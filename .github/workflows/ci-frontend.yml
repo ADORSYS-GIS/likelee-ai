@@ -34,8 +34,7 @@ jobs:
 
       - name: Check Formatting
         # This runs the "format:check" script from your package.json
-        run: npm run format:check
-
+        run: npx prettier --check .
       - name: Run Lint
         run: npm run lint
 
