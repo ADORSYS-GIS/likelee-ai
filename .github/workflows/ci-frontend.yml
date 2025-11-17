@@ -1,0 +1,41 @@
+# This workflow will run checks on your 'likelee-ui' (frontend) code.
+
+name: CI - likelee-ui Checks
+
+# We want it to run on any Pull Request that targets the 'develop' or 'main' branch.
+on:
+  pull_request:
+    branches: [ develop, main ]
+
+# jobs
+jobs:
+  #'build-and-lint-ui'
+  build-and-lint-ui:
+    # This job will run on a fresh, virtual machine hosted by GitHub
+    runs-on: ubuntu-latest
+
+    # 'steps:' 
+    steps:
+      # 1. Check out the repository code
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 2. Set up the Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'likelee-ui/package-lock.json' 
+
+      # 3. Install dependencies for the 'likelee-ui' app
+      - name: Install dependencies
+        run: cd likelee-ui && npm install
+
+      # 4. Run the 'lint' command (checks for code style errors)
+      - name: Run Lint
+        run: cd likelee-ui && npm run lint
+
+      # 5. Run the 'build' command
+      - name: Run Build
+        run: cd likelee-ui && npm run build
