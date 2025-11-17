@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,44 +12,51 @@ export default function CommercialRights() {
     {
       icon: Shield,
       title: "Verified Creator Consent",
-      description: "Not data extraction. Creators actively license their likeness through Likelee. Every permission is explicit, time-limited, and revocable."
+      description:
+        "Not data extraction. Creators actively license their likeness through Likelee. Every permission is explicit, time-limited, and revocable.",
     },
     {
       icon: Zap,
       title: "Built for Speed & Scale",
-      description: "We engineered infrastructure to deliver licensed creative in <48 hours—no back-and-forth, no legal delays. Your creative pipeline moves at brand speed, not celebrity speed."
+      description:
+        "We engineered infrastructure to deliver licensed creative in <48 hours—no back-and-forth, no legal delays. Your creative pipeline moves at brand speed, not celebrity speed.",
     },
     {
       icon: FileCheck,
       title: "Smart Contract Protection",
-      description: "Every license embeds usage scope, territory, duration, and compensation automatically. No gray areas. Watermarked assets + cryptographic verification ensure compliance."
-    }
+      description:
+        "Every license embeds usage scope, territory, duration, and compensation automatically. No gray areas. Watermarked assets + cryptographic verification ensure compliance.",
+    },
   ];
 
   const useCases = [
     {
       title: "Performance Marketing",
-      description: "License creator likenesses for social media ads. Set impressions, regions, and duration upfront. Pay only for active months."
+      description:
+        "License creator likenesses for social media ads. Set impressions, regions, and duration upfront. Pay only for active months.",
     },
     {
       title: "E-Commerce & Web",
-      description: "Feature verified creators on product pages and campaigns. Full transparency on who approved what, for how long."
+      description:
+        "Feature verified creators on product pages and campaigns. Full transparency on who approved what, for how long.",
     },
     {
       title: "Outdoor & In-Store",
-      description: "Billboard, retail, and experiential campaigns with pre-cleared talent. No last-minute legal complications."
+      description:
+        "Billboard, retail, and experiential campaigns with pre-cleared talent. No last-minute legal complications.",
     },
     {
       title: "Content & Gaming",
-      description: "Integrate creator likenesses into films, games, and interactive experiences with verified commercial rights."
-    }
+      description:
+        "Integrate creator likenesses into films, games, and interactive experiences with verified commercial rights.",
+    },
   ];
 
   const steps = [
     "Verified creators upload profiles + set licensing terms",
     "You browse, select, submit your brief",
     "Creator approves in one click",
-    "You receive watermarked asset + binding license agreement"
+    "You receive watermarked asset + binding license agreement",
   ];
 
   useEffect(() => {
@@ -58,23 +64,25 @@ export default function CommercialRights() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      "name": "Commercial Rights & Creator Licensing",
-      "description": "Get brand-safe creative with verified, consented talent in under 48 hours. Smart contracts, watermarked assets, and full compliance.",
-      "provider": {
+      name: "Commercial Rights & Creator Licensing",
+      description:
+        "Get brand-safe creative with verified, consented talent in under 48 hours. Smart contracts, watermarked assets, and full compliance.",
+      provider: {
         "@type": "Organization",
-        "name": "Likelee",
-        "url": "https://likelee.ai"
+        name: "Likelee",
+        url: "https://likelee.ai",
       },
-      "serviceType": "Commercial Likeness Licensing",
-      "areaServed": "Worldwide",
-      "offers": {
+      serviceType: "Commercial Likeness Licensing",
+      areaServed: "Worldwide",
+      offers: {
         "@type": "Offer",
-        "description": "License verified creator likenesses legally and instantly for commercial use"
-      }
+        description:
+          "License verified creator likenesses legally and instantly for commercial use",
+      },
     };
 
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
     script.text = JSON.stringify(structuredData);
     document.head.appendChild(script);
 
@@ -95,7 +103,8 @@ export default function CommercialRights() {
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 leading-relaxed max-w-4xl mx-auto mb-10">
-            Get brand-safe creative with real, consented talent in &lt;48 hours. Every license is verified, tracked, and fully compliant.
+            Get brand-safe creative with real, consented talent in &lt;48 hours.
+            Every license is verified, tracked, and fully compliant.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -128,11 +137,16 @@ export default function CommercialRights() {
             {benefits.map((benefit, index) => {
               const Icon = benefit.icon;
               return (
-                <Card key={index} className="p-8 bg-white border-2 border-black transition-all hover:shadow-xl group rounded-none">
+                <Card
+                  key={index}
+                  className="p-8 bg-white border-2 border-black transition-all hover:shadow-xl group rounded-none"
+                >
                   <div className="w-16 h-16 bg-gradient-to-br from-[#32C8D1] to-teal-600 border-2 border-black flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{benefit.title}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {benefit.title}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
                     {benefit.description}
                   </p>
@@ -154,8 +168,13 @@ export default function CommercialRights() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
-              <Card key={index} className="p-8 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black transition-all hover:shadow-xl rounded-none">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">{useCase.title}</h3>
+              <Card
+                key={index}
+                className="p-8 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black transition-all hover:shadow-xl rounded-none"
+              >
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  {useCase.title}
+                </h3>
                 <p className="text-gray-700 leading-relaxed text-lg">
                   {useCase.description}
                 </p>
@@ -181,7 +200,9 @@ export default function CommercialRights() {
             {steps.map((step, index) => (
               <div key={index} className="text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-[#32C8D1] to-teal-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl">
-                  <span className="text-4xl font-bold text-white">{index + 1}</span>
+                  <span className="text-4xl font-bold text-white">
+                    {index + 1}
+                  </span>
                 </div>
                 <p className="text-gray-700 leading-relaxed text-lg font-medium">
                   {step}
@@ -199,7 +220,8 @@ export default function CommercialRights() {
             Ready to license verified creator likenesses?
           </h2>
           <p className="text-xl text-cyan-100 mb-10">
-            Get started with brand-safe, legally compliant creative in under 48 hours.
+            Get started with brand-safe, legally compliant creative in under 48
+            hours.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

@@ -1,6 +1,6 @@
-import './App.css'
-import Pages from '@/pages'
-import { Toaster } from '@/components/ui/toaster'
+import "./App.css";
+import Pages from "@/pages";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function App() {
   return (
@@ -8,5 +8,5 @@ export default function App() {
       <Pages />
       <Toaster />
     </>
-  )
+  );
 }

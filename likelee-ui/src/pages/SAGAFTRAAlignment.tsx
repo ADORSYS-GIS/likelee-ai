@@ -1,7 +1,14 @@
-
 import React, { useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, Shield, DollarSign, Lock, FileText, Users, Scale } from "lucide-react";
+import {
+  CheckCircle2,
+  Shield,
+  DollarSign,
+  Lock,
+  FileText,
+  Users,
+  Scale,
+} from "lucide-react";
 
 export default function SAGAFTRAAlignment() {
   useEffect(() => {
@@ -9,18 +16,20 @@ export default function SAGAFTRAAlignment() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      "name": "SAG-AFTRA Alignment",
-      "description": "How Likelee implements SAG-AFTRA AI safeguards: informed consent, fair pay, scope-locked usage, and enforceable protections for all creators.",
-      "url": "https://likelee.ai/s-a-g-a-f-t-r-a-alignment",
-      "about": {
+      name: "SAG-AFTRA Alignment",
+      description:
+        "How Likelee implements SAG-AFTRA AI safeguards: informed consent, fair pay, scope-locked usage, and enforceable protections for all creators.",
+      url: "https://likelee.ai/s-a-g-a-f-t-r-a-alignment",
+      about: {
         "@type": "Thing",
-        "name": "SAG-AFTRA AI Guidelines Compliance",
-        "description": "Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards into every license"
-      }
+        name: "SAG-AFTRA AI Guidelines Compliance",
+        description:
+          "Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards into every license",
+      },
     };
 
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
     script.text = JSON.stringify(structuredData);
     document.head.appendChild(script);
 
@@ -33,45 +42,52 @@ export default function SAGAFTRAAlignment() {
     {
       icon: FileText,
       title: "Informed consent every time",
-      description: "A creator signs a clear, project-specific release before any capture, synthetization, or reuse of their face, voice, or motion.",
-      color: "from-[#32C8D1] to-teal-600"
+      description:
+        "A creator signs a clear, project-specific release before any capture, synthetization, or reuse of their face, voice, or motion.",
+      color: "from-[#32C8D1] to-teal-600",
     },
     {
       icon: DollarSign,
       title: "Fair pay & residuals on autopilot",
-      description: "Each replica triggers up-front compensation, ongoing residuals, and full pension/health (or equivalent) contributions—logged and paid out automatically by our royalty engine.",
-      color: "from-green-500 to-emerald-600"
+      description:
+        "Each replica triggers up-front compensation, ongoing residuals, and full pension/health (or equivalent) contributions—logged and paid out automatically by our royalty engine.",
+      color: "from-green-500 to-emerald-600",
     },
     {
       icon: Lock,
       title: "Scope-locked usage",
-      description: "Contracts spell out exactly where (TV, streaming, social, in-engine, print, etc.) and how long a replica can appear. New medium? New project? Fresh approval + payout.",
-      color: "from-[#F18B6A] to-[#E07A5A]"
+      description:
+        "Contracts spell out exactly where (TV, streaming, social, in-engine, print, etc.) and how long a replica can appear. New medium? New project? Fresh approval + payout.",
+      color: "from-[#F18B6A] to-[#E07A5A]",
     },
     {
       icon: Shield,
       title: "No blanket rights or transfers",
-      description: '"All-media in perpetuity" clauses are void here. Consent is non-transferable; sublicensing requires a brand-new agreement.',
-      color: "from-purple-500 to-indigo-600"
+      description:
+        '"All-media in perpetuity" clauses are void here. Consent is non-transferable; sublicensing requires a brand-new agreement.',
+      color: "from-purple-500 to-indigo-600",
     },
     {
       icon: Users,
       title: "AI-training is a separate license",
-      description: "Feeding likeness data into model training is its own, bargained-for use case with distinct terms and revenue share.",
-      color: "from-[#F7B750] to-yellow-600"
+      description:
+        "Feeding likeness data into model training is its own, bargained-for use case with distinct terms and revenue share.",
+      color: "from-[#F7B750] to-yellow-600",
     },
     {
       icon: Users,
       title: "Background talent protected",
-      description: "Digital stand-ins never count toward background-hiring minimums or replace on-set performers.",
-      color: "from-cyan-500 to-blue-600"
+      description:
+        "Digital stand-ins never count toward background-hiring minimums or replace on-set performers.",
+      color: "from-cyan-500 to-blue-600",
     },
     {
       icon: Scale,
       title: "Enforceable safeguards",
-      description: "Backed by SAG-AFTRA contracts and California law, giving creators clear recourse if terms are breached.",
-      color: "from-red-500 to-pink-600"
-    }
+      description:
+        "Backed by SAG-AFTRA contracts and California law, giving creators clear recourse if terms are breached.",
+      color: "from-red-500 to-pink-600",
+    },
   ];
 
   return (
@@ -86,7 +102,10 @@ export default function SAGAFTRAAlignment() {
             SAG-AFTRA Alignment
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 leading-relaxed max-w-4xl mx-auto">
-            Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards into every license we issue—and we apply the same bar to all creators on the platform (actors, models, athletes, influencers, voice).
+            Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards
+            into every license we issue—and we apply the same bar to all
+            creators on the platform (actors, models, athletes, influencers,
+            voice).
           </p>
         </div>
       </section>
@@ -98,11 +117,18 @@ export default function SAGAFTRAAlignment() {
             {safeguards.map((safeguard, index) => {
               const Icon = safeguard.icon;
               return (
-                <Card key={index} className="p-8 bg-white border-2 border-black transition-all hover:shadow-xl group rounded-none">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${safeguard.color} border-2 border-black flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                <Card
+                  key={index}
+                  className="p-8 bg-white border-2 border-black transition-all hover:shadow-xl group rounded-none"
+                >
+                  <div
+                    className={`w-16 h-16 bg-gradient-to-br ${safeguard.color} border-2 border-black flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                  >
                     <Icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{safeguard.title}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {safeguard.title}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
                     {safeguard.description}
                   </p>
@@ -121,7 +147,10 @@ export default function SAGAFTRAAlignment() {
               Bottom Line
             </h2>
             <p className="text-xl text-gray-700 leading-relaxed text-center">
-              Likelee licenses talent the way the union's AI rules intended—consent first, cash second, creator control always—and we hold every brand and campaign on the platform to that same standard.
+              Likelee licenses talent the way the union's AI rules
+              intended—consent first, cash second, creator control always—and we
+              hold every brand and campaign on the platform to that same
+              standard.
             </p>
           </Card>
         </div>

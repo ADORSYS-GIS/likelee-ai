@@ -9,11 +9,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
-  Search, Bell, HelpCircle, User, Plus, Filter, TrendingUp,
-  FileText, Clock, CheckCircle2, Play, DollarSign, Eye,
-  BarChart3, Download, Settings, Calendar, Globe, Star,
-  Zap, Users, Video, AlertCircle, Building2, ExternalLink,
-  Edit3, Sparkles, X
+  Search,
+  Bell,
+  HelpCircle,
+  User,
+  Plus,
+  Filter,
+  TrendingUp,
+  FileText,
+  Clock,
+  CheckCircle2,
+  Play,
+  DollarSign,
+  Eye,
+  BarChart3,
+  Download,
+  Settings,
+  Calendar,
+  Globe,
+  Star,
+  Zap,
+  Users,
+  Video,
+  AlertCircle,
+  Building2,
+  ExternalLink,
+  Edit3,
+  Sparkles,
+  X,
 } from "lucide-react";
 
 import CampaignBuilder from "../components/CampaignBuilder";
@@ -24,7 +47,7 @@ const mockAgency = {
   clients: 8,
   active_campaigns: 12,
   team_members: 15,
-  monthly_budget: 125000
+  monthly_budget: 125000,
 };
 
 const mockClients = [
@@ -37,7 +60,7 @@ const mockClients = [
     spend: 24500,
     status: "active",
     ad_accounts: 2,
-    generations: 45
+    generations: 45,
   },
   {
     id: 2,
@@ -48,7 +71,7 @@ const mockClients = [
     spend: 18200,
     status: "active",
     ad_accounts: 1,
-    generations: 28
+    generations: 28,
   },
   {
     id: 3,
@@ -59,8 +82,8 @@ const mockClients = [
     spend: 35000,
     status: "active",
     ad_accounts: 3,
-    generations: 18
-  }
+    generations: 18,
+  },
 ];
 
 const mockGenerations = [
@@ -71,10 +94,11 @@ const mockGenerations = [
     campaign_id: 1,
     campaign_name: "Nike Spring Collection",
     type: "video",
-    thumbnail: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300",
+    thumbnail:
+      "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300",
     status: "completed",
     created_date: "2025-01-15",
-    aspect_ratio: "16:9"
+    aspect_ratio: "16:9",
   },
   {
     id: 2,
@@ -83,10 +107,11 @@ const mockGenerations = [
     campaign_id: 1,
     campaign_name: "Nike Spring Collection",
     type: "image",
-    thumbnail: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=300",
+    thumbnail:
+      "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=300",
     status: "completed",
     created_date: "2025-01-14",
-    aspect_ratio: "1:1"
+    aspect_ratio: "1:1",
   },
   {
     id: 3,
@@ -95,11 +120,12 @@ const mockGenerations = [
     campaign_id: 2,
     campaign_name: "Sephora Holiday Campaign",
     type: "video",
-    thumbnail: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300",
+    thumbnail:
+      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300",
     status: "processing",
     created_date: "2025-01-16",
-    aspect_ratio: "9:16"
-  }
+    aspect_ratio: "9:16",
+  },
 ];
 
 const mockCampaigns = [
@@ -112,7 +138,7 @@ const mockCampaigns = [
     end_date: "2025-02-28",
     budget: 12000,
     creators: 3,
-    deliverables: 8
+    deliverables: 8,
   },
   {
     id: 2,
@@ -123,8 +149,8 @@ const mockCampaigns = [
     end_date: "2025-01-31",
     budget: 8500,
     creators: 2,
-    deliverables: 5
-  }
+    deliverables: 5,
+  },
 ];
 
 const mockCreators = [
@@ -137,7 +163,7 @@ const mockCreators = [
     engagement: "4.2%",
     platforms: ["Instagram", "TikTok"],
     price: 450,
-    approval_rate: 94
+    approval_rate: 94,
   },
   {
     id: 2,
@@ -148,7 +174,7 @@ const mockCreators = [
     engagement: "5.8%",
     platforms: ["YouTube", "Instagram"],
     price: 380,
-    approval_rate: 88
+    approval_rate: 88,
   },
   {
     id: 3,
@@ -159,8 +185,8 @@ const mockCreators = [
     engagement: "N/A",
     platforms: ["Virtual"],
     price: 520,
-    approval_rate: 100
-  }
+    approval_rate: 100,
+  },
 ];
 
 export default function MarketingAgencyDashboard() {
@@ -178,13 +204,15 @@ export default function MarketingAgencyDashboard() {
 
   const getFilteredCampaigns = () => {
     if (selectedClient === "all") return mockCampaigns;
-    const client = mockClients.find(c => c.id.toString() === selectedClient);
-    return mockCampaigns.filter(c => c.client === client?.name);
+    const client = mockClients.find((c) => c.id.toString() === selectedClient);
+    return mockCampaigns.filter((c) => c.client === client?.name);
   };
 
   const getFilteredGenerations = () => {
     if (selectedClient === "all") return mockGenerations;
-    return mockGenerations.filter(g => g.client_id.toString() === selectedClient);
+    return mockGenerations.filter(
+      (g) => g.client_id.toString() === selectedClient,
+    );
   };
 
   const getClientStats = () => {
@@ -193,16 +221,18 @@ export default function MarketingAgencyDashboard() {
         campaigns: mockAgency.active_campaigns,
         generations: mockGenerations.length,
         spend: mockClients.reduce((sum, c) => sum + c.spend, 0),
-        ad_accounts: mockClients.reduce((sum, c) => sum + c.ad_accounts, 0)
+        ad_accounts: mockClients.reduce((sum, c) => sum + c.ad_accounts, 0),
       };
     }
-    const client = mockClients.find(c => c.id.toString() === selectedClient);
-    const clientGens = mockGenerations.filter(g => g.client_id.toString() === selectedClient);
+    const client = mockClients.find((c) => c.id.toString() === selectedClient);
+    const clientGens = mockGenerations.filter(
+      (g) => g.client_id.toString() === selectedClient,
+    );
     return {
       campaigns: client?.campaigns || 0,
       generations: clientGens.length,
       spend: client?.spend || 0,
-      ad_accounts: client?.ad_accounts || 0
+      ad_accounts: client?.ad_accounts || 0,
     };
   };
 
@@ -214,7 +244,7 @@ export default function MarketingAgencyDashboard() {
     if (!acc[gen.campaign_id]) {
       acc[gen.campaign_id] = {
         campaign_name: gen.campaign_name,
-        generations: []
+        generations: [],
       };
     }
     acc[gen.campaign_id].generations.push(gen);
@@ -228,10 +258,16 @@ export default function MarketingAgencyDashboard() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-3">
-                <img src={mockAgency.logo} alt="Agency" className="w-10 h-10 rounded-full object-cover border-2 border-gray-200" />
-                <span className="text-xl font-bold text-gray-900">Likelee Agency</span>
+                <img
+                  src={mockAgency.logo}
+                  alt="Agency"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                />
+                <span className="text-xl font-bold text-gray-900">
+                  Likelee Agency
+                </span>
               </div>
-              
+
               <div className="hidden md:flex items-center gap-1">
                 <Button
                   variant={activeTab === "home" ? "default" : "ghost"}
@@ -294,8 +330,10 @@ export default function MarketingAgencyDashboard() {
                   className="border-2 border-gray-300 px-4 py-2 rounded-none text-sm font-medium bg-white"
                 >
                   <option value="all">All Clients</option>
-                  {mockClients.map(client => (
-                    <option key={client.id} value={client.id.toString()}>{client.name}</option>
+                  {mockClients.map((client) => (
+                    <option key={client.id} value={client.id.toString()}>
+                      {client.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -322,7 +360,13 @@ export default function MarketingAgencyDashboard() {
             <Building2 className="h-5 w-5 text-cyan-600" />
             <AlertDescription className="text-gray-900 font-medium flex items-center justify-between">
               <span>
-                Viewing data for: <strong>{mockClients.find(c => c.id.toString() === selectedClient)?.name}</strong>
+                Viewing data for:{" "}
+                <strong>
+                  {
+                    mockClients.find((c) => c.id.toString() === selectedClient)
+                      ?.name
+                  }
+                </strong>
               </span>
               <Button
                 variant="outline"
@@ -339,7 +383,8 @@ export default function MarketingAgencyDashboard() {
         <Alert className="mb-8 bg-cyan-50 border-2 border-cyan-600 rounded-none">
           <AlertCircle className="h-5 w-5 text-cyan-600" />
           <AlertDescription className="text-cyan-900 font-medium">
-            🎬 <strong>Demo Mode:</strong> This is a preview of the Marketing Agency Dashboard - a multi-client command center.
+            🎬 <strong>Demo Mode:</strong> This is a preview of the Marketing
+            Agency Dashboard - a multi-client command center.
           </AlertDescription>
         </Alert>
 
@@ -350,10 +395,9 @@ export default function MarketingAgencyDashboard() {
                 Welcome back, {mockAgency.name}
               </h1>
               <p className="text-gray-600">
-                {selectedClient === "all" 
+                {selectedClient === "all"
                   ? `You're managing ${mockAgency.clients} clients and ${mockAgency.active_campaigns} active campaigns.`
-                  : `Viewing ${mockClients.find(c => c.id.toString() === selectedClient)?.name}'s account with ${clientStats.campaigns} campaigns.`
-                }
+                  : `Viewing ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}'s account with ${clientStats.campaigns} campaigns.`}
               </p>
             </div>
 
@@ -363,7 +407,9 @@ export default function MarketingAgencyDashboard() {
                   <FileText className="w-8 h-8 text-cyan-600" />
                 </div>
                 <p className="text-sm text-gray-600 mb-1">Active Campaigns</p>
-                <p className="text-3xl font-bold text-gray-900">{clientStats.campaigns}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {clientStats.campaigns}
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
@@ -371,7 +417,9 @@ export default function MarketingAgencyDashboard() {
                   <Video className="w-8 h-8 text-cyan-600" />
                 </div>
                 <p className="text-sm text-gray-600 mb-1">Total Generations</p>
-                <p className="text-3xl font-bold text-gray-900">{clientStats.generations}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {clientStats.generations}
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
@@ -379,7 +427,9 @@ export default function MarketingAgencyDashboard() {
                   <DollarSign className="w-8 h-8 text-cyan-600" />
                 </div>
                 <p className="text-sm text-gray-600 mb-1">Total Spend</p>
-                <p className="text-3xl font-bold text-gray-900">${(clientStats.spend / 1000).toFixed(1)}K</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  ${(clientStats.spend / 1000).toFixed(1)}K
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
@@ -387,12 +437,16 @@ export default function MarketingAgencyDashboard() {
                   <Globe className="w-8 h-8 text-cyan-600" />
                 </div>
                 <p className="text-sm text-gray-600 mb-1">Ad Accounts</p>
-                <p className="text-3xl font-bold text-gray-900">{clientStats.ad_accounts}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {clientStats.ad_accounts}
+                </p>
               </Card>
             </div>
 
             <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Quick Actions
+              </h2>
               <div className="grid md:grid-cols-4 gap-4">
                 <Button
                   onClick={() => setActiveTab("marketplace")}
@@ -427,64 +481,100 @@ export default function MarketingAgencyDashboard() {
 
             {Object.keys(generationsByCampaign).length > 0 && (
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Generations by Campaign</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Recent Generations by Campaign
+                </h3>
                 <div className="space-y-6">
-                  {Object.entries(generationsByCampaign).map(([campaignId, data]) => (
-                    <div key={campaignId} className="border-b pb-4 last:border-b-0">
-                      <h4 className="font-bold text-gray-900 mb-3">{data.campaign_name}</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {data.generations.map(gen => (
-                          <div key={gen.id} className="group relative">
-                            <div className="aspect-video bg-gray-100 rounded-none overflow-hidden border-2 border-gray-200">
-                              <img src={gen.thumbnail} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                <Button size="sm" className="bg-white text-gray-900 hover:bg-gray-100 rounded-none">
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  View
-                                </Button>
-                                <Button size="sm" variant="outline" className="border-white text-white hover:bg-white/20 rounded-none">
-                                  <Download className="w-3 h-3 mr-1" />
-                                  Download
-                                </Button>
+                  {Object.entries(generationsByCampaign).map(
+                    ([campaignId, data]) => (
+                      <div
+                        key={campaignId}
+                        className="border-b pb-4 last:border-b-0"
+                      >
+                        <h4 className="font-bold text-gray-900 mb-3">
+                          {data.campaign_name}
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {data.generations.map((gen) => (
+                            <div key={gen.id} className="group relative">
+                              <div className="aspect-video bg-gray-100 rounded-none overflow-hidden border-2 border-gray-200">
+                                <img
+                                  src={gen.thumbnail}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-white text-gray-900 hover:bg-gray-100 rounded-none"
+                                  >
+                                    <Eye className="w-3 h-3 mr-1" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-white text-white hover:bg-white/20 rounded-none"
+                                  >
+                                    <Download className="w-3 h-3 mr-1" />
+                                    Download
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                <Badge
+                                  className={
+                                    gen.status === "completed"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                  }
+                                >
+                                  {gen.status}
+                                </Badge>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {gen.aspect_ratio} • {gen.created_date}
+                                </p>
                               </div>
                             </div>
-                            <div className="mt-2">
-                              <Badge className={gen.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                                {gen.status}
-                              </Badge>
-                              <p className="text-xs text-gray-500 mt-1">{gen.aspect_ratio} • {gen.created_date}</p>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               </Card>
             )}
 
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Recent Activity
+                </h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 pb-3 border-b border-gray-200">
                     <Clock className="w-4 h-4 text-gray-500 mt-1" />
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900 font-medium">Campaign "Nike Spring Collection" started</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        Campaign "Nike Spring Collection" started
+                      </p>
                       <p className="text-xs text-gray-500">2 hours ago</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 pb-3 border-b border-gray-200">
                     <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900 font-medium">3 videos approved for Tesla campaign</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        3 videos approved for Tesla campaign
+                      </p>
                       <p className="text-xs text-gray-500">5 hours ago</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Users className="w-4 h-4 text-cyan-600 mt-1" />
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900 font-medium">New creator "Sarah Johnson" added</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        New creator "Sarah Johnson" added
+                      </p>
                       <p className="text-xs text-gray-500">1 day ago</p>
                     </div>
                   </div>
@@ -492,22 +582,37 @@ export default function MarketingAgencyDashboard() {
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Top Performing Clients</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Top Performing Clients
+                </h3>
                 <div className="space-y-3">
                   {mockClients.map((client, idx) => (
-                    <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 border-2 border-gray-200 rounded-none">
+                    <div
+                      key={client.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 border-2 border-gray-200 rounded-none"
+                    >
                       <div className="flex items-center gap-3">
-                        <img src={client.logo} alt={client.name} className="w-10 h-10 rounded-full object-cover border-2 border-gray-200" />
+                        <img
+                          src={client.logo}
+                          alt={client.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                        />
                         <div>
-                          <p className="font-medium text-gray-900">{client.name}</p>
-                          <p className="text-xs text-gray-500">{client.campaigns} campaigns</p>
+                          <p className="font-medium text-gray-900">
+                            {client.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {client.campaigns} campaigns
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900">${(client.spend / 1000).toFixed(1)}K</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          ${(client.spend / 1000).toFixed(1)}K
+                        </p>
                         <Badge className="bg-green-100 text-green-800">
-                          <TrendingUp className="w-3 h-3 mr-1" />
-                          +{(idx + 1) * 12}%
+                          <TrendingUp className="w-3 h-3 mr-1" />+
+                          {(idx + 1) * 12}%
                         </Badge>
                       </div>
                     </div>
@@ -522,8 +627,12 @@ export default function MarketingAgencyDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Creator Marketplace</h1>
-                <p className="text-gray-600">Discover and connect with creators and AI talent</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Creator Marketplace
+                </h1>
+                <p className="text-gray-600">
+                  Discover and connect with creators and AI talent
+                </p>
               </div>
               <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                 <Filter className="w-4 h-4 mr-2" />
@@ -543,8 +652,11 @@ export default function MarketingAgencyDashboard() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {mockCreators.map(creator => (
-                <Card key={creator.id} className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none">
+              {mockCreators.map((creator) => (
+                <Card
+                  key={creator.id}
+                  className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
+                >
                   <div className="flex items-start gap-4 mb-4">
                     <img
                       src={creator.image}
@@ -552,11 +664,18 @@ export default function MarketingAgencyDashboard() {
                       className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
                     />
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-1">{creator.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{creator.tagline}</p>
+                      <h3 className="font-bold text-gray-900 mb-1">
+                        {creator.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {creator.tagline}
+                      </p>
                       <div className="flex flex-wrap gap-1">
-                        {creator.platforms.map(platform => (
-                          <Badge key={platform} className="bg-gray-200 text-gray-700 text-xs">
+                        {creator.platforms.map((platform) => (
+                          <Badge
+                            key={platform}
+                            className="bg-gray-200 text-gray-700 text-xs"
+                          >
                             {platform}
                           </Badge>
                         ))}
@@ -568,20 +687,28 @@ export default function MarketingAgencyDashboard() {
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Followers</p>
                       <p className="text-base font-bold text-gray-900">
-                        {creator.followers > 0 ? `${(creator.followers / 1000).toFixed(0)}K` : 'N/A'}
+                        {creator.followers > 0
+                          ? `${(creator.followers / 1000).toFixed(0)}K`
+                          : "N/A"}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Engagement</p>
-                      <p className="text-base font-bold text-gray-900">{creator.engagement}</p>
+                      <p className="text-base font-bold text-gray-900">
+                        {creator.engagement}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Starting at</p>
-                      <p className="text-base font-bold text-gray-900">${creator.price}</p>
+                      <p className="text-base font-bold text-gray-900">
+                        ${creator.price}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-600 mb-1">Approval</p>
-                      <p className="text-base font-bold text-gray-900">{creator.approval_rate}%</p>
+                      <p className="text-base font-bold text-gray-900">
+                        {creator.approval_rate}%
+                      </p>
                     </div>
                   </div>
 
@@ -590,16 +717,16 @@ export default function MarketingAgencyDashboard() {
                       Add to Campaign
                     </Button>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex-1 border-2 border-gray-300 rounded-none"
                         onClick={() => setShowPreviewModal(creator)}
                       >
                         <Play className="w-4 h-4 mr-1" />
                         Preview
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex-1 border-2 border-gray-300 rounded-none"
                         onClick={() => setShowCreatorProfile(creator)}
                       >
@@ -618,8 +745,12 @@ export default function MarketingAgencyDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Clients</h1>
-                <p className="text-gray-600">Manage your client accounts and relationships</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Your Clients
+                </h1>
+                <p className="text-gray-600">
+                  Manage your client accounts and relationships
+                </p>
               </div>
               <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                 <Plus className="w-4 h-4 mr-2" />
@@ -628,13 +759,24 @@ export default function MarketingAgencyDashboard() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {mockClients.map(client => (
-                <Card key={client.id} className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none">
+              {mockClients.map((client) => (
+                <Card
+                  key={client.id}
+                  className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
+                >
                   <div className="flex items-start gap-4 mb-4">
-                    <img src={client.logo} alt={client.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" />
+                    <img
+                      src={client.logo}
+                      alt={client.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                    />
                     <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 mb-1">{client.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{client.industry}</p>
+                      <h3 className="font-bold text-gray-900 mb-1">
+                        {client.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {client.industry}
+                      </p>
                       <Badge className="bg-green-100 text-green-800">
                         {client.status}
                       </Badge>
@@ -643,20 +785,28 @@ export default function MarketingAgencyDashboard() {
 
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Active Campaigns</span>
-                      <span className="font-bold text-gray-900">{client.campaigns}</span>
+                      <span className="text-sm text-gray-600">
+                        Active Campaigns
+                      </span>
+                      <span className="font-bold text-gray-900">
+                        {client.campaigns}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Total Spend</span>
-                      <span className="font-bold text-gray-900">${(client.spend / 1000).toFixed(1)}K</span>
+                      <span className="font-bold text-gray-900">
+                        ${(client.spend / 1000).toFixed(1)}K
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Ad Accounts</span>
-                      <span className="font-bold text-gray-900">{client.ad_accounts}</span>
+                      <span className="font-bold text-gray-900">
+                        {client.ad_accounts}
+                      </span>
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-none"
                     onClick={() => setSelectedClient(client.id.toString())}
                   >
@@ -672,15 +822,16 @@ export default function MarketingAgencyDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Campaigns</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Campaigns
+                </h1>
                 <p className="text-gray-600">
-                  {selectedClient === "all" 
+                  {selectedClient === "all"
                     ? "All active campaigns across clients"
-                    : `Campaigns for ${mockClients.find(c => c.id.toString() === selectedClient)?.name}`
-                  }
+                    : `Campaigns for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`}
                 </p>
               </div>
-              <Button 
+              <Button
                 onClick={() => setShowCampaignBuilder(true)}
                 className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none"
               >
@@ -690,17 +841,28 @@ export default function MarketingAgencyDashboard() {
             </div>
 
             <div className="space-y-4">
-              {filteredCampaigns.map(campaign => (
-                <Card key={campaign.id} className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none">
+              {filteredCampaigns.map((campaign) => (
+                <Card
+                  key={campaign.id}
+                  className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{campaign.name}</h3>
-                      <p className="text-gray-600 mb-3">Client: {campaign.client}</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {campaign.name}
+                      </h3>
+                      <p className="text-gray-600 mb-3">
+                        Client: {campaign.client}
+                      </p>
                       <Badge className="bg-green-100 text-green-800">
                         {campaign.status}
                       </Badge>
                     </div>
-                    <Button variant="ghost" size="icon" className="rounded-none">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-none"
+                    >
                       <Settings className="w-5 h-5" />
                     </Button>
                   </div>
@@ -708,23 +870,33 @@ export default function MarketingAgencyDashboard() {
                   <div className="grid md:grid-cols-5 gap-4">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Start Date</p>
-                      <p className="font-medium text-gray-900">{campaign.start_date}</p>
+                      <p className="font-medium text-gray-900">
+                        {campaign.start_date}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">End Date</p>
-                      <p className="font-medium text-gray-900">{campaign.end_date}</p>
+                      <p className="font-medium text-gray-900">
+                        {campaign.end_date}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Budget</p>
-                      <p className="font-medium text-gray-900">${(campaign.budget / 1000).toFixed(1)}K</p>
+                      <p className="font-medium text-gray-900">
+                        ${(campaign.budget / 1000).toFixed(1)}K
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Creators</p>
-                      <p className="font-medium text-gray-900">{campaign.creators}</p>
+                      <p className="font-medium text-gray-900">
+                        {campaign.creators}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Deliverables</p>
-                      <p className="font-medium text-gray-900">{campaign.deliverables}</p>
+                      <p className="font-medium text-gray-900">
+                        {campaign.deliverables}
+                      </p>
                     </div>
                   </div>
 
@@ -733,11 +905,17 @@ export default function MarketingAgencyDashboard() {
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </Button>
-                    <Button variant="outline" className="border-2 border-gray-300 rounded-none">
+                    <Button
+                      variant="outline"
+                      className="border-2 border-gray-300 rounded-none"
+                    >
                       <Edit3 className="w-4 h-4 mr-2" />
                       Edit
                     </Button>
-                    <Button variant="outline" className="border-2 border-gray-300 rounded-none">
+                    <Button
+                      variant="outline"
+                      className="border-2 border-gray-300 rounded-none"
+                    >
                       <BarChart3 className="w-4 h-4 mr-2" />
                       Analytics
                     </Button>
@@ -751,61 +929,98 @@ export default function MarketingAgencyDashboard() {
         {activeTab === "studio" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Likelee Studio</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Likelee Studio
+              </h1>
               <p className="text-gray-600">
-                {selectedClient === "all" 
+                {selectedClient === "all"
                   ? "View all generations across clients"
-                  : `Viewing generations for ${mockClients.find(c => c.id.toString() === selectedClient)?.name}`
-                }
+                  : `Viewing generations for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`}
               </p>
             </div>
 
             {Object.keys(generationsByCampaign).length > 0 ? (
               <div className="space-y-6">
-                {Object.entries(generationsByCampaign).map(([campaignId, data]) => (
-                  <Card key={campaignId} className="p-6 bg-white border-2 border-gray-200 rounded-none">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold text-gray-900">{data.campaign_name}</h3>
-                      <Badge className="bg-cyan-100 text-cyan-800">
-                        {data.generations.length} generations
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {data.generations.map(gen => (
-                        <Card key={gen.id} className="p-4 border-2 border-gray-200 rounded-none">
-                          <div className="aspect-video bg-gray-100 rounded-none mb-3 overflow-hidden">
-                            <img src={gen.thumbnail} alt="" className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-900">{gen.type}</span>
-                            <Badge className={gen.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                              {gen.status}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-gray-500 mb-3">{gen.aspect_ratio}</p>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" className="flex-1 border-2 border-gray-300 rounded-none">
-                              <Download className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                            <Button size="sm" variant="outline" className="flex-1 border-2 border-gray-300 rounded-none">
-                              <Edit3 className="w-3 h-3 mr-1" />
-                              Edit
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </Card>
-                ))}
+                {Object.entries(generationsByCampaign).map(
+                  ([campaignId, data]) => (
+                    <Card
+                      key={campaignId}
+                      className="p-6 bg-white border-2 border-gray-200 rounded-none"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {data.campaign_name}
+                        </h3>
+                        <Badge className="bg-cyan-100 text-cyan-800">
+                          {data.generations.length} generations
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {data.generations.map((gen) => (
+                          <Card
+                            key={gen.id}
+                            className="p-4 border-2 border-gray-200 rounded-none"
+                          >
+                            <div className="aspect-video bg-gray-100 rounded-none mb-3 overflow-hidden">
+                              <img
+                                src={gen.thumbnail}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {gen.type}
+                              </span>
+                              <Badge
+                                className={
+                                  gen.status === "completed"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }
+                              >
+                                {gen.status}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-3">
+                              {gen.aspect_ratio}
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 border-2 border-gray-300 rounded-none"
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                Download
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 border-2 border-gray-300 rounded-none"
+                              >
+                                <Edit3 className="w-3 h-3 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </Card>
+                  ),
+                )}
               </div>
             ) : (
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <div className="text-center py-12">
                   <Zap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">No Generations Yet</h3>
-                  <p className="text-gray-600 mb-6">Start creating content for your campaigns</p>
-                  <Button 
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    No Generations Yet
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Start creating content for your campaigns
+                  </p>
+                  <Button
                     onClick={() => setShowCampaignBuilder(true)}
                     className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-none"
                   >
@@ -820,19 +1035,22 @@ export default function MarketingAgencyDashboard() {
         {activeTab === "performance" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Performance & Analytics</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Performance & Analytics
+              </h1>
               <p className="text-gray-600">
-                {selectedClient === "all" 
+                {selectedClient === "all"
                   ? "Track ROI and engagement across all campaigns"
-                  : `Performance analytics for ${mockClients.find(c => c.id.toString() === selectedClient)?.name}`
-                }
+                  : `Performance analytics for ${mockClients.find((c) => c.id.toString() === selectedClient)?.name}`}
               </p>
             </div>
 
             <div className="grid md:grid-cols-4 gap-6">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <p className="text-sm text-gray-600 mb-1">Total Campaigns</p>
-                <p className="text-3xl font-bold text-gray-900">{clientStats.campaigns}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {clientStats.campaigns}
+                </p>
               </Card>
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <p className="text-sm text-gray-600 mb-1">Avg Duration</p>
@@ -855,17 +1073,25 @@ export default function MarketingAgencyDashboard() {
                     <BarChart3 className="w-6 h-6 text-cyan-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Competitor Tracker</h3>
-                    <p className="text-sm text-gray-600">Track up to 20 competitors</p>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Competitor Tracker
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Track up to 20 competitors
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-none">
-                    <span className="text-sm text-gray-700">Competitors Tracked</span>
+                    <span className="text-sm text-gray-700">
+                      Competitors Tracked
+                    </span>
                     <span className="font-bold text-gray-900">12 / 20</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-none">
-                    <span className="text-sm text-gray-700">Insights Generated</span>
+                    <span className="text-sm text-gray-700">
+                      Insights Generated
+                    </span>
                     <span className="font-bold text-gray-900">48</span>
                   </div>
                 </div>
@@ -881,8 +1107,12 @@ export default function MarketingAgencyDashboard() {
                     <Globe className="w-6 h-6 text-cyan-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Ad Accounts</h3>
-                    <p className="text-sm text-gray-600">Connect up to 3 platforms</p>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Ad Accounts
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Connect up to 3 platforms
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-3 mb-4">
@@ -893,7 +1123,9 @@ export default function MarketingAgencyDashboard() {
                       </div>
                       <span className="text-sm text-gray-700">Meta Ads</span>
                     </div>
-                    <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                    <Badge className="bg-green-100 text-green-800">
+                      Connected
+                    </Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-none">
                     <div className="flex items-center gap-2">
@@ -902,7 +1134,9 @@ export default function MarketingAgencyDashboard() {
                       </div>
                       <span className="text-sm text-gray-700">TikTok Ads</span>
                     </div>
-                    <Badge className="bg-gray-200 text-gray-700">Not Connected</Badge>
+                    <Badge className="bg-gray-200 text-gray-700">
+                      Not Connected
+                    </Badge>
                   </div>
                 </div>
                 <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
@@ -917,8 +1151,12 @@ export default function MarketingAgencyDashboard() {
                     <Sparkles className="w-6 h-6 text-cyan-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Ads Inspiration Library</h3>
-                    <p className="text-sm text-gray-600">Browse winning ad creatives</p>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Ads Inspiration Library
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Browse winning ad creatives
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-3 mb-4">
@@ -943,22 +1181,32 @@ export default function MarketingAgencyDashboard() {
                     <TrendingUp className="w-6 h-6 text-cyan-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Market Trend Analysis</h3>
-                    <p className="text-sm text-gray-600">AI-powered trend detection</p>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Market Trend Analysis
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      AI-powered trend detection
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-3 mb-4">
                   <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-none">
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="w-4 h-4 text-cyan-600" />
-                      <span className="text-sm font-medium text-gray-900">Trending: UGC Testimonials</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        Trending: UGC Testimonials
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-600">+47% engagement vs last month</p>
+                    <p className="text-xs text-gray-600">
+                      +47% engagement vs last month
+                    </p>
                   </div>
                   <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-none">
                     <div className="flex items-center gap-2 mb-1">
                       <Star className="w-4 h-4 text-cyan-600" />
-                      <span className="text-sm font-medium text-gray-900">Hot Topic: AI-Generated</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        Hot Topic: AI-Generated
+                      </span>
                     </div>
                     <p className="text-xs text-gray-600">3.2x higher CTR</p>
                   </div>
@@ -975,17 +1223,28 @@ export default function MarketingAgencyDashboard() {
                   <FileText className="w-5 h-5 text-cyan-600" />
                   Smart Ads Reports
                 </h3>
-                <p className="text-gray-600 mb-4">Automated performance reports with AI insights</p>
+                <p className="text-gray-600 mb-4">
+                  Automated performance reports with AI insights
+                </p>
                 <div className="space-y-2 mb-4">
-                  <Button variant="outline" className="w-full justify-between border-2 border-gray-300 rounded-none">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between border-2 border-gray-300 rounded-none"
+                  >
                     <span>Weekly Performance Summary</span>
                     <Download className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" className="w-full justify-between border-2 border-gray-300 rounded-none">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between border-2 border-gray-300 rounded-none"
+                  >
                     <span>Monthly ROI Analysis</span>
                     <Download className="w-4 h-4" />
                   </Button>
-                  <Button variant="outline" className="w-full justify-between border-2 border-gray-300 rounded-none">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between border-2 border-gray-300 rounded-none"
+                  >
                     <span>Creative Performance Report</span>
                     <Download className="w-4 h-4" />
                   </Button>
@@ -1000,37 +1259,55 @@ export default function MarketingAgencyDashboard() {
                   <Bell className="w-5 h-5 text-red-600" />
                   Creative Performance Alerts
                 </h3>
-                <p className="text-gray-600 mb-4">Get notified when creative performance changes</p>
+                <p className="text-gray-600 mb-4">
+                  Get notified when creative performance changes
+                </p>
                 <div className="space-y-3">
                   <div className="p-3 bg-red-50 border border-red-200 rounded-none">
                     <div className="flex items-center gap-2 mb-1">
                       <AlertCircle className="w-4 h-4 text-red-600" />
-                      <span className="text-sm font-medium text-gray-900">Campaign CTR Drop</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        Campaign CTR Drop
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-600">Nike Spring Collection: -12% CTR in last 24h</p>
+                    <p className="text-xs text-gray-600">
+                      Nike Spring Collection: -12% CTR in last 24h
+                    </p>
                   </div>
                   <div className="p-3 bg-green-50 border border-green-200 rounded-none">
                     <div className="flex items-center gap-2 mb-1">
                       <TrendingUp className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-900">High Performer</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        High Performer
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-600">Sephora Video #3: 4.2x above benchmark</p>
+                    <p className="text-xs text-gray-600">
+                      Sephora Video #3: 4.2x above benchmark
+                    </p>
                   </div>
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-none">
                     <div className="flex items-center gap-2 mb-1">
                       <Sparkles className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">Optimization Suggestion</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        Optimization Suggestion
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-600">Try 9:16 format for +23% engagement</p>
+                    <p className="text-xs text-gray-600">
+                      Try 9:16 format for +23% engagement
+                    </p>
                   </div>
                 </div>
               </Card>
             </div>
 
             <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Performance Over Time</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Performance Over Time
+              </h3>
               <div className="h-64 flex items-center justify-center bg-gray-50">
-                <p className="text-gray-500">Chart placeholder - Will integrate with analytics API</p>
+                <p className="text-gray-500">
+                  Chart placeholder - Will integrate with analytics API
+                </p>
               </div>
             </Card>
           </div>
@@ -1040,7 +1317,9 @@ export default function MarketingAgencyDashboard() {
           <div className="space-y-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
             <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-              <p className="text-center text-gray-500 py-12">Settings coming soon</p>
+              <p className="text-center text-gray-500 py-12">
+                Settings coming soon
+              </p>
             </Card>
           </div>
         )}
@@ -1059,24 +1338,36 @@ export default function MarketingAgencyDashboard() {
             <Card className="w-full max-w-4xl bg-white p-8 rounded-none">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-start gap-6">
-                  <img 
-                    src={showCreatorProfile.image} 
+                  <img
+                    src={showCreatorProfile.image}
                     alt={showCreatorProfile.name}
                     className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
                   />
                   <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{showCreatorProfile.name}</h2>
-                    <p className="text-gray-600 mb-3">{showCreatorProfile.tagline}</p>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                      {showCreatorProfile.name}
+                    </h2>
+                    <p className="text-gray-600 mb-3">
+                      {showCreatorProfile.tagline}
+                    </p>
                     <div className="flex gap-2">
-                      {showCreatorProfile.platforms.map(platform => (
-                        <Badge key={platform} className="bg-gray-200 text-gray-700">
+                      {showCreatorProfile.platforms.map((platform) => (
+                        <Badge
+                          key={platform}
+                          className="bg-gray-200 text-gray-700"
+                        >
                           {platform}
                         </Badge>
                       ))}
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowCreatorProfile(null)} className="rounded-none">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowCreatorProfile(null)}
+                  className="rounded-none"
+                >
                   <X className="w-5 h-5" />
                 </Button>
               </div>
@@ -1086,22 +1377,32 @@ export default function MarketingAgencyDashboard() {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Followers</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {showCreatorProfile.followers > 0 ? `${(showCreatorProfile.followers / 1000).toFixed(0)}K` : 'N/A'}
+                      {showCreatorProfile.followers > 0
+                        ? `${(showCreatorProfile.followers / 1000).toFixed(0)}K`
+                        : "N/A"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Engagement Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">{showCreatorProfile.engagement}</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Engagement Rate
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {showCreatorProfile.engagement}
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Starting Price</p>
-                    <p className="text-2xl font-bold text-gray-900">${showCreatorProfile.price}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${showCreatorProfile.price}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Approval Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">{showCreatorProfile.approval_rate}%</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {showCreatorProfile.approval_rate}%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1110,8 +1411,8 @@ export default function MarketingAgencyDashboard() {
                 <Button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                   Add to Campaign
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="border-2 border-gray-300 rounded-none"
                   onClick={() => setShowPreviewModal(showCreatorProfile)}
                 >
@@ -1129,12 +1430,19 @@ export default function MarketingAgencyDashboard() {
           <div className="min-h-screen flex items-center justify-center p-6">
             <div className="w-full max-w-3xl">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">{showPreviewModal.name} - Preview Reel</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowPreviewModal(null)} className="text-white hover:bg-white/10 rounded-none">
+                <h3 className="text-xl font-bold text-white">
+                  {showPreviewModal.name} - Preview Reel
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowPreviewModal(null)}
+                  className="text-white hover:bg-white/10 rounded-none"
+                >
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              
+
               <div className="relative bg-black rounded-none overflow-hidden">
                 <div className="aspect-video flex items-center justify-center bg-gray-900">
                   <Play className="w-20 h-20 text-white opacity-50" />
@@ -1150,8 +1458,8 @@ export default function MarketingAgencyDashboard() {
                 <Button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-none">
                   Request Full Access
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="border-2 border-white text-white hover:bg-white/10 rounded-none"
                   onClick={() => {
                     setShowPreviewModal(null);

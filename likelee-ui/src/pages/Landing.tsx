@@ -7,7 +7,10 @@ export default function Landing() {
   const navigate = useNavigate();
 
   const createPageUrl = (path) => {
-    return `/${path.toLowerCase().replace(/([A-Z])/g, '-$1').replace(/^-/, '')}`;
+    return `/${path
+      .toLowerCase()
+      .replace(/([A-Z])/g, "-$1")
+      .replace(/^-/, "")}`;
   };
 
   useEffect(() => {
@@ -15,26 +18,27 @@ export default function Landing() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Likelee",
-      "url": "https://likelee.ai",
-      "description": "Join a growing network where real people, AI creative talent, and businesses turn creative vision into earnings—one AI-powered project at a time.",
-      "potentialAction": {
+      name: "Likelee",
+      url: "https://likelee.ai",
+      description:
+        "Join a growing network where real people, AI creative talent, and businesses turn creative vision into earnings—one AI-powered project at a time.",
+      potentialAction: {
         "@type": "SearchAction",
-        "target": "https://likelee.ai/search?q={search_term_string}",
-        "query-input": "required name=search_term_string"
+        target: "https://likelee.ai/search?q={search_term_string}",
+        "query-input": "required name=search_term_string",
       },
-      "publisher": {
+      publisher: {
         "@type": "Organization",
-        "name": "Likelee",
-        "logo": {
+        name: "Likelee",
+        logo: {
           "@type": "ImageObject",
-          "url": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
-        }
-      }
+          url: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png",
+        },
+      },
     };
 
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
     script.text = JSON.stringify(structuredData);
     document.head.appendChild(script);
 
@@ -57,7 +61,9 @@ export default function Landing() {
       <section className="relative pt-24 pb-24 lg:pt-32 lg:pb-32 overflow-hidden border-b-2 border-black bg-gradient-to-b from-sky-100 to-cyan-50 min-h-screen">
         <div className="relative z-10 max-w-7xl mx-auto text-center pb-32 px-6">
           <h1 className="text-lg md:text-2xl lg:text-3xl font-normal text-gray-900 mb-12 leading-relaxed max-w-4xl mx-auto">
-            Join a growing network where real people, AI creative talent, and businesses turn creative vision into earnings—one AI-powered project at a time.
+            Join a growing network where real people, AI creative talent, and
+            businesses turn creative vision into earnings—one AI-powered project
+            at a time.
           </h1>
 
           {/* SAG-AFTRA Badge */}
@@ -68,8 +74,12 @@ export default function Landing() {
             >
               <CheckCircle2 className="w-5 h-5 text-gray-700" />
               <div className="text-left">
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Aligned With</div>
-                <div className="text-sm font-semibold text-gray-900">SAG-AFTRA Standards</div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aligned With
+                </div>
+                <div className="text-sm font-semibold text-gray-900">
+                  SAG-AFTRA Standards
+                </div>
               </div>
             </button>
           </div>
@@ -81,20 +91,51 @@ export default function Landing() {
               <div className="flex justify-center bounce-arrow">
                 <ArrowDown className="w-8 h-8 text-gray-900" strokeWidth={3} />
               </div>
-              
+
               {/* SVG Branch Lines */}
-              <svg className="absolute top-8 left-1/2 -translate-x-1/2" width="600" height="120" viewBox="0 0 600 120" style={{ pointerEvents: 'none' }}>
+              <svg
+                className="absolute top-8 left-1/2 -translate-x-1/2"
+                width="600"
+                height="120"
+                viewBox="0 0 600 120"
+                style={{ pointerEvents: "none" }}
+              >
                 {/* Main vertical line */}
-                <line x1="300" y1="0" x2="300" y2="40" stroke="#111" strokeWidth="3" />
-                
+                <line
+                  x1="300"
+                  y1="0"
+                  x2="300"
+                  y2="40"
+                  stroke="#111"
+                  strokeWidth="3"
+                />
+
                 {/* Left branch to Creators */}
-                <path d="M 300 40 Q 280 60, 150 80" stroke="#32C8D1" strokeWidth="3" fill="none" />
-                
+                <path
+                  d="M 300 40 Q 280 60, 150 80"
+                  stroke="#32C8D1"
+                  strokeWidth="3"
+                  fill="none"
+                />
+
                 {/* Center line to AI Artists */}
-                <line x1="300" y1="40" x2="300" y2="80" stroke="#F18B6A" strokeWidth="3" fill="none" />
-                
+                <line
+                  x1="300"
+                  y1="40"
+                  x2="300"
+                  y2="80"
+                  stroke="#F18B6A"
+                  strokeWidth="3"
+                  fill="none"
+                />
+
                 {/* Right branch to Business */}
-                <path d="M 300 40 Q 320 60, 450 80" stroke="#F7B750" strokeWidth="3" fill="none" />
+                <path
+                  d="M 300 40 Q 320 60, 450 80"
+                  stroke="#F7B750"
+                  strokeWidth="3"
+                  fill="none"
+                />
               </svg>
             </div>
           </div>
@@ -128,9 +169,17 @@ export default function Landing() {
         </div>
 
         {/* Ocean Wave Effect - Clean waves only, no sea life */}
-        <div className="absolute bottom-0 left-0 right-0 w-full h-[400px] md:h-[500px] overflow-hidden z-0" style={{ pointerEvents: 'none' }}>
+        <div
+          className="absolute bottom-0 left-0 right-0 w-full h-[400px] md:h-[500px] overflow-hidden z-0"
+          style={{ pointerEvents: "none" }}
+        >
           {/* Ocean Waves - Back Layer (Gentle Parabola) */}
-          <svg className="absolute bottom-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <svg
+            className="absolute bottom-0 w-full h-full"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 1440 400"
+            preserveAspectRatio="none"
+          >
             <path
               fill="#32C8D1"
               fillOpacity="0.3"
@@ -149,7 +198,12 @@ export default function Landing() {
           </svg>
 
           {/* Ocean Waves - Front Layer (Gentle Parabola) */}
-          <svg className="absolute bottom-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 400" preserveAspectRatio="none">
+          <svg
+            className="absolute bottom-0 w-full h-full"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 1440 400"
+            preserveAspectRatio="none"
+          >
             <path
               fill="#32C8D1"
               fillOpacity="0.5"

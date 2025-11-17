@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +16,7 @@ const creditTiers = [
   { credits: 50000, price: 999, label: "50,000" },
   { credits: 100000, price: 1899, label: "100,000" },
   { credits: 250000, price: 4499, label: "250,000" },
-  { credits: 500000, price: 8999, label: "500,000" }
+  { credits: 500000, price: 8999, label: "500,000" },
 ];
 
 export default function StudioSubscribe() {
@@ -27,25 +26,27 @@ export default function StudioSubscribe() {
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => base44.auth.me()
+    queryKey: ["user"],
+    queryFn: () => base44.auth.me(),
   });
 
   const { data: credits } = useQuery({
-    queryKey: ['credits', user?.email],
+    queryKey: ["credits", user?.email],
     queryFn: async () => {
-      const result = await base44.entities.StudioCredits.filter({ user_email: user.email });
-      return result[0] || { credits_balance: 0, plan_type: 'free' };
+      const result = await base44.entities.StudioCredits.filter({
+        user_email: user.email,
+      });
+      return result[0] || { credits_balance: 0, plan_type: "free" };
     },
-    enabled: !!user
+    enabled: !!user,
   });
 
   const checkoutMutation = useMutation({
     mutationFn: async ({ plan_type, credits, price }) => {
-      const { data } = await base44.functions.invoke('createCheckoutSession', {
+      const { data } = await base44.functions.invoke("createCheckoutSession", {
         plan_type,
         credits,
-        price
+        price,
       });
       return data;
     },
@@ -55,9 +56,11 @@ export default function StudioSubscribe() {
     },
     onError: (error) => {
       console.error("Checkout failed:", error);
-      alert('Checkout failed: ' + (error.message || 'An unknown error occurred.'));
+      alert(
+        "Checkout failed: " + (error.message || "An unknown error occurred."),
+      );
       setCheckingOut(false);
-    }
+    },
   });
 
   const selectedTier = creditTiers[selectedTierIndex];
@@ -68,7 +71,7 @@ export default function StudioSubscribe() {
   };
 
   return (
-    <div style={{ background: '#0A0A0F', minHeight: '100vh', color: '#fff' }}>
+    <div style={{ background: "#0A0A0F", minHeight: "100vh", color: "#fff" }}>
       <style>{`
         .credit-slider {
           -webkit-appearance: none;
@@ -124,17 +127,19 @@ export default function StudioSubscribe() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a href="/studio" className="flex items-center gap-3">
-              <img 
+              <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
                 alt="Likelee Logo"
                 className="h-8 w-auto"
               />
-              <span className="text-lg font-bold text-white">likelee.studio</span>
+              <span className="text-lg font-bold text-white">
+                likelee.studio
+              </span>
             </a>
           </div>
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(createPageUrl('Studio'))}
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("Studio"))}
             className="text-gray-400 hover:text-white"
           >
             ← Back to Studio
@@ -145,13 +150,14 @@ export default function StudioSubscribe() {
       {/* Hero */}
       <section className="px-6 pt-16 pb-12 text-center">
         <Badge className="mb-6 bg-white/10 text-white border-white/20">
-          Current Plan: {credits?.plan_type || 'Free'}
+          Current Plan: {credits?.plan_type || "Free"}
         </Badge>
         <h1 className="text-4xl md:text-6xl font-bold mb-6">
           Choose Your Plan
         </h1>
         <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-          Get unlimited access to AI image and video generation with our flexible plans.
+          Get unlimited access to AI image and video generation with our
+          flexible plans.
         </p>
       </section>
 
@@ -163,7 +169,9 @@ export default function StudioSubscribe() {
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-6 h-6 text-[#32C8D1]" />
-                <Badge className="bg-[#32C8D1]/20 text-[#32C8D1]">Most Popular</Badge>
+                <Badge className="bg-[#32C8D1]/20 text-[#32C8D1]">
+                  Most Popular
+                </Badge>
               </div>
 
               <h3 className="text-2xl font-bold text-white mb-2">Lite Plan</h3>
@@ -201,7 +209,7 @@ export default function StudioSubscribe() {
               </ul>
 
               <Button
-                onClick={() => handleSubscribe('lite', 300, 15)}
+                onClick={() => handleSubscribe("lite", 300, 15)}
                 disabled={checkingOut || checkoutMutation.isPending}
                 className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:opacity-90"
               >
@@ -210,8 +218,8 @@ export default function StudioSubscribe() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing...
                   </>
-                ) : credits?.plan_type === 'lite' ? (
-                  'Current Plan'
+                ) : credits?.plan_type === "lite" ? (
+                  "Current Plan"
                 ) : (
                   <>
                     Subscribe to Lite
@@ -229,15 +237,23 @@ export default function StudioSubscribe() {
 
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="w-6 h-6 text-[#F18B6A]" />
-                <Badge className="bg-[#F18B6A]/20 text-[#F18B6A]">Best Value</Badge>
+                <Badge className="bg-[#F18B6A]/20 text-[#F18B6A]">
+                  Best Value
+                </Badge>
               </div>
 
-              <h3 className="text-2xl font-bold text-white mb-2">Pro Plan — Flexible Credits</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Pro Plan — Flexible Credits
+              </h3>
               <div className="flex items-baseline mb-2">
-                <span className="text-5xl font-bold text-white">${selectedTier.price}</span>
+                <span className="text-5xl font-bold text-white">
+                  ${selectedTier.price}
+                </span>
                 <span className="text-gray-400 ml-2">/ month</span>
               </div>
-              <p className="text-gray-400 mb-6">{selectedTier.label} credits per month</p>
+              <p className="text-gray-400 mb-6">
+                {selectedTier.label} credits per month
+              </p>
 
               {/* Credit Slider */}
               <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
@@ -249,10 +265,12 @@ export default function StudioSubscribe() {
                   min="0"
                   max={creditTiers.length - 1}
                   value={selectedTierIndex}
-                  onChange={(e) => setSelectedTierIndex(parseInt(e.target.value))}
+                  onChange={(e) =>
+                    setSelectedTierIndex(parseInt(e.target.value))
+                  }
                   className="credit-slider"
                 />
-                
+
                 <div className="flex justify-between text-xs text-gray-400 mt-2 mb-6">
                   <span>2K</span>
                   <span>100K</span>
@@ -262,9 +280,13 @@ export default function StudioSubscribe() {
                 <div className="pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Monthly total:</span>
-                    <span className="text-3xl font-bold text-white">${selectedTier.price}</span>
+                    <span className="text-3xl font-bold text-white">
+                      ${selectedTier.price}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-400 mt-2">for {selectedTier.label} credits</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    for {selectedTier.label} credits
+                  </p>
                 </div>
               </div>
 
@@ -288,7 +310,13 @@ export default function StudioSubscribe() {
               </ul>
 
               <Button
-                onClick={() => handleSubscribe('pro', selectedTier.credits, selectedTier.price)}
+                onClick={() =>
+                  handleSubscribe(
+                    "pro",
+                    selectedTier.credits,
+                    selectedTier.price,
+                  )
+                }
                 disabled={checkingOut || checkoutMutation.isPending}
                 className="w-full h-12 bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90"
               >
@@ -297,8 +325,8 @@ export default function StudioSubscribe() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing...
                   </>
-                ) : credits?.plan_type === 'pro' ? (
-                  'Current Plan'
+                ) : credits?.plan_type === "pro" ? (
+                  "Current Plan"
                 ) : (
                   <>
                     Subscribe to Pro
@@ -313,7 +341,9 @@ export default function StudioSubscribe() {
           {credits && (
             <Card className="p-6 mt-8 bg-white/5 border border-white/10 text-center">
               <p className="text-gray-400 mb-2">Your Current Balance</p>
-              <p className="text-4xl font-bold text-white mb-2">{credits.credits_balance}</p>
+              <p className="text-4xl font-bold text-white mb-2">
+                {credits.credits_balance}
+              </p>
               <p className="text-sm text-gray-400">credits available</p>
             </Card>
           )}

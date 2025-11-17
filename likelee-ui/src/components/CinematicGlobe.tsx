@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import * as THREE from 'three';
+import React, { useRef, useEffect } from "react";
+import * as THREE from "three";
 
 export default function CinematicGlobe() {
   const containerRef = useRef(null);
@@ -18,16 +18,19 @@ export default function CinematicGlobe() {
       45,
       containerRef.current.clientWidth / containerRef.current.clientHeight,
       0.1,
-      1000
+      1000,
     );
     camera.position.z = 3.2; // Zoomed out from 2.5 to 3.2
 
     // Renderer
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true, 
-      alpha: true 
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
     });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    renderer.setSize(
+      containerRef.current.clientWidth,
+      containerRef.current.clientHeight,
+    );
     renderer.setPixelRatio(window.devicePixelRatio);
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -38,17 +41,17 @@ export default function CinematicGlobe() {
     // Create Earth material with texture
     const textureLoader = new THREE.TextureLoader();
     const earthTexture = textureLoader.load(
-      'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+      "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
       () => {
         renderer.render(scene, camera);
-      }
+      },
     );
 
     const material = new THREE.MeshPhongMaterial({
       map: earthTexture,
       bumpScale: 0.05,
-      specular: new THREE.Color('grey'),
-      shininess: 10
+      specular: new THREE.Color("grey"),
+      shininess: 10,
     });
 
     const earth = new THREE.Mesh(geometry, material);
@@ -74,7 +77,7 @@ export default function CinematicGlobe() {
       `,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
-      transparent: true
+      transparent: true,
     });
 
     const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
@@ -87,7 +90,7 @@ export default function CinematicGlobe() {
       color: 0xffffff,
       size: 0.02,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.8,
     });
 
     const starsVertices = [];
@@ -99,8 +102,8 @@ export default function CinematicGlobe() {
     }
 
     starsGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(starsVertices, 3)
+      "position",
+      new THREE.Float32BufferAttribute(starsVertices, 3),
     );
 
     const stars = new THREE.Points(starsGeometry, starsMaterial);
@@ -128,7 +131,7 @@ export default function CinematicGlobe() {
       isDragging.current = true;
       previousMousePosition.current = {
         x: e.clientX || e.touches?.[0]?.clientX || 0,
-        y: e.clientY || e.touches?.[0]?.clientY || 0
+        y: e.clientY || e.touches?.[0]?.clientY || 0,
       };
     };
 
@@ -157,20 +160,20 @@ export default function CinematicGlobe() {
 
     // Add event listeners
     const canvas = renderer.domElement;
-    canvas.style.cursor = 'grab';
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('mouseleave', handleMouseUp);
-    canvas.addEventListener('touchstart', handleMouseDown);
-    canvas.addEventListener('touchmove', handleMouseMove);
-    canvas.addEventListener('touchend', handleMouseUp);
+    canvas.style.cursor = "grab";
+    canvas.addEventListener("mousedown", handleMouseDown);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mouseleave", handleMouseUp);
+    canvas.addEventListener("touchstart", handleMouseDown);
+    canvas.addEventListener("touchmove", handleMouseMove);
+    canvas.addEventListener("touchend", handleMouseUp);
 
-    canvas.addEventListener('mousedown', () => {
-      canvas.style.cursor = 'grabbing';
+    canvas.addEventListener("mousedown", () => {
+      canvas.style.cursor = "grabbing";
     });
-    canvas.addEventListener('mouseup', () => {
-      canvas.style.cursor = 'grab';
+    canvas.addEventListener("mouseup", () => {
+      canvas.style.cursor = "grab";
     });
 
     // Animation
@@ -196,7 +199,7 @@ export default function CinematicGlobe() {
     // Handle resize
     const handleResize = () => {
       if (!containerRef.current) return;
-      
+
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
 
@@ -205,20 +208,20 @@ export default function CinematicGlobe() {
       renderer.setSize(width, height);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationId);
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseup', handleMouseUp);
-      canvas.removeEventListener('mouseleave', handleMouseUp);
-      canvas.removeEventListener('touchstart', handleMouseDown);
-      canvas.removeEventListener('touchmove', handleMouseMove);
-      canvas.removeEventListener('touchend', handleMouseUp);
-      
+      canvas.removeEventListener("mousedown", handleMouseDown);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mouseleave", handleMouseUp);
+      canvas.removeEventListener("touchstart", handleMouseDown);
+      canvas.removeEventListener("touchmove", handleMouseMove);
+      canvas.removeEventListener("touchend", handleMouseUp);
+
       if (containerRef.current && rendererRef.current) {
         containerRef.current.removeChild(rendererRef.current.domElement);
       }
@@ -233,8 +236,8 @@ export default function CinematicGlobe() {
   }, []);
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="w-full h-[500px] md:h-[650px] lg:h-[750px]"
     />
   );

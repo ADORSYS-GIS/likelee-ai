@@ -4,9 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { 
-  Trophy, TrendingUp, DollarSign, Users, Shield, Target, 
-  CheckCircle2, Zap, BarChart3, Rocket, Award, Clock, AlertCircle 
+import {
+  Trophy,
+  TrendingUp,
+  DollarSign,
+  Users,
+  Shield,
+  Target,
+  CheckCircle2,
+  Zap,
+  BarChart3,
+  Rocket,
+  Award,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 
 export default function SportsAgency() {
@@ -16,23 +27,24 @@ export default function SportsAgency() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      "name": "Sports Agency NIL Management",
-      "description": "License your athletes' likenesses for AI-powered content. Earn recurring revenue.",
-      "provider": {
+      name: "Sports Agency NIL Management",
+      description:
+        "License your athletes' likenesses for AI-powered content. Earn recurring revenue.",
+      provider: {
         "@type": "Organization",
-        "name": "Likelee",
-        "url": "https://likelee.ai"
+        name: "Likelee",
+        url: "https://likelee.ai",
       },
-      "serviceType": "Sports Agency NIL Platform",
-      "areaServed": "Worldwide",
-      "audience": {
+      serviceType: "Sports Agency NIL Platform",
+      areaServed: "Worldwide",
+      audience: {
         "@type": "Audience",
-        "audienceType": "Sports Agencies, Athlete Representatives"
-      }
+        audienceType: "Sports Agencies, Athlete Representatives",
+      },
     };
 
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
     script.text = JSON.stringify(structuredData);
     document.head.appendChild(script);
 
@@ -57,7 +69,9 @@ export default function SportsAgency() {
           </h1>
           <Card className="p-8 bg-white border-2 border-black shadow-xl rounded-none mb-8">
             <p className="text-xl md:text-2xl text-gray-700 leading-relaxed mb-6">
-              Brands are building AI-powered campaigns right now. They need verified athlete likenesses. Your athletes should be earning recurring royalties from every use.
+              Brands are building AI-powered campaigns right now. They need
+              verified athlete likenesses. Your athletes should be earning
+              recurring royalties from every use.
             </p>
             <div className="flex items-center justify-center gap-3">
               <Zap className="w-8 h-8 text-emerald-600" />
@@ -67,7 +81,7 @@ export default function SportsAgency() {
             </div>
           </Card>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
+            <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               className="h-16 px-10 text-lg font-medium bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white border-2 border-black shadow-xl transition-all hover:scale-105 rounded-none"
             >
@@ -87,14 +101,18 @@ export default function SportsAgency() {
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               You Already Know Licensing.
-              <span className="block text-emerald-600">You're Missing the AI-Powered Opportunity.</span>
+              <span className="block text-emerald-600">
+                You're Missing the AI-Powered Opportunity.
+              </span>
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 mb-10">
             <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
               <CheckCircle2 className="w-10 h-10 text-green-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-4">What You Know</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                What You Know
+              </h3>
               <div className="space-y-2 text-gray-700">
                 <p>✓ You manage athlete sponsorships</p>
                 <p>✓ You understand licensing</p>
@@ -104,7 +122,9 @@ export default function SportsAgency() {
 
             <Card className="p-8 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-600 rounded-none">
               <Zap className="w-10 h-10 text-emerald-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-4">What You're Missing</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                What You're Missing
+              </h3>
               <div className="space-y-2 text-gray-700">
                 <p>→ Licensing athlete likenesses for AI campaigns</p>
                 <p>→ Digital content & synthetic media deals</p>
@@ -117,7 +137,9 @@ export default function SportsAgency() {
             <p className="text-2xl md:text-3xl font-bold text-white mb-3">
               Brands need this. Athletes should be earning from it.
             </p>
-            <p className="text-xl text-white mb-4">You're not set up to offer it.</p>
+            <p className="text-xl text-white mb-4">
+              You're not set up to offer it.
+            </p>
             <div className="flex items-center justify-center gap-3 mt-6">
               <DollarSign className="w-10 h-10 text-yellow-300" />
               <p className="text-3xl font-bold text-yellow-300">
@@ -144,7 +166,9 @@ export default function SportsAgency() {
           <div className="grid md:grid-cols-4 gap-6 mb-10">
             <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
               <Shield className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">License athlete likenesses</p>
+              <p className="font-bold text-gray-900">
+                License athlete likenesses
+              </p>
             </Card>
             <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
               <BarChart3 className="w-12 h-12 text-green-600 mx-auto mb-4" />
@@ -152,7 +176,9 @@ export default function SportsAgency() {
             </Card>
             <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
               <DollarSign className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">Collect recurring payments</p>
+              <p className="font-bold text-gray-900">
+                Collect recurring payments
+              </p>
             </Card>
             <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
               <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-4" />
@@ -164,15 +190,22 @@ export default function SportsAgency() {
             <div className="space-y-6">
               <div className="flex items-center justify-center gap-4">
                 <TrendingUp className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">Your athletes earn more.</p>
+                <p className="text-3xl font-bold text-white">
+                  Your athletes earn more.
+                </p>
               </div>
               <div className="flex items-center justify-center gap-4">
                 <Users className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">Your team doesn't grow.</p>
+                <p className="text-3xl font-bold text-white">
+                  Your team doesn't grow.
+                </p>
               </div>
               <div className="flex items-center justify-center gap-4">
                 <Award className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">You capture a revenue stream competitors haven't figured out yet.</p>
+                <p className="text-3xl font-bold text-white">
+                  You capture a revenue stream competitors haven't figured out
+                  yet.
+                </p>
               </div>
             </div>
           </Card>
@@ -208,7 +241,9 @@ export default function SportsAgency() {
               <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-teal-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
                 <span className="text-3xl font-bold text-white">2</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Set Terms</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Set Terms
+              </h3>
               <div className="space-y-2 text-gray-700">
                 <p>→ Athletes define what they're OK with</p>
                 <p>→ Set pricing</p>
@@ -220,7 +255,9 @@ export default function SportsAgency() {
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Brands License</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Brands License
+              </h3>
               <div className="space-y-2 text-gray-700">
                 <p>→ Brands search your roster</p>
                 <p>→ Submit license requests</p>
@@ -259,20 +296,33 @@ export default function SportsAgency() {
             <Card className="p-10 bg-white border-2 border-black rounded-none shadow-xl">
               <div className="flex items-center gap-3 mb-6">
                 <Trophy className="w-12 h-12 text-emerald-600" />
-                <h3 className="text-2xl font-bold text-gray-900">15-Athlete Regional Agency</h3>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  15-Athlete Regional Agency
+                </h3>
               </div>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <DollarSign className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700"><span className="font-bold text-gray-900">$2.5K-$5K/month</span> per athlete in recurring likeness licensing</p>
+                  <p className="text-lg text-gray-700">
+                    <span className="font-bold text-gray-900">
+                      $2.5K-$5K/month
+                    </span>{" "}
+                    per athlete in recurring likeness licensing
+                  </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <TrendingUp className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700"><span className="font-bold text-emerald-600">3-5× more revenue</span></p>
+                  <p className="text-lg text-gray-700">
+                    <span className="font-bold text-emerald-600">
+                      3-5× more revenue
+                    </span>
+                  </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Users className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700"><span className="font-bold">Same team</span></p>
+                  <p className="text-lg text-gray-700">
+                    <span className="font-bold">Same team</span>
+                  </p>
                 </div>
               </div>
             </Card>
@@ -280,20 +330,29 @@ export default function SportsAgency() {
             <Card className="p-10 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black rounded-none shadow-xl">
               <div className="flex items-center gap-3 mb-6">
                 <Award className="w-12 h-12 text-yellow-300" />
-                <h3 className="text-2xl font-bold text-white">50+ Athlete National Agency</h3>
+                <h3 className="text-2xl font-bold text-white">
+                  50+ Athlete National Agency
+                </h3>
               </div>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <DollarSign className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white"><span className="font-bold">$150K+/month</span> new recurring revenue from AI-powered likeness licensing</p>
+                  <p className="text-lg text-white">
+                    <span className="font-bold">$150K+/month</span> new
+                    recurring revenue from AI-powered likeness licensing
+                  </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Users className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white"><span className="font-bold">No new hires needed</span></p>
+                  <p className="text-lg text-white">
+                    <span className="font-bold">No new hires needed</span>
+                  </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Rocket className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">Infrastructure scales with you</p>
+                  <p className="text-lg text-white">
+                    Infrastructure scales with you
+                  </p>
                 </div>
               </div>
             </Card>
@@ -319,8 +378,13 @@ export default function SportsAgency() {
               <div className="flex items-start gap-4">
                 <CheckCircle2 className="w-8 h-8 text-green-600 mt-1 flex-shrink-0" />
                 <div>
-                  <p className="text-xl font-bold text-gray-900 mb-2">AI-powered content is standard</p>
-                  <p className="text-lg text-gray-700">Brands are using athlete likenesses in AI campaigns every day</p>
+                  <p className="text-xl font-bold text-gray-900 mb-2">
+                    AI-powered content is standard
+                  </p>
+                  <p className="text-lg text-gray-700">
+                    Brands are using athlete likenesses in AI campaigns every
+                    day
+                  </p>
                 </div>
               </div>
             </Card>
@@ -329,8 +393,12 @@ export default function SportsAgency() {
               <div className="flex items-start gap-4">
                 <AlertCircle className="w-8 h-8 text-red-600 mt-1 flex-shrink-0" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900 mb-2">The Question:</p>
-                  <p className="text-xl text-gray-700">Are your athletes getting paid?</p>
+                  <p className="text-2xl font-bold text-gray-900 mb-2">
+                    The Question:
+                  </p>
+                  <p className="text-xl text-gray-700">
+                    Are your athletes getting paid?
+                  </p>
                 </div>
               </div>
             </Card>
@@ -338,7 +406,9 @@ export default function SportsAgency() {
             <Card className="p-10 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black rounded-none text-center shadow-2xl">
               <div className="flex items-center justify-center gap-4 mb-4">
                 <Award className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">Your Competitive Advantage</p>
+                <p className="text-3xl font-bold text-white">
+                  Your Competitive Advantage
+                </p>
               </div>
               <p className="text-xl text-white">
                 Most agencies aren't set up to offer this. You can be first.
@@ -362,7 +432,8 @@ export default function SportsAgency() {
               <div className="flex items-center justify-center gap-3">
                 <DollarSign className="w-10 h-10 text-yellow-300" />
                 <p className="text-2xl font-bold text-white">
-                  Your athletes have a revenue stream most agencies aren't offering yet.
+                  Your athletes have a revenue stream most agencies aren't
+                  offering yet.
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
@@ -373,7 +444,7 @@ export default function SportsAgency() {
               </div>
             </div>
           </Card>
-          <Button 
+          <Button
             onClick={() => navigate(createPageUrl("SalesInquiry"))}
             className="h-20 px-14 text-xl font-bold bg-white hover:bg-gray-100 text-emerald-600 border-2 border-black shadow-2xl transition-all hover:scale-105 rounded-none"
           >

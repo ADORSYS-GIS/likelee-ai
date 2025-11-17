@@ -6,14 +6,48 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Upload, X, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 
-const projectTypes = ["reel", "short_film", "campaign", "edit", "commercial", "music_video", "other"];
-const aiTools = ["Sora", "Runway Gen-3", "Runway Gen-4", "Midjourney", "Pika Labs", "Fal AI", "Kaiber", "Stable Diffusion", "Luma Dream Machine", "Google Veo"];
-const skills = ["AI Video Editing", "Lip-sync Animation", "Compositing", "Script-to-Video", "Color Grading", "Motion Graphics", "Storytelling", "Product Visualization"];
+const projectTypes = [
+  "reel",
+  "short_film",
+  "campaign",
+  "edit",
+  "commercial",
+  "music_video",
+  "other",
+];
+const aiTools = [
+  "Sora",
+  "Runway Gen-3",
+  "Runway Gen-4",
+  "Midjourney",
+  "Pika Labs",
+  "Fal AI",
+  "Kaiber",
+  "Stable Diffusion",
+  "Luma Dream Machine",
+  "Google Veo",
+];
+const skills = [
+  "AI Video Editing",
+  "Lip-sync Animation",
+  "Compositing",
+  "Script-to-Video",
+  "Color Grading",
+  "Motion Graphics",
+  "Storytelling",
+  "Product Visualization",
+];
 
 export default function UploadProject() {
   const navigate = useNavigate();
@@ -25,15 +59,15 @@ export default function UploadProject() {
     tools_used: [],
     skills_showcased: [],
     external_url: "",
-    duration_seconds: ""
+    duration_seconds: "",
   });
 
   const toggleArrayItem = (field, value) => {
-    setProject(prev => ({
+    setProject((prev) => ({
       ...prev,
       [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
+        ? prev[field].filter((item) => item !== value)
+        : [...prev[field], value],
     }));
   };
 
@@ -57,7 +91,8 @@ export default function UploadProject() {
         <Alert className="mb-8 bg-[#F18B6A]/10 border-2 border-[#F18B6A] rounded-none">
           <AlertCircle className="h-5 w-5 text-[#F18B6A]" />
           <AlertDescription className="text-gray-900">
-            <strong>Demo Mode:</strong> This is a preview page. Real uploads will be available after sign up!
+            <strong>Demo Mode:</strong> This is a preview page. Real uploads
+            will be available after sign up!
           </AlertDescription>
         </Alert>
 
@@ -71,7 +106,9 @@ export default function UploadProject() {
             Back to Dashboard
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Upload New Project</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Upload New Project
+            </h1>
             <p className="text-gray-600">Showcase your AI creative work</p>
           </div>
         </div>
@@ -85,7 +122,9 @@ export default function UploadProject() {
               </Label>
               <Input
                 value={project.title}
-                onChange={(e) => setProject({...project, title: e.target.value})}
+                onChange={(e) =>
+                  setProject({ ...project, title: e.target.value })
+                }
                 placeholder="Nike AI Campaign - 'Future of Sport'"
                 className="border-2 border-gray-300 rounded-none"
               />
@@ -98,7 +137,9 @@ export default function UploadProject() {
               </Label>
               <Textarea
                 value={project.description}
-                onChange={(e) => setProject({...project, description: e.target.value})}
+                onChange={(e) =>
+                  setProject({ ...project, description: e.target.value })
+                }
                 placeholder="Describe your project, the creative process, and what makes it unique..."
                 className="min-h-[120px] border-2 border-gray-300 rounded-none"
               />
@@ -109,14 +150,25 @@ export default function UploadProject() {
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
                 Project Type *
               </Label>
-              <Select value={project.project_type} onValueChange={(value) => setProject({...project, project_type: value})}>
+              <Select
+                value={project.project_type}
+                onValueChange={(value) =>
+                  setProject({ ...project, project_type: value })
+                }
+              >
                 <SelectTrigger className="border-2 border-gray-300 rounded-none">
                   <SelectValue placeholder="Select project type" />
                 </SelectTrigger>
                 <SelectContent>
                   {projectTypes.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      {type
+                        .split("_")
+                        .map(
+                          (word) =>
+                            word.charAt(0).toUpperCase() + word.slice(1),
+                        )
+                        .join(" ")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -130,8 +182,12 @@ export default function UploadProject() {
               </Label>
               <div className="border-2 border-dashed border-gray-300 rounded-none p-12 text-center hover:border-[#F18B6A] transition-colors cursor-pointer">
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-700 font-medium mb-1">Click to upload or drag and drop</p>
-                <p className="text-sm text-gray-500">MP4, MOV, PNG, JPG (max 500MB)</p>
+                <p className="text-gray-700 font-medium mb-1">
+                  Click to upload or drag and drop
+                </p>
+                <p className="text-sm text-gray-500">
+                  MP4, MOV, PNG, JPG (max 500MB)
+                </p>
               </div>
             </div>
 
@@ -144,15 +200,17 @@ export default function UploadProject() {
                 {aiTools.map((tool) => (
                   <div
                     key={tool}
-                    onClick={() => toggleArrayItem('tools_used', tool)}
+                    onClick={() => toggleArrayItem("tools_used", tool)}
                     className={`p-3 border-2 rounded-none cursor-pointer transition-all ${
                       project.tools_used.includes(tool)
-                        ? 'border-[#F18B6A] bg-[#F18B6A]/10'
-                        : 'border-gray-300 hover:border-gray-400'
+                        ? "border-[#F18B6A] bg-[#F18B6A]/10"
+                        : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{tool}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {tool}
+                      </span>
                       {project.tools_used.includes(tool) && (
                         <CheckCircle2 className="w-4 h-4 text-[#F18B6A]" />
                       )}
@@ -171,15 +229,17 @@ export default function UploadProject() {
                 {skills.map((skill) => (
                   <div
                     key={skill}
-                    onClick={() => toggleArrayItem('skills_showcased', skill)}
+                    onClick={() => toggleArrayItem("skills_showcased", skill)}
                     className={`p-3 border-2 rounded-none cursor-pointer transition-all ${
                       project.skills_showcased.includes(skill)
-                        ? 'border-[#32C8D1] bg-[#32C8D1]/10'
-                        : 'border-gray-300 hover:border-gray-400'
+                        ? "border-[#32C8D1] bg-[#32C8D1]/10"
+                        : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{skill}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {skill}
+                      </span>
                       {project.skills_showcased.includes(skill) && (
                         <CheckCircle2 className="w-4 h-4 text-[#32C8D1]" />
                       )}
@@ -198,7 +258,9 @@ export default function UploadProject() {
                 <Input
                   type="number"
                   value={project.duration_seconds}
-                  onChange={(e) => setProject({...project, duration_seconds: e.target.value})}
+                  onChange={(e) =>
+                    setProject({ ...project, duration_seconds: e.target.value })
+                  }
                   placeholder="45"
                   className="border-2 border-gray-300 rounded-none"
                 />
@@ -209,7 +271,9 @@ export default function UploadProject() {
                 </Label>
                 <Input
                   value={project.external_url}
-                  onChange={(e) => setProject({...project, external_url: e.target.value})}
+                  onChange={(e) =>
+                    setProject({ ...project, external_url: e.target.value })
+                  }
                   placeholder="https://youtube.com/watch?v=..."
                   className="border-2 border-gray-300 rounded-none"
                 />
