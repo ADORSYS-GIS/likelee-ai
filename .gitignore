@@ -107,7 +107,6 @@ __sapper__
 build
 
 # Remix build output
-.cache/
 build/
 public/build/
 
@@ -116,9 +115,7 @@ public/build/
 .vuepress/public
 
 # Vite build output
-dist
 .vite-cache
-build
 
 # Other
 /dist
