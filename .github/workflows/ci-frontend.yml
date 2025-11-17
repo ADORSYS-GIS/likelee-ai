@@ -1,41 +1,50 @@
-# This workflow will run checks on your 'likelee-ui' (frontend) code.
 
-name: CI - likelee-ui Checks
+# This workflow runs ALL checks for the 'likelee-ui' (frontend) code.
+name: CI - Frontend (likelee-ui)
 
-# We want it to run on any Pull Request that targets the 'develop' or 'main' branch.
 on:
   pull_request:
-    branches: [ develop, main ]
+    branches: [ main, develop ] # Run on PRs to main or develop
+    # Only run this pipeline if changes were made in the 'likelee-ui' folder
+    paths:
+      - 'likelee-ui/**'
 
-# jobs
 jobs:
-  #'build-and-lint-ui'
-  build-and-lint-ui:
-    # This job will run on a fresh, virtual machine hosted by GitHub
+  check-frontend:
     runs-on: ubuntu-latest
 
-    # 'steps:' 
+    # Set the working-directory for all steps to 'likelee-ui'
+    defaults:
+      run:
+        working-directory: ./likelee-ui
+
     steps:
-      # 1. Check out the repository code
       - name: Check out code
         uses: actions/checkout@v4
 
-      # 2. Set up the Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'likelee-ui/package-lock.json' 
+          cache-dependency-path: 'likelee-ui/package-lock.json'
 
-      # 3. Install dependencies for the 'likelee-ui' app
       - name: Install dependencies
-        run: cd likelee-ui && npm install
+        run: npm install
 
-      # 4. Run the 'lint' command (checks for code style errors)
+      - name: Check Formatting
+        # This runs the "format:check" script from your package.json
+        run: npm run format:check
+
       - name: Run Lint
-        run: cd likelee-ui && npm run lint
+        run: npm run lint
 
-      # 5. Run the 'build' command
       - name: Run Build
-        run: cd likelee-ui && npm run build
+        run: npm run build
+
+      - name: Run Tests
+        # This runs the "test" script from your package.json
+        run: npm run test
+
+      - name: Run Security Audit
+        run: npm audit
