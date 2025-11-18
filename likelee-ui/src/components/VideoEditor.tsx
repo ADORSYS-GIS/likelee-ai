@@ -3,8 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, Download, Plus, Trash2, Type, Sparkles, Move } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Play,
+  Pause,
+  Download,
+  Plus,
+  Trash2,
+  Type,
+  Sparkles,
+  Move,
+} from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function VideoEditor({ clips, onAddClip, type = "video" }) {
@@ -16,7 +31,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
     brightness: 100,
     contrast: 100,
     saturation: 100,
-    blur: 0
+    blur: 0,
   });
   const [textOverlays, setTextOverlays] = useState([]);
   const [showTextInput, setShowTextInput] = useState(false);
@@ -26,27 +41,29 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
 
   useEffect(() => {
     if (clips && clips.length > 0) {
-      setTimeline(clips.map((clip, index) => ({
-        id: `clip-${index}`,
-        url: clip,
-        duration: 5,
-        type: type
-      })));
+      setTimeline(
+        clips.map((clip, index) => ({
+          id: `clip-${index}`,
+          url: clip,
+          duration: 5,
+          type: type,
+        })),
+      );
     }
   }, [clips, type]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-    
+
     const items = Array.from(timeline);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-    
+
     setTimeline(items);
   };
 
   const removeClip = (clipId) => {
-    setTimeline(timeline.filter(clip => clip.id !== clipId));
+    setTimeline(timeline.filter((clip) => clip.id !== clipId));
     if (selectedClip?.id === clipId) {
       setSelectedClip(null);
     }
@@ -59,29 +76,32 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
 
   const applyFilters = () => {
     if (!videoRef.current || !canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     const video = videoRef.current;
-    
+
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 360;
-    
+
     ctx.filter = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%) blur(${filters.blur}px)`;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   };
 
   const addTextOverlay = () => {
     if (!newText.trim()) return;
-    
-    setTextOverlays([...textOverlays, {
-      id: `text-${Date.now()}`,
-      text: newText,
-      x: 50,
-      y: 50,
-      fontSize: 32,
-      color: "#ffffff"
-    }]);
+
+    setTextOverlays([
+      ...textOverlays,
+      {
+        id: `text-${Date.now()}`,
+        text: newText,
+        x: 50,
+        y: 50,
+        fontSize: 32,
+        color: "#ffffff",
+      },
+    ]);
     setNewText("");
     setShowTextInput(false);
   };
@@ -90,13 +110,13 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
     // In a real implementation, this would use FFmpeg.wasm or similar
     // For now, we'll just download the first clip with filters applied
     if (timeline.length === 0) return;
-    
+
     const canvas = canvasRef.current;
     canvas.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'edited-video.png';
+      a.download = "edited-video.png";
       a.click();
       URL.revokeObjectURL(url);
     });
@@ -111,7 +131,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
           <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
             {selectedClip ? (
               <>
-                {selectedClip.type === 'video' ? (
+                {selectedClip.type === "video" ? (
                   <video
                     ref={videoRef}
                     src={selectedClip.url}
@@ -129,9 +149,9 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 w-full h-full"
-                  style={{ mixBlendMode: 'normal' }}
+                  style={{ mixBlendMode: "normal" }}
                 />
-                
+
                 {/* Text Overlays */}
                 {textOverlays.map((overlay) => (
                   <div
@@ -142,7 +162,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                       top: `${overlay.y}%`,
                       fontSize: `${overlay.fontSize}px`,
                       color: overlay.color,
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+                      textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
                     }}
                   >
                     {overlay.text}
@@ -157,7 +177,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
           </div>
 
           {/* Playback Controls */}
-          {selectedClip && selectedClip.type === 'video' && (
+          {selectedClip && selectedClip.type === "video" && (
             <div className="mt-4 flex items-center gap-4">
               <Button
                 size="sm"
@@ -173,7 +193,11 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                 }}
                 className="bg-white/10 hover:bg-white/20"
               >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {isPlaying ? (
+                  <Pause className="w-4 h-4" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
               </Button>
               <div className="flex-1">
                 <input
@@ -217,7 +241,11 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                   className="flex gap-2 overflow-x-auto pb-2"
                 >
                   {timeline.map((clip, index) => (
-                    <Draggable key={clip.id} draggableId={clip.id} index={index}>
+                    <Draggable
+                      key={clip.id}
+                      draggableId={clip.id}
+                      index={index}
+                    >
                       {(provided) => (
                         <div
                           ref={provided.innerRef}
@@ -225,13 +253,22 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                           {...provided.dragHandleProps}
                           onClick={() => setSelectedClip(clip)}
                           className={`relative flex-shrink-0 w-32 h-20 rounded-lg overflow-hidden cursor-pointer border-2 ${
-                            selectedClip?.id === clip.id ? 'border-[#F18B6A]' : 'border-white/10'
+                            selectedClip?.id === clip.id
+                              ? "border-[#F18B6A]"
+                              : "border-white/10"
                           }`}
                         >
-                          {clip.type === 'video' ? (
-                            <video src={clip.url} className="w-full h-full object-cover" />
+                          {clip.type === "video" ? (
+                            <video
+                              src={clip.url}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <img src={clip.url} alt="Clip" className="w-full h-full object-cover" />
+                            <img
+                              src={clip.url}
+                              alt="Clip"
+                              className="w-full h-full object-cover"
+                            />
                           )}
                           <button
                             onClick={(e) => {
@@ -279,7 +316,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
               </label>
               <Slider
                 value={[filters.brightness]}
-                onValueChange={([v]) => handleFilterChange('brightness', v)}
+                onValueChange={([v]) => handleFilterChange("brightness", v)}
                 min={0}
                 max={200}
                 step={1}
@@ -292,7 +329,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
               </label>
               <Slider
                 value={[filters.contrast]}
-                onValueChange={([v]) => handleFilterChange('contrast', v)}
+                onValueChange={([v]) => handleFilterChange("contrast", v)}
                 min={0}
                 max={200}
                 step={1}
@@ -305,7 +342,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
               </label>
               <Slider
                 value={[filters.saturation]}
-                onValueChange={([v]) => handleFilterChange('saturation', v)}
+                onValueChange={([v]) => handleFilterChange("saturation", v)}
                 min={0}
                 max={200}
                 step={1}
@@ -318,7 +355,7 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
               </label>
               <Slider
                 value={[filters.blur]}
-                onValueChange={([v]) => handleFilterChange('blur', v)}
+                onValueChange={([v]) => handleFilterChange("blur", v)}
                 min={0}
                 max={10}
                 step={0.5}
@@ -381,9 +418,15 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
                   key={overlay.id}
                   className="flex items-center justify-between p-2 bg-white/5 rounded"
                 >
-                  <span className="text-sm text-white truncate">{overlay.text}</span>
+                  <span className="text-sm text-white truncate">
+                    {overlay.text}
+                  </span>
                   <button
-                    onClick={() => setTextOverlays(textOverlays.filter(t => t.id !== overlay.id))}
+                    onClick={() =>
+                      setTextOverlays(
+                        textOverlays.filter((t) => t.id !== overlay.id),
+                      )
+                    }
                     className="text-red-400 hover:text-red-300"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -396,13 +439,15 @@ export default function VideoEditor({ clips, onAddClip, type = "video" }) {
 
         {/* Quick Actions */}
         <Card className="p-6 bg-white/5 border border-white/10 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4 text-white">Quick Actions</h3>
+          <h3 className="text-lg font-semibold mb-4 text-white">
+            Quick Actions
+          </h3>
           <div className="space-y-2">
             <Button
               size="sm"
               variant="outline"
               className="w-full border-white/10 hover:bg-white/5 justify-start"
-              onClick={() => handleFilterChange('brightness', 100)}
+              onClick={() => handleFilterChange("brightness", 100)}
             >
               Reset Filters
             </Button>

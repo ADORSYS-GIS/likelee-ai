@@ -4,7 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -19,7 +25,7 @@ export default function SalesInquiry() {
     company_size: "",
     budget_range: "",
     use_case: "",
-    message: ""
+    message: "",
   });
 
   const submitInquiry = useMutation({
@@ -41,12 +47,12 @@ Use Case: ${data.use_case}
 
 Message:
 ${data.message}
-        `
+        `,
       });
     },
     onSuccess: () => {
       setSubmitted(true);
-    }
+    },
   });
 
   const handleSubmit = (e) => {
@@ -65,12 +71,17 @@ ${data.message}
             Thank You!
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            We've received your inquiry and will be in touch within 24 hours to discuss how Likelee can help your brand create amazing AI-powered campaigns.
+            We've received your inquiry and will be in touch within 24 hours to
+            discuss how Likelee can help your brand create amazing AI-powered
+            campaigns.
           </p>
           <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-6 border-2 border-black rounded-none mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-3">What's next?</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">
+              What's next?
+            </h3>
             <p className="text-gray-700 leading-relaxed">
-              Our team will review your inquiry and schedule a personalized demo to show you exactly how our platform can work for your campaigns.
+              Our team will review your inquiry and schedule a personalized demo
+              to show you exactly how our platform can work for your campaigns.
             </p>
           </div>
         </Card>
@@ -94,28 +105,38 @@ ${data.message}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="company_name" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="company_name"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Company Name *
                 </Label>
                 <Input
                   id="company_name"
                   required
                   value={formData.company_name}
-                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, company_name: e.target.value })
+                  }
                   className="border-2 border-gray-300 rounded-none"
                   placeholder="Your Company"
                 />
               </div>
 
               <div>
-                <Label htmlFor="contact_name" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="contact_name"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Your Name *
                 </Label>
                 <Input
                   id="contact_name"
                   required
                   value={formData.contact_name}
-                  onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, contact_name: e.target.value })
+                  }
                   className="border-2 border-gray-300 rounded-none"
                   placeholder="John Doe"
                 />
@@ -124,7 +145,10 @@ ${data.message}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Work Email *
                 </Label>
                 <Input
@@ -132,21 +156,28 @@ ${data.message}
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="border-2 border-gray-300 rounded-none"
                   placeholder="you@company.com"
                 />
               </div>
 
               <div>
-                <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="phone"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Phone Number
                 </Label>
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   className="border-2 border-gray-300 rounded-none"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -155,12 +186,17 @@ ${data.message}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="company_size" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="company_size"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Company Size *
                 </Label>
-                <Select 
-                  value={formData.company_size} 
-                  onValueChange={(value) => setFormData({ ...formData, company_size: value })}
+                <Select
+                  value={formData.company_size}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, company_size: value })
+                  }
                   required
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
@@ -177,12 +213,17 @@ ${data.message}
               </div>
 
               <div>
-                <Label htmlFor="budget_range" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="budget_range"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Monthly Budget Range
                 </Label>
-                <Select 
-                  value={formData.budget_range} 
-                  onValueChange={(value) => setFormData({ ...formData, budget_range: value })}
+                <Select
+                  value={formData.budget_range}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, budget_range: value })
+                  }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue placeholder="Select range" />
@@ -198,36 +239,56 @@ ${data.message}
             </div>
 
             <div>
-              <Label htmlFor="use_case" className="text-sm font-medium text-gray-700 mb-2 block">
+              <Label
+                htmlFor="use_case"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
                 Primary Use Case *
               </Label>
-              <Select 
-                value={formData.use_case} 
-                onValueChange={(value) => setFormData({ ...formData, use_case: value })}
+              <Select
+                value={formData.use_case}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, use_case: value })
+                }
                 required
               >
                 <SelectTrigger className="border-2 border-gray-300 rounded-none">
                   <SelectValue placeholder="Select use case" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="social_media">Social Media Campaigns</SelectItem>
-                  <SelectItem value="commercials">TV/Digital Commercials</SelectItem>
-                  <SelectItem value="brand_content">Brand Content Creation</SelectItem>
-                  <SelectItem value="product_launches">Product Launches</SelectItem>
-                  <SelectItem value="influencer_marketing">Influencer Marketing</SelectItem>
+                  <SelectItem value="social_media">
+                    Social Media Campaigns
+                  </SelectItem>
+                  <SelectItem value="commercials">
+                    TV/Digital Commercials
+                  </SelectItem>
+                  <SelectItem value="brand_content">
+                    Brand Content Creation
+                  </SelectItem>
+                  <SelectItem value="product_launches">
+                    Product Launches
+                  </SelectItem>
+                  <SelectItem value="influencer_marketing">
+                    Influencer Marketing
+                  </SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="message" className="text-sm font-medium text-gray-700 mb-2 block">
+              <Label
+                htmlFor="message"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
                 Tell us about your needs
               </Label>
               <Textarea
                 id="message"
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, message: e.target.value })
+                }
                 className="border-2 border-gray-300 rounded-none min-h-[120px]"
                 placeholder="What are you looking to achieve with AI-powered creator content?"
               />
@@ -246,7 +307,10 @@ ${data.message}
         <div className="mt-8 text-center">
           <p className="text-gray-600">
             Need immediate assistance? Email us at{" "}
-            <a href="mailto:operations@likelee.ai" className="text-[#F7B750] hover:text-[#E6A640] font-semibold underline">
+            <a
+              href="mailto:operations@likelee.ai"
+              className="text-[#F7B750] hover:text-[#E6A640] font-semibold underline"
+            >
               operations@likelee.ai
             </a>
           </p>

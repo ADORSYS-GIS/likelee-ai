@@ -1,9 +1,16 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Users, Zap, CheckCircle2, FileCheck, BarChart3, Film } from "lucide-react";
+import {
+  Shield,
+  Users,
+  Zap,
+  CheckCircle2,
+  FileCheck,
+  BarChart3,
+  Film,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -15,7 +22,7 @@ export default function ProductionStudio() {
   const messages = [
     "License verified likeness.",
     "Streamline production.",
-    "Bring a human touch to your AI-driven creative projects."
+    "Bring a human touch to your AI-driven creative projects.",
   ];
 
   useEffect(() => {
@@ -71,18 +78,27 @@ export default function ProductionStudio() {
             <Badge className="mb-8 bg-slate-100 text-slate-700 hover:bg-slate-100 px-4 py-2 rounded-none border-2 border-black">
               For Production Houses & Studios
             </Badge>
-            <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 max-w-4xl mx-auto mb-6 leading-tight" style={{ minHeight: '7rem' }}>
-              <span 
-                className={`block bg-gradient-to-r from-slate-700 to-gray-800 bg-clip-text text-transparent ${isFlipping ? 'flip-out' : 'flip-in'}`}
+            <div
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 max-w-4xl mx-auto mb-6 leading-tight"
+              style={{ minHeight: "7rem" }}
+            >
+              <span
+                className={`block bg-gradient-to-r from-slate-700 to-gray-800 bg-clip-text text-transparent ${isFlipping ? "flip-out" : "flip-in"}`}
               >
                 {messages[currentMessageIndex]}
               </span>
             </div>
             <p className="text-2xl md:text-3xl text-gray-600 max-w-4xl mx-auto mb-8 leading-relaxed">
-              Connect with influencers and AI creators for your full production needs.
+              Connect with influencers and AI creators for your full production
+              needs.
             </p>
             <Button
-              onClick={() => navigate(createPageUrl("OrganizationSignup") + "?type=production_studio")}
+              onClick={() =>
+                navigate(
+                  createPageUrl("OrganizationSignup") +
+                    "?type=production_studio",
+                )
+              }
               className="h-14 px-10 text-base font-medium bg-gradient-to-r from-slate-700 to-gray-800 hover:from-slate-800 hover:to-gray-900 text-white border-2 border-black shadow-lg transition-all hover:shadow-xl hover:scale-105 rounded-none"
             >
               Request Studio Access
@@ -105,9 +121,12 @@ export default function ProductionStudio() {
               <div className="w-14 h-14 bg-gradient-to-br from-slate-600 to-slate-700 rounded-none flex items-center justify-center mb-6 border-2 border-black">
                 <Users className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Verified Talent Library</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Verified Talent Library
+              </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Access thousands of real, licensed faces cleared for advertising, film, and AI generation.
+                Access thousands of real, licensed faces cleared for
+                advertising, film, and AI generation.
               </p>
             </Card>
 
@@ -115,9 +134,12 @@ export default function ProductionStudio() {
               <div className="w-14 h-14 bg-gradient-to-br from-gray-600 to-gray-700 rounded-none flex items-center justify-center mb-6 border-2 border-black">
                 <Shield className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Embedded Consent & Rights</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Embedded Consent & Rights
+              </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Every likeness carries built-in metadata outlining region, duration, and usage permissions.
+                Every likeness carries built-in metadata outlining region,
+                duration, and usage permissions.
               </p>
             </Card>
 
@@ -125,9 +147,12 @@ export default function ProductionStudio() {
               <div className="w-14 h-14 bg-gradient-to-br from-zinc-600 to-zinc-700 rounded-none flex items-center justify-center mb-6 border-2 border-black">
                 <FileCheck className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Credit & Attribution Tools</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Credit & Attribution Tools
+              </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Credit each licensed face in-frame, in metadata, or in credits — ensuring ethical compliance and recognition.
+                Credit each licensed face in-frame, in metadata, or in credits —
+                ensuring ethical compliance and recognition.
               </p>
             </Card>
 
@@ -135,9 +160,12 @@ export default function ProductionStudio() {
               <div className="w-14 h-14 bg-gradient-to-br from-slate-700 to-gray-800 rounded-none flex items-center justify-center mb-6 border-2 border-black">
                 <Zap className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Creator Collaboration</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Creator Collaboration
+              </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Work with AI artists and creative technologists directly through Likelee Studio to bring concepts to life.
+                Work with AI artists and creative technologists directly through
+                Likelee Studio to bring concepts to life.
               </p>
             </Card>
           </div>
@@ -156,9 +184,13 @@ export default function ProductionStudio() {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Studio Access */}
             <Card className="p-8 border-2 border-black rounded-none bg-white hover:shadow-xl transition-all">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Studio Access</h3>
-              <p className="text-gray-600 mb-6">For small creative teams or boutique production houses</p>
-              
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Studio Access
+              </h3>
+              <p className="text-gray-600 mb-6">
+                For small creative teams or boutique production houses
+              </p>
+
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
                   <span className="text-4xl font-bold text-gray-900">$199</span>
@@ -169,23 +201,33 @@ export default function ProductionStudio() {
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Unlimited marketplace access (Faces + AI Talent)</span>
+                  <span className="text-gray-700">
+                    Unlimited marketplace access (Faces + AI Talent)
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Standard licensing for digital & social use</span>
+                  <span className="text-gray-700">
+                    Standard licensing for digital & social use
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Direct payment to creators per usage</span>
+                  <span className="text-gray-700">
+                    Direct payment to creators per usage
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Track usage & license duration via dashboard</span>
+                  <span className="text-gray-700">
+                    Track usage & license duration via dashboard
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">AI video/image generation via Likelee Studio</span>
+                  <span className="text-gray-700">
+                    AI video/image generation via Likelee Studio
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
@@ -198,7 +240,12 @@ export default function ProductionStudio() {
               </div>
 
               <Button
-                onClick={() => navigate(createPageUrl("OrganizationSignup") + "?type=production_studio&plan=studio")}
+                onClick={() =>
+                  navigate(
+                    createPageUrl("OrganizationSignup") +
+                      "?type=production_studio&plan=studio",
+                  )
+                }
                 className="w-full h-12 bg-gradient-to-r from-slate-700 to-gray-800 hover:opacity-90 text-white border-2 border-black rounded-none"
               >
                 Get Started
@@ -210,10 +257,14 @@ export default function ProductionStudio() {
               <div className="absolute top-0 right-0 bg-gradient-to-br from-slate-700 to-gray-800 text-white text-xs font-bold px-4 py-1 rounded-bl-lg">
                 POPULAR
               </div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Creative Studio</h3>
-              <p className="text-gray-600 mb-6">For growing production companies and creative collectives</p>
-              
+
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Creative Studio
+              </h3>
+              <p className="text-gray-600 mb-6">
+                For growing production companies and creative collectives
+              </p>
+
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
                   <span className="text-4xl font-bold text-gray-900">$449</span>
@@ -224,27 +275,39 @@ export default function ProductionStudio() {
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Unlimited marketplace access (Faces + AI Talent)</span>
+                  <span className="text-gray-700">
+                    Unlimited marketplace access (Faces + AI Talent)
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Commercial licensing for broadcast, OOH, and paid campaigns</span>
+                  <span className="text-gray-700">
+                    Commercial licensing for broadcast, OOH, and paid campaigns
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Private asset library for in-house talent or clients</span>
+                  <span className="text-gray-700">
+                    Private asset library for in-house talent or clients
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Credits & attribution tracking for creative works</span>
+                  <span className="text-gray-700">
+                    Credits & attribution tracking for creative works
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Analytics dashboard for campaigns & viewership data</span>
+                  <span className="text-gray-700">
+                    Analytics dashboard for campaigns & viewership data
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Invite AI talent & editors for collaboration</span>
+                  <span className="text-gray-700">
+                    Invite AI talent & editors for collaboration
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
@@ -257,7 +320,12 @@ export default function ProductionStudio() {
               </div>
 
               <Button
-                onClick={() => navigate(createPageUrl("OrganizationSignup") + "?type=production_studio&plan=creative")}
+                onClick={() =>
+                  navigate(
+                    createPageUrl("OrganizationSignup") +
+                      "?type=production_studio&plan=creative",
+                  )
+                }
                 className="w-full h-12 bg-gradient-to-r from-slate-700 to-gray-800 hover:opacity-90 text-white border-2 border-black rounded-none"
               >
                 Upgrade to Creative Studio
@@ -266,39 +334,57 @@ export default function ProductionStudio() {
 
             {/* Enterprise Production */}
             <Card className="p-8 border-2 border-black rounded-none bg-white hover:shadow-xl transition-all">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise Production</h3>
-              <p className="text-gray-600 mb-6">For global studios, agencies, and large-scale content pipelines</p>
-              
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Enterprise Production
+              </h3>
+              <p className="text-gray-600 mb-6">
+                For global studios, agencies, and large-scale content pipelines
+              </p>
+
               <div className="mb-8">
                 <div className="flex items-baseline mb-2">
-                  <span className="text-2xl font-bold text-gray-900">Custom Pricing</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    Custom Pricing
+                  </span>
                 </div>
               </div>
 
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Full API integration for rights & metadata management</span>
+                  <span className="text-gray-700">
+                    Full API integration for rights & metadata management
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Territory-based usage frameworks</span>
+                  <span className="text-gray-700">
+                    Territory-based usage frameworks
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Bulk license negotiation for recurring productions</span>
+                  <span className="text-gray-700">
+                    Bulk license negotiation for recurring productions
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Custom royalty splits between talent and client</span>
+                  <span className="text-gray-700">
+                    Custom royalty splits between talent and client
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">White-label Likelee environment for in-studio use</span>
+                  <span className="text-gray-700">
+                    White-label Likelee environment for in-studio use
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-                  <span className="text-gray-700">Dedicated account, legal, and compliance support</span>
+                  <span className="text-gray-700">
+                    Dedicated account, legal, and compliance support
+                  </span>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
@@ -325,7 +411,8 @@ export default function ProductionStudio() {
             Every Face Has a Story — License It.
           </h2>
           <p className="text-xl text-slate-200 mb-4">
-            Likelee helps studios create responsibly by bridging the gap between creative freedom and human authenticity.
+            Likelee helps studios create responsibly by bridging the gap between
+            creative freedom and human authenticity.
           </p>
           <p className="text-2xl text-white font-semibold">
             Verified faces. Transparent rights. Real recognition.
@@ -338,7 +425,12 @@ export default function ProductionStudio() {
               Book a Demo
             </Button>
             <Button
-              onClick={() => navigate(createPageUrl("OrganizationSignup") + "?type=production_studio")}
+              onClick={() =>
+                navigate(
+                  createPageUrl("OrganizationSignup") +
+                    "?type=production_studio",
+                )
+              }
               variant="outline"
               className="h-16 px-12 text-lg font-medium bg-transparent hover:bg-white/10 text-white border-2 border-white rounded-none"
             >

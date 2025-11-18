@@ -7,11 +7,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useMutation } from '@tanstack/react-query'; 
-import { base44 } from '@/api/base44Client';
+import { useMutation } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 const contentTypes = [
   "Social media ads",
@@ -23,7 +29,7 @@ const contentTypes = [
   "Video-game / VR characters",
   "Stock photo / video libraries",
   "Educational / nonprofit spots",
-  "Other"
+  "Other",
 ];
 
 const modelWorkTypes = [
@@ -42,7 +48,7 @@ const modelWorkTypes = [
   "Plus Size",
   "Mature / Senior",
   "Petite",
-  "Other"
+  "Other",
 ];
 
 const industries = [
@@ -59,7 +65,7 @@ const industries = [
   "Education",
   "Real Estate",
   "Entertainment",
-  "Open to any industry"
+  "Open to any industry",
 ];
 
 const athleteBrandCategories = [
@@ -73,14 +79,30 @@ const athleteBrandCategories = [
   "Automotive",
   "Finance / Fintech",
   "Education / Training",
-  "Open to any brand"
+  "Open to any brand",
 ];
 
 const sportsOptions = [
-  "Football", "Basketball", "Baseball", "Soccer", "Tennis", "Golf",
-  "Track & Field", "Swimming", "Gymnastics", "Volleyball", "Wrestling",
-  "Boxing", "MMA", "Hockey", "Lacrosse", "Softball", "Cheerleading",
-  "Dance", "Esports", "Other"
+  "Football",
+  "Basketball",
+  "Baseball",
+  "Soccer",
+  "Tennis",
+  "Golf",
+  "Track & Field",
+  "Swimming",
+  "Gymnastics",
+  "Volleyball",
+  "Wrestling",
+  "Boxing",
+  "MMA",
+  "Hockey",
+  "Lacrosse",
+  "Softball",
+  "Cheerleading",
+  "Dance",
+  "Esports",
+  "Other",
 ];
 
 const ethnicities = [
@@ -92,22 +114,48 @@ const ethnicities = [
   "Pacific Islander",
   "White / Caucasian",
   "Mixed / Multiracial",
-  "Prefer not to say"
+  "Prefer not to say",
 ];
 
-const hairColors = ["Black", "Brown", "Blonde", "Red", "Gray/White", "Dyed (specify below)"];
+const hairColors = [
+  "Black",
+  "Brown",
+  "Blonde",
+  "Red",
+  "Gray/White",
+  "Dyed (specify below)",
+];
 const eyeColors = ["Brown", "Blue", "Green", "Hazel", "Gray", "Amber"];
-const skinTones = ["Fair", "Light", "Medium-Light", "Medium", "Medium-Dark", "Dark", "Deep"];
-const vibes = ["Streetwear", "Glam", "Natural", "Classic", "Edgy", "Athletic", "Runway", "Editorial", "Commercial", "Casual"];
+const skinTones = [
+  "Fair",
+  "Light",
+  "Medium-Light",
+  "Medium",
+  "Medium-Dark",
+  "Dark",
+  "Deep",
+];
+const vibes = [
+  "Streetwear",
+  "Glam",
+  "Natural",
+  "Classic",
+  "Edgy",
+  "Athletic",
+  "Runway",
+  "Editorial",
+  "Commercial",
+  "Casual",
+];
 
 export default function ReserveProfile() {
   const urlParams = new URLSearchParams(window.location.search);
-  const creatorType = urlParams.get('type') || 'influencer'; // influencer, model_actor, athlete
+  const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
-  const [profileId, setProfileId] = useState(null); 
+  const [profileId, setProfileId] = useState(null);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -115,7 +163,7 @@ export default function ReserveProfile() {
     confirmPassword: "",
     full_name: "",
     stage_name: "",
-    
+
     // Common fields
     city: "",
     state: "",
@@ -124,19 +172,19 @@ export default function ReserveProfile() {
     ethnicity: [],
     vibes: [],
     visibility: "private",
-    
+
     // Influencer specific
     content_types: [],
     content_other: "",
     industries: [],
     primary_platform: "",
     platform_handle: "",
-    
+
     // Model specific
     work_types: [],
     representation_status: "",
     headshot_url: "",
-    
+
     // Athlete specific
     sport: "",
     athlete_type: "",
@@ -146,7 +194,7 @@ export default function ReserveProfile() {
     instagram_handle: "",
     twitter_handle: "",
     brand_categories: [],
-    bio: ""
+    bio: "",
   });
 
   const totalSteps = 3;
@@ -155,14 +203,14 @@ export default function ReserveProfile() {
   const getStepTitle = () => {
     if (step === 1) return "Create Your Account";
     if (step === 2) {
-      if (creatorType === 'influencer') return "Profile Basics";
-      if (creatorType === 'model_actor') return "Talent Details";
-      if (creatorType === 'athlete') return "Athlete Info";
+      if (creatorType === "influencer") return "Profile Basics";
+      if (creatorType === "model_actor") return "Talent Details";
+      if (creatorType === "athlete") return "Athlete Info";
     }
     if (step === 3) {
-      if (creatorType === 'influencer') return "Opportunities";
-      if (creatorType === 'model_actor') return "Preferences";
-      if (creatorType === 'athlete') return "Brand Setup";
+      if (creatorType === "influencer") return "Opportunities";
+      if (creatorType === "model_actor") return "Preferences";
+      if (creatorType === "athlete") return "Brand Setup";
     }
     return "";
   };
@@ -180,7 +228,7 @@ export default function ReserveProfile() {
           industries: [],
           ethnicity: [],
           vibes: [],
-          visibility: "private"
+          visibility: "private",
         });
         console.log("Profile created successfully:", profile);
         return profile;
@@ -195,9 +243,12 @@ export default function ReserveProfile() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Unknown error occurred";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unknown error occurred";
       alert(`Failed to create profile: ${errorMessage}. Please try again.`);
-    }
+    },
   });
 
   // Profile update (Step 3)
@@ -206,7 +257,7 @@ export default function ReserveProfile() {
       if (!profileId) {
         throw new Error("Profile ID not found for update.");
       }
-      
+
       try {
         const updateData = {
           city: data.city || "",
@@ -216,21 +267,21 @@ export default function ReserveProfile() {
           ethnicity: data.ethnicity || [],
           vibes: data.vibes || [],
           visibility: data.visibility || "private",
-          status: "waitlist"
+          status: "waitlist",
         };
 
         // Add type-specific fields
-        if (data.creator_type === 'influencer') {
+        if (data.creator_type === "influencer") {
           updateData.content_types = data.content_types || [];
           updateData.content_other = data.content_other || "";
           updateData.industries = data.industries || [];
           updateData.primary_platform = data.primary_platform || "";
           updateData.platform_handle = data.platform_handle || "";
-        } else if (data.creator_type === 'model_actor') {
+        } else if (data.creator_type === "model_actor") {
           updateData.work_types = data.work_types || [];
           updateData.representation_status = data.representation_status || "";
           updateData.headshot_url = data.headshot_url || "";
-        } else if (data.creator_type === 'athlete') {
+        } else if (data.creator_type === "athlete") {
           updateData.sport = data.sport || "";
           updateData.athlete_type = data.athlete_type || "";
           updateData.school_name = data.school_name || "";
@@ -244,8 +295,11 @@ export default function ReserveProfile() {
 
         console.log("Updating profile with data:", updateData);
 
-        const updated = await base44.entities.FaceProfile.update(profileId, updateData);
-        
+        const updated = await base44.entities.FaceProfile.update(
+          profileId,
+          updateData,
+        );
+
         console.log("Profile updated successfully:", updated);
         return updated;
       } catch (error) {
@@ -259,9 +313,12 @@ export default function ReserveProfile() {
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Unknown error occurred";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unknown error occurred";
       alert(`Failed to update profile: ${errorMessage}. Please try again.`);
-    }
+    },
   });
 
   const handleFirstContinue = () => {
@@ -281,15 +338,19 @@ export default function ReserveProfile() {
       alert("Passwords do not match.");
       return;
     }
-    if (creatorType === 'model_actor' && !formData.stage_name && !formData.full_name) {
+    if (
+      creatorType === "model_actor" &&
+      !formData.stage_name &&
+      !formData.full_name
+    ) {
       alert("Please enter your full name or stage name.");
       return;
     }
-    if (creatorType !== 'model_actor' && !formData.full_name) {
+    if (creatorType !== "model_actor" && !formData.full_name) {
       alert("Please enter your full name.");
       return;
     }
-    
+
     createInitialProfileMutation.mutate(formData);
   };
 
@@ -307,11 +368,11 @@ export default function ReserveProfile() {
   };
 
   const toggleArrayItem = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: prev[field].includes(value)
-        ? prev[field].filter(item => item !== value)
-        : [...prev[field], value]
+        ? prev[field].filter((item) => item !== value)
+        : [...prev[field], value],
     }));
   };
 
@@ -326,7 +387,9 @@ export default function ReserveProfile() {
             Profile reserved—welcome to the Likelee ecosystem
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.
+            We're onboarding talent in waves to keep demand and visibility
+            balanced. Your profile is saved; we'll notify you when it's time to
+            complete verification and go live.
           </p>
         </Card>
       </div>
@@ -341,7 +404,9 @@ export default function ReserveProfile() {
           <Alert className="mb-8 bg-cyan-50 border-2 border-[#32C8D1] rounded-none">
             <AlertCircle className="h-5 w-5 text-[#32C8D1]" />
             <AlertDescription className="text-cyan-900 font-medium">
-              We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort.
+              We're launching in limited batches to make sure every Creator gets
+              visibility and campaign opportunities. Reserve your profile to
+              join the first creator cohort.
             </AlertDescription>
           </Alert>
         )}
@@ -349,7 +414,9 @@ export default function ReserveProfile() {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Reserve Your Profile</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Reserve Your Profile
+            </h2>
             <Badge className="bg-cyan-100 text-cyan-700 border-2 border-black rounded-none">
               Step {step} of {totalSteps}
             </Badge>
@@ -367,81 +434,122 @@ export default function ReserveProfile() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{getStepTitle()}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {getStepTitle()}
+                </h3>
                 <p className="text-gray-600">
-                  {creatorType === 'athlete' && "Create your NIL-ready account"}
-                  {creatorType === 'model_actor' && "Create your Likelee account"}
-                  {creatorType === 'influencer' && "Let's start with the basics"}
+                  {creatorType === "athlete" && "Create your NIL-ready account"}
+                  {creatorType === "model_actor" &&
+                    "Create your Likelee account"}
+                  {creatorType === "influencer" &&
+                    "Let's start with the basics"}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Email Address
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="you@example.com"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="password"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Password
                   </Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="••••••••"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Confirm Password
                   </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="••••••••"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="full_name" className="text-sm font-medium text-gray-700 mb-2 block">
-                    {creatorType === 'model_actor' ? "Full Name / Stage Name" : "Full Name"}
+                  <Label
+                    htmlFor="full_name"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    {creatorType === "model_actor"
+                      ? "Full Name / Stage Name"
+                      : "Full Name"}
                   </Label>
                   <Input
                     id="full_name"
                     type="text"
-                    value={creatorType === 'model_actor' ? (formData.stage_name || formData.full_name) : formData.full_name}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      [creatorType === 'model_actor' ? 'stage_name' : 'full_name']: e.target.value 
-                    })}
+                    value={
+                      creatorType === "model_actor"
+                        ? formData.stage_name || formData.full_name
+                        : formData.full_name
+                    }
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        [creatorType === "model_actor"
+                          ? "stage_name"
+                          : "full_name"]: e.target.value,
+                      })
+                    }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={creatorType === 'model_actor' ? "Your name or stage name" : "Your full name"}
+                    placeholder={
+                      creatorType === "model_actor"
+                        ? "Your name or stage name"
+                        : "Your full name"
+                    }
                   />
                 </div>
               </div>
 
               <Button
-                onClick={handleFirstContinue} 
-                disabled={createInitialProfileMutation.isPending} 
+                onClick={handleFirstContinue}
+                disabled={createInitialProfileMutation.isPending}
                 className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
               >
-                {createInitialProfileMutation.isPending ? "Saving..." : "Continue"}
+                {createInitialProfileMutation.isPending
+                  ? "Saving..."
+                  : "Continue"}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
@@ -451,36 +559,50 @@ export default function ReserveProfile() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{getStepTitle()}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {getStepTitle()}
+                </h3>
                 <p className="text-gray-600">
-                  {creatorType === 'influencer' && "Tell us a little about yourself"}
-                  {creatorType === 'model_actor' && "Let's start your portfolio"}
-                  {creatorType === 'athlete' && "Tell us about your sport"}
+                  {creatorType === "influencer" &&
+                    "Tell us a little about yourself"}
+                  {creatorType === "model_actor" &&
+                    "Let's start your portfolio"}
+                  {creatorType === "athlete" && "Tell us about your sport"}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="city" className="text-sm font-medium text-gray-700 mb-2 block">
+                    <Label
+                      htmlFor="city"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
                       City
                     </Label>
                     <Input
                       id="city"
                       value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="Los Angeles"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="state" className="text-sm font-medium text-gray-700 mb-2 block">
+                    <Label
+                      htmlFor="state"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
                       State
                     </Label>
                     <Input
                       id="state"
                       value={formData.state}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, state: e.target.value })
+                      }
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="CA"
                     />
@@ -488,15 +610,20 @@ export default function ReserveProfile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="birthdate" className="text-sm font-medium text-gray-700 mb-2 block">
-                    {creatorType === 'athlete' ? "Age" : "Birthdate"}
+                  <Label
+                    htmlFor="birthdate"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    {creatorType === "athlete" ? "Age" : "Birthdate"}
                   </Label>
-                  {creatorType === 'athlete' ? (
+                  {creatorType === "athlete" ? (
                     <Input
                       id="age"
                       type="number"
                       value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, age: e.target.value })
+                      }
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="21"
                     />
@@ -505,7 +632,9 @@ export default function ReserveProfile() {
                       id="birthdate"
                       type="date"
                       value={formData.birthdate}
-                      onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, birthdate: e.target.value })
+                      }
                       className="border-2 border-gray-300 rounded-none"
                     />
                   )}
@@ -515,12 +644,33 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
                     How do you identify?
                   </Label>
-                  <RadioGroup value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                  <RadioGroup
+                    value={formData.gender}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, gender: value })
+                    }
+                  >
                     <div className="space-y-2">
-                      {["Female", "Male", "Nonbinary", "Gender fluid", "Prefer not to say"].map((option) => (
-                        <div key={option} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                          <RadioGroupItem value={option} id={option} className="border-2 border-gray-400" />
-                          <Label htmlFor={option} className="text-sm text-gray-700 cursor-pointer flex-1">
+                      {[
+                        "Female",
+                        "Male",
+                        "Nonbinary",
+                        "Gender fluid",
+                        "Prefer not to say",
+                      ].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option}
+                            id={option}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={option}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
                             {option}
                           </Label>
                         </div>
@@ -535,14 +685,22 @@ export default function ReserveProfile() {
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {ethnicities.map((ethnicity) => (
-                      <div key={ethnicity} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                      <div
+                        key={ethnicity}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
                         <Checkbox
                           id={ethnicity}
                           checked={formData.ethnicity.includes(ethnicity)}
-                          onCheckedChange={() => toggleArrayItem("ethnicity", ethnicity)}
+                          onCheckedChange={() =>
+                            toggleArrayItem("ethnicity", ethnicity)
+                          }
                           className="border-2 border-gray-400"
                         />
-                        <label htmlFor={ethnicity} className="text-sm text-gray-700 cursor-pointer flex-1">
+                        <label
+                          htmlFor={ethnicity}
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
                           {ethnicity}
                         </label>
                       </div>
@@ -551,19 +709,29 @@ export default function ReserveProfile() {
                 </div>
 
                 {/* Athlete-specific fields */}
-                {creatorType === 'athlete' && (
+                {creatorType === "athlete" && (
                   <>
                     <div>
-                      <Label htmlFor="sport" className="text-sm font-medium text-gray-700 mb-2 block">
+                      <Label
+                        htmlFor="sport"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Sport
                       </Label>
-                      <Select value={formData.sport} onValueChange={(value) => setFormData({ ...formData, sport: value })}>
+                      <Select
+                        value={formData.sport}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, sport: value })
+                        }
+                      >
                         <SelectTrigger className="border-2 border-gray-300 rounded-none">
                           <SelectValue placeholder="Select your sport" />
                         </SelectTrigger>
                         <SelectContent>
                           {sportsOptions.map((sport) => (
-                            <SelectItem key={sport} value={sport}>{sport}</SelectItem>
+                            <SelectItem key={sport} value={sport}>
+                              {sport}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -573,29 +741,54 @@ export default function ReserveProfile() {
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
                         Athlete Type
                       </Label>
-                      <RadioGroup value={formData.athlete_type} onValueChange={(value) => setFormData({ ...formData, athlete_type: value })}>
+                      <RadioGroup
+                        value={formData.athlete_type}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, athlete_type: value })
+                        }
+                      >
                         <div className="space-y-2">
-                          {["University", "Professional", "Independent"].map((option) => (
-                            <div key={option} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                              <RadioGroupItem value={option} id={option} className="border-2 border-gray-400" />
-                              <Label htmlFor={option} className="text-sm text-gray-700 cursor-pointer flex-1">
-                                {option}
-                              </Label>
-                            </div>
-                          ))}
+                          {["University", "Professional", "Independent"].map(
+                            (option) => (
+                              <div
+                                key={option}
+                                className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                              >
+                                <RadioGroupItem
+                                  value={option}
+                                  id={option}
+                                  className="border-2 border-gray-400"
+                                />
+                                <Label
+                                  htmlFor={option}
+                                  className="text-sm text-gray-700 cursor-pointer flex-1"
+                                >
+                                  {option}
+                                </Label>
+                              </div>
+                            ),
+                          )}
                         </div>
                       </RadioGroup>
                     </div>
 
                     {formData.athlete_type === "University" && (
                       <div>
-                        <Label htmlFor="school_name" className="text-sm font-medium text-gray-700 mb-2 block">
+                        <Label
+                          htmlFor="school_name"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
                           School Name
                         </Label>
                         <Input
                           id="school_name"
                           value={formData.school_name}
-                          onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              school_name: e.target.value,
+                            })
+                          }
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="University name"
                         />
@@ -603,13 +796,21 @@ export default function ReserveProfile() {
                     )}
 
                     <div>
-                      <Label htmlFor="languages" className="text-sm font-medium text-gray-700 mb-2 block">
+                      <Label
+                        htmlFor="languages"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Languages
                       </Label>
                       <Input
                         id="languages"
                         value={formData.languages}
-                        onChange={(e) => setFormData({ ...formData, languages: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            languages: e.target.value,
+                          })
+                        }
                         className="border-2 border-gray-300 rounded-none"
                         placeholder="e.g., English, Spanish"
                       />
@@ -618,17 +819,22 @@ export default function ReserveProfile() {
                 )}
 
                 {/* Model-specific fields */}
-                {creatorType === 'model_actor' && (
+                {creatorType === "model_actor" && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <Label className="text-sm font-medium text-gray-900">
                         Type of work (select up to 3)
                       </Label>
-                      <span className="text-xs text-gray-500">You can specify more later</span>
+                      <span className="text-xs text-gray-500">
+                        You can specify more later
+                      </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
                       {modelWorkTypes.map((type) => (
-                        <div key={type} className="flex items-center space-x-2 p-2 hover:bg-gray-50">
+                        <div
+                          key={type}
+                          className="flex items-center space-x-2 p-2 hover:bg-gray-50"
+                        >
                           <Checkbox
                             id={type}
                             checked={formData.work_types.includes(type)}
@@ -638,12 +844,17 @@ export default function ReserveProfile() {
                               } else if (formData.work_types.length < 3) {
                                 toggleArrayItem("work_types", type);
                               } else {
-                                alert("Please select up to 3 options for now. You can add more later.");
+                                alert(
+                                  "Please select up to 3 options for now. You can add more later.",
+                                );
                               }
                             }}
                             className="border-2 border-gray-400"
                           />
-                          <label htmlFor={type} className="text-sm text-gray-700 cursor-pointer flex-1">
+                          <label
+                            htmlFor={type}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
                             {type}
                           </label>
                         </div>
@@ -653,21 +864,29 @@ export default function ReserveProfile() {
                 )}
 
                 {/* Influencer vibes */}
-                {creatorType === 'influencer' && (
+                {creatorType === "influencer" && (
                   <div>
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
                       Vibe / Style Tags
                     </Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {vibes.map((vibe) => (
-                        <div key={vibe} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                        <div
+                          key={vibe}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
                           <Checkbox
                             id={vibe}
                             checked={formData.vibes.includes(vibe)}
-                            onCheckedChange={() => toggleArrayItem("vibes", vibe)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("vibes", vibe)
+                            }
                             className="border-2 border-gray-400"
                           />
-                          <label htmlFor={vibe} className="text-sm text-gray-700 cursor-pointer flex-1">
+                          <label
+                            htmlFor={vibe}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
                             {vibe}
                           </label>
                         </div>
@@ -690,7 +909,7 @@ export default function ReserveProfile() {
                   onClick={handleNext}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {creatorType === 'athlete' ? 'Next: Brand Setup' : 'Continue'}
+                  {creatorType === "athlete" ? "Next: Brand Setup" : "Continue"}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -701,35 +920,51 @@ export default function ReserveProfile() {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{getStepTitle()}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {getStepTitle()}
+                </h3>
                 <p className="text-gray-600">
-                  {creatorType === 'influencer' && "Help us match you with the right campaigns"}
-                  {creatorType === 'model_actor' && "Help us tailor your opportunities"}
-                  {creatorType === 'athlete' && "Get ready to attract sponsorship and brand deals"}
+                  {creatorType === "influencer" &&
+                    "Help us match you with the right campaigns"}
+                  {creatorType === "model_actor" &&
+                    "Help us tailor your opportunities"}
+                  {creatorType === "athlete" &&
+                    "Get ready to attract sponsorship and brand deals"}
                 </p>
               </div>
 
               <div className="space-y-6">
                 {/* Influencer Step 3 */}
-                {creatorType === 'influencer' && (
+                {creatorType === "influencer" && (
                   <>
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          What kind of content are you interested in being featured in?
+                          What kind of content are you interested in being
+                          featured in?
                         </Label>
-                        <span className="text-xs text-gray-500">Select up to 3 for now</span>
+                        <span className="text-xs text-gray-500">
+                          Select up to 3 for now
+                        </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {contentTypes.map((type) => (
-                          <div key={type} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                          <div
+                            key={type}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
                             <Checkbox
                               id={type}
                               checked={formData.content_types.includes(type)}
-                              onCheckedChange={() => toggleArrayItem("content_types", type)}
+                              onCheckedChange={() =>
+                                toggleArrayItem("content_types", type)
+                              }
                               className="border-2 border-gray-400"
                             />
-                            <label htmlFor={type} className="text-sm text-gray-700 cursor-pointer flex-1">
+                            <label
+                              htmlFor={type}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
+                            >
                               {type}
                             </label>
                           </div>
@@ -738,7 +973,12 @@ export default function ReserveProfile() {
                       {formData.content_types.includes("Other") && (
                         <Input
                           value={formData.content_other}
-                          onChange={(e) => setFormData({ ...formData, content_other: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              content_other: e.target.value,
+                            })
+                          }
                           className="mt-3 border-2 border-gray-300 rounded-none"
                           placeholder="Please specify..."
                         />
@@ -748,20 +988,31 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          What types of brands or industries do you want to work with?
+                          What types of brands or industries do you want to work
+                          with?
                         </Label>
-                        <span className="text-xs text-gray-500">Select up to 3 for now</span>
+                        <span className="text-xs text-gray-500">
+                          Select up to 3 for now
+                        </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {industries.map((industry) => (
-                          <div key={industry} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                          <div
+                            key={industry}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
                             <Checkbox
                               id={industry}
                               checked={formData.industries.includes(industry)}
-                              onCheckedChange={() => toggleArrayItem("industries", industry)}
+                              onCheckedChange={() =>
+                                toggleArrayItem("industries", industry)
+                              }
                               className="border-2 border-gray-400"
                             />
-                            <label htmlFor={industry} className="text-sm text-gray-700 cursor-pointer flex-1">
+                            <label
+                              htmlFor={industry}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
+                            >
                               {industry}
                             </label>
                           </div>
@@ -771,10 +1022,21 @@ export default function ReserveProfile() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="primary_platform" className="text-sm font-medium text-gray-700 mb-2 block">
+                        <Label
+                          htmlFor="primary_platform"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
                           Primary Platform
                         </Label>
-                        <Select value={formData.primary_platform} onValueChange={(value) => setFormData({ ...formData, primary_platform: value })}>
+                        <Select
+                          value={formData.primary_platform}
+                          onValueChange={(value) =>
+                            setFormData({
+                              ...formData,
+                              primary_platform: value,
+                            })
+                          }
+                        >
                           <SelectTrigger className="border-2 border-gray-300 rounded-none">
                             <SelectValue placeholder="Select platform" />
                           </SelectTrigger>
@@ -788,13 +1050,21 @@ export default function ReserveProfile() {
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="platform_handle" className="text-sm font-medium text-gray-700 mb-2 block">
+                        <Label
+                          htmlFor="platform_handle"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
                           Handle
                         </Label>
                         <Input
                           id="platform_handle"
                           value={formData.platform_handle}
-                          onChange={(e) => setFormData({ ...formData, platform_handle: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              platform_handle: e.target.value,
+                            })
+                          }
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="@yourhandle"
                         />
@@ -804,18 +1074,36 @@ export default function ReserveProfile() {
                 )}
 
                 {/* Model/Actor Step 3 */}
-                {creatorType === 'model_actor' && (
+                {creatorType === "model_actor" && (
                   <>
                     <div>
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
                         Representation Status
                       </Label>
-                      <RadioGroup value={formData.representation_status} onValueChange={(value) => setFormData({ ...formData, representation_status: value })}>
+                      <RadioGroup
+                        value={formData.representation_status}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            representation_status: value,
+                          })
+                        }
+                      >
                         <div className="space-y-2">
                           {["Agency", "Independent"].map((option) => (
-                            <div key={option} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                              <RadioGroupItem value={option} id={option} className="border-2 border-gray-400" />
-                              <Label htmlFor={option} className="text-sm text-gray-700 cursor-pointer flex-1">
+                            <div
+                              key={option}
+                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                            >
+                              <RadioGroupItem
+                                value={option}
+                                id={option}
+                                className="border-2 border-gray-400"
+                              />
+                              <Label
+                                htmlFor={option}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
                                 {option}
                               </Label>
                             </div>
@@ -830,14 +1118,22 @@ export default function ReserveProfile() {
                       </Label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {vibes.map((vibe) => (
-                          <div key={vibe} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                          <div
+                            key={vibe}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
                             <Checkbox
                               id={vibe}
                               checked={formData.vibes.includes(vibe)}
-                              onCheckedChange={() => toggleArrayItem("vibes", vibe)}
+                              onCheckedChange={() =>
+                                toggleArrayItem("vibes", vibe)
+                              }
                               className="border-2 border-gray-400"
                             />
-                            <label htmlFor={vibe} className="text-sm text-gray-700 cursor-pointer flex-1">
+                            <label
+                              htmlFor={vibe}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
+                            >
                               {vibe}
                             </label>
                           </div>
@@ -846,46 +1142,72 @@ export default function ReserveProfile() {
                     </div>
 
                     <div>
-                      <Label htmlFor="headshot_url" className="text-sm font-medium text-gray-700 mb-2 block">
+                      <Label
+                        htmlFor="headshot_url"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Upload Headshot (optional)
                       </Label>
                       <Input
                         id="headshot_url"
                         type="text"
                         value={formData.headshot_url}
-                        onChange={(e) => setFormData({ ...formData, headshot_url: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            headshot_url: e.target.value,
+                          })
+                        }
                         className="border-2 border-gray-300 rounded-none"
                         placeholder="Image URL"
                       />
-                      <p className="text-xs text-gray-500 mt-1">You can upload your headshot after creating your account</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        You can upload your headshot after creating your account
+                      </p>
                     </div>
                   </>
                 )}
 
                 {/* Athlete Step 3 */}
-                {creatorType === 'athlete' && (
+                {creatorType === "athlete" && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="instagram_handle" className="text-sm font-medium text-gray-700 mb-2 block">
+                        <Label
+                          htmlFor="instagram_handle"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
                           Instagram (optional)
                         </Label>
                         <Input
                           id="instagram_handle"
                           value={formData.instagram_handle}
-                          onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              instagram_handle: e.target.value,
+                            })
+                          }
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="@yourhandle"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="twitter_handle" className="text-sm font-medium text-gray-700 mb-2 block">
+                        <Label
+                          htmlFor="twitter_handle"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
                           Twitter/X (optional)
                         </Label>
                         <Input
                           id="twitter_handle"
                           value={formData.twitter_handle}
-                          onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              twitter_handle: e.target.value,
+                            })
+                          }
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="@yourhandle"
                         />
@@ -897,18 +1219,30 @@ export default function ReserveProfile() {
                         <Label className="text-sm font-medium text-gray-900">
                           Interests / Brand Categories
                         </Label>
-                        <span className="text-xs text-gray-500">Select up to 3 for now</span>
+                        <span className="text-xs text-gray-500">
+                          Select up to 3 for now
+                        </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {athleteBrandCategories.map((category) => (
-                          <div key={category} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                          <div
+                            key={category}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
                             <Checkbox
                               id={category}
-                              checked={formData.brand_categories.includes(category)}
-                              onCheckedChange={() => toggleArrayItem("brand_categories", category)}
+                              checked={formData.brand_categories.includes(
+                                category,
+                              )}
+                              onCheckedChange={() =>
+                                toggleArrayItem("brand_categories", category)
+                              }
                               className="border-2 border-gray-400"
                             />
-                            <label htmlFor={category} className="text-sm text-gray-700 cursor-pointer flex-1">
+                            <label
+                              htmlFor={category}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
+                            >
                               {category}
                             </label>
                           </div>
@@ -917,13 +1251,18 @@ export default function ReserveProfile() {
                     </div>
 
                     <div>
-                      <Label htmlFor="bio" className="text-sm font-medium text-gray-700 mb-2 block">
+                      <Label
+                        htmlFor="bio"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Short Bio
                       </Label>
                       <Textarea
                         id="bio"
                         value={formData.bio}
-                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, bio: e.target.value })
+                        }
                         className="border-2 border-gray-300 rounded-none h-24"
                         placeholder="Tell brands a bit about you..."
                       />
@@ -936,18 +1275,39 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
                     Profile Visibility
                   </Label>
-                  <RadioGroup value={formData.visibility} onValueChange={(value) => setFormData({ ...formData, visibility: value })}>
+                  <RadioGroup
+                    value={formData.visibility}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, visibility: value })
+                    }
+                  >
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem value="public" id="public" className="border-2 border-gray-400" />
-                        <Label htmlFor="public" className="text-sm text-gray-700 cursor-pointer flex-1">
-                          <span className="font-medium">Public</span> - Visible to everyone
+                        <RadioGroupItem
+                          value="public"
+                          id="public"
+                          className="border-2 border-gray-400"
+                        />
+                        <Label
+                          htmlFor="public"
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          <span className="font-medium">Public</span> - Visible
+                          to everyone
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem value="private" id="private" className="border-2 border-gray-400" />
-                        <Label htmlFor="private" className="text-sm text-gray-700 cursor-pointer flex-1">
-                          <span className="font-medium">Private</span> - Only discoverable to brands and AI creators
+                        <RadioGroupItem
+                          value="private"
+                          id="private"
+                          className="border-2 border-gray-400"
+                        />
+                        <Label
+                          htmlFor="private"
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          <span className="font-medium">Private</span> - Only
+                          discoverable to brands and AI creators
                         </Label>
                       </div>
                     </div>
@@ -966,10 +1326,12 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} 
+                  disabled={updateProfileMutation.isPending}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {updateProfileMutation.isPending ? "Submitting..." : "Create My Account"}
+                  {updateProfileMutation.isPending
+                    ? "Submitting..."
+                    : "Create My Account"}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>

@@ -7,12 +7,29 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
-  Upload, Instagram, Mic, CheckCircle2, ArrowRight, ArrowLeft,
-  AlertCircle, Loader2, User, Image as ImageIcon, Video, Trash2, Play
+  Upload,
+  Instagram,
+  Mic,
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  AlertCircle,
+  Loader2,
+  User,
+  Image as ImageIcon,
+  Video,
+  Trash2,
+  Play,
 } from "lucide-react";
 
 const ethnicities = [
@@ -24,12 +41,20 @@ const ethnicities = [
   "Pacific Islander",
   "White / Caucasian",
   "Mixed / Multiracial",
-  "Prefer not to say"
+  "Prefer not to say",
 ];
 
 const hairColors = ["Black", "Brown", "Blonde", "Red", "Gray/White", "Dyed"];
 const eyeColors = ["Brown", "Blue", "Green", "Hazel", "Gray", "Amber"];
-const skinTones = ["Fair", "Light", "Medium-Light", "Medium", "Medium-Dark", "Dark", "Deep"];
+const skinTones = [
+  "Fair",
+  "Light",
+  "Medium-Light",
+  "Medium",
+  "Medium-Dark",
+  "Dark",
+  "Deep",
+];
 
 export default function AddTalent() {
   const navigate = useNavigate();
@@ -37,7 +62,7 @@ export default function AddTalent() {
   const [uploading, setUploading] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
   const totalSteps = 3;
-  
+
   const [formData, setFormData] = useState({
     // Basic Info
     full_name: "",
@@ -45,7 +70,7 @@ export default function AddTalent() {
     email: "",
     phone: "",
     birthdate: "",
-    
+
     // Physical Attributes
     gender: "",
     ethnicity: [],
@@ -54,24 +79,24 @@ export default function AddTalent() {
     skin_tone: "",
     height_feet: "",
     height_inches: "",
-    
+
     // Location
     city: "",
     state: "",
     country: "",
-    
+
     // Media
     hero_media: null,
     photos: [],
     voice_sample: null,
-    
+
     // Social
     instagram_connected: false,
     instagram_handle: "",
-    
+
     // Notes
     bio: "",
-    special_skills: ""
+    special_skills: "",
   });
 
   const fileInputRef = useRef(null);
@@ -87,9 +112,9 @@ export default function AddTalent() {
           ...formData,
           hero_media: {
             url: URL.createObjectURL(file),
-            type: file.type.includes('video') ? 'video' : 'image',
-            name: file.name
-          }
+            type: file.type.includes("video") ? "video" : "image",
+            name: file.name,
+          },
         });
         setUploading(false);
       }, 1000);
@@ -101,13 +126,13 @@ export default function AddTalent() {
     if (files.length > 0) {
       setUploading(true);
       setTimeout(() => {
-        const newPhotos = files.map(file => ({
+        const newPhotos = files.map((file) => ({
           url: URL.createObjectURL(file),
-          name: file.name
+          name: file.name,
         }));
         setFormData({
           ...formData,
-          photos: [...formData.photos, ...newPhotos]
+          photos: [...formData.photos, ...newPhotos],
         });
         setUploading(false);
       }, 1000);
@@ -123,8 +148,8 @@ export default function AddTalent() {
           ...formData,
           voice_sample: {
             url: URL.createObjectURL(file),
-            name: file.name
-          }
+            name: file.name,
+          },
         });
         setUploadingVoice(false);
       }, 1000);
@@ -134,7 +159,7 @@ export default function AddTalent() {
   const handleDeletePhoto = (index) => {
     setFormData({
       ...formData,
-      photos: formData.photos.filter((_, i) => i !== index)
+      photos: formData.photos.filter((_, i) => i !== index),
     });
   };
 
@@ -143,7 +168,7 @@ export default function AddTalent() {
     setFormData({
       ...formData,
       instagram_connected: true,
-      instagram_handle: "@talent_handle"
+      instagram_handle: "@talent_handle",
     });
     alert("Instagram connected! (Demo mode)");
   };
@@ -153,12 +178,12 @@ export default function AddTalent() {
     if (current.includes(ethnicity)) {
       setFormData({
         ...formData,
-        ethnicity: current.filter(e => e !== ethnicity)
+        ethnicity: current.filter((e) => e !== ethnicity),
       });
     } else {
       setFormData({
         ...formData,
-        ethnicity: [...current, ethnicity]
+        ethnicity: [...current, ethnicity],
       });
     }
   };
@@ -169,7 +194,8 @@ export default function AddTalent() {
     navigate(createPageUrl("AgencyDashboard"));
   };
 
-  const canProceedStep1 = formData.full_name && formData.email && formData.birthdate;
+  const canProceedStep1 =
+    formData.full_name && formData.email && formData.birthdate;
   const canProceedStep2 = formData.gender && formData.ethnicity.length > 0;
 
   const progress = (step / totalSteps) * 100;
@@ -187,29 +213,45 @@ export default function AddTalent() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Talent</h1>
-          <p className="text-gray-600">Add a new talent to your agency roster</p>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Add New Talent
+          </h1>
+          <p className="text-gray-600">
+            Add a new talent to your agency roster
+          </p>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <div className="flex gap-8">
-              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-indigo-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
+              <div
+                className={`flex items-center gap-2 ${step >= 1 ? "text-indigo-600" : "text-gray-400"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+                >
                   1
                 </div>
                 <span className="font-medium">Basic Info</span>
               </div>
-              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-indigo-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
+              <div
+                className={`flex items-center gap-2 ${step >= 2 ? "text-indigo-600" : "text-gray-400"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+                >
                   2
                 </div>
                 <span className="font-medium">Attributes</span>
               </div>
-              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-indigo-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
+              <div
+                className={`flex items-center gap-2 ${step >= 3 ? "text-indigo-600" : "text-gray-400"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+                >
                   3
                 </div>
                 <span className="font-medium">Media & Social</span>
@@ -224,32 +266,46 @@ export default function AddTalent() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Basic Information</h3>
-                <p className="text-gray-600">Let's start with the essential details</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Basic Information
+                </h3>
+                <p className="text-gray-600">
+                  Let's start with the essential details
+                </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="full_name" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="full_name"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Full Legal Name *
                   </Label>
                   <Input
                     id="full_name"
                     value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, full_name: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="Jane Marie Doe"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="stage_name" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="stage_name"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Stage Name / Professional Name
                   </Label>
                   <Input
                     id="stage_name"
                     value={formData.stage_name}
-                    onChange={(e) => setFormData({ ...formData, stage_name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, stage_name: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="Jane Doe"
                   />
@@ -258,28 +314,38 @@ export default function AddTalent() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Email Address *
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="jane@example.com"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="phone"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Phone Number
                   </Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="+1 (555) 123-4567"
                   />
@@ -287,53 +353,73 @@ export default function AddTalent() {
               </div>
 
               <div>
-                <Label htmlFor="birthdate" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="birthdate"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Date of Birth *
                 </Label>
                 <Input
                   id="birthdate"
                   type="date"
                   value={formData.birthdate}
-                  onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, birthdate: e.target.value })
+                  }
                   className="border-2 border-gray-300"
                 />
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="city" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="city"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     City
                   </Label>
                   <Input
                     id="city"
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="Los Angeles"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="state" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="state"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     State / Province
                   </Label>
                   <Input
                     id="state"
                     value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, state: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="CA"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="country" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="country"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Country
                   </Label>
                   <Input
                     id="country"
                     value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, country: e.target.value })
+                    }
                     className="border-2 border-gray-300"
                     placeholder="USA"
                   />
@@ -341,13 +427,18 @@ export default function AddTalent() {
               </div>
 
               <div>
-                <Label htmlFor="bio" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="bio"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Bio / Notes
                 </Label>
                 <Textarea
                   id="bio"
                   value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bio: e.target.value })
+                  }
                   className="border-2 border-gray-300 min-h-24"
                   placeholder="Brief bio or internal notes about this talent..."
                 />
@@ -368,8 +459,12 @@ export default function AddTalent() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Physical Attributes</h3>
-                <p className="text-gray-600">Help brands find the right match</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Physical Attributes
+                </h3>
+                <p className="text-gray-600">
+                  Help brands find the right match
+                </p>
               </div>
 
               <div>
@@ -377,18 +472,28 @@ export default function AddTalent() {
                   Gender Identity *
                 </Label>
                 <div className="grid md:grid-cols-3 gap-3">
-                  {["Female", "Male", "Non-binary", "Gender fluid", "Prefer not to say"].map((option) => (
+                  {[
+                    "Female",
+                    "Male",
+                    "Non-binary",
+                    "Gender fluid",
+                    "Prefer not to say",
+                  ].map((option) => (
                     <Card
                       key={option}
-                      onClick={() => setFormData({ ...formData, gender: option })}
+                      onClick={() =>
+                        setFormData({ ...formData, gender: option })
+                      }
                       className={`p-4 cursor-pointer transition-all ${
                         formData.gender === option
-                          ? 'border-2 border-indigo-600 bg-indigo-50'
-                          : 'border-2 border-gray-200 hover:border-gray-300'
+                          ? "border-2 border-indigo-600 bg-indigo-50"
+                          : "border-2 border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">{option}</span>
+                        <span className="font-medium text-gray-900">
+                          {option}
+                        </span>
                         {formData.gender === option && (
                           <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                         )}
@@ -409,12 +514,14 @@ export default function AddTalent() {
                       onClick={() => toggleEthnicity(ethnicity)}
                       className={`p-3 cursor-pointer transition-all ${
                         formData.ethnicity.includes(ethnicity)
-                          ? 'border-2 border-indigo-600 bg-indigo-50'
-                          : 'border-2 border-gray-200 hover:border-gray-300'
+                          ? "border-2 border-indigo-600 bg-indigo-50"
+                          : "border-2 border-gray-200 hover:border-gray-300"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">{ethnicity}</span>
+                        <span className="text-sm text-gray-700">
+                          {ethnicity}
+                        </span>
                         {formData.ethnicity.includes(ethnicity) && (
                           <CheckCircle2 className="w-4 h-4 text-indigo-600" />
                         )}
@@ -426,48 +533,78 @@ export default function AddTalent() {
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="hair_color" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="hair_color"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Hair Color
                   </Label>
-                  <Select value={formData.hair_color} onValueChange={(value) => setFormData({ ...formData, hair_color: value })}>
+                  <Select
+                    value={formData.hair_color}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, hair_color: value })
+                    }
+                  >
                     <SelectTrigger className="border-2 border-gray-300">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {hairColors.map((color) => (
-                        <SelectItem key={color} value={color}>{color}</SelectItem>
+                        <SelectItem key={color} value={color}>
+                          {color}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="eye_color" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="eye_color"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Eye Color
                   </Label>
-                  <Select value={formData.eye_color} onValueChange={(value) => setFormData({ ...formData, eye_color: value })}>
+                  <Select
+                    value={formData.eye_color}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, eye_color: value })
+                    }
+                  >
                     <SelectTrigger className="border-2 border-gray-300">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {eyeColors.map((color) => (
-                        <SelectItem key={color} value={color}>{color}</SelectItem>
+                        <SelectItem key={color} value={color}>
+                          {color}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="skin_tone" className="text-sm font-medium text-gray-700 mb-2 block">
+                  <Label
+                    htmlFor="skin_tone"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
                     Skin Tone
                   </Label>
-                  <Select value={formData.skin_tone} onValueChange={(value) => setFormData({ ...formData, skin_tone: value })}>
+                  <Select
+                    value={formData.skin_tone}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, skin_tone: value })
+                    }
+                  >
                     <SelectTrigger className="border-2 border-gray-300">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {skinTones.map((tone) => (
-                        <SelectItem key={tone} value={tone}>{tone}</SelectItem>
+                        <SelectItem key={tone} value={tone}>
+                          {tone}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -483,37 +620,56 @@ export default function AddTalent() {
                     <Input
                       type="number"
                       value={formData.height_feet}
-                      onChange={(e) => setFormData({ ...formData, height_feet: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          height_feet: e.target.value,
+                        })
+                      }
                       className="border-2 border-gray-300"
                       placeholder="5"
                       min="0"
                       max="8"
                     />
-                    <span className="text-xs text-gray-500 mt-1 block">Feet</span>
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Feet
+                    </span>
                   </div>
                   <div className="flex-1">
                     <Input
                       type="number"
                       value={formData.height_inches}
-                      onChange={(e) => setFormData({ ...formData, height_inches: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          height_inches: e.target.value,
+                        })
+                      }
                       className="border-2 border-gray-300"
                       placeholder="8"
                       min="0"
                       max="11"
                     />
-                    <span className="text-xs text-gray-500 mt-1 block">Inches</span>
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Inches
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="special_skills" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="special_skills"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Special Skills / Tags
                 </Label>
                 <Input
                   id="special_skills"
                   value={formData.special_skills}
-                  onChange={(e) => setFormData({ ...formData, special_skills: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, special_skills: e.target.value })
+                  }
                   className="border-2 border-gray-300"
                   placeholder="e.g., Dancer, Athlete, Bilingual Spanish"
                 />
@@ -544,8 +700,12 @@ export default function AddTalent() {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Media & Social</h3>
-                <p className="text-gray-600">Upload cameo and connect social accounts</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Media & Social
+                </h3>
+                <p className="text-gray-600">
+                  Upload cameo and connect social accounts
+                </p>
               </div>
 
               {/* Hero Media / Cameo */}
@@ -576,12 +736,14 @@ export default function AddTalent() {
                       <p className="text-gray-700 font-medium mb-1">
                         {uploading ? "Uploading..." : "Click to upload"}
                       </p>
-                      <p className="text-sm text-gray-500">Video (MP4, MOV) or Image (JPG, PNG)</p>
+                      <p className="text-sm text-gray-500">
+                        Video (MP4, MOV) or Image (JPG, PNG)
+                      </p>
                     </button>
                   </div>
                 ) : (
                   <div className="relative">
-                    {formData.hero_media.type === 'video' ? (
+                    {formData.hero_media.type === "video" ? (
                       <video
                         src={formData.hero_media.url}
                         controls
@@ -595,7 +757,9 @@ export default function AddTalent() {
                       />
                     )}
                     <Button
-                      onClick={() => setFormData({ ...formData, hero_media: null })}
+                      onClick={() =>
+                        setFormData({ ...formData, hero_media: null })
+                      }
                       variant="outline"
                       size="sm"
                       className="absolute top-2 right-2 bg-white"
@@ -635,7 +799,9 @@ export default function AddTalent() {
                       <p className="text-gray-700 font-medium mb-1">
                         {uploading ? "Uploading..." : "Click to upload photos"}
                       </p>
-                      <p className="text-sm text-gray-500">JPG or PNG, multiple files accepted</p>
+                      <p className="text-sm text-gray-500">
+                        JPG or PNG, multiple files accepted
+                      </p>
                     </button>
                   </div>
                 ) : (
@@ -700,9 +866,13 @@ export default function AddTalent() {
                         <Mic className="w-10 h-10 text-gray-400 mx-auto mb-3" />
                       )}
                       <p className="text-gray-700 font-medium mb-1">
-                        {uploadingVoice ? "Uploading..." : "Click to upload voice sample"}
+                        {uploadingVoice
+                          ? "Uploading..."
+                          : "Click to upload voice sample"}
                       </p>
-                      <p className="text-sm text-gray-500">MP3, WAV, or other audio format</p>
+                      <p className="text-sm text-gray-500">
+                        MP3, WAV, or other audio format
+                      </p>
                     </button>
                   </div>
                 ) : (
@@ -712,11 +882,19 @@ export default function AddTalent() {
                         <Mic className="w-5 h-5 text-green-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{formData.voice_sample.name}</p>
-                        <audio controls src={formData.voice_sample.url} className="w-full mt-2" />
+                        <p className="font-medium text-gray-900">
+                          {formData.voice_sample.name}
+                        </p>
+                        <audio
+                          controls
+                          src={formData.voice_sample.url}
+                          className="w-full mt-2"
+                        />
                       </div>
                       <Button
-                        onClick={() => setFormData({ ...formData, voice_sample: null })}
+                        onClick={() =>
+                          setFormData({ ...formData, voice_sample: null })
+                        }
                         variant="outline"
                         size="sm"
                       >
@@ -745,7 +923,9 @@ export default function AddTalent() {
                     <div className="flex items-center gap-3">
                       <Instagram className="w-6 h-6 text-purple-600" />
                       <div>
-                        <p className="font-bold text-gray-900">{formData.instagram_handle}</p>
+                        <p className="font-bold text-gray-900">
+                          {formData.instagram_handle}
+                        </p>
                         <p className="text-sm text-gray-600">Connected</p>
                       </div>
                     </div>
@@ -757,7 +937,8 @@ export default function AddTalent() {
               <Alert className="bg-blue-50 border-2 border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-900 text-sm">
-                  You can always add more media and update details later from the roster management screen.
+                  You can always add more media and update details later from
+                  the roster management screen.
                 </AlertDescription>
               </Alert>
 
