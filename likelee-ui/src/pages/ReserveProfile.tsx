@@ -1,17 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button as UIButton } from "@/components/ui/button";
+import { Input as UIInput } from "@/components/ui/input";
+import { Label as UILabel } from "@/components/ui/label";
+import { Checkbox as UICheckbox } from "@/components/ui/checkbox";
+import { Card as UICard } from "@/components/ui/card";
+import { Badge as UIBadge } from "@/components/ui/badge";
+import { Textarea as UITextarea } from "@/components/ui/textarea";
+import { RadioGroup as UIRadioGroup, RadioGroupItem as UIRadioGroupItem } from "@/components/ui/radio-group";
+import { Select as UISelect, SelectContent as UISelectContent, SelectItem as UISelectItem, SelectTrigger as UISelectTrigger, SelectValue as UISelectValue } from "@/components/ui/select";
 import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert as UIAlert, AlertDescription as UIAlertDescription } from "@/components/ui/alert";
 import { useMutation } from '@tanstack/react-query'; 
 import { base44 } from '@/api/base44Client';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/auth/AuthProvider';
+import { useNavigate } from 'react-router-dom'
+
+// Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
+const Button: any = UIButton
+const Input: any = UIInput
+const Label: any = UILabel
+const Checkbox: any = UICheckbox
+const Card: any = UICard
+const Badge: any = UIBadge
+const Textarea: any = UITextarea
+const RadioGroup: any = UIRadioGroup
+const RadioGroupItem: any = UIRadioGroupItem
+const Select: any = UISelect
+const SelectContent: any = UISelectContent
+const SelectItem: any = UISelectItem
+const SelectTrigger: any = UISelectTrigger
+const SelectValue: any = UISelectValue
+const Alert: any = UIAlert
+const AlertDescription: any = UIAlertDescription
 
 const contentTypes = [
   "Social media ads",
@@ -103,6 +124,10 @@ const vibes = ["Streetwear", "Glam", "Natural", "Classic", "Edgy", "Athletic", "
 export default function ReserveProfile() {
   const urlParams = new URLSearchParams(window.location.search);
   const creatorType = urlParams.get('type') || 'influencer'; // influencer, model_actor, athlete
+  const initialMode = (urlParams.get('mode') as 'signup'|'login') || 'login'
+  const [authMode, setAuthMode] = useState<'signup'|'login'>(initialMode)
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -149,8 +174,63 @@ export default function ReserveProfile() {
     bio: ""
   });
 
-  const totalSteps = 3;
+  const startVerification = async () => {
+    if (!authenticated || !user?.uid) {
+      alert('Please log in to start verification.')
+      return
+    }
+    try {
+      setKycLoading(true)
+      const res = await fetch(`${API_BASE}/api/kyc/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.uid }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      setKycProvider(data.provider || 'veriff')
+      setKycSessionUrl(data.session_url)
+      setKycStatus('pending')
+      setLivenessStatus('pending')
+      if (data.session_url) window.open(data.session_url, '_blank')
+    } catch (e: any) {
+      alert(`Failed to start verification: ${e?.message || e}`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const refreshVerificationStatus = async () => {
+    if (!authenticated || !user?.uid) return
+    try {
+      setKycLoading(true)
+      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.uid)}`)
+      if (!res.ok) throw new Error(await res.text())
+      const rows = await res.json()
+      const row = Array.isArray(rows) && rows.length ? rows[0] : null
+      if (row) {
+        if (row.kyc_status) setKycStatus(row.kyc_status)
+        if (row.liveness_status) setLivenessStatus(row.liveness_status)
+        if (row.kyc_provider) setKycProvider(row.kyc_provider)
+      }
+    } catch (e: any) {
+      alert(`Failed to fetch verification status: ${e?.message || e}`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
+
+  // Verification state
+  const { initialized, authenticated, user } = useAuth()
+  const [kycStatus, setKycStatus] = useState<'not_started'|'pending'|'approved'|'rejected'>('not_started')
+  const [livenessStatus, setLivenessStatus] = useState<'not_started'|'pending'|'approved'|'rejected'>('not_started')
+  const [kycProvider, setKycProvider] = useState<string | null>(null)
+  const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null)
+  const [kycLoading, setKycLoading] = useState(false)
+  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || ''
 
   const getStepTitle = () => {
     if (step === 1) return "Create Your Account";
@@ -168,7 +248,7 @@ export default function ReserveProfile() {
   };
 
   // Initial profile creation (Step 1)
-  const createInitialProfileMutation = useMutation({
+  const createInitialProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
       try {
         const profile = await base44.entities.FaceProfile.create({
@@ -195,20 +275,20 @@ export default function ReserveProfile() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Unknown error occurred";
+      const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Unknown error occurred";
       alert(`Failed to create profile: ${errorMessage}. Please try again.`);
     }
   });
 
   // Profile update (Step 3)
-  const updateProfileMutation = useMutation({
+  const updateProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
       if (!profileId) {
         throw new Error("Profile ID not found for update.");
       }
       
       try {
-        const updateData = {
+        const updateData: any = {
           city: data.city || "",
           state: data.state || "",
           birthdate: data.birthdate || "",
@@ -254,12 +334,12 @@ export default function ReserveProfile() {
       }
     },
     onSuccess: () => {
-      console.log("Update mutation succeeded, showing success screen");
-      setSubmitted(true);
+      // Proceed to verification step
+      setStep(4)
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Unknown error occurred";
+      const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Unknown error occurred";
       alert(`Failed to update profile: ${errorMessage}. Please try again.`);
     }
   });
@@ -375,6 +455,25 @@ export default function ReserveProfile() {
                 </p>
               </div>
 
+              {/* Auth mode switch */}
+              <div className="flex gap-2">
+                <Button
+                  variant={authMode === 'signup' ? 'default' : 'outline'}
+                  className="rounded-none border-2 border-black"
+                  onClick={() => setAuthMode('signup')}
+                >
+                  Sign up
+                </Button>
+                <Button
+                  variant={authMode === 'login' ? 'default' : 'outline'}
+                  className="rounded-none border-2 border-black"
+                  onClick={() => setAuthMode('login')}
+                >
+                  Log in
+                </Button>
+              </div>
+
+              {authMode === 'signup' ? (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
@@ -426,24 +525,64 @@ export default function ReserveProfile() {
                     id="full_name"
                     type="text"
                     value={creatorType === 'model_actor' ? (formData.stage_name || formData.full_name) : formData.full_name}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      [creatorType === 'model_actor' ? 'stage_name' : 'full_name']: e.target.value 
+                    onChange={(e: any) => setFormData({
+                      ...formData,
+                      [creatorType === 'model_actor' ? 'stage_name' : 'full_name']: e.target.value
                     })}
                     className="border-2 border-gray-300 rounded-none"
                     placeholder={creatorType === 'model_actor' ? "Your name or stage name" : "Your full name"}
                   />
                 </div>
+                <Button
+                  onClick={handleFirstContinue} 
+                  disabled={createInitialProfileMutation.isPending} 
+                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                >
+                  {createInitialProfileMutation.isPending ? "Saving..." : "Continue"}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
               </div>
-
-              <Button
-                onClick={handleFirstContinue} 
-                disabled={createInitialProfileMutation.isPending} 
-                className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-              >
-                {createInitialProfileMutation.isPending ? "Saving..." : "Continue"}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+              ) : (
+                <form
+                  className="space-y-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    // Reuse formData.email/password
+                    await login(formData.email, formData.password)
+                    navigate('/CreatorDashboard')
+                  }}
+                >
+                  <div>
+                    <Label htmlFor="login_email" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="login_email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="login_password" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Password
+                    </Label>
+                    <Input
+                      id="login_password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full h-12 bg-black text-white border-2 border-black rounded-none">
+                    Log in
+                  </Button>
+                </form>
+              )}
             </div>
           )}
 
@@ -966,11 +1105,76 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} 
+                  disabled={updateProfileMutation.isPending}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {updateProfileMutation.isPending ? "Submitting..." : "Create My Account"}
+                  {updateProfileMutation.isPending ? "Saving..." : "Save & Continue to Verification"}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Verify Identity */}
+          {step === 4 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Verify Identity</h3>
+                <p className="text-gray-600">Complete KYC and liveness to activate your profile.</p>
+              </div>
+
+              {!initialized ? (
+                <p className="text-gray-700">Loading…</p>
+              ) : !authenticated ? (
+                <div className="p-4 border-2 border-amber-500 bg-amber-50">
+                  <p className="text-amber-900 mb-3">Please log in to start verification.</p>
+                  <Button onClick={() => navigate('/Login')} className="rounded-none border-2 border-black bg-black text-white">Log in</Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 border-2 border-gray-200">
+                      <p className="text-sm text-gray-600">KYC status</p>
+                      <p className="text-lg font-semibold">{kycStatus}</p>
+                    </div>
+                    <div className="p-4 border-2 border-gray-200">
+                      <p className="text-sm text-gray-600">Liveness status</p>
+                      <p className="text-lg font-semibold">{livenessStatus}</p>
+                    </div>
+                    <div className="p-4 border-2 border-gray-200">
+                      <p className="text-sm text-gray-600">Provider</p>
+                      <p className="text-lg font-semibold">{kycProvider || 'veriff'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button onClick={startVerification} disabled={kycLoading} className="rounded-none border-2 border-black bg-black text-white">
+                      {kycLoading ? 'Starting…' : (kycStatus === 'not_started' ? 'Start verification' : 'Restart verification')}
+                    </Button>
+                    <Button onClick={refreshVerificationStatus} variant="outline" className="rounded-none border-2 border-black">Refresh status</Button>
+                    <Button
+                      onClick={() => setSubmitted(true)}
+                      disabled={!(kycStatus === 'approved' && livenessStatus === 'approved')}
+                      className="rounded-none border-2 border-black bg-green-600 text-white disabled:opacity-50"
+                    >
+                      Finish
+                    </Button>
+                  </div>
+
+                  {kycSessionUrl && (
+                    <p className="text-sm text-gray-500">If a new window didn’t open, <a className="underline" href={kycSessionUrl} target="_blank" rel="noreferrer">click here</a>.</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back
                 </Button>
               </div>
             </div>

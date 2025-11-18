@@ -18,8 +18,9 @@ export default function Layout({ children, currentPageName }) {
 
   // Track page views on route change
   useEffect(() => {
-    if (window.gtag) {
-      window.gtag('config', 'G-3D3HD3NBKY', {
+    const gtag = (window as any).gtag
+    if (gtag) {
+      gtag('config', 'G-3D3HD3NBKY', {
         page_path: location.pathname + location.search,
       });
     }
@@ -27,6 +28,9 @@ export default function Layout({ children, currentPageName }) {
 
   // Initialize Google Analytics
   useEffect(() => {
+    if (!import.meta.env.PROD) {
+      return
+    }
     // Load Google Analytics script
     const script1 = document.createElement('script');
     script1.async = true;
@@ -55,9 +59,9 @@ export default function Layout({ children, currentPageName }) {
       document.title = "Likelee - Fueling the Income Ecosystem for Creators in the AI Era";
       
       // Update or create meta description
-      let metaDescription = document.querySelector('meta[name="description"]');
+      let metaDescription = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
       if (!metaDescription) {
-        metaDescription = document.createElement('meta');
+        metaDescription = document.createElement('meta') as HTMLMetaElement;
         metaDescription.name = "description";
         document.head.appendChild(metaDescription);
       }
@@ -73,9 +77,9 @@ export default function Layout({ children, currentPageName }) {
       ];
 
       ogTags.forEach(tag => {
-        let meta = document.querySelector(`meta[property="${tag.property}"]`);
+        let meta = document.querySelector(`meta[property="${tag.property}"]`) as HTMLMetaElement | null;
         if (!meta) {
-          meta = document.createElement('meta');
+          meta = document.createElement('meta') as HTMLMetaElement;
           meta.setAttribute('property', tag.property);
           document.head.appendChild(meta);
         }
@@ -90,9 +94,9 @@ export default function Layout({ children, currentPageName }) {
       ];
 
       twitterTags.forEach(tag => {
-        let meta = document.querySelector(`meta[name="${tag.name}"]`);
+        let meta = document.querySelector(`meta[name="${tag.name}"]`) as HTMLMetaElement | null;
         if (!meta) {
-          meta = document.createElement('meta');
+          meta = document.createElement('meta') as HTMLMetaElement;
           meta.name = tag.name;
           document.head.appendChild(meta);
         }
@@ -100,9 +104,9 @@ export default function Layout({ children, currentPageName }) {
       });
 
       // Add canonical link
-      let canonical = document.querySelector('link[rel="canonical"]');
+      let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (!canonical) {
-        canonical = document.createElement('link');
+        canonical = document.createElement('link') as HTMLLinkElement;
         canonical.rel = 'canonical';
         document.head.appendChild(canonical);
       }

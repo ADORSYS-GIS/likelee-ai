@@ -6,7 +6,19 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: true
+    allowedHosts: true,
+    host: true,
+    port: 5173,
+    strictPort: true,
+    watch: {
+      usePolling: true,
+      interval: 500,
+    },
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+      protocol: 'ws',
+    },
   },
   resolve: {
     alias: {
@@ -21,4 +33,4 @@ export default defineConfig({
       },
     },
   },
-}) 
+})
