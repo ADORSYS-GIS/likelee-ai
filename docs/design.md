@@ -46,7 +46,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 ## 5. Tech Stack
 
 - Frontend: React 18.2.0, TypeScript, Vite 6.5, Tailwind CSS 3.4.16.
-- Backend: Firebase (Auth, Realtime DB, Storage). Future: functions/services as needed.
+- Backend: Firebase (Auth, Realtime DB, Storage). Future: functions/services as needed, Rust axum framework.
  
 
 ## 6. External Integrations

@@ -1,7 +1,7 @@
 import React from 'react'
 import Layout from './Layout'
 import { useAuth } from '@/auth/AuthProvider'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function Register() {
   const { register, initialized, authenticated } = useAuth()
@@ -11,12 +11,27 @@ export default function Register() {
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+  const creatorType = React.useMemo(() => new URLSearchParams(location.search).get('type'), [location.search])
 
   React.useEffect(() => {
-    if (initialized && authenticated) {
-      navigate('/CreatorDashboard', { replace: true })
+    // If a creator type is supplied, delegate the entire flow to ReserveProfile (Step 1 handles signup)
+    if (creatorType) {
+      navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`, { replace: true })
+      return
     }
-  }, [initialized, authenticated, navigate])
+    if (initialized && authenticated) {
+      if (creatorType) {
+        navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`, { replace: true })
+      } else {
+        navigate('/CreatorDashboard', { replace: true })
+      }
+    }
+  }, [initialized, authenticated, navigate, creatorType])
+
+  if (creatorType) {
+    return null
+  }
 
   return (
     <Layout currentPageName="Register">
@@ -35,7 +50,11 @@ export default function Register() {
               setLoading(true)
               try {
                 await register(email, password, name)
-                navigate('/CreatorDashboard')
+                if (creatorType) {
+                  navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`)
+                } else {
+                  navigate('/CreatorDashboard')
+                }
               } catch (err: any) {
                 setError(err?.message ?? 'Failed to register')
               } finally {

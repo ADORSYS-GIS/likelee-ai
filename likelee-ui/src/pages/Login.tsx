@@ -1,7 +1,7 @@
 import React from 'react'
 import Layout from './Layout'
 import { useAuth } from '@/auth/AuthProvider'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function Login() {
   const { login, initialized, authenticated } = useAuth()
@@ -10,12 +10,18 @@ export default function Login() {
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+  const creatorType = React.useMemo(() => new URLSearchParams(location.search).get('type'), [location.search])
 
   React.useEffect(() => {
     if (initialized && authenticated) {
-      navigate('/CreatorDashboard', { replace: true })
+      if (creatorType) {
+        navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`, { replace: true })
+      } else {
+        navigate('/CreatorDashboard', { replace: true })
+      }
     }
-  }, [initialized, authenticated, navigate])
+  }, [initialized, authenticated, navigate, creatorType])
 
   return (
     <Layout currentPageName="Login">
@@ -34,7 +40,11 @@ export default function Login() {
               setLoading(true)
               try {
                 await login(email, password)
-                navigate('/CreatorDashboard')
+                if (creatorType) {
+                  navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`)
+                } else {
+                  navigate('/CreatorDashboard')
+                }
               } catch (err: any) {
                 setError(err?.message ?? 'Failed to sign in')
               } finally {

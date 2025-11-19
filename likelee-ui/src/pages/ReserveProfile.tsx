@@ -11,7 +11,6 @@ import { Select as UISelect, SelectContent as UISelectContent, SelectItem as UIS
 import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
 import { Alert as UIAlert, AlertDescription as UIAlertDescription } from "@/components/ui/alert";
 import { useMutation } from '@tanstack/react-query'; 
-import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom'
@@ -132,7 +131,8 @@ export default function ReserveProfile() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
-  const [profileId, setProfileId] = useState(null); 
+  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null); 
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -251,26 +251,57 @@ export default function ReserveProfile() {
   const createInitialProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
       try {
-        const profile = await base44.entities.FaceProfile.create({
+        const payload: any = {
           email: data.email,
+          full_name: data.creator_type === 'model_actor' ? (data.stage_name || data.full_name) : data.full_name,
           creator_type: data.creator_type,
-          full_name: data.full_name || data.stage_name,
-          status: "waitlist",
           content_types: [],
+          content_other: null,
           industries: [],
+          primary_platform: null,
+          platform_handle: null,
+          work_types: [],
+          representation_status: null,
+          headshot_url: null,
+          sport: null,
+          athlete_type: null,
+          school_name: null,
+          age: null,
+          languages: null,
+          instagram_handle: null,
+          twitter_handle: null,
+          brand_categories: [],
+          bio: null,
+          city: data.city || null,
+          state: data.state || null,
+          birthdate: data.birthdate || null,
           ethnicity: [],
+          gender: data.gender || null,
           vibes: [],
-          visibility: "private"
-        });
-        console.log("Profile created successfully:", profile);
-        return profile;
+          visibility: "private",
+          status: "waitlist",
+          created_by_id: "anonymous",
+          created_by: "anonymous",
+          is_sample: false,
+        }
+        const res = await fetch(`${API_BASE}/api/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        const profile = await res.json()
+        console.log('Profile created successfully:', profile)
+        return profile
       } catch (error) {
-        console.error("Detailed error:", error);
-        throw error;
+        console.error('Detailed error:', error)
+        throw error
       }
     },
     onSuccess: (data) => {
-      setProfileId(data.id);
+      // If backend returns an array (PostgREST insert/update), pick first
+      const id = Array.isArray(data) && data.length ? (data[0]?.id || null) : (data?.id || null)
+      if (id) setProfileId(id)
       setStep(2);
     },
     onError: (error) => {
@@ -283,51 +314,50 @@ export default function ReserveProfile() {
   // Profile update (Step 3)
   const updateProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
-      if (!profileId) {
-        throw new Error("Profile ID not found for update.");
-      }
       
       try {
         const updateData: any = {
+          email: data.email,
+          full_name: data.creator_type === 'model_actor' ? (data.stage_name || data.full_name) : data.full_name,
+          creator_type: data.creator_type,
+          content_types: data.content_types || [],
+          content_other: data.content_other || null,
+          industries: data.industries || [],
+          primary_platform: data.primary_platform || null,
+          platform_handle: data.platform_handle || null,
+          work_types: data.work_types || [],
+          representation_status: data.representation_status || "",
+          headshot_url: data.headshot_url || "",
+          sport: data.sport || null,
+          athlete_type: data.athlete_type || null,
+          school_name: data.school_name || null,
+          age: data.age || null,
+          languages: data.languages || null,
+          instagram_handle: data.instagram_handle || null,
+          twitter_handle: data.twitter_handle || null,
+          brand_categories: data.brand_categories || [],
+          bio: data.bio || null,
           city: data.city || "",
           state: data.state || "",
           birthdate: data.birthdate || "",
-          gender: data.gender || "",
           ethnicity: data.ethnicity || [],
+          gender: data.gender || "",
           vibes: data.vibes || [],
           visibility: data.visibility || "private",
-          status: "waitlist"
-        };
-
-        // Add type-specific fields
-        if (data.creator_type === 'influencer') {
-          updateData.content_types = data.content_types || [];
-          updateData.content_other = data.content_other || "";
-          updateData.industries = data.industries || [];
-          updateData.primary_platform = data.primary_platform || "";
-          updateData.platform_handle = data.platform_handle || "";
-        } else if (data.creator_type === 'model_actor') {
-          updateData.work_types = data.work_types || [];
-          updateData.representation_status = data.representation_status || "";
-          updateData.headshot_url = data.headshot_url || "";
-        } else if (data.creator_type === 'athlete') {
-          updateData.sport = data.sport || "";
-          updateData.athlete_type = data.athlete_type || "";
-          updateData.school_name = data.school_name || "";
-          updateData.age = data.age || "";
-          updateData.languages = data.languages || "";
-          updateData.instagram_handle = data.instagram_handle || "";
-          updateData.twitter_handle = data.twitter_handle || "";
-          updateData.brand_categories = data.brand_categories || [];
-          updateData.bio = data.bio || "";
+          status: "waitlist",
         }
 
-        console.log("Updating profile with data:", updateData);
+        console.log("Upserting profile with data:", updateData);
 
-        const updated = await base44.entities.FaceProfile.update(profileId, updateData);
-        
-        console.log("Profile updated successfully:", updated);
-        return updated;
+        const res = await fetch(`${API_BASE}/api/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData),
+        })
+        if (!res.ok) throw new Error(await res.text())
+        const updated = await res.json()
+        console.log('Profile updated successfully:', updated)
+        return updated
       } catch (error) {
         console.error("Detailed update error:", error);
         throw error;
@@ -370,10 +400,51 @@ export default function ReserveProfile() {
       return;
     }
     
-    createInitialProfileMutation.mutate(formData);
+    // Check email availability before proceeding
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/email/available?email=${encodeURIComponent(formData.email)}`)
+        if (!res.ok) throw new Error(await res.text())
+        const data = await res.json()
+        if (!data.available) {
+          alert('This email is already registered. Please log in instead.')
+          return
+        }
+        createInitialProfileMutation.mutate(formData)
+      } catch (e: any) {
+        alert(`Failed to validate email: ${e?.message || e}`)
+      }
+    })()
   };
 
   const handleNext = () => {
+    // Step validations
+    if (step === 2 && creatorType === 'influencer') {
+      if (!formData.city?.trim()) {
+        alert('City is required.');
+        return;
+      }
+      if (!formData.state?.trim()) {
+        alert('State is required.');
+        return;
+      }
+      if (!formData.birthdate) {
+        alert('Birthdate is required.');
+        return;
+      }
+      // 18+ check
+      const birth = new Date(formData.birthdate);
+      const today = new Date();
+      const age = today.getFullYear() - birth.getFullYear() - ((today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) ? 1 : 0);
+      if (isFinite(age) && age < 18) {
+        alert('You must be 18 or older.');
+        return;
+      }
+      if (!formData.gender?.trim()) {
+        alert('Please select how you identify.');
+        return;
+      }
+    }
     if (step < totalSteps) setStep(step + 1);
   };
 
@@ -382,6 +453,29 @@ export default function ReserveProfile() {
   };
 
   const handleSubmit = async () => {
+    // Step 3 validations for influencer
+    if (creatorType === 'influencer') {
+      if (!formData.content_types || formData.content_types.length === 0) {
+        alert('Select at least one campaign type.');
+        return;
+      }
+      if (!formData.industries || formData.industries.length === 0) {
+        alert('Select at least one industry.');
+        return;
+      }
+      if (!formData.primary_platform?.trim()) {
+        alert('Primary platform is required.');
+        return;
+      }
+      if (!formData.platform_handle?.trim()) {
+        alert('Handle is required.');
+        return;
+      }
+      if (!formData.visibility) {
+        alert('Please select a profile visibility.');
+        return;
+      }
+    }
     console.log("Submitting final form data:", formData);
     updateProfileMutation.mutate(formData);
   };
@@ -1147,11 +1241,12 @@ export default function ReserveProfile() {
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     <Button onClick={startVerification} disabled={kycLoading} className="rounded-none border-2 border-black bg-black text-white">
                       {kycLoading ? 'Starting…' : (kycStatus === 'not_started' ? 'Start verification' : 'Restart verification')}
                     </Button>
                     <Button onClick={refreshVerificationStatus} variant="outline" className="rounded-none border-2 border-black">Refresh status</Button>
+                    <Button onClick={() => setShowSkipModal(true)} variant="outline" className="rounded-none border-2 border-amber-600 text-amber-700">Skip for Now</Button>
                     <Button
                       onClick={() => setSubmitted(true)}
                       disabled={!(kycStatus === 'approved' && livenessStatus === 'approved')}
@@ -1177,6 +1272,27 @@ export default function ReserveProfile() {
                   Back
                 </Button>
               </div>
+              {/* Skip Confirmation Modal */}
+              {showSkipModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowSkipModal(false)} />
+                  <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
+                    <h4 className="text-lg font-bold mb-2">Skip Identity Verification?</h4>
+                    <p className="text-sm text-gray-700 mb-4">Hey! If you choose to skip now, your profile will still be created, but you won't be able to work with brands until you complete verification.</p>
+                    <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
+                      You can complete verification anytime from your dashboard.
+                    </div>
+                    <div className="flex gap-3 justify-end">
+                      <Button variant="outline" className="rounded-none border-2 border-black" onClick={() => setShowSkipModal(false)}>
+                        ← Go Back
+                      </Button>
+                      <Button className="rounded-none border-2 border-black bg-black text-white" onClick={() => { setShowSkipModal(false); setSubmitted(true); }}>
+                        Skip for Now - I'm Sure
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </Card>
