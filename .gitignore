@@ -94,6 +94,8 @@ dist
 
 # Docusaurus build output
 .docusaurus
+likelee-server/Cargo.lock
+likelee-server/target
 
 # Gatsby build output
 .cache/
