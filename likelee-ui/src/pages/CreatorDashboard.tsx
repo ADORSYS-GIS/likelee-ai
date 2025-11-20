@@ -26,7 +26,9 @@ import {
   Send, MessageSquare, Copy, ArrowRight, RefreshCw
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/auth/AuthProvider'
+import CameoUpload from './CameoUpload'
 
 // Voice recording scripts for different emotions
 const VOICE_SCRIPTS = {
@@ -1012,6 +1014,9 @@ export default function CreatorDashboard() {
           </AlertDescription>
         </Alert>
       </Card>
+
+      {/* Reference Photos (Front/Left/Right) before Cameo Video */}
+      <CameoUpload />
 
       {/* MY CAMEO Section */}
       <Card className="p-6 bg-white border border-gray-200">
@@ -2650,22 +2655,91 @@ export default function CreatorDashboard() {
         <div className="p-6 border-b border-gray-200">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
-              <img 
-                src={creator.profile_photo}
-                alt={creator.name}
-                className={`w-12 h-12 rounded-full object-cover border-2 ${creator?.kyc_status === 'approved' ? 'border-red-500' : 'border-[#32C8D1]'}`}
-              />
+              {creator?.kyc_status === 'approved' ? (
+                <Avatar className="w-12 h-12 border-2 border-green-500">
+                  {creator?.profile_photo ? (
+                    <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                  ) : null}
+                  <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                    {(() => {
+                      const base = (creator?.name || creator?.email || '').trim();
+                      if (!base) return 'U';
+                      const parts = base.includes(' ')
+                        ? base.split(/\s+/)
+                        : base.split('@')[0].split(/\.|_/);
+                      const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                      return initials || 'U';
+                    })()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="w-14 h-14 rounded-full p-[2px] animate-spin" style={{ background: 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)', animationDuration: '3s' }}>
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <Avatar className="w-12 h-12">
+                      {creator?.profile_photo ? (
+                        <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                        {(() => {
+                          const base = (creator?.name || creator?.email || '').trim();
+                          if (!base) return 'U';
+                          const parts = base.includes(' ')
+                            ? base.split(/\s+/)
+                            : base.split('@')[0].split(/\.|_/);
+                          const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                          return initials || 'U';
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{creator.name}</p>
-                <p className="text-xs text-gray-600 truncate">{creator.email}</p>
               </div>
             </div>
           ) : (
-            <img 
-              src={creator.profile_photo}
-              alt={creator.name}
-              className={`w-12 h-12 rounded-full object-cover border-2 ${creator?.kyc_status === 'approved' ? 'border-red-500' : 'border-[#32C8D1]'} mx-auto`}
-            />
+            <div className="mx-auto">
+              {creator?.kyc_status === 'approved' ? (
+                <Avatar className="w-12 h-12 border-2 border-green-500">
+                  {creator?.profile_photo ? (
+                    <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                  ) : null}
+                  <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                    {(() => {
+                      const base = (creator?.name || creator?.email || '').trim();
+                      if (!base) return 'U';
+                      const parts = base.includes(' ')
+                        ? base.split(/\s+/)
+                        : base.split('@')[0].split(/\.|_/);
+                      const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                      return initials || 'U';
+                    })()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="w-14 h-14 rounded-full p-[2px] animate-spin" style={{ background: 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)', animationDuration: '3s' }}>
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <Avatar className="w-12 h-12">
+                      {creator?.profile_photo ? (
+                        <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                        {(() => {
+                          const base = (creator?.name || creator?.email || '').trim();
+                          if (!base) return 'U';
+                          const parts = base.includes(' ')
+                            ? base.split(/\s+/)
+                            : base.split('@')[0].split(/\.|_/);
+                          const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                          return initials || 'U';
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

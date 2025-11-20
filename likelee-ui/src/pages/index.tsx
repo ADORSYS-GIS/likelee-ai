@@ -95,6 +95,7 @@ import SAGAFTRAAlignment from "./SAGAFTRAAlignment";
 import AboutUs from "./AboutUs";
 
 import CommercialRights from "./CommercialRights";
+import CameoUpload from "./CameoUpload";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -173,6 +174,7 @@ const PAGES = {
     TalentDashboard: TalentDashboard,
     
     UploadProject: UploadProject,
+    CameoUpload: CameoUpload,
     
     DemoTalentDashboard: DemoTalentDashboard,
     
@@ -324,6 +326,8 @@ function PagesContent() {
                 <Route path="/AboutUs" element={<AboutUs />} />
                 
                 <Route path="/CommercialRights" element={<CommercialRights />} />
+                
+                <Route path="/CameoUpload" element={<ProtectedRoute><CameoUpload /></ProtectedRoute>} />
                 
                 <Route path="/Login" element={<Login />} />
                 <Route path="/Register" element={<Register />} />
