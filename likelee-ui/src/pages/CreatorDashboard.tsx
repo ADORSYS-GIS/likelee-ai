@@ -400,11 +400,11 @@ export default function CreatorDashboard() {
   // Fetch per-user dashboard data
   useEffect(() => {
     if (!initialized) return
-    if (!authenticated || !user?.uid) return
+    if (!authenticated || !user?.id) return
     const abort = new AbortController()
     ;(async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.uid)}`, { signal: abort.signal })
+        const res = await fetch(`${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`, { signal: abort.signal })
         if (!res.ok) throw new Error(await res.text())
         const json = await res.json()
         const profile = json.profile || {}
@@ -425,6 +425,9 @@ export default function CreatorDashboard() {
           accept_negotiations: creator.accept_negotiations ?? true,
           kyc_status: profile.kyc_status,
           verified_at: profile.verified_at,
+          cameo_front_url: profile.cameo_front_url,
+          cameo_left_url: profile.cameo_left_url,
+          cameo_right_url: profile.cameo_right_url,
         })
         // If backend provides arrays later, replace mocks
         if (Array.isArray(json.campaigns) && json.campaigns.length) setActiveCampaigns(json.campaigns)
@@ -436,11 +439,11 @@ export default function CreatorDashboard() {
       }
     })()
     return () => abort.abort()
-  }, [initialized, authenticated, user?.uid])
+  }, [initialized, authenticated, user?.id])
 
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
-    if (!authenticated || !user?.uid) {
+    if (!authenticated || !user?.id) {
       alert('Please log in to start verification.')
       return
     }
@@ -449,7 +452,7 @@ export default function CreatorDashboard() {
       const res = await fetch(`${API_BASE}/api/kyc/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.uid }),
+        body: JSON.stringify({ user_id: user.id }),
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
@@ -462,10 +465,10 @@ export default function CreatorDashboard() {
   }
 
   const refreshVerificationFromDashboard = async () => {
-    if (!authenticated || !user?.uid) return
+    if (!authenticated || !user?.id) return
     try {
       setKycLoading(true)
-      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.uid)}`)
+      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.id)}`)
       if (!res.ok) throw new Error(await res.text())
       const rows = await res.json()
       const row = Array.isArray(rows) && rows.length ? rows[0] : null
@@ -1016,6 +1019,37 @@ export default function CreatorDashboard() {
       </Card>
 
       {/* Reference Photos (Front/Left/Right) before Cameo Video */}
+      {(creator?.cameo_front_url || creator?.cameo_left_url || creator?.cameo_right_url) && (
+        <Card className="p-6 bg-white border border-gray-200 mb-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Reference Photos</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Front</div>
+              {creator?.cameo_front_url ? (
+                <img src={creator.cameo_front_url} alt="Front" className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg" />
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">No image</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Left</div>
+              {creator?.cameo_left_url ? (
+                <img src={creator.cameo_left_url} alt="Left" className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg" />
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">No image</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Right</div>
+              {creator?.cameo_right_url ? (
+                <img src={creator.cameo_right_url} alt="Right" className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg" />
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">No image</div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
       <CameoUpload />
 
       {/* MY CAMEO Section */}

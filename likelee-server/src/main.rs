@@ -12,6 +12,7 @@ use chrono::Utc;
 use dotenvy::dotenv;
 use postgrest::Postgrest;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tower_http::cors::{Any, CorsLayer};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -24,6 +25,12 @@ struct VeriffConfig {
     base_url: String,
     api_key: String,
     shared_secret: String,
+}
+
+#[derive(Clone)]
+struct DuixConfig {
+    base_url: String,
+    auth_token: String,
 }
 
 // Upsert profile by email (and id if provided)
@@ -108,7 +115,7 @@ async fn get_dashboard(State(state): State<AppState>, Query(q): Query<DashboardQ
     let resp = state
         .pg
         .from("profiles")
-        .select("id, email, full_name, city, state, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at")
+        .select("id, email, full_name, city, state, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url")
         .eq("id", &q.user_id)
         .execute()
         .await
@@ -189,11 +196,14 @@ async fn check_email(State(state): State<AppState>, Query(q): Query<EmailQuery>)
 struct AppState {
     pg: Postgrest,
     veriff: VeriffConfig,
+    duix: DuixConfig,
 }
 
 #[derive(Deserialize)]
 struct SessionRequest {
     user_id: String,
+    #[serde(default)]
+    return_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -276,7 +286,7 @@ async fn create_session(State(state): State<AppState>, Json(req): Json<SessionRe
         verification: VeriffVerification {
             vendor_data: &req.user_id,
             lang: None,
-            features: None,
+            features: None, // Some accounts do not support requested features; rely on webhook/polling and manual return
         },
     };
     let body_str = serde_json::to_string(&veriff_body).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -492,6 +502,8 @@ async fn main() {
     let veriff_base_url = env::var("VERIFF_BASE_URL").expect("VERIFF_BASE_URL is required");
     let veriff_api_key = env::var("VERIFF_API_KEY").expect("VERIFF_API_KEY is required");
     let veriff_shared_secret = env::var("VERIFF_SHARED_SECRET").expect("VERIFF_SHARED_SECRET is required");
+    let duix_base_url = env::var("DUIX_BASE_URL").unwrap_or_else(|_| "http://127.0.0.1:7860".into());
+    let duix_auth_token = env::var("DUIX_AUTH_TOKEN").unwrap_or_else(|_| "change-me".into());
 
     // Init tracing
     let filter = tracing_subscriber::EnvFilter::try_from_default_env()
@@ -506,6 +518,7 @@ async fn main() {
     let state = AppState { 
         pg,
         veriff: VeriffConfig { base_url: veriff_base_url, api_key: veriff_api_key, shared_secret: veriff_shared_secret },
+        duix: DuixConfig { base_url: duix_base_url, auth_token: duix_auth_token },
     };
 
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
@@ -514,6 +527,7 @@ async fn main() {
         .route("/api/kyc/session", post(create_session))
         .route("/api/kyc/status", get(get_status))
         .route("/api/dashboard", get(get_dashboard))
+        .route("/api/avatar/generate", post(generate_avatar))
         .route("/webhooks/kyc/veriff", post(veriff_webhook))
         .route("/api/email/available", get(check_email))
         .route("/api/profile", post(upsert_profile))

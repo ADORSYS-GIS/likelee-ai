@@ -1,11 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useAuth } from '@/auth/AuthProvider'
-import { firebaseStorage } from '@/lib/firebase'
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-} from 'firebase/storage'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -110,40 +105,86 @@ export default function CameoUpload() {
     }))
   }
 
+  // Prefill from existing profile cameo_*_url if present
+  React.useEffect(() => {
+    (async () => {
+      try {
+        if (!user || !supabase) return
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('cameo_front_url, cameo_left_url, cameo_right_url')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (!error && data && (data.cameo_front_url || data.cameo_left_url || data.cameo_right_url)) {
+          setStates((prev) => ({
+            front: {
+              ...prev.front,
+              previewUrl: data.cameo_front_url || prev.front.previewUrl,
+              downloadUrl: data.cameo_front_url || prev.front.downloadUrl,
+              uploading: false,
+              progress: data.cameo_front_url ? 100 : prev.front.progress,
+            },
+            left: {
+              ...prev.left,
+              previewUrl: data.cameo_left_url || prev.left.previewUrl,
+              downloadUrl: data.cameo_left_url || prev.left.downloadUrl,
+              uploading: false,
+              progress: data.cameo_left_url ? 100 : prev.left.progress,
+            },
+            right: {
+              ...prev.right,
+              previewUrl: data.cameo_right_url || prev.right.previewUrl,
+              downloadUrl: data.cameo_right_url || prev.right.downloadUrl,
+              uploading: false,
+              progress: data.cameo_right_url ? 100 : prev.right.progress,
+            },
+          }) as any)
+          return
+        }
+        // Fallback: read from Storage if DB columns are empty or row missing (no early profile creation)
+        const prefix = `faces/${user.id}/reference`
+        const { data: files, error: listErr } = await supabase.storage.from('profiles').list(prefix, { limit: 100 })
+        if (listErr || !files) return
+        const byKey: Record<string, string> = {}
+        files.forEach((f) => {
+          const name = f.name.toLowerCase()
+          let key: ViewKey | null = null
+          if (name.includes('front')) key = 'front'
+          else if (name.includes('left')) key = 'left'
+          else if (name.includes('right')) key = 'right'
+          if (key) {
+            const { data: pub } = supabase.storage.from('profiles').getPublicUrl(`${prefix}/${f.name}`)
+            byKey[key] = pub.publicUrl
+          }
+        })
+        setStates((prev) => ({
+          front: { ...prev.front, previewUrl: byKey.front || prev.front.previewUrl, downloadUrl: byKey.front || prev.front.downloadUrl, uploading: false, progress: byKey.front ? 100 : prev.front.progress },
+          left: { ...prev.left, previewUrl: byKey.left || prev.left.previewUrl, downloadUrl: byKey.left || prev.left.downloadUrl, uploading: false, progress: byKey.left ? 100 : prev.left.progress },
+          right: { ...prev.right, previewUrl: byKey.right || prev.right.previewUrl, downloadUrl: byKey.right || prev.right.downloadUrl, uploading: false, progress: byKey.right ? 100 : prev.right.progress },
+        }) as any)
+      } catch (_) {}
+    })()
+  }, [user])
+
   const uploadOne = async (key: ViewKey, file: File): Promise<string> => {
     if (!user) throw new Error('Not authenticated')
-    const path = `faces/${user.uid}/reference/${key}.jpg`
-    const storageRef = ref(firebaseStorage, path)
-
-    const meta = { contentType: file.type || 'image/jpeg' }
-    const task = uploadBytesResumable(storageRef, file, meta)
-
-    return new Promise((resolve, reject) => {
-      setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: true, progress: 0, error: undefined } }))
-
-      task.on(
-        'state_changed',
-        (snap) => {
-          const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
-          setStates((prev) => ({ ...prev, [key]: { ...prev[key], progress: pct } }))
-        },
-        (err) => {
-          console.error(err)
-          setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, error: err.message } }))
-          reject(err)
-        },
-        async () => {
-          try {
-            const url = await getDownloadURL(task.snapshot.ref)
-            setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, downloadUrl: url, progress: 100 } }))
-            resolve(url)
-          } catch (e: any) {
-            setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, error: e.message } }))
-            reject(e)
-          }
-        }
-      )
-    })
+    if (!supabase) throw new Error('Supabase not configured')
+    const path = `faces/${user.id}/reference/${key}.jpg`
+    setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: true, progress: 0, error: undefined } }))
+    const { error } = await supabase.storage.from('profiles').upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' })
+    if (error) {
+      setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, error: error.message } }))
+      throw error
+    }
+    const { data } = supabase.storage.from('profiles').getPublicUrl(path)
+    const url = data.publicUrl
+    setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, downloadUrl: url, progress: 100 } }))
+    // Persist the single cameo url back to profiles
+    try {
+      const column = key === 'front' ? 'cameo_front_url' : key === 'left' ? 'cameo_left_url' : 'cameo_right_url'
+      await supabase.from('profiles').update({ [column]: url }).eq('id', user.id)
+    } catch (_) {}
+    return url
   }
 
   const handleUploadAll = async () => {
@@ -169,7 +210,7 @@ export default function CameoUpload() {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            user_id: user.uid,
+            user_id: user.id,
             references: {
               front: states.front.downloadUrl || urls[0],
               left: states.left.downloadUrl || urls[1],

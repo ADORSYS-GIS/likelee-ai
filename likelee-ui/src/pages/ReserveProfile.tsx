@@ -14,6 +14,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton
@@ -120,12 +121,208 @@ const eyeColors = ["Brown", "Blue", "Green", "Hazel", "Gray", "Amber"];
 const skinTones = ["Fair", "Light", "Medium-Light", "Medium", "Medium-Dark", "Dark", "Deep"];
 const vibes = ["Streetwear", "Glam", "Natural", "Classic", "Edgy", "Athletic", "Runway", "Editorial", "Commercial", "Casual"];
 
+function ReferencePhotosStep(props: any) {
+  const { kycStatus, onBack, onUploaded, onComplete, uploadFn, userId, apiBase } = props
+  const [cameraOpen, setCameraOpen] = React.useState(false)
+  const [stream, setStream] = React.useState<any>(null)
+  const [currentPose, setCurrentPose] = React.useState<'front'|'left'|'right'>('front')
+  const [captures, setCaptures] = React.useState<any>({ front: null, left: null, right: null })
+  const [consent, setConsent] = React.useState(false)
+  const [uploading, setUploading] = React.useState(false)
+  const [uploadedUrls, setUploadedUrls] = React.useState<any>({ front: null, left: null, right: null })
+  const [generating, setGenerating] = React.useState(false)
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
+
+  const attachStreamToVideo = () => {
+    const v: any = document.getElementById('reference-video')
+    if (v && stream && v.srcObject !== stream) v.srcObject = stream
+  }
+
+  React.useEffect(() => {
+    attachStreamToVideo()
+  }, [stream, cameraOpen])
+
+  const openCamera = async () => {
+    try {
+      const s = await (navigator.mediaDevices as any).getUserMedia({ video: { facingMode: 'user' }, audio: false })
+      setStream(s)
+      setCameraOpen(true)
+      setTimeout(attachStreamToVideo, 50)
+    } catch (_e) {
+      alert('Unable to access camera. Please allow camera permissions.')
+    }
+  }
+
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((t: any) => t.stop())
+      setStream(null)
+    }
+    setCameraOpen(false)
+  }
+
+  const capture = async () => {
+    const video: any = document.getElementById('reference-video')
+    if (!video) return
+    const canvas = document.createElement('canvas')
+    const w = video.videoWidth || 720
+    const h = video.videoHeight || 720
+    canvas.width = w
+    canvas.height = h
+    const ctx: any = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0, w, h)
+    const blob: any = await new Promise((res) => canvas.toBlob(res as any, 'image/jpeg', 0.95))
+    const file = new File([blob], `${currentPose}.jpg`, { type: 'image/jpeg' })
+    const url = URL.createObjectURL(blob)
+    setCaptures((prev: any) => ({ ...prev, [currentPose]: { file, url } }))
+    if (currentPose === 'front') setCurrentPose('left')
+    else if (currentPose === 'left') setCurrentPose('right')
+  }
+
+  const doUpload = async () => {
+    if (!consent) { alert('Please give consent before uploading.'); return }
+    if (!captures.front || !captures.left || !captures.right) { alert('Please capture all three views.'); return }
+    try {
+      setUploading(true)
+      const resFront = await uploadFn(captures.front.file, 'front')
+      const resLeft = await uploadFn(captures.left.file, 'left')
+      const resRight = await uploadFn(captures.right.file, 'right')
+      const frontUrl = resFront?.publicUrl || resFront?.url || null
+      const leftUrl = resLeft?.publicUrl || resLeft?.url || null
+      const rightUrl = resRight?.publicUrl || resRight?.url || null
+      onUploaded(frontUrl, leftUrl, rightUrl)
+      setUploadedUrls({ front: frontUrl, left: leftUrl, right: rightUrl })
+      onComplete && onComplete()
+      closeCamera()
+    } catch (e: any) {
+      alert(`Failed to upload reference photos: ${e?.message || e}`)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const generateAvatar = async () => {
+    if (!userId) { alert('Missing user id.'); return }
+    // Ensure we have uploaded URLs
+    if (!uploadedUrls.front || !uploadedUrls.left || !uploadedUrls.right) {
+      await doUpload()
+      if (!uploadedUrls.front || !uploadedUrls.left || !uploadedUrls.right) return
+    }
+    try {
+      setGenerating(true)
+      const res = await fetch(`${apiBase}/api/avatar/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          front_url: uploadedUrls.front,
+          left_url: uploadedUrls.left,
+          right_url: uploadedUrls.right,
+        }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url)
+    } catch (e: any) {
+      alert(`Failed to generate avatar: ${e?.message || e}`)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Reference Photos</h3>
+        <p className="text-gray-700">Capture three photos of your face: front, left profile, and right profile. This happens after verification.</p>
+      </div>
+
+      {kycStatus !== 'approved' && (
+        <div className="p-4 border-2 border-yellow-300 bg-yellow-50 text-gray-800">
+          Verification is pending. You can capture and upload your reference photos now, but your profile won't go live until verification is approved.
+          <div className="mt-4">
+            <Button onClick={onBack} variant="outline" className="h-10 px-6 border-2 border-black rounded-none">← Back</Button>
+          </div>
+        </div>
+      )}
+      <div className="space-y-4">
+        <div className="flex gap-4">
+          <Button onClick={openCamera} className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none">Open Camera</Button>
+          <Button onClick={onBack} variant="outline" className="h-12 border-2 border-black rounded-none">Back</Button>
+        </div>
+
+        {cameraOpen && (
+          <div className="border-2 border-black p-4 bg-gray-50">
+            <div className="mb-3">
+              <Label className="text-sm font-medium text-gray-900">Live Camera Preview</Label>
+              <div className="mt-2 h-64 bg-black flex items-center justify-center border-2 border-gray-200">
+                <video id="reference-video" autoPlay playsInline muted className="w-full h-full object-contain" />
+              </div>
+              <div className="text-sm text-gray-600 mt-2">Current pose: {currentPose.toUpperCase()}</div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={capture} className="h-10 bg-black text-white border-2 border-black rounded-none">Capture</Button>
+              <Button
+                onClick={() => setCurrentPose(currentPose === 'front' ? 'left' : (currentPose === 'left' ? 'right' : 'front'))}
+                variant="outline"
+                className="h-10 border-2 border-black rounded-none"
+              >Next Pose</Button>
+              <Button onClick={closeCamera} variant="outline" className="h-10 border-2 border-black rounded-none">Close</Button>
+            </div>
+          </div>
+        )}
+
+        {(captures.front || captures.left || captures.right) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front ? <img src={captures.front.url} className="w-full h-full object-cover" /> : <span className="text-gray-500">Pending</span>}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left ? <img src={captures.left.url} className="w-full h-full object-cover" /> : <span className="text-gray-500">Pending</span>}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right ? <img src={captures.right.url} className="w-full h-full object-cover" /> : <span className="text-gray-500">Pending</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+          <div className="flex items-center gap-2">
+            <Checkbox id="consent" checked={consent} onCheckedChange={(v:any)=>setConsent(!!v)} />
+            <Label htmlFor="consent">I consent to store these reference photos as my digital identity.</Label>
+          </div>
+
+          <div className="flex gap-4">
+            <Button onClick={doUpload} disabled={uploading || !consent || !captures.front || !captures.left || !captures.right} className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none">{uploading ? 'Uploading…' : 'Save & Finish'}</Button>
+            <Button onClick={generateAvatar} disabled={generating || !consent || !(captures.front && captures.left && captures.right)} variant="outline" className="flex-1 h-12 border-2 border-black rounded-none">{generating ? 'Generating…' : 'Generate Avatar (Duix)'}</Button>
+          </div>
+
+          {avatarUrl && (
+            <div className="mt-4">
+              <Label className="text-sm font-medium text-gray-900">Generated Avatar</Label>
+              <img src={avatarUrl} alt="Avatar" className="mt-2 w-full max-w-md border-2 border-gray-200" />
+            </div>
+          )}
+        </div>
+      
+    </div>
+  )
+}
+
 export default function ReserveProfile() {
   const urlParams = new URLSearchParams(window.location.search);
   const creatorType = urlParams.get('type') || 'influencer'; // influencer, model_actor, athlete
   const initialMode = (urlParams.get('mode') as 'signup'|'login') || 'login'
   const [authMode, setAuthMode] = useState<'signup'|'login'>(initialMode)
-  const { login } = useAuth()
+  const { login, register } = useAuth()
   const navigate = useNavigate()
 
   const [step, setStep] = useState(1);
@@ -174,17 +371,56 @@ export default function ReserveProfile() {
     bio: ""
   });
 
-  const startVerification = async () => {
-    if (!authenticated || !user?.uid) {
-      alert('Please log in to start verification.')
+  // Cameo reference image URLs
+  const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null)
+  const [cameoLeftUrl, setCameoLeftUrl] = useState<string | null>(null)
+  const [cameoRightUrl, setCameoRightUrl] = useState<string | null>(null)
+  const [uploadingCameo, setUploadingCameo] = useState(false)
+
+  const uploadCameoImage = async (file: File, side: 'front'|'left'|'right') => {
+    if (!supabase) {
+      alert('Image upload not configured. Missing Supabase keys.')
       return
     }
     try {
+      setUploadingCameo(true)
+      const owner = (user?.id || formData.email || 'anonymous').replace(/[^a-zA-Z0-9_-]/g, '_')
+      const path = `cameo/${owner}/${Date.now()}_${side}_${file.name}`
+      const { error } = await supabase.storage.from('profiles').upload(path, file, { upsert: false })
+      if (error) throw error
+      const { data } = supabase.storage.from('profiles').getPublicUrl(path)
+      const url = data.publicUrl
+      if (side === 'front') setCameoFrontUrl(url)
+      if (side === 'left') setCameoLeftUrl(url)
+      if (side === 'right') setCameoRightUrl(url)
+      // Persist to profile for cross-page prefill (do not create a new row yet)
+      try {
+        if (user?.id) {
+          const column = side === 'front' ? 'cameo_front_url' : side === 'left' ? 'cameo_left_url' : 'cameo_right_url'
+          await supabase.from('profiles').update({ [column]: url }).eq('id', user.id)
+        }
+      } catch (_e) {}
+      return { publicUrl: url }
+    } catch (e: any) {
+      alert(`Failed to upload image: ${e?.message || e}`)
+    } finally {
+      setUploadingCameo(false)
+    }
+  }
+
+  const startVerification = async () => {
+    const targetId = user?.id || profileId
+    if (!targetId) { alert('Profile not ready yet. Please complete previous steps.'); return }
+    try {
       setKycLoading(true)
+      const u = new URL(window.location.href)
+      u.searchParams.set('step', '4')
+      u.searchParams.set('verified', '1')
+      const returnUrl = u.toString()
       const res = await fetch(`${API_BASE}/api/kyc/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.uid }),
+        body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
       })
       if (!res.ok) throw new Error(await res.text())
       const data = await res.json()
@@ -201,10 +437,11 @@ export default function ReserveProfile() {
   }
 
   const refreshVerificationStatus = async () => {
-    if (!authenticated || !user?.uid) return
+    const targetId = user?.id || profileId
+    if (!targetId) return
     try {
       setKycLoading(true)
-      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.uid)}`)
+      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(targetId)}`)
       if (!res.ok) throw new Error(await res.text())
       const rows = await res.json()
       const row = Array.isArray(rows) && rows.length ? rows[0] : null
@@ -212,7 +449,11 @@ export default function ReserveProfile() {
         if (row.kyc_status) setKycStatus(row.kyc_status)
         if (row.liveness_status) setLivenessStatus(row.liveness_status)
         if (row.kyc_provider) setKycProvider(row.kyc_provider)
+        if (row.kyc_status === 'approved' && !cameoFrontUrl && !cameoLeftUrl && !cameoRightUrl) {
+          alert('Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.')
+        }
       }
+      return row
     } catch (e: any) {
       alert(`Failed to fetch verification status: ${e?.message || e}`)
     } finally {
@@ -220,7 +461,28 @@ export default function ReserveProfile() {
     }
   }
 
-  const totalSteps = 4;
+  const verifyAndContinue = async () => {
+    try {
+      setKycLoading(true)
+      const row = await refreshVerificationStatus()
+      const kyc = row?.kyc_status || kycStatus
+      const live = row?.liveness_status || livenessStatus
+      if (kyc === 'approved' && live === 'approved') {
+        setStep(5)
+        return
+      }
+      // If user hasn't started verification, kick it off automatically
+      if ((kyc || 'not_started') === 'not_started' && (live || 'not_started') === 'not_started') {
+        await startVerification()
+        return
+      }
+      alert(`Verification not complete yet. KYC: ${kyc || 'not_started'}, Liveness: ${live || 'not_started'}.`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const totalSteps = 5;
   const progress = (step / totalSteps) * 100;
 
   // Verification state
@@ -247,11 +509,29 @@ export default function ReserveProfile() {
     return "";
   };
 
+  useEffect(() => {
+    if (step !== 4) return
+    // Initial fetch
+    refreshVerificationStatus()
+    // If redirected back with ?verified=1, attempt to proceed
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('verified') === '1') {
+      verifyAndContinue()
+    }
+    // Poll every 5s while on step 4
+    const interval = setInterval(() => {
+      refreshVerificationStatus()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [step])
+
   // Initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
+      if (!user) throw new Error('Not authenticated')
       try {
         const payload: any = {
+          id: user.id,
           email: data.email,
           full_name: data.creator_type === 'model_actor' ? (data.stage_name || data.full_name) : data.full_name,
           creator_type: data.creator_type,
@@ -280,28 +560,18 @@ export default function ReserveProfile() {
           vibes: [],
           visibility: "private",
           status: "waitlist",
-          created_by_id: "anonymous",
-          created_by: "anonymous",
           is_sample: false,
         }
-        const res = await fetch(`${API_BASE}/api/profile`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) throw new Error(await res.text())
-        const profile = await res.json()
-        console.log('Profile created successfully:', profile)
-        return profile
+        const { data: upserted, error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' }).select()
+        if (error) throw error
+        return Array.isArray(upserted) ? upserted[0] : upserted
       } catch (error) {
         console.error('Detailed error:', error)
         throw error
       }
     },
-    onSuccess: (data) => {
-      // If backend returns an array (PostgREST insert/update), pick first
-      const id = Array.isArray(data) && data.length ? (data[0]?.id || null) : (data?.id || null)
-      if (id) setProfileId(id)
+    onSuccess: () => {
+      setProfileId(user?.id || null)
       setStep(2);
     },
     onError: (error) => {
@@ -314,9 +584,10 @@ export default function ReserveProfile() {
   // Profile update (Step 3)
   const updateProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
-      
+      if (!user) throw new Error('Not authenticated')
       try {
         const updateData: any = {
+          id: user.id,
           email: data.email,
           full_name: data.creator_type === 'model_actor' ? (data.stage_name || data.full_name) : data.full_name,
           creator_type: data.creator_type,
@@ -347,17 +618,14 @@ export default function ReserveProfile() {
           status: "waitlist",
         }
 
-        console.log("Upserting profile with data:", updateData);
+        if (cameoFrontUrl) (updateData as any).cameo_front_url = cameoFrontUrl
+        if (cameoLeftUrl) (updateData as any).cameo_left_url = cameoLeftUrl
+        if (cameoRightUrl) (updateData as any).cameo_right_url = cameoRightUrl
 
-        const res = await fetch(`${API_BASE}/api/profile`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updateData),
-        })
-        if (!res.ok) throw new Error(await res.text())
-        const updated = await res.json()
-        console.log('Profile updated successfully:', updated)
-        return updated
+        console.log("Upserting profile with data:", updateData);
+        const { data: updated, error } = await supabase.from('profiles').upsert(updateData, { onConflict: 'id' }).select()
+        if (error) throw error
+        return Array.isArray(updated) ? updated[0] : updated
       } catch (error) {
         console.error("Detailed update error:", error);
         throw error;
@@ -400,19 +668,36 @@ export default function ReserveProfile() {
       return;
     }
     
-    // Check email availability before proceeding
-    (async () => {
+    // Check email availability, then register in Firebase, then create profile
+    ;(async () => {
       try {
         const res = await fetch(`${API_BASE}/api/email/available?email=${encodeURIComponent(formData.email)}`)
         if (!res.ok) throw new Error(await res.text())
         const data = await res.json()
         if (!data.available) {
-          alert('This email is already registered. Please log in instead.')
+          const proceed = window.confirm('This email is already registered. Would you like us to send a magic link to sign in?')
+          if (proceed) {
+            const { error } = await supabase.auth.signInWithOtp({
+              email: formData.email.trim().toLowerCase(),
+              options: { emailRedirectTo: `${window.location.origin}/Login` },
+            })
+            if (error) {
+              alert(error.message)
+            } else {
+              alert('Magic link sent. Check your email to complete sign-in.')
+            }
+          } else {
+            alert('This email is already registered. Please log in instead.')
+          }
           return
         }
-        createInitialProfileMutation.mutate(formData)
+        // Create Supabase auth user so login works
+        const displayName = (creatorType === 'model_actor') ? (formData.stage_name || formData.full_name) : formData.full_name
+        await register(formData.email, formData.password, displayName)
+        // Move to next step; profile will be saved at the end (step 5)
+        setStep(2)
       } catch (e: any) {
-        alert(`Failed to validate email: ${e?.message || e}`)
+        alert(`Failed to sign up: ${e?.message || e}`)
       }
     })()
   };
@@ -476,9 +761,74 @@ export default function ReserveProfile() {
         return;
       }
     }
-    console.log("Submitting final form data:", formData);
-    updateProfileMutation.mutate(formData);
+    console.log("Collected step 3 data (no write yet):", formData);
+    setStep(4);
   };
+
+  const finalizeProfile = async () => {
+    if (!user) { alert('Please log in.'); return }
+    try {
+      // Backfill missing cameo URLs from Storage if needed
+      let front = cameoFrontUrl
+      let left = cameoLeftUrl
+      let right = cameoRightUrl
+      if ((!front || !left || !right) && supabase) {
+        const prefix = `faces/${user.id}/reference`
+        const { data: files } = await supabase.storage.from('profiles').list(prefix, { limit: 100 })
+        if (files && files.length) {
+          files.forEach((f: any) => {
+            const name = f.name.toLowerCase()
+            const pub = supabase.storage.from('profiles').getPublicUrl(`${prefix}/${f.name}`).data.publicUrl
+            if (!front && name.includes('front')) front = pub
+            if (!left && name.includes('left')) left = pub
+            if (!right && name.includes('right')) right = pub
+          })
+        }
+      }
+
+      const payload: any = {
+        id: user.id,
+        email: formData.email,
+        full_name: creatorType === 'model_actor' ? (formData.stage_name || formData.full_name) : formData.full_name,
+        creator_type: creatorType,
+        content_types: formData.content_types || [],
+        content_other: formData.content_other || null,
+        industries: formData.industries || [],
+        primary_platform: formData.primary_platform || null,
+        platform_handle: formData.platform_handle || null,
+        work_types: formData.work_types || [],
+        representation_status: formData.representation_status || '',
+        headshot_url: formData.headshot_url || '',
+        sport: formData.sport || null,
+        athlete_type: formData.athlete_type || null,
+        school_name: formData.school_name || null,
+        age: formData.age || null,
+        languages: formData.languages || null,
+        instagram_handle: formData.instagram_handle || null,
+        twitter_handle: formData.twitter_handle || null,
+        brand_categories: formData.brand_categories || [],
+        bio: formData.bio || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        birthdate: formData.birthdate || null,
+        ethnicity: formData.ethnicity || [],
+        gender: formData.gender || null,
+        vibes: formData.vibes || [],
+        visibility: formData.visibility || 'private',
+        status: 'waitlist',
+      }
+      if (front) (payload as any).cameo_front_url = front
+      if (left) (payload as any).cameo_left_url = left
+      if (right) (payload as any).cameo_right_url = right
+
+      const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+      if (error) throw error
+      setProfileId(user.id)
+      setSubmitted(true)
+    } catch (e: any) {
+      alert(`Failed to save your profile: ${e?.message || e}`)
+    }
+  }
 
   const toggleArrayItem = (field, value) => {
     setFormData(prev => ({
@@ -502,6 +852,14 @@ export default function ReserveProfile() {
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
             We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.
           </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link to="/Login">
+              <Button className="rounded-none border-2 border-black bg-black text-white px-6 h-11">Sign in</Button>
+            </Link>
+            <Link to="/CreatorDashboard">
+              <Button variant="outline" className="rounded-none border-2 border-black h-11 px-6">Go to Dashboard</Button>
+            </Link>
+          </div>
         </Card>
       </div>
     );
@@ -783,6 +1141,7 @@ export default function ReserveProfile() {
                   </div>
                 </div>
 
+                
                 {/* Athlete-specific fields */}
                 {creatorType === 'athlete' && (
                   <>
@@ -1209,76 +1568,82 @@ export default function ReserveProfile() {
             </div>
           )}
 
-          {/* Step 4: Verify Identity */}
+          {/* Step 4: Verify Identity - redesigned */}
           {step === 4 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Verify Identity</h3>
-                <p className="text-gray-600">Complete KYC and liveness to activate your profile.</p>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">Identity Verification</h3>
+                <p className="text-gray-700">Verify your identity to become visible to brands and unlock opportunities</p>
               </div>
 
-              {!initialized ? (
-                <p className="text-gray-700">Loading…</p>
-              ) : !authenticated ? (
-                <div className="p-4 border-2 border-amber-500 bg-amber-50">
-                  <p className="text-amber-900 mb-3">Please log in to start verification.</p>
-                  <Button onClick={() => navigate('/Login')} className="rounded-none border-2 border-black bg-black text-white">Log in</Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 border-2 border-gray-200">
-                      <p className="text-sm text-gray-600">KYC status</p>
-                      <p className="text-lg font-semibold">{kycStatus}</p>
-                    </div>
-                    <div className="p-4 border-2 border-gray-200">
-                      <p className="text-sm text-gray-600">Liveness status</p>
-                      <p className="text-lg font-semibold">{livenessStatus}</p>
-                    </div>
-                    <div className="p-4 border-2 border-gray-200">
-                      <p className="text-sm text-gray-600">Provider</p>
-                      <p className="text-lg font-semibold">{kycProvider || 'veriff'}</p>
-                    </div>
-                  </div>
+              {/* Why verify box */}
+              <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
+                <h4 className="font-bold text-gray-900 mb-3">Why verify your identity?</h4>
+                <ul className="space-y-2 text-gray-800">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Get discovered by brands looking for verified creators</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Build trust and credibility with licensing partners</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Unlock higher-value campaign opportunities</li>
+                </ul>
+              </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button onClick={startVerification} disabled={kycLoading} className="rounded-none border-2 border-black bg-black text-white">
-                      {kycLoading ? 'Starting…' : (kycStatus === 'not_started' ? 'Start verification' : 'Restart verification')}
-                    </Button>
-                    <Button onClick={refreshVerificationStatus} variant="outline" className="rounded-none border-2 border-black">Refresh status</Button>
-                    <Button onClick={() => setShowSkipModal(true)} variant="outline" className="rounded-none border-2 border-amber-600 text-amber-700">Skip for Now</Button>
-                    <Button
-                      onClick={() => setSubmitted(true)}
-                      disabled={!(kycStatus === 'approved' && livenessStatus === 'approved')}
-                      className="rounded-none border-2 border-black bg-green-600 text-white disabled:opacity-50"
-                    >
-                      Finish
-                    </Button>
-                  </div>
+              <p className="text-gray-700">We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.</p>
 
-                  {kycSessionUrl && (
-                    <p className="text-sm text-gray-500">If a new window didn’t open, <a className="underline" href={kycSessionUrl} target="_blank" rel="noreferrer">click here</a>.</p>
-                  )}
-                </div>
-              )}
+              {/* Requirements box */}
+              <div className="p-5 border-2 border-gray-300 bg-gray-50">
+                <h4 className="font-bold text-gray-900 mb-2">What you'll need:</h4>
+                <ul className="list-disc list-inside text-gray-800 space-y-1">
+                  <li>Government-issued ID (driver's license, passport, or state ID)</li>
+                  <li>Good lighting and camera/mic access</li>
+                  <li>2–3 minutes in a quiet space</li>
+                </ul>
+              </div>
 
-              <div className="flex gap-4">
+              <div className="space-y-3">
                 <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  className="flex-1 h-12 border-2 border-black rounded-none"
+                  onClick={startVerification}
+                  disabled={kycLoading}
+                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {kycLoading ? 'Starting…' : 'Verify Identity Now'}
                 </Button>
+                <div className="text-sm text-gray-700 flex items-center justify-between">
+                  <span>KYC: <strong className="capitalize">{kycStatus.replace('_', ' ')}</strong></span>
+                  <span>Liveness: <strong className="capitalize">{livenessStatus.replace('_', ' ')}</strong></span>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={verifyAndContinue}
+                    disabled={kycLoading}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-black rounded-none"
+                  >
+                    {kycLoading ? 'Checking…' : 'Verify & Continue'}
+                  </Button>
+                  <Button
+                    onClick={handleBack}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-black rounded-none"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setShowSkipModal(true)}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-gray-300 rounded-none"
+                  >
+                    Skip for Now
+                  </Button>
+                </div>
               </div>
+
               {/* Skip Confirmation Modal */}
               {showSkipModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                   <div className="absolute inset-0 bg-black/50" onClick={() => setShowSkipModal(false)} />
                   <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
                     <h4 className="text-lg font-bold mb-2">Skip Identity Verification?</h4>
-                    <p className="text-sm text-gray-700 mb-4">Hey! If you choose to skip now, your profile will still be created, but you won't be able to work with brands until you complete verification.</p>
+                    <p className="text-sm text-gray-700 mb-4">If you skip now, your profile will be created, but brands won't see you until you complete verification.</p>
                     <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
                       You can complete verification anytime from your dashboard.
                     </div>
@@ -1286,13 +1651,32 @@ export default function ReserveProfile() {
                       <Button variant="outline" className="rounded-none border-2 border-black" onClick={() => setShowSkipModal(false)}>
                         ← Go Back
                       </Button>
-                      <Button className="rounded-none border-2 border-black bg-black text-white" onClick={() => { setShowSkipModal(false); setSubmitted(true); }}>
+                      <Button className="rounded-none border-2 border-black bg-black text-white" onClick={() => { setShowSkipModal(false); setStep(5); }}>
                         Skip for Now - I'm Sure
                       </Button>
                     </div>
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* Step 5: Reference Photos */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <ReferencePhotosStep
+                kycStatus={kycStatus}
+                onBack={() => setStep(4)}
+                onUploaded={(front: string | null, left: string | null, right: string | null) => {
+                  if (front) setCameoFrontUrl(front)
+                  if (left) setCameoLeftUrl(left)
+                  if (right) setCameoRightUrl(right)
+                }}
+                onComplete={finalizeProfile}
+                uploadFn={uploadCameoImage}
+                userId={user?.id}
+                apiBase={API_BASE}
+              />
             </div>
           )}
         </Card>
