@@ -8,6 +8,7 @@ import { Badge as UIBadge } from "@/components/ui/badge";
 import { Textarea as UITextarea } from "@/components/ui/textarea";
 import { RadioGroup as UIRadioGroup, RadioGroupItem as UIRadioGroupItem } from "@/components/ui/radio-group";
 import { Select as UISelect, SelectContent as UISelectContent, SelectItem as UISelectItem, SelectTrigger as UISelectTrigger, SelectValue as UISelectValue } from "@/components/ui/select";
+import { Slider as UISlider } from "@/components/ui/slider";
 import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
 import { Alert as UIAlert, AlertDescription as UIAlertDescription } from "@/components/ui/alert";
 import { useMutation } from '@tanstack/react-query'; 
@@ -31,6 +32,7 @@ const SelectContent: any = UISelectContent
 const SelectItem: any = UISelectItem
 const SelectTrigger: any = UISelectTrigger
 const SelectValue: any = UISelectValue
+const Slider: any = UISlider
 const Alert: any = UIAlert
 const AlertDescription: any = UIAlertDescription
 
@@ -346,6 +348,9 @@ export default function ReserveProfile() {
     ethnicity: [],
     vibes: [],
     visibility: "private",
+    // Pricing (USD-only)
+    base_monthly_price_usd: "",
+    per_use_price_usd: 5,
     
     // Influencer specific
     content_types: [],
@@ -704,29 +709,43 @@ export default function ReserveProfile() {
 
   const handleNext = () => {
     // Step validations
-    if (step === 2 && creatorType === 'influencer') {
-      if (!formData.city?.trim()) {
-        alert('City is required.');
+    if (step === 2) {
+      // Common validations for step 2 per creator type
+      if (creatorType === 'influencer') {
+        if (!formData.city?.trim()) {
+          alert('City is required.');
+          return;
+        }
+        if (!formData.state?.trim()) {
+          alert('State is required.');
+          return;
+        }
+        if (!formData.birthdate) {
+          alert('Birthdate is required.');
+          return;
+        }
+        // 18+ check
+        const birth = new Date(formData.birthdate);
+        const today = new Date();
+        const age = today.getFullYear() - birth.getFullYear() - ((today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) ? 1 : 0);
+        if (isFinite(age) && age < 18) {
+          alert('You must be 18 or older.');
+          return;
+        }
+        if (!formData.gender?.trim()) {
+          alert('Please select how you identify.');
+          return;
+        }
+      }
+      // Pricing required in onboarding step (applies to all creator types)
+      const monthly = Number(formData.base_monthly_price_usd)
+      const perUse = Number(formData.per_use_price_usd)
+      if (!isFinite(monthly) || monthly < 150) {
+        alert('Please set your base monthly license price (minimum $150).')
         return;
       }
-      if (!formData.state?.trim()) {
-        alert('State is required.');
-        return;
-      }
-      if (!formData.birthdate) {
-        alert('Birthdate is required.');
-        return;
-      }
-      // 18+ check
-      const birth = new Date(formData.birthdate);
-      const today = new Date();
-      const age = today.getFullYear() - birth.getFullYear() - ((today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) ? 1 : 0);
-      if (isFinite(age) && age < 18) {
-        alert('You must be 18 or older.');
-        return;
-      }
-      if (!formData.gender?.trim()) {
-        alert('Please select how you identify.');
+      if (!isFinite(perUse) || perUse < 5 || perUse > 200) {
+        alert('Please set your per-use price between $5 and $200.')
         return;
       }
     }
@@ -786,6 +805,8 @@ export default function ReserveProfile() {
         }
       }
 
+      const monthlyUsd = Number(formData.base_monthly_price_usd)
+      const perUseUsd = Number(formData.per_use_price_usd)
       const payload: any = {
         id: user.id,
         email: formData.email,
@@ -816,6 +837,10 @@ export default function ReserveProfile() {
         vibes: formData.vibes || [],
         visibility: formData.visibility || 'private',
         status: 'waitlist',
+        // Pricing in cents (USD-only)
+        base_monthly_price_cents: isFinite(monthlyUsd) ? Math.round(monthlyUsd * 100) : 15000,
+        per_use_price_cents: isFinite(perUseUsd) ? Math.round(perUseUsd * 100) : 500,
+        currency_code: 'USD',
       }
       if (front) (payload as any).cameo_front_url = front
       if (left) (payload as any).cameo_left_url = left
@@ -1267,6 +1292,76 @@ export default function ReserveProfile() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Pricing (USD-only) */}
+              <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Licensing Pricing</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="base_monthly_price" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Base monthly license price (USD)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700">$</span>
+                      <Input
+                        id="base_monthly_price"
+                        type="number"
+                        min={150}
+                        step={1}
+                        value={formData.base_monthly_price_usd}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9.]/g, '')
+                          setFormData({ ...formData, base_monthly_price_usd: v })
+                        }}
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder="150"
+                      />
+                      <span className="text-sm text-gray-600">/month</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Minimum $150/month. Currency is locked to USD.</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Per-use price (USD)
+                    </Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-700">$</span>
+                        <Input
+                          type="number"
+                          min={5}
+                          max={200}
+                          step={1}
+                          value={formData.per_use_price_usd}
+                          onChange={(e) => {
+                            const n = Number(e.target.value)
+                            if (!Number.isFinite(n)) return
+                            const clamped = Math.max(5, Math.min(200, Math.round(n)))
+                            setFormData({ ...formData, per_use_price_usd: clamped })
+                          }}
+                          className="w-24 border-2 border-gray-300 rounded-none"
+                        />
+                        <span className="text-sm text-gray-600">per use</span>
+                      </div>
+                      <div className="px-1">
+                        <Slider
+                          value={[Number(formData.per_use_price_usd) || 5]}
+                          min={5}
+                          max={200}
+                          step={1}
+                          onValueChange={(vals: any) => {
+                            const v = Array.isArray(vals) ? vals[0] : vals
+                            const clamped = Math.max(5, Math.min(200, Math.round(Number(v) || 5)))
+                            setFormData({ ...formData, per_use_price_usd: clamped })
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">Choose between $5 and $200 per use. Typical bookings are $5–$15.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-4">

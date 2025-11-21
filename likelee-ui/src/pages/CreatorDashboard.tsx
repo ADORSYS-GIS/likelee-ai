@@ -23,7 +23,7 @@ import {
   Volume2, Download, Lock, Unlock, Plus, X, LayoutDashboard,
   FileText, Calendar, BarChart3, Menu, ChevronRight, Clock,
   Shield, Building2, Target, PlayCircle, CheckSquare, XCircle,
-  Send, MessageSquare, Copy, ArrowRight, RefreshCw
+  Send, MessageSquare, Copy, ArrowRight, RefreshCw, Wallet as WalletIcon
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -2200,6 +2200,14 @@ export default function CreatorDashboard() {
           <h2 className="text-3xl font-bold text-gray-900">Earnings Dashboard</h2>
           <p className="text-gray-600 mt-1">Track your revenue and payments</p>
         </div>
+        <Button
+          onClick={() => navigate(createPageUrl("RoyaltyWallet"))}
+          variant="outline"
+          className="rounded-full border-2 border-black bg-gradient-to-r from-[#F18B6A] to-pink-500 text-white hover:from-[#E07A5A] hover:to-pink-600 shadow-sm px-4 py-2 flex items-center gap-2"
+        >
+          <WalletIcon className="w-4 h-4" />
+          Royalty Wallet
+        </Button>
       </div>
 
       {/* Key Earnings Metrics */}

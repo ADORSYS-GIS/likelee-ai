@@ -8,8 +8,10 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 20251120_profiles_avatar_canonical.sql
 - 20251120_profiles_cameo_images.sql
 - 20251121_profiles_id_default.sql
+- 2025-11-21_royalty_wallet_mvp.sql
+- 2025-11-21_consolidated_profiles_wallet.sql
 
-Currently, the schema centers on a single table `profiles` with no explicit foreign keys.
+Currently, the schema includes `profiles` and the new `royalty_ledger` table (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
 ## Mermaid ER Diagram
 
@@ -80,12 +82,43 @@ erDiagram
     text cameo_left_url
     text cameo_right_url
 
+    %% pricing (USD-only)
+    integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
+    integer per_use_price_cents "check 500..20000 (i.e., $5..$200)"
+    text currency_code "check = 'USD'"
+    timestamptz pricing_updated_at
+
     %% legacy timestamps (from initial table)
     timestamptz created_at "default now()"
     timestamptz updated_at
   }
+
+  ROYALTY_LEDGER {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid face_id FK "REFERENCES profiles(id)"
+    text booking_id
+    text brand_name
+    integer amount_cents "check >= 0"
+    text currency_code "check = 'USD'"
+    text status "enum('pending','paid')"
+    date period_month "first day of month"
+    timestamptz created_at "default now()"
+  }
+
+  V_FACE_PAYOUTS {
+    uuid face_id
+    text face_name
+    date period_month
+    integer paid_cents
+    integer pending_cents
+    integer total_cents
+    integer event_count
+  }
+
+  PROFILES ||--o{ ROYALTY_LEDGER : face_id
 ```
 
 ## Notes
 - The initial migration created `profiles.id` as `TEXT PRIMARY KEY`. The later migration `20251121_profiles_id_default.sql` ensures a UUID default via `gen_random_uuid()`. If your environment still has `id` as TEXT, apply a conversion migration.
-- No foreign keys are defined yet. If you plan to link `profiles.id` to `auth.users(id)`, we can extend the schema and update this diagram.
+- `royalty_ledger.face_id` references `profiles(id)`; the view `v_face_payouts` aggregates paid/pending amounts by face and month for read-only dashboard usage.
+- The consolidated migration `2025-11-21_consolidated_profiles_wallet.sql` couples minimal `profiles` prerequisites and the Royalty Wallet schema (ledger, view, policies) to provision new environments consistently. Prefer running this single file in greenfield environments to avoid ordering issues.
