@@ -10,6 +10,7 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 20251121_profiles_id_default.sql
 - 2025-11-21_royalty_wallet_mvp.sql
 - 2025-11-21_consolidated_profiles_wallet.sql
+- 2025-11-23_moderation_events.sql
 
 Currently, the schema includes `profiles` and the new `royalty_ledger` table (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
@@ -105,6 +106,19 @@ erDiagram
     timestamptz created_at "default now()"
   }
 
+  MODERATION_EVENTS {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    text image_url
+    text user_id "logical reference to profiles(id)"
+    text image_role "front | left | right | other"
+    boolean flagged "default false"
+    jsonb labels "array of moderation labels"
+    text review_status "enum('pending','approved','rejected'), default 'pending'"
+    text reviewed_by
+    timestamptz reviewed_at
+    timestamptz created_at "default now()"
+  }
+
   V_FACE_PAYOUTS {
     uuid face_id
     text face_name
@@ -116,6 +130,7 @@ erDiagram
   }
 
   PROFILES ||--o{ ROYALTY_LEDGER : face_id
+  PROFILES ||--o{ MODERATION_EVENTS : user_id
 ```
 
 ## Notes

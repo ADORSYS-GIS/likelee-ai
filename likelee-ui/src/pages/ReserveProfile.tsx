@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from 'react-dom'
+import { FaceLivenessDetector } from '@aws-amplify/ui-react-liveness'
 import { Button as UIButton } from "@/components/ui/button";
 import { Input as UIInput } from "@/components/ui/input";
 import { Label as UILabel } from "@/components/ui/label";
@@ -35,6 +37,7 @@ const SelectValue: any = UISelectValue
 const Slider: any = UISlider
 const Alert: any = UIAlert
 const AlertDescription: any = UIAlertDescription
+const FaceLivenessDetectorAny: any = FaceLivenessDetector
 
 const contentTypes = [
   "Social media ads",
@@ -390,11 +393,50 @@ export default function ReserveProfile() {
     try {
       setUploadingCameo(true)
       const owner = (user?.id || formData.email || 'anonymous').replace(/[^a-zA-Z0-9_-]/g, '_')
+      // Pre-scan the raw bytes before storing
+      {
+        const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+        const buf = await file.arrayBuffer()
+        const resScan = await fetch(`${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user?.id || owner)}&image_role=${encodeURIComponent(side)}`, {
+          method: 'POST',
+          headers: { 'content-type': file.type || 'image/jpeg' },
+          body: new Uint8Array(buf),
+        })
+        if (resScan.ok) {
+          const out = await resScan.json()
+          if (out?.flagged) {
+            alert(`Your ${side} photo was flagged and cannot be used. Please upload a different photo.`)
+            throw new Error('Image flagged by moderation')
+          }
+        } else {
+          throw new Error(await resScan.text())
+        }
+      }
       const path = `cameo/${owner}/${Date.now()}_${side}_${file.name}`
       const { error } = await supabase.storage.from('profiles').upload(path, file, { upsert: false })
       if (error) throw error
       const { data } = supabase.storage.from('profiles').getPublicUrl(path)
       const url = data.publicUrl
+      // Call moderation endpoint
+      try {
+        const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+        const res = await fetch(`${apiBase}/api/moderation/image`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ image_url: url, user_id: user?.id || owner, image_role: side }),
+        })
+        if (res.ok) {
+          const out = await res.json()
+          if (out?.flagged) {
+            alert(`Your ${side} photo was flagged and cannot be used. Please upload a different photo.`)
+            throw new Error('Image flagged by moderation')
+          }
+        } else {
+          throw new Error(await res.text())
+        }
+      } catch (e) {
+        throw e
+      }
       if (side === 'front') setCameoFrontUrl(url)
       if (side === 'left') setCameoLeftUrl(url)
       if (side === 'right') setCameoRightUrl(url)
@@ -487,6 +529,35 @@ export default function ReserveProfile() {
     }
   }
 
+  const startLiveness = async () => {
+    try {
+      if (!COGNITO_IDENTITY_POOL_ID) {
+        alert('Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.');
+        return
+      }
+      setLivenessRunning(true)
+      console.log('[liveness] creating server session...')
+
+      const res = await fetch(`${API_BASE}/api/liveness/create`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({})
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const { session_id } = await res.json()
+      if (!session_id) throw new Error('Missing session_id')
+      setLivenessSessionId(session_id)
+      setShowLiveness(true)
+      // Session is created and modal is open; allow user to click again later if needed
+      setLivenessRunning(false)
+      console.log('[liveness] session ready, modal opened', session_id)
+    } catch (e: any) {
+      setLivenessRunning(false)
+      setShowLiveness(false)
+      alert(e?.message || String(e))
+    }
+  }
+
   const totalSteps = 5;
   const progress = (step / totalSteps) * 100;
 
@@ -498,6 +569,11 @@ export default function ReserveProfile() {
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null)
   const [kycLoading, setKycLoading] = useState(false)
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || ''
+  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || 'eu-central-1'
+  const COGNITO_IDENTITY_POOL_ID = (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || ''
+  const [showLiveness, setShowLiveness] = useState(false)
+  const [livenessRunning, setLivenessRunning] = useState(false)
+  const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null)
 
   const getStepTitle = () => {
     if (step === 1) return "Create Your Account";
@@ -1059,6 +1135,68 @@ export default function ReserveProfile() {
                     Log in
                   </Button>
                 </form>
+              )}
+
+              {/* Liveness Modal */}
+              {showLiveness && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => { if (!livenessRunning) setShowLiveness(false) }} />
+                  <div className="relative z-10 w-full max-w-2xl bg-white border-2 border-black p-3">
+                    <div className="mb-2 font-semibold">Face Liveness</div>
+                    <div className="text-xs text-gray-600 mb-2">Session: {livenessSessionId} • Region: {AWS_REGION}</div>
+                    {livenessSessionId && (
+                      <FaceLivenessDetectorAny
+                        sessionId={livenessSessionId}
+                        region={AWS_REGION}
+                        credentialProvider={async () => {
+                          const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers') as any
+                          return fromCognitoIdentityPool({
+                            clientConfig: { region: AWS_REGION },
+                            identityPoolId: COGNITO_IDENTITY_POOL_ID,
+                          })
+                        }}
+                        createCredentialsProvider={async () => {
+                          const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers') as any
+                          return fromCognitoIdentityPool({
+                            clientConfig: { region: AWS_REGION },
+                            identityPoolId: COGNITO_IDENTITY_POOL_ID,
+                          })
+                        }}
+                        onAnalysisComplete={async () => {
+                          try {
+                            console.log('[liveness] analysis complete; fetching results')
+                            const r = await fetch(`${API_BASE}/api/liveness/result`, {
+                              method: 'POST',
+                              headers: { 'content-type': 'application/json' },
+                              body: JSON.stringify({ session_id: livenessSessionId })
+                            })
+                            if (r.ok) {
+                              const data = await r.json()
+                              console.log('[liveness] result', data)
+                              setLivenessStatus(data.passed ? 'approved' : 'rejected')
+                              if (!data.passed) alert('Liveness check failed. Please try again with good lighting and follow prompts.')
+                            } else {
+                              alert(`Failed to fetch liveness result: ${await r.text()}`)
+                            }
+                          } finally {
+                            setLivenessRunning(false)
+                            setShowLiveness(false)
+                            setLivenessSessionId(null)
+                          }
+                        }}
+                        onError={(e: any) => {
+                          console.error('Liveness error', e)
+                          alert(`Liveness error: ${e?.message || e}`)
+                          setLivenessRunning(false)
+                          setShowLiveness(false)
+                          setLivenessSessionId(null)
+                        }}
+                      />
+                    )}
+                    <div className="mt-3 text-sm text-gray-600">Follow the on-screen prompts. This uses secure AWS Rekognition.</div>
+                  </div>
+                </div>,
+                document.body
               )}
             </div>
           )}
@@ -1700,6 +1838,14 @@ export default function ReserveProfile() {
                   className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
                   {kycLoading ? 'Starting…' : 'Verify Identity Now'}
+                </Button>
+                <Button
+                  onClick={startLiveness}
+                  disabled={livenessRunning}
+                  variant="outline"
+                  className="w-full h-12 border-2 border-black rounded-none"
+                >
+                  {livenessRunning ? 'Preparing…' : 'Start Liveness Check'}
                 </Button>
                 <div className="text-sm text-gray-700 flex items-center justify-between">
                   <span>KYC: <strong className="capitalize">{kycStatus.replace('_', ' ')}</strong></span>

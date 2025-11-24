@@ -169,6 +169,30 @@ export default function CameoUpload() {
   const uploadOne = async (key: ViewKey, file: File): Promise<string> => {
     if (!user) throw new Error('Not authenticated')
     if (!supabase) throw new Error('Supabase not configured')
+    // Pre-scan the raw bytes before storing
+    try {
+      const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+      const buf = await file.arrayBuffer()
+      const res = await fetch(`${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user.id)}&image_role=${encodeURIComponent(key)}`, {
+        method: 'POST',
+        headers: { 'content-type': file.type || 'image/jpeg' },
+        body: new Uint8Array(buf),
+      })
+      if (res.ok) {
+        const out = await res.json()
+        if (out?.flagged) {
+          setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, error: 'Image was flagged by moderation. Please upload a different photo.' } }))
+          toast.error(`Your ${key} photo was flagged and cannot be used. Please upload a different photo.`)
+          throw new Error('Image flagged by moderation')
+        }
+      } else {
+        // If the moderation endpoint fails, treat as error to avoid storing unscanned content
+        const msg = await res.text()
+        throw new Error(msg || 'Moderation pre-scan failed')
+      }
+    } catch (e: any) {
+      throw e
+    }
     const path = `faces/${user.id}/reference/${key}.jpg`
     setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: true, progress: 0, error: undefined } }))
     const { error } = await supabase.storage.from('profiles').upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' })
@@ -178,6 +202,27 @@ export default function CameoUpload() {
     }
     const { data } = supabase.storage.from('profiles').getPublicUrl(path)
     const url = data.publicUrl
+
+    // Call moderation endpoint (best-effort)
+    try {
+      const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+      const res = await fetch(`${apiBase}/api/moderation/image`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ image_url: url, user_id: user.id, image_role: key }),
+      })
+      if (res.ok) {
+        const out = await res.json()
+        if (out?.flagged) {
+          setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, error: 'Image was flagged by moderation. Please upload a different photo.' } }))
+          toast.error(`Your ${key} photo was flagged and cannot be used. Please upload a different photo.`)
+          throw new Error('Image flagged by moderation')
+        }
+      }
+    } catch (_) {
+      // non-blocking
+    }
+
     setStates((prev) => ({ ...prev, [key]: { ...prev[key], uploading: false, downloadUrl: url, progress: 100 } }))
     // Persist the single cameo url back to profiles
     try {
