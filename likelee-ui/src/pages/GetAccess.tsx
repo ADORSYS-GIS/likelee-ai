@@ -11,8 +11,9 @@ const organizationTypes = [
     icon: Building2,
     title: "Brand / Company",
     subtitle: "Direct brand or corporation",
-    description: "You're a brand looking to create campaigns, ads, or content featuring real faces.",
-    color: "bg-orange-500"
+    description:
+      "You're a brand looking to create campaigns, ads, or content featuring real faces.",
+    color: "bg-orange-500",
   },
   {
     type: "marketing_agency",
@@ -20,24 +21,26 @@ const organizationTypes = [
     title: "Marketing Agency",
     subtitle: "Advertising & creative services",
     description: "You create campaigns and content for multiple brand clients.",
-    color: "bg-[#32C8D1]"
+    color: "bg-[#32C8D1]",
   },
   {
     type: "talent_agency",
     icon: UserCircle,
     title: "Talent / Modeling Agency",
     subtitle: "Talent representation",
-    description: "You represent talent and want to expand their opportunities into AI content.",
-    color: "bg-purple-500"
+    description:
+      "You represent talent and want to expand their opportunities into AI content.",
+    color: "bg-purple-500",
   },
   {
     type: "sports_agency",
     icon: Trophy,
     title: "Sports Agency",
     subtitle: "NIL & athlete representation",
-    description: "You represent athletes and want to protect and monetize their likeness with AI-ready NIL management.",
-    color: "bg-emerald-600"
-  }
+    description:
+      "You represent athletes and want to protect and monetize their likeness with AI-ready NIL management.",
+    color: "bg-emerald-600",
+  },
 ];
 
 export default function GetAccess() {
@@ -55,7 +58,8 @@ export default function GetAccess() {
             What type of organization are you?
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            This helps us customize your experience and show you the most relevant features.
+            This helps us customize your experience and show you the most
+            relevant features.
           </p>
         </div>
 
@@ -69,20 +73,22 @@ export default function GetAccess() {
                 onClick={() => handleSelect(org.type)}
               >
                 <div className="flex flex-col items-center text-center mb-6">
-                  <div className={`w-20 h-20 ${org.color} border-2 border-black flex items-center justify-center shrink-0 mb-4`}>
+                  <div
+                    className={`w-20 h-20 ${org.color} border-2 border-black flex items-center justify-center shrink-0 mb-4`}
+                  >
                     <Icon className="w-10 h-10 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-1">{org.title}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                      {org.title}
+                    </h3>
                     <p className="text-gray-600 font-medium">{org.subtitle}</p>
                   </div>
                 </div>
                 <p className="text-gray-700 leading-relaxed text-base mb-6">
                   {org.description}
                 </p>
-                <Button
-                  className="w-full h-12 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform"
-                >
+                <Button className="w-full h-12 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform">
                   Select
                 </Button>
               </Card>

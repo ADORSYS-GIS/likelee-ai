@@ -1,5 +1,4 @@
-import { base44 } from './base44Client';
-
+import { base44 } from "./base44Client";
 
 export const generateVideo = base44.functions.generateVideo;
 
@@ -48,4 +47,3 @@ export const createVoiceProfile = base44.functions.createVoiceProfile;
 export const sitemapXml = base44.functions.sitemapXml;
 
 export const staticPages = base44.functions.staticPages;
-

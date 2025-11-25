@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -14,23 +13,26 @@ const creatorTypes = [
     type: "influencer",
     icon: Users,
     title: "Influencer / UGC Creator",
-    description: "You create content, have an audience, or collaborate with brands.",
-    color: "bg-[#32C8D1]"
+    description:
+      "You create content, have an audience, or collaborate with brands.",
+    color: "bg-[#32C8D1]",
   },
   {
     type: "model_actor",
     icon: User,
     title: "Independent Model or Actor",
-    description: "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
-    color: "bg-purple-500"
+    description:
+      "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
+    color: "bg-purple-500",
   },
   {
     type: "athlete",
     icon: Trophy,
     title: "Athlete (NIL & Pro)",
-    description: "You're a college or pro athlete managing your own name, image, and likeness dealings.",
-    color: "bg-emerald-600"
-  }
+    description:
+      "You're a college or pro athlete managing your own name, image, and likeness dealings.",
+    color: "bg-emerald-600",
+  },
 ];
 
 export default function CreatorSignupOptions() {
@@ -51,7 +53,8 @@ export default function CreatorSignupOptions() {
             What type of creator are you?
           </h1>
           <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
-            Choose the option that best describes you to get started with the right profile setup.
+            Choose the option that best describes you to get started with the
+            right profile setup.
           </p>
         </div>
 
@@ -66,13 +69,17 @@ export default function CreatorSignupOptions() {
                 onClick={() => handleSelect(creator.type)}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 ${creator.color} border-2 border-black flex items-center justify-center shrink-0`}>
+                  <div
+                    className={`w-12 h-12 ${creator.color} border-2 border-black flex items-center justify-center shrink-0`}
+                  >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-sm font-bold text-gray-900 leading-tight flex-1">
-                    {creator.type === 'influencer' && 'Influencer / UGC Creator'}
-                    {creator.type === 'model_actor' && 'Independent Model or Actor'}
-                    {creator.type === 'athlete' && 'Athlete (NIL & Pro)'}
+                    {creator.type === "influencer" &&
+                      "Influencer / UGC Creator"}
+                    {creator.type === "model_actor" &&
+                      "Independent Model or Actor"}
+                    {creator.type === "athlete" && "Athlete (NIL & Pro)"}
                   </h3>
                 </div>
               </Card>
@@ -91,17 +98,19 @@ export default function CreatorSignupOptions() {
                 onClick={() => handleSelect(creator.type)}
               >
                 <div className="flex flex-col items-center text-center mb-6">
-                  <div className={`w-20 h-20 ${creator.color} border-2 border-black flex items-center justify-center shrink-0 mb-6`}>
+                  <div
+                    className={`w-20 h-20 ${creator.color} border-2 border-black flex items-center justify-center shrink-0 mb-6`}
+                  >
                     <Icon className="w-10 h-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{creator.title}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {creator.title}
+                  </h3>
                 </div>
                 <p className="text-gray-700 leading-relaxed text-base mb-6">
                   {creator.description}
                 </p>
-                <Button
-                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform"
-                >
+                <Button className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform">
                   Select
                 </Button>
               </Card>
