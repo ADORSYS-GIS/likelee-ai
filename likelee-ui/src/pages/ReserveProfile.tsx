@@ -1,23 +1,43 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { createPortal } from 'react-dom'
+import { FaceLivenessDetector } from '@aws-amplify/ui-react-liveness'
+import { Button as UIButton } from "@/components/ui/button";
+import { Input as UIInput } from "@/components/ui/input";
+import { Label as UILabel } from "@/components/ui/label";
+import { Checkbox as UICheckbox } from "@/components/ui/checkbox";
+import { Card as UICard } from "@/components/ui/card";
+import { Badge as UIBadge } from "@/components/ui/badge";
+import { Textarea as UITextarea } from "@/components/ui/textarea";
+import { RadioGroup as UIRadioGroup, RadioGroupItem as UIRadioGroupItem } from "@/components/ui/radio-group";
+import { Select as UISelect, SelectContent as UISelectContent, SelectItem as UISelectItem, SelectTrigger as UISelectTrigger, SelectValue as UISelectValue } from "@/components/ui/select";
+import { Slider as UISlider } from "@/components/ui/slider";
 import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useMutation } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { Alert as UIAlert, AlertDescription as UIAlertDescription } from "@/components/ui/alert";
+import { useMutation } from '@tanstack/react-query'; 
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/auth/AuthProvider';
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
+
+// Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
+const Button: any = UIButton
+const Input: any = UIInput
+const Label: any = UILabel
+const Checkbox: any = UICheckbox
+const Card: any = UICard
+const Badge: any = UIBadge
+const Textarea: any = UITextarea
+const RadioGroup: any = UIRadioGroup
+const RadioGroupItem: any = UIRadioGroupItem
+const Select: any = UISelect
+const SelectContent: any = UISelectContent
+const SelectItem: any = UISelectItem
+const SelectTrigger: any = UISelectTrigger
+const SelectValue: any = UISelectValue
+const Slider: any = UISlider
+const Alert: any = UIAlert
+const AlertDescription: any = UIAlertDescription
+const FaceLivenessDetectorAny: any = FaceLivenessDetector
 
 const contentTypes = [
   "Social media ads",
@@ -29,7 +49,7 @@ const contentTypes = [
   "Video-game / VR characters",
   "Stock photo / video libraries",
   "Educational / nonprofit spots",
-  "Other",
+  "Other"
 ];
 
 const modelWorkTypes = [
@@ -48,7 +68,7 @@ const modelWorkTypes = [
   "Plus Size",
   "Mature / Senior",
   "Petite",
-  "Other",
+  "Other"
 ];
 
 const industries = [
@@ -65,7 +85,7 @@ const industries = [
   "Education",
   "Real Estate",
   "Entertainment",
-  "Open to any industry",
+  "Open to any industry"
 ];
 
 const athleteBrandCategories = [
@@ -79,30 +99,14 @@ const athleteBrandCategories = [
   "Automotive",
   "Finance / Fintech",
   "Education / Training",
-  "Open to any brand",
+  "Open to any brand"
 ];
 
 const sportsOptions = [
-  "Football",
-  "Basketball",
-  "Baseball",
-  "Soccer",
-  "Tennis",
-  "Golf",
-  "Track & Field",
-  "Swimming",
-  "Gymnastics",
-  "Volleyball",
-  "Wrestling",
-  "Boxing",
-  "MMA",
-  "Hockey",
-  "Lacrosse",
-  "Softball",
-  "Cheerleading",
-  "Dance",
-  "Esports",
-  "Other",
+  "Football", "Basketball", "Baseball", "Soccer", "Tennis", "Golf",
+  "Track & Field", "Swimming", "Gymnastics", "Volleyball", "Wrestling",
+  "Boxing", "MMA", "Hockey", "Lacrosse", "Softball", "Cheerleading",
+  "Dance", "Esports", "Other"
 ];
 
 const ethnicities = [
@@ -114,48 +118,223 @@ const ethnicities = [
   "Pacific Islander",
   "White / Caucasian",
   "Mixed / Multiracial",
-  "Prefer not to say",
+  "Prefer not to say"
 ];
 
-const hairColors = [
-  "Black",
-  "Brown",
-  "Blonde",
-  "Red",
-  "Gray/White",
-  "Dyed (specify below)",
-];
+const hairColors = ["Black", "Brown", "Blonde", "Red", "Gray/White", "Dyed (specify below)"];
 const eyeColors = ["Brown", "Blue", "Green", "Hazel", "Gray", "Amber"];
-const skinTones = [
-  "Fair",
-  "Light",
-  "Medium-Light",
-  "Medium",
-  "Medium-Dark",
-  "Dark",
-  "Deep",
-];
-const vibes = [
-  "Streetwear",
-  "Glam",
-  "Natural",
-  "Classic",
-  "Edgy",
-  "Athletic",
-  "Runway",
-  "Editorial",
-  "Commercial",
-  "Casual",
-];
+const skinTones = ["Fair", "Light", "Medium-Light", "Medium", "Medium-Dark", "Dark", "Deep"];
+const vibes = ["Streetwear", "Glam", "Natural", "Classic", "Edgy", "Athletic", "Runway", "Editorial", "Commercial", "Casual"];
+
+function ReferencePhotosStep(props: any) {
+  const { kycStatus, onBack, onUploaded, onComplete, uploadFn, userId, apiBase } = props
+  const [cameraOpen, setCameraOpen] = React.useState(false)
+  const [stream, setStream] = React.useState<any>(null)
+  const [currentPose, setCurrentPose] = React.useState<'front'|'left'|'right'>('front')
+  const [captures, setCaptures] = React.useState<any>({ front: null, left: null, right: null })
+  const [consent, setConsent] = React.useState(false)
+  const [uploading, setUploading] = React.useState(false)
+  const [uploadedUrls, setUploadedUrls] = React.useState<any>({ front: null, left: null, right: null })
+  const [generating, setGenerating] = React.useState(false)
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
+
+  const attachStreamToVideo = () => {
+    const v: any = document.getElementById('reference-video')
+    if (v && stream && v.srcObject !== stream) v.srcObject = stream
+  }
+
+  React.useEffect(() => {
+    attachStreamToVideo()
+  }, [stream, cameraOpen])
+
+  const openCamera = async () => {
+    try {
+      const s = await (navigator.mediaDevices as any).getUserMedia({ video: { facingMode: 'user' }, audio: false })
+      setStream(s)
+      setCameraOpen(true)
+      setTimeout(attachStreamToVideo, 50)
+    } catch (_e) {
+      alert('Unable to access camera. Please allow camera permissions.')
+    }
+  }
+
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((t: any) => t.stop())
+      setStream(null)
+    }
+    setCameraOpen(false)
+  }
+
+  const capture = async () => {
+    const video: any = document.getElementById('reference-video')
+    if (!video) return
+    const canvas = document.createElement('canvas')
+    const w = video.videoWidth || 720
+    const h = video.videoHeight || 720
+    canvas.width = w
+    canvas.height = h
+    const ctx: any = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0, w, h)
+    const blob: any = await new Promise((res) => canvas.toBlob(res as any, 'image/jpeg', 0.95))
+    const file = new File([blob], `${currentPose}.jpg`, { type: 'image/jpeg' })
+    const url = URL.createObjectURL(blob)
+    setCaptures((prev: any) => ({ ...prev, [currentPose]: { file, url } }))
+    if (currentPose === 'front') setCurrentPose('left')
+    else if (currentPose === 'left') setCurrentPose('right')
+  }
+
+  const doUpload = async () => {
+    if (!consent) { alert('Please give consent before uploading.'); return }
+    if (!captures.front || !captures.left || !captures.right) { alert('Please capture all three views.'); return }
+    try {
+      setUploading(true)
+      const resFront = await uploadFn(captures.front.file, 'front')
+      const resLeft = await uploadFn(captures.left.file, 'left')
+      const resRight = await uploadFn(captures.right.file, 'right')
+      const frontUrl = resFront?.publicUrl || resFront?.url || null
+      const leftUrl = resLeft?.publicUrl || resLeft?.url || null
+      const rightUrl = resRight?.publicUrl || resRight?.url || null
+      onUploaded(frontUrl, leftUrl, rightUrl)
+      setUploadedUrls({ front: frontUrl, left: leftUrl, right: rightUrl })
+      onComplete && onComplete()
+      closeCamera()
+    } catch (e: any) {
+      alert(`Failed to upload reference photos: ${e?.message || e}`)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const generateAvatar = async () => {
+    if (!userId) { alert('Missing user id.'); return }
+    // Ensure we have uploaded URLs
+    if (!uploadedUrls.front || !uploadedUrls.left || !uploadedUrls.right) {
+      await doUpload()
+      if (!uploadedUrls.front || !uploadedUrls.left || !uploadedUrls.right) return
+    }
+    try {
+      setGenerating(true)
+      const res = await fetch(`${apiBase}/api/avatar/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          front_url: uploadedUrls.front,
+          left_url: uploadedUrls.left,
+          right_url: uploadedUrls.right,
+        }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url)
+    } catch (e: any) {
+      alert(`Failed to generate avatar: ${e?.message || e}`)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Reference Photos</h3>
+        <p className="text-gray-700">Capture three photos of your face: front, left profile, and right profile. This happens after verification.</p>
+      </div>
+
+      {kycStatus !== 'approved' && (
+        <div className="p-4 border-2 border-yellow-300 bg-yellow-50 text-gray-800">
+          Verification is pending. You can capture and upload your reference photos now, but your profile won't go live until verification is approved.
+          <div className="mt-4">
+            <Button onClick={onBack} variant="outline" className="h-10 px-6 border-2 border-black rounded-none">← Back</Button>
+          </div>
+        </div>
+      )}
+      <div className="space-y-4">
+        <div className="flex gap-4">
+          <Button onClick={openCamera} className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none">Open Camera</Button>
+          <Button onClick={onBack} variant="outline" className="h-12 border-2 border-black rounded-none">Back</Button>
+        </div>
+
+        {cameraOpen && (
+          <div className="border-2 border-black p-4 bg-gray-50">
+            <div className="mb-3">
+              <Label className="text-sm font-medium text-gray-900">Live Camera Preview</Label>
+              <div className="mt-2 h-64 bg-black flex items-center justify-center border-2 border-gray-200">
+                <video id="reference-video" autoPlay playsInline muted className="w-full h-full object-contain" />
+              </div>
+              <div className="text-sm text-gray-600 mt-2">Current pose: {currentPose.toUpperCase()}</div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={capture} className="h-10 bg-black text-white border-2 border-black rounded-none">Capture</Button>
+              <Button
+                onClick={() => setCurrentPose(currentPose === 'front' ? 'left' : (currentPose === 'left' ? 'right' : 'front'))}
+                variant="outline"
+                className="h-10 border-2 border-black rounded-none"
+              >Next Pose</Button>
+              <Button onClick={closeCamera} variant="outline" className="h-10 border-2 border-black rounded-none">Close</Button>
+            </div>
+          </div>
+        )}
+
+        {(captures.front || captures.left || captures.right) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front ? <img src={captures.front.url} className="w-full h-full object-cover" /> : <span className="text-gray-500">Pending</span>}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left ? <img src={captures.left.url} className="w-full h-full object-cover" /> : <span className="text-gray-500">Pending</span>}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right ? <img src={captures.right.url} className="w-full h-full object-cover" /> : <span className="text-gray-500">Pending</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+          <div className="flex items-center gap-2">
+            <Checkbox id="consent" checked={consent} onCheckedChange={(v:any)=>setConsent(!!v)} />
+            <Label htmlFor="consent">I consent to store these reference photos as my digital identity.</Label>
+          </div>
+
+          <div className="flex gap-4">
+            <Button onClick={doUpload} disabled={uploading || !consent || !captures.front || !captures.left || !captures.right} className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none">{uploading ? 'Uploading…' : 'Save & Finish'}</Button>
+            <Button onClick={generateAvatar} disabled={generating || !consent || !(captures.front && captures.left && captures.right)} variant="outline" className="flex-1 h-12 border-2 border-black rounded-none">{generating ? 'Generating…' : 'Generate Avatar (Duix)'}</Button>
+          </div>
+
+          {avatarUrl && (
+            <div className="mt-4">
+              <Label className="text-sm font-medium text-gray-900">Generated Avatar</Label>
+              <img src={avatarUrl} alt="Avatar" className="mt-2 w-full max-w-md border-2 border-gray-200" />
+            </div>
+          )}
+        </div>
+      
+    </div>
+  )
+}
 
 export default function ReserveProfile() {
   const urlParams = new URLSearchParams(window.location.search);
-  const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
+  const creatorType = urlParams.get('type') || 'influencer'; // influencer, model_actor, athlete
+  const initialMode = (urlParams.get('mode') as 'signup'|'login') || 'login'
+  const [authMode, setAuthMode] = useState<'signup'|'login'>(initialMode)
+  const { login, register } = useAuth()
+  const navigate = useNavigate()
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
-  const [profileId, setProfileId] = useState(null);
+  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null); 
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -163,7 +342,7 @@ export default function ReserveProfile() {
     confirmPassword: "",
     full_name: "",
     stage_name: "",
-
+    
     // Common fields
     city: "",
     state: "",
@@ -172,19 +351,22 @@ export default function ReserveProfile() {
     ethnicity: [],
     vibes: [],
     visibility: "private",
-
+    // Pricing (USD-only)
+    base_monthly_price_usd: "",
+    per_use_price_usd: 5,
+    
     // Influencer specific
     content_types: [],
     content_other: "",
     industries: [],
     primary_platform: "",
     platform_handle: "",
-
+    
     // Model specific
     work_types: [],
     representation_status: "",
     headshot_url: "",
-
+    
     // Athlete specific
     sport: "",
     athlete_type: "",
@@ -194,131 +376,351 @@ export default function ReserveProfile() {
     instagram_handle: "",
     twitter_handle: "",
     brand_categories: [],
-    bio: "",
+    bio: ""
   });
 
-  const totalSteps = 3;
+  // Cameo reference image URLs
+  const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null)
+  const [cameoLeftUrl, setCameoLeftUrl] = useState<string | null>(null)
+  const [cameoRightUrl, setCameoRightUrl] = useState<string | null>(null)
+  const [uploadingCameo, setUploadingCameo] = useState(false)
+
+  const uploadCameoImage = async (file: File, side: 'front'|'left'|'right') => {
+    if (!supabase) {
+      alert('Image upload not configured. Missing Supabase keys.')
+      return
+    }
+    try {
+      setUploadingCameo(true)
+      const owner = (user?.id || formData.email || 'anonymous').replace(/[^a-zA-Z0-9_-]/g, '_')
+      // Pre-scan the raw bytes before storing
+      {
+        const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+        const buf = await file.arrayBuffer()
+        const resScan = await fetch(`${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user?.id || owner)}&image_role=${encodeURIComponent(side)}`, {
+          method: 'POST',
+          headers: { 'content-type': file.type || 'image/jpeg' },
+          body: new Uint8Array(buf),
+        })
+        if (resScan.ok) {
+          const out = await resScan.json()
+          if (out?.flagged) {
+            alert(`Your ${side} photo was flagged and cannot be used. Please upload a different photo.`)
+            throw new Error('Image flagged by moderation')
+          }
+        } else {
+          throw new Error(await resScan.text())
+        }
+      }
+      const path = `cameo/${owner}/${Date.now()}_${side}_${file.name}`
+      const { error } = await supabase.storage.from('profiles').upload(path, file, { upsert: false })
+      if (error) throw error
+      const { data } = supabase.storage.from('profiles').getPublicUrl(path)
+      const url = data.publicUrl
+      // Call moderation endpoint
+      try {
+        const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+        const res = await fetch(`${apiBase}/api/moderation/image`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ image_url: url, user_id: user?.id || owner, image_role: side }),
+        })
+        if (res.ok) {
+          const out = await res.json()
+          if (out?.flagged) {
+            alert(`Your ${side} photo was flagged and cannot be used. Please upload a different photo.`)
+            throw new Error('Image flagged by moderation')
+          }
+        } else {
+          throw new Error(await res.text())
+        }
+      } catch (e) {
+        throw e
+      }
+      if (side === 'front') setCameoFrontUrl(url)
+      if (side === 'left') setCameoLeftUrl(url)
+      if (side === 'right') setCameoRightUrl(url)
+      // Persist to profile for cross-page prefill (do not create a new row yet)
+      try {
+        if (user?.id) {
+          const column = side === 'front' ? 'cameo_front_url' : side === 'left' ? 'cameo_left_url' : 'cameo_right_url'
+          await supabase.from('profiles').update({ [column]: url }).eq('id', user.id)
+        }
+      } catch (_e) {}
+      return { publicUrl: url }
+    } catch (e: any) {
+      alert(`Failed to upload image: ${e?.message || e}`)
+    } finally {
+      setUploadingCameo(false)
+    }
+  }
+
+  const startVerification = async () => {
+    const targetId = user?.id || profileId
+    if (!targetId) { alert('Profile not ready yet. Please complete previous steps.'); return }
+    try {
+      setKycLoading(true)
+      const u = new URL(window.location.href)
+      u.searchParams.set('step', '4')
+      u.searchParams.set('verified', '1')
+      const returnUrl = u.toString()
+      const res = await fetch(`${API_BASE}/api/kyc/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      setKycProvider(data.provider || 'veriff')
+      setKycSessionUrl(data.session_url)
+      setKycStatus('pending')
+      setLivenessStatus('pending')
+      if (data.session_url) window.open(data.session_url, '_blank')
+    } catch (e: any) {
+      alert(`Failed to start verification: ${e?.message || e}`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const refreshVerificationStatus = async () => {
+    const targetId = user?.id || profileId
+    if (!targetId) return
+    try {
+      setKycLoading(true)
+      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(targetId)}`)
+      if (!res.ok) throw new Error(await res.text())
+      const rows = await res.json()
+      const row = Array.isArray(rows) && rows.length ? rows[0] : null
+      if (row) {
+        if (row.kyc_status) setKycStatus(row.kyc_status)
+        if (row.liveness_status) setLivenessStatus(row.liveness_status)
+        if (row.kyc_provider) setKycProvider(row.kyc_provider)
+        if (row.kyc_status === 'approved' && !cameoFrontUrl && !cameoLeftUrl && !cameoRightUrl) {
+          alert('Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.')
+        }
+      }
+      return row
+    } catch (e: any) {
+      alert(`Failed to fetch verification status: ${e?.message || e}`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const verifyAndContinue = async () => {
+    try {
+      setKycLoading(true)
+      const row = await refreshVerificationStatus()
+      const kyc = row?.kyc_status || kycStatus
+      const live = row?.liveness_status || livenessStatus
+      if (kyc === 'approved' && live === 'approved') {
+        setStep(5)
+        return
+      }
+      // If user hasn't started verification, kick it off automatically
+      if ((kyc || 'not_started') === 'not_started' && (live || 'not_started') === 'not_started') {
+        await startVerification()
+        return
+      }
+      alert(`Verification not complete yet. KYC: ${kyc || 'not_started'}, Liveness: ${live || 'not_started'}.`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const startLiveness = async () => {
+    try {
+      if (!COGNITO_IDENTITY_POOL_ID) {
+        alert('Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.');
+        return
+      }
+      setLivenessRunning(true)
+      console.log('[liveness] creating server session...')
+
+      const res = await fetch(`${API_BASE}/api/liveness/create`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({})
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const { session_id } = await res.json()
+      if (!session_id) throw new Error('Missing session_id')
+      setLivenessSessionId(session_id)
+      setShowLiveness(true)
+      // Session is created and modal is open; allow user to click again later if needed
+      setLivenessRunning(false)
+      console.log('[liveness] session ready, modal opened', session_id)
+    } catch (e: any) {
+      setLivenessRunning(false)
+      setShowLiveness(false)
+      alert(e?.message || String(e))
+    }
+  }
+
+  const totalSteps = 5;
   const progress = (step / totalSteps) * 100;
+
+  // Verification state
+  const { initialized, authenticated, user } = useAuth()
+  const [kycStatus, setKycStatus] = useState<'not_started'|'pending'|'approved'|'rejected'>('not_started')
+  const [livenessStatus, setLivenessStatus] = useState<'not_started'|'pending'|'approved'|'rejected'>('not_started')
+  const [kycProvider, setKycProvider] = useState<string | null>(null)
+  const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null)
+  const [kycLoading, setKycLoading] = useState(false)
+  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || ''
+  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || 'eu-central-1'
+  const COGNITO_IDENTITY_POOL_ID = (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || ''
+  const [showLiveness, setShowLiveness] = useState(false)
+  const [livenessRunning, setLivenessRunning] = useState(false)
+  const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null)
 
   const getStepTitle = () => {
     if (step === 1) return "Create Your Account";
     if (step === 2) {
-      if (creatorType === "influencer") return "Profile Basics";
-      if (creatorType === "model_actor") return "Talent Details";
-      if (creatorType === "athlete") return "Athlete Info";
+      if (creatorType === 'influencer') return "Profile Basics";
+      if (creatorType === 'model_actor') return "Talent Details";
+      if (creatorType === 'athlete') return "Athlete Info";
     }
     if (step === 3) {
-      if (creatorType === "influencer") return "Opportunities";
-      if (creatorType === "model_actor") return "Preferences";
-      if (creatorType === "athlete") return "Brand Setup";
+      if (creatorType === 'influencer') return "Opportunities";
+      if (creatorType === 'model_actor') return "Preferences";
+      if (creatorType === 'athlete') return "Brand Setup";
     }
     return "";
   };
 
+  useEffect(() => {
+    if (step !== 4) return
+    // Initial fetch
+    refreshVerificationStatus()
+    // If redirected back with ?verified=1, attempt to proceed
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('verified') === '1') {
+      verifyAndContinue()
+    }
+    // Poll every 5s while on step 4
+    const interval = setInterval(() => {
+      refreshVerificationStatus()
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [step])
+
   // Initial profile creation (Step 1)
-  const createInitialProfileMutation = useMutation({
+  const createInitialProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
+      if (!user) throw new Error('Not authenticated')
       try {
-        const profile = await base44.entities.FaceProfile.create({
+        const payload: any = {
+          id: user.id,
           email: data.email,
+          full_name: data.creator_type === 'model_actor' ? (data.stage_name || data.full_name) : data.full_name,
           creator_type: data.creator_type,
-          full_name: data.full_name || data.stage_name,
-          status: "waitlist",
           content_types: [],
+          content_other: null,
           industries: [],
+          primary_platform: null,
+          platform_handle: null,
+          work_types: [],
+          representation_status: null,
+          headshot_url: null,
+          sport: null,
+          athlete_type: null,
+          school_name: null,
+          age: null,
+          languages: null,
+          instagram_handle: null,
+          twitter_handle: null,
+          brand_categories: [],
+          bio: null,
+          city: data.city || null,
+          state: data.state || null,
+          birthdate: data.birthdate || null,
           ethnicity: [],
+          gender: data.gender || null,
           vibes: [],
           visibility: "private",
-        });
-        console.log("Profile created successfully:", profile);
-        return profile;
+          status: "waitlist",
+          is_sample: false,
+        }
+        const { data: upserted, error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' }).select()
+        if (error) throw error
+        return Array.isArray(upserted) ? upserted[0] : upserted
       } catch (error) {
-        console.error("Detailed error:", error);
-        throw error;
+        console.error('Detailed error:', error)
+        throw error
       }
     },
-    onSuccess: (data) => {
-      setProfileId(data.id);
+    onSuccess: () => {
+      setProfileId(user?.id || null)
       setStep(2);
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Unknown error occurred";
+      const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Unknown error occurred";
       alert(`Failed to create profile: ${errorMessage}. Please try again.`);
-    },
+    }
   });
 
   // Profile update (Step 3)
-  const updateProfileMutation = useMutation({
+  const updateProfileMutation = useMutation<any, Error, any>({
     mutationFn: async (data) => {
-      if (!profileId) {
-        throw new Error("Profile ID not found for update.");
-      }
-
+      if (!user) throw new Error('Not authenticated')
       try {
-        const updateData = {
+        const updateData: any = {
+          id: user.id,
+          email: data.email,
+          full_name: data.creator_type === 'model_actor' ? (data.stage_name || data.full_name) : data.full_name,
+          creator_type: data.creator_type,
+          content_types: data.content_types || [],
+          content_other: data.content_other || null,
+          industries: data.industries || [],
+          primary_platform: data.primary_platform || null,
+          platform_handle: data.platform_handle || null,
+          work_types: data.work_types || [],
+          representation_status: data.representation_status || "",
+          headshot_url: data.headshot_url || "",
+          sport: data.sport || null,
+          athlete_type: data.athlete_type || null,
+          school_name: data.school_name || null,
+          age: data.age || null,
+          languages: data.languages || null,
+          instagram_handle: data.instagram_handle || null,
+          twitter_handle: data.twitter_handle || null,
+          brand_categories: data.brand_categories || [],
+          bio: data.bio || null,
           city: data.city || "",
           state: data.state || "",
           birthdate: data.birthdate || "",
-          gender: data.gender || "",
           ethnicity: data.ethnicity || [],
+          gender: data.gender || "",
           vibes: data.vibes || [],
           visibility: data.visibility || "private",
           status: "waitlist",
-        };
-
-        // Add type-specific fields
-        if (data.creator_type === "influencer") {
-          updateData.content_types = data.content_types || [];
-          updateData.content_other = data.content_other || "";
-          updateData.industries = data.industries || [];
-          updateData.primary_platform = data.primary_platform || "";
-          updateData.platform_handle = data.platform_handle || "";
-        } else if (data.creator_type === "model_actor") {
-          updateData.work_types = data.work_types || [];
-          updateData.representation_status = data.representation_status || "";
-          updateData.headshot_url = data.headshot_url || "";
-        } else if (data.creator_type === "athlete") {
-          updateData.sport = data.sport || "";
-          updateData.athlete_type = data.athlete_type || "";
-          updateData.school_name = data.school_name || "";
-          updateData.age = data.age || "";
-          updateData.languages = data.languages || "";
-          updateData.instagram_handle = data.instagram_handle || "";
-          updateData.twitter_handle = data.twitter_handle || "";
-          updateData.brand_categories = data.brand_categories || [];
-          updateData.bio = data.bio || "";
         }
 
-        console.log("Updating profile with data:", updateData);
+        if (cameoFrontUrl) (updateData as any).cameo_front_url = cameoFrontUrl
+        if (cameoLeftUrl) (updateData as any).cameo_left_url = cameoLeftUrl
+        if (cameoRightUrl) (updateData as any).cameo_right_url = cameoRightUrl
 
-        const updated = await base44.entities.FaceProfile.update(
-          profileId,
-          updateData,
-        );
-
-        console.log("Profile updated successfully:", updated);
-        return updated;
+        console.log("Upserting profile with data:", updateData);
+        const { data: updated, error } = await supabase.from('profiles').upsert(updateData, { onConflict: 'id' }).select()
+        if (error) throw error
+        return Array.isArray(updated) ? updated[0] : updated
       } catch (error) {
         console.error("Detailed update error:", error);
         throw error;
       }
     },
     onSuccess: () => {
-      console.log("Update mutation succeeded, showing success screen");
-      setSubmitted(true);
+      // Proceed to verification step
+      setStep(4)
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Unknown error occurred";
+      const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Unknown error occurred";
       alert(`Failed to update profile: ${errorMessage}. Please try again.`);
-    },
+    }
   });
 
   const handleFirstContinue = () => {
@@ -338,23 +740,91 @@ export default function ReserveProfile() {
       alert("Passwords do not match.");
       return;
     }
-    if (
-      creatorType === "model_actor" &&
-      !formData.stage_name &&
-      !formData.full_name
-    ) {
+    if (creatorType === 'model_actor' && !formData.stage_name && !formData.full_name) {
       alert("Please enter your full name or stage name.");
       return;
     }
-    if (creatorType !== "model_actor" && !formData.full_name) {
+    if (creatorType !== 'model_actor' && !formData.full_name) {
       alert("Please enter your full name.");
       return;
     }
-
-    createInitialProfileMutation.mutate(formData);
+    
+    // Check email availability, then register in Firebase, then create profile
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/email/available?email=${encodeURIComponent(formData.email)}`)
+        if (!res.ok) throw new Error(await res.text())
+        const data = await res.json()
+        if (!data.available) {
+          const proceed = window.confirm('This email is already registered. Would you like us to send a magic link to sign in?')
+          if (proceed) {
+            const { error } = await supabase.auth.signInWithOtp({
+              email: formData.email.trim().toLowerCase(),
+              options: { emailRedirectTo: `${window.location.origin}/Login` },
+            })
+            if (error) {
+              alert(error.message)
+            } else {
+              alert('Magic link sent. Check your email to complete sign-in.')
+            }
+          } else {
+            alert('This email is already registered. Please log in instead.')
+          }
+          return
+        }
+        // Create Supabase auth user so login works
+        const displayName = (creatorType === 'model_actor') ? (formData.stage_name || formData.full_name) : formData.full_name
+        await register(formData.email, formData.password, displayName)
+        // Move to next step; profile will be saved at the end (step 5)
+        setStep(2)
+      } catch (e: any) {
+        alert(`Failed to sign up: ${e?.message || e}`)
+      }
+    })()
   };
 
   const handleNext = () => {
+    // Step validations
+    if (step === 2) {
+      // Common validations for step 2 per creator type
+      if (creatorType === 'influencer') {
+        if (!formData.city?.trim()) {
+          alert('City is required.');
+          return;
+        }
+        if (!formData.state?.trim()) {
+          alert('State is required.');
+          return;
+        }
+        if (!formData.birthdate) {
+          alert('Birthdate is required.');
+          return;
+        }
+        // 18+ check
+        const birth = new Date(formData.birthdate);
+        const today = new Date();
+        const age = today.getFullYear() - birth.getFullYear() - ((today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) ? 1 : 0);
+        if (isFinite(age) && age < 18) {
+          alert('You must be 18 or older.');
+          return;
+        }
+        if (!formData.gender?.trim()) {
+          alert('Please select how you identify.');
+          return;
+        }
+      }
+      // Pricing required in onboarding step (applies to all creator types)
+      const monthly = Number(formData.base_monthly_price_usd)
+      const perUse = Number(formData.per_use_price_usd)
+      if (!isFinite(monthly) || monthly < 150) {
+        alert('Please set your base monthly license price (minimum $150).')
+        return;
+      }
+      if (!isFinite(perUse) || perUse < 5 || perUse > 200) {
+        alert('Please set your per-use price between $5 and $200.')
+        return;
+      }
+    }
     if (step < totalSteps) setStep(step + 1);
   };
 
@@ -363,16 +833,110 @@ export default function ReserveProfile() {
   };
 
   const handleSubmit = async () => {
-    console.log("Submitting final form data:", formData);
-    updateProfileMutation.mutate(formData);
+    // Step 3 validations for influencer
+    if (creatorType === 'influencer') {
+      if (!formData.content_types || formData.content_types.length === 0) {
+        alert('Select at least one campaign type.');
+        return;
+      }
+      if (!formData.industries || formData.industries.length === 0) {
+        alert('Select at least one industry.');
+        return;
+      }
+      if (!formData.primary_platform?.trim()) {
+        alert('Primary platform is required.');
+        return;
+      }
+      if (!formData.platform_handle?.trim()) {
+        alert('Handle is required.');
+        return;
+      }
+      if (!formData.visibility) {
+        alert('Please select a profile visibility.');
+        return;
+      }
+    }
+    console.log("Collected step 3 data (no write yet):", formData);
+    setStep(4);
   };
 
+  const finalizeProfile = async () => {
+    if (!user) { alert('Please log in.'); return }
+    try {
+      // Backfill missing cameo URLs from Storage if needed
+      let front = cameoFrontUrl
+      let left = cameoLeftUrl
+      let right = cameoRightUrl
+      if ((!front || !left || !right) && supabase) {
+        const prefix = `faces/${user.id}/reference`
+        const { data: files } = await supabase.storage.from('profiles').list(prefix, { limit: 100 })
+        if (files && files.length) {
+          files.forEach((f: any) => {
+            const name = f.name.toLowerCase()
+            const pub = supabase.storage.from('profiles').getPublicUrl(`${prefix}/${f.name}`).data.publicUrl
+            if (!front && name.includes('front')) front = pub
+            if (!left && name.includes('left')) left = pub
+            if (!right && name.includes('right')) right = pub
+          })
+        }
+      }
+
+      const monthlyUsd = Number(formData.base_monthly_price_usd)
+      const perUseUsd = Number(formData.per_use_price_usd)
+      const payload: any = {
+        id: user.id,
+        email: formData.email,
+        full_name: creatorType === 'model_actor' ? (formData.stage_name || formData.full_name) : formData.full_name,
+        creator_type: creatorType,
+        content_types: formData.content_types || [],
+        content_other: formData.content_other || null,
+        industries: formData.industries || [],
+        primary_platform: formData.primary_platform || null,
+        platform_handle: formData.platform_handle || null,
+        work_types: formData.work_types || [],
+        representation_status: formData.representation_status || '',
+        headshot_url: formData.headshot_url || '',
+        sport: formData.sport || null,
+        athlete_type: formData.athlete_type || null,
+        school_name: formData.school_name || null,
+        age: formData.age || null,
+        languages: formData.languages || null,
+        instagram_handle: formData.instagram_handle || null,
+        twitter_handle: formData.twitter_handle || null,
+        brand_categories: formData.brand_categories || [],
+        bio: formData.bio || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        birthdate: formData.birthdate || null,
+        ethnicity: formData.ethnicity || [],
+        gender: formData.gender || null,
+        vibes: formData.vibes || [],
+        visibility: formData.visibility || 'private',
+        status: 'waitlist',
+        // Pricing in cents (USD-only)
+        base_monthly_price_cents: isFinite(monthlyUsd) ? Math.round(monthlyUsd * 100) : 15000,
+        per_use_price_cents: isFinite(perUseUsd) ? Math.round(perUseUsd * 100) : 500,
+        currency_code: 'USD',
+      }
+      if (front) (payload as any).cameo_front_url = front
+      if (left) (payload as any).cameo_left_url = left
+      if (right) (payload as any).cameo_right_url = right
+
+      const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+      if (error) throw error
+      setProfileId(user.id)
+      setSubmitted(true)
+    } catch (e: any) {
+      alert(`Failed to save your profile: ${e?.message || e}`)
+    }
+  }
+
   const toggleArrayItem = (field, value) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: prev[field].includes(value)
-        ? prev[field].filter((item) => item !== value)
-        : [...prev[field], value],
+        ? prev[field].filter(item => item !== value)
+        : [...prev[field], value]
     }));
   };
 
@@ -387,10 +951,16 @@ export default function ReserveProfile() {
             Profile reserved—welcome to the Likelee ecosystem
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            We're onboarding talent in waves to keep demand and visibility
-            balanced. Your profile is saved; we'll notify you when it's time to
-            complete verification and go live.
+            We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.
           </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link to="/Login">
+              <Button className="rounded-none border-2 border-black bg-black text-white px-6 h-11">Sign in</Button>
+            </Link>
+            <Link to="/CreatorDashboard">
+              <Button variant="outline" className="rounded-none border-2 border-black h-11 px-6">Go to Dashboard</Button>
+            </Link>
+          </div>
         </Card>
       </div>
     );
@@ -404,9 +974,7 @@ export default function ReserveProfile() {
           <Alert className="mb-8 bg-cyan-50 border-2 border-[#32C8D1] rounded-none">
             <AlertCircle className="h-5 w-5 text-[#32C8D1]" />
             <AlertDescription className="text-cyan-900 font-medium">
-              We're launching in limited batches to make sure every Creator gets
-              visibility and campaign opportunities. Reserve your profile to
-              join the first creator cohort.
+              We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort.
             </AlertDescription>
           </Alert>
         )}
@@ -414,9 +982,7 @@ export default function ReserveProfile() {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Reserve Your Profile
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">Reserve Your Profile</h2>
             <Badge className="bg-cyan-100 text-cyan-700 border-2 border-black rounded-none">
               Step {step} of {totalSteps}
             </Badge>
@@ -434,124 +1000,204 @@ export default function ReserveProfile() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {getStepTitle()}
-                </h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{getStepTitle()}</h3>
                 <p className="text-gray-600">
-                  {creatorType === "athlete" && "Create your NIL-ready account"}
-                  {creatorType === "model_actor" &&
-                    "Create your Likelee account"}
-                  {creatorType === "influencer" &&
-                    "Let's start with the basics"}
+                  {creatorType === 'athlete' && "Create your NIL-ready account"}
+                  {creatorType === 'model_actor' && "Create your Likelee account"}
+                  {creatorType === 'influencer' && "Let's start with the basics"}
                 </p>
               </div>
 
+              {/* Auth mode switch */}
+              <div className="flex gap-2">
+                <Button
+                  variant={authMode === 'signup' ? 'default' : 'outline'}
+                  className="rounded-none border-2 border-black"
+                  onClick={() => setAuthMode('signup')}
+                >
+                  Sign up
+                </Button>
+                <Button
+                  variant={authMode === 'login' ? 'default' : 'outline'}
+                  className="rounded-none border-2 border-black"
+                  onClick={() => setAuthMode('login')}
+                >
+                  Log in
+                </Button>
+              </div>
+
+              {authMode === 'signup' ? (
               <div className="space-y-4">
                 <div>
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-2 block">
                     Email Address
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="you@example.com"
                   />
                 </div>
 
                 <div>
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
                     Password
                   </Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="••••••••"
                   />
                 </div>
 
                 <div>
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 mb-2 block">
                     Confirm Password
                   </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="••••••••"
                   />
                 </div>
 
                 <div>
-                  <Label
-                    htmlFor="full_name"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {creatorType === "model_actor"
-                      ? "Full Name / Stage Name"
-                      : "Full Name"}
+                  <Label htmlFor="full_name" className="text-sm font-medium text-gray-700 mb-2 block">
+                    {creatorType === 'model_actor' ? "Full Name / Stage Name" : "Full Name"}
                   </Label>
                   <Input
                     id="full_name"
                     type="text"
-                    value={
-                      creatorType === "model_actor"
-                        ? formData.stage_name || formData.full_name
-                        : formData.full_name
-                    }
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        [creatorType === "model_actor"
-                          ? "stage_name"
-                          : "full_name"]: e.target.value,
-                      })
-                    }
+                    value={creatorType === 'model_actor' ? (formData.stage_name || formData.full_name) : formData.full_name}
+                    onChange={(e: any) => setFormData({
+                      ...formData,
+                      [creatorType === 'model_actor' ? 'stage_name' : 'full_name']: e.target.value
+                    })}
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={
-                      creatorType === "model_actor"
-                        ? "Your name or stage name"
-                        : "Your full name"
-                    }
+                    placeholder={creatorType === 'model_actor' ? "Your name or stage name" : "Your full name"}
                   />
                 </div>
+                <Button
+                  onClick={handleFirstContinue} 
+                  disabled={createInitialProfileMutation.isPending} 
+                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                >
+                  {createInitialProfileMutation.isPending ? "Saving..." : "Continue"}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
               </div>
+              ) : (
+                <form
+                  className="space-y-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    // Reuse formData.email/password
+                    await login(formData.email, formData.password)
+                    navigate('/CreatorDashboard')
+                  }}
+                >
+                  <div>
+                    <Label htmlFor="login_email" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="login_email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="login_password" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Password
+                    </Label>
+                    <Input
+                      id="login_password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full h-12 bg-black text-white border-2 border-black rounded-none">
+                    Log in
+                  </Button>
+                </form>
+              )}
 
-              <Button
-                onClick={handleFirstContinue}
-                disabled={createInitialProfileMutation.isPending}
-                className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-              >
-                {createInitialProfileMutation.isPending
-                  ? "Saving..."
-                  : "Continue"}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+              {/* Liveness Modal */}
+              {showLiveness && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => { if (!livenessRunning) setShowLiveness(false) }} />
+                  <div className="relative z-10 w-full max-w-2xl bg-white border-2 border-black p-3">
+                    <div className="mb-2 font-semibold">Face Liveness</div>
+                    <div className="text-xs text-gray-600 mb-2">Session: {livenessSessionId} • Region: {AWS_REGION}</div>
+                    {livenessSessionId && (
+                      <FaceLivenessDetectorAny
+                        sessionId={livenessSessionId}
+                        region={AWS_REGION}
+                        credentialProvider={async () => {
+                          const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers') as any
+                          return fromCognitoIdentityPool({
+                            clientConfig: { region: AWS_REGION },
+                            identityPoolId: COGNITO_IDENTITY_POOL_ID,
+                          })
+                        }}
+                        createCredentialsProvider={async () => {
+                          const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers') as any
+                          return fromCognitoIdentityPool({
+                            clientConfig: { region: AWS_REGION },
+                            identityPoolId: COGNITO_IDENTITY_POOL_ID,
+                          })
+                        }}
+                        onAnalysisComplete={async () => {
+                          try {
+                            console.log('[liveness] analysis complete; fetching results')
+                            const r = await fetch(`${API_BASE}/api/liveness/result`, {
+                              method: 'POST',
+                              headers: { 'content-type': 'application/json' },
+                              body: JSON.stringify({ session_id: livenessSessionId })
+                            })
+                            if (r.ok) {
+                              const data = await r.json()
+                              console.log('[liveness] result', data)
+                              setLivenessStatus(data.passed ? 'approved' : 'rejected')
+                              if (!data.passed) alert('Liveness check failed. Please try again with good lighting and follow prompts.')
+                            } else {
+                              alert(`Failed to fetch liveness result: ${await r.text()}`)
+                            }
+                          } finally {
+                            setLivenessRunning(false)
+                            setShowLiveness(false)
+                            setLivenessSessionId(null)
+                          }
+                        }}
+                        onError={(e: any) => {
+                          console.error('Liveness error', e)
+                          alert(`Liveness error: ${e?.message || e}`)
+                          setLivenessRunning(false)
+                          setShowLiveness(false)
+                          setLivenessSessionId(null)
+                        }}
+                      />
+                    )}
+                    <div className="mt-3 text-sm text-gray-600">Follow the on-screen prompts. This uses secure AWS Rekognition.</div>
+                  </div>
+                </div>,
+                document.body
+              )}
             </div>
           )}
 
@@ -559,50 +1205,36 @@ export default function ReserveProfile() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {getStepTitle()}
-                </h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{getStepTitle()}</h3>
                 <p className="text-gray-600">
-                  {creatorType === "influencer" &&
-                    "Tell us a little about yourself"}
-                  {creatorType === "model_actor" &&
-                    "Let's start your portfolio"}
-                  {creatorType === "athlete" && "Tell us about your sport"}
+                  {creatorType === 'influencer' && "Tell us a little about yourself"}
+                  {creatorType === 'model_actor' && "Let's start your portfolio"}
+                  {creatorType === 'athlete' && "Tell us about your sport"}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label
-                      htmlFor="city"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
+                    <Label htmlFor="city" className="text-sm font-medium text-gray-700 mb-2 block">
                       City
                     </Label>
                     <Input
                       id="city"
                       value={formData.city}
-                      onChange={(e) =>
-                        setFormData({ ...formData, city: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="Los Angeles"
                     />
                   </div>
                   <div>
-                    <Label
-                      htmlFor="state"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
+                    <Label htmlFor="state" className="text-sm font-medium text-gray-700 mb-2 block">
                       State
                     </Label>
                     <Input
                       id="state"
                       value={formData.state}
-                      onChange={(e) =>
-                        setFormData({ ...formData, state: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="CA"
                     />
@@ -610,20 +1242,15 @@ export default function ReserveProfile() {
                 </div>
 
                 <div>
-                  <Label
-                    htmlFor="birthdate"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    {creatorType === "athlete" ? "Age" : "Birthdate"}
+                  <Label htmlFor="birthdate" className="text-sm font-medium text-gray-700 mb-2 block">
+                    {creatorType === 'athlete' ? "Age" : "Birthdate"}
                   </Label>
-                  {creatorType === "athlete" ? (
+                  {creatorType === 'athlete' ? (
                     <Input
                       id="age"
                       type="number"
                       value={formData.age}
-                      onChange={(e) =>
-                        setFormData({ ...formData, age: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="21"
                     />
@@ -632,9 +1259,7 @@ export default function ReserveProfile() {
                       id="birthdate"
                       type="date"
                       value={formData.birthdate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birthdate: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
                       className="border-2 border-gray-300 rounded-none"
                     />
                   )}
@@ -644,33 +1269,12 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
                     How do you identify?
                   </Label>
-                  <RadioGroup
-                    value={formData.gender}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, gender: value })
-                    }
-                  >
+                  <RadioGroup value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
                     <div className="space-y-2">
-                      {[
-                        "Female",
-                        "Male",
-                        "Nonbinary",
-                        "Gender fluid",
-                        "Prefer not to say",
-                      ].map((option) => (
-                        <div
-                          key={option}
-                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                        >
-                          <RadioGroupItem
-                            value={option}
-                            id={option}
-                            className="border-2 border-gray-400"
-                          />
-                          <Label
-                            htmlFor={option}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
+                      {["Female", "Male", "Nonbinary", "Gender fluid", "Prefer not to say"].map((option) => (
+                        <div key={option} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                          <RadioGroupItem value={option} id={option} className="border-2 border-gray-400" />
+                          <Label htmlFor={option} className="text-sm text-gray-700 cursor-pointer flex-1">
                             {option}
                           </Label>
                         </div>
@@ -685,22 +1289,14 @@ export default function ReserveProfile() {
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {ethnicities.map((ethnicity) => (
-                      <div
-                        key={ethnicity}
-                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                      >
+                      <div key={ethnicity} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
                         <Checkbox
                           id={ethnicity}
                           checked={formData.ethnicity.includes(ethnicity)}
-                          onCheckedChange={() =>
-                            toggleArrayItem("ethnicity", ethnicity)
-                          }
+                          onCheckedChange={() => toggleArrayItem("ethnicity", ethnicity)}
                           className="border-2 border-gray-400"
                         />
-                        <label
-                          htmlFor={ethnicity}
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
+                        <label htmlFor={ethnicity} className="text-sm text-gray-700 cursor-pointer flex-1">
                           {ethnicity}
                         </label>
                       </div>
@@ -708,30 +1304,21 @@ export default function ReserveProfile() {
                   </div>
                 </div>
 
+                
                 {/* Athlete-specific fields */}
-                {creatorType === "athlete" && (
+                {creatorType === 'athlete' && (
                   <>
                     <div>
-                      <Label
-                        htmlFor="sport"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
+                      <Label htmlFor="sport" className="text-sm font-medium text-gray-700 mb-2 block">
                         Sport
                       </Label>
-                      <Select
-                        value={formData.sport}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, sport: value })
-                        }
-                      >
+                      <Select value={formData.sport} onValueChange={(value) => setFormData({ ...formData, sport: value })}>
                         <SelectTrigger className="border-2 border-gray-300 rounded-none">
                           <SelectValue placeholder="Select your sport" />
                         </SelectTrigger>
                         <SelectContent>
                           {sportsOptions.map((sport) => (
-                            <SelectItem key={sport} value={sport}>
-                              {sport}
-                            </SelectItem>
+                            <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -741,54 +1328,29 @@ export default function ReserveProfile() {
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
                         Athlete Type
                       </Label>
-                      <RadioGroup
-                        value={formData.athlete_type}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, athlete_type: value })
-                        }
-                      >
+                      <RadioGroup value={formData.athlete_type} onValueChange={(value) => setFormData({ ...formData, athlete_type: value })}>
                         <div className="space-y-2">
-                          {["University", "Professional", "Independent"].map(
-                            (option) => (
-                              <div
-                                key={option}
-                                className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                              >
-                                <RadioGroupItem
-                                  value={option}
-                                  id={option}
-                                  className="border-2 border-gray-400"
-                                />
-                                <Label
-                                  htmlFor={option}
-                                  className="text-sm text-gray-700 cursor-pointer flex-1"
-                                >
-                                  {option}
-                                </Label>
-                              </div>
-                            ),
-                          )}
+                          {["University", "Professional", "Independent"].map((option) => (
+                            <div key={option} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                              <RadioGroupItem value={option} id={option} className="border-2 border-gray-400" />
+                              <Label htmlFor={option} className="text-sm text-gray-700 cursor-pointer flex-1">
+                                {option}
+                              </Label>
+                            </div>
+                          ))}
                         </div>
                       </RadioGroup>
                     </div>
 
                     {formData.athlete_type === "University" && (
                       <div>
-                        <Label
-                          htmlFor="school_name"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
+                        <Label htmlFor="school_name" className="text-sm font-medium text-gray-700 mb-2 block">
                           School Name
                         </Label>
                         <Input
                           id="school_name"
                           value={formData.school_name}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              school_name: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="University name"
                         />
@@ -796,21 +1358,13 @@ export default function ReserveProfile() {
                     )}
 
                     <div>
-                      <Label
-                        htmlFor="languages"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
+                      <Label htmlFor="languages" className="text-sm font-medium text-gray-700 mb-2 block">
                         Languages
                       </Label>
                       <Input
                         id="languages"
                         value={formData.languages}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            languages: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setFormData({ ...formData, languages: e.target.value })}
                         className="border-2 border-gray-300 rounded-none"
                         placeholder="e.g., English, Spanish"
                       />
@@ -819,22 +1373,17 @@ export default function ReserveProfile() {
                 )}
 
                 {/* Model-specific fields */}
-                {creatorType === "model_actor" && (
+                {creatorType === 'model_actor' && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <Label className="text-sm font-medium text-gray-900">
                         Type of work (select up to 3)
                       </Label>
-                      <span className="text-xs text-gray-500">
-                        You can specify more later
-                      </span>
+                      <span className="text-xs text-gray-500">You can specify more later</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
                       {modelWorkTypes.map((type) => (
-                        <div
-                          key={type}
-                          className="flex items-center space-x-2 p-2 hover:bg-gray-50"
-                        >
+                        <div key={type} className="flex items-center space-x-2 p-2 hover:bg-gray-50">
                           <Checkbox
                             id={type}
                             checked={formData.work_types.includes(type)}
@@ -844,17 +1393,12 @@ export default function ReserveProfile() {
                               } else if (formData.work_types.length < 3) {
                                 toggleArrayItem("work_types", type);
                               } else {
-                                alert(
-                                  "Please select up to 3 options for now. You can add more later.",
-                                );
+                                alert("Please select up to 3 options for now. You can add more later.");
                               }
                             }}
                             className="border-2 border-gray-400"
                           />
-                          <label
-                            htmlFor={type}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
+                          <label htmlFor={type} className="text-sm text-gray-700 cursor-pointer flex-1">
                             {type}
                           </label>
                         </div>
@@ -864,29 +1408,21 @@ export default function ReserveProfile() {
                 )}
 
                 {/* Influencer vibes */}
-                {creatorType === "influencer" && (
+                {creatorType === 'influencer' && (
                   <div>
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
                       Vibe / Style Tags
                     </Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {vibes.map((vibe) => (
-                        <div
-                          key={vibe}
-                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                        >
+                        <div key={vibe} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
                           <Checkbox
                             id={vibe}
                             checked={formData.vibes.includes(vibe)}
-                            onCheckedChange={() =>
-                              toggleArrayItem("vibes", vibe)
-                            }
+                            onCheckedChange={() => toggleArrayItem("vibes", vibe)}
                             className="border-2 border-gray-400"
                           />
-                          <label
-                            htmlFor={vibe}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
+                          <label htmlFor={vibe} className="text-sm text-gray-700 cursor-pointer flex-1">
                             {vibe}
                           </label>
                         </div>
@@ -894,6 +1430,76 @@ export default function ReserveProfile() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Pricing (USD-only) */}
+              <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Licensing Pricing</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="base_monthly_price" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Base monthly license price (USD)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700">$</span>
+                      <Input
+                        id="base_monthly_price"
+                        type="number"
+                        min={150}
+                        step={1}
+                        value={formData.base_monthly_price_usd}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9.]/g, '')
+                          setFormData({ ...formData, base_monthly_price_usd: v })
+                        }}
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder="150"
+                      />
+                      <span className="text-sm text-gray-600">/month</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Minimum $150/month. Currency is locked to USD.</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Per-use price (USD)
+                    </Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-700">$</span>
+                        <Input
+                          type="number"
+                          min={5}
+                          max={200}
+                          step={1}
+                          value={formData.per_use_price_usd}
+                          onChange={(e) => {
+                            const n = Number(e.target.value)
+                            if (!Number.isFinite(n)) return
+                            const clamped = Math.max(5, Math.min(200, Math.round(n)))
+                            setFormData({ ...formData, per_use_price_usd: clamped })
+                          }}
+                          className="w-24 border-2 border-gray-300 rounded-none"
+                        />
+                        <span className="text-sm text-gray-600">per use</span>
+                      </div>
+                      <div className="px-1">
+                        <Slider
+                          value={[Number(formData.per_use_price_usd) || 5]}
+                          min={5}
+                          max={200}
+                          step={1}
+                          onValueChange={(vals: any) => {
+                            const v = Array.isArray(vals) ? vals[0] : vals
+                            const clamped = Math.max(5, Math.min(200, Math.round(Number(v) || 5)))
+                            setFormData({ ...formData, per_use_price_usd: clamped })
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">Choose between $5 and $200 per use. Typical bookings are $5–$15.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-4">
@@ -909,7 +1515,7 @@ export default function ReserveProfile() {
                   onClick={handleNext}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {creatorType === "athlete" ? "Next: Brand Setup" : "Continue"}
+                  {creatorType === 'athlete' ? 'Next: Brand Setup' : 'Continue'}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -920,51 +1526,35 @@ export default function ReserveProfile() {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {getStepTitle()}
-                </h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{getStepTitle()}</h3>
                 <p className="text-gray-600">
-                  {creatorType === "influencer" &&
-                    "Help us match you with the right campaigns"}
-                  {creatorType === "model_actor" &&
-                    "Help us tailor your opportunities"}
-                  {creatorType === "athlete" &&
-                    "Get ready to attract sponsorship and brand deals"}
+                  {creatorType === 'influencer' && "Help us match you with the right campaigns"}
+                  {creatorType === 'model_actor' && "Help us tailor your opportunities"}
+                  {creatorType === 'athlete' && "Get ready to attract sponsorship and brand deals"}
                 </p>
               </div>
 
               <div className="space-y-6">
                 {/* Influencer Step 3 */}
-                {creatorType === "influencer" && (
+                {creatorType === 'influencer' && (
                   <>
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          What kind of content are you interested in being
-                          featured in?
+                          What kind of content are you interested in being featured in?
                         </Label>
-                        <span className="text-xs text-gray-500">
-                          Select up to 3 for now
-                        </span>
+                        <span className="text-xs text-gray-500">Select up to 3 for now</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {contentTypes.map((type) => (
-                          <div
-                            key={type}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
+                          <div key={type} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
                             <Checkbox
                               id={type}
                               checked={formData.content_types.includes(type)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("content_types", type)
-                              }
+                              onCheckedChange={() => toggleArrayItem("content_types", type)}
                               className="border-2 border-gray-400"
                             />
-                            <label
-                              htmlFor={type}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
+                            <label htmlFor={type} className="text-sm text-gray-700 cursor-pointer flex-1">
                               {type}
                             </label>
                           </div>
@@ -973,12 +1563,7 @@ export default function ReserveProfile() {
                       {formData.content_types.includes("Other") && (
                         <Input
                           value={formData.content_other}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              content_other: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, content_other: e.target.value })}
                           className="mt-3 border-2 border-gray-300 rounded-none"
                           placeholder="Please specify..."
                         />
@@ -988,31 +1573,20 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          What types of brands or industries do you want to work
-                          with?
+                          What types of brands or industries do you want to work with?
                         </Label>
-                        <span className="text-xs text-gray-500">
-                          Select up to 3 for now
-                        </span>
+                        <span className="text-xs text-gray-500">Select up to 3 for now</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {industries.map((industry) => (
-                          <div
-                            key={industry}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
+                          <div key={industry} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
                             <Checkbox
                               id={industry}
                               checked={formData.industries.includes(industry)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("industries", industry)
-                              }
+                              onCheckedChange={() => toggleArrayItem("industries", industry)}
                               className="border-2 border-gray-400"
                             />
-                            <label
-                              htmlFor={industry}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
+                            <label htmlFor={industry} className="text-sm text-gray-700 cursor-pointer flex-1">
                               {industry}
                             </label>
                           </div>
@@ -1022,21 +1596,10 @@ export default function ReserveProfile() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label
-                          htmlFor="primary_platform"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
+                        <Label htmlFor="primary_platform" className="text-sm font-medium text-gray-700 mb-2 block">
                           Primary Platform
                         </Label>
-                        <Select
-                          value={formData.primary_platform}
-                          onValueChange={(value) =>
-                            setFormData({
-                              ...formData,
-                              primary_platform: value,
-                            })
-                          }
-                        >
+                        <Select value={formData.primary_platform} onValueChange={(value) => setFormData({ ...formData, primary_platform: value })}>
                           <SelectTrigger className="border-2 border-gray-300 rounded-none">
                             <SelectValue placeholder="Select platform" />
                           </SelectTrigger>
@@ -1050,21 +1613,13 @@ export default function ReserveProfile() {
                         </Select>
                       </div>
                       <div>
-                        <Label
-                          htmlFor="platform_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
+                        <Label htmlFor="platform_handle" className="text-sm font-medium text-gray-700 mb-2 block">
                           Handle
                         </Label>
                         <Input
                           id="platform_handle"
                           value={formData.platform_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              platform_handle: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, platform_handle: e.target.value })}
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="@yourhandle"
                         />
@@ -1074,36 +1629,18 @@ export default function ReserveProfile() {
                 )}
 
                 {/* Model/Actor Step 3 */}
-                {creatorType === "model_actor" && (
+                {creatorType === 'model_actor' && (
                   <>
                     <div>
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
                         Representation Status
                       </Label>
-                      <RadioGroup
-                        value={formData.representation_status}
-                        onValueChange={(value) =>
-                          setFormData({
-                            ...formData,
-                            representation_status: value,
-                          })
-                        }
-                      >
+                      <RadioGroup value={formData.representation_status} onValueChange={(value) => setFormData({ ...formData, representation_status: value })}>
                         <div className="space-y-2">
                           {["Agency", "Independent"].map((option) => (
-                            <div
-                              key={option}
-                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                            >
-                              <RadioGroupItem
-                                value={option}
-                                id={option}
-                                className="border-2 border-gray-400"
-                              />
-                              <Label
-                                htmlFor={option}
-                                className="text-sm text-gray-700 cursor-pointer flex-1"
-                              >
+                            <div key={option} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                              <RadioGroupItem value={option} id={option} className="border-2 border-gray-400" />
+                              <Label htmlFor={option} className="text-sm text-gray-700 cursor-pointer flex-1">
                                 {option}
                               </Label>
                             </div>
@@ -1118,22 +1655,14 @@ export default function ReserveProfile() {
                       </Label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {vibes.map((vibe) => (
-                          <div
-                            key={vibe}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
+                          <div key={vibe} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
                             <Checkbox
                               id={vibe}
                               checked={formData.vibes.includes(vibe)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("vibes", vibe)
-                              }
+                              onCheckedChange={() => toggleArrayItem("vibes", vibe)}
                               className="border-2 border-gray-400"
                             />
-                            <label
-                              htmlFor={vibe}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
+                            <label htmlFor={vibe} className="text-sm text-gray-700 cursor-pointer flex-1">
                               {vibe}
                             </label>
                           </div>
@@ -1142,72 +1671,46 @@ export default function ReserveProfile() {
                     </div>
 
                     <div>
-                      <Label
-                        htmlFor="headshot_url"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
+                      <Label htmlFor="headshot_url" className="text-sm font-medium text-gray-700 mb-2 block">
                         Upload Headshot (optional)
                       </Label>
                       <Input
                         id="headshot_url"
                         type="text"
                         value={formData.headshot_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            headshot_url: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setFormData({ ...formData, headshot_url: e.target.value })}
                         className="border-2 border-gray-300 rounded-none"
                         placeholder="Image URL"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        You can upload your headshot after creating your account
-                      </p>
+                      <p className="text-xs text-gray-500 mt-1">You can upload your headshot after creating your account</p>
                     </div>
                   </>
                 )}
 
                 {/* Athlete Step 3 */}
-                {creatorType === "athlete" && (
+                {creatorType === 'athlete' && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label
-                          htmlFor="instagram_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
+                        <Label htmlFor="instagram_handle" className="text-sm font-medium text-gray-700 mb-2 block">
                           Instagram (optional)
                         </Label>
                         <Input
                           id="instagram_handle"
                           value={formData.instagram_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              instagram_handle: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="@yourhandle"
                         />
                       </div>
                       <div>
-                        <Label
-                          htmlFor="twitter_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
+                        <Label htmlFor="twitter_handle" className="text-sm font-medium text-gray-700 mb-2 block">
                           Twitter/X (optional)
                         </Label>
                         <Input
                           id="twitter_handle"
                           value={formData.twitter_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              twitter_handle: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
                           className="border-2 border-gray-300 rounded-none"
                           placeholder="@yourhandle"
                         />
@@ -1219,30 +1722,18 @@ export default function ReserveProfile() {
                         <Label className="text-sm font-medium text-gray-900">
                           Interests / Brand Categories
                         </Label>
-                        <span className="text-xs text-gray-500">
-                          Select up to 3 for now
-                        </span>
+                        <span className="text-xs text-gray-500">Select up to 3 for now</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {athleteBrandCategories.map((category) => (
-                          <div
-                            key={category}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
+                          <div key={category} className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
                             <Checkbox
                               id={category}
-                              checked={formData.brand_categories.includes(
-                                category,
-                              )}
-                              onCheckedChange={() =>
-                                toggleArrayItem("brand_categories", category)
-                              }
+                              checked={formData.brand_categories.includes(category)}
+                              onCheckedChange={() => toggleArrayItem("brand_categories", category)}
                               className="border-2 border-gray-400"
                             />
-                            <label
-                              htmlFor={category}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
+                            <label htmlFor={category} className="text-sm text-gray-700 cursor-pointer flex-1">
                               {category}
                             </label>
                           </div>
@@ -1251,18 +1742,13 @@ export default function ReserveProfile() {
                     </div>
 
                     <div>
-                      <Label
-                        htmlFor="bio"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
+                      <Label htmlFor="bio" className="text-sm font-medium text-gray-700 mb-2 block">
                         Short Bio
                       </Label>
                       <Textarea
                         id="bio"
                         value={formData.bio}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bio: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                         className="border-2 border-gray-300 rounded-none h-24"
                         placeholder="Tell brands a bit about you..."
                       />
@@ -1275,39 +1761,18 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
                     Profile Visibility
                   </Label>
-                  <RadioGroup
-                    value={formData.visibility}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, visibility: value })
-                    }
-                  >
+                  <RadioGroup value={formData.visibility} onValueChange={(value) => setFormData({ ...formData, visibility: value })}>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="public"
-                          id="public"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="public"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          <span className="font-medium">Public</span> - Visible
-                          to everyone
+                        <RadioGroupItem value="public" id="public" className="border-2 border-gray-400" />
+                        <Label htmlFor="public" className="text-sm text-gray-700 cursor-pointer flex-1">
+                          <span className="font-medium">Public</span> - Visible to everyone
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="private"
-                          id="private"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="private"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          <span className="font-medium">Private</span> - Only
-                          discoverable to brands and AI creators
+                        <RadioGroupItem value="private" id="private" className="border-2 border-gray-400" />
+                        <Label htmlFor="private" className="text-sm text-gray-700 cursor-pointer flex-1">
+                          <span className="font-medium">Private</span> - Only discoverable to brands and AI creators
                         </Label>
                       </div>
                     </div>
@@ -1329,12 +1794,130 @@ export default function ReserveProfile() {
                   disabled={updateProfileMutation.isPending}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Create My Account"}
+                  {updateProfileMutation.isPending ? "Saving..." : "Save & Continue to Verification"}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Step 4: Verify Identity - redesigned */}
+          {step === 4 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">Identity Verification</h3>
+                <p className="text-gray-700">Verify your identity to become visible to brands and unlock opportunities</p>
+              </div>
+
+              {/* Why verify box */}
+              <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
+                <h4 className="font-bold text-gray-900 mb-3">Why verify your identity?</h4>
+                <ul className="space-y-2 text-gray-800">
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Get discovered by brands looking for verified creators</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Build trust and credibility with licensing partners</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Unlock higher-value campaign opportunities</li>
+                </ul>
+              </div>
+
+              <p className="text-gray-700">We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.</p>
+
+              {/* Requirements box */}
+              <div className="p-5 border-2 border-gray-300 bg-gray-50">
+                <h4 className="font-bold text-gray-900 mb-2">What you'll need:</h4>
+                <ul className="list-disc list-inside text-gray-800 space-y-1">
+                  <li>Government-issued ID (driver's license, passport, or state ID)</li>
+                  <li>Good lighting and camera/mic access</li>
+                  <li>2–3 minutes in a quiet space</li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={startVerification}
+                  disabled={kycLoading}
+                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                >
+                  {kycLoading ? 'Starting…' : 'Verify Identity Now'}
+                </Button>
+                <Button
+                  onClick={startLiveness}
+                  disabled={livenessRunning}
+                  variant="outline"
+                  className="w-full h-12 border-2 border-black rounded-none"
+                >
+                  {livenessRunning ? 'Preparing…' : 'Start Liveness Check'}
+                </Button>
+                <div className="text-sm text-gray-700 flex items-center justify-between">
+                  <span>KYC: <strong className="capitalize">{kycStatus.replace('_', ' ')}</strong></span>
+                  <span>Liveness: <strong className="capitalize">{livenessStatus.replace('_', ' ')}</strong></span>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={verifyAndContinue}
+                    disabled={kycLoading}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-black rounded-none"
+                  >
+                    {kycLoading ? 'Checking…' : 'Verify & Continue'}
+                  </Button>
+                  <Button
+                    onClick={handleBack}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-black rounded-none"
+                  >
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setShowSkipModal(true)}
+                    variant="outline"
+                    className="flex-1 h-12 border-2 border-gray-300 rounded-none"
+                  >
+                    Skip for Now
+                  </Button>
+                </div>
+              </div>
+
+              {/* Skip Confirmation Modal */}
+              {showSkipModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowSkipModal(false)} />
+                  <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
+                    <h4 className="text-lg font-bold mb-2">Skip Identity Verification?</h4>
+                    <p className="text-sm text-gray-700 mb-4">If you skip now, your profile will be created, but brands won't see you until you complete verification.</p>
+                    <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
+                      You can complete verification anytime from your dashboard.
+                    </div>
+                    <div className="flex gap-3 justify-end">
+                      <Button variant="outline" className="rounded-none border-2 border-black" onClick={() => setShowSkipModal(false)}>
+                        ← Go Back
+                      </Button>
+                      <Button className="rounded-none border-2 border-black bg-black text-white" onClick={() => { setShowSkipModal(false); setStep(5); }}>
+                        Skip for Now - I'm Sure
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Step 5: Reference Photos */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <ReferencePhotosStep
+                kycStatus={kycStatus}
+                onBack={() => setStep(4)}
+                onUploaded={(front: string | null, left: string | null, right: string | null) => {
+                  if (front) setCameoFrontUrl(front)
+                  if (left) setCameoLeftUrl(left)
+                  if (right) setCameoRightUrl(right)
+                }}
+                onComplete={finalizeProfile}
+                uploadFn={uploadCameoImage}
+                userId={user?.id}
+                apiBase={API_BASE}
+              />
             </div>
           )}
         </Card>
