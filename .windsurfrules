@@ -1,0 +1,16 @@
+# General
+This is the most important series of rules for the AI to follow.
+- always implement based on the design.md file located at [./docs/design.md], and ask questions if you find something to be 
+unclear or have a better proposal.
+
+# Code
+- always implement based on the design.md file located at [./docs/design.md], and ask questions if you find something to be 
+unclear or have a better proposal.
+- if you have a migration file, [./supabase/migrations/*.sql], please generate a mermaid ER diagram for the table relations and include it in the pull request.
+
+# Configuration
+- All runtime configuration MUST be centralized in [likelee-server/src/config.rs](likelee-server/src/config.rs) using the Rust `envconfig` crate with `#[derive(Envconfig)]`.
+- Do NOT read environment variables directly in application code (`std::env::var`) outside the configuration module.
+- Keep [.env.example](likelee-server/.env.example) in sync with [ServerConfig](likelee-server/src/config.rs) fields and defaults.
+- Document new/changed environment variables in [docs/design.md](docs/design.md) under “Configuration Management”.
+EOF

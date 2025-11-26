@@ -1,10 +1,16 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Zap, DollarSign, Users, Shield, BarChart3, GraduationCap } from "lucide-react";
+import {
+  Zap,
+  DollarSign,
+  Users,
+  Shield,
+  BarChart3,
+  GraduationCap,
+} from "lucide-react";
 
 export default function CreatorsForYou() {
   const navigate = useNavigate();
@@ -35,10 +41,17 @@ export default function CreatorsForYou() {
               Why We Built This
             </h2>
             <p className="text-xl text-gray-700 leading-relaxed mb-6">
-              You're not just a prompt engineer. You are a director, a storyteller, a visual pioneer. The tools for AI creation are evolving at lightspeed, but the professional infrastructure has been left behind. We saw a gap between groundbreaking artistry and sustainable careers.
+              You're not just a prompt engineer. You are a director, a
+              storyteller, a visual pioneer. The tools for AI creation are
+              evolving at lightspeed, but the professional infrastructure has
+              been left behind. We saw a gap between groundbreaking artistry and
+              sustainable careers.
             </p>
             <p className="text-xl text-gray-700 leading-relaxed mb-6">
-              We built Likelee to bridge that gap. This isn't another tool; it's your professional ecosystem. A place where your craft is respected, your collaborations are seamless, and your compensation is guaranteed.
+              We built Likelee to bridge that gap. This isn't another tool; it's
+              your professional ecosystem. A place where your craft is
+              respected, your collaborations are seamless, and your compensation
+              is guaranteed.
             </p>
           </div>
 
@@ -60,9 +73,13 @@ export default function CreatorsForYou() {
                   <Zap className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Your Vision is the Engine.</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Your Vision is the Engine.
+                  </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    Models and tools will change. Your ideas are the constant. Likelee is tool-agnostic, allowing you to focus on the story, not the software.
+                    Models and tools will change. Your ideas are the constant.
+                    Likelee is tool-agnostic, allowing you to focus on the
+                    story, not the software.
                   </p>
                 </div>
               </div>
@@ -74,9 +91,13 @@ export default function CreatorsForYou() {
                   <DollarSign className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Get Paid, Not Played.</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Get Paid, Not Played.
+                  </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    No more chasing invoices. We guarantee upfront fees, clear licensing terms, and automated royalties. Your financial dashboard is as transparent as your creative one.
+                    No more chasing invoices. We guarantee upfront fees, clear
+                    licensing terms, and automated royalties. Your financial
+                    dashboard is as transparent as your creative one.
                   </p>
                 </div>
               </div>
@@ -88,9 +109,13 @@ export default function CreatorsForYou() {
                   <Users className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Direct, Don't Negotiate.</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Direct, Don't Negotiate.
+                  </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    Access a library of verified, pre-cleared talent. Contracts and releases are baked in, so you can spend your time on set—not on paperwork.
+                    Access a library of verified, pre-cleared talent. Contracts
+                    and releases are baked in, so you can spend your time on
+                    set—not on paperwork.
                   </p>
                 </div>
               </div>
@@ -102,9 +127,13 @@ export default function CreatorsForYou() {
                   <Shield className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Your Virtual Studio.</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Your Virtual Studio.
+                  </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    This is your hub for professional collaboration. Post briefs for projects, find trusted co-creators, and manage shared assets, all from your dashboard.
+                    This is your hub for professional collaboration. Post briefs
+                    for projects, find trusted co-creators, and manage shared
+                    assets, all from your dashboard.
                   </p>
                 </div>
               </div>
@@ -116,9 +145,13 @@ export default function CreatorsForYou() {
                   <BarChart3 className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Own Your Analytics.</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Own Your Analytics.
+                  </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    Track every view, every license, and every payout in real-time. We provide the data you need to understand your work's impact and value.
+                    Track every view, every license, and every payout in
+                    real-time. We provide the data you need to understand your
+                    work's impact and value.
                   </p>
                 </div>
               </div>
@@ -130,9 +163,14 @@ export default function CreatorsForYou() {
                   <GraduationCap className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Master Your Craft.</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Master Your Craft.
+                  </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    Grow alongside the industry's best. Access exclusive workshops, deep-dive technique breakdowns, and peer project reviews to sharpen your skills while you build your portfolio.
+                    Grow alongside the industry's best. Access exclusive
+                    workshops, deep-dive technique breakdowns, and peer project
+                    reviews to sharpen your skills while you build your
+                    portfolio.
                   </p>
                 </div>
               </div>
@@ -145,7 +183,9 @@ export default function CreatorsForYou() {
               Your Stage is Waiting.
             </h2>
             <p className="text-xl text-gray-700 leading-relaxed">
-              Stop juggling platforms and navigating legal gray areas. Start building a body of work for brands that value true creative partnership.
+              Stop juggling platforms and navigating legal gray areas. Start
+              building a body of work for brands that value true creative
+              partnership.
             </p>
           </div>
         </div>
@@ -160,7 +200,7 @@ export default function CreatorsForYou() {
           <p className="text-xl text-orange-100 mb-10">
             Start building your professional AI creative career today.
           </p>
-          <Button 
+          <Button
             onClick={() => navigate(createPageUrl("CreatorSignup"))}
             className="h-16 px-12 text-lg font-medium bg-white hover:bg-gray-100 text-[#F18B6A] border-2 border-black shadow-2xl transition-all hover:scale-105 rounded-none"
           >

@@ -1,5 +1,4 @@
-import { base44 } from './base44Client';
-
+import { base44 } from "./base44Client";
 
 export const Organization = base44.entities.Organization;
 
@@ -24,8 +23,6 @@ export const TalentProject = base44.entities.TalentProject;
 export const JobMatch = base44.entities.JobMatch;
 
 export const VoiceProfile = base44.entities.VoiceProfile;
-
-
 
 // auth sdk:
 export const User = base44.auth;

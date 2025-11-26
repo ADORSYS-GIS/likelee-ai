@@ -95,8 +95,17 @@ import SAGAFTRAAlignment from "./SAGAFTRAAlignment";
 import AboutUs from "./AboutUs";
 
 import CommercialRights from "./CommercialRights";
+import CameoUpload from "./CameoUpload";
+import RoyaltyWallet from "./RoyaltyWallet";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+const __pagesQueryClient = new QueryClient()
+import ProtectedRoute from '@/auth/ProtectedRoute'
+import Login from './Login'
+import Register from './Register'
+import TwoFactorSetup from './TwoFactorSetup'
+import LicensingSettings from './LicensingSettings'
 
 const PAGES = {
     
@@ -167,6 +176,7 @@ const PAGES = {
     TalentDashboard: TalentDashboard,
     
     UploadProject: UploadProject,
+    CameoUpload: CameoUpload,
     
     DemoTalentDashboard: DemoTalentDashboard,
     
@@ -195,6 +205,10 @@ const PAGES = {
     AboutUs: AboutUs,
     
     CommercialRights: CommercialRights,
+    
+    LicensingSettings: LicensingSettings,
+    
+    RoyaltyWallet: RoyaltyWallet,
     
 }
 
@@ -287,29 +301,29 @@ function PagesContent() {
                 
                 <Route path="/AITalentBoard" element={<AITalentBoard />} />
                 
-                <Route path="/TalentDashboard" element={<TalentDashboard />} />
+                <Route path="/TalentDashboard" element={<ProtectedRoute><TalentDashboard /></ProtectedRoute>} />
                 
-                <Route path="/UploadProject" element={<UploadProject />} />
+                <Route path="/UploadProject" element={<ProtectedRoute><UploadProject /></ProtectedRoute>} />
                 
-                <Route path="/DemoTalentDashboard" element={<DemoTalentDashboard />} />
+                <Route path="/DemoTalentDashboard" element={<ProtectedRoute><DemoTalentDashboard /></ProtectedRoute>} />
                 
-                <Route path="/CreatorDashboard" element={<CreatorDashboard />} />
+                <Route path="/CreatorDashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
                 
-                <Route path="/AgencyDashboard" element={<AgencyDashboard />} />
+                <Route path="/AgencyDashboard" element={<ProtectedRoute><AgencyDashboard /></ProtectedRoute>} />
                 
                 <Route path="/AddTalent" element={<AddTalent />} />
                 
-                <Route path="/BrandDashboard" element={<BrandDashboard />} />
+                <Route path="/BrandDashboard" element={<ProtectedRoute><BrandDashboard /></ProtectedRoute>} />
                 
-                <Route path="/MarketingAgencyDashboard" element={<MarketingAgencyDashboard />} />
+                <Route path="/MarketingAgencyDashboard" element={<ProtectedRoute><MarketingAgencyDashboard /></ProtectedRoute>} />
                 
-                <Route path="/BrandCampaignDashboard" element={<BrandCampaignDashboard />} />
+                <Route path="/BrandCampaignDashboard" element={<ProtectedRoute><BrandCampaignDashboard /></ProtectedRoute>} />
                 
-                <Route path="/PostJob" element={<PostJob />} />
+                <Route path="/PostJob" element={<ProtectedRoute><PostJob /></ProtectedRoute>} />
                 
                 <Route path="/SportsAgency" element={<SportsAgency />} />
                 
-                <Route path="/SportsAgencyDashboard" element={<SportsAgencyDashboard />} />
+                <Route path="/SportsAgencyDashboard" element={<ProtectedRoute><SportsAgencyDashboard /></ProtectedRoute>} />
                 
                 <Route path="/CreatorSignupOptions" element={<CreatorSignupOptions />} />
                 
@@ -319,6 +333,16 @@ function PagesContent() {
                 
                 <Route path="/CommercialRights" element={<CommercialRights />} />
                 
+                <Route path="/LicensingSettings" element={<ProtectedRoute><LicensingSettings /></ProtectedRoute>} />
+                
+                <Route path="/CameoUpload" element={<ProtectedRoute><CameoUpload /></ProtectedRoute>} />
+                
+                <Route path="/RoyaltyWallet" element={<ProtectedRoute><RoyaltyWallet /></ProtectedRoute>} />
+                
+                <Route path="/Login" element={<Login />} />
+                <Route path="/Register" element={<Register />} />
+                <Route path="/TwoFactorSetup" element={<ProtectedRoute><TwoFactorSetup /></ProtectedRoute>} />
+                
             </Routes>
         </Layout>
     );
@@ -326,8 +350,10 @@ function PagesContent() {
 
 export default function Pages() {
     return (
-        <Router>
-            <PagesContent />
-        </Router>
+        <QueryClientProvider client={__pagesQueryClient}>
+            <Router>
+                <PagesContent />
+            </Router>
+        </QueryClientProvider>
     );
 }

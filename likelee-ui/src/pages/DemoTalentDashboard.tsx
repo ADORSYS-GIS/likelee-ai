@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -10,61 +9,102 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Play, Edit, Briefcase, AlertCircle, CheckCircle2,
-  Crown, Lock, Sparkles, ExternalLink, DollarSign, TrendingUp,
-  Download, Eye, Star, Package, QrCode, Share2, FileText,
-  Zap, BarChart3, Palette
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Play,
+  Edit,
+  Briefcase,
+  AlertCircle,
+  CheckCircle2,
+  Crown,
+  Lock,
+  Sparkles,
+  ExternalLink,
+  DollarSign,
+  TrendingUp,
+  Download,
+  Eye,
+  Star,
+  Package,
+  QrCode,
+  Share2,
+  FileText,
+  Zap,
+  BarChart3,
+  Palette,
 } from "lucide-react";
 import JobBoardContent from "@/components/JobBoardContent";
 
 const mockPortfolio = {
   name: "Alex Chen",
-  profile_photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300",
+  profile_photo:
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300",
   bio: "AI video creator specializing in cinematic storytelling and brand campaigns. 3+ years experience with cutting-edge AI tools.",
   hourly_rate: 150,
   project_rate_min: 2000,
   project_rate_max: 8000,
   availability: "available",
   available_for_collabs: true,
-  skills_tags: ["AI Video Editing", "Lip-sync Animation", "Compositing", "Script-to-Video", "Color Grading"],
-  ai_tools: ["Sora", "Runway Gen-3", "Midjourney", "Pika Labs", "Fal AI"]
+  skills_tags: [
+    "AI Video Editing",
+    "Lip-sync Animation",
+    "Compositing",
+    "Script-to-Video",
+    "Color Grading",
+  ],
+  ai_tools: ["Sora", "Runway Gen-3", "Midjourney", "Pika Labs", "Fal AI"],
 };
 
 const mockProjects = [
   {
     id: "1",
     title: "Nike AI Campaign - 'Future of Sport'",
-    description: "Created AI-generated campaign showcasing futuristic sports scenarios using Runway Gen-3 and custom prompting.",
-    thumbnail_url: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800",
+    description:
+      "Created AI-generated campaign showcasing futuristic sports scenarios using Runway Gen-3 and custom prompting.",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800",
     tools_used: ["Runway Gen-3", "Midjourney", "After Effects"],
     duration_seconds: 45,
     view_count: 342,
-    is_featured: true
+    is_featured: true,
   },
   {
     id: "2",
     title: "Short Film: 'Digital Dreams'",
-    description: "Experimental short film exploring AI consciousness. Won Best AI Film at Digital Arts Festival 2024.",
-    thumbnail_url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800",
+    description:
+      "Experimental short film exploring AI consciousness. Won Best AI Film at Digital Arts Festival 2024.",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800",
     tools_used: ["Sora", "Pika Labs", "Fal AI"],
     duration_seconds: 180,
     view_count: 1523,
-    is_featured: false
+    is_featured: false,
   },
   {
     id: "3",
     title: "Product Demo Reel - Tech Startup",
-    description: "AI-generated product showcase for SaaS startup. Clean, modern aesthetic with dynamic transitions.",
-    thumbnail_url: "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800",
+    description:
+      "AI-generated product showcase for SaaS startup. Clean, modern aesthetic with dynamic transitions.",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800",
     tools_used: ["Midjourney", "Runway Gen-3", "DaVinci Resolve"],
     duration_seconds: 30,
     view_count: 856,
-    is_featured: false
-  }
+    is_featured: false,
+  },
 ];
 
 const mockActiveJobs = [
@@ -75,7 +115,7 @@ const mockActiveJobs = [
     status: "in_progress",
     deadline: "2025-02-15",
     payment_status: "pending",
-    amount: 4500
+    amount: 4500,
   },
   {
     id: 2,
@@ -84,8 +124,8 @@ const mockActiveJobs = [
     status: "delivered",
     deadline: "2025-01-20",
     payment_status: "paid",
-    amount: 2000
-  }
+    amount: 2000,
+  },
 ];
 
 const mockApplications = [
@@ -95,7 +135,7 @@ const mockApplications = [
     company: "Film Studio ABC",
     applied_date: "2025-01-18",
     status: "pending",
-    budget: "$3,000 - $6,000"
+    budget: "$3,000 - $6,000",
   },
   {
     id: 2,
@@ -103,7 +143,7 @@ const mockApplications = [
     company: "Beauty Brand",
     applied_date: "2025-01-16",
     status: "accepted",
-    budget: "$1,200 - $2,500"
+    budget: "$1,200 - $2,500",
   },
   {
     id: 3,
@@ -111,32 +151,57 @@ const mockApplications = [
     company: "Marketing Agency",
     applied_date: "2025-01-14",
     status: "rejected",
-    budget: "$800 - $1,500"
-  }
+    budget: "$800 - $1,500",
+  },
 ];
 
 const mockEarnings = {
   total_earned: 12450,
   pending_payment: 4500,
   completed_jobs: 8,
-  average_job_value: 1556
+  average_job_value: 1556,
 };
 
 const mockPackageData = {
   display_name: "Alex Chen",
   role_title: "AI Video Artist | Motion Designer",
-  short_bio: "I merge cinematic storytelling with generative AI tools to create immersive brand experiences.",
-  skills_tools: ["Runway Gen-3", "Midjourney", "Sora", "After Effects", "DaVinci Resolve"],
-  portfolio_links: ["https://behance.net/alexchen", "https://tiktok.com/@alexchen"],
+  short_bio:
+    "I merge cinematic storytelling with generative AI tools to create immersive brand experiences.",
+  skills_tools: [
+    "Runway Gen-3",
+    "Midjourney",
+    "Sora",
+    "After Effects",
+    "DaVinci Resolve",
+  ],
+  portfolio_links: [
+    "https://behance.net/alexchen",
+    "https://tiktok.com/@alexchen",
+  ],
   contact_email: "alex@example.com",
   packages_generated: 3,
   total_views: 127,
-  total_downloads: 45
+  total_downloads: 45,
 };
 
-const hairColors = ["Black", "Brown", "Blonde", "Red", "Gray/White", "Dyed (specify below)"];
+const hairColors = [
+  "Black",
+  "Brown",
+  "Blonde",
+  "Red",
+  "Gray/White",
+  "Dyed (specify below)",
+];
 const eyeColors = ["Brown", "Blue", "Green", "Hazel", "Gray", "Amber"];
-const skinTones = ["Fair", "Light", "Medium-Light", "Medium", "Medium-Dark", "Dark", "Deep"];
+const skinTones = [
+  "Fair",
+  "Light",
+  "Medium-Light",
+  "Medium",
+  "Medium-Dark",
+  "Dark",
+  "Deep",
+];
 
 export default function DemoTalentDashboard() {
   const navigate = useNavigate();
@@ -151,12 +216,14 @@ export default function DemoTalentDashboard() {
     hairColor: "Brown",
     eyeColor: "Brown",
     skinTone: "Medium",
-    height: "5'10\""
+    height: "5'10\"",
   });
   const isPro = false;
 
   const handleGeneratePackage = () => {
-    alert("Package generated! (Demo mode - download would start in production)");
+    alert(
+      "Package generated! (Demo mode - download would start in production)",
+    );
   };
 
   const handleSaveProfile = () => {
@@ -171,7 +238,9 @@ export default function DemoTalentDashboard() {
         <Alert className="mb-8 bg-blue-50 border-2 border-blue-500 rounded-none">
           <AlertCircle className="h-5 w-5 text-blue-600" />
           <AlertDescription className="text-blue-900 font-medium">
-            <strong>Demo Mode:</strong> This is a preview of the AI Talent Dashboard with sample data. Sign up to create your real profile and start getting matched with opportunities!
+            <strong>Demo Mode:</strong> This is a preview of the AI Talent
+            Dashboard with sample data. Sign up to create your real profile and
+            start getting matched with opportunities!
             <Button
               onClick={() => navigate(createPageUrl("CreatorSignup"))}
               variant="outline"
@@ -192,7 +261,9 @@ export default function DemoTalentDashboard() {
                 className="w-12 h-12 rounded-full object-cover border-2 border-[#F18B6A]"
               />
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{portfolio.name}</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {portfolio.name}
+                </h2>
                 <p className="text-sm text-gray-600">AI Creator Dashboard</p>
               </div>
             </div>
@@ -271,69 +342,109 @@ export default function DemoTalentDashboard() {
         </div>
 
         {/* Edit Profile Modal */}
-        <Dialog open={showEditProfileModal} onOpenChange={setShowEditProfileModal}>
+        <Dialog
+          open={showEditProfileModal}
+          onOpenChange={setShowEditProfileModal}
+        >
           <DialogContent className="max-w-2xl rounded-none">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">Edit Profile</DialogTitle>
+              <DialogTitle className="text-2xl font-bold">
+                Edit Profile
+              </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-6 mt-6">
               <div>
-                <Label htmlFor="hairColor" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="hairColor"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Hair Color
                 </Label>
-                <Select value={profileData.hairColor} onValueChange={(value) => setProfileData({...profileData, hairColor: value})}>
+                <Select
+                  value={profileData.hairColor}
+                  onValueChange={(value) =>
+                    setProfileData({ ...profileData, hairColor: value })
+                  }
+                >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue placeholder="Select hair color" />
                   </SelectTrigger>
                   <SelectContent>
                     {hairColors.map((color) => (
-                      <SelectItem key={color} value={color}>{color}</SelectItem>
+                      <SelectItem key={color} value={color}>
+                        {color}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="eyeColor" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="eyeColor"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Eye Color
                 </Label>
-                <Select value={profileData.eyeColor} onValueChange={(value) => setProfileData({...profileData, eyeColor: value})}>
+                <Select
+                  value={profileData.eyeColor}
+                  onValueChange={(value) =>
+                    setProfileData({ ...profileData, eyeColor: value })
+                  }
+                >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue placeholder="Select eye color" />
                   </SelectTrigger>
                   <SelectContent>
                     {eyeColors.map((color) => (
-                      <SelectItem key={color} value={color}>{color}</SelectItem>
+                      <SelectItem key={color} value={color}>
+                        {color}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="skinTone" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="skinTone"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Skin Tone
                 </Label>
-                <Select value={profileData.skinTone} onValueChange={(value) => setProfileData({...profileData, skinTone: value})}>
+                <Select
+                  value={profileData.skinTone}
+                  onValueChange={(value) =>
+                    setProfileData({ ...profileData, skinTone: value })
+                  }
+                >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue placeholder="Select skin tone" />
                   </SelectTrigger>
                   <SelectContent>
                     {skinTones.map((tone) => (
-                      <SelectItem key={tone} value={tone}>{tone}</SelectItem>
+                      <SelectItem key={tone} value={tone}>
+                        {tone}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="height" className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label
+                  htmlFor="height"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Height (optional)
                 </Label>
                 <Input
                   id="height"
                   value={profileData.height}
-                  onChange={(e) => setProfileData({...profileData, height: e.target.value})}
+                  onChange={(e) =>
+                    setProfileData({ ...profileData, height: e.target.value })
+                  }
                   className="border-2 border-gray-300 rounded-none"
                   placeholder="e.g., 5'10&quot; or 178cm"
                 />
@@ -368,10 +479,18 @@ export default function DemoTalentDashboard() {
               </DialogTitle>
             </DialogHeader>
 
-            <Tabs value={packageTab} onValueChange={setPackageTab} className="mt-4">
+            <Tabs
+              value={packageTab}
+              onValueChange={setPackageTab}
+              className="mt-4"
+            >
               <TabsList className="grid w-full grid-cols-3 rounded-none">
-                <TabsTrigger value="overview" className="rounded-none">Overview</TabsTrigger>
-                <TabsTrigger value="settings" className="rounded-none">Package Settings</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-none">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="rounded-none">
+                  Package Settings
+                </TabsTrigger>
                 <TabsTrigger value="analytics" className="rounded-none">
                   Analytics
                   {!isPro && <Lock className="w-3 h-3 ml-1" />}
@@ -386,38 +505,62 @@ export default function DemoTalentDashboard() {
                       <Sparkles className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">What is the Likelee Package?</h3>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        What is the Likelee Package?
+                      </h3>
                       <p className="text-gray-700 leading-relaxed mb-4">
-                        Your Likelee Package is an auto-generated branded portfolio PDF + shareable link that serves as your professional application card.
-                        It pulls your profile data, skills, projects, and contact info into a beautiful, branded format that hiring managers love.
+                        Your Likelee Package is an auto-generated branded
+                        portfolio PDF + shareable link that serves as your
+                        professional application card. It pulls your profile
+                        data, skills, projects, and contact info into a
+                        beautiful, branded format that hiring managers love.
                       </p>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-semibold text-gray-900">Clean & Brand-Consistent</p>
-                            <p className="text-sm text-gray-600">Likelee watermark, gradient backgrounds, professional layout</p>
+                            <p className="font-semibold text-gray-900">
+                              Clean & Brand-Consistent
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Likelee watermark, gradient backgrounds,
+                              professional layout
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-semibold text-gray-900">Dynamic Data</p>
-                            <p className="text-sm text-gray-600">Auto-pulls from your profile: name, skills, links, stats</p>
+                            <p className="font-semibold text-gray-900">
+                              Dynamic Data
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Auto-pulls from your profile: name, skills, links,
+                              stats
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-semibold text-gray-900">Shareable Link + QR</p>
-                            <p className="text-sm text-gray-600">Links back to your Likelee profile for more visibility</p>
+                            <p className="font-semibold text-gray-900">
+                              Shareable Link + QR
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Links back to your Likelee profile for more
+                              visibility
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="font-semibold text-gray-900">PDF + Web Format</p>
-                            <p className="text-sm text-gray-600">Download as PDF or share as interactive link</p>
+                            <p className="font-semibold text-gray-900">
+                              PDF + Web Format
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Download as PDF or share as interactive link
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -428,36 +571,57 @@ export default function DemoTalentDashboard() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
                     <FileText className="w-8 h-8 text-[#F18B6A] mb-4" />
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Your Package Stats</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      Your Package Stats
+                    </h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Packages Generated</span>
-                        <span className="font-bold text-gray-900">{packageData.packages_generated}</span>
+                        <span className="text-gray-600">
+                          Packages Generated
+                        </span>
+                        <span className="font-bold text-gray-900">
+                          {packageData.packages_generated}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Total Views</span>
-                        <span className="font-bold text-gray-900">{packageData.total_views}</span>
+                        <span className="font-bold text-gray-900">
+                          {packageData.total_views}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Total Downloads</span>
-                        <span className="font-bold text-gray-900">{packageData.total_downloads}</span>
+                        <span className="font-bold text-gray-900">
+                          {packageData.total_downloads}
+                        </span>
                       </div>
                     </div>
                   </Card>
 
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
                     <QrCode className="w-8 h-8 text-[#32C8D1] mb-4" />
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Quick Actions</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      Quick Actions
+                    </h3>
                     <div className="space-y-3">
-                      <Button onClick={handleGeneratePackage} className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-none">
+                      <Button
+                        onClick={handleGeneratePackage}
+                        className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-none"
+                      >
                         <Zap className="w-4 h-4 mr-2" />
                         Generate New Package
                       </Button>
-                      <Button variant="outline" className="w-full border-2 border-gray-300 rounded-none">
+                      <Button
+                        variant="outline"
+                        className="w-full border-2 border-gray-300 rounded-none"
+                      >
                         <Share2 className="w-4 h-4 mr-2" />
                         Share Package Link
                       </Button>
-                      <Button variant="outline" className="w-full border-2 border-gray-300 rounded-none">
+                      <Button
+                        variant="outline"
+                        className="w-full border-2 border-gray-300 rounded-none"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Download Latest PDF
                       </Button>
@@ -470,23 +634,33 @@ export default function DemoTalentDashboard() {
                     <div className="flex items-start gap-4">
                       <Crown className="w-8 h-8 text-purple-600 flex-shrink-0" />
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Unlock Pro Package Features</h3>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          Unlock Pro Package Features
+                        </h3>
                         <div className="grid md:grid-cols-2 gap-3 mb-4">
                           <div className="flex items-center gap-2">
                             <Palette className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm text-gray-700">Custom color themes</span>
+                            <span className="text-sm text-gray-700">
+                              Custom color themes
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <BarChart3 className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm text-gray-700">Analytics dashboard</span>
+                            <span className="text-sm text-gray-700">
+                              Analytics dashboard
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm text-gray-700">Multiple package formats</span>
+                            <span className="text-sm text-gray-700">
+                              Multiple package formats
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Zap className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm text-gray-700">Auto-send feature</span>
+                            <span className="text-sm text-gray-700">
+                              Auto-send feature
+                            </span>
                           </div>
                         </div>
                         <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-none">
@@ -501,24 +675,43 @@ export default function DemoTalentDashboard() {
               {/* Settings Tab */}
               <TabsContent value="settings" className="space-y-6 mt-6">
                 <Card className="p-6 border-2 border-gray-200 rounded-none">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Package Information</h3>
-                  <p className="text-gray-600 mb-6">This information will be included in your generated Likelee Package</p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Package Information
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    This information will be included in your generated Likelee
+                    Package
+                  </p>
 
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Display Name</Label>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Display Name
+                      </Label>
                       <Input
                         value={packageData.display_name}
-                        onChange={(e) => setPackageData({...packageData, display_name: e.target.value})}
+                        onChange={(e) =>
+                          setPackageData({
+                            ...packageData,
+                            display_name: e.target.value,
+                          })
+                        }
                         className="border-2 border-gray-300 rounded-none"
                       />
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Role / Title</Label>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Role / Title
+                      </Label>
                       <Input
                         value={packageData.role_title}
-                        onChange={(e) => setPackageData({...packageData, role_title: e.target.value})}
+                        onChange={(e) =>
+                          setPackageData({
+                            ...packageData,
+                            role_title: e.target.value,
+                          })
+                        }
                         className="border-2 border-gray-300 rounded-none"
                         placeholder="e.g., AI Video Artist | Motion Designer"
                       />
@@ -530,38 +723,61 @@ export default function DemoTalentDashboard() {
                       </Label>
                       <Textarea
                         value={packageData.short_bio}
-                        onChange={(e) => setPackageData({...packageData, short_bio: e.target.value})}
+                        onChange={(e) =>
+                          setPackageData({
+                            ...packageData,
+                            short_bio: e.target.value,
+                          })
+                        }
                         maxLength={280}
                         className="border-2 border-gray-300 rounded-none h-24"
                         placeholder="Brief description of your work and expertise..."
                       />
-                      <p className="text-xs text-gray-500 mt-1">{packageData.short_bio.length}/280 characters</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {packageData.short_bio.length}/280 characters
+                      </p>
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Contact Email</Label>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Contact Email
+                      </Label>
                       <Input
                         type="email"
                         value={packageData.contact_email}
-                        onChange={(e) => setPackageData({...packageData, contact_email: e.target.value})}
+                        onChange={(e) =>
+                          setPackageData({
+                            ...packageData,
+                            contact_email: e.target.value,
+                          })
+                        }
                         className="border-2 border-gray-300 rounded-none"
                       />
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-3 block">Skills / AI Tools</Label>
+                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                        Skills / AI Tools
+                      </Label>
                       <div className="flex flex-wrap gap-2 mb-3">
                         {packageData.skills_tools.map((skill, index) => (
-                          <Badge key={index} className="bg-[#32C8D1] text-white rounded-none">
+                          <Badge
+                            key={index}
+                            className="bg-[#32C8D1] text-white rounded-none"
+                          >
                             {skill}
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500">Edit your skills in Profile Settings</p>
+                      <p className="text-xs text-gray-500">
+                        Edit your skills in Profile Settings
+                      </p>
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Portfolio Links</Label>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Portfolio Links
+                      </Label>
                       {packageData.portfolio_links.map((link, index) => (
                         <Input
                           key={index}
@@ -571,17 +787,27 @@ export default function DemoTalentDashboard() {
                           readOnly // For demo purposes, editing links directly here is not implemented. They would usually be managed in profile settings.
                         />
                       ))}
-                      <Button variant="outline" className="border-2 border-gray-300 rounded-none text-sm">
+                      <Button
+                        variant="outline"
+                        className="border-2 border-gray-300 rounded-none text-sm"
+                      >
                         + Add Link
                       </Button>
                     </div>
                   </div>
 
                   <div className="mt-6 pt-6 border-t-2 border-gray-200 flex gap-3">
-                    <Button onClick={() => alert("Settings saved! (Demo mode)")} className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-none">
+                    <Button
+                      onClick={() => alert("Settings saved! (Demo mode)")}
+                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-none"
+                    >
                       Save Settings
                     </Button>
-                    <Button onClick={handleGeneratePackage} variant="outline" className="border-2 border-[#32C8D1] text-[#32C8D1] rounded-none">
+                    <Button
+                      onClick={handleGeneratePackage}
+                      variant="outline"
+                      className="border-2 border-[#32C8D1] text-[#32C8D1] rounded-none"
+                    >
                       <Zap className="w-4 h-4 mr-2" />
                       Generate Package Now
                     </Button>
@@ -593,8 +819,13 @@ export default function DemoTalentDashboard() {
                     <div className="flex items-start gap-4">
                       <Lock className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
                       <div>
-                        <h3 className="font-bold text-gray-900 mb-2">Pro Theme Options</h3>
-                        <p className="text-gray-700 mb-4">Upgrade to Pro to unlock custom themes, color options, and multiple package formats.</p>
+                        <h3 className="font-bold text-gray-900 mb-2">
+                          Pro Theme Options
+                        </h3>
+                        <p className="text-gray-700 mb-4">
+                          Upgrade to Pro to unlock custom themes, color options,
+                          and multiple package formats.
+                        </p>
                         <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-none">
                           Unlock Pro Features
                         </Button>
@@ -609,10 +840,14 @@ export default function DemoTalentDashboard() {
                 {!isPro ? (
                   <Card className="p-12 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-600 rounded-none text-center">
                     <BarChart3 className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4">Advanced Analytics - Pro Feature</h3>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                      Advanced Analytics - Pro Feature
+                    </h3>
                     <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
-                      Track package views, downloads, click-through rates, and see which companies viewed your profile.
-                      Get insights on when recruiters open your package and optimize your applications.
+                      Track package views, downloads, click-through rates, and
+                      see which companies viewed your profile. Get insights on
+                      when recruiters open your package and optimize your
+                      applications.
                     </p>
                     <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-none">
                       <Crown className="w-4 h-4 mr-2" />
@@ -621,8 +856,12 @@ export default function DemoTalentDashboard() {
                   </Card>
                 ) : (
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Package Analytics</h3>
-                    <p className="text-gray-600">Analytics dashboard would appear here for Pro users</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      Package Analytics
+                    </h3>
+                    <p className="text-gray-600">
+                      Analytics dashboard would appear here for Pro users
+                    </p>
                   </Card>
                 )}
               </TabsContent>
@@ -637,29 +876,41 @@ export default function DemoTalentDashboard() {
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Job Opportunities</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Job Opportunities
+                    </p>
                     <p className="text-3xl font-bold text-gray-900">150+</p>
                   </div>
                   <Briefcase className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Available opportunities</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Available opportunities
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Projects</p>
-                    <p className="text-3xl font-bold text-gray-900">{projects.length}</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {projects.length}
+                    </p>
                   </div>
                   <Play className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">{projects.filter(p => p.is_featured).length} featured</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {projects.filter((p) => p.is_featured).length} featured
+                </p>
               </Card>
             </div>
 
             <Card className="p-8 bg-gradient-to-br from-[#F18B6A] to-[#E07A5A] border-2 border-black text-center rounded-none">
-              <h2 className="text-2xl font-bold text-white mb-4">Start Browsing Job Opportunities</h2>
-              <p className="text-white/90 mb-6">Discover AI creative opportunities matched to your skills</p>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                Start Browsing Job Opportunities
+              </h2>
+              <p className="text-white/90 mb-6">
+                Discover AI creative opportunities matched to your skills
+              </p>
               <Button
                 onClick={() => setActiveTab("job_board")}
                 className="bg-white hover:bg-gray-100 text-[#F18B6A] border-2 border-black rounded-none"
@@ -673,9 +924,12 @@ export default function DemoTalentDashboard() {
               <div className="w-20 h-20 bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] border-2 border-black flex items-center justify-center mx-auto mb-6 rounded-none">
                 <Sparkles className="w-10 h-10 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-4">Create AI Content with Likelee Studio</h3>
+              <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                Create AI Content with Likelee Studio
+              </h3>
               <p className="text-xl text-gray-700 leading-relaxed max-w-2xl mx-auto mb-8">
-                Create and add content to your portfolio on platform with all the latest video generation models
+                Create and add content to your portfolio on platform with all
+                the latest video generation models
               </p>
               <Button
                 onClick={() => navigate(createPageUrl("Studio"))}
@@ -696,28 +950,42 @@ export default function DemoTalentDashboard() {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">My Jobs</h1>
-              <p className="text-gray-600">Manage your active and completed projects</p>
+              <p className="text-gray-600">
+                Manage your active and completed projects
+              </p>
             </div>
 
             <div className="space-y-4">
-              {mockActiveJobs.map(job => (
-                <Card key={job.id} className="p-6 bg-white border-2 border-gray-200 rounded-none">
+              {mockActiveJobs.map((job) => (
+                <Card
+                  key={job.id}
+                  className="p-6 bg-white border-2 border-gray-200 rounded-none"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{job.title}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {job.title}
+                      </h3>
                       <p className="text-gray-700 mb-3">Client: {job.client}</p>
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge className={
-                          job.status === "in_progress" ? "bg-blue-600 text-white rounded-none" :
-                            job.status === "delivered" ? "bg-green-600 text-white rounded-none" :
-                              "bg-gray-600 text-white rounded-none"
-                        }>
+                        <Badge
+                          className={
+                            job.status === "in_progress"
+                              ? "bg-blue-600 text-white rounded-none"
+                              : job.status === "delivered"
+                                ? "bg-green-600 text-white rounded-none"
+                                : "bg-gray-600 text-white rounded-none"
+                          }
+                        >
                           {job.status.replace("_", " ")}
                         </Badge>
-                        <Badge className={
-                          job.payment_status === "paid" ? "bg-green-100 text-green-800 rounded-none" :
-                            "bg-yellow-100 text-yellow-800 rounded-none"
-                        }>
+                        <Badge
+                          className={
+                            job.payment_status === "paid"
+                              ? "bg-green-100 text-green-800 rounded-none"
+                              : "bg-yellow-100 text-yellow-800 rounded-none"
+                          }
+                        >
                           Payment: {job.payment_status}
                         </Badge>
                       </div>
@@ -727,7 +995,10 @@ export default function DemoTalentDashboard() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" className="border-2 border-gray-300 rounded-none">
+                      <Button
+                        variant="outline"
+                        className="border-2 border-gray-300 rounded-none"
+                      >
                         View Details
                       </Button>
                       {job.status === "delivered" && (
@@ -746,8 +1017,13 @@ export default function DemoTalentDashboard() {
                 <div className="flex items-start gap-4">
                   <Lock className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-2">Unlock Advanced Job Management</h3>
-                    <p className="text-gray-700 mb-4">Upgrade to Pro for auto-invoice generator and integrated client chat portal.</p>
+                    <h3 className="font-bold text-gray-900 mb-2">
+                      Unlock Advanced Job Management
+                    </h3>
+                    <p className="text-gray-700 mb-4">
+                      Upgrade to Pro for auto-invoice generator and integrated
+                      client chat portal.
+                    </p>
                     <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-none">
                       Upgrade to Pro
                     </Button>
@@ -762,7 +1038,9 @@ export default function DemoTalentDashboard() {
         {activeTab === "applications" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Applications</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Applications
+              </h1>
               <p className="text-gray-600">Track your job applications</p>
             </div>
 
@@ -770,39 +1048,60 @@ export default function DemoTalentDashboard() {
               <div className="flex items-start gap-4">
                 <Sparkles className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-2">Apply with Likelee Package</h3>
+                  <h3 className="font-bold text-gray-900 mb-2">
+                    Apply with Likelee Package
+                  </h3>
                   <p className="text-gray-700 mb-4">
-                    Auto-attach your verified profile, top 3 projects, and AI tools specialties in a professional one-page kit.
-                    This feature is FREE and helps you stand out to clients.
+                    Auto-attach your verified profile, top 3 projects, and AI
+                    tools specialties in a professional one-page kit. This
+                    feature is FREE and helps you stand out to clients.
                   </p>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Automatically included in all applications</span>
+                    <span className="text-sm text-gray-700">
+                      Automatically included in all applications
+                    </span>
                   </div>
                 </div>
               </div>
             </Card>
 
             <div className="space-y-4">
-              {mockApplications.map(app => (
-                <Card key={app.id} className="p-6 bg-white border-2 border-gray-200 rounded-none">
+              {mockApplications.map((app) => (
+                <Card
+                  key={app.id}
+                  className="p-6 bg-white border-2 border-gray-200 rounded-none"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 mb-2">{app.job_title}</h3>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        {app.job_title}
+                      </h3>
                       <p className="text-gray-700 mb-3">{app.company}</p>
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge className={
-                          app.status === "accepted" ? "bg-green-600 text-white rounded-none" :
-                            app.status === "rejected" ? "bg-red-600 text-white rounded-none" :
-                              "bg-gray-600 text-white rounded-none"
-                        }>
+                        <Badge
+                          className={
+                            app.status === "accepted"
+                              ? "bg-green-600 text-white rounded-none"
+                              : app.status === "rejected"
+                                ? "bg-red-600 text-white rounded-none"
+                                : "bg-gray-600 text-white rounded-none"
+                          }
+                        >
                           {app.status}
                         </Badge>
-                        <Badge className="bg-gray-200 text-gray-700 rounded-none">{app.budget}</Badge>
+                        <Badge className="bg-gray-200 text-gray-700 rounded-none">
+                          {app.budget}
+                        </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">Applied: {app.applied_date}</p>
+                      <p className="text-sm text-gray-600">
+                        Applied: {app.applied_date}
+                      </p>
                     </div>
-                    <Button variant="outline" className="border-2 border-gray-300 rounded-none">
+                    <Button
+                      variant="outline"
+                      className="border-2 border-gray-300 rounded-none"
+                    >
                       View Application
                     </Button>
                   </div>
@@ -814,8 +1113,9 @@ export default function DemoTalentDashboard() {
               <Alert className="bg-amber-50 border-2 border-amber-600 rounded-none">
                 <Lock className="h-5 w-5 text-amber-600" />
                 <AlertDescription className="text-amber-900">
-                  <strong>Free tier limit:</strong> You can have 3 active applications at a time.
-                  Upgrade to Pro for unlimited applications.
+                  <strong>Free tier limit:</strong> You can have 3 active
+                  applications at a time. Upgrade to Pro for unlimited
+                  applications.
                 </AlertDescription>
               </Alert>
             )}
@@ -827,10 +1127,17 @@ export default function DemoTalentDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Portfolio & Profile</h1>
-                <p className="text-gray-600">Showcase your work to potential clients</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Portfolio & Profile
+                </h1>
+                <p className="text-gray-600">
+                  Showcase your work to potential clients
+                </p>
               </div>
-              <Button onClick={() => navigate(createPageUrl("UploadProject"))} className="bg-[#F18B6A] hover:bg-[#E07A5A] text-white rounded-none">
+              <Button
+                onClick={() => navigate(createPageUrl("UploadProject"))}
+                className="bg-[#F18B6A] hover:bg-[#E07A5A] text-white rounded-none"
+              >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Add Project
               </Button>
@@ -844,19 +1151,28 @@ export default function DemoTalentDashboard() {
                   className="w-24 h-24 rounded-full object-cover border-2 border-[#F18B6A]"
                 />
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{portfolio.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {portfolio.name}
+                  </h2>
                   <p className="text-gray-700 mb-4">{portfolio.bio}</p>
                   <div className="flex items-center gap-3 mb-4">
                     <Badge className="bg-[#F18B6A] text-white rounded-none">
-                      {portfolio.availability === 'available' ? 'Available' : 'Unavailable'}
+                      {portfolio.availability === "available"
+                        ? "Available"
+                        : "Unavailable"}
                     </Badge>
                     {portfolio.available_for_collabs && (
-                      <Badge className="bg-gray-200 text-gray-700 rounded-none">Open to Collaborations</Badge>
+                      <Badge className="bg-gray-200 text-gray-700 rounded-none">
+                        Open to Collaborations
+                      </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-6 text-sm text-gray-600">
                     <span>${portfolio.hourly_rate}/hr</span>
-                    <span>Projects: ${portfolio.project_rate_min.toLocaleString()} - ${portfolio.project_rate_max.toLocaleString()}</span>
+                    <span>
+                      Projects: ${portfolio.project_rate_min.toLocaleString()} -
+                      ${portfolio.project_rate_max.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -866,8 +1182,11 @@ export default function DemoTalentDashboard() {
                   <div>
                     <h3 className="font-bold text-gray-900 mb-3">Skills</h3>
                     <div className="flex flex-wrap gap-2">
-                      {portfolio.skills_tags.map(skill => (
-                        <Badge key={skill} className="bg-gray-200 text-gray-700 rounded-none">
+                      {portfolio.skills_tags.map((skill) => (
+                        <Badge
+                          key={skill}
+                          className="bg-gray-200 text-gray-700 rounded-none"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -876,8 +1195,11 @@ export default function DemoTalentDashboard() {
                   <div>
                     <h3 className="font-bold text-gray-900 mb-3">AI Tools</h3>
                     <div className="flex flex-wrap gap-2">
-                      {portfolio.ai_tools.map(tool => (
-                        <Badge key={tool} className="bg-gray-200 text-gray-700 rounded-none">
+                      {portfolio.ai_tools.map((tool) => (
+                        <Badge
+                          key={tool}
+                          className="bg-gray-200 text-gray-700 rounded-none"
+                        >
                           {tool}
                         </Badge>
                       ))}
@@ -888,8 +1210,11 @@ export default function DemoTalentDashboard() {
             </Card>
 
             <div className="grid md:grid-cols-3 gap-6">
-              {projects.map(project => (
-                <Card key={project.id} className="p-4 bg-white border-2 border-gray-200 rounded-none">
+              {projects.map((project) => (
+                <Card
+                  key={project.id}
+                  className="p-4 bg-white border-2 border-gray-200 rounded-none"
+                >
                   <div className="relative mb-4">
                     <img
                       src={project.thumbnail_url}
@@ -903,8 +1228,12 @@ export default function DemoTalentDashboard() {
                       </Badge>
                     )}
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2">{project.title}</h3>
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{project.description}</p>
+                  <h3 className="font-bold text-gray-900 mb-2">
+                    {project.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {project.description}
+                  </p>
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <span className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
@@ -921,8 +1250,13 @@ export default function DemoTalentDashboard() {
                 <div className="flex items-start gap-4">
                   <Lock className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-2">Unlock Advanced Personalization</h3>
-                    <p className="text-gray-700 mb-4">Upgrade to get custom banner, vanity URL, and detailed showcase analytics.</p>
+                    <h3 className="font-bold text-gray-900 mb-2">
+                      Unlock Advanced Personalization
+                    </h3>
+                    <p className="text-gray-700 mb-4">
+                      Upgrade to get custom banner, vanity URL, and detailed
+                      showcase analytics.
+                    </p>
                     <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-none">
                       Upgrade Now
                     </Button>
@@ -937,57 +1271,87 @@ export default function DemoTalentDashboard() {
         {activeTab === "earnings" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Earnings & Payments</h1>
-              <p className="text-gray-600">Track your income and withdraw funds</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Earnings & Payments
+              </h1>
+              <p className="text-gray-600">
+                Track your income and withdraw funds
+              </p>
             </div>
 
             <div className="grid md:grid-cols-4 gap-6">
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <DollarSign className="w-8 h-8 text-green-600 mb-4" />
                 <p className="text-sm text-gray-600 mb-1">Total Earned</p>
-                <p className="text-3xl font-bold text-gray-900">${mockEarnings.total_earned.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  ${mockEarnings.total_earned.toLocaleString()}
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <AlertCircle className="w-8 h-8 text-amber-600 mb-4" />
                 <p className="text-sm text-gray-600 mb-1">Pending Payment</p>
-                <p className="text-3xl font-bold text-gray-900">${mockEarnings.pending_payment.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  ${mockEarnings.pending_payment.toLocaleString()}
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <CheckCircle2 className="w-8 h-8 text-blue-600 mb-4" />
                 <p className="text-sm text-gray-600 mb-1">Completed Jobs</p>
-                <p className="text-3xl font-bold text-gray-900">{mockEarnings.completed_jobs}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {mockEarnings.completed_jobs}
+                </p>
               </Card>
 
               <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
                 <TrendingUp className="w-8 h-8 text-purple-600 mb-4" />
                 <p className="text-sm text-gray-600 mb-1">Avg Job Value</p>
-                <p className="text-3xl font-bold text-gray-900">${mockEarnings.average_job_value.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  ${mockEarnings.average_job_value.toLocaleString()}
+                </p>
               </Card>
             </div>
 
             <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Completed Jobs</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Completed Jobs
+              </h3>
               <div className="space-y-3">
-                {mockActiveJobs.filter(j => j.payment_status === "paid").map(job => (
-                  <div key={job.id} className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-none">
-                    <div>
-                      <p className="font-medium text-gray-900">{job.title}</p>
-                      <p className="text-sm text-gray-600">{job.client}</p>
+                {mockActiveJobs
+                  .filter((j) => j.payment_status === "paid")
+                  .map((job) => (
+                    <div
+                      key={job.id}
+                      className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-none"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900">{job.title}</p>
+                        <p className="text-sm text-gray-600">{job.client}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-gray-900">
+                          ${job.amount.toLocaleString()}
+                        </p>
+                        <Badge className="bg-green-100 text-green-800 rounded-none">
+                          Paid
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900">${job.amount.toLocaleString()}</p>
-                      <Badge className="bg-green-100 text-green-800 rounded-none">Paid</Badge>
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
 
               <div className="flex justify-between items-center mt-6 pt-6 border-t-2 border-gray-200">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Available to Withdraw</p>
-                  <p className="text-2xl font-bold text-gray-900">${(mockEarnings.total_earned - mockEarnings.pending_payment).toLocaleString()}</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    Available to Withdraw
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    $
+                    {(
+                      mockEarnings.total_earned - mockEarnings.pending_payment
+                    ).toLocaleString()}
+                  </p>
                 </div>
                 <Button className="bg-green-600 hover:bg-green-700 text-white rounded-none">
                   <Download className="w-4 h-4 mr-2" />
@@ -1001,8 +1365,13 @@ export default function DemoTalentDashboard() {
                 <div className="flex items-start gap-4">
                   <Lock className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-2">Unlock Instant Payouts</h3>
-                    <p className="text-gray-700 mb-4">Pro members get instant payouts and advanced earnings projections.</p>
+                    <h3 className="font-bold text-gray-900 mb-2">
+                      Unlock Instant Payouts
+                    </h3>
+                    <p className="text-gray-700 mb-4">
+                      Pro members get instant payouts and advanced earnings
+                      projections.
+                    </p>
                     <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-none">
                       Upgrade to Pro
                     </Button>
@@ -1017,25 +1386,35 @@ export default function DemoTalentDashboard() {
         {activeTab === "upgrade" && (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">Boost Your Visibility & Earnings</h1>
-              <p className="text-xl text-gray-600">Choose the plan that fits your goals</p>
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                Boost Your Visibility & Earnings
+              </h1>
+              <p className="text-xl text-gray-600">
+                Choose the plan that fits your goals
+              </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="p-8 bg-white border-2 border-gray-200 rounded-none">
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Free
+                  </h3>
                   <p className="text-4xl font-bold text-gray-900 mb-2">$0</p>
                   <p className="text-gray-600">Forever free</p>
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Unlimited job browsing</span>
+                    <span className="text-gray-700">
+                      Unlimited job browsing
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Apply with Likelee Package</span>
+                    <span className="text-gray-700">
+                      Apply with Likelee Package
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1046,7 +1425,10 @@ export default function DemoTalentDashboard() {
                     <span className="text-gray-700">Standard portfolio</span>
                   </li>
                 </ul>
-                <Button disabled className="w-full bg-gray-300 text-gray-600 rounded-none cursor-not-allowed">
+                <Button
+                  disabled
+                  className="w-full bg-gray-300 text-gray-600 rounded-none cursor-not-allowed"
+                >
                   Current Plan
                 </Button>
               </Card>
@@ -1067,7 +1449,9 @@ export default function DemoTalentDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Unlimited applications</span>
+                    <span className="text-gray-700">
+                      Unlimited applications
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1075,11 +1459,15 @@ export default function DemoTalentDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Custom application templates</span>
+                    <span className="text-gray-700">
+                      Custom application templates
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Featured placement on listings</span>
+                    <span className="text-gray-700">
+                      Featured placement on listings
+                    </span>
                   </li>
                 </ul>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none">
@@ -1092,7 +1480,9 @@ export default function DemoTalentDashboard() {
                   <Crown className="w-8 h-8 text-amber-600" />
                 </div>
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Elite</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Elite
+                  </h3>
                   <p className="text-4xl font-bold text-gray-900 mb-2">$99</p>
                   <p className="text-gray-600">per month</p>
                 </div>
@@ -1103,7 +1493,9 @@ export default function DemoTalentDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Top-tier listing priority</span>
+                    <span className="text-gray-700">
+                      Top-tier listing priority
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -1111,11 +1503,15 @@ export default function DemoTalentDashboard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">Verified Creator badge</span>
+                    <span className="text-gray-700">
+                      Verified Creator badge
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Crown className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700 font-semibold">Direct Brand Invites</span>
+                    <span className="text-gray-700 font-semibold">
+                      Direct Brand Invites
+                    </span>
                   </li>
                 </ul>
                 <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none">
@@ -1125,8 +1521,13 @@ export default function DemoTalentDashboard() {
             </div>
 
             <Card className="p-8 bg-gradient-to-r from-blue-600 to-purple-600 border-2 border-black rounded-none text-white text-center">
-              <h3 className="text-2xl font-bold mb-4">Feature Your Portfolio on Likelee Marketplace</h3>
-              <p className="text-lg mb-6">Get priority job matching and increased visibility to brands actively hiring AI creators.</p>
+              <h3 className="text-2xl font-bold mb-4">
+                Feature Your Portfolio on Likelee Marketplace
+              </h3>
+              <p className="text-lg mb-6">
+                Get priority job matching and increased visibility to brands
+                actively hiring AI creators.
+              </p>
               <Button className="bg-white hover:bg-gray-100 text-blue-600 rounded-none">
                 Learn More
               </Button>

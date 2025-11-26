@@ -1,0 +1,25 @@
+use axum::{routing::{get, post}, Router};
+use tower_http::cors::{Any, CorsLayer};
+use crate::config::AppState;
+
+pub fn build_router(state: AppState) -> Router {
+    let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
+    Router::new()
+        .route("/api/kyc/session", post(crate::kyc::create_session))
+        .route("/api/kyc/status", get(crate::kyc::get_status))
+        .route("/api/kyc/organization/session", post(crate::kyc::create_session))
+        .route("/api/kyc/organization/status", get(crate::kyc::get_status))
+        .route("/api/dashboard", get(crate::dashboard::get_dashboard))
+        .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
+        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
+        .route("/api/email/available", get(crate::profiles::check_email))
+        .route("/api/profile", post(crate::profiles::upsert_profile))
+        .route("/api/face-profiles", post(crate::face_profiles::create_face_profile))
+        .route("/api/face-profiles/:id", post(crate::face_profiles::update_face_profile))
+        .route("/api/moderation/image", post(crate::moderation::moderate_image))
+        .route("/api/moderation/image-bytes", post(crate::moderation::moderate_image_bytes))
+        .route("/api/liveness/create", post(crate::liveness::create_session))
+        .route("/api/liveness/result", post(crate::liveness::liveness_result))
+        .with_state(state)
+        .layer(cors)
+}

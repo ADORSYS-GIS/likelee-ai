@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +23,12 @@ import {
   Volume2, Download, Lock, Unlock, Plus, X, LayoutDashboard,
   FileText, Calendar, BarChart3, Menu, ChevronRight, Clock,
   Shield, Building2, Target, PlayCircle, CheckSquare, XCircle,
-  Send, MessageSquare, Copy, ArrowRight
+  Send, MessageSquare, Copy, ArrowRight, RefreshCw, Wallet as WalletIcon
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { useAuth } from '@/auth/AuthProvider'
+import CameoUpload from './CameoUpload'
 
 // Voice recording scripts for different emotions
 const VOICE_SCRIPTS = {
@@ -327,35 +329,23 @@ const mockContracts = [
 
 export default function CreatorDashboard() {
   const navigate = useNavigate();
+  const { user, initialized, authenticated } = useAuth()
+  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || ''
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [creator, setCreator] = useState({
-    name: "Lily Chen",
-    email: "lily@example.com",
-    profile_photo: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/3ce34e58b_Screenshot2025-10-24at101047AM.png",
-    location: "Scottsdale, Arizona",
-    bio: "UGC creator & influencer specializing in beauty, lifestyle, and product reviews. Passionate about authentic storytelling.",
-    instagram_handle: "@lilycreates",
-    tiktok_handle: "@lilycreates",
-    instagram_connected: true,
-    instagram_followers: 28400,
-    content_types: ["Social-media ads", "Web & banner campaigns"],
-    industries: ["Fashion / Beauty", "Tech / Electronics"],
-    price_per_week: 500,
-    royalty_percentage: 2.5,
-    accept_negotiations: true
-  });
+  const [creator, setCreator] = useState<any>({});
   
   const [heroMedia, setHeroMedia] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [voiceLibrary, setVoiceLibrary] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [activeCampaigns, setActiveCampaigns] = useState(mockActiveCampaigns);
-  const [pendingApprovals, setPendingApprovals] = useState(mockPendingApprovals);
+  const [kycLoading, setKycLoading] = useState(false);
+  const [activeCampaigns, setActiveCampaigns] = useState<any[]>(mockActiveCampaigns);
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>(mockPendingApprovals);
   const [editingRules, setEditingRules] = useState(false);
-  const [contracts, setContracts] = useState(mockContracts);
+  const [contracts, setContracts] = useState<any[]>(mockContracts);
   const [selectedContract, setSelectedContract] = useState(null);
   const [showContractDetails, setShowContractDetails] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
@@ -402,10 +392,95 @@ export default function CreatorDashboard() {
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
 
-  // Calculate metrics
-  const totalMonthlyRevenue = activeCampaigns.reduce((sum, c) => sum + c.rate, 0);
+  // Calculate metrics (fallback to computed if backend doesn't send)
+  const totalMonthlyRevenue = activeCampaigns.reduce((sum, c) => sum + (c.rate || 0), 0);
   const annualRunRate = totalMonthlyRevenue * 12;
   const pendingCount = pendingApprovals.length;
+
+  // Fetch per-user dashboard data
+  useEffect(() => {
+    if (!initialized) return
+    if (!authenticated || !user?.id) return
+    const abort = new AbortController()
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`, { signal: abort.signal })
+        if (!res.ok) throw new Error(await res.text())
+        const json = await res.json()
+        const profile = json.profile || {}
+        setCreator({
+          name: profile.full_name || creator.name,
+          email: profile.email || creator.email,
+          profile_photo: creator.profile_photo,
+          location: [profile.city, profile.state].filter(Boolean).join(', '),
+          bio: creator.bio,
+          instagram_handle: profile.platform_handle ? `@${profile.platform_handle}` : creator.instagram_handle,
+          tiktok_handle: creator.tiktok_handle,
+          instagram_connected: creator.instagram_connected ?? false,
+          instagram_followers: creator.instagram_followers ?? 0,
+          content_types: profile.content_types || [],
+          industries: profile.industries || [],
+          price_per_week: creator.price_per_week ?? 0,
+          royalty_percentage: creator.royalty_percentage ?? 0,
+          accept_negotiations: creator.accept_negotiations ?? true,
+          kyc_status: profile.kyc_status,
+          verified_at: profile.verified_at,
+          cameo_front_url: profile.cameo_front_url,
+          cameo_left_url: profile.cameo_left_url,
+          cameo_right_url: profile.cameo_right_url,
+        })
+        // If backend provides arrays later, replace mocks
+        if (Array.isArray(json.campaigns) && json.campaigns.length) setActiveCampaigns(json.campaigns)
+        if (Array.isArray(json.approvals) && json.approvals.length) setPendingApprovals(json.approvals)
+        if (Array.isArray(json.contracts) && json.contracts.length) setContracts(json.contracts)
+        // Optionally, if backend provides metrics, you can store them to override computed ones
+      } catch (e) {
+        console.error('Failed to fetch dashboard', e)
+      }
+    })()
+    return () => abort.abort()
+  }, [initialized, authenticated, user?.id])
+
+  // Verification actions from dashboard
+  const startVerificationFromDashboard = async () => {
+    if (!authenticated || !user?.id) {
+      alert('Please log in to start verification.')
+      return
+    }
+    try {
+      setKycLoading(true)
+      const res = await fetch(`${API_BASE}/api/kyc/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json()
+      if (data.session_url) window.open(data.session_url, '_blank')
+    } catch (e: any) {
+      alert(`Failed to start verification: ${e?.message || e}`)
+    } finally {
+      setKycLoading(false)
+    }
+  }
+
+  const refreshVerificationFromDashboard = async () => {
+    if (!authenticated || !user?.id) return
+    try {
+      setKycLoading(true)
+      const res = await fetch(`${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.id)}`)
+      if (!res.ok) throw new Error(await res.text())
+      const rows = await res.json()
+      const row = Array.isArray(rows) && rows.length ? rows[0] : null
+      if (row && (row.kyc_status || row.liveness_status)) {
+        setCreator((prev: any) => ({ ...prev, kyc_status: row.kyc_status, verified_at: row.verified_at }))
+      }
+    } catch (e: any) {
+      console.error('Failed to refresh verification status', e)
+    } finally {
+      setKycLoading(false)
+    }
+  }
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -943,6 +1018,40 @@ export default function CreatorDashboard() {
         </Alert>
       </Card>
 
+      {/* Reference Photos (Front/Left/Right) before Cameo Video */}
+      {(creator?.cameo_front_url || creator?.cameo_left_url || creator?.cameo_right_url) && (
+        <Card className="p-6 bg-white border border-gray-200 mb-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Reference Photos</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Front</div>
+              {creator?.cameo_front_url ? (
+                <img src={creator.cameo_front_url} alt="Front" className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg" />
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">No image</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Left</div>
+              {creator?.cameo_left_url ? (
+                <img src={creator.cameo_left_url} alt="Left" className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg" />
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">No image</div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Right</div>
+              {creator?.cameo_right_url ? (
+                <img src={creator.cameo_right_url} alt="Right" className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg" />
+              ) : (
+                <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">No image</div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+      <CameoUpload />
+
       {/* MY CAMEO Section */}
       <Card className="p-6 bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-6">
@@ -1203,10 +1312,20 @@ export default function CreatorDashboard() {
         <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="font-medium text-gray-900">Identity Verified</span>
+              {creator?.kyc_status === 'approved' && <CheckCircle2 className="w-5 h-5 text-green-600" />}
+              {creator?.kyc_status === 'pending' && <Clock className="w-5 h-5 text-yellow-600" />}
+              {creator?.kyc_status === 'rejected' && <XCircle className="w-5 h-5 text-red-600" />}
+              {!creator?.kyc_status && <AlertCircle className="w-5 h-5 text-gray-500" />}
+              <span className="font-medium text-gray-900">Identity Verification</span>
             </div>
-            <Badge className="bg-green-100 text-green-700">Verified</Badge>
+            <Badge className={
+              creator?.kyc_status === 'approved' ? 'bg-green-100 text-green-700' :
+              creator?.kyc_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+              creator?.kyc_status === 'rejected' ? 'bg-red-100 text-red-700' :
+              'bg-gray-100 text-gray-700'
+            }>
+              {creator?.kyc_status ? (creator.kyc_status.charAt(0).toUpperCase() + creator.kyc_status.slice(1)) : 'Not started'}
+            </Badge>
           </div>
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
@@ -1214,6 +1333,16 @@ export default function CreatorDashboard() {
               <span className="font-medium text-gray-900">Likeness Rights</span>
             </div>
             <Badge className="bg-green-100 text-green-700">Confirmed</Badge>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button onClick={startVerificationFromDashboard} disabled={kycLoading} variant="outline" className="border-2 border-gray-300">
+              {kycLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
+              Complete Verification
+            </Button>
+            <Button onClick={refreshVerificationFromDashboard} disabled={kycLoading} variant="outline" className="border-2 border-gray-300">
+              {kycLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Refresh Status
+            </Button>
           </div>
         </div>
       </Card>
@@ -2071,6 +2200,14 @@ export default function CreatorDashboard() {
           <h2 className="text-3xl font-bold text-gray-900">Earnings Dashboard</h2>
           <p className="text-gray-600 mt-1">Track your revenue and payments</p>
         </div>
+        <Button
+          onClick={() => navigate(createPageUrl("RoyaltyWallet"))}
+          variant="outline"
+          className="rounded-full border-2 border-black bg-gradient-to-r from-[#F18B6A] to-pink-500 text-white hover:from-[#E07A5A] hover:to-pink-600 shadow-sm px-4 py-2 flex items-center gap-2"
+        >
+          <WalletIcon className="w-4 h-4" />
+          Royalty Wallet
+        </Button>
       </div>
 
       {/* Key Earnings Metrics */}
@@ -2215,7 +2352,7 @@ export default function CreatorDashboard() {
                 <img 
                   src={creator.profile_photo}
                   alt={creator.name}
-                  className="w-32 h-32 rounded-full object-cover border-2 border-[#32C8D1]"
+                  className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === 'approved' ? 'border-red-500' : 'border-[#32C8D1]'}`}
                 />
                 <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 border-2 border-gray-300 cursor-pointer hover:bg-gray-50">
                   <Edit className="w-4 h-4 text-gray-600" />
@@ -2560,22 +2697,91 @@ export default function CreatorDashboard() {
         <div className="p-6 border-b border-gray-200">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
-              <img 
-                src={creator.profile_photo}
-                alt={creator.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-[#32C8D1]"
-              />
+              {creator?.kyc_status === 'approved' ? (
+                <Avatar className="w-12 h-12 border-2 border-green-500">
+                  {creator?.profile_photo ? (
+                    <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                  ) : null}
+                  <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                    {(() => {
+                      const base = (creator?.name || creator?.email || '').trim();
+                      if (!base) return 'U';
+                      const parts = base.includes(' ')
+                        ? base.split(/\s+/)
+                        : base.split('@')[0].split(/\.|_/);
+                      const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                      return initials || 'U';
+                    })()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="w-14 h-14 rounded-full p-[2px] animate-spin" style={{ background: 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)', animationDuration: '3s' }}>
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <Avatar className="w-12 h-12">
+                      {creator?.profile_photo ? (
+                        <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                        {(() => {
+                          const base = (creator?.name || creator?.email || '').trim();
+                          if (!base) return 'U';
+                          const parts = base.includes(' ')
+                            ? base.split(/\s+/)
+                            : base.split('@')[0].split(/\.|_/);
+                          const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                          return initials || 'U';
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{creator.name}</p>
-                <p className="text-xs text-gray-600 truncate">{creator.email}</p>
               </div>
             </div>
           ) : (
-            <img 
-              src={creator.profile_photo}
-              alt={creator.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-[#32C8D1] mx-auto"
-            />
+            <div className="mx-auto">
+              {creator?.kyc_status === 'approved' ? (
+                <Avatar className="w-12 h-12 border-2 border-green-500">
+                  {creator?.profile_photo ? (
+                    <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                  ) : null}
+                  <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                    {(() => {
+                      const base = (creator?.name || creator?.email || '').trim();
+                      if (!base) return 'U';
+                      const parts = base.includes(' ')
+                        ? base.split(/\s+/)
+                        : base.split('@')[0].split(/\.|_/);
+                      const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                      return initials || 'U';
+                    })()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="w-14 h-14 rounded-full p-[2px] animate-spin" style={{ background: 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)', animationDuration: '3s' }}>
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <Avatar className="w-12 h-12">
+                      {creator?.profile_photo ? (
+                        <AvatarImage src={creator.profile_photo} alt={creator.name || 'User'} />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold">
+                        {(() => {
+                          const base = (creator?.name || creator?.email || '').trim();
+                          if (!base) return 'U';
+                          const parts = base.includes(' ')
+                            ? base.split(/\s+/)
+                            : base.split('@')[0].split(/\.|_/);
+                          const initials = parts.filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('');
+                          return initials || 'U';
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

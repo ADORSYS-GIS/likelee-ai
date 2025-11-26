@@ -1,40 +1,48 @@
-
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card as UICard } from "@/components/ui/card";
+import { Button as UIButton } from "@/components/ui/button";
 import { Users, User, Trophy } from "lucide-react";
+
+const Card: any = UICard
+const Button: any = UIButton
 
 const creatorTypes = [
   {
     type: "influencer",
     icon: Users,
     title: "Influencer / UGC Creator",
-    description: "You create content, have an audience, or collaborate with brands.",
-    color: "bg-[#32C8D1]"
+    description:
+      "You create content, have an audience, or collaborate with brands.",
+    color: "bg-[#32C8D1]",
   },
   {
     type: "model_actor",
     icon: User,
     title: "Independent Model or Actor",
-    description: "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
-    color: "bg-purple-500"
+    description:
+      "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
+    color: "bg-purple-500",
   },
   {
     type: "athlete",
     icon: Trophy,
     title: "Athlete (NIL & Pro)",
-    description: "You're a college or pro athlete managing your own name, image, and likeness dealings.",
-    color: "bg-emerald-600"
-  }
+    description:
+      "You're a college or pro athlete managing your own name, image, and likeness dealings.",
+    color: "bg-emerald-600",
+  },
 ];
 
 export default function CreatorSignupOptions() {
   const navigate = useNavigate();
+  const [selectedType, setSelectedType] = React.useState<string | null>(null)
+  const [showAuth, setShowAuth] = React.useState(false)
 
   const handleSelect = (type) => {
-    navigate(createPageUrl("ReserveProfile") + `?type=${type}`);
+    setSelectedType(type)
+    setShowAuth(true)
   };
 
   return (
@@ -45,7 +53,8 @@ export default function CreatorSignupOptions() {
             What type of creator are you?
           </h1>
           <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
-            Choose the option that best describes you to get started with the right profile setup.
+            Choose the option that best describes you to get started with the
+            right profile setup.
           </p>
         </div>
 
@@ -60,13 +69,17 @@ export default function CreatorSignupOptions() {
                 onClick={() => handleSelect(creator.type)}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 ${creator.color} border-2 border-black flex items-center justify-center shrink-0`}>
+                  <div
+                    className={`w-12 h-12 ${creator.color} border-2 border-black flex items-center justify-center shrink-0`}
+                  >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-sm font-bold text-gray-900 leading-tight flex-1">
-                    {creator.type === 'influencer' && 'Influencer / UGC Creator'}
-                    {creator.type === 'model_actor' && 'Independent Model or Actor'}
-                    {creator.type === 'athlete' && 'Athlete (NIL & Pro)'}
+                    {creator.type === "influencer" &&
+                      "Influencer / UGC Creator"}
+                    {creator.type === "model_actor" &&
+                      "Independent Model or Actor"}
+                    {creator.type === "athlete" && "Athlete (NIL & Pro)"}
                   </h3>
                 </div>
               </Card>
@@ -85,23 +98,56 @@ export default function CreatorSignupOptions() {
                 onClick={() => handleSelect(creator.type)}
               >
                 <div className="flex flex-col items-center text-center mb-6">
-                  <div className={`w-20 h-20 ${creator.color} border-2 border-black flex items-center justify-center shrink-0 mb-6`}>
+                  <div
+                    className={`w-20 h-20 ${creator.color} border-2 border-black flex items-center justify-center shrink-0 mb-6`}
+                  >
                     <Icon className="w-10 h-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{creator.title}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {creator.title}
+                  </h3>
                 </div>
                 <p className="text-gray-700 leading-relaxed text-base mb-6">
                   {creator.description}
                 </p>
-                <Button
-                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform"
-                >
+                <Button className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform">
                   Select
                 </Button>
               </Card>
             );
           })}
         </div>
+
+        {/* Auth chooser modal */}
+        {showAuth && selectedType && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowAuth(false)} />
+            <div className="relative z-10 w-full max-w-md bg-white border-2 border-black p-6">
+              <h2 className="text-xl font-bold mb-2">Get started</h2>
+              <p className="text-sm text-gray-600 mb-6">Selected: {selectedType.replace('_', ' ')}</p>
+              <div className="space-y-3">
+                <Link
+                  to={`${createPageUrl('Register')}?type=${selectedType}`}
+                  className="block w-full"
+                  onClick={() => setShowAuth(false)}
+                >
+                  <Button className="w-full bg-black text-white rounded-none">
+                    Sign up as {selectedType.replace('_', ' ')}
+                  </Button>
+                </Link>
+                <Link
+                  to={`${createPageUrl('Login')}?type=${selectedType}`}
+                  className="block w-full"
+                  onClick={() => setShowAuth(false)}
+                >
+                  <Button variant="outline" className="w-full border-2 border-black rounded-none">
+                    I already have an account
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

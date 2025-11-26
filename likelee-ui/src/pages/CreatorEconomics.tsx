@@ -24,17 +24,23 @@ export default function CreatorEconomics() {
 
           <div className="max-w-4xl mx-auto mb-12">
             <p className="text-xl text-gray-300 leading-relaxed text-center mb-8">
-              Licensing your likeness isn't selling out; it's scaling up. While you're filming your next project, your digital twin can be earning in ten more.
+              Licensing your likeness isn't selling out; it's scaling up. While
+              you're filming your next project, your digital twin can be earning
+              in ten more.
             </p>
           </div>
 
           <Card className="p-8 md:p-12 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-none">
-            <h3 className="text-2xl font-bold text-white mb-8 text-center">Traditional Model vs. Likelee Likeness Model</h3>
+            <h3 className="text-2xl font-bold text-white mb-8 text-center">
+              Traditional Model vs. Likelee Likeness Model
+            </h3>
             <div className="grid gap-6">
               <div className="flex items-center justify-between p-6 bg-white/5 border border-white/10 rounded-none">
                 <div className="flex-1">
                   <p className="text-gray-400 text-sm mb-2">Traditional Path</p>
-                  <p className="text-lg text-white">You perform or shoot manually</p>
+                  <p className="text-lg text-white">
+                    You perform or shoot manually
+                  </p>
                 </div>
                 <div className="w-12 flex justify-center">
                   <span className="text-[#32C8D1] text-2xl">→</span>
@@ -76,7 +82,9 @@ export default function CreatorEconomics() {
               <div className="flex items-center justify-between p-6 bg-white/5 border border-white/10 rounded-none">
                 <div className="flex-1">
                   <p className="text-gray-400 text-sm mb-2">Traditional Path</p>
-                  <p className="text-lg text-white">You can't reuse or repurpose</p>
+                  <p className="text-lg text-white">
+                    You can't reuse or repurpose
+                  </p>
                 </div>
                 <div className="w-12 flex justify-center">
                   <span className="text-[#32C8D1] text-2xl">→</span>
@@ -105,13 +113,13 @@ export default function CreatorEconomics() {
           </h2>
           <div className="space-y-6 text-lg md:text-xl text-cyan-50 leading-relaxed">
             <p>
-              Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.
+              Brands and studios are already generating AI campaigns — most use
+              unlicensed or synthetic faces.
             </p>
+            <p>Likelee is where real talent powers the AI world.</p>
             <p>
-              Likelee is where real talent powers the AI world.
-            </p>
-            <p>
-              Every creator, model, and performer is verified, tracked, and paid royalties.
+              Every creator, model, and performer is verified, tracked, and paid
+              royalties.
             </p>
             <p className="text-2xl md:text-3xl font-bold text-white pt-6">
               You're not being replaced by AI — you're becoming its shareholder.
@@ -134,13 +142,15 @@ export default function CreatorEconomics() {
               No likeness license on Likelee pays below the community minimum.
             </p>
             <p className="text-lg text-gray-700 leading-relaxed text-center">
-              You can also set your own floor so brands and studios can't lowball you.
+              You can also set your own floor so brands and studios can't
+              lowball you.
             </p>
           </Card>
 
           <div className="bg-white p-8 border-2 border-black rounded-none">
             <p className="text-xl text-gray-700 leading-relaxed text-center mb-6">
-              Transparency builds trust. We publish average creator earnings and benchmark data so you always know your true market value.
+              Transparency builds trust. We publish average creator earnings and
+              benchmark data so you always know your true market value.
             </p>
             <div className="grid md:grid-cols-3 gap-6 mt-8">
               <div className="text-center">
@@ -168,7 +178,8 @@ export default function CreatorEconomics() {
               Real Creators. Real Earnings.
             </h2>
             <p className="text-xl text-gray-600">
-              See what creators, models, and performers are earning through likeness licensing.
+              See what creators, models, and performers are earning through
+              likeness licensing.
             </p>
           </div>
 
@@ -179,10 +190,13 @@ export default function CreatorEconomics() {
                   <DollarSign className="w-6 h-6 text-white" />
                 </div>
                 <p className="text-3xl font-bold text-gray-900 mb-2">$1,524</p>
-                <p className="text-sm text-gray-600 mb-4">Royalties across 6 brands</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Royalties across 6 brands
+                </p>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                → 1 campaign → 6 brand partnerships → ongoing residuals for 9 months
+                → 1 campaign → 6 brand partnerships → ongoing residuals for 9
+                months
               </p>
             </Card>
 
@@ -192,10 +206,13 @@ export default function CreatorEconomics() {
                   <DollarSign className="w-6 h-6 text-white" />
                 </div>
                 <p className="text-3xl font-bold text-gray-900 mb-2">$700</p>
-                <p className="text-sm text-gray-600 mb-4">Residuals (15% revenue share)</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Residuals (15% revenue share)
+                </p>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                → Licensed likeness for a music video → royalties continue as views grow
+                → Licensed likeness for a music video → royalties continue as
+                views grow
               </p>
             </Card>
 
@@ -205,10 +222,13 @@ export default function CreatorEconomics() {
                   <DollarSign className="w-6 h-6 text-white" />
                 </div>
                 <p className="text-3xl font-bold text-gray-900 mb-2">$3,200</p>
-                <p className="text-sm text-gray-600 mb-4">Annual licensing income</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Annual licensing income
+                </p>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                → 3 active licenses → recurring monthly royalties → passive income stream
+                → 3 active licenses → recurring monthly royalties → passive
+                income stream
               </p>
             </Card>
           </div>
@@ -222,7 +242,8 @@ export default function CreatorEconomics() {
             Ready to become a digital talent owner?
           </h2>
           <p className="text-xl text-cyan-100 mb-10">
-            Join creators, models, and performers building sustainable income through likeness licensing.
+            Join creators, models, and performers building sustainable income
+            through likeness licensing.
           </p>
           <Button
             onClick={() => navigate(createPageUrl("ReserveProfile"))}
