@@ -11,7 +11,7 @@ import { Textarea as UITextarea } from "@/components/ui/textarea";
 import { RadioGroup as UIRadioGroup, RadioGroupItem as UIRadioGroupItem } from "@/components/ui/radio-group";
 import { Select as UISelect, SelectContent as UISelectContent, SelectItem as UISelectItem, SelectTrigger as UISelectTrigger, SelectValue as UISelectValue } from "@/components/ui/select";
 import { Slider as UISlider } from "@/components/ui/slider";
-import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, AlertCircle, XCircle, Loader2 } from "lucide-react";
 import { Alert as UIAlert, AlertDescription as UIAlertDescription } from "@/components/ui/alert";
 import { useMutation } from '@tanstack/react-query'; 
 import { Link } from 'react-router-dom';
@@ -533,6 +533,11 @@ export default function ReserveProfile() {
 
   const startLiveness = async () => {
     try {
+      // Prevent starting new sessions after approval (cost control)
+      if (livenessStatus === 'approved') {
+        alert('Liveness is already approved. No further checks needed.');
+        return
+      }
       if (!COGNITO_IDENTITY_POOL_ID) {
         alert('Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.');
         return
@@ -612,6 +617,7 @@ export default function ReserveProfile() {
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || ''
   const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || 'eu-central-1'
   const COGNITO_IDENTITY_POOL_ID = (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || ''
+  const [firstContinueLoading, setFirstContinueLoading] = useState(false)
   const [showLiveness, setShowLiveness] = useState(false)
   const [livenessRunning, setLivenessRunning] = useState(false)
   const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null)
@@ -828,6 +834,8 @@ export default function ReserveProfile() {
     }
     
     // Check email availability, then register in Firebase, then create profile
+    if (firstContinueLoading) return
+    setFirstContinueLoading(true)
     ;(async () => {
       try {
         const res = await fetch(`${API_BASE}/api/email/available?email=${encodeURIComponent(formData.email)}`)
@@ -857,6 +865,8 @@ export default function ReserveProfile() {
         setStep(2)
       } catch (e: any) {
         alert(`Failed to sign up: ${e?.message || e}`)
+      } finally {
+        setFirstContinueLoading(false)
       }
     })()
   };
@@ -1166,10 +1176,10 @@ export default function ReserveProfile() {
                 </div>
                 <Button
                   onClick={handleFirstContinue} 
-                  disabled={createInitialProfileMutation.isPending} 
+                  disabled={createInitialProfileMutation.isPending || firstContinueLoading} 
                   className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {createInitialProfileMutation.isPending ? "Saving..." : "Continue"}
+                  {firstContinueLoading ? "Checking..." : (createInitialProfileMutation.isPending ? "Saving..." : "Continue")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -1248,16 +1258,16 @@ export default function ReserveProfile() {
                               const data = await r.json()
                               console.log('[liveness] result', data)
                               setLivenessStatus(data.passed ? 'approved' : 'rejected')
+                              // Close modal and clear session/creds on either outcome to reset UI.
+                              // For rejection, user can re-open and retry cleanly.
                               if (!data.passed) {
                                 alert('Liveness check failed. Please try again with good lighting and follow prompts.')
-                              } else {
-                                // Close modal on success and clear session/creds to prevent the UI from staying stuck in verifying state
-                                setTimeout(() => {
-                                  setShowLiveness(false)
-                                  setLivenessSessionId(null)
-                                  setLivenessCreds(null)
-                                }, 300)
                               }
+                              setTimeout(() => {
+                                setShowLiveness(false)
+                                setLivenessSessionId(null)
+                                setLivenessCreds(null)
+                              }, 300)
                             } else {
                               alert(`Failed to fetch liveness result: ${await r.text()}`)
                             }
@@ -1928,13 +1938,15 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={startLiveness}
-                  disabled={livenessRunning}
+                  disabled={livenessRunning || livenessStatus === 'approved'}
                   variant="outline"
                   className="w-full h-12 border-2 border-black rounded-none"
                 >
-                  {livenessRunning ? 'Preparing…' : 'Start Liveness Check'}
+                  {livenessStatus === 'approved'
+                    ? 'Liveness Approved'
+                    : livenessRunning ? 'Preparing…' : 'Start Liveness Check'}
                 </Button>
-                {LIVENESS_DEBUG && (
+                {LIVENESS_DEBUG && showLiveness && (
                   <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
                     <div>Debug: step={step} • showLiveness={String(showLiveness)} • session={livenessSessionId || '—'} • region={AWS_REGION}</div>
                     {livenessSessionId && livenessCreds && (
@@ -1956,6 +1968,15 @@ export default function ReserveProfile() {
                               if (r.ok) {
                                 const data = await r.json()
                                 setLivenessStatus(data.passed ? 'approved' : 'rejected')
+                                if (!data.passed) {
+                                  alert('Liveness check failed. Please try again with good lighting and follow prompts.')
+                                }
+                                // Always close and clear after a result to avoid lingering "Verifying" UI
+                                setTimeout(() => {
+                                  setShowLiveness(false)
+                                  setLivenessSessionId(null)
+                                  setLivenessCreds(null)
+                                }, 300)
                               } else {
                                 console.error('Failed to fetch liveness result', await r.text())
                               }
@@ -1970,7 +1991,30 @@ export default function ReserveProfile() {
                 )}
                 <div className="text-sm text-gray-700 flex items-center justify-between">
                   <span>KYC: <strong className="capitalize">{kycStatus.replace('_', ' ')}</strong></span>
-                  <span>Liveness: <strong className="capitalize">{livenessStatus.replace('_', ' ')}</strong></span>
+                  <span className="flex items-center gap-1">
+                    <span>Liveness:</span>
+                    {livenessStatus === 'approved' && (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <strong className="capitalize text-green-700">approved</strong>
+                      </>
+                    )}
+                    {livenessStatus === 'rejected' && (
+                      <>
+                        <XCircle className="w-4 h-4 text-red-600" />
+                        <strong className="capitalize text-red-700">rejected</strong>
+                      </>
+                    )}
+                    {livenessStatus === 'pending' && (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                        <strong className="capitalize text-blue-700">verifying</strong>
+                      </>
+                    )}
+                    {livenessStatus === 'not_started' && (
+                      <strong className="capitalize text-gray-700">not started</strong>
+                    )}
+                  </span>
                 </div>
                 <div className="flex gap-3">
                   <Button
