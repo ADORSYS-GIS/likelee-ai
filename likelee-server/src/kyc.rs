@@ -10,7 +10,8 @@ type HmacSha256 = Hmac<Sha256>;
 
 #[derive(Deserialize)]
 pub struct SessionRequest {
-    pub user_id: String,
+    pub user_id: Option<String>,
+    pub organization_id: Option<String>,
     #[allow(dead_code)]
     #[serde(default)]
     pub return_url: Option<String>,
@@ -78,9 +79,10 @@ fn compute_hmac_hex(secret: &str, body: &[u8]) -> String {
 }
 
 pub async fn create_session(State(state): State<AppState>, Json(req): Json<SessionRequest>) -> Result<Json<SessionResponse>, (StatusCode, String)> {
-    debug!(user_id = %req.user_id, "Creating Veriff session");
+    let profile_id = req.user_id.as_ref().or(req.organization_id.as_ref()).ok_or((StatusCode::BAD_REQUEST, "missing user_id or organization_id".to_string()))?;
+    debug!(%profile_id, "Creating Veriff session");
     let veriff_body = VeriffCreateSessionBody {
-        verification: VeriffVerification { vendor_data: &req.user_id, lang: None, features: None },
+        verification: VeriffVerification { vendor_data: profile_id, lang: None, features: None },
     };
     let body_str = serde_json::to_string(&veriff_body).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let sig = compute_hmac_hex(&state.veriff.shared_secret, body_str.as_bytes());
@@ -133,20 +135,24 @@ pub async fn create_session(State(state): State<AppState>, Json(req): Json<Sessi
         kyc_session_id: if session_id.is_empty() { None } else { Some(session_id.clone()) },
         verified_at: None,
     };
-    update_profile(&state, &req.user_id, &payload).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    update_profile(&state, profile_id, &payload).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
     Ok(Json(SessionResponse { session_id, session_url, provider: "veriff".into() }))
 }
 
 #[derive(Deserialize)]
-pub struct StatusQuery { pub user_id: String }
+pub struct StatusQuery {
+    pub user_id: Option<String>,
+    pub organization_id: Option<String>,
+}
 
 pub async fn get_status(State(state): State<AppState>, Query(q): Query<StatusQuery>) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let profile_id = q.user_id.as_ref().or(q.organization_id.as_ref()).ok_or((StatusCode::BAD_REQUEST, "missing user_id or organization_id".to_string()))?;
     let resp = state
         .pg
         .from("profiles")
         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
-        .eq("id", &q.user_id)
+        .eq("id", profile_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -196,12 +202,12 @@ pub async fn get_status(State(state): State<AppState>, Query(q): Query<StatusQue
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
-                    let _ = update_profile(&state, &q.user_id, &payload).await;
+                    let _ = update_profile(&state, profile_id, &payload).await;
                     let resp2 = state
                         .pg
                         .from("profiles")
                         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
-                        .eq("id", &q.user_id)
+                        .eq("id", profile_id)
                         .execute()
                         .await
                         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

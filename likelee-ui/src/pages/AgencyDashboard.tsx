@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../auth/AuthProvider";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,6 +77,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import {
+  getOrganizationProfileByUserId,
+  getOrganizationKycStatus as fetchKycStatus,
+} from "../api/functions";
+import { KycStatusResponse } from "../types/kyc";
+import { OrganizationProfile } from "../api/entities";
 
 // Mock agency data
 const mockAgency = {
@@ -491,7 +499,7 @@ export default function AgencyDashboard() {
     if (t.license_expiry === "—") return false;
     const expiry = new Date(t.license_expiry);
     const now = new Date();
-    const daysUntilExpiry = (expiry - now) / (1000 * 60 * 60 * 24);
+    const daysUntilExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysUntilExpiry < 30 && daysUntilExpiry > 0;
   }).length;
 
@@ -530,7 +538,7 @@ export default function AgencyDashboard() {
     if (expiryDate === "—") return false;
     const expiry = new Date(expiryDate);
     const now = new Date();
-    const daysUntilExpiry = (expiry - now) / (1000 * 60 * 60 * 24);
+    const daysUntilExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysUntilExpiry < 30 && daysUntilExpiry > 0;
   };
 
@@ -541,7 +549,21 @@ export default function AgencyDashboard() {
     return expiry < now;
   };
 
+  const { data: kycStatus } = useQuery({
+    queryKey: ['kycStatus'],
+    queryFn: () => fetchKycStatus('organization_id'),
+  });
+
   return (
+    <React.Fragment>
+      {kycStatus?.kyc_status === 'verified' && (
+        <Button
+          variant="default"
+          onClick={() => navigate(createPageUrl("CreateAgency"))}
+        >
+          Create Agency
+        </Button>
+      )}
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6">
@@ -690,10 +712,10 @@ export default function AgencyDashboard() {
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 text-xs">
+                      <span className="bg-green-100 text-green-800 text-xs">
                         <Shield className="w-3 h-3 mr-1" />
                         Verified
-                      </Badge>
+                      </span>
                     </div>
 
                     <div className="p-2">
@@ -774,12 +796,12 @@ export default function AgencyDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex gap-4 mb-6">
-          <Alert className="flex-1 py-2 px-4 bg-blue-50 border border-blue-300 rounded-none">
-            <AlertDescription className="text-blue-900 text-sm font-medium">
+          <div className="flex-1 py-2 px-4 bg-blue-50 border border-blue-300 rounded-none">
+            <div className="text-blue-900 text-sm font-medium">
               <strong>Demo Mode:</strong> This is a preview of the Agency
               Dashboard for talent and modeling agencies.
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         </div>
 
         {activeTab === "roster" && (
@@ -797,11 +819,11 @@ export default function AgencyDashboard() {
                       {mockAgency.name}
                     </h1>
                     <div className="flex items-center gap-3 mb-3">
-                      <Badge className="bg-green-500 text-white">
+                      <span className="bg-green-500 text-white">
                         <Shield className="w-3 h-3 mr-1" />
                         Verified Agency
-                      </Badge>
-                      <Badge
+                      </span>
+                      <span
                         className={
                           mockAgency.marketplace_visible
                             ? "bg-blue-500 text-white"
@@ -810,7 +832,7 @@ export default function AgencyDashboard() {
                       >
                         Marketplace:{" "}
                         {mockAgency.marketplace_visible ? "Public" : "Private"}
-                      </Badge>
+                      </span>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
@@ -943,17 +965,17 @@ export default function AgencyDashboard() {
             <Card className="p-6 bg-white border-2 border-gray-200">
               <Tabs value={rosterTab} onValueChange={setRosterTab}>
                 <div className="flex items-center justify-between mb-6">
-                  <TabsList>
-                    <TabsTrigger value="roster">Roster</TabsTrigger>
-                    <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-                    <TabsTrigger value="licenses">Licenses</TabsTrigger>
-                    <TabsTrigger value="analytics">
+                  <div>
+                    <button onClick={() => setRosterTab('roster')}>Roster</button>
+                    <button onClick={() => setRosterTab('campaigns')}>Campaigns</button>
+                    <button onClick={() => setRosterTab('licenses')}>Licenses</button>
+                    <button onClick={() => setRosterTab('analytics')}>
                       Analytics
-                      <Badge className="ml-2 bg-indigo-600 text-white text-xs">
+                      <span className="ml-2 bg-indigo-600 text-white text-xs">
                         Pro
-                      </Badge>
-                    </TabsTrigger>
-                  </TabsList>
+                      </span>
+                    </button>
+                  </div>
 
                   <div className="flex gap-3">
                     <Button
@@ -973,7 +995,7 @@ export default function AgencyDashboard() {
                   </div>
                 </div>
 
-                <TabsContent value="roster" className="mt-0">
+                <div className="mt-0">
                   <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
                     <div className="flex-1 min-w-[200px]">
                       <Input
@@ -984,35 +1006,23 @@ export default function AgencyDashboard() {
                       />
                     </div>
 
-                    <Select
-                      value={statusFilter}
-                      onValueChange={setStatusFilter}
-                    >
-                      <SelectTrigger className="w-40 border-2 border-gray-300">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="w-40 border-2 border-gray-300">
+                      <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
 
-                    <Select
-                      value={consentFilter}
-                      onValueChange={setConsentFilter}
-                    >
-                      <SelectTrigger className="w-40 border-2 border-gray-300">
-                        <SelectValue placeholder="Consent" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Consent</SelectItem>
-                        <SelectItem value="complete">Complete</SelectItem>
-                        <SelectItem value="expiring">Expiring</SelectItem>
-                        <SelectItem value="missing">Missing</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="w-40 border-2 border-gray-300">
+                      <select value={consentFilter} onChange={(e) => setConsentFilter(e.target.value)}>
+                        <option value="all">All Consent</option>
+                        <option value="complete">Complete</option>
+                        <option value="expiring">Expiring</option>
+                        <option value="missing">Missing</option>
+                      </select>
+                    </div>
 
                     {(searchQuery ||
                       statusFilter !== "all" ||
@@ -1135,7 +1145,7 @@ export default function AgencyDashboard() {
                               </div>
                             </td>
                             <td className="px-4 py-4">
-                              <Badge
+                              <span
                                 className={
                                   talent.status === "active"
                                     ? "bg-green-100 text-green-800"
@@ -1145,10 +1155,10 @@ export default function AgencyDashboard() {
                                 }
                               >
                                 {talent.status}
-                              </Badge>
+                              </span>
                             </td>
                             <td className="px-4 py-4">
-                              <Badge
+                              <span
                                 className={
                                   talent.consent === "complete"
                                     ? "bg-green-100 text-green-800"
@@ -1165,7 +1175,7 @@ export default function AgencyDashboard() {
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                 )}
                                 {talent.consent}
-                              </Badge>
+                              </span>
                             </td>
                             <td className="px-4 py-4">
                               <div className="flex gap-1">
@@ -1234,27 +1244,27 @@ export default function AgencyDashboard() {
                       </tbody>
                     </table>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="campaigns">
+                <div>
                   <div className="text-center py-12">
                     <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500 text-lg">
                       Campaign tracking coming soon
                     </p>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="licenses">
+                <div>
                   <div className="text-center py-12">
                     <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500 text-lg">
                       License management coming soon
                     </p>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="analytics">
+                <div>
                   <div className="text-center py-12">
                     <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500 text-lg mb-2">
@@ -1268,7 +1278,7 @@ export default function AgencyDashboard() {
                       Upgrade to Pro
                     </Button>
                   </div>
-                </TabsContent>
+                </div>
               </Tabs>
             </Card>
           </div>
@@ -1302,16 +1312,16 @@ export default function AgencyDashboard() {
                       </p>
                       <div className="flex flex-wrap gap-2 mb-3">
                         {request.talent.map((name) => (
-                          <Badge
+                          <span
                             key={name}
                             className="bg-indigo-100 text-indigo-800"
                           >
                             {name}
-                          </Badge>
+                          </span>
                         ))}
                       </div>
                     </div>
-                    <Badge
+                    <span
                       className={
                         request.status === "reviewing"
                           ? "bg-blue-100 text-blue-800"
@@ -1321,7 +1331,7 @@ export default function AgencyDashboard() {
                       }
                     >
                       {request.status}
-                    </Badge>
+                    </span>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4 mb-6">
@@ -1476,14 +1486,14 @@ export default function AgencyDashboard() {
             </div>
 
             <Tabs value={analyticsTab} onValueChange={setAnalyticsTab}>
-              <TabsList className="border-b border-gray-200">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="roster">Roster Insights</TabsTrigger>
-                <TabsTrigger value="clients">Clients & Campaigns</TabsTrigger>
-                <TabsTrigger value="compliance">Compliance</TabsTrigger>
-              </TabsList>
+              <div className="border-b border-gray-200">
+                <button onClick={() => setAnalyticsTab('overview')}>Overview</button>
+                <button onClick={() => setAnalyticsTab('roster')}>Roster Insights</button>
+                <button onClick={() => setAnalyticsTab('clients')}>Clients & Campaigns</button>
+                <button onClick={() => setAnalyticsTab('compliance')}>Compliance</button>
+              </div>
 
-              <TabsContent value="overview" className="space-y-6 mt-6">
+              <div className="space-y-6 mt-6">
                 <div className="grid md:grid-cols-4 gap-6">
                   <Card className="p-6 bg-white border-2 border-black rounded-none">
                     <div className="flex items-center justify-between mb-4">
@@ -1639,9 +1649,9 @@ export default function AgencyDashboard() {
                     </ResponsiveContainer>
                   </Card>
                 </div>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="roster" className="space-y-6 mt-6">
+              <div className="space-y-6 mt-6">
                 <Card className="p-6 bg-white border-2 border-black rounded-none">
                   <h3 className="text-lg font-bold text-gray-900 mb-6">
                     Earnings by Talent (Last 30 Days)
@@ -1805,9 +1815,9 @@ export default function AgencyDashboard() {
                                 {talent.engagement_rate}%
                               </td>
                               <td className="px-4 py-3">
-                                <Badge className="bg-green-100 text-green-800">
+                                <span className="bg-green-100 text-green-800">
                                   Active
-                                </Badge>
+                                </span>
                               </td>
                             </tr>
                           ))}
@@ -1815,9 +1825,9 @@ export default function AgencyDashboard() {
                     </table>
                   </div>
                 </Card>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="clients" className="space-y-6 mt-6">
+              <div className="space-y-6 mt-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <Card className="p-6 bg-white border-2 border-black rounded-none">
                     <h3 className="text-lg font-bold text-gray-900 mb-6">
@@ -1936,9 +1946,9 @@ export default function AgencyDashboard() {
                     </p>
                   </Card>
                 </div>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="compliance" className="space-y-6 mt-6">
+              <div className="space-y-6 mt-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <Card className="p-6 bg-white border-2 border-black rounded-none">
                     <div className="flex items-center gap-3 mb-4">
@@ -2090,7 +2100,7 @@ export default function AgencyDashboard() {
                     </div>
                   </div>
                 </Card>
-              </TabsContent>
+              </div>
             </Tabs>
           </div>
         )}
@@ -2149,10 +2159,10 @@ export default function AgencyDashboard() {
                       </p>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">
+                  <span className="bg-green-100 text-green-800">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     Connected
-                  </Badge>
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200">
                   <div className="flex items-center gap-3">
@@ -2162,10 +2172,10 @@ export default function AgencyDashboard() {
                       <p className="text-sm text-gray-600">Voice cloning</p>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">
+                  <span className="bg-green-100 text-green-800">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     Connected
-                  </Badge>
+                  </span>
                 </div>
               </div>
             </Card>
@@ -2213,9 +2223,9 @@ export default function AgencyDashboard() {
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {selectedTalent.categories.map((cat) => (
-                      <Badge key={cat} variant="outline">
+                      <span key={cat} className="text-xs">
                         {cat}
-                      </Badge>
+                      </span>
                     ))}
                   </div>
                   <p className="text-sm text-gray-600">{selectedTalent.bio}</p>
@@ -2259,7 +2269,7 @@ export default function AgencyDashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Consent:</span>
-                    <Badge
+                    <span
                       className={
                         selectedTalent.consent === "complete"
                           ? "bg-green-100 text-green-800"
@@ -2269,7 +2279,7 @@ export default function AgencyDashboard() {
                       }
                     >
                       {selectedTalent.consent}
-                    </Badge>
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Expiry Date:</span>
@@ -2287,13 +2297,12 @@ export default function AgencyDashboard() {
                     <span className="text-gray-600">AI Usage:</span>
                     <div className="flex gap-1">
                       {selectedTalent.ai_usage_types.map((type) => (
-                        <Badge
+                        <span
                           key={type}
-                          variant="outline"
                           className="text-xs capitalize"
                         >
                           {type}
-                        </Badge>
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -2353,5 +2362,6 @@ export default function AgencyDashboard() {
         </div>
       )}
     </div>
+    </React.Fragment>
   );
 }

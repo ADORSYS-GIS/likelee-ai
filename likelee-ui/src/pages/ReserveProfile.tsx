@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from 'react-dom'
-import { FaceLivenessDetector } from '@aws-amplify/ui-react-liveness'
+import { FaceLivenessDetector, FaceLivenessDetectorCore } from '@aws-amplify/ui-react-liveness'
 import { Button as UIButton } from "@/components/ui/button";
 import { Input as UIInput } from "@/components/ui/input";
 import { Label as UILabel } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { fetchAuthSession } from 'aws-amplify/auth'
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton
@@ -38,6 +39,7 @@ const Slider: any = UISlider
 const Alert: any = UIAlert
 const AlertDescription: any = UIAlertDescription
 const FaceLivenessDetectorAny: any = FaceLivenessDetector
+const FaceLivenessDetectorCoreAny: any = FaceLivenessDetectorCore
 
 const contentTypes = [
   "Social media ads",
@@ -538,6 +540,15 @@ export default function ReserveProfile() {
       setLivenessRunning(true)
       console.log('[liveness] creating server session...')
 
+      // Ensure Amplify fetches/refreshes unauth credentials so the component can use them
+      try {
+        const session = await fetchAuthSession()
+        const accessKeyId = (session as any)?.credentials?.accessKeyId
+        if (accessKeyId) console.log('[liveness] Amplify session creds ready', { accessKeyId })
+      } catch (e) {
+        console.warn('[liveness] fetchAuthSession failed (will continue):', e)
+      }
+
       const res = await fetch(`${API_BASE}/api/liveness/create`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -546,14 +557,44 @@ export default function ReserveProfile() {
       if (!res.ok) throw new Error(await res.text())
       const { session_id } = await res.json()
       if (!session_id) throw new Error('Missing session_id')
+
+      // Resolve AWS credentials now and keep them stable for the session
+      let resolvedCreds: any | null = null
+      try {
+        const session = await fetchAuthSession()
+        const creds: any = (session as any)?.credentials
+        if (creds?.accessKeyId && creds?.secretAccessKey) {
+          resolvedCreds = {
+            accessKeyId: creds.accessKeyId,
+            secretAccessKey: creds.secretAccessKey,
+            sessionToken: creds.sessionToken,
+          }
+          console.log('[liveness] pre-resolved Amplify creds', { accessKeyId: resolvedCreds.accessKeyId })
+        }
+      } catch (e) {
+        console.warn('[liveness] fetchAuthSession failed (pre-resolve):', e)
+      }
+      if (!resolvedCreds) {
+        const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers')
+        const provider = fromCognitoIdentityPool({
+          clientConfig: { region: 'us-east-1' },
+          identityPoolId: COGNITO_IDENTITY_POOL_ID,
+        })
+        resolvedCreds = await provider()
+        console.log('[liveness] pre-resolved fallback creds', { accessKeyId: resolvedCreds.accessKeyId })
+      }
+
+      setLivenessCreds(resolvedCreds)
       setLivenessSessionId(session_id)
       setShowLiveness(true)
       // Session is created and modal is open; allow user to click again later if needed
       setLivenessRunning(false)
       console.log('[liveness] session ready, modal opened', session_id)
+      setLivenessError(null)
     } catch (e: any) {
       setLivenessRunning(false)
-      setShowLiveness(false)
+      setShowLiveness(true)
+      setLivenessError(e?.message || String(e))
       alert(e?.message || String(e))
     }
   }
@@ -574,6 +615,43 @@ export default function ReserveProfile() {
   const [showLiveness, setShowLiveness] = useState(false)
   const [livenessRunning, setLivenessRunning] = useState(false)
   const [livenessSessionId, setLivenessSessionId] = useState<string | null>(null)
+  const [livenessCreds, setLivenessCreds] = useState<any | null>(null)
+  const LIVENESS_DEBUG = ((import.meta as any).env.VITE_LIVENESS_DEBUG || '') === '1'
+  const [livenessError, setLivenessError] = useState<string | null>(null)
+  const coreCredentialsProvider = React.useCallback(async () => {
+    try {
+      const session = await fetchAuthSession()
+      const creds: any = (session as any)?.credentials
+      if (creds?.accessKeyId && creds?.secretAccessKey) {
+        console.log('[liveness] using Amplify creds', { accessKeyId: creds.accessKeyId })
+        return {
+          accessKeyId: creds.accessKeyId,
+          secretAccessKey: creds.secretAccessKey,
+          sessionToken: creds.sessionToken,
+        }
+      }
+    } catch (e) {
+      console.warn('[liveness] fetchAuthSession failed, will fallback to identity pool:', e)
+    }
+    // Fallback: resolve via Cognito Identity Pool directly
+    if (!COGNITO_IDENTITY_POOL_ID) throw new Error('Missing identity pool id for fallback provider')
+    const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers')
+    const provider = fromCognitoIdentityPool({
+      clientConfig: { region: 'us-east-1' },
+      identityPoolId: COGNITO_IDENTITY_POOL_ID,
+    })
+    const c = await provider()
+    console.log('[liveness] using fallback identity-pool creds', { accessKeyId: c.accessKeyId })
+    return c
+  }, [COGNITO_IDENTITY_POOL_ID])
+
+  // Ensure modal stays visible whenever we have a session id
+  useEffect(() => {
+    if (livenessSessionId && !showLiveness) {
+      console.log('[liveness] restoring modal visibility')
+      setShowLiveness(true)
+    }
+  }, [livenessSessionId, showLiveness])
 
   const getStepTitle = () => {
     if (step === 1) return "Create Your Account";
@@ -1140,28 +1218,24 @@ export default function ReserveProfile() {
               {/* Liveness Modal */}
               {showLiveness && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-                  <div className="absolute inset-0 bg-black/50" onClick={() => { if (!livenessRunning) setShowLiveness(false) }} />
+                  <div className="absolute inset-0 bg-black/50" />
                   <div className="relative z-10 w-full max-w-2xl bg-white border-2 border-black p-3">
                     <div className="mb-2 font-semibold">Face Liveness</div>
                     <div className="text-xs text-gray-600 mb-2">Session: {livenessSessionId} • Region: {AWS_REGION}</div>
-                    {livenessSessionId && (
-                      <FaceLivenessDetectorAny
+                    {livenessError && (
+                      <div className="mb-2 p-2 border-2 border-red-400 bg-red-50 text-red-800 text-xs">
+                        Error: {livenessError}
+                      </div>
+                    )}
+                    {livenessSessionId && livenessCreds && (
+                      <FaceLivenessDetectorCoreAny
                         sessionId={livenessSessionId}
-                        region={AWS_REGION}
-                        credentialProvider={async () => {
-                          const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers') as any
-                          return fromCognitoIdentityPool({
-                            clientConfig: { region: AWS_REGION },
-                            identityPoolId: COGNITO_IDENTITY_POOL_ID,
-                          })
-                        }}
-                        createCredentialsProvider={async () => {
-                          const { fromCognitoIdentityPool } = await import('@aws-sdk/credential-providers') as any
-                          return fromCognitoIdentityPool({
-                            clientConfig: { region: AWS_REGION },
-                            identityPoolId: COGNITO_IDENTITY_POOL_ID,
-                          })
-                        }}
+                        region={"us-east-1"}
+                        // Provide multiple shapes to satisfy various lib expectations
+                        credentialProvider={async () => livenessCreds}
+                        credentialsProvider={async () => livenessCreds}
+                        credentials={livenessCreds}
+                        config={{ awsCredentials: livenessCreds, credentialProvider: async () => livenessCreds }}
                         onAnalysisComplete={async () => {
                           try {
                             console.log('[liveness] analysis complete; fetching results')
@@ -1174,26 +1248,39 @@ export default function ReserveProfile() {
                               const data = await r.json()
                               console.log('[liveness] result', data)
                               setLivenessStatus(data.passed ? 'approved' : 'rejected')
-                              if (!data.passed) alert('Liveness check failed. Please try again with good lighting and follow prompts.')
+                              if (!data.passed) {
+                                alert('Liveness check failed. Please try again with good lighting and follow prompts.')
+                              } else {
+                                // Close modal on success and clear session/creds to prevent the UI from staying stuck in verifying state
+                                setTimeout(() => {
+                                  setShowLiveness(false)
+                                  setLivenessSessionId(null)
+                                  setLivenessCreds(null)
+                                }, 300)
+                              }
                             } else {
                               alert(`Failed to fetch liveness result: ${await r.text()}`)
                             }
                           } finally {
                             setLivenessRunning(false)
-                            setShowLiveness(false)
-                            setLivenessSessionId(null)
+                            // Keep modal and session so user can see result and retry/close manually
                           }
                         }}
                         onError={(e: any) => {
                           console.error('Liveness error', e)
+                          setLivenessError(e?.message || String(e))
                           alert(`Liveness error: ${e?.message || e}`)
                           setLivenessRunning(false)
-                          setShowLiveness(false)
-                          setLivenessSessionId(null)
+                          // Keep modal open to present the error
+                          // Do not clear session id; keep it for retry/diagnostics
                         }}
                       />
                     )}
                     <div className="mt-3 text-sm text-gray-600">Follow the on-screen prompts. This uses secure AWS Rekognition.</div>
+                    
+                    <div className="mt-3 flex justify-end gap-2">
+                      <Button variant="outline" className="h-8 border-2 border-black rounded-none" onClick={() => { setShowLiveness(false); setLivenessError(null); }}>Close</Button>
+                    </div>
                   </div>
                 </div>,
                 document.body
@@ -1847,6 +1934,40 @@ export default function ReserveProfile() {
                 >
                   {livenessRunning ? 'Preparing…' : 'Start Liveness Check'}
                 </Button>
+                {LIVENESS_DEBUG && (
+                  <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
+                    <div>Debug: step={step} • showLiveness={String(showLiveness)} • session={livenessSessionId || '—'} • region={AWS_REGION}</div>
+                    {livenessSessionId && livenessCreds && (
+                      <div className="border border-gray-200">
+                        <FaceLivenessDetectorCoreAny
+                          sessionId={livenessSessionId}
+                          region={"us-east-1"}
+                          credentialProvider={async () => livenessCreds}
+                          credentialsProvider={async () => livenessCreds}
+                          credentials={livenessCreds}
+                          config={{ awsCredentials: livenessCreds, credentialProvider: async () => livenessCreds }}
+                          onAnalysisComplete={async () => {
+                            try {
+                              const r = await fetch(`${API_BASE}/api/liveness/result`, {
+                                method: 'POST',
+                                headers: { 'content-type': 'application/json' },
+                                body: JSON.stringify({ session_id: livenessSessionId })
+                              })
+                              if (r.ok) {
+                                const data = await r.json()
+                                setLivenessStatus(data.passed ? 'approved' : 'rejected')
+                              } else {
+                                console.error('Failed to fetch liveness result', await r.text())
+                              }
+                            } finally {
+                              setLivenessRunning(false)
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="text-sm text-gray-700 flex items-center justify-between">
                   <span>KYC: <strong className="capitalize">{kycStatus.replace('_', ' ')}</strong></span>
                   <span>Liveness: <strong className="capitalize">{livenessStatus.replace('_', ' ')}</strong></span>

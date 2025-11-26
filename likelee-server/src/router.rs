@@ -7,6 +7,8 @@ pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
+        .route("/api/kyc/organization/session", post(crate::kyc::create_session))
+        .route("/api/kyc/organization/status", get(crate::kyc::get_status))
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

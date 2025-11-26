@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+// Temporary comment to trigger TypeScript re-evaluation
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +15,9 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client"; // Updated import
+import { createOrganizationKycSession, getOrganizationKycStatus } from "@/api/functions";
 
 const industries = [
   "Fashion",
@@ -63,7 +65,8 @@ export default function OrganizationSignup() {
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
   const [submitted, setSubmitted] = useState(false); // New state for submission status
-  const [profileId, setProfileId] = useState(null); // Add profileId state
+  const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
+  const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
   const [formData, setFormData] = useState({
     // Step 1 - Basic
     email: "",
@@ -139,7 +142,7 @@ export default function OrganizationSignup() {
 
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: (data: typeof formData) => {
       return base44.entities.OrganizationProfile.create({
         email: data.email,
         // password: data.password, // Assuming password is part of initial user creation - REMOVED AS PER INSTRUCTIONS
@@ -152,9 +155,23 @@ export default function OrganizationSignup() {
         status: "waitlist",
       });
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setProfileId(data.id); // Assuming the API returns the created profile's ID
-      setStep(2);
+      // Initiate KYC session after profile creation
+      try {
+        const kycSession = await createOrganizationKycSession({ organization_id: data.id });
+        if (kycSession && kycSession.session_url) {
+          setKycSessionUrl(kycSession.session_url);
+          // Redirect user to KYC verification page
+          window.location.href = kycSession.session_url;
+        } else {
+          console.error("KYC session URL not received.");
+          setStep(2); // Proceed to next step even if KYC session fails to initiate
+        }
+      } catch (kycError) {
+        console.error("Error initiating KYC session:", kycError);
+        setStep(2); // Proceed to next step even if KYC session fails to initiate
+      }
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
@@ -164,7 +181,7 @@ export default function OrganizationSignup() {
 
   // Updated mutation for profile updates (Step 2)
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: (data: typeof formData) => {
       if (!profileId) {
         throw new Error("Profile ID not found for update."); // Modified error message
       }
@@ -263,8 +280,18 @@ export default function OrganizationSignup() {
     return titles[orgType] || "Organization";
   };
 
+  // Fetch KYC status if profileId is available and form is submitted
+  const { data: kycStatusData, isLoading: isKycStatusLoading } = useQuery({
+    queryKey: ["organizationKycStatus", profileId],
+    queryFn: () => getOrganizationKycStatus(profileId!),
+    enabled: !!profileId && submitted, // Only run when profileId is available and form is submitted
+  });
+
   // Render success message if form was submitted successfully
   if (submitted) {
+    const kycStatus = kycStatusData?.kyc_status;
+    const kycSessionId = kycStatusData?.kyc_session_id;
+
     return (
       <div
         className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
@@ -276,22 +303,36 @@ export default function OrganizationSignup() {
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Thanks—partner onboarding is in progress
+            {kycStatus === "approved"
+              ? "KYC Verified! Partner Onboarding Complete."
+              : "Thanks—partner onboarding is in progress"}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            We're staging brand access to ensure healthy supply/demand for
-            campaigns. You're on our priority list; we'll reach out to set up
-            your brief, budget, and timeline.
+            {kycStatus === "approved"
+              ? "Your organization's identity has been successfully verified. You can now proceed to manage your agency."
+              : "We're staging brand access to ensure healthy supply/demand for campaigns. You're on our priority list; we'll reach out to set up your brief, budget, and timeline."}
           </p>
-          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-6 border-2 border-black rounded-none mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
-              What's next:
-            </h3>
-            <p className="text-gray-700 leading-relaxed">
-              Expect a calendar link and a lightweight intake form from our
-              team.
-            </p>
-          </div>
+          {kycStatus !== "approved" && (
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-6 border-2 border-black rounded-none mb-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                What's next:
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {kycSessionUrl
+                  ? "You will be redirected to complete KYC verification. If not, click the button below."
+                  : "Expect a calendar link and a lightweight intake form from our team."}
+              </p>
+              {kycSessionUrl && (
+                <Button
+                  onClick={() => (window.location.href = kycSessionUrl)}
+                  className={`mt-4 w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                >
+                  Complete KYC Verification
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              )}
+            </div>
+          )}
         </Card>
       </div>
     );
@@ -311,6 +352,7 @@ export default function OrganizationSignup() {
               </h2>
             </div>
             <Badge
+              variant="default"
               className={`${colors.badge} border-2 border-black rounded-none`}
             >
               Step {step} of {totalSteps}

@@ -47,7 +47,6 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 
 - Frontend: React 18.2.0, TypeScript, Vite 6.5, Tailwind CSS 3.4.16.
 - Backend: Firebase (Auth, Realtime DB, Storage). Future: functions/services as needed, Rust axum framework.
- 
 
 ## 6. External Integrations
 
@@ -57,7 +56,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 | AI Generation/Rendering    | Replicate API, Hugging Face APIs, Together.ai                                         |
 | Storage & Database         | Firebase Realtime Database, Firebase Storage                                          |
 | Asset Traceability         | Truepic Lens (invisible watermarking)                                                 |
-| Moderation                 | AWS Rekognition                                                                       |
+| Moderation & Liveness     | AWS Rekognition (Moderation, Face Liveness)                                           |
 | Royalty Tracking (P2)      | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only)                   |
 
 ## 7. Data Model (Conceptual)
@@ -109,8 +108,67 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - P1: Creator core flow, Stripe bookings, Royalty Ledger, Watermark API, Model Router + Prompt UI, i18n EN.
 - P2: Spend-/Revenue-Share tracking (Ads/Shopify integrations), C2PA manifests, extended locales (ES/FR), enhanced moderation.
 
+## 13. Configuration Management
+
+- Runtime configuration is centralized via the Rust `envconfig` crate.
+- Service reads configuration from environment variables (with dotenv support in dev).
+- Single source of truth struct: `ServerConfig` (`likelee-server/src/config.rs`).
+
+### Environment Variables (Backend – likelee-server)
+- SUPABASE_URL (required)
+- SUPABASE_SERVICE_KEY (required)
+- PORT (default: 8787)
+- VERIFF_BASE_URL (required)
+- VERIFF_API_KEY (required)
+- VERIFF_SHARED_SECRET (required)
+- DUIX_BASE_URL (default: http://127.0.0.1:7860)
+- DUIX_AUTH_TOKEN (default: change-me)
+- MODERATION_ENABLED (default: "1", set to "0" to disable Rekognition image moderation)
+- AWS_REGION (default: us-east-1)
+- LIVENESS_ENABLED (default: "0"; set to "1" to enable Face Liveness endpoints)
+- LIVENESS_MIN_SCORE (default: 0.90)
+- COGNITO_IDENTITY_POOL_ID (required when LIVENESS_ENABLED=1)
+
+Notes:
+- All runtime config is read only via `ServerConfig` (envconfig). Do NOT call `std::env::var` in application code.
+- Keep `likelee-server/.env.example` in sync with these variables and defaults.
+
+### Environment Variables (Frontend – likelee-ui)
+- VITE_API_BASE_URL – e.g. http://localhost:8787
+- VITE_AWS_REGION – must be a valid AWS region (e.g., us-east-1, eu-west-1)
+- VITE_COGNITO_IDENTITY_POOL_ID – e.g., us-east-1:xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+### Rekognition Face Liveness – Region Alignment
+- Face Liveness is available only in specific regions. Use a supported region (e.g., us-east-1 or eu-west-1).
+- The following must MATCH the same region:
+  - Backend `AWS_REGION`
+  - Frontend `VITE_AWS_REGION`
+  - Cognito Identity Pool region
+- Invalid regions (e.g., `eu-east-1`) or mismatched regions will cause DNS errors or AccessDenied.
+
+### IAM Requirements
+- Server IAM principal (keys used by likelee-server):
+  - `rekognition:CreateFaceLivenessSession`
+  - `rekognition:GetFaceLivenessSessionResults`
+- Browser (Cognito Identity Pool role used by the web app):
+  - `rekognition:StartFaceLivenessSession`
+- Cognito Role Trust Policy must restrict to your Identity Pool and amr:
+  - `"cognito-identity.amazonaws.com:aud": "<IDENTITY_POOL_ID>"`
+  - `"ForAnyValue:StringLike": { "cognito-identity.amazonaws.com:amr": "unauthenticated" }` (or `authenticated` if using auth role)
+- Ensure the Rekognition service-linked role exists (AWSServiceRoleForRekognition) or allow `iam:CreateServiceLinkedRole`.
+
+### Frontend Integration Notes (Amplify UI Face Liveness)
+- Use `@aws-amplify/ui-react-liveness` FaceLivenessDetector component.
+- Import styles in `src/main.tsx`:
+  - `@aws-amplify/ui-react/styles.css`
+  - `@aws-amplify/ui-react-liveness/styles.css`
+- Provide a credentials provider from Cognito Identity Pool at runtime.
+- Open the detector in a portal-based modal to avoid stacking/overflow issues.
+
+### Operational Guidance
+- If session creation succeeds but UI stays pending: verify CloudTrail for `StartFaceLivenessSession` in the selected region.
+- If no event appears: fix Cognito role trust/policy or region mismatch; ensure camera/mic are allowed.
+
 ---
 
 Appendix: Add Context/Container/Component/Deployment diagrams. Link ADRs for IdP, Stripe model, watermarking/C2PA, model routing providers.
-
-    
