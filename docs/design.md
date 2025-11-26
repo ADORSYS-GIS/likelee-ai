@@ -47,7 +47,6 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 
 - Frontend: React 18.2.0, TypeScript, Vite 6.5, Tailwind CSS 3.4.16.
 - Backend: Firebase (Auth, Realtime DB, Storage). Future: functions/services as needed, Rust axum framework.
- 
 
 ## 6. External Integrations
 
@@ -57,7 +56,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 | AI Generation/Rendering    | Replicate API, Hugging Face APIs, Together.ai                                         |
 | Storage & Database         | Firebase Realtime Database, Firebase Storage                                          |
 | Asset Traceability         | Truepic Lens (invisible watermarking)                                                 |
-| Moderation                 | AWS Rekognition                                                                       |
+| Moderation & Liveness     | AWS Rekognition (Moderation, Face Liveness)                                           |
 | Royalty Tracking (P2)      | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only)                   |
 
 ## 7. Data Model (Conceptual)
@@ -109,8 +108,134 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - P1: Creator core flow, Stripe bookings, Royalty Ledger, Watermark API, Model Router + Prompt UI, i18n EN.
 - P2: Spend-/Revenue-Share tracking (Ads/Shopify integrations), C2PA manifests, extended locales (ES/FR), enhanced moderation.
 
+## 13. Configuration Management
+
+- Runtime configuration is centralized via the Rust `envconfig` crate.
+- Service reads configuration from environment variables (with dotenv support in dev).
+- Single source of truth struct: `ServerConfig` (`likelee-server/src/config.rs`).
+
+### Environment Variables (Backend – likelee-server)
+- SUPABASE_URL (required)
+- SUPABASE_SERVICE_KEY (required)
+- PORT (default: 8787)
+- VERIFF_BASE_URL (required)
+- VERIFF_API_KEY (required)
+- VERIFF_SHARED_SECRET (required)
+- DUIX_BASE_URL (default: http://127.0.0.1:7860)
+- DUIX_AUTH_TOKEN (default: change-me)
+- MODERATION_ENABLED (default: "1", set to "0" to disable Rekognition image moderation)
+- AWS_REGION (default: us-east-1)
+- LIVENESS_ENABLED (default: "0"; set to "1" to enable Face Liveness endpoints)
+- LIVENESS_MIN_SCORE (default: 0.90)
+- COGNITO_IDENTITY_POOL_ID (required when LIVENESS_ENABLED=1)
+
+Notes:
+- All runtime config is read only via `ServerConfig` (envconfig). Do NOT call `std::env::var` in application code.
+- Keep `likelee-server/.env.example` in sync with these variables and defaults.
+
+### Environment Variables (Frontend – likelee-ui)
+- VITE_API_BASE_URL – e.g. http://localhost:8787
+- VITE_AWS_REGION – must be a valid AWS region (e.g., us-east-1, eu-west-1)
+- VITE_COGNITO_IDENTITY_POOL_ID – e.g., us-east-1:xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+ - VITE_LIVENESS_DEBUG – set "1" to show in-app debug panel (optional)
+
+### Rekognition Face Liveness – Region Alignment
+- Face Liveness is available only in specific regions. Use a supported region (e.g., us-east-1 or eu-west-1).
+- The following must MATCH the same region:
+  - Backend `AWS_REGION`
+  - Frontend `VITE_AWS_REGION`
+  - Cognito Identity Pool region
+- Invalid regions (e.g., `eu-east-1`) or mismatched regions will cause DNS errors or AccessDenied.
+
+### Rekognition Face Liveness – Browser IAM Permissions (Cognito Identity Pool Role)
+- Required actions (unauth or auth role depending on usage):
+  - `cognito-identity:GetId`
+  - `cognito-identity:GetCredentialsForIdentity`
+  - `rekognition:StartFaceLivenessSession`
+- Trust policy must scope to your pool and amr:
+  - `"cognito-identity.amazonaws.com:aud": "<IDENTITY_POOL_ID>"`
+  - `"ForAnyValue:StringLike": { "cognito-identity.amazonaws.com:amr": "unauthenticated" }`
+
+### IAM Requirements
+- Server IAM principal (keys used by likelee-server):
+  - `rekognition:CreateFaceLivenessSession`
+  - `rekognition:GetFaceLivenessSessionResults`
+- Browser (Cognito Identity Pool role used by the web app):
+  - `rekognition:StartFaceLivenessSession`
+- Cognito Role Trust Policy must restrict to your Identity Pool and amr:
+  - `"cognito-identity.amazonaws.com:aud": "<IDENTITY_POOL_ID>"`
+  - `"ForAnyValue:StringLike": { "cognito-identity.amazonaws.com:amr": "unauthenticated" }` (or `authenticated` if using auth role)
+- Ensure the Rekognition service-linked role exists (AWSServiceRoleForRekognition) or allow `iam:CreateServiceLinkedRole`.
+
+### Frontend Integration Notes (Amplify UI Face Liveness)
+- Prefer `FaceLivenessDetectorCore` for explicit credentials control when debugging credential issues.
+- Import styles in `src/main.tsx`:
+  - `@aws-amplify/ui-react/styles.css`
+  - `@aws-amplify/ui-react-liveness/styles.css`
+- Provide credentials via one of the following patterns (in order of preference):
+  - Pre-resolve credentials and pass as `credentials` and/or via `credentialProvider`/`credentialsProvider` props.
+  - Use Amplify `fetchAuthSession()` to obtain creds; fallback to `fromCognitoIdentityPool` when needed.
+- Open the detector in a portal-based modal to avoid stacking/overflow issues.
+- Pin region consistently (e.g., `us-east-1`).
+
+### Face Liveness Integration Playbook
+- Goal: ensure the browser can start the WebRTC/WebSocket session with Rekognition using Cognito creds; avoid “Missing credentials” loops.
+- Steps:
+  1. Create session on server: `create_face_liveness_session` (server role permissions required).
+  2. Pre-resolve browser credentials before rendering the detector.
+     - Try Amplify `fetchAuthSession()` first.
+     - Fallback to `fromCognitoIdentityPool({ region, identityPoolId })`.
+  3. Render `FaceLivenessDetectorCore` only when both `sessionId` and credentials are present.
+  4. Handle `onAnalysisComplete` to POST `/api/liveness/result` and update status.
+  5. Replace the detector with a lightweight result panel (success/failure). Do not keep the detector rendering once a result is known.
+  6. Color-code status in the parent UI (green approved, red rejected, yellow pending, gray not started).
+
+### UI Lifecycle Requirements (Detector Modal)
+- Render states:
+  - Waiting: show detector only while `livenessOutcome` is null.
+  - Result: replace detector with a result card (tick/cross, status, confidence, hints).
+  - Close: allow Close button; optionally auto-close on success.
+- Safety polling: while modal is open and `sessionId` exists, optionally poll `/api/liveness/result` to handle cases where `onAnalysisComplete` doesn’t fire. Stop polling once a result is obtained.
+- Retry: either reuse the same session (if allowed) or create a fresh session. Recommended: create a fresh session for reliability.
+
+### Diagnostics & Observability
+- Frontend logs:
+  - Log pre-resolved credential source and partial AccessKeyId.
+  - Log session creation, modal open/close, analysis complete, and result payload.
+- Network expectations:
+  - With pre-resolved creds you may not see Cognito calls, but must see Rekognition `StartFaceLivenessSession`/stream.
+- CloudTrail checks (region-aligned):
+  - Server: `CreateFaceLivenessSession`, `GetFaceLivenessSessionResults`.
+  - Client: `StartFaceLivenessSession`.
+
+### Pitfalls to Avoid
+- Passing wrong or unsupported prop names to older versions of `@aws-amplify/ui-react-liveness`. If stuck, upgrade `aws-amplify` and `@aws-amplify/ui-react-liveness` to latest.
+- Region mismatch among server, frontend, and Cognito Identity Pool.
+- Not granting `cognito-identity:*` actions to the unauth role.
+- Rendering the detector after the result arrives (leads to perpetual “Verifying…”).
+- Reading env vars directly in runtime code outside the config module (server). Always use `ServerConfig`.
+
+### Build/Test Checklist (Face Liveness)
+- Config
+  - Backend `AWS_REGION` == Frontend `VITE_AWS_REGION` == Cognito pool region.
+  - `COGNITO_IDENTITY_POOL_ID` configured on server and `VITE_COGNITO_IDENTITY_POOL_ID` on frontend.
+  - `LIVENESS_ENABLED=1` on server for liveness endpoints.
+- IAM
+  - Server policy for Rekognition create/get.
+  - Unauth/auth role: `cognito-identity:GetId`, `GetCredentialsForIdentity`, `rekognition:StartFaceLivenessSession`.
+  - Trust policy scoped to the pool and `amr`.
+- UX
+  - Modal opens only when session+creds exist.
+  - Detector stops and result panel appears after result.
+  - Footer status shows color-coded liveness.
+- Diagnostics
+  - Console shows source of creds and session id.
+  - CloudTrail shows expected Rekognition activity in the chosen region.
+
+### Operational Guidance
+- If session creation succeeds but UI stays pending: verify CloudTrail for `StartFaceLivenessSession` in the selected region.
+- If no event appears: fix Cognito role trust/policy or region mismatch; ensure camera/mic are allowed.
+
 ---
 
 Appendix: Add Context/Container/Component/Deployment diagrams. Link ADRs for IdP, Stripe model, watermarking/C2PA, model routing providers.
-
-    
