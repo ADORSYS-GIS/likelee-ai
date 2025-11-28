@@ -16,8 +16,14 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client"; // Updated import
-import { createOrganizationKycSession, getOrganizationKycStatus } from "@/api/functions";
+import { useAuth } from "../auth/AuthProvider";
+import { 
+  createOrganizationKycSession, 
+  getOrganizationKycStatus,
+  registerOrganization,
+  updateOrganizationProfile,
+  createLivenessSession,
+} from "@/api/functions";
 
 const industries = [
   "Fashion",
@@ -62,6 +68,7 @@ const campaignTypes = [
 ];
 
 export default function OrganizationSignup() {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
   const [submitted, setSubmitted] = useState(false); // New state for submission status
@@ -98,7 +105,7 @@ export default function OrganizationSignup() {
     bulk_onboard: "",
   });
 
-  const totalSteps = 2;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
 
   useEffect(() => {
@@ -142,36 +149,26 @@ export default function OrganizationSignup() {
 
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
-    mutationFn: (data: typeof formData) => {
-      return base44.entities.OrganizationProfile.create({
+    mutationFn: async (data: typeof formData) => {
+      const payload = {
         email: data.email,
-        // password: data.password, // Assuming password is part of initial user creation - REMOVED AS PER INSTRUCTIONS
+        password: data.password,
         organization_name: data.organization_name,
-        contact_name: data.contact_name,
-        contact_title: data.contact_title,
-        organization_type: orgType,
-        website: data.website,
-        phone_number: data.phone_number,
-        status: "waitlist",
-      });
+        contact_name: data.contact_name || undefined,
+        contact_title: data.contact_title || undefined,
+        organization_type: orgType || undefined,
+        website: data.website || undefined,
+        phone_number: data.phone_number || undefined,
+      };
+      return await registerOrganization(payload);
     },
-    onSuccess: async (data) => {
-      setProfileId(data.id); // Assuming the API returns the created profile's ID
-      // Initiate KYC session after profile creation
-      try {
-        const kycSession = await createOrganizationKycSession({ organization_id: data.id });
-        if (kycSession && kycSession.session_url) {
-          setKycSessionUrl(kycSession.session_url);
-          // Redirect user to KYC verification page
-          window.location.href = kycSession.session_url;
-        } else {
-          console.error("KYC session URL not received.");
-          setStep(2); // Proceed to next step even if KYC session fails to initiate
-        }
-      } catch (kycError) {
-        console.error("Error initiating KYC session:", kycError);
-        setStep(2); // Proceed to next step even if KYC session fails to initiate
-      }
+    onSuccess: async (resp: any) => {
+      // Postgrest usually returns an array of inserted rows; handle both array/object
+      const created = Array.isArray(resp) ? resp[0] : resp;
+      const newId = created?.id;
+      setProfileId(newId);
+      // Move to Step 2; KYC/Liveness will happen in Step 3
+      setStep(2);
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
@@ -185,16 +182,7 @@ export default function OrganizationSignup() {
       if (!profileId) {
         throw new Error("Profile ID not found for update."); // Modified error message
       }
-      return base44.entities.OrganizationProfile.update(profileId, {
-        // Resend Step 1 data (backend can handle idempotency/ignoring unchanged fields) - REMOVED AS PER INSTRUCTIONS
-        // email: data.email,
-        // organization_name: data.organization_name,
-        // contact_name: data.contact_name,
-        // contact_title: data.contact_title,
-        // organization_type: orgType,
-        // website: data.website,
-        // phone_number: data.phone_number,
-
+      return updateOrganizationProfile(profileId, {
         // Step 2 specific fields
         industry: data.industry,
         primary_goal: data.primary_goal,
@@ -213,12 +201,13 @@ export default function OrganizationSignup() {
         open_to_ai: data.open_to_ai,
         campaign_types: data.campaign_types,
         bulk_onboard: data.bulk_onboard,
-        provide_creators: data.provide_creators, // Can be "provide", "upload", "match", or "tools" depending on orgType
-        status: "waitlist", // Default status for new sign-ups
-      });
+        provide_creators: data.provide_creators,
+        status: "waitlist",
+      }, user?.id);
     },
     onSuccess: () => {
-      setSubmitted(true); // Set submitted to true on successful mutation
+      // Move to Step 3 for verification
+      setStep(3);
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
@@ -280,19 +269,54 @@ export default function OrganizationSignup() {
     return titles[orgType] || "Organization";
   };
 
-  // Fetch KYC status if profileId is available and form is submitted
-  const { data: kycStatusData, isLoading: isKycStatusLoading } = useQuery({
+  // Fetch KYC status in Step 3 when profileId is available
+  const { data: kycStatusData, isLoading: isKycStatusLoading, refetch: refetchKycStatus } = useQuery({
     queryKey: ["organizationKycStatus", profileId],
     queryFn: () => getOrganizationKycStatus(profileId!),
-    enabled: !!profileId && submitted, // Only run when profileId is available and form is submitted
+    enabled: !!profileId && step === 3,
   });
 
-  // Render success message if form was submitted successfully
-  if (submitted) {
+  // Render success message if form was submitted successfully and KYC is approved
+  if (submitted && kycStatusData?.kyc_status === "approved") {
     const kycStatus = kycStatusData?.kyc_status;
     const kycSessionId = kycStatusData?.kyc_session_id;
 
-    return (
+    // Handlers for Step 3 (Verification)
+  const startOrgKyc = async () => {
+    if (!profileId) {
+      alert("Organization profile not found yet. Complete Step 1 first.");
+      return;
+    }
+    try {
+      const session = await createOrganizationKycSession({ organization_id: profileId });
+      const url = (session as any)?.session_url || (session as any)?.data?.session_url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        alert("Unable to start organization KYC. Please try again later.");
+      }
+    } catch (e) {
+      console.error("Error starting organization KYC", e);
+      alert("Failed to start organization KYC.");
+    }
+  };
+
+  const startLiveness = async () => {
+    try {
+      const res = await createLivenessSession({ user_id: user?.id });
+      const sid = (res as any)?.session_id || (res as any)?.data?.session_id;
+      if (sid) {
+        alert(`Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`);
+      } else {
+        alert("Could not create liveness session. Check server configuration.");
+      }
+    } catch (e) {
+      console.error("Error creating liveness session", e);
+      alert("Failed to create liveness session.");
+    }
+  };
+
+  return (
       <div
         className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
       >
@@ -701,13 +725,10 @@ export default function OrganizationSignup() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  disabled={updateProfileMutation.isPending}
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
-                  {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Complete Sign Up"}{" "}
-                  {/* Dynamic text */}
+                  {updateProfileMutation.isPending ? "Saving..." : "Continue to Verification"}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>

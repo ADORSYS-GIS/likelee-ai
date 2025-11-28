@@ -9,6 +9,11 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route("/api/kyc/organization/session", post(crate::kyc::create_session))
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
+        // Organization Profiles
+        .route("/api/organization-register", post(crate::organization_profiles::register))
+        .route("/api/organization-profile", post(crate::organization_profiles::create))
+        .route("/api/organization-profile/:id", post(crate::organization_profiles::update))
+        .route("/api/organization-profile/user/:user_id", get(crate::organization_profiles::get_by_user))
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

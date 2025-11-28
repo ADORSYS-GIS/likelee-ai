@@ -55,4 +55,6 @@ pub struct AppState {
     pub veriff: VeriffConfig,
     pub duix: DuixConfig,
     pub rekog: Option<RekogClient>,
+    pub supabase_url: String,
+    pub supabase_service_key: String,
 }

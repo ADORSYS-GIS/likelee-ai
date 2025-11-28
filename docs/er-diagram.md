@@ -1,6 +1,6 @@
 # Database ER Diagram
 
-This ER diagram reflects the current schema defined by the Supabase migrations in `likelee-ui/supabase/migrations` as of the latest change. It is derived from the following files:
+This ER diagram reflects the current schema defined by the Supabase migrations in `/supabase/migrations` as of the latest change. It is derived from the following files:
 
 - 20251118_profiles.sql
 - 20251118_profiles_verification.sql
@@ -11,6 +11,7 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 2025-11-21_royalty_wallet_mvp.sql
 - 2025-11-21_consolidated_profiles_wallet.sql
 - 2025-11-23_moderation_events.sql
+- 20251127_create_org_and_agency_users.sql
 
 Currently, the schema includes `profiles` and the new `royalty_ledger` table (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
@@ -119,6 +120,47 @@ erDiagram
     timestamptz created_at "default now()"
   }
 
+  ORGANIZATION_PROFILES {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid owner_user_id "logical FK → profiles(id)"
+    text email
+    text organization_name
+    text contact_name
+    text contact_title
+    text organization_type
+    text website
+    text phone_number
+    text industry
+    text primary_goal
+    text geographic_target
+    text production_type
+    text budget_range
+    text uses_ai
+    text creates_for
+    jsonb roles_needed
+    text client_count
+    text campaign_budget
+    jsonb services_offered
+    text handle_contracts
+    text talent_count
+    text licenses_likeness
+    jsonb open_to_ai
+    jsonb campaign_types
+    text bulk_onboard
+    text status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  AGENCY_USERS {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid agency_id FK "REFERENCES organization_profiles(id)"
+    uuid user_id "logical FK → profiles(id)"
+    text role "enum('owner','admin','manager','viewer')"
+    text status "enum('active','invited','suspended')"
+    timestamptz created_at
+  }
+
   V_FACE_PAYOUTS {
     uuid face_id
     text face_name
@@ -131,9 +173,61 @@ erDiagram
 
   PROFILES ||--o{ ROYALTY_LEDGER : face_id
   PROFILES ||--o{ MODERATION_EVENTS : user_id
+  PROFILES ||--o{ ORGANIZATION_PROFILES : owner_user_id
+  ORGANIZATION_PROFILES ||--o{ AGENCY_USERS : agency_id
+  PROFILES ||--o{ AGENCY_USERS : user_id
 ```
 
 ## Notes
 - The initial migration created `profiles.id` as `TEXT PRIMARY KEY`. The later migration `20251121_profiles_id_default.sql` ensures a UUID default via `gen_random_uuid()`. If your environment still has `id` as TEXT, apply a conversion migration.
 - `royalty_ledger.face_id` references `profiles(id)`; the view `v_face_payouts` aggregates paid/pending amounts by face and month for read-only dashboard usage.
 - The consolidated migration `2025-11-21_consolidated_profiles_wallet.sql` couples minimal `profiles` prerequisites and the Royalty Wallet schema (ledger, view, policies) to provision new environments consistently. Prefer running this single file in greenfield environments to avoid ordering issues.
+
+## Relationship Details
+
+- **PROFILES → ORGANIZATION_PROFILES (owner_user_id)**
+  - Each organization profile is owned by a single user profile (`owner_user_id`).
+  - Cardinality: 1 profile can own 0..N organizations. Each organization has exactly 1 owner.
+  - Access: RLS allows only the owner to select/insert/update their own organization rows.
+
+- **ORGANIZATION_PROFILES → AGENCY_USERS (agency_id)**
+  - Membership table linking organizations (agencies/brands) to users who have seats/roles.
+  - Cardinality: 1 organization has 0..N members; a user can appear in 0..N organizations.
+  - Unique constraint `(agency_id, user_id)` prevents duplicates.
+  - Roles: `owner | admin | manager | viewer`. Status: `active | invited | suspended`.
+  - Access: RLS permits members (or owner) to select rows; only owners can insert/update membership.
+
+- **PROFILES → AGENCY_USERS (user_id)**
+  - References the user profile who is a member of an organization.
+  - Cardinality: 1 profile can belong to 0..N organizations; each membership row maps exactly 1 profile to 1 organization.
+
+- **PROFILES → ROYALTY_LEDGER (face_id)**
+  - Ledger entries attribute earnings to a Face (stored in `profiles`).
+  - Cardinality: 1 face can have 0..N ledger entries; each ledger entry references exactly 1 face.
+  - Used by dashboards and the `V_FACE_PAYOUTS` view for aggregation.
+
+- **PROFILES → MODERATION_EVENTS (user_id)**
+  - Moderation events are tied to the profile that submitted the image or action.
+  - Cardinality: 1 profile can have 0..N moderation events; each event references exactly 1 profile.
+
+- **V_FACE_PAYOUTS** (view)
+  - Read-only aggregation across `ROYALTY_LEDGER` grouped by face and month.
+  - No direct writes; used for analytics/overview.
+
+### Compliance and KYC/Liveness Context
+- KYC status for user profiles is stored on `PROFILES` and is used to gate sensitive actions.
+- Organization owner’s KYC must be approved to unlock “Create Agency” tools in the UI.
+- Organization-level KYC (via Veriff) is initiated on creation and tracked via status endpoints.
+
+### Practical Flows
+- Create Organization
+  - User (owner profile) creates `ORGANIZATION_PROFILES` row → Triggers organization KYC session.
+  - On approval, owner can add members by inserting rows into `AGENCY_USERS` (subject to RLS: owner-only insert).
+
+- Membership Management
+  - Owner adds team members (emails/users) → rows in `AGENCY_USERS` with role/status.
+  - Members gain read access to the organization’s membership list via RLS.
+
+- Earnings Attribution
+  - Bookings/payments produce `ROYALTY_LEDGER` entries tied to a Face (in `PROFILES`).
+  - `V_FACE_PAYOUTS` aggregates for dashboards.

@@ -38,6 +38,8 @@ async fn main() {
         veriff: likelee_server::config::VeriffConfig { base_url: cfg.veriff_base_url, api_key: cfg.veriff_api_key, shared_secret: cfg.veriff_shared_secret },
         duix: likelee_server::config::DuixConfig { base_url: cfg.duix_base_url, auth_token: cfg.duix_auth_token },
         rekog,
+        supabase_url: cfg.supabase_url.clone(),
+        supabase_service_key: cfg.supabase_service_key.clone(),
     };
 
     let app = likelee_server::router::build_router(state);

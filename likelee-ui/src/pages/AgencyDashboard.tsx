@@ -79,7 +79,8 @@ import {
 } from "recharts";
 import {
   getOrganizationProfileByUserId,
-  getOrganizationKycStatus as fetchKycStatus,
+  getKycStatus as fetchUserKycStatus,
+  createKycSession,
 } from "../api/functions";
 import { KycStatusResponse } from "../types/kyc";
 import { OrganizationProfile } from "../api/entities";
@@ -549,21 +550,54 @@ export default function AgencyDashboard() {
     return expiry < now;
   };
 
-  const { data: kycStatus } = useQuery({
-    queryKey: ['kycStatus'],
-    queryFn: () => fetchKycStatus('organization_id'),
+  const { user } = useAuth();
+  const { data: ownerKyc, isLoading: isOwnerKycLoading, refetch: refetchOwnerKyc } = useQuery< KycStatusResponse | any >({
+    queryKey: ["ownerKycStatus", user?.id],
+    queryFn: () => fetchUserKycStatus(user!.id),
+    enabled: !!user?.id,
   });
+
+  const startOwnerKyc = async () => {
+    if (!user?.id) return;
+    try {
+      const session = await createKycSession({ user_id: user.id });
+      // If base client returns raw axios-like response, handle .session_url accordingly
+      const url = (session as any)?.session_url || (session as any)?.data?.session_url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        alert("Unable to start verification. Please try again later.");
+      }
+    } catch (e) {
+      console.error("Error starting KYC session", e);
+      alert("Failed to start KYC verification.");
+    }
+  };
 
   return (
     <React.Fragment>
-      {kycStatus?.kyc_status === 'verified' && (
-        <Button
-          variant="default"
-          onClick={() => navigate(createPageUrl("CreateAgency"))}
-        >
-          Create Agency
-        </Button>
-      )}
+      {/* KYC gate for Agency creation */}
+      <div className="max-w-7xl mx-auto px-6 mt-6">
+        {ownerKyc?.kyc_status === "approved" ? (
+          <Button
+            variant="default"
+            onClick={() => navigate(createPageUrl("CreateAgency"))}
+          >
+            Create Agency
+          </Button>
+        ) : (
+          <Card className="mb-4 p-4 border-2 border-dashed">
+            <p className="text-sm text-gray-700">
+              Identity verification is required to create and manage an Agency. Complete KYC to enable Agency tools.
+            </p>
+            <div className="mt-3">
+              <Button onClick={startOwnerKyc} disabled={!user?.id || isOwnerKycLoading}>
+                {isOwnerKycLoading ? "Checking..." : "Verify identity (KYC)"}
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6">

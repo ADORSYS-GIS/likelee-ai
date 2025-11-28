@@ -49,8 +49,39 @@ export const sitemapXml = () => base44Client.get("/sitemap.xml");
 
 export const staticPages = () => base44Client.get("/static-pages");
 
+// Owner (user) KYC
+export const createKycSession = (data: { user_id: string }) =>
+  base44Client.post<KycSessionResponse>("/api/kyc/session", data);
+
+export const getKycStatus = (user_id: string) =>
+  base44Client.get<KycStatusResponse>(`/api/kyc/status?user_id=${user_id}`);
+
+// Organization (profile) KYC
 export const createOrganizationKycSession = (data: { organization_id: string }) => base44Client.post<KycSessionResponse>("/api/kyc/organization/session", data);
 
 export const getOrganizationKycStatus = (organization_id: string) => base44Client.get<KycStatusResponse>(`/api/kyc/organization/status?organization_id=${organization_id}`);
 
 export const getOrganizationProfileByUserId = (user_id: string) => base44Client.get(`/api/organization-profile/user/${user_id}`);
+
+// Organization profile CRUD
+export const createOrganizationProfile = (data: any, userId?: string) =>
+  base44Client.post(`/api/organization-profile`, data, { headers: userId ? { 'x-user-id': userId } : {} });
+
+export const updateOrganizationProfile = (id: string, data: any, userId?: string) =>
+  base44Client.post(`/api/organization-profile/${id}`, data, { headers: userId ? { 'x-user-id': userId } : {} });
+
+// Organization registration (creates user + organization and links ownership)
+export const registerOrganization = (data: {
+  email: string;
+  password: string;
+  organization_name: string;
+  contact_name?: string;
+  contact_title?: string;
+  organization_type?: string;
+  website?: string;
+  phone_number?: string;
+}) => base44Client.post(`/api/organization-register`, data);
+
+// Liveness
+export const createLivenessSession = (data: { user_id?: string }) =>
+  base44Client.post(`/api/liveness/create`, data);
