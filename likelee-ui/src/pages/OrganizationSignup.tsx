@@ -17,8 +17,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
-import { 
-  createOrganizationKycSession, 
+import {
+  createOrganizationKycSession,
   getOrganizationKycStatus,
   registerOrganization,
   updateOrganizationProfile,
@@ -182,28 +182,32 @@ export default function OrganizationSignup() {
       if (!profileId) {
         throw new Error("Profile ID not found for update."); // Modified error message
       }
-      return updateOrganizationProfile(profileId, {
-        // Step 2 specific fields
-        industry: data.industry,
-        primary_goal: data.primary_goal,
-        geographic_target: data.geographic_target,
-        production_type: data.production_type,
-        budget_range: data.budget_range,
-        uses_ai: data.uses_ai,
-        creates_for: data.creates_for,
-        roles_needed: data.roles_needed,
-        client_count: data.client_count,
-        campaign_budget: data.campaign_budget,
-        services_offered: data.services_offered,
-        handle_contracts: data.handle_contracts,
-        talent_count: data.talent_count,
-        licenses_likeness: data.licenses_likeness,
-        open_to_ai: data.open_to_ai,
-        campaign_types: data.campaign_types,
-        bulk_onboard: data.bulk_onboard,
-        provide_creators: data.provide_creators,
-        status: "waitlist",
-      }, user?.id);
+      return updateOrganizationProfile(
+        profileId,
+        {
+          // Step 2 specific fields
+          industry: data.industry,
+          primary_goal: data.primary_goal,
+          geographic_target: data.geographic_target,
+          production_type: data.production_type,
+          budget_range: data.budget_range,
+          uses_ai: data.uses_ai,
+          creates_for: data.creates_for,
+          roles_needed: data.roles_needed,
+          client_count: data.client_count,
+          campaign_budget: data.campaign_budget,
+          services_offered: data.services_offered,
+          handle_contracts: data.handle_contracts,
+          talent_count: data.talent_count,
+          licenses_likeness: data.licenses_likeness,
+          open_to_ai: data.open_to_ai,
+          campaign_types: data.campaign_types,
+          bulk_onboard: data.bulk_onboard,
+          provide_creators: data.provide_creators,
+          status: "waitlist",
+        },
+        user?.id,
+      );
     },
     onSuccess: () => {
       // Move to Step 3 for verification
@@ -270,7 +274,11 @@ export default function OrganizationSignup() {
   };
 
   // Fetch KYC status in Step 3 when profileId is available
-  const { data: kycStatusData, isLoading: isKycStatusLoading, refetch: refetchKycStatus } = useQuery({
+  const {
+    data: kycStatusData,
+    isLoading: isKycStatusLoading,
+    refetch: refetchKycStatus,
+  } = useQuery({
     queryKey: ["organizationKycStatus", profileId],
     queryFn: () => getOrganizationKycStatus(profileId!),
     enabled: !!profileId && step === 3,
@@ -282,41 +290,48 @@ export default function OrganizationSignup() {
     const kycSessionId = kycStatusData?.kyc_session_id;
 
     // Handlers for Step 3 (Verification)
-  const startOrgKyc = async () => {
-    if (!profileId) {
-      alert("Organization profile not found yet. Complete Step 1 first.");
-      return;
-    }
-    try {
-      const session = await createOrganizationKycSession({ organization_id: profileId });
-      const url = (session as any)?.session_url || (session as any)?.data?.session_url;
-      if (url) {
-        window.location.href = url;
-      } else {
-        alert("Unable to start organization KYC. Please try again later.");
+    const startOrgKyc = async () => {
+      if (!profileId) {
+        alert("Organization profile not found yet. Complete Step 1 first.");
+        return;
       }
-    } catch (e) {
-      console.error("Error starting organization KYC", e);
-      alert("Failed to start organization KYC.");
-    }
-  };
-
-  const startLiveness = async () => {
-    try {
-      const res = await createLivenessSession({ user_id: user?.id });
-      const sid = (res as any)?.session_id || (res as any)?.data?.session_id;
-      if (sid) {
-        alert(`Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`);
-      } else {
-        alert("Could not create liveness session. Check server configuration.");
+      try {
+        const session = await createOrganizationKycSession({
+          organization_id: profileId,
+        });
+        const url =
+          (session as any)?.session_url || (session as any)?.data?.session_url;
+        if (url) {
+          window.location.href = url;
+        } else {
+          alert("Unable to start organization KYC. Please try again later.");
+        }
+      } catch (e) {
+        console.error("Error starting organization KYC", e);
+        alert("Failed to start organization KYC.");
       }
-    } catch (e) {
-      console.error("Error creating liveness session", e);
-      alert("Failed to create liveness session.");
-    }
-  };
+    };
 
-  return (
+    const startLiveness = async () => {
+      try {
+        const res = await createLivenessSession({ user_id: user?.id });
+        const sid = (res as any)?.session_id || (res as any)?.data?.session_id;
+        if (sid) {
+          alert(
+            `Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`,
+          );
+        } else {
+          alert(
+            "Could not create liveness session. Check server configuration.",
+          );
+        }
+      } catch (e) {
+        console.error("Error creating liveness session", e);
+        alert("Failed to create liveness session.");
+      }
+    };
+
+    return (
       <div
         className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
       >
@@ -728,7 +743,9 @@ export default function OrganizationSignup() {
                   disabled={updateProfileMutation.isPending}
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
-                  {updateProfileMutation.isPending ? "Saving..." : "Continue to Verification"}
+                  {updateProfileMutation.isPending
+                    ? "Saving..."
+                    : "Continue to Verification"}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>

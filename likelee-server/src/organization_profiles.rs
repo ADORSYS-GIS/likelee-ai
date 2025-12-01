@@ -1,11 +1,15 @@
-use axum::{extract::{Path, State}, http::StatusCode, Json};
-use serde::{Deserialize, Serialize};
 use crate::config::AppState;
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    Json,
+};
+use serde::{Deserialize, Serialize};
 
 // Accept either a single string or an array of strings for primary_goal
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(untagged)]
-enum PrimaryGoalField {
+pub enum PrimaryGoalField {
     One(String),
     Many(Vec<String>),
 }
@@ -71,21 +75,41 @@ pub async fn register(
     let user_resp = client
         .post(&admin_url)
         .header("apikey", state.supabase_service_key.clone())
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .json(&create_user_body)
         .send()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let status = user_resp.status();
-    let user_text = user_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_text = user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, user_text));
     }
-    let user_json: serde_json::Value = serde_json::from_str(&user_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let owner_user_id = user_json.get("user").and_then(|u| u.get("id")).and_then(|v| v.as_str()).map(|s| s.to_string())
-        .or_else(|| user_json.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "failed to parse created user id".to_string()))?;
+    let user_json: serde_json::Value = serde_json::from_str(&user_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let owner_user_id = user_json
+        .get("user")
+        .and_then(|u| u.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            user_json
+                .get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "failed to parse created user id".to_string(),
+        ))?;
 
     let mut org = serde_json::json!({
         "owner_user_id": owner_user_id,
@@ -99,14 +123,13 @@ pub async fn register(
         "status": "waitlist"
     });
     if let serde_json::Value::Object(ref mut map) = org {
-        if let Some(pg) = map.get("primary_goal").cloned() {
-            match pg {
-                serde_json::Value::Array(arr) => {
-                    let joined = arr.into_iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect::<Vec<_>>().join(", ");
-                    map.insert("primary_goal".into(), serde_json::Value::String(joined));
-                }
-                _ => {}
-            }
+        if let Some(serde_json::Value::Array(arr)) = map.get("primary_goal").cloned() {
+            let joined = arr
+                .into_iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect::<Vec<_>>()
+                .join(", ");
+            map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
     }
     let body = org.to_string();
@@ -118,12 +141,16 @@ pub async fn register(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let st = resp.status();
-    let txt = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !st.is_success() {
         let code = StatusCode::from_u16(st.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, txt));
     }
-    let v: serde_json::Value = serde_json::from_str(&txt).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&txt)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
@@ -135,29 +162,45 @@ pub async fn create(
     let owner_user_id = payload
         .owner_user_id
         .clone()
-        .or_else(|| headers.get("x-user-id").and_then(|v| v.to_str().ok()).map(|s| s.to_string()))
-        .ok_or((StatusCode::BAD_REQUEST, "missing owner_user_id (provide in body or x-user-id header)".to_string()))?;
+        .or_else(|| {
+            headers
+                .get("x-user-id")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "missing owner_user_id (provide in body or x-user-id header)".to_string(),
+        ))?;
     // Validate required fields on create
-    let email = payload.email.clone().ok_or((StatusCode::BAD_REQUEST, "missing email".to_string()))?;
-    let organization_name = payload.organization_name.clone().ok_or((StatusCode::BAD_REQUEST, "missing organization_name".to_string()))?;
-    let mut v = serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let email = payload
+        .email
+        .clone()
+        .ok_or((StatusCode::BAD_REQUEST, "missing email".to_string()))?;
+    let organization_name = payload.organization_name.clone().ok_or((
+        StatusCode::BAD_REQUEST,
+        "missing organization_name".to_string(),
+    ))?;
+    let mut v =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if let serde_json::Value::Object(ref mut map) = v {
-        map.insert("owner_user_id".into(), serde_json::Value::String(owner_user_id));
+        map.insert(
+            "owner_user_id".into(),
+            serde_json::Value::String(owner_user_id),
+        );
         map.insert("email".into(), serde_json::Value::String(email));
-        map.insert("organization_name".into(), serde_json::Value::String(organization_name));
+        map.insert(
+            "organization_name".into(),
+            serde_json::Value::String(organization_name),
+        );
         // Normalize primary_goal: if it's an array, join to a comma-separated string to fit DB text column
-        if let Some(pg_val) = map.get("primary_goal").cloned() {
-            match pg_val {
-                serde_json::Value::Array(arr) => {
-                    let joined = arr
-                        .into_iter()
-                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    map.insert("primary_goal".into(), serde_json::Value::String(joined));
-                }
-                _ => { /* leave as-is if already string or null */ }
-            }
+        if let Some(serde_json::Value::Array(arr)) = map.get("primary_goal").cloned() {
+            let joined = arr
+                .into_iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect::<Vec<_>>()
+                .join(", ");
+            map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
     }
     let body = v.to_string();
@@ -169,31 +212,36 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let status = resp.status();
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
-pub async fn update(State(state): State<AppState>, Path(id): Path<String>, Json(payload): Json<OrganizationProfilePayload>) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+pub async fn update(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<OrganizationProfilePayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // Normalize primary_goal to a string if provided as array
-    let mut v = serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let mut v =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if let serde_json::Value::Object(ref mut map) = v {
-        if let Some(pg_val) = map.get("primary_goal").cloned() {
-            match pg_val {
-                serde_json::Value::Array(arr) => {
-                    let joined = arr
-                        .into_iter()
-                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    map.insert("primary_goal".into(), serde_json::Value::String(joined));
-                }
-                _ => { /* leave */ }
-            }
+        if let Some(serde_json::Value::Array(arr)) = map.get("primary_goal").cloned() {
+            let joined = arr
+                .into_iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect::<Vec<_>>()
+                .join(", ");
+            map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
         // Do not allow updating ownership via this endpoint
         map.remove("owner_user_id");
@@ -215,12 +263,19 @@ pub async fn update(State(state): State<AppState>, Path(id): Path<String>, Json(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
-pub async fn get_by_user(State(state): State<AppState>, Path(user_id): Path<String>) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+pub async fn get_by_user(
+    State(state): State<AppState>,
+    Path(user_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("organization_profiles")
@@ -229,7 +284,11 @@ pub async fn get_by_user(State(state): State<AppState>, Path(user_id): Path<Stri
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }

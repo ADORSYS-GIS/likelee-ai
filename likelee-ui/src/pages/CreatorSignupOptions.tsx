@@ -5,8 +5,8 @@ import { Card as UICard } from "@/components/ui/card";
 import { Button as UIButton } from "@/components/ui/button";
 import { Users, User, Trophy } from "lucide-react";
 
-const Card: any = UICard
-const Button: any = UIButton
+const Card: any = UICard;
+const Button: any = UIButton;
 
 const creatorTypes = [
   {
@@ -37,12 +37,12 @@ const creatorTypes = [
 
 export default function CreatorSignupOptions() {
   const navigate = useNavigate();
-  const [selectedType, setSelectedType] = React.useState<string | null>(null)
-  const [showAuth, setShowAuth] = React.useState(false)
+  const [selectedType, setSelectedType] = React.useState<string | null>(null);
+  const [showAuth, setShowAuth] = React.useState(false);
 
   const handleSelect = (type) => {
-    setSelectedType(type)
-    setShowAuth(true)
+    setSelectedType(type);
+    setShowAuth(true);
   };
 
   return (
@@ -121,26 +121,34 @@ export default function CreatorSignupOptions() {
         {/* Auth chooser modal */}
         {showAuth && selectedType && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setShowAuth(false)} />
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setShowAuth(false)}
+            />
             <div className="relative z-10 w-full max-w-md bg-white border-2 border-black p-6">
               <h2 className="text-xl font-bold mb-2">Get started</h2>
-              <p className="text-sm text-gray-600 mb-6">Selected: {selectedType.replace('_', ' ')}</p>
+              <p className="text-sm text-gray-600 mb-6">
+                Selected: {selectedType.replace("_", " ")}
+              </p>
               <div className="space-y-3">
                 <Link
-                  to={`${createPageUrl('Register')}?type=${selectedType}`}
+                  to={`${createPageUrl("Register")}?type=${selectedType}`}
                   className="block w-full"
                   onClick={() => setShowAuth(false)}
                 >
                   <Button className="w-full bg-black text-white rounded-none">
-                    Sign up as {selectedType.replace('_', ' ')}
+                    Sign up as {selectedType.replace("_", " ")}
                   </Button>
                 </Link>
                 <Link
-                  to={`${createPageUrl('Login')}?type=${selectedType}`}
+                  to={`${createPageUrl("Login")}?type=${selectedType}`}
                   className="block w-full"
                   onClick={() => setShowAuth(false)}
                 >
-                  <Button variant="outline" className="w-full border-2 border-black rounded-none">
+                  <Button
+                    variant="outline"
+                    className="w-full border-2 border-black rounded-none"
+                  >
                     I already have an account
                   </Button>
                 </Link>

@@ -1,9 +1,15 @@
-use axum::{extract::{Query, State}, http::StatusCode, Json};
-use serde::{Deserialize, Serialize};
 use crate::config::AppState;
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-pub struct DashboardQuery { pub user_id: String }
+pub struct DashboardQuery {
+    pub user_id: String,
+}
 
 #[derive(Serialize)]
 pub struct DashboardResponse {
@@ -14,7 +20,10 @@ pub struct DashboardResponse {
     pub contracts: Vec<serde_json::Value>,
 }
 
-pub async fn get_dashboard(State(state): State<AppState>, Query(q): Query<DashboardQuery>) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
+pub async fn get_dashboard(
+    State(state): State<AppState>,
+    Query(q): Query<DashboardQuery>,
+) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("profiles")
@@ -23,8 +32,12 @@ pub async fn get_dashboard(State(state): State<AppState>, Query(q): Query<Dashbo
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let profile = rows.get(0).cloned().unwrap_or(serde_json::json!({}));
 
     let campaigns: Vec<serde_json::Value> = vec![];
@@ -38,5 +51,11 @@ pub async fn get_dashboard(State(state): State<AppState>, Query(q): Query<Dashbo
         "annual_run_rate": 0,
     });
 
-    Ok(Json(DashboardResponse { profile, metrics, campaigns, approvals, contracts }))
+    Ok(Json(DashboardResponse {
+        profile,
+        metrics,
+        campaigns,
+        approvals,
+        contracts,
+    }))
 }

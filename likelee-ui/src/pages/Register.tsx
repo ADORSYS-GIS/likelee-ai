@@ -1,36 +1,45 @@
-import React from 'react'
-import Layout from './Layout'
-import { useAuth } from '@/auth/AuthProvider'
-import { useNavigate, useLocation } from 'react-router-dom'
+import React from "react";
+import Layout from "./Layout";
+import { useAuth } from "@/auth/AuthProvider";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Register() {
-  const { register, initialized, authenticated } = useAuth()
-  const [email, setEmail] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [name, setName] = React.useState('')
-  const [error, setError] = React.useState<string | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const creatorType = React.useMemo(() => new URLSearchParams(location.search).get('type'), [location.search])
+  const { register, initialized, authenticated } = useAuth();
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const creatorType = React.useMemo(
+    () => new URLSearchParams(location.search).get("type"),
+    [location.search],
+  );
 
   React.useEffect(() => {
     // If a creator type is supplied, delegate the entire flow to ReserveProfile (Step 1 handles signup)
     if (creatorType) {
-      navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`, { replace: true })
-      return
+      navigate(
+        `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`,
+        { replace: true },
+      );
+      return;
     }
     if (initialized && authenticated) {
       if (creatorType) {
-        navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`, { replace: true })
+        navigate(
+          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`,
+          { replace: true },
+        );
       } else {
-        navigate('/CreatorDashboard', { replace: true })
+        navigate("/CreatorDashboard", { replace: true });
       }
     }
-  }, [initialized, authenticated, navigate, creatorType])
+  }, [initialized, authenticated, navigate, creatorType]);
 
   if (creatorType) {
-    return null
+    return null;
   }
 
   return (
@@ -45,25 +54,29 @@ export default function Register() {
           <form
             className="space-y-4"
             onSubmit={async (e) => {
-              e.preventDefault()
-              setError(null)
-              setLoading(true)
+              e.preventDefault();
+              setError(null);
+              setLoading(true);
               try {
-                await register(email, password, name)
+                await register(email, password, name);
                 if (creatorType) {
-                  navigate(`/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`)
+                  navigate(
+                    `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=signup`,
+                  );
                 } else {
-                  navigate('/CreatorDashboard')
+                  navigate("/CreatorDashboard");
                 }
               } catch (err: any) {
-                setError(err?.message ?? 'Failed to register')
+                setError(err?.message ?? "Failed to register");
               } finally {
-                setLoading(false)
+                setLoading(false);
               }
             }}
           >
             <div>
-              <label className="block text-sm font-medium mb-1">Full name</label>
+              <label className="block text-sm font-medium mb-1">
+                Full name
+              </label>
               <input
                 type="text"
                 value={name}
@@ -97,11 +110,11 @@ export default function Register() {
               disabled={loading}
               className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
             >
-              {loading ? 'Creating…' : 'Create account'}
+              {loading ? "Creating…" : "Create account"}
             </button>
           </form>
         )}
       </div>
     </Layout>
-  )
+  );
 }

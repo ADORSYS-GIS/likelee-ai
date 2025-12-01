@@ -1,6 +1,6 @@
-use postgrest::Postgrest;
 use aws_sdk_rekognition::Client as RekogClient;
 use envconfig::Envconfig;
+use postgrest::Postgrest;
 
 #[derive(Clone)]
 pub struct VeriffConfig {

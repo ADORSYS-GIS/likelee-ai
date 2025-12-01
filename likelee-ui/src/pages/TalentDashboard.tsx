@@ -518,7 +518,7 @@ export default function TalentDashboard() {
           </TabsContent>
 
           {/* Profile Settings Tab */}
-          
+
           <TabsContent value="profile" className="space-y-6">
             <Card className="p-6 bg-white border-2 border-black rounded-none">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">
@@ -711,9 +711,13 @@ export default function TalentDashboard() {
                 {/* Licensing + Royalty Wallet (read-only) */}
                 <div className="mt-10 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xl font-bold text-gray-900">Licensing & Earnings</h4>
+                    <h4 className="text-xl font-bold text-gray-900">
+                      Licensing & Earnings
+                    </h4>
                     <Button
-                      onClick={() => navigate(createPageUrl("LicensingSettings"))}
+                      onClick={() =>
+                        navigate(createPageUrl("LicensingSettings"))
+                      }
                       variant="outline"
                       className="border-2 border-black rounded-none"
                     >
