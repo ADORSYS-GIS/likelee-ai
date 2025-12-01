@@ -1,10 +1,10 @@
+use aws_config::BehaviorVersion;
 use aws_types::region::Region;
 use dotenvy::dotenv;
 use envconfig::Envconfig;
 use postgrest::Postgrest;
 use serde_json::json;
 use tracing::{info, warn};
-use aws_config::BehaviorVersion;
 
 #[tokio::main]
 async fn main() {
