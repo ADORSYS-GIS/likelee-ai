@@ -97,6 +97,7 @@ import AboutUs from "./AboutUs";
 import CommercialRights from "./CommercialRights";
 import CameoUpload from "./CameoUpload";
 import RoyaltyWallet from "./RoyaltyWallet";
+import PublicProfile from "./PublicProfile";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -209,6 +210,7 @@ const PAGES = {
     LicensingSettings: LicensingSettings,
     
     RoyaltyWallet: RoyaltyWallet,
+    PublicProfile: PublicProfile,
     
 }
 
@@ -338,6 +340,8 @@ function PagesContent() {
                 <Route path="/CameoUpload" element={<ProtectedRoute><CameoUpload /></ProtectedRoute>} />
                 
                 <Route path="/RoyaltyWallet" element={<ProtectedRoute><RoyaltyWallet /></ProtectedRoute>} />
+                
+                <Route path="/PublicProfile" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
                 
                 <Route path="/Login" element={<Login />} />
                 <Route path="/Register" element={<Register />} />

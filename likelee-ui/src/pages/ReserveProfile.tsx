@@ -19,6 +19,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { fetchAuthSession } from 'aws-amplify/auth'
+import { toast } from "@/components/ui/use-toast"
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton
@@ -355,7 +356,7 @@ export default function ReserveProfile() {
     visibility: "private",
     // Pricing (USD-only)
     base_monthly_price_usd: "",
-    per_use_price_usd: 5,
+    
     
     // Influencer specific
     content_types: [],
@@ -903,13 +904,8 @@ export default function ReserveProfile() {
       }
       // Pricing required in onboarding step (applies to all creator types)
       const monthly = Number(formData.base_monthly_price_usd)
-      const perUse = Number(formData.per_use_price_usd)
       if (!isFinite(monthly) || monthly < 150) {
         alert('Please set your base monthly license price (minimum $150).')
-        return;
-      }
-      if (!isFinite(perUse) || perUse < 5 || perUse > 200) {
-        alert('Please set your per-use price between $5 and $200.')
         return;
       }
     }
@@ -970,7 +966,6 @@ export default function ReserveProfile() {
       }
 
       const monthlyUsd = Number(formData.base_monthly_price_usd)
-      const perUseUsd = Number(formData.per_use_price_usd)
       const payload: any = {
         id: user.id,
         email: formData.email,
@@ -1003,7 +998,6 @@ export default function ReserveProfile() {
         status: 'waitlist',
         // Pricing in cents (USD-only)
         base_monthly_price_cents: isFinite(monthlyUsd) ? Math.round(monthlyUsd * 100) : 15000,
-        per_use_price_cents: isFinite(perUseUsd) ? Math.round(perUseUsd * 100) : 500,
         currency_code: 'USD',
       }
       if (front) (payload as any).cameo_front_url = front
@@ -1188,9 +1182,13 @@ export default function ReserveProfile() {
                   className="space-y-4"
                   onSubmit={async (e) => {
                     e.preventDefault()
-                    // Reuse formData.email/password
-                    await login(formData.email, formData.password)
-                    navigate('/CreatorDashboard')
+                    try {
+                      await login(formData.email, formData.password)
+                      navigate('/CreatorDashboard')
+                    } catch (err: any) {
+                      const msg = err?.message || 'Failed to sign in'
+                      toast({ title: 'Sign-in failed', description: msg, variant: 'destructive' })
+                    }
                   }}
                 >
                   <div>
@@ -1532,8 +1530,8 @@ export default function ReserveProfile() {
               {/* Pricing (USD-only) */}
               <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
                 <h4 className="text-lg font-semibold text-gray-900 mb-3">Licensing Pricing</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
+                <div className="w-full flex justify-center">
+                  <div className="w-full max-w-sm">
                     <Label htmlFor="base_monthly_price" className="text-sm font-medium text-gray-700 mb-2 block">
                       Base monthly license price (USD)
                     </Label>
@@ -1555,46 +1553,6 @@ export default function ReserveProfile() {
                       <span className="text-sm text-gray-600">/month</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">Minimum $150/month. Currency is locked to USD.</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Per-use price (USD)
-                    </Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-gray-700">$</span>
-                        <Input
-                          type="number"
-                          min={5}
-                          max={200}
-                          step={1}
-                          value={formData.per_use_price_usd}
-                          onChange={(e) => {
-                            const n = Number(e.target.value)
-                            if (!Number.isFinite(n)) return
-                            const clamped = Math.max(5, Math.min(200, Math.round(n)))
-                            setFormData({ ...formData, per_use_price_usd: clamped })
-                          }}
-                          className="w-24 border-2 border-gray-300 rounded-none"
-                        />
-                        <span className="text-sm text-gray-600">per use</span>
-                      </div>
-                      <div className="px-1">
-                        <Slider
-                          value={[Number(formData.per_use_price_usd) || 5]}
-                          min={5}
-                          max={200}
-                          step={1}
-                          onValueChange={(vals: any) => {
-                            const v = Array.isArray(vals) ? vals[0] : vals
-                            const clamped = Math.max(5, Math.min(200, Math.round(Number(v) || 5)))
-                            setFormData({ ...formData, per_use_price_usd: clamped })
-                          }}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500">Choose between $5 and $200 per use. Typical bookings are $5–$15.</p>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1877,11 +1835,11 @@ export default function ReserveProfile() {
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              <div className="flex items-center gap-4 justify-between">
                 <Button
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-black rounded-none"
+                  className="h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Back
@@ -1889,7 +1847,7 @@ export default function ReserveProfile() {
                 <Button
                   onClick={handleSubmit}
                   disabled={updateProfileMutation.isPending}
-                  className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                  className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
                   {updateProfileMutation.isPending ? "Saving..." : "Save & Continue to Verification"}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
@@ -2016,30 +1974,31 @@ export default function ReserveProfile() {
                     )}
                   </span>
                 </div>
-                <div className="flex gap-3">
-                  <Button
-                    onClick={verifyAndContinue}
-                    disabled={kycLoading}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-black rounded-none"
-                  >
-                    {kycLoading ? 'Checking…' : 'Verify & Continue'}
-                  </Button>
-                  <Button
-                    onClick={handleBack}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-black rounded-none"
-                  >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={() => setShowSkipModal(true)}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-gray-300 rounded-none"
-                  >
-                    Skip for Now
-                  </Button>
+                <div className="w-full">
+                  <div className="grid grid-cols-3 gap-2 w-full max-w-xl mx-auto">
+                    <Button
+                      onClick={handleBack}
+                      variant="outline"
+                      className="w-full h-12 border-2 border-black rounded-none"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={() => setShowSkipModal(true)}
+                      variant="outline"
+                      className="w-full h-12 border-2 border-gray-300 rounded-none"
+                    >
+                      Skip for Now
+                    </Button>
+                    <Button
+                      onClick={verifyAndContinue}
+                      disabled={kycLoading}
+                      className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                    >
+                      {kycLoading ? 'Checking…' : 'Verify & Continue'}
+                    </Button>
+                  </div>
                 </div>
               </div>
 

@@ -23,6 +23,15 @@ pub struct ServerConfig {
     #[envconfig(from = "SUPABASE_SERVICE_KEY")]
     pub supabase_service_key: String,
 
+    #[envconfig(from = "SUPABASE_BUCKET_PRIVATE", default = "likelee-private")]
+    pub supabase_bucket_private: String,
+
+    #[envconfig(from = "SUPABASE_BUCKET_PUBLIC", default = "likelee-public")]
+    pub supabase_bucket_public: String,
+
+    #[envconfig(from = "SUPABASE_BUCKET_TEMP", default = "likelee-temp")]
+    pub supabase_bucket_temp: String,
+
     #[envconfig(from = "PORT", default = "8787")]
     pub port: u16,
 
@@ -57,4 +66,5 @@ pub struct AppState {
     pub rekog: Option<RekogClient>,
     pub supabase_url: String,
     pub supabase_service_key: String,
+    pub supabase_bucket_public: String,
 }

@@ -1,9 +1,10 @@
 use dotenvy::dotenv;
-use tracing::info;
+use tracing::{info, warn};
 use aws_types::region::Region;
 use aws_config;
 use postgrest::Postgrest;
 use envconfig::Envconfig;
+use serde_json::json;
 
 #[tokio::main]
 async fn main() {
@@ -21,6 +22,27 @@ async fn main() {
     let pg = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
         .insert_header("apikey", cfg.supabase_service_key.clone())
         .insert_header("Authorization", format!("Bearer {}", cfg.supabase_service_key));
+
+    // Ensure Storage buckets and policies exist (Option B: server-only writes)
+    {
+        let rpc = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
+            .insert_header("apikey", cfg.supabase_service_key.clone())
+            .insert_header("Authorization", format!("Bearer {}", cfg.supabase_service_key));
+        let body = json!({
+            "p_public_bucket": cfg.supabase_bucket_public,
+            "p_private_bucket": cfg.supabase_bucket_private,
+            "p_temp_bucket": cfg.supabase_bucket_temp,
+        });
+        match rpc.rpc("ensure_storage", body.to_string()).execute().await {
+            Ok(_) => info!(
+                public = %cfg.supabase_bucket_public,
+                private = %cfg.supabase_bucket_private,
+                temp = %cfg.supabase_bucket_temp,
+                "storage buckets ensured"
+            ),
+            Err(e) => warn!(error = %e, "failed to ensure storage buckets/policies via RPC; continuing"),
+        }
+    }
 
     let rekog = if moderation_enabled {
         let region = Region::new(cfg.aws_region.clone());
@@ -40,6 +62,7 @@ async fn main() {
         rekog,
         supabase_url: cfg.supabase_url.clone(),
         supabase_service_key: cfg.supabase_service_key.clone(),
+        supabase_bucket_public: cfg.supabase_bucket_public.clone(),
     };
 
     let app = likelee_server::router::build_router(state);

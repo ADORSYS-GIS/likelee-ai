@@ -85,3 +85,7 @@ export const registerOrganization = (data: {
 // Liveness
 export const createLivenessSession = (data: { user_id?: string }) =>
   base44Client.post(`/api/liveness/create`, data);
+
+// Dashboard data for a specific user
+export const getDashboard = (user_id: string) =>
+  base44Client.get(`/api/dashboard`, { params: { user_id } });

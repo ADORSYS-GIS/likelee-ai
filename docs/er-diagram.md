@@ -86,13 +86,30 @@ erDiagram
 
     %% pricing (USD-only)
     integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
-    integer per_use_price_cents "check 500..20000 (i.e., $5..$200)"
     text currency_code "check = 'USD'"
     timestamptz pricing_updated_at
 
     %% legacy timestamps (from initial table)
     timestamptz created_at "default now()"
     timestamptz updated_at
+  }
+
+  REFERENCE_IMAGES {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid user_id FK "REFERENCES profiles(id)"
+    text section_id
+    text storage_bucket
+    text storage_path
+    text public_url
+    integer width
+    integer height
+    bigint size_bytes
+    text mime_type
+    text sha256
+    text moderation_status "enum('pending','approved','flagged')"
+    text moderation_reason
+    timestamptz created_at "default now()"
+    uuid created_by
   }
 
   ROYALTY_LEDGER {
@@ -173,6 +190,7 @@ erDiagram
 
   PROFILES ||--o{ ROYALTY_LEDGER : face_id
   PROFILES ||--o{ MODERATION_EVENTS : user_id
+  PROFILES ||--o{ REFERENCE_IMAGES : user_id
   PROFILES ||--o{ ORGANIZATION_PROFILES : owner_user_id
   ORGANIZATION_PROFILES ||--o{ AGENCY_USERS : agency_id
   PROFILES ||--o{ AGENCY_USERS : user_id

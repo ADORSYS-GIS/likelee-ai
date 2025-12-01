@@ -8,3 +8,4 @@ pub mod face_profiles;
 pub mod avatar;
 pub mod organization_profiles;
 pub mod router;
+pub mod reference_images;

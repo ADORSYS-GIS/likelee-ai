@@ -3,6 +3,7 @@ import Layout from './Layout'
 import { useAuth } from '@/auth/AuthProvider'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { toast } from '@/components/ui/use-toast'
 
 export default function Login() {
   const { login, initialized, authenticated } = useAuth()
@@ -47,7 +48,9 @@ export default function Login() {
                   navigate('/CreatorDashboard')
                 }
               } catch (err: any) {
-                setError(err?.message ?? 'Failed to sign in')
+                const msg = err?.message ?? 'Failed to sign in'
+                setError(msg)
+                toast({ title: 'Sign-in failed', description: msg, variant: 'destructive' })
               } finally {
                 setLoading(false)
               }
@@ -94,9 +97,11 @@ export default function Login() {
                       options: { emailRedirectTo: `${window.location.origin}/Login` },
                     })
                     if (error) throw error
-                    alert('Magic link sent. Check your email to complete sign-in.')
+                    toast({ title: 'Magic link sent', description: 'Check your email to complete sign-in.' })
                   } catch (err: any) {
-                    setError(err?.message ?? 'Failed to send magic link')
+                    const msg = err?.message ?? 'Failed to send magic link'
+                    setError(msg)
+                    toast({ title: 'Magic link error', description: msg, variant: 'destructive' })
                   } finally {
                     setLoading(false)
                   }

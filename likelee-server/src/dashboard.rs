@@ -18,7 +18,7 @@ pub async fn get_dashboard(State(state): State<AppState>, Query(q): Query<Dashbo
     let resp = state
         .pg
         .from("profiles")
-        .select("id, email, full_name, city, state, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url")
+        .select("id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url, base_monthly_price_cents, currency_code")
         .eq("id", &q.user_id)
         .execute()
         .await

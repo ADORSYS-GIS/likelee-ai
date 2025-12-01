@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,11 +23,14 @@ import {
   Volume2, Download, Lock, Unlock, Plus, X, LayoutDashboard,
   FileText, Calendar, BarChart3, Menu, ChevronRight, Clock,
   Shield, Building2, Target, PlayCircle, CheckSquare, XCircle,
-  Send, MessageSquare, Copy, ArrowRight, RefreshCw, Wallet as WalletIcon
+  Send, MessageSquare, Copy, ArrowRight, RefreshCw, Wallet as WalletIcon,
+  Gift, CreditCard, Link as LinkIcon,
+  HelpCircle, LogOut
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/auth/AuthProvider'
+import { supabase } from '@/lib/supabase'
 import CameoUpload from './CameoUpload'
 
 // Voice recording scripts for different emotions
@@ -164,180 +167,47 @@ const IMAGE_SECTIONS = [
   }
 ];
 
-// Mock data for campaigns
-const mockActiveCampaigns = [
-  {
-    id: 1,
-    brand: "Nike Sportswear",
-    brand_logo: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100",
-    usage_type: "Social Ads",
-    rate: 500,
-    active_until: "2025-12-31",
-    status: "active",
-    earnings_this_month: 500,
-    regions: ["North America", "Europe"],
-    impressions_week: 125000,
-    auto_renewal: true
-  },
-  {
-    id: 2,
-    brand: "Glossier Beauty",
-    brand_logo: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=100",
-    usage_type: "Web & Banner",
-    rate: 750,
-    active_until: "2026-03-15",
-    status: "active",
-    earnings_this_month: 750,
-    regions: ["Global"],
-    impressions_week: 89000,
-    auto_renewal: false
-  },
-  {
-    id: 3,
-    brand: "Tesla Motors",
-    brand_logo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=100",
-    usage_type: "TV Commercial",
-    rate: 1200,
-    active_until: "2025-06-30",
-    status: "expiring_soon",
-    earnings_this_month: 1200,
-    regions: ["North America"],
-    impressions_week: 250000,
-    auto_renewal: false
-  }
-];
+// Empty defaults for campaigns (until wired to real data)
+const mockActiveCampaigns: any[] = [];
 
-const mockPendingApprovals = [
-  {
-    id: 1,
-    brand: "Adidas Running",
-    brand_logo: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=100",
-    usage_type: "Social Media Campaign",
-    proposed_rate: 600,
-    term_length: "6 months",
-    regions: ["North America", "Asia"],
-    industries: ["Sports / Fitness"],
-    perpetual: false,
-    requested_date: "2025-11-10"
-  },
-  {
-    id: 2,
-    brand: "Whole Foods Market",
-    brand_logo: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=100",
-    usage_type: "Print & Outdoor",
-    proposed_rate: 450,
-    term_length: "3 months",
-    regions: ["North America"],
-    industries: ["Food / Beverage"],
-    perpetual: false,
-    requested_date: "2025-11-09"
-  },
-  {
-    id: 3,
-    brand: "Samsung Electronics",
-    brand_logo: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=100",
-    usage_type: "TV Commercial",
-    proposed_rate: 2000,
-    term_length: "Perpetual",
-    regions: ["Global"],
-    industries: ["Tech / Electronics"],
-    perpetual: true,
-    requested_date: "2025-11-08"
-  }
-];
+const mockPendingApprovals: any[] = [];
 
 const revenueData = [
   { month: 'Jun', revenue: 0 },
-  { month: 'Jul', revenue: 500 },
-  { month: 'Aug', revenue: 1250 },
-  { month: 'Sep', revenue: 1750 },
-  { month: 'Oct', revenue: 2200 },
-  { month: 'Nov', revenue: 2450 }
+  { month: 'Jul', revenue: 0 },
+  { month: 'Aug', revenue: 0 },
+  { month: 'Sep', revenue: 0 },
+  { month: 'Oct', revenue: 0 },
+  { month: 'Nov', revenue: 0 }
 ];
 
-const earningsByIndustry = [
-  { name: 'Sports / Fitness', value: 1200, color: '#32C8D1' },
-  { name: 'Beauty / Fashion', value: 750, color: '#F18B6A' },
-  { name: 'Tech / Electronics', value: 500, color: '#F7B750' }
-];
+const earningsByIndustry: any[] = [];
 
-const mockContracts = [
-  {
-    id: 1,
-    brand: "Nike Sportswear",
-    brand_logo: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100",
-    project_name: "Fall Running Campaign",
-    creator_earnings: 500,
-    earnings_to_date: 3000,
-    status: "active",
-    effective_date: "2024-06-01",
-    expiration_date: "2025-12-31",
-    days_remaining: 395,
-    auto_renew: true,
-    territory: "North America, Europe",
-    channels: ["Social Media", "Website"],
-    deliverables: "2 Instagram Reels (15-30s each), 1 Hero Image",
-    revisions: 2,
-    prohibited_uses: "Competitor brands, political content",
-    payment_status: "paid",
-    amount_paid: 3000,
-    amount_pending: 0
-  },
-  {
-    id: 2,
-    brand: "Glossier Beauty",
-    brand_logo: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=100",
-    project_name: "Holiday Beauty Collection",
-    creator_earnings: 750,
-    earnings_to_date: 4500,
-    status: "active",
-    effective_date: "2024-07-01",
-    expiration_date: "2026-03-15",
-    days_remaining: 488,
-    auto_renew: false,
-    territory: "Global",
-    channels: ["Social Media", "Website", "Email Marketing"],
-    deliverables: "3 TikTok videos, 2 Instagram posts",
-    revisions: 3,
-    prohibited_uses: "Adult content, tobacco",
-    payment_status: "paid",
-    amount_paid: 4500,
-    amount_pending: 0
-  },
-  {
-    id: 3,
-    brand: "Tesla Motors",
-    brand_logo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=100",
-    project_name: "Model Y Launch",
-    creator_earnings: 1200,
-    earnings_to_date: 7200,
-    status: "expiring_soon",
-    effective_date: "2024-12-01",
-    expiration_date: "2025-06-30",
-    days_remaining: 14,
-    auto_renew: false,
-    territory: "North America",
-    channels: ["TV Commercial", "Web"],
-    deliverables: "1 TV spot (30s), 3 web banner images",
-    revisions: 2,
-    prohibited_uses: "Competitor automotive brands",
-    payment_status: "paid",
-    amount_paid: 7200,
-    amount_pending: 0
-  }
-];
+const mockContracts: any[] = [];
 
 export default function CreatorDashboard() {
   const navigate = useNavigate();
-  const { user, initialized, authenticated } = useAuth()
+  const [searchParams] = useSearchParams();
+  const { user, initialized, authenticated, logout } = useAuth()
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || ''
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [creator, setCreator] = useState<any>({});
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   const [heroMedia, setHeroMedia] = useState(null);
   const [photos, setPhotos] = useState([]);
+
+  // Initialize active section from query string if provided
+  useEffect(() => {
+    const s = searchParams.get('section');
+    if (!s) return;
+    const validIds = navigationItems.map((n) => n.id);
+    if (validIds.includes(s)) {
+      setActiveSection(s);
+    }
+  }, [searchParams]);
   const [voiceLibrary, setVoiceLibrary] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -346,6 +216,7 @@ export default function CreatorDashboard() {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>(mockPendingApprovals);
   const [editingRules, setEditingRules] = useState(false);
   const [contracts, setContracts] = useState<any[]>(mockContracts);
+  const [contentItems, setContentItems] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState(null);
   const [showContractDetails, setShowContractDetails] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
@@ -363,17 +234,17 @@ export default function CreatorDashboard() {
     headshot_smiling: null,
     fullbody_casual: null,
     fullbody_formal: null,
-    side_profile: { url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400" },
+    side_profile: null,
     three_quarter: null,
-    hair_down: { url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400" },
+    hair_down: null,
     hair_up: null,
     hair_styling: null,
-    upper_body: { url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400" },
+    upper_body: null,
     outdoors: null,
-    indoors: { url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400" },
+    indoors: null,
     makeup_variation: null,
-    seasonal: { url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400" },
-    signature: { url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400" }
+    seasonal: null,
+    signature: null
   });
   const [contentPreferences, setContentPreferences] = useState({
     comfortable: ["Fashion & Beauty", "Product Reviews", "Testimonials", "Social Media Content", "Educational Content", "Fitness/Wellness", "Lifestyle Content"],
@@ -396,6 +267,7 @@ export default function CreatorDashboard() {
   const totalMonthlyRevenue = activeCampaigns.reduce((sum, c) => sum + (c.rate || 0), 0);
   const annualRunRate = totalMonthlyRevenue * 12;
   const pendingCount = pendingApprovals.length;
+  const expiringCount = activeCampaigns.filter((c) => c.status === 'expiring_soon').length;
 
   // Fetch per-user dashboard data
   useEffect(() => {
@@ -413,14 +285,17 @@ export default function CreatorDashboard() {
           email: profile.email || creator.email,
           profile_photo: creator.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(', '),
-          bio: creator.bio,
+          bio: profile.bio || creator.bio,
           instagram_handle: profile.platform_handle ? `@${profile.platform_handle}` : creator.instagram_handle,
           tiktok_handle: creator.tiktok_handle,
           instagram_connected: creator.instagram_connected ?? false,
           instagram_followers: creator.instagram_followers ?? 0,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
-          price_per_week: creator.price_per_week ?? 0,
+          // Derive weekly price from monthly base (USD-only)
+          price_per_week: (typeof profile.base_monthly_price_cents === 'number')
+            ? Math.round((profile.base_monthly_price_cents / 100) / 4)
+            : (creator.price_per_week ?? 0),
           royalty_percentage: creator.royalty_percentage ?? 0,
           accept_negotiations: creator.accept_negotiations ?? true,
           kyc_status: profile.kyc_status,
@@ -484,6 +359,7 @@ export default function CreatorDashboard() {
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "content", label: "Content", icon: PlayCircle },
     { id: "likeness", label: "My Likeness", icon: ImageIcon },
     { id: "voice", label: "Voice & Recordings", icon: Mic },
     { id: "campaigns", label: "Active Campaigns", icon: Target, badge: activeCampaigns.length },
@@ -507,6 +383,61 @@ export default function CreatorDashboard() {
         alert("Hero media uploaded! (Demo mode)");
       }, 1000);
     }
+  };
+
+  const renderContent = () => {
+    const detectionsCount = 0;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Content</h2>
+          <p className="text-gray-600 mt-1">Track content created with your likeness</p>
+        </div>
+
+        <Alert className="bg-blue-50 border border-blue-200">
+          <AlertCircle className="h-5 w-5 text-blue-600" />
+          <AlertDescription className="text-blue-900">
+            Welcome to your Content page! You don't have any content yet — when brands publish content with your licensed likeness, it will appear here.
+          </AlertDescription>
+        </Alert>
+
+        <div className="flex items-center gap-4">
+          <Badge className="bg-gray-900 text-white">Brand Content ({contentItems.length})</Badge>
+          <Badge className="bg-red-100 text-red-700 border border-red-300">Detections ({detectionsCount})</Badge>
+        </div>
+
+        {contentItems.length === 0 ? (
+          <Card className="p-10 text-center text-gray-600">
+            <p>No brand content yet.</p>
+            <p className="text-sm text-gray-500 mt-1">Complete your profile to get discovered and start receiving opportunities.</p>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {contentItems.map((item) => (
+              <Card key={item.id} className="overflow-hidden">
+                {item.thumbnail_url ? (
+                  <img src={item.thumbnail_url} alt={item.title || 'Content'} className="w-full h-40 object-cover" />
+                ) : null}
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-gray-900 truncate">{item.title || 'Untitled Content'}</div>
+                    {item.platform && <Badge className="bg-gray-100 text-gray-700 border border-gray-300">{item.platform}</Badge>}
+                  </div>
+                  {item.published_at && (
+                    <div className="text-xs text-gray-500 mt-1">Published {new Date(item.published_at).toLocaleDateString()}</div>
+                  )}
+                  {item.url && (
+                    <Button asChild variant="outline" className="w-full mt-3 border-2 border-gray-300">
+                      <a href={item.url} target="_blank" rel="noreferrer">Open</a>
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handlePhotosUpload = (e) => {
@@ -783,162 +714,122 @@ export default function CreatorDashboard() {
     alert("Profile updated! (Demo mode)");
   };
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      {/* Top Section - Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-gray-600">Total Monthly Revenue</p>
-            <DollarSign className="w-5 h-5 text-[#32C8D1]" />
-          </div>
-          <p className="text-4xl font-bold text-gray-900">${totalMonthlyRevenue.toLocaleString()}</p>
-          <p className="text-sm text-gray-600 mt-1">From {activeCampaigns.length} active campaigns</p>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-            <Target className="w-5 h-5 text-[#32C8D1]" />
-          </div>
-          <p className="text-4xl font-bold text-gray-900">{activeCampaigns.length}</p>
-          <Badge className="mt-2 bg-green-100 text-green-700 border border-green-300">All Running</Badge>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-            <AlertCircle className="w-5 h-5 text-yellow-600" />
-          </div>
-          <p className="text-4xl font-bold text-gray-900">{pendingCount}</p>
-          {pendingCount > 0 && (
-            <Badge className="mt-2 bg-yellow-100 text-yellow-700 border border-yellow-300">Action Needed</Badge>
-          )}
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-gray-600">Annual Run Rate</p>
-            <TrendingUp className="w-5 h-5 text-[#32C8D1]" />
-          </div>
-          <p className="text-4xl font-bold text-gray-900">${annualRunRate.toLocaleString()}</p>
-          <p className="text-sm text-gray-600 mt-1">Based on active licenses</p>
-        </Card>
-      </div>
-
-      {/* Action Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card 
-          className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-          onClick={() => setActiveSection("approvals")}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <CheckSquare className="w-6 h-6 text-yellow-600" />
+  const renderDashboard = () => {
+    const imagesFilled = Object.values(referenceImages).filter((img) => img !== null).length;
+    const imagesTotal = IMAGE_SECTIONS.length;
+    const cameoPresent = !!heroMedia;
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-600">Total Monthly Revenue</p>
+              <DollarSign className="w-5 h-5 text-[#32C8D1]" />
             </div>
-            {pendingCount > 0 && (
-              <Badge className="bg-yellow-500 text-white">{pendingCount}</Badge>
-            )}
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Review {pendingCount} Usage Request{pendingCount !== 1 ? 's' : ''}</h3>
-          <p className="text-sm text-gray-600">Brands waiting for approval</p>
-        </Card>
-
-        <Card 
-          className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-          onClick={() => setActiveSection("voice")}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
-              <Mic className="w-6 h-6 text-[#32C8D1]" />
+            <p className="text-4xl font-bold text-gray-900">${totalMonthlyRevenue.toLocaleString()}</p>
+            <p className="text-sm text-gray-600 mt-1">Your revenue will appear here once your first license activates</p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
+              <Target className="w-5 h-5 text-[#32C8D1]" />
             </div>
-            <Badge className="bg-[#32C8D1] text-white">{voiceLibrary.length}</Badge>
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Upload New Voice Tone</h3>
-          <p className="text-sm text-gray-600">Expand your voice library</p>
-        </Card>
-
-        <Card 
-          className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-          onClick={() => setActiveSection("campaigns")}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-orange-600" />
+            <p className="text-4xl font-bold text-gray-900">{activeCampaigns.length}</p>
+            <p className="text-sm text-gray-600 mt-1">Ready for your first deal? Complete your profile below to get discovered</p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
+              <AlertCircle className="w-5 h-5 text-gray-500" />
             </div>
-            <Badge className="bg-orange-100 text-orange-700 border border-orange-300">1 Expiring</Badge>
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Pause/Renew Expiring Campaign</h3>
-          <p className="text-sm text-gray-600">Tesla Motors ends Jun 30</p>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Revenue Trend (Last 6 Months)</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="revenue" stroke="#32C8D1" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Earnings by Industry</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={earningsByIndustry}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({name, value}) => `${name}: $${value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {earningsByIndustry.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
-
-      {/* Usage Frequency */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Usage Frequency</h3>
-        <div className="space-y-3">
-          {activeCampaigns.map((campaign) => (
-            <div key={campaign.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <img 
-                  src={campaign.brand_logo} 
-                  alt={campaign.brand}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold text-gray-900">{campaign.brand}</p>
-                  <p className="text-xs text-gray-500">{campaign.usage_type}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900">{campaign.impressions_week.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">impressions/week</p>
-              </div>
+            <p className="text-4xl font-bold text-gray-900">{pendingCount}</p>
+            <p className="text-sm text-gray-600 mt-1">Brands are waiting to see your complete profile</p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-600">Annual Run Rate</p>
+              <TrendingUp className="w-5 h-5 text-[#32C8D1]" />
             </div>
-          ))}
+            <p className="text-4xl font-bold text-gray-900">${annualRunRate.toLocaleString()}</p>
+            <p className="text-sm text-gray-600 mt-1">Based on active licenses</p>
+          </Card>
         </div>
-      </Card>
-    </div>
-  );
+
+        <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveSection("likeness")}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-6 h-6 text-[#32C8D1]" />
+              </div>
+              <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300">Priority</Badge>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Complete Your Profile</h3>
+            <p className="text-sm text-gray-600">Add reference images and your cameo video to get discovered by brands</p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveSection("voice")}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Mic className="w-6 h-6 text-purple-600" />
+              </div>
+              <Badge className="bg-purple-100 text-purple-700 border border-purple-300">{voiceLibrary.length}/6</Badge>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Upload Your First Voice Tone</h3>
+            <p className="text-sm text-gray-600">Strengthen your profile with voice recordings</p>
+          </Card>
+        </div>
+
+        <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+        <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
+          <p>Your campaign activity will show here once licenses activate</p>
+          <p className="text-sm text-gray-500 mt-1">Complete your profile to start receiving brand opportunities</p>
+        </Card>
+
+        <Card className="p-4 md:p-5 bg-white border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Profile Status</h3>
+            <Badge className="bg-[#32C8D1] text-white">Complete to Get Discovered During Pilot</Badge>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Reference Images */}
+            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-cyan-600" />
+                <span>Reference Images</span>
+              </div>
+              <div className="text-3xl font-bold text-gray-900">{imagesFilled}/{imagesTotal}</div>
+              <Progress value={Math.round((imagesFilled / imagesTotal) * 100)} className="h-2 mt-3 bg-gray-200" />
+            </div>
+
+            {/* Voice Recordings */}
+            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+                <Mic className="w-4 h-4 text-purple-600" />
+                <span>Voice Recordings</span>
+              </div>
+              <div className="text-3xl font-bold text-gray-900">{voiceLibrary.length}/6</div>
+              <Progress value={Math.min(voiceLibrary.length * (100 / 6), 100)} className="h-2 mt-3 bg-gray-200" />
+            </div>
+
+            {/* Cameo Video */}
+            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  <Video className="w-4 h-4 text-orange-600" />
+                  <span>Cameo Video</span>
+                </div>
+                {!cameoPresent && (
+                  <span className="text-xs bg-red-100 text-red-700 border border-red-300 rounded px-2 py-0.5">Missing</span>
+                )}
+              </div>
+              <div className="text-3xl font-bold text-gray-900">{cameoPresent ? 1 : 0}/1</div>
+              <Progress value={cameoPresent ? 100 : 0} className="h-2 mt-3 bg-gray-200" />
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  };
 
   const handleImageSectionUpload = (sectionId) => {
     setSelectedImageSection(sectionId);
@@ -958,21 +849,54 @@ export default function CreatorDashboard() {
     }
   };
 
-  const confirmImageUpload = () => {
-    if (!previewImage || !selectedImageSection) return;
-    
-    setUploadingToSection(true);
-    setTimeout(() => {
+  const confirmImageUpload = async () => {
+    try {
+      if (!previewImage || !selectedImageSection) return;
+      if (!user) { alert('Please log in to upload.'); return; }
+      const file: File = previewImage.file;
+      if (!file) { alert('No file selected.'); return; }
+      // Server pre-scan is limited to 5MB
+      if (file.size > 5_000_000) { alert('Please upload an image ≤ 5MB.'); return; }
+
+      setUploadingToSection(true);
+
+      // Upload via backend (Option B: server-only writes)
+      const apiBase = (import.meta as any).env.VITE_API_BASE_URL || (import.meta as any).env.VITE_API_BASE || 'http://localhost:8787'
+      const buf = await file.arrayBuffer()
+      const res = await fetch(`${apiBase}/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}` , {
+        method: 'POST',
+        headers: { 'content-type': file.type || 'image/jpeg' },
+        body: new Uint8Array(buf),
+      })
+      if (!res.ok) {
+        const raw = await res.text();
+        try {
+          const err = JSON.parse(raw);
+          const msg: string = err?.message || 'Upload failed';
+          const reasons: string[] = Array.isArray(err?.reasons) ? err.reasons : [];
+          alert(`${msg}${reasons.length ? '\n\nDetails:\n- ' + reasons.join('\n- ') : ''}`);
+        } catch {
+          alert(raw || 'Upload failed');
+        }
+        setUploadingToSection(false);
+        return;
+      }
+      const out = await res.json()
+      const publicUrl = out?.public_url
+
       setReferenceImages({
         ...referenceImages,
-        [selectedImageSection]: { url: previewImage.url }
+        [selectedImageSection]: { url: publicUrl }
       });
-      setUploadingToSection(false);
       setShowImageUploadModal(false);
       setSelectedImageSection(null);
       setPreviewImage(null);
-      alert("Reference image uploaded! (Demo mode)");
-    }, 1000);
+      alert('Reference image uploaded!');
+    } catch (e: any) {
+      alert(`Upload failed: ${e?.message || e}`)
+    } finally {
+      setUploadingToSection(false);
+    }
   };
 
   const deleteReferenceImage = (sectionId) => {
@@ -2200,111 +2124,120 @@ export default function CreatorDashboard() {
           <h2 className="text-3xl font-bold text-gray-900">Earnings Dashboard</h2>
           <p className="text-gray-600 mt-1">Track your revenue and payments</p>
         </div>
-        <Button
-          onClick={() => navigate(createPageUrl("RoyaltyWallet"))}
-          variant="outline"
-          className="rounded-full border-2 border-black bg-gradient-to-r from-[#F18B6A] to-pink-500 text-white hover:from-[#E07A5A] hover:to-pink-600 shadow-sm px-4 py-2 flex items-center gap-2"
-        >
-          <WalletIcon className="w-4 h-4" />
-          Royalty Wallet
+        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2">
+          <DollarSign className="w-4 h-4" />
+          Cash Out
         </Button>
       </div>
 
-      {/* Key Earnings Metrics */}
+      {/* Info banner */}
+      <Alert className="bg-blue-50 border border-blue-200 text-blue-900">
+        <AlertCircle className="h-5 w-5 text-blue-600" />
+        <AlertDescription>
+          <span className="font-semibold">Your earnings dashboard is ready!</span> Once your licenses activate, you'll see real-time earnings here. Currently, you have no active contracts.
+        </AlertDescription>
+      </Alert>
+
+      {/* Key metrics */}
       <div className="grid md:grid-cols-4 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
-          <p className="text-3xl font-bold text-gray-900">$14,700</p>
-          <p className="text-sm text-green-600 mt-1">+156% vs last year</p>
+          <p className="text-3xl font-bold text-gray-900">$0</p>
+          <p className="text-sm text-gray-600 mt-1">Will update once your first license activates</p>
         </Card>
-
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
-          <p className="text-3xl font-bold text-gray-900">${totalMonthlyRevenue.toLocaleString()}</p>
-          <p className="text-sm text-gray-600 mt-1">From {activeCampaigns.length} campaigns</p>
+          <p className="text-3xl font-bold text-gray-900">$0</p>
+          <p className="text-sm text-gray-600 mt-1">Waiting for active campaigns</p>
         </Card>
-
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
-          <p className="text-3xl font-bold text-gray-900">${totalMonthlyRevenue.toLocaleString()}</p>
-          <Badge className="mt-2 bg-blue-100 text-blue-700 border border-blue-300">Same as current</Badge>
+          <p className="text-3xl font-bold text-gray-900">$0</p>
+          <p className="text-sm text-gray-600 mt-1">Will calculate based on active licenses</p>
         </Card>
-
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">Next Payment</p>
-          <p className="text-2xl font-bold text-gray-900">Dec 1, 2025</p>
-          <p className="text-sm text-gray-600 mt-1">${totalMonthlyRevenue} pending</p>
+          <p className="text-2xl font-bold text-gray-900">To be determined</p>
+          <p className="text-sm text-gray-600 mt-1">No active contracts yet</p>
         </Card>
       </div>
 
-      {/* Earnings Comparison */}
-      <Card className="p-6 bg-gray-100 border border-gray-300">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Comparison Widget</h3>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="p-4 bg-white rounded-lg border border-gray-200">
-            <p className="text-gray-600 mb-2">Traditional Model:</p>
-            <p className="text-3xl font-bold text-gray-900">$500</p>
-            <p className="text-sm text-gray-600">One-time payment</p>
+      {/* Charts row */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Revenue Trend (Last 6 Months)</h3>
+          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+            <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div>Your revenue trend will appear here</div>
+            <div className="text-sm text-gray-500 mt-1">Once you have active campaigns</div>
           </div>
-          <div className="p-4 bg-white rounded-lg border border-gray-200">
-            <p className="text-gray-600 mb-2">Likelee Model:</p>
-            <p className="text-3xl font-bold text-[#32C8D1]">${totalMonthlyRevenue}/month</p>
-            <p className="text-sm text-gray-600">6 months = ${totalMonthlyRevenue * 6}</p>
+        </Card>
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Earnings by Industry</h3>
+          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+            <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div>Your industry breakdown will appear here</div>
+            <div className="text-sm text-gray-500 mt-1">Once you have active campaigns</div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Comparison Banner */}
+      <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">This is what your earnings could look like</h3>
+          <p className="text-sm text-gray-600">See how Likelee's recurring model compares to traditional one-time payments</p>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="p-5 bg-white rounded-lg border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
+            <p className="text-3xl font-bold text-gray-900">$500</p>
+            <p className="text-sm text-gray-600">One-time payment per campaign</p>
+          </div>
+          <div className="p-5 bg-white rounded-lg border border-cyan-300">
+            <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
+            <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
+            <p className="text-sm text-gray-600">Per active license • Recurring revenue</p>
           </div>
         </div>
       </Card>
 
-      {/* Revenue by Campaign */}
+      {/* Earnings by Campaign */}
       <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Earnings by Campaign</h3>
-        <div className="space-y-3">
-          {activeCampaigns.map((campaign) => (
-            <div key={campaign.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="flex items-center gap-3">
-                <img 
-                  src={campaign.brand_logo} 
-                  alt={campaign.brand}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold text-gray-900">{campaign.brand}</p>
-                  <p className="text-xs text-gray-500">{campaign.usage_type}</p>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Earnings by Campaign</h3>
+        {activeCampaigns.length === 0 ? (
+          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+            <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div className="font-semibold text-gray-900">Your campaigns will appear here</div>
+            <div className="text-sm text-gray-500 mt-1">Once you have active licenses generating revenue</div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activeCampaigns.map((c) => (
+              <div key={c.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="font-semibold text-gray-900 truncate">{c.name || c.brand || 'Campaign'}</div>
+                <div className="text-right">
+                  <div className="font-bold text-gray-900">${(c.earnings_this_month || 0).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500">this month</div>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900">${campaign.earnings_this_month}</p>
-                <p className="text-xs text-gray-500">this month</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Payment History */}
       <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Payment History</h3>
-        <div className="space-y-3">
-          {[
-            { date: "2025-11-01", amount: 2450, status: "paid", transaction: "TXN_112025" },
-            { date: "2025-10-01", amount: 2200, status: "paid", transaction: "TXN_102025" },
-            { date: "2025-09-01", amount: 1750, status: "paid", transaction: "TXN_092025" }
-          ].map((payment, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div>
-                <p className="font-semibold text-gray-900">{new Date(payment.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-                <p className="text-xs text-gray-500">{payment.transaction}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-green-600">${payment.amount.toLocaleString()}</p>
-                <Badge className="bg-green-100 text-green-700 border border-green-300 text-xs">Paid</Badge>
-              </div>
-            </div>
-          ))}
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Payment History</h3>
+        <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+          <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <div className="font-semibold text-gray-900">Your payment history will appear here</div>
+          <div className="text-sm text-gray-500 mt-1">Once you receive your first payout</div>
         </div>
-        <Button variant="outline" className="w-full mt-4 border-2 border-gray-300">
-          Download Tax Summary (1099)
-        </Button>
       </Card>
+      <Button variant="outline" disabled className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed">
+        Download Tax Summary (1099)
+      </Button>
     </div>
   );
 
@@ -2450,6 +2383,19 @@ export default function CreatorDashboard() {
                   onChange={(e) => setCreator({...creator, tiktok_handle: e.target.value})}
                   className="border-2 border-gray-300"
                   placeholder="@yourhandle"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  <LinkIcon className="w-4 h-4 inline mr-2" />
+                  External Portfolio URL
+                </Label>
+                <Input
+                  value={creator.portfolio_url || ""}
+                  onChange={(e) => setCreator({ ...creator, portfolio_url: e.target.value })}
+                  className="border-2 border-gray-300"
+                  placeholder="https://yourportfolio.com"
                 />
               </div>
 
@@ -2694,7 +2640,7 @@ export default function CreatorDashboard() {
       {/* Sidebar */}
       <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}>
         {/* Profile Section */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 relative">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
               {creator?.kyc_status === 'approved' ? (
@@ -2715,7 +2661,7 @@ export default function CreatorDashboard() {
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <div className="w-14 h-14 rounded-full p-[2px] animate-spin" style={{ background: 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)', animationDuration: '3s' }}>
+                <div className="w-14 h-14 rounded-full p-[2px]" style={{ background: 'conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)' }}>
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                     <Avatar className="w-12 h-12">
                       {creator?.profile_photo ? (
@@ -2736,9 +2682,21 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex items-center gap-2">
                 <p className="font-bold text-gray-900 truncate">{creator.name}</p>
+                {creator?.kyc_status === 'approved' && (
+                  <Badge className="bg-gray-900 text-green-400 border border-green-500">
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Creator
+                  </Badge>
+                )}
               </div>
+              <button
+                className="ml-auto text-gray-600 hover:text-gray-900"
+                onClick={() => setShowProfileMenu((v) => !v)}
+                aria-label="Open profile menu"
+              >
+                <ChevronRight className={`w-5 h-5 transition-transform ${showProfileMenu ? 'rotate-90' : ''}`} />
+              </button>
             </div>
           ) : (
             <div className="mx-auto">
@@ -2781,6 +2739,61 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {showProfileMenu && (
+            <div className="absolute left-6 right-6 mt-2 bg-white border-2 border-gray-200 shadow-xl z-50">
+              <div className="p-2">
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
+                  onClick={() => {
+                    setActiveSection('settings');
+                    setSettingsTab('profile');
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <Edit className="w-4 h-4 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-900">Edit Profile</span>
+                </button>
+
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
+                  onClick={() => {
+                    const url = `${window.location.origin}/PublicProfile`;
+                    window.open(url, '_blank');
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <Eye className="w-4 h-4 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-900">View Public Profile</span>
+                </button>
+
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
+                  onClick={() => {
+                    navigate('/Support');
+                    setShowProfileMenu(false);
+                  }}
+                >
+                  <HelpCircle className="w-4 h-4 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-900">Help / Support</span>
+                </button>
+              </div>
+
+              <div className="p-2 border-t border-gray-200">
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left text-red-600"
+                  onClick={async () => {
+                    try { await logout?.() } catch (_) {}
+                    setShowProfileMenu(false);
+                    navigate('/Login');
+                  }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm font-medium">Logout</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -2832,6 +2845,7 @@ export default function CreatorDashboard() {
       <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300 overflow-y-auto`}>
         <div className="p-8">
           {activeSection === "dashboard" && renderDashboard()}
+          {activeSection === "content" && renderContent()}
           {activeSection === "likeness" && renderLikeness()}
           {activeSection === "voice" && renderVoice()}
           {activeSection === "campaigns" && renderCampaigns()}
@@ -3116,14 +3130,14 @@ export default function CreatorDashboard() {
 
       {/* Image Upload Modal */}
       <Dialog open={showImageUploadModal} onOpenChange={setShowImageUploadModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Upload Reference Image
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-4 space-y-6">
+          <div className="py-4 space-y-6 overflow-y-auto pr-2 max-h-[65vh]">
             {selectedImageSection && (() => {
               const section = IMAGE_SECTIONS.find(s => s.id === selectedImageSection);
               if (!section) return null;
@@ -3186,7 +3200,7 @@ export default function CreatorDashboard() {
                       <img 
                         src={previewImage.url}
                         alt="Preview"
-                        className="w-full max-h-96 object-contain border-2 border-gray-200 rounded-lg mb-4"
+                        className="w-full max-h-[50vh] object-contain border-2 border-gray-200 rounded-lg mb-4"
                       />
                       
                       <Card className="p-4 bg-green-50 border border-green-200">
@@ -3209,7 +3223,7 @@ export default function CreatorDashboard() {
                     </div>
                   )}
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 sticky bottom-0 bg-white pt-3">
                     <Button 
                       variant="outline" 
                       onClick={() => {

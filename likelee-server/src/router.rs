@@ -23,6 +23,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/face-profiles/:id", post(crate::face_profiles::update_face_profile))
         .route("/api/moderation/image", post(crate::moderation::moderate_image))
         .route("/api/moderation/image-bytes", post(crate::moderation::moderate_image_bytes))
+        .route("/api/reference-images/upload", post(crate::reference_images::upload_reference_image))
         .route("/api/liveness/create", post(crate::liveness::create_session))
         .route("/api/liveness/result", post(crate::liveness::liveness_result))
         .with_state(state)
