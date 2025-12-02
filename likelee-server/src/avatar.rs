@@ -1,6 +1,6 @@
+use crate::config::AppState;
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
-use crate::config::AppState;
 
 #[derive(Deserialize)]
 pub struct GenerateAvatarRequest {
@@ -19,6 +19,11 @@ pub struct GenerateAvatarResponse {
     pub avatar_canonical_url: Option<String>,
 }
 
-pub async fn generate_avatar(_state: State<AppState>, Json(_req): Json<GenerateAvatarRequest>) -> Result<Json<GenerateAvatarResponse>, (StatusCode, String)> {
-    Ok(Json(GenerateAvatarResponse { avatar_canonical_url: None }))
+pub async fn generate_avatar(
+    _state: State<AppState>,
+    Json(_req): Json<GenerateAvatarRequest>,
+) -> Result<Json<GenerateAvatarResponse>, (StatusCode, String)> {
+    Ok(Json(GenerateAvatarResponse {
+        avatar_canonical_url: None,
+    }))
 }

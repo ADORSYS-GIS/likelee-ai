@@ -2,7 +2,8 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
 const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 300; // time after dismiss to fully remove
+const AUTO_DISMISS_DELAY = 2000; // auto close after 2s
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -119,8 +120,15 @@ function toast({ ...props }) {
       toast: { ...props, id },
     });
 
-  const dismiss = () =>
+  let autoTimer: any = null;
+
+  const dismiss = () => {
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+  };
 
   dispatch({
     type: actionTypes.ADD_TOAST,
@@ -133,6 +141,11 @@ function toast({ ...props }) {
       },
     },
   });
+
+  // Schedule automatic dismiss
+  autoTimer = setTimeout(() => {
+    dismiss();
+  }, AUTO_DISMISS_DELAY);
 
   return {
     id,

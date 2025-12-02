@@ -34,7 +34,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 ## 4. Architecture Overview
 
 - Web SPA (likelee-ui): React + TypeScript + Vite + Tailwind.
-- Backend/Data: Firebase Realtime Database, Firebase Authentication, Firebase Storage.
+- Backend/Data: Supabase (Auth, Postgres, Storage) with service APIs (Rust axum server).
 - Core services (logical):
   - Royalty Ledger: record bookings and expose reads for dashboards.
   - Watermark API: apply invisible watermark to exports; hash tied to booking ID.
@@ -46,7 +46,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 ## 5. Tech Stack
 
 - Frontend: React 18.2.0, TypeScript, Vite 6.5, Tailwind CSS 3.4.16.
-- Backend: Firebase (Auth, Realtime DB, Storage). Future: functions/services as needed, Rust axum framework.
+- Backend: Supabase (Auth, Postgres, Storage) + Rust axum server.
 
 ## 6. External Integrations
 
@@ -54,7 +54,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 | -------------------------- | ------------------------------------------------------------------------------------- |
 | Payments & Billing         | Stripe Connect, Stripe Checkout                                                       |
 | AI Generation/Rendering    | Replicate API, Hugging Face APIs, Together.ai                                         |
-| Storage & Database         | Firebase Realtime Database, Firebase Storage                                          |
+| Storage & Database         | Supabase (Auth, Postgres, Storage)                                                    |
 | Asset Traceability         | Truepic Lens (invisible watermarking)                                                 |
 | Moderation & Liveness     | AWS Rekognition (Moderation, Face Liveness)                                           |
 | Royalty Tracking (P2)      | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only)                   |
@@ -67,6 +67,10 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   - Booking → Ledger entry (immutable) with references to payments, C2PA/watermark hash.
 - Consent:
   - Explicit consent steps for uploading face photos and licensing terms.
+
+Reference images storage model (Supabase):
+- `reference_images` table stores creator reference images (including the three cameo angles). Columns include: user_id, section_id (e.g., headshot_neutral, headshot_smiling, etc.), storage_bucket, storage_path, public_url (if public), width, height, size_bytes, mime_type, sha256, moderation_status, moderation_reason, created_at, created_by, deleted_at.
+- The three cameo images (front/left/right) are fully migrated into `reference_images` and no longer kept as separate columns on profiles for new writes. Legacy reads can be supported via a one-time backfill or view.
 
 ## 8. Security, Compliance, and Ethics
 
@@ -117,6 +121,9 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 ### Environment Variables (Backend – likelee-server)
 - SUPABASE_URL (required)
 - SUPABASE_SERVICE_KEY (required)
+- SUPABASE_BUCKET_PRIVATE (default: likelee-private)
+- SUPABASE_BUCKET_PUBLIC (default: likelee-public)
+- SUPABASE_BUCKET_TEMP (default: likelee-temp)
 - PORT (default: 8787)
 - VERIFF_BASE_URL (required)
 - VERIFF_API_KEY (required)
@@ -137,7 +144,24 @@ Notes:
 - VITE_API_BASE_URL – e.g. http://localhost:8787
 - VITE_AWS_REGION – must be a valid AWS region (e.g., us-east-1, eu-west-1)
 - VITE_COGNITO_IDENTITY_POOL_ID – e.g., us-east-1:xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
- - VITE_LIVENESS_DEBUG – set "1" to show in-app debug panel (optional)
+- VITE_LIVENESS_DEBUG – set "1" to show in-app debug panel (optional)
+
+### Storage Architecture (Supabase)
+- Buckets
+  - likelee-private (private): sensitive creator assets and drafts.
+  - likelee-public (public): publicly viewable reference images and approved assets.
+  - likelee-temp (private): temporary uploads prior to moderation.
+- Paths
+  - likelee-public: `likeness/{user_id}/sections/{section_id}/{ts}.{ext}` (Images section is public by design.)
+  - likelee-private: `faces/{user_id}/reference/{front|left|right}.jpg` (legacy) → migrated to `reference_images` under sections.
+  - likelee-temp: `tmp/{user_id}/{uuid}.{ext}` (auto-clean TTL ~24h).
+- Access
+  - Public bucket is read-public; writes via server only.
+  - Private/temp buckets are non-public; access via signed URLs when required.
+- Moderation Flow
+  - Pre-scan bytes → upload → post-scan (best-effort) → DB mark `approved` or move to quarantine.
+- Migration note
+  - The three cameo images (front, left, right) are fully moved into `reference_images` using section_ids (e.g., `cameo_front`, `cameo_left`, `cameo_right`) or mapped to existing headshot sections. Profiles no longer store separate cameo URL columns for new writes.
 
 ### Rekognition Face Liveness – Region Alignment
 - Face Liveness is available only in specific regions. Use a supported region (e.g., us-east-1 or eu-west-1).
