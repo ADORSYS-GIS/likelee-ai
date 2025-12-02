@@ -1,0 +1,40 @@
+name: Manual Rollback to Previous Tag (EC2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag (SHA) to rollback to. Leave empty to use previous recorded tag on EC2."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY_IMAGE_SERVER: ghcr.io/${{ github.repository }}/likelee-server
+  REGISTRY_IMAGE_UI: ghcr.io/${{ github.repository }}/likelee-ui
+  REMOTE_DIR: /opt/likelee/deploy/ec2
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger rollback on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.REMOTE_DIR }}
+            export REGISTRY_IMAGE_SERVER='${{ env.REGISTRY_IMAGE_SERVER }}'
+            export REGISTRY_IMAGE_UI='${{ env.REGISTRY_IMAGE_UI }}'
+            chmod +x scripts/rollback.sh || true
+            if [ -n "${{ github.event.inputs.tag }}" ]; then
+              ./scripts/rollback.sh "${{ github.event.inputs.tag }}"
+            else
+              ./scripts/rollback.sh
+            fi
+            echo "Rollback requested to tag: '${{ github.event.inputs.tag }}'"

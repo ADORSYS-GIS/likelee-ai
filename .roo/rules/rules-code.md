@@ -49,6 +49,10 @@
 
 ## Database/Migrations
 - When adding migrations (`supabase/migrations/*.sql`), generate a Mermaid ER diagram for table relations and include it in the PR.
+- IDs must be generated at the database level.
+  - Primary keys should use DB defaults (e.g., `uuid_generate_v4()` / `gen_random_uuid()`) and must not be provided by clients or backend code.
+  - Server handlers must not require clients to send `id` fields; derive foreign keys from authenticated context or headers where possible.
+  - Any exception must be explicitly documented in `docs/design.md` and validated in code.
 
 ## Logging/Diagnostics
 - Log effective AWS region at startup and warn on non‑supported or mismatched regions.

@@ -27,8 +27,9 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: "border bg-background text-foreground",
+        // Brand-matched destructive style: teal gradient background and black border/text for strong contrast
         destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+          "group border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white",
       },
     },
     defaultVariants: {
@@ -52,7 +53,7 @@ const ToastAction = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-black group-[.destructive]:hover:border-black group-[.destructive]:hover:bg-black/10 group-[.destructive]:hover:text-white group-[.destructive]:focus:ring-teal-400",
       className,
     )}
     {...props}
@@ -64,7 +65,7 @@ const ToastClose = React.forwardRef(({ className, ...props }, ref) => (
   <button
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-teal-100 group-[.destructive]:hover:text-white group-[.destructive]:focus:ring-teal-300 group-[.destructive]:focus:ring-offset-black",
       className,
     )}
     toast-close=""

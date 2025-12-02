@@ -1,0 +1,130 @@
+name: Deploy to EC2 (Active on main)
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+  SERVER_IMAGE_NAME: likelee-server
+  UI_IMAGE_NAME: likelee-ui
+  # Change if your org/repo differs
+  REGISTRY_IMAGE_SERVER: ghcr.io/${{ github.repository }}/likelee-server
+  REGISTRY_IMAGE_UI: ghcr.io/${{ github.repository }}/likelee-ui
+  REMOTE_DIR: /opt/likelee/deploy/ec2
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push likelee-server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: likelee-server/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY_IMAGE_SERVER }}:${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=${{ env.REGISTRY_IMAGE_SERVER }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY_IMAGE_SERVER }}:buildcache,mode=max
+
+      - name: Build and push likelee-ui
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: likelee-ui/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY_IMAGE_UI }}:${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=${{ env.REGISTRY_IMAGE_UI }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY_IMAGE_UI }}:buildcache,mode=max
+          build-args: |
+            VITE_KEYCLOAK_URL=${{ secrets.VITE_KEYCLOAK_URL }}
+            VITE_KEYCLOAK_REALM=${{ secrets.VITE_KEYCLOAK_REALM }}
+            VITE_KEYCLOAK_CLIENT_ID=${{ secrets.VITE_KEYCLOAK_CLIENT_ID }}
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            VITE_API_BASE_URL=/api
+            VITE_AWS_REGION=${{ secrets.VITE_AWS_REGION }}
+            VITE_COGNITO_IDENTITY_POOL_ID=${{ secrets.VITE_COGNITO_IDENTITY_POOL_ID }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for copying deploy files)
+        uses: actions/checkout@v4
+
+      - name: Upload deploy directory to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: |
+            deploy/ec2/*
+          target: ${{ env.REMOTE_DIR }}
+          overwrite: true
+
+      - name: Deploy new images on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.REMOTE_DIR }}
+            export REGISTRY_IMAGE_SERVER='${{ env.REGISTRY_IMAGE_SERVER }}'
+            export REGISTRY_IMAGE_UI='${{ env.REGISTRY_IMAGE_UI }}'
+            export IMAGE_TAG='${{ env.IMAGE_TAG }}'
+            chmod +x scripts/update-images.sh || true
+            ./scripts/update-images.sh
+
+      - name: Health check (API)
+        id: health
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            # Allow some time for containers to settle
+            sleep 8
+            # Self-signed cert, so use -k to skip verification
+            curl -skf https://localhost/api/dashboard >/dev/null
+
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.REMOTE_DIR }}
+            export REGISTRY_IMAGE_SERVER='${{ env.REGISTRY_IMAGE_SERVER }}'
+            export REGISTRY_IMAGE_UI='${{ env.REGISTRY_IMAGE_UI }}'
+            chmod +x scripts/rollback.sh || true
+            ./scripts/rollback.sh || true
+            echo "Rollback executed due to failed health check."
