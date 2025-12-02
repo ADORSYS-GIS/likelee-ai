@@ -308,6 +308,42 @@ export default function CreatorDashboard() {
     seasonal: null,
     signature: null,
   });
+
+  // Load persisted Reference Image Library on mount/auth ready
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+    const abort = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
+          { signal: abort.signal },
+        );
+        if (!res.ok) return; // best-effort
+        const items = await res.json();
+        if (Array.isArray(items)) {
+          // keep latest per section_id
+          const bySection = new Map<string, any>();
+          for (const it of items) {
+            const sid = it.section_id;
+            if (!sid) continue;
+            if (!bySection.has(sid)) bySection.set(sid, it);
+          }
+          setReferenceImages((prev) => {
+            const next = { ...prev } as any;
+            Object.keys(next).forEach((sid) => {
+              const row = bySection.get(sid);
+              next[sid] = row ? { url: row.public_url } : null;
+            });
+            return next;
+          });
+        }
+      } catch (_) {
+        // ignore
+      }
+    })();
+    return () => abort.abort();
+  }, [initialized, authenticated, user?.id, API_BASE]);
   const [contentPreferences, setContentPreferences] = useState({
     comfortable: [
       "Fashion & Beauty",

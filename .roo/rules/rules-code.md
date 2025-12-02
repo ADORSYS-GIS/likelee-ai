@@ -57,3 +57,31 @@
 ## Logging/Diagnostics
 - Log effective AWS region at startup and warn on non‑supported or mismatched regions.
 - Include request IDs and label counts/results where helpful. Avoid logging sensitive data.
+
+## Local CI Pre‑Push Checklist
+- **Backend (likelee-server)**
+  - Format check (no writes): `cargo fmt -- --check`
+  - Lint (deny warnings): `cargo clippy -- -D warnings`
+  - Build: `cargo build --verbose`
+  - Tests: `cargo test --verbose`
+  - Security audit: `cargo audit`
+  - Autofix helpers when needed:
+    - Apply formatter: `cargo fmt`
+    - Update cargo-audit if missing: `cargo install cargo-audit --locked`
+
+- **Frontend (likelee-ui)**
+  - Install: `npm install`
+  - Formatting check: `npx prettier --check .`
+  - Lint: `npm run lint`
+  - Build: `npm run build`
+  - Tests: `npm run test`
+  - Security audit: `npm audit`
+  - Autofix helpers when needed:
+    - Apply formatter: `npx prettier --write .`
+
+- **Push gate**
+  - Only push when all steps above pass locally.
+  - If configuration changes are introduced, update:
+    - `likelee-server/src/config.rs` (Envconfig fields & defaults)
+    - `likelee-server/.env.example` to match `ServerConfig`
+    - `docs/design.md` under “Configuration Management”

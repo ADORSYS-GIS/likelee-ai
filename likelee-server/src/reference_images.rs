@@ -17,6 +17,33 @@ pub struct UploadQuery {
     pub section_id: String,
 }
 
+#[derive(Deserialize)]
+pub struct ListQuery {
+    pub user_id: String,
+}
+
+pub async fn list_reference_images(
+    State(state): State<AppState>,
+    Query(q): Query<ListQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Query reference_images for this user via PostgREST and return raw JSON array
+    let req = state
+        .pg
+        .from("reference_images")
+        .select("*")
+        .eq("user_id", &q.user_id)
+        .order("created_at.desc");
+
+    let resp = req.execute().await.map_err(|e| {
+        let m = e.to_string();
+        (StatusCode::BAD_GATEWAY, m)
+    })?;
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let json: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    Ok(Json(json))
+}
+
 #[derive(Serialize)]
 pub struct UploadResponse {
     pub public_url: String,
