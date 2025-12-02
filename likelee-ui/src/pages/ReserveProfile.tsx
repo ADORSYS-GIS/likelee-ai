@@ -223,6 +223,31 @@ function ReferencePhotosStep(props: any) {
   const [generating, setGenerating] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
 
+  // Load previously uploaded reference photo URLs on mount (for refresh scenarios)
+  React.useEffect(() => {
+    const loadExisting = async () => {
+      if (!userId || !supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("cameo_front_url, cameo_left_url, cameo_right_url")
+          .eq("id", userId)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setUploadedUrls({
+            front: data.cameo_front_url || null,
+            left: data.cameo_left_url || null,
+            right: data.cameo_right_url || null,
+          });
+        }
+      } catch (_e) {
+        // ignore – previews are a best-effort enhancement
+      }
+    };
+    loadExisting();
+  }, [userId]);
+
   const attachStreamToVideo = () => {
     const v: any = document.getElementById("reference-video");
     if (v && stream && v.srcObject !== stream) v.srcObject = stream;
@@ -432,14 +457,21 @@ function ReferencePhotosStep(props: any) {
           </div>
         )}
 
-        {(captures.front || captures.left || captures.right) && (
+        {(captures.front ||
+          captures.left ||
+          captures.right ||
+          uploadedUrls.front ||
+          uploadedUrls.left ||
+          uploadedUrls.right) && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label className="text-sm font-medium text-gray-900">Front</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front ? (
+                {captures.front || uploadedUrls.front ? (
                   <img
-                    src={captures.front.url}
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -450,9 +482,9 @@ function ReferencePhotosStep(props: any) {
             <div>
               <Label className="text-sm font-medium text-gray-900">Left</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left ? (
+                {captures.left || uploadedUrls.left ? (
                   <img
-                    src={captures.left.url}
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -463,9 +495,11 @@ function ReferencePhotosStep(props: any) {
             <div>
               <Label className="text-sm font-medium text-gray-900">Right</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right ? (
+                {captures.right || uploadedUrls.right ? (
                   <img
-                    src={captures.right.url}
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
                     className="w-full h-full object-cover"
                   />
                 ) : (

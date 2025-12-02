@@ -61,6 +61,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::reference_images::upload_reference_image),
         )
         .route(
+            "/api/reference-images",
+            get(crate::reference_images::list_reference_images),
+        )
+        .route(
             "/api/liveness/create",
             post(crate::liveness::create_session),
         )

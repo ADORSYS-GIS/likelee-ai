@@ -2,7 +2,6 @@ import React from "react";
 import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Login() {
@@ -96,40 +95,6 @@ export default function Login() {
                 className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
               >
                 {loading ? "Signing in…" : "Sign in"}
-              </button>
-              <button
-                type="button"
-                disabled={loading || !email}
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  try {
-                    const { error } = await supabase.auth.signInWithOtp({
-                      email: email.trim().toLowerCase(),
-                      options: {
-                        emailRedirectTo: `${window.location.origin}/Login`,
-                      },
-                    });
-                    if (error) throw error;
-                    toast({
-                      title: "Magic link sent",
-                      description: "Check your email to complete sign-in.",
-                    });
-                  } catch (err: any) {
-                    const msg = err?.message ?? "Failed to send magic link";
-                    setError(msg);
-                    toast({
-                      title: "Magic link error",
-                      description: msg,
-                      variant: "destructive",
-                    });
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                className="px-4 py-2 rounded border border-black text-black disabled:opacity-50"
-              >
-                Send magic link
               </button>
             </div>
           </form>

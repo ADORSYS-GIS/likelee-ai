@@ -141,7 +141,7 @@ export default function CreatorSignupOptions() {
                   </Button>
                 </Link>
                 <Link
-                  to={`${createPageUrl("Login")}?type=${selectedType}`}
+                  to={`/ReserveProfile?type=${selectedType}&mode=login`}
                   className="block w-full"
                   onClick={() => setShowAuth(false)}
                 >
