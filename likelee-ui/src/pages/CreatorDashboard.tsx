@@ -3513,7 +3513,7 @@ export default function CreatorDashboard() {
                         editingRules && handleToggleIndustry(industry)
                       }
                       className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                         } ${!editingRules && "cursor-default"}`}
                     >
@@ -3533,7 +3533,7 @@ export default function CreatorDashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowRatesModal('industry')}
-                      className="border-2 border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white"
+                      className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Initial Licensing Rate
@@ -4639,9 +4639,7 @@ export default function CreatorDashboard() {
                   <Button
                     type="submit"
                     disabled={savingRates}
-                    className={showRatesModal === 'content'
-                      ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                      : "bg-purple-500 hover:bg-purple-600 text-white"}
+                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   >
                     {savingRates ? (
                       <>
