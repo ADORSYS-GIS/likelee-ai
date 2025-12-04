@@ -233,7 +233,8 @@ const exampleCampaigns = [
     id: "example-nike",
     brand: "Nike",
     brand_logo: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-    campaign: "Air Max Heritage Collection",
+    brand_image_url: "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
+    campaign: "Best Nike Heritage Collection",
     rate: 2500,
     status: "active",
     start_date: "2024-01-15",
@@ -244,6 +245,7 @@ const exampleCampaigns = [
     id: "example-tesla",
     brand: "Tesla",
     brand_logo: "https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg",
+    brand_image_url: "https://images.unsplash.com/photo-1617704548623-340376564e68?q=80&w=2070&auto=format&fit=crop",
     campaign: "Model Y Launch Campaign",
     rate: 3200,
     status: "active",
@@ -252,11 +254,12 @@ const exampleCampaigns = [
     isExample: true,
   },
   {
-    id: "example-lululemon",
-    brand: "Lululemon",
-    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
-    campaign: "Spring Activewear Line",
-    rate: 1800,
+    id: "example-pepsi",
+    brand: "Pepsi",
+    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
+    brand_image_url: "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+    campaign: "Thirsty for More, Best energy drink",
+    rate: 2800,
     status: "active",
     start_date: "2024-03-01",
     end_date: "2024-06-30",
@@ -1092,37 +1095,30 @@ export default function CreatorDashboard() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {exampleCampaigns.map((campaign) => (
                 <Card
                   key={campaign.id}
-                  className="p-4 bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-[#32C8D1] transition-all"
+                  className="relative overflow-hidden rounded-lg h-64 bg-cover bg-center text-white shadow-lg transform hover:scale-105 transition-transform duration-300"
+                  style={{
+                    backgroundImage: `url(${campaign.brand_image_url})`,
+                  }}
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                      {campaign.brand === "Nike"
-                        ? "👟"
-                        : campaign.brand === "Tesla"
-                          ? "🚗"
-                          : "🧘"}
+                  <div className="absolute inset-0 bg-black bg-opacity-50 p-4 flex flex-col justify-end">
+                    <h4 className="font-bold text-xl mb-1">
+                      {campaign.brand}
+                    </h4>
+                    <p className="text-sm mb-2">
+                      {campaign.campaign}
+                    </p>
+                    <div className="flex items-center justify-between text-sm">
+                      <Badge className="bg-green-500 text-white border-none">
+                        Active
+                      </Badge>
+                      <span className="font-bold">
+                        ${campaign.rate}/mo
+                      </span>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">
-                        {campaign.brand}
-                      </h4>
-                      <p className="text-xs text-gray-500">Example Campaign</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 mb-3">
-                    {campaign.campaign}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="bg-green-100 text-green-700 border border-green-300">
-                      Active
-                    </Badge>
-                    <span className="font-bold text-gray-900">
-                      ${campaign.rate}/mo
-                    </span>
                   </div>
                 </Card>
               ))}
