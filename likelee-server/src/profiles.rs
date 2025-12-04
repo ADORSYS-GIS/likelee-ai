@@ -152,6 +152,19 @@ pub async fn upload_profile_photo(
         ));
     }
 
+    // Validate file size: max 5MB
+    const MAX_FILE_SIZE: usize = 5_000_000; // 5MB
+    if body.len() > MAX_FILE_SIZE {
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            format!(
+                "File size ({} bytes) exceeds maximum allowed size of {} bytes (5MB)",
+                body.len(),
+                MAX_FILE_SIZE
+            ),
+        ));
+    }
+
     let ct = headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
