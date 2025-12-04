@@ -21,7 +21,10 @@ pub struct CustomRate {
     pub price_per_week_cents: i32,
 }
 
-pub async fn get_creator_rates(State(ctx): State<AppState>, Query(q): Query<RateQuery>) -> impl IntoResponse {
+pub async fn get_creator_rates(
+    State(ctx): State<AppState>,
+    Query(q): Query<RateQuery>,
+) -> impl IntoResponse {
     let response = ctx
         .pg
         .from("creator_custom_rates")
@@ -35,14 +38,28 @@ pub async fn get_creator_rates(State(ctx): State<AppState>, Query(q): Query<Rate
             if res.status().is_success() {
                 let body_text = match res.text().await {
                     Ok(text) => text,
-                    Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to read response body").into_response(),
+                    Err(_) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Failed to read response body",
+                        )
+                            .into_response()
+                    }
                 };
                 match serde_json::from_str::<Vec<CustomRate>>(&body_text) {
                     Ok(rates) => (StatusCode::OK, Json(rates)).into_response(),
-                    Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse rates from response").into_response(),
+                    Err(_) => (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to parse rates from response",
+                    )
+                        .into_response(),
                 }
             } else {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch rates from db").into_response()
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to fetch rates from db",
+                )
+                    .into_response()
             }
         }
         Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database request failed").into_response(),
@@ -71,7 +88,13 @@ pub async fn upsert_creator_rates(
             if res.status().is_success() {
                 (StatusCode::OK, "Rates updated successfully").into_response()
             } else {
-                (StatusCode::BAD_REQUEST, format!("Failed to upsert rates: {}", res.text().await.unwrap_or_default()))
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Failed to upsert rates: {}",
+                        res.text().await.unwrap_or_default()
+                    ),
+                )
                     .into_response()
             }
         }
