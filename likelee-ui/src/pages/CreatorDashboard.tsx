@@ -1538,13 +1538,14 @@ export default function CreatorDashboard() {
                             <strong>Best For:</strong> {section.bestFor}
                           </p>
                           <Badge
+                            variant="outline"
                             className={
                               hasImage
                                 ? "bg-green-500 text-white"
                                 : "bg-gray-300 text-gray-700"
                             }
                           >
-                            {hasImage ? "✓ UPLOADED" : "⚠️ MISSING"}
+                            {hasImage ? "UPLOADED" : "MISSING"}
                           </Badge>
                         </div>
                         {hasImage && (
