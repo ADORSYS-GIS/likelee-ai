@@ -231,7 +231,7 @@ pub async fn upload_profile_photo(
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let profile = rows.get(0).cloned().unwrap_or(serde_json::json!({}));
+    let profile = rows.first().cloned().unwrap_or(serde_json::json!({}));
 
     Ok(Json(serde_json::json!({
         "message": "Upload successful",
