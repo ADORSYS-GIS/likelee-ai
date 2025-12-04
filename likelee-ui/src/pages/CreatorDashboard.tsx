@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Upload,
@@ -309,6 +310,11 @@ export default function CreatorDashboard() {
     signature: null,
   });
 
+  // Custom Rates State
+  const [customRates, setCustomRates] = useState<any[]>([]);
+  const [showRatesModal, setShowRatesModal] = useState<'content' | 'industry' | null>(null);
+  const [savingRates, setSavingRates] = useState(false);
+
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
@@ -441,6 +447,24 @@ export default function CreatorDashboard() {
     })();
     return () => abort.abort();
   }, [initialized, authenticated, user?.id]);
+
+  // Fetch custom rates
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setCustomRates(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch rates", e);
+      }
+    })();
+  }, [initialized, authenticated, user?.id, API_BASE]);
 
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
@@ -793,10 +817,10 @@ export default function CreatorDashboard() {
           voiceLibrary.map((rec) =>
             rec.id === recording.id
               ? {
-                  ...rec,
-                  voiceProfileCreated: true,
-                  voice_id: response.data.voice_id,
-                }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: response.data.voice_id,
+              }
               : rec,
           ),
         );
@@ -805,8 +829,8 @@ export default function CreatorDashboard() {
       } else {
         throw new Error(
           response.data?.error ||
-            response.data?.details ||
-            "Unknown error creating voice profile",
+          response.data?.details ||
+          "Unknown error creating voice profile",
         );
       }
     } catch (error) {
@@ -842,13 +866,12 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${
-                index === currentWord
-                  ? "text-[#32C8D1] font-bold scale-110"
-                  : index < currentWord
-                    ? "text-gray-400"
-                    : "text-gray-700"
-              }`}
+              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
+                ? "text-[#32C8D1] font-bold scale-110"
+                : index < currentWord
+                  ? "text-gray-400"
+                  : "text-gray-700"
+                }`}
             >
               {word}
             </span>
@@ -1266,56 +1289,56 @@ export default function CreatorDashboard() {
         {(creator?.cameo_front_url ||
           creator?.cameo_left_url ||
           creator?.cameo_right_url) && (
-          <Card className="p-6 bg-white border border-gray-200 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Reference Photos
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Front</div>
-                {creator?.cameo_front_url ? (
-                  <img
-                    src={creator.cameo_front_url}
-                    alt="Front"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
+            <Card className="p-6 bg-white border border-gray-200 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Reference Photos
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-600">Front</div>
+                  {creator?.cameo_front_url ? (
+                    <img
+                      src={creator.cameo_front_url}
+                      alt="Front"
+                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-600">Left</div>
+                  {creator?.cameo_left_url ? (
+                    <img
+                      src={creator.cameo_left_url}
+                      alt="Left"
+                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-600">Right</div>
+                  {creator?.cameo_right_url ? (
+                    <img
+                      src={creator.cameo_right_url}
+                      alt="Right"
+                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                      No image
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Left</div>
-                {creator?.cameo_left_url ? (
-                  <img
-                    src={creator.cameo_left_url}
-                    alt="Left"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Right</div>
-                {creator?.cameo_right_url ? (
-                  <img
-                    src={creator.cameo_right_url}
-                    alt="Right"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        )}
+            </Card>
+          )}
         <CameoUpload />
 
         {/* MY CAMEO Section */}
@@ -1679,7 +1702,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                    creator.kyc_status.slice(1)
+                  creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -1789,18 +1812,16 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
-                  hasRecording
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-[#32C8D1]"
-                }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-200 hover:border-[#32C8D1]"
+                  }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                      }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -1838,9 +1859,8 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                        recording.accessible ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
+                        }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2010,13 +2030,12 @@ export default function CreatorDashboard() {
                   </td>
                   <td className="py-4 px-4">
                     <Badge
-                      className={`${
-                        campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                      }`}
+                      className={`${campaign.status === "active"
+                        ? "bg-green-100 text-green-700 border border-green-300"
+                        : campaign.status === "expiring_soon"
+                          ? "bg-orange-100 text-orange-700 border border-orange-300"
+                          : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                     >
                       {campaign.status === "active"
                         ? "Active"
@@ -2697,21 +2716,19 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -2723,11 +2740,10 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${
-                  contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
-                }`}
+                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
+                  ? "border-orange-300"
+                  : "border-gray-200"
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3010,6 +3026,67 @@ export default function CreatorDashboard() {
     </div>
   );
 
+  const handleSaveRates = async (e) => {
+    e.preventDefault();
+    setSavingRates(true);
+    try {
+      const formData = new FormData(e.target);
+      const rates: any[] = [];
+
+      // Process Content Types
+      creator.content_types?.forEach((type) => {
+        const val = formData.get(`rate_content_${type}`);
+        if (val) {
+          rates.push({
+            rate_type: "content_type",
+            rate_name: type,
+            price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
+          });
+        }
+      });
+
+      // Process Industries
+      creator.industries?.forEach((ind) => {
+        const val = formData.get(`rate_industry_${ind}`);
+        if (val) {
+          rates.push({
+            rate_type: "industry",
+            rate_name: ind,
+            price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
+          });
+        }
+      });
+
+      console.log("Saving rates:", rates);
+
+      const res = await fetch(
+        `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(rates),
+        },
+      );
+
+      console.log("Response status:", res.status);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Error response:", errorText);
+        throw new Error(`Failed to save: ${errorText}`);
+      }
+
+      setCustomRates(rates);
+      setShowRatesModal(false);
+      alert("Rates saved successfully!");
+    } catch (e: any) {
+      console.error("Save error:", e);
+      alert(`Failed to save rates: ${e?.message || e}`);
+    } finally {
+      setSavingRates(false);
+    }
+  };
+
   const renderSettings = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -3025,21 +3102,19 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "profile"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "rules"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
           My Rules
         </button>
@@ -3309,23 +3384,41 @@ export default function CreatorDashboard() {
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
                   Content I'm Open To
                 </Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {CONTENT_TYPES.map((type) => (
                     <Badge
                       key={type}
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
                   ))}
                 </div>
+                {!editingRules && creator.content_types && creator.content_types.length > 0 && (
+                  <>
+                    <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                      <AlertCircle className="h-5 w-5 text-blue-600" />
+                      <AlertDescription className="text-blue-900 text-sm">
+                        Want different rates for each content type? Click below to customize.
+                      </AlertDescription>
+                    </Alert>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRatesModal('content')}
+                      className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Initial Licensing Rate
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Industries */}
@@ -3333,23 +3426,41 @@ export default function CreatorDashboard() {
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
                   Industries I Work With
                 </Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {INDUSTRIES.map((industry) => (
                     <Badge
                       key={industry}
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
+                        ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
                   ))}
                 </div>
+                {!editingRules && creator.industries && creator.industries.length > 0 && (
+                  <>
+                    <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                      <AlertCircle className="h-5 w-5 text-blue-600" />
+                      <AlertDescription className="text-blue-900 text-sm">
+                        Want different rates for each industry? Click below to customize.
+                      </AlertDescription>
+                    </Alert>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRatesModal('industry')}
+                      className="border-2 border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Initial Licensing Rate
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Pricing */}
@@ -3375,7 +3486,6 @@ export default function CreatorDashboard() {
                             price_per_week: parseInt(e.target.value) || 0,
                           })
                         }
-                        disabled={!editingRules}
                         className="border-2 border-gray-300 text-lg"
                         min="0"
                         step="50"
@@ -3384,48 +3494,6 @@ export default function CreatorDashboard() {
                         / week
                       </span>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Campaign Royalties */}
-              <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Campaign Royalties
-                </Label>
-                <p className="text-sm text-gray-600 mb-4">
-                  Percentage of campaign revenue from your likeness (0-5%)
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="0"
-                      max="5"
-                      step="0.5"
-                      value={creator.royalty_percentage || 0}
-                      onChange={(e) =>
-                        setCreator({
-                          ...creator,
-                          royalty_percentage: parseFloat(e.target.value),
-                        })
-                      }
-                      disabled={!editingRules}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#32C8D1]"
-                    />
-                    <div className="flex items-center gap-2 min-w-24">
-                      <span className="text-2xl font-bold text-[#32C8D1]">
-                        {creator.royalty_percentage || 0}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>0%</span>
-                    <span>1%</span>
-                    <span>2%</span>
-                    <span>3%</span>
-                    <span>4%</span>
-                    <span>5%</span>
                   </div>
                 </div>
               </div>
@@ -3683,7 +3751,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) {}
+                    } catch (_) { }
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -3707,11 +3775,10 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
+                    ? "bg-[#32C8D1] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -4341,6 +4408,165 @@ export default function CreatorDashboard() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Rates Modal */}
+      <Dialog open={showRatesModal !== null} onOpenChange={() => setShowRatesModal(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {showRatesModal === 'content'
+                ? 'Customize Content Type Rates'
+                : 'Customize Industry Rates'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleSaveRates}
+            className="flex-1 overflow-y-auto py-4 pr-2"
+          >
+            <Alert className="bg-blue-50 border border-blue-200 mb-6">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                Set specific weekly rates for different {showRatesModal === 'content' ? 'content types' : 'industries'}. If left blank, your base rate (${creator.price_per_week}/week)
+                will apply.
+              </AlertDescription>
+            </Alert>
+
+            {/* Content Types - Only show if modal type is 'content' */}
+            {showRatesModal === 'content' && (
+              creator.content_types && creator.content_types.length > 0 ? (
+                <div className="mb-8">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Video className="w-5 h-5 text-[#32C8D1]" />
+                    Content Types
+                  </h4>
+                  <div className="grid gap-4">
+                    {creator.content_types.map((type) => {
+                      const existing = customRates.find(
+                        (r) => r.rate_type === "content_type" && r.rate_name === type,
+                      );
+                      return (
+                        <div
+                          key={type}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                        >
+                          <Label className="font-medium text-gray-700">
+                            {type}
+                          </Label>
+                          <div className="flex items-center gap-2 w-48">
+                            <span className="text-gray-500">$</span>
+                            <Input
+                              type="number"
+                              name={`rate_content_${type}`}
+                              defaultValue={
+                                existing
+                                  ? (existing.price_per_week_cents / 100).toString()
+                                  : ""
+                              }
+                              placeholder={creator.price_per_week?.toString()}
+                              className="bg-white"
+                              min="0"
+                              step="1"
+                            />
+                            <span className="text-gray-500 text-sm">/wk</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <Alert className="bg-amber-50 border border-amber-200 mb-6">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-900">
+                    <strong>No content types selected.</strong> Please go back to "My Rules" and select the content types you're open to first.
+                  </AlertDescription>
+                </Alert>
+              )
+            )}
+
+            {/* Industries - Only show if modal type is 'industry' */}
+            {showRatesModal === 'industry' && (
+              creator.industries && creator.industries.length > 0 ? (
+                <div className="mb-6">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-purple-500" />
+                    Industries
+                  </h4>
+                  <div className="grid gap-4">
+                    {creator.industries.map((ind) => {
+                      const existing = customRates.find(
+                        (r) => r.rate_type === "industry" && r.rate_name === ind,
+                      );
+                      return (
+                        <div
+                          key={ind}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                        >
+                          <Label className="font-medium text-gray-700">
+                            {ind}
+                          </Label>
+                          <div className="flex items-center gap-2 w-48">
+                            <span className="text-gray-500">$</span>
+                            <Input
+                              type="number"
+                              name={`rate_industry_${ind}`}
+                              defaultValue={
+                                existing
+                                  ? (existing.price_per_week_cents / 100).toString()
+                                  : ""
+                              }
+                              placeholder={creator.price_per_week?.toString()}
+                              className="bg-white"
+                              min="0"
+                              step="1"
+                            />
+                            <span className="text-gray-500 text-sm">/wk</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <Alert className="bg-amber-50 border border-amber-200 mb-6">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-900">
+                    <strong>No industries selected.</strong> Please go back to "My Rules" and select the industries you work with first.
+                  </AlertDescription>
+                </Alert>
+              )
+            )}
+
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRatesModal(null)}
+                className="border-2 border-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingRates}
+                className={showRatesModal === 'content'
+                  ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                  : "bg-purple-500 hover:bg-purple-600 text-white"}
+              >
+                {savingRates ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Rates"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
