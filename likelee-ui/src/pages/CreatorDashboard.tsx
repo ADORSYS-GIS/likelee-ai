@@ -235,10 +235,15 @@ const exampleCampaigns = [
     brand_logo: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
     brand_image_url: "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
     campaign: "Best Nike Heritage Collection",
+    usage_type: "Social Ads",
     rate: 15000,
     status: "active",
     start_date: "2024-01-15",
     end_date: "2024-07-15",
+    active_until: "2024-07-15",
+    regions: ["North America", "Europe"],
+    impressions_week: 125000,
+    auto_renewal: true,
     isExample: true,
   },
   {
@@ -247,10 +252,15 @@ const exampleCampaigns = [
     brand_logo: "",
     brand_image_url: "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
     campaign: "Natural Glow Collection",
+    usage_type: "Web & Banner",
     rate: 15000,
     status: "active",
     start_date: "2024-02-01",
     end_date: "2024-08-01",
+    active_until: "2024-08-01",
+    regions: ["Global"],
+    impressions_week: 89000,
+    auto_renewal: false,
     isExample: true,
   },
   {
@@ -259,10 +269,15 @@ const exampleCampaigns = [
     brand_logo: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
     brand_image_url: "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
     campaign: "Thirsty for More, Best energy drink",
+    usage_type: "TV Commercial",
     rate: 50000,
     status: "active",
     start_date: "2024-03-01",
     end_date: "2024-06-30",
+    active_until: "2024-06-30",
+    regions: ["North America"],
+    impressions_week: 250000,
+    auto_renewal: false,
     isExample: true,
   },
 ];
@@ -2101,20 +2116,17 @@ export default function CreatorDashboard() {
                     <td className="py-4 px-4">
                       <div className="flex gap-2">
                         <Button
-                          onClick={() => showingExamples ? null : handlePauseCampaign(campaign.id)}
+                          onClick={() => handlePauseCampaign(campaign.id)}
                           variant="outline"
                           size="sm"
-                          disabled={showingExamples}
-                          className={showingExamples ? "opacity-50 cursor-not-allowed" : ""}
                         >
                           <Pause className="w-4 h-4" />
                         </Button>
                         <Button
-                          onClick={() => showingExamples ? null : handleRevokeCampaign(campaign.id)}
+                          onClick={() => handleRevokeCampaign(campaign.id)}
                           variant="outline"
                           size="sm"
-                          className={showingExamples ? "opacity-50 cursor-not-allowed" : "text-red-600 hover:bg-red-50"}
-                          disabled={showingExamples}
+                          className="text-red-600 hover:bg-red-50"
                         >
                           Revoke
                         </Button>
@@ -2127,83 +2139,81 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
-        {/* Campaign Details Cards - Only show for real campaigns */}
-        {!showingExamples && activeCampaigns.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-6">
-            {campaignsToShow.slice(0, 2).map((campaign) => (
-              <Card
-                key={campaign.id}
-                className="p-6 bg-white border border-gray-200"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={campaign.brand_logo}
-                      alt={campaign.brand}
-                      className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
-                    />
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg">
-                        {campaign.brand}
-                      </h3>
-                      <p className="text-sm text-gray-600">{campaign.usage_type}</p>
-                    </div>
+        {/* Campaign Details Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {campaignsToShow.slice(0, 2).map((campaign) => (
+            <Card
+              key={campaign.id}
+              className="p-6 bg-white border border-gray-200"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={campaign.brand_logo}
+                    alt={campaign.brand}
+                    className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">
+                      {campaign.brand}
+                    </h3>
+                    <p className="text-sm text-gray-600">{campaign.usage_type}</p>
                   </div>
-                  <Badge
-                    className={
-                      campaign.status === "active"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-orange-100 text-orange-700 border border-orange-300"
-                    }
-                  >
-                    {campaign.status === "active" ? "Active" : "Expiring Soon"}
-                  </Badge>
                 </div>
+                <Badge
+                  className={
+                    campaign.status === "active"
+                      ? "bg-green-100 text-green-700 border border-green-300"
+                      : "bg-orange-100 text-orange-700 border border-orange-300"
+                  }
+                >
+                  {campaign.status === "active" ? "Active" : "Expiring Soon"}
+                </Badge>
+              </div>
 
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Monthly Rate:</span>
-                    <span className="font-bold text-gray-900">
-                      ${campaign.rate}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Active Until:</span>
-                    <span className="font-medium text-gray-900">
-                      {new Date(campaign.active_until).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Regions:</span>
-                    <span className="font-medium text-gray-900">
-                      {campaign.regions.join(", ")}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Weekly Impressions:</span>
-                    <span className="font-medium text-gray-900">
-                      {campaign.impressions_week.toLocaleString()}
-                    </span>
-                  </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Monthly Rate:</span>
+                  <span className="font-bold text-gray-900">
+                    ${campaign.rate.toLocaleString()}
+                  </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Active Until:</span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(campaign.active_until).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Regions:</span>
+                  <span className="font-medium text-gray-900">
+                    {campaign.regions.join(", ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Weekly Impressions:</span>
+                  <span className="font-medium text-gray-900">
+                    {campaign.impressions_week.toLocaleString()}
+                  </span>
+                </div>
+              </div>
 
-                <div className="flex gap-2 mt-6">
-                  <Button variant="outline" className="flex-1">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 text-red-600 hover:bg-red-50"
-                    onClick={() => handleRevokeCampaign(campaign.id)}
-                  >
-                    Revoke
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+              <div className="flex gap-2 mt-6">
+                <Button variant="outline" className="flex-1">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 text-red-600 hover:bg-red-50"
+                  onClick={() => handleRevokeCampaign(campaign.id)}
+                >
+                  Revoke
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
 
         {/* Rights Expiration Calendar */}
         <div className="bg-blue-50 border border-blue-200">
