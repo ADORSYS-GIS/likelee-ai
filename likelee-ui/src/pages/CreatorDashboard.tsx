@@ -227,6 +227,43 @@ const IMAGE_SECTIONS = [
   },
 ];
 
+// Example campaigns for blank users (shown when no real campaigns exist)
+const exampleCampaigns = [
+  {
+    id: "example-nike",
+    brand: "Nike",
+    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
+    campaign: "Air Max Heritage Collection",
+    rate: 2500,
+    status: "active",
+    start_date: "2024-01-15",
+    end_date: "2024-07-15",
+    isExample: true,
+  },
+  {
+    id: "example-tesla",
+    brand: "Tesla",
+    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg",
+    campaign: "Model Y Launch Campaign",
+    rate: 3200,
+    status: "active",
+    start_date: "2024-02-01",
+    end_date: "2024-08-01",
+    isExample: true,
+  },
+  {
+    id: "example-lululemon",
+    brand: "Lululemon",
+    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
+    campaign: "Spring Activewear Line",
+    rate: 1800,
+    status: "active",
+    start_date: "2024-03-01",
+    end_date: "2024-06-30",
+    isExample: true,
+  },
+];
+
 // Empty defaults for campaigns (until wired to real data)
 const mockActiveCampaigns: any[] = [];
 
@@ -793,10 +830,10 @@ export default function CreatorDashboard() {
           voiceLibrary.map((rec) =>
             rec.id === recording.id
               ? {
-                  ...rec,
-                  voiceProfileCreated: true,
-                  voice_id: response.data.voice_id,
-                }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: response.data.voice_id,
+              }
               : rec,
           ),
         );
@@ -805,8 +842,8 @@ export default function CreatorDashboard() {
       } else {
         throw new Error(
           response.data?.error ||
-            response.data?.details ||
-            "Unknown error creating voice profile",
+          response.data?.details ||
+          "Unknown error creating voice profile",
         );
       }
     } catch (error) {
@@ -842,13 +879,12 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${
-                index === currentWord
-                  ? "text-[#32C8D1] font-bold scale-110"
-                  : index < currentWord
-                    ? "text-gray-400"
-                    : "text-gray-700"
-              }`}
+              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
+                ? "text-[#32C8D1] font-bold scale-110"
+                : index < currentWord
+                  ? "text-gray-400"
+                  : "text-gray-700"
+                }`}
             >
               {word}
             </span>
@@ -1045,12 +1081,61 @@ export default function CreatorDashboard() {
         </div>
 
         <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-        <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
-          <p>Your campaign activity will show here once licenses activate</p>
-          <p className="text-sm text-gray-500 mt-1">
-            Complete your profile to start receiving brand opportunities
-          </p>
-        </Card>
+        {activeCampaigns.length === 0 ? (
+          <div className="space-y-4">
+            <Alert className="bg-blue-50 border border-blue-200">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                <strong>Preview Examples:</strong> These are sample campaigns to
+                show you what opportunities look like. Complete your profile to
+                start receiving real brand deals!
+              </AlertDescription>
+            </Alert>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {exampleCampaigns.map((campaign) => (
+                <Card
+                  key={campaign.id}
+                  className="p-4 bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-[#32C8D1] transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+                      {campaign.brand === "Nike"
+                        ? "👟"
+                        : campaign.brand === "Tesla"
+                          ? "🚗"
+                          : "🧘"}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900">
+                        {campaign.brand}
+                      </h4>
+                      <p className="text-xs text-gray-500">Example Campaign</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-3">
+                    {campaign.campaign}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <Badge className="bg-green-100 text-green-700 border border-green-300">
+                      Active
+                    </Badge>
+                    <span className="font-bold text-gray-900">
+                      ${campaign.rate}/mo
+                    </span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
+            <p>Your campaign activity will show here once licenses activate</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Complete your profile to start receiving brand opportunities
+            </p>
+          </Card>
+        )}
 
         <Card className="p-4 md:p-5 bg-white border border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -1262,72 +1347,20 @@ export default function CreatorDashboard() {
           </Alert>
         </Card>
 
-        {/* Reference Photos (Front/Left/Right) before Cameo Video */}
-        {(creator?.cameo_front_url ||
-          creator?.cameo_left_url ||
-          creator?.cameo_right_url) && (
-          <Card className="p-6 bg-white border border-gray-200 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Reference Photos
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Front</div>
-                {creator?.cameo_front_url ? (
-                  <img
-                    src={creator.cameo_front_url}
-                    alt="Front"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Left</div>
-                {creator?.cameo_left_url ? (
-                  <img
-                    src={creator.cameo_left_url}
-                    alt="Left"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Right</div>
-                {creator?.cameo_right_url ? (
-                  <img
-                    src={creator.cameo_right_url}
-                    alt="Right"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        )}
-        <CameoUpload />
-
-        {/* MY CAMEO Section */}
+        {/* MY CAMEO Section - NOW FIRST with Coming Soon */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                MY CAMEO
-              </h3>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  MY CAMEO
+                </h3>
+                <Badge className="bg-amber-100 text-amber-700 border border-amber-400">
+                  Coming Soon
+                </Badge>
+              </div>
               <p className="text-gray-600">
-                The video representation of you - brands use this for AI cameos
-                and content generation
+                Upload a profile picture or selfie for now. Full cameo creation tools coming soon!
               </p>
             </div>
             {heroMedia && <CheckCircle2 className="w-8 h-8 text-green-600" />}
@@ -1411,31 +1444,31 @@ export default function CreatorDashboard() {
                 <input
                   type="file"
                   id="heroUpload"
-                  accept="video/*"
-                  onChange={handleHeroUpload}
-                  disabled={uploading}
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
                   className="hidden"
                 />
                 <label htmlFor="heroUpload" className="cursor-pointer">
-                  {uploading ? (
+                  {uploadingPhoto ? (
                     <Loader2 className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
                   ) : (
-                    <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   )}
                   <p className="text-lg text-gray-700 font-medium mb-2">
-                    {uploading ? "Uploading..." : "Upload Your Cameo Video"}
+                    {uploadingPhoto ? "Uploading..." : "Upload Profile Picture / Selfie"}
                   </p>
                   <p className="text-sm text-gray-500">
-                    MP4 or MOV, 30-60 seconds recommended
+                    JPG or PNG, high quality recommended
                   </p>
                 </label>
               </div>
-              <Alert className="bg-amber-50 border border-amber-200">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-                <AlertDescription className="text-amber-900 text-sm">
-                  <strong>Your cameo is required to start earning.</strong>{" "}
-                  Brands need this video reference to create content featuring
-                  you.
+              <Alert className="bg-blue-50 border border-blue-200">
+                <AlertCircle className="h-5 w-5 text-blue-600" />
+                <AlertDescription className="text-blue-900 text-sm">
+                  <strong>For now, upload a clear profile photo.</strong>{" "}
+                  Full cameo video creation tools will be available soon to help you create
+                  professional AI-ready content.
                 </AlertDescription>
               </Alert>
             </div>
@@ -1491,7 +1524,7 @@ export default function CreatorDashboard() {
                   className={`p-4 border-2 ${hasImage ? "border-green-200 bg-green-50" : "border-gray-200"}`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-sm">
                       {index + 1}
                     </div>
 
@@ -1679,7 +1712,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                    creator.kyc_status.slice(1)
+                  creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -1789,18 +1822,16 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
-                  hasRecording
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-[#32C8D1]"
-                }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-200 hover:border-[#32C8D1]"
+                  }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                      }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -1838,9 +1869,8 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                        recording.accessible ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
+                        }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2010,13 +2040,12 @@ export default function CreatorDashboard() {
                   </td>
                   <td className="py-4 px-4">
                     <Badge
-                      className={`${
-                        campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                      }`}
+                      className={`${campaign.status === "active"
+                        ? "bg-green-100 text-green-700 border border-green-300"
+                        : campaign.status === "expiring_soon"
+                          ? "bg-orange-100 text-orange-700 border border-orange-300"
+                          : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                     >
                       {campaign.status === "active"
                         ? "Active"
@@ -2697,21 +2726,19 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -2723,11 +2750,10 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${
-                  contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
-                }`}
+                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
+                  ? "border-orange-300"
+                  : "border-gray-200"
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3025,21 +3051,19 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "profile"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "rules"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
           My Rules
         </button>
@@ -3316,11 +3340,10 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
@@ -3340,11 +3363,10 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
+                        ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
@@ -3683,7 +3705,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) {}
+                    } catch (_) { }
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -3707,11 +3729,10 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
+                    ? "bg-[#32C8D1] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
