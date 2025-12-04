@@ -584,14 +584,14 @@ export default function CreatorDashboard() {
           </p>
         </div>
 
-        <Alert className="bg-blue-50 border border-blue-200">
+        <div className="bg-blue-50 border border-blue-200">
           <AlertCircle className="h-5 w-5 text-blue-600" />
-          <AlertDescription className="text-blue-900">
+          <p className="text-blue-900">
             Welcome to your Content page! You don't have any content yet — when
             brands publish content with your licensed likeness, it will appear
             here.
-          </AlertDescription>
-        </Alert>
+          </p>
+        </div>
 
         <div className="flex items-center gap-4">
           <Badge className="bg-gray-900 text-white">
@@ -1083,14 +1083,14 @@ export default function CreatorDashboard() {
         <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
         {activeCampaigns.length === 0 ? (
           <div className="space-y-4">
-            <Alert className="bg-blue-50 border border-blue-200">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <AlertDescription className="text-blue-900">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-blue-900">
                 <strong>Preview Examples:</strong> These are sample campaigns to
                 show you what opportunities look like. Complete your profile to
                 start receiving real brand deals!
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {exampleCampaigns.map((campaign) => (
@@ -1117,7 +1117,7 @@ export default function CreatorDashboard() {
                     {campaign.campaign}
                   </p>
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-green-100 text-green-700 border border-green-300">
+                    <Badge variant="outline" className="bg-green-100 text-green-700 border border-green-300">
                       Active
                     </Badge>
                     <span className="font-bold text-gray-900">
@@ -1338,13 +1338,13 @@ export default function CreatorDashboard() {
             </div>
           </div>
           <Progress value={completeness.percentage} className="h-3 mb-3" />
-          <Alert className="bg-white border border-blue-200">
-            <AlertCircle className="h-5 w-5 text-blue-600" />
-            <AlertDescription className="text-blue-900">
+          <div className="bg-white border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
               <strong>Complete profiles earn 15% more.</strong> Brands pay
               premium rates for creators with full reference libraries.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         </Card>
 
         {/* MY CAMEO Section - NOW FIRST with Coming Soon */}
@@ -1407,14 +1407,14 @@ export default function CreatorDashboard() {
                 )}
               </div>
 
-              <Alert className="bg-blue-50 border border-blue-200">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-                <AlertDescription className="text-blue-900 text-sm">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-blue-900 text-sm">
                   <strong>About Your Cameo:</strong> Brands use this to generate
                   AI cameos of you speaking, reference your voice/expressions,
                   and create photorealistic content featuring you.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
 
               <div className="flex gap-3">
                 <Button
@@ -1463,14 +1463,14 @@ export default function CreatorDashboard() {
                   </p>
                 </label>
               </div>
-              <Alert className="bg-blue-50 border border-blue-200">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-                <AlertDescription className="text-blue-900 text-sm">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-blue-900 text-sm">
                   <strong>For now, upload a clear profile photo.</strong>{" "}
                   Full cameo video creation tools will be available soon to help you create
                   professional AI-ready content.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
             </div>
           )}
         </Card>
@@ -1504,15 +1504,15 @@ export default function CreatorDashboard() {
             </div>
           </div>
 
-          <Alert className="mb-6 bg-blue-50 border border-blue-200">
-            <AlertCircle className="h-5 w-5 text-blue-600" />
-            <AlertDescription className="text-blue-900">
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
               <strong>How This Works:</strong> Upload photos in 15 different
               categories. Brands use these to generate images of you that look
               consistent and photorealistic. More variety = better quality
               content = higher rates.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
 
           <div className="space-y-4">
             {IMAGE_SECTIONS.map((section, index) => {
@@ -1613,14 +1613,14 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Quality Standards */}
-          <Alert className="mt-6 bg-amber-50 border border-amber-200">
+          <div className="mt-6 bg-amber-50 border border-amber-200">
             <AlertCircle className="h-5 w-5 text-amber-600" />
-            <AlertDescription className="text-amber-900">
+            <p className="text-amber-900">
               <strong>Quality Standards:</strong> High-resolution (minimum
               1080x1080), clear lighting, face/body clearly visible, no heavy
               filters, professional quality preferred.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         </Card>
 
         {/* Content Guidelines */}
@@ -1641,9 +1641,10 @@ export default function CreatorDashboard() {
                 {contentPreferences.comfortable.map((item) => (
                   <Badge
                     key={item}
+                    variant="outline"
                     className="bg-green-100 text-green-700 border border-green-300 px-3 py-2"
                   >
-                    ✓ {item}
+                    {item}
                   </Badge>
                 ))}
               </div>
@@ -1657,6 +1658,7 @@ export default function CreatorDashboard() {
                 {contentPreferences.not_comfortable.map((item) => (
                   <Badge
                     key={item}
+                    variant="outline"
                     className="bg-red-100 text-red-700 border border-red-300 px-3 py-2"
                   >
                     ✗ {item}
@@ -1700,6 +1702,7 @@ export default function CreatorDashboard() {
                 </span>
               </div>
               <Badge
+                variant="outline"
                 className={
                   creator?.kyc_status === "approved"
                     ? "bg-green-100 text-green-700"
@@ -1723,7 +1726,7 @@ export default function CreatorDashboard() {
                   Likeness Rights
                 </span>
               </div>
-              <Badge className="bg-green-100 text-green-700">Confirmed</Badge>
+              <Badge variant="outline" className="bg-green-100 text-green-700">Confirmed</Badge>
             </div>
             <div className="flex gap-2 pt-2">
               <Button
@@ -1770,7 +1773,7 @@ export default function CreatorDashboard() {
             Build your voice library for different emotions and tones
           </p>
         </div>
-        <Badge className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg">
+        <Badge variant="outline" className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg">
           {voiceLibrary.length} Voice{voiceLibrary.length !== 1 ? "s" : ""}
         </Badge>
       </div>
@@ -1946,14 +1949,14 @@ export default function CreatorDashboard() {
       )}
 
       {/* Voice Training Tips */}
-      <Alert className="bg-purple-50 border border-purple-200">
+      <div className="bg-purple-50 border border-purple-200">
         <Volume2 className="h-5 w-5 text-purple-600" />
-        <AlertDescription className="text-purple-900">
+        <p className="text-purple-900">
           <strong>Voice Training Tips:</strong> Speak clearly, avoid background
           noise, record in a quiet room, and maintain consistent volume
           throughout the recording.
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
     </div>
   );
 
@@ -2033,7 +2036,7 @@ export default function CreatorDashboard() {
                   <td className="py-4 px-4 text-gray-700">
                     {new Date(campaign.active_until).toLocaleDateString()}
                     {campaign.auto_renewal && (
-                      <Badge className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs">
+                      <Badge className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs" variant="outline">
                         Auto-Renew
                       </Badge>
                     )}
@@ -2160,14 +2163,14 @@ export default function CreatorDashboard() {
       </div>
 
       {/* Rights Expiration Calendar */}
-      <Alert className="bg-blue-50 border border-blue-200">
+      <div className="bg-blue-50 border border-blue-200">
         <Calendar className="h-5 w-5 text-blue-600" />
-        <AlertDescription className="text-blue-900">
+        <p className="text-blue-900">
           <strong>Your consent required for all uses.</strong>{" "}
           {activeCampaigns.length} active campaigns, all time-limited, all
           approved by you. You can pause/revoke anytime.
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
     </div>
   );
 
@@ -2303,14 +2306,14 @@ export default function CreatorDashboard() {
           </Card>
 
           {approval.perpetual && (
-            <Alert className="bg-red-50 border-2 border-red-400">
+            <div className="bg-red-50 border-2 border-red-400">
               <AlertCircle className="h-5 w-5 text-red-600" />
-              <AlertDescription className="text-red-900">
+              <p className="text-red-900">
                 <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
                 use your likeness forever. You should negotiate for time-limited
                 terms (6 months, 1 year) instead.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
           )}
 
           {/* Actions */}
@@ -2460,15 +2463,15 @@ export default function CreatorDashboard() {
                 </div>
 
                 {approval.perpetual && (
-                  <Alert className="mb-6 bg-red-50 border-2 border-red-300">
+                  <div className="mb-6 bg-red-50 border-2 border-red-300">
                     <AlertCircle className="h-5 w-5 text-red-600" />
-                    <AlertDescription className="text-red-900">
+                    <p className="text-red-900">
                       <strong>Warning:</strong> This is a perpetual-use request.
                       You would give up long-term control of your likeness for
                       this campaign. Consider negotiating for time-limited terms
                       instead.
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
                 )}
 
                 <div className="flex gap-3">
@@ -2608,13 +2611,13 @@ export default function CreatorDashboard() {
               </p>
             </div>
             {contract.auto_renew && (
-              <Alert className="mt-4 bg-blue-50 border border-blue-200">
+              <div className="mt-4 bg-blue-50 border border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-900 text-sm">
+                <p className="text-blue-900 text-sm">
                   <strong>Auto-Renewal Enabled:</strong> After expiration, you
                   can decide whether to renew on new terms.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
             )}
           </Card>
 
@@ -2810,15 +2813,15 @@ export default function CreatorDashboard() {
                 </div>
 
                 {contract.status === "expiring_soon" && (
-                  <Alert className="mb-4 bg-orange-50 border-2 border-orange-300">
+                  <div className="mb-4 bg-orange-50 border-2 border-orange-300">
                     <Clock className="h-5 w-5 text-orange-600" />
-                    <AlertDescription className="text-orange-900">
+                    <p className="text-orange-900">
                       <strong>
                         Expiring in {contract.days_remaining} days!
                       </strong>{" "}
                       Would you like to renew this license?
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
                 )}
 
                 <div className="flex gap-2">
@@ -2876,16 +2879,16 @@ export default function CreatorDashboard() {
       </div>
 
       {/* Info banner */}
-      <Alert className="bg-blue-50 border border-blue-200 text-blue-900">
-        <AlertCircle className="h-5 w-5 text-blue-600" />
-        <AlertDescription>
+      <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
+        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <p>
           <span className="font-semibold">
             Your earnings dashboard is ready!
           </span>{" "}
           Once your licenses activate, you'll see real-time earnings here.
           Currently, you have no active contracts.
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
 
       {/* Key metrics */}
       <div className="grid md:grid-cols-4 gap-6">
@@ -3566,7 +3569,7 @@ export default function CreatorDashboard() {
                   {creator.name}
                 </p>
                 {creator?.kyc_status === "approved" && (
-                  <Badge className="bg-gray-900 text-green-400 border border-green-500">
+                  <Badge variant="outline" className="bg-green-100 text-green-700 border border-green-300">
                     <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Creator
                   </Badge>
                 )}
@@ -3803,9 +3806,9 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <Alert className="bg-amber-50 border-2 border-amber-300">
+                  <div className="bg-amber-50 border-2 border-amber-300">
                     <AlertCircle className="h-5 w-5 text-amber-600" />
-                    <AlertDescription className="text-amber-900">
+                    <p className="text-amber-900">
                       <strong>⚠️ IMPORTANT PAYMENT WARNING</strong>
                       <p className="mt-2">If you pause NOW (mid-month):</p>
                       <ul className="list-disc ml-6 mt-2 space-y-1">
@@ -3816,8 +3819,8 @@ export default function CreatorDashboard() {
                         </li>
                         <li>That money will be forfeited</li>
                       </ul>
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
 
                   <div className="space-y-4">
                     <Card
@@ -3921,9 +3924,9 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <Alert className="bg-red-50 border-2 border-red-300">
+                  <div className="bg-red-50 border-2 border-red-300">
                     <AlertCircle className="h-5 w-5 text-red-600" />
-                    <AlertDescription className="text-red-900">
+                    <p className="text-red-900">
                       <strong>What happens when you revoke:</strong>
                       <ul className="list-disc ml-6 mt-2 space-y-1">
                         <li>
@@ -3937,8 +3940,8 @@ export default function CreatorDashboard() {
                         <li>Your earnings STOP after the 30-day period ends</li>
                         <li>The license cannot be reactivated</li>
                       </ul>
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
 
                   <Card className="p-6 bg-gray-50 border border-gray-200">
                     <h3 className="font-bold text-gray-900 mb-4">
@@ -4081,9 +4084,9 @@ export default function CreatorDashboard() {
               </div>
             </div>
 
-            <Alert className="bg-blue-50 border-2 border-blue-300">
+            <div className="bg-blue-50 border-2 border-blue-300">
               <AlertCircle className="h-5 w-5 text-blue-600" />
-              <AlertDescription className="text-blue-900">
+              <p className="text-blue-900">
                 <strong>What Happens After You Upload:</strong>
                 <ul className="list-disc ml-6 mt-2 space-y-1">
                   <li>New cameo goes through verification (24 hours)</li>
@@ -4095,17 +4098,17 @@ export default function CreatorDashboard() {
                   </li>
                   <li>New licenses will use the new cameo</li>
                 </ul>
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
 
-            <Alert className="bg-amber-50 border-2 border-amber-300">
+            <div className="bg-amber-50 border-2 border-amber-300">
               <AlertCircle className="h-5 w-5 text-amber-600" />
-              <AlertDescription className="text-amber-900">
+              <p className="text-amber-900">
                 <strong>Important:</strong> Existing contracts will NOT change.
                 Brands who signed with your old cameo will continue using that
                 version. Only new projects will use the updated cameo.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
 
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
               <input
