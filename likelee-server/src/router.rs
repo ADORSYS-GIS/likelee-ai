@@ -1,5 +1,6 @@
 use crate::config::AppState;
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{get, post},
     Router,
 };
@@ -77,5 +78,6 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::liveness::liveness_result),
         )
         .with_state(state)
+        .layer(DefaultBodyLimit::max(5_000_000)) // 5MB limit
         .layer(cors)
 }
