@@ -1977,219 +1977,244 @@ export default function CreatorDashboard() {
     </div>
   );
 
-  const renderCampaigns = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Active Campaigns</h2>
-          <p className="text-gray-600 mt-1">
-            Track and manage your licensing agreements
-          </p>
-        </div>
-        <Badge className="bg-green-100 text-green-700 border border-green-300 px-4 py-2 text-lg">
-          {activeCampaigns.length} Active
-        </Badge>
-      </div>
+  const renderCampaigns = () => {
+    // Use example campaigns if activeCampaigns is empty, otherwise use real data
+    const campaignsToShow = activeCampaigns.length === 0 ? exampleCampaigns : activeCampaigns;
+    const showingExamples = activeCampaigns.length === 0;
 
-      {/* Campaigns Table */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-gray-300">
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Brand
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Usage Type
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Rate
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Active Until
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Status
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  This Month
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeCampaigns.map((campaign) => (
-                <tr
-                  key={campaign.id}
-                  className="border-b border-gray-200 hover:bg-gray-50"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={campaign.brand_logo}
-                        alt={campaign.brand}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                      />
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.brand}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {campaign.impressions_week.toLocaleString()}{" "}
-                          impressions/week
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-gray-700">
-                    {campaign.usage_type}
-                  </td>
-                  <td className="py-4 px-4 font-bold text-gray-900">
-                    ${campaign.rate}/mo
-                  </td>
-                  <td className="py-4 px-4 text-gray-700">
-                    {new Date(campaign.active_until).toLocaleDateString()}
-                    {campaign.auto_renewal && (
-                      <Badge className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs" variant="outline">
-                        Auto-Renew
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="py-4 px-4">
-                    <Badge
-                      className={`${campaign.status === "active"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : campaign.status === "expiring_soon"
-                          ? "bg-orange-100 text-orange-700 border border-orange-300"
-                          : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
-                    >
-                      {campaign.status === "active"
-                        ? "Active"
-                        : campaign.status === "expiring_soon"
-                          ? "Expiring Soon"
-                          : campaign.status}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-4 font-bold text-green-600">
-                    ${campaign.earnings_this_month}
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handlePauseCampaign(campaign.id)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Pause className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleRevokeCampaign(campaign.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        Revoke
-                      </Button>
-                    </div>
-                  </td>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Active Campaigns</h2>
+            <p className="text-gray-600 mt-1">
+              Track and manage your licensing agreements
+            </p>
+          </div>
+          <Badge className="bg-green-100 text-green-700 border border-green-300 px-4 py-2 text-lg">
+            {activeCampaigns.length} Active
+          </Badge>
+        </div>
+
+        {/* Welcome message for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Active Campaigns!</strong> This is an example of what your campaigns will look like. You don't have any active campaigns yet — but when brands start working with you, they'll appear here!
+            </p>
+          </div>
+        )}
+
+        {/* Campaigns Table */}
+        <Card className="p-6 bg-white border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-gray-300">
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Brand
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Usage Type
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Rate
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Active Until
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Status
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    This Month
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody>
+                {campaignsToShow.map((campaign) => (
+                  <tr
+                    key={campaign.id}
+                    className="border-b border-gray-200 hover:bg-gray-50"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        {campaign.brand_logo && (
+                          <img
+                            src={campaign.brand_logo}
+                            alt={campaign.brand}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                          />
+                        )}
+                        {!campaign.brand_logo && (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                            {campaign.brand.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {campaign.brand}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {campaign.impressions_week?.toLocaleString() || campaign.campaign}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {campaign.usage_type || campaign.campaign?.split(',')[0] || 'Social Ads'}
+                    </td>
+                    <td className="py-4 px-4 font-bold text-gray-900">
+                      ${campaign.rate.toLocaleString()}/mo
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {new Date(campaign.active_until || campaign.end_date).toLocaleDateString()}
+                      {campaign.auto_renewal && (
+                        <Badge className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs" variant="outline">
+                          Auto-Renew
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-4 px-4">
+                      <Badge
+                        className={`${campaign.status === "active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
+                      >
+                        {campaign.status === "active"
+                          ? "Active"
+                          : campaign.status === "expiring_soon"
+                            ? "Expiring Soon"
+                            : campaign.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4 font-bold text-green-600">
+                      ${campaign.earnings_this_month || campaign.rate.toLocaleString()}
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => showingExamples ? null : handlePauseCampaign(campaign.id)}
+                          variant="outline"
+                          size="sm"
+                          disabled={showingExamples}
+                          className={showingExamples ? "opacity-50 cursor-not-allowed" : ""}
+                        >
+                          <Pause className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => showingExamples ? null : handleRevokeCampaign(campaign.id)}
+                          variant="outline"
+                          size="sm"
+                          className={showingExamples ? "opacity-50 cursor-not-allowed" : "text-red-600 hover:bg-red-50"}
+                          disabled={showingExamples}
+                        >
+                          Revoke
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
 
-      {/* Campaign Details Cards */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {activeCampaigns.slice(0, 2).map((campaign) => (
-          <Card
-            key={campaign.id}
-            className="p-6 bg-white border border-gray-200"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src={campaign.brand_logo}
-                  alt={campaign.brand}
-                  className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
-                />
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">
-                    {campaign.brand}
-                  </h3>
-                  <p className="text-sm text-gray-600">{campaign.usage_type}</p>
+        {/* Campaign Details Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {campaignsToShow.slice(0, 2).map((campaign) => (
+            <Card
+              key={campaign.id}
+              className="p-6 bg-white border border-gray-200"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={campaign.brand_logo}
+                    alt={campaign.brand}
+                    className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">
+                      {campaign.brand}
+                    </h3>
+                    <p className="text-sm text-gray-600">{campaign.usage_type}</p>
+                  </div>
+                </div>
+                <Badge
+                  className={
+                    campaign.status === "active"
+                      ? "bg-green-100 text-green-700 border border-green-300"
+                      : "bg-orange-100 text-orange-700 border border-orange-300"
+                  }
+                >
+                  {campaign.status === "active" ? "Active" : "Expiring Soon"}
+                </Badge>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Monthly Rate:</span>
+                  <span className="font-bold text-gray-900">
+                    ${campaign.rate}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Active Until:</span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(campaign.active_until).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Regions:</span>
+                  <span className="font-medium text-gray-900">
+                    {campaign.regions.join(", ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Weekly Impressions:</span>
+                  <span className="font-medium text-gray-900">
+                    {campaign.impressions_week.toLocaleString()}
+                  </span>
                 </div>
               </div>
-              <Badge
-                className={
-                  campaign.status === "active"
-                    ? "bg-green-100 text-green-700 border border-green-300"
-                    : "bg-orange-100 text-orange-700 border border-orange-300"
-                }
-              >
-                {campaign.status === "active" ? "Active" : "Expiring Soon"}
-              </Badge>
-            </div>
 
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Monthly Rate:</span>
-                <span className="font-bold text-gray-900">
-                  ${campaign.rate}
-                </span>
+              <div className="flex gap-2 mt-6">
+                <Button variant="outline" className="flex-1">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 text-red-600 hover:bg-red-50"
+                  onClick={() => handleRevokeCampaign(campaign.id)}
+                >
+                  Revoke
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Active Until:</span>
-                <span className="font-medium text-gray-900">
-                  {new Date(campaign.active_until).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Regions:</span>
-                <span className="font-medium text-gray-900">
-                  {campaign.regions.join(", ")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Weekly Impressions:</span>
-                <span className="font-medium text-gray-900">
-                  {campaign.impressions_week.toLocaleString()}
-                </span>
-              </div>
-            </div>
+            </Card>
+          ))}
+        </div>
 
-            <div className="flex gap-2 mt-6">
-              <Button variant="outline" className="flex-1">
-                <Eye className="w-4 h-4 mr-2" />
-                View Details
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 text-red-600 hover:bg-red-50"
-                onClick={() => handleRevokeCampaign(campaign.id)}
-              >
-                Revoke
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {/* Rights Expiration Calendar */}
+        <div className="bg-blue-50 border border-blue-200">
+          <Calendar className="h-5 w-5 text-blue-600" />
+          <p className="text-blue-900">
+            <strong>Your consent required for all uses.</strong>{" "}
+            {activeCampaigns.length} active campaigns, all time-limited, all
+            approved by you. You can pause/revoke anytime.
+          </p>
+        </div>
       </div>
-
-      {/* Rights Expiration Calendar */}
-      <div className="bg-blue-50 border border-blue-200">
-        <Calendar className="h-5 w-5 text-blue-600" />
-        <p className="text-blue-900">
-          <strong>Your consent required for all uses.</strong>{" "}
-          {activeCampaigns.length} active campaigns, all time-limited, all
-          approved by you. You can pause/revoke anytime.
-        </p>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderApprovals = () => {
     if (showApprovalContract) {

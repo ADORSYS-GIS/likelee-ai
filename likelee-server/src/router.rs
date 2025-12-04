@@ -4,7 +4,6 @@ use axum::{
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
-use axum::extract::DefaultBodyLimit;
 
 pub fn build_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -12,7 +11,6 @@ pub fn build_router(state: AppState) -> Router {
         .allow_methods(Any)
         .allow_headers(Any);
     Router::new()
-        .layer(DefaultBodyLimit::max(5 * 1024 * 1024))
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
@@ -42,7 +40,6 @@ pub fn build_router(state: AppState) -> Router {
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::profiles::check_email))
         .route("/api/profile", post(crate::profiles::upsert_profile))
-        .route("/api/profile/photo-upload", post(crate::profiles::upload_profile_photo))
         .route(
             "/api/face-profiles",
             post(crate::face_profiles::create_face_profile),
