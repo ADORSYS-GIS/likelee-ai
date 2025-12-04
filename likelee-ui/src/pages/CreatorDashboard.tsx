@@ -684,13 +684,36 @@ export default function CreatorDashboard() {
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!user?.id) {
+        alert("You must be logged in to upload a photo.");
+        return;
+      }
+      if (file.size > 5_000_000) {
+        alert("Please upload an image of 5 MB or less.");
+        return;
+      }
       setUploadingPhoto(true);
-      setTimeout(() => {
-        const url = URL.createObjectURL(file);
-        setCreator({ ...creator, profile_photo: url });
+      try {
+        const buf = await file.arrayBuffer();
+        const res = await fetch(
+          `${API_BASE}/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`,
+          {
+            method: "POST",
+            headers: { "content-type": file.type || "image/jpeg" },
+            body: new Uint8Array(buf),
+          }
+        );
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        const json = await res.json();
+        setCreator({ ...creator, profile_photo: json.public_url });
+        alert("Profile photo updated!");
+      } catch (err: any) {
+        alert(`Upload failed: ${err.message}`);
+      } finally {
         setUploadingPhoto(false);
-        alert("Photo uploaded! (Demo mode)");
-      }, 1000);
+      }
     }
   };
 
@@ -1351,12 +1374,12 @@ export default function CreatorDashboard() {
                 <h3 className="text-2xl font-bold text-gray-900">
                   MY CAMEO
                 </h3>
-                <Badge className="bg-amber-100 text-amber-700 border border-amber-400">
+                <Badge className="bg-red-100 text-red-700 border border-red-400">
                   Coming Soon
                 </Badge>
               </div>
               <p className="text-gray-600">
-                Upload a profile picture or selfie for now. Full cameo creation tools coming soon!
+                The video representation of you - brands use this for AI cameos and content generation
               </p>
             </div>
             {heroMedia && <CheckCircle2 className="w-8 h-8 text-green-600" />}
@@ -1440,31 +1463,30 @@ export default function CreatorDashboard() {
                 <input
                   type="file"
                   id="heroUpload"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  disabled={uploadingPhoto}
+                  accept="video/*"
+                  onChange={handleHeroUpload}
+                  disabled={uploading}
                   className="hidden"
                 />
                 <label htmlFor="heroUpload" className="cursor-pointer">
-                  {uploadingPhoto ? (
+                  {uploading ? (
                     <Loader2 className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
                   ) : (
-                    <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   )}
                   <p className="text-lg text-gray-700 font-medium mb-2">
-                    {uploadingPhoto ? "Uploading..." : "Upload Profile Picture / Selfie"}
+                    {uploading ? "Uploading..." : "Upload Your Cameo Video"}
                   </p>
                   <p className="text-sm text-gray-500">
-                    JPG or PNG, high quality recommended
+                    MP4 or MOV, 30-60 seconds recommended
                   </p>
                 </label>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-900 text-sm">
-                  <strong>For now, upload a clear profile photo.</strong>{" "}
-                  Full cameo video creation tools will be available soon to help you create
-                  professional AI-ready content.
+                  <strong>Your cameo is required to start earning.</strong>{" "}
+                  Brands need this video reference to create content featuring you.
                 </p>
               </div>
             </div>
