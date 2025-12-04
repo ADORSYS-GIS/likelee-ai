@@ -84,29 +84,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
-
-// Voice recording scripts for different emotions
-const VOICE_SCRIPTS = {
-  happy:
-    "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
-
-  emotional:
-    "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-
-  excited:
-    "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-
-  mellow:
-    "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-
-  relaxed:
-    "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-
-  angry:
-    "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
-};
-
-// Content types and industries for My Rules
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -131,6 +108,28 @@ const INDUSTRIES = [
   "Luxury & Lifestyle",
   "Travel / Hospitality",
 ];
+
+// Voice recording scripts for different emotions
+const VOICE_SCRIPTS = {
+  happy:
+    "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+
+  emotional:
+    "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+
+  excited:
+    "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+
+  mellow:
+    "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+
+  relaxed:
+    "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+
+  angry:
+    "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
+};
+
 
 const IMAGE_SECTIONS = [
   {
@@ -381,6 +380,9 @@ export default function CreatorDashboard() {
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
 
+  // Track if we've loaded data for the current user to prevent unnecessary refetches
+  const loadedUserRef = useRef<string | null>(null);
+
   // Calculate metrics (fallback to computed if backend doesn't send)
   const totalMonthlyRevenue = activeCampaigns.reduce(
     (sum, c) => sum + (c.rate || 0),
@@ -396,9 +398,15 @@ export default function CreatorDashboard() {
   useEffect(() => {
     if (!initialized) return;
     if (!authenticated || !user?.id) return;
+
+    // Skip if we've already loaded data for this user
+    if (loadedUserRef.current === user.id) return;
+
+    loadedUserRef.current = user.id;
     const abort = new AbortController();
     (async () => {
       try {
+        console.log('Fetching dashboard data for user:', user.id);
         const res = await fetch(
           `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
           { signal: abort.signal },
@@ -406,6 +414,7 @@ export default function CreatorDashboard() {
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
         const profile = json.profile || {};
+        console.log('Dashboard loaded with content_types:', profile.content_types, 'industries:', profile.industries);
         setCreator({
           name: profile.full_name || creator.name,
           email: profile.email || creator.email,
@@ -949,9 +958,67 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleSaveRules = () => {
-    setEditingRules(false);
-    alert("Licensing preferences updated! (Demo mode)");
+
+  const handleSaveRules = async () => {
+    if (!user) return;
+
+    // Only send fields that exist in the profiles table
+    // Exclude frontend-only fields like accept_negotiations, royalty_percentage, etc.
+    const profileData = {
+      email: creator.email || user.email,
+      full_name: creator.name,
+      bio: creator.bio,
+      city: creator.location?.split(',')[0]?.trim(),
+      state: creator.location?.split(',')[1]?.trim(),
+      content_types: creator.content_types,
+      industries: creator.industries,
+      base_monthly_price_cents: (creator.price_per_week || 0) * 400,
+      platform_handle: creator.instagram_handle?.replace('@', ''),
+    };
+
+    console.log('Saving profile with data:', {
+      content_types: profileData.content_types,
+      industries: profileData.industries,
+      email: profileData.email,
+      price_per_week: creator.price_per_week,
+      base_monthly_price_cents: profileData.base_monthly_price_cents,
+    });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Save failed:', errorText);
+        throw new Error(`Server error: ${errorText}`);
+      }
+
+      const responseData = await res.json();
+      console.log('Save response:', responseData);
+
+      // Update creator state with the saved data from the response
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        const savedProfile = responseData[0];
+        setCreator(prev => ({
+          ...prev,
+          content_types: savedProfile.content_types || [],
+          industries: savedProfile.industries || [],
+          price_per_week: savedProfile.base_monthly_price_cents
+            ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
+            : prev.price_per_week,
+        }));
+      }
+
+      setEditingRules(false);
+      alert("Licensing preferences updated!");
+    } catch (error: any) {
+      console.error("Failed to save rules:", error);
+      alert(`Failed to save preferences: ${error?.message || error}`);
+    }
   };
 
   const handleSaveProfile = () => {
@@ -3031,53 +3098,65 @@ export default function CreatorDashboard() {
     setSavingRates(true);
     try {
       const formData = new FormData(e.target);
-      const rates: any[] = [];
+      const newRates: any[] = [];
 
-      // Process Content Types
-      creator.content_types?.forEach((type) => {
-        const val = formData.get(`rate_content_${type}`);
-        if (val) {
-          rates.push({
-            rate_type: "content_type",
-            rate_name: type,
-            price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
-          });
-        }
-      });
+      // Determine which modal is open and process only its rates
+      if (showRatesModal === 'content') {
+        creator.content_types?.filter(t => CONTENT_TYPES.includes(t)).forEach((type) => {
+          const val = formData.get(`rate_content_${type}`);
+          if (val && val.toString().trim() !== '') {
+            newRates.push({
+              rate_type: "content_type",
+              rate_name: type,
+              price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
+            });
+          }
+        });
+      } else if (showRatesModal === 'industry') {
+        creator.industries?.filter(i => INDUSTRIES.includes(i)).forEach((ind) => {
+          const val = formData.get(`rate_industry_${ind}`);
+          if (val && val.toString().trim() !== '') {
+            newRates.push({
+              rate_type: "industry",
+              rate_name: ind,
+              price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
+            });
+          }
+        });
+      }
 
-      // Process Industries
-      creator.industries?.forEach((ind) => {
-        const val = formData.get(`rate_industry_${ind}`);
-        if (val) {
-          rates.push({
-            rate_type: "industry",
-            rate_name: ind,
-            price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
-          });
-        }
-      });
+      // Get the existing rates from the *other* category to preserve them
+      const otherRateType = showRatesModal === 'content' ? 'industry' : 'content_type';
+      const preservedRates = customRates.filter(r => r.rate_type === otherRateType);
 
-      console.log("Saving rates:", rates);
+      // Combine the new rates with the preserved rates
+      const finalRates = [...newRates, ...preservedRates];
 
       const res = await fetch(
         `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rates),
+          body: JSON.stringify(finalRates),
         },
       );
 
-      console.log("Response status:", res.status);
-
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Error response:", errorText);
         throw new Error(`Failed to save: ${errorText}`);
       }
 
-      setCustomRates(rates);
-      setShowRatesModal(false);
+      // Reload rates from database to confirm persistence
+      const reloadRes = await fetch(
+        `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+      );
+      if (reloadRes.ok) {
+        const reloadedRates = await reloadRes.json();
+        setCustomRates(reloadedRates);
+      }
+
+      setShowRatesModal(null);
+      setEditingRules(false);
       alert("Rates saved successfully!");
     } catch (e: any) {
       console.error("Save error:", e);
@@ -3486,7 +3565,8 @@ export default function CreatorDashboard() {
                             price_per_week: parseInt(e.target.value) || 0,
                           })
                         }
-                        className="border-2 border-gray-300 text-lg"
+                        disabled={!editingRules}
+                        className={`border-2 text-lg ${!editingRules ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'}`}
                         min="0"
                         step="50"
                       />
@@ -4436,45 +4516,47 @@ export default function CreatorDashboard() {
 
             {/* Content Types - Only show if modal type is 'content' */}
             {showRatesModal === 'content' && (
-              creator.content_types && creator.content_types.length > 0 ? (
+              (creator.content_types?.filter(t => CONTENT_TYPES.includes(t)) || []).length > 0 ? (
                 <div className="mb-8">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Video className="w-5 h-5 text-[#32C8D1]" />
                     Content Types
                   </h4>
                   <div className="grid gap-4">
-                    {creator.content_types.map((type) => {
-                      const existing = customRates.find(
-                        (r) => r.rate_type === "content_type" && r.rate_name === type,
-                      );
-                      return (
-                        <div
-                          key={type}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                        >
-                          <Label className="font-medium text-gray-700">
-                            {type}
-                          </Label>
-                          <div className="flex items-center gap-2 w-48">
-                            <span className="text-gray-500">$</span>
-                            <Input
-                              type="number"
-                              name={`rate_content_${type}`}
-                              defaultValue={
-                                existing
-                                  ? (existing.price_per_week_cents / 100).toString()
-                                  : ""
-                              }
-                              placeholder={creator.price_per_week?.toString()}
-                              className="bg-white"
-                              min="0"
-                              step="1"
-                            />
-                            <span className="text-gray-500 text-sm">/wk</span>
+                    {creator.content_types
+                      ?.filter(type => CONTENT_TYPES.includes(type))
+                      .map((type) => {
+                        const existing = customRates.find(
+                          (r) => r.rate_type === "content_type" && r.rate_name === type,
+                        );
+                        return (
+                          <div
+                            key={type}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <Label className="font-medium text-gray-700">
+                              {type}
+                            </Label>
+                            <div className="flex items-center gap-2 w-48">
+                              <span className="text-gray-500">$</span>
+                              <Input
+                                type="number"
+                                name={`rate_content_${type}`}
+                                defaultValue={
+                                  existing
+                                    ? (existing.price_per_week_cents / 100).toString()
+                                    : ""
+                                }
+                                placeholder={creator.price_per_week?.toString()}
+                                className="bg-white"
+                                min="0"
+                                step="1"
+                              />
+                              <span className="text-gray-500 text-sm">/wk</span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </div>
               ) : (
@@ -4489,45 +4571,47 @@ export default function CreatorDashboard() {
 
             {/* Industries - Only show if modal type is 'industry' */}
             {showRatesModal === 'industry' && (
-              creator.industries && creator.industries.length > 0 ? (
+              (creator.industries?.filter(i => INDUSTRIES.includes(i)) || []).length > 0 ? (
                 <div className="mb-6">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Briefcase className="w-5 h-5 text-purple-500" />
                     Industries
                   </h4>
                   <div className="grid gap-4">
-                    {creator.industries.map((ind) => {
-                      const existing = customRates.find(
-                        (r) => r.rate_type === "industry" && r.rate_name === ind,
-                      );
-                      return (
-                        <div
-                          key={ind}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                        >
-                          <Label className="font-medium text-gray-700">
-                            {ind}
-                          </Label>
-                          <div className="flex items-center gap-2 w-48">
-                            <span className="text-gray-500">$</span>
-                            <Input
-                              type="number"
-                              name={`rate_industry_${ind}`}
-                              defaultValue={
-                                existing
-                                  ? (existing.price_per_week_cents / 100).toString()
-                                  : ""
-                              }
-                              placeholder={creator.price_per_week?.toString()}
-                              className="bg-white"
-                              min="0"
-                              step="1"
-                            />
-                            <span className="text-gray-500 text-sm">/wk</span>
+                    {creator.industries
+                      ?.filter(ind => INDUSTRIES.includes(ind))
+                      .map((ind) => {
+                        const existing = customRates.find(
+                          (r) => r.rate_type === "industry" && r.rate_name === ind,
+                        );
+                        return (
+                          <div
+                            key={ind}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <Label className="font-medium text-gray-700">
+                              {ind}
+                            </Label>
+                            <div className="flex items-center gap-2 w-48">
+                              <span className="text-gray-500">$</span>
+                              <Input
+                                type="number"
+                                name={`rate_industry_${ind}`}
+                                defaultValue={
+                                  existing
+                                    ? (existing.price_per_week_cents / 100).toString()
+                                    : ""
+                                }
+                                placeholder={creator.price_per_week?.toString()}
+                                className="bg-white"
+                                min="0"
+                                step="1"
+                              />
+                              <span className="text-gray-500 text-sm">/wk</span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </div>
               ) : (
@@ -4549,22 +4633,26 @@ export default function CreatorDashboard() {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={savingRates}
-                className={showRatesModal === 'content'
-                  ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  : "bg-purple-500 hover:bg-purple-600 text-white"}
-              >
-                {savingRates ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Rates"
+              {/* Only show Save Rates button if there are items to customize */}
+              {((showRatesModal === 'content' && creator.content_types?.filter(t => CONTENT_TYPES.includes(t)).length > 0) ||
+                (showRatesModal === 'industry' && creator.industries?.filter(i => INDUSTRIES.includes(i)).length > 0)) && (
+                  <Button
+                    type="submit"
+                    disabled={savingRates}
+                    className={showRatesModal === 'content'
+                      ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                      : "bg-purple-500 hover:bg-purple-600 text-white"}
+                  >
+                    {savingRates ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Rates"
+                    )}
+                  </Button>
                 )}
-              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
