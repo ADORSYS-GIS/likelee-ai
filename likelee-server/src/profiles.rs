@@ -164,14 +164,18 @@ pub async fn upload_profile_photo(
         "updated_date": chrono::Utc::now().to_rfc3339(),
     });
 
-    state
+    let res = state
         .pg
         .from("profiles")
         .eq("id", &q.user_id)
         .update(update_payload.to_string())
         .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .await;
+    if let Err(e) = res {
+        let msg = format!("failed to update profile photo url: {}", e);
+        error!(%msg);
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+    }
 
     Ok(Json(UploadResponse { public_url }))
 }

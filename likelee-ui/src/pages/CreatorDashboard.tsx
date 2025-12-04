@@ -443,7 +443,7 @@ export default function CreatorDashboard() {
         setCreator({
           name: profile.full_name || creator.name,
           email: profile.email || creator.email,
-          profile_photo: creator.profile_photo,
+          profile_photo: profile.profile_photo_url || creator.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(", "),
           bio: profile.bio || creator.bio,
           instagram_handle: profile.platform_handle
@@ -701,13 +701,31 @@ export default function CreatorDashboard() {
             method: "POST",
             headers: { "content-type": file.type || "image/jpeg" },
             body: new Uint8Array(buf),
+            cache: "no-cache",
           }
         );
         if (!res.ok) {
           throw new Error(await res.text());
         }
         const json = await res.json();
+
+        // Update local state immediately
         setCreator({ ...creator, profile_photo: json.public_url });
+
+        // Refetch full profile data to ensure consistency
+        const profileRes = await fetch(
+          `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
+          { cache: "no-cache" }
+        );
+        if (profileRes.ok) {
+          const profileJson = await profileRes.json();
+          const profile = profileJson.profile || {};
+          setCreator(prev => ({
+            ...prev,
+            profile_photo: profile.profile_photo_url || json.public_url,
+          }));
+        }
+
         alert("Profile photo updated!");
       } catch (err: any) {
         alert(`Upload failed: ${err.message}`);
