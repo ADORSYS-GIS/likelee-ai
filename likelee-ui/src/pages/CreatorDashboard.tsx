@@ -232,8 +232,10 @@ const exampleCampaigns = [
   {
     id: "example-nike",
     brand: "Nike",
-    brand_logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    brand_image_url: "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    brand_image_url:
+      "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
     campaign: "Best Nike Heritage Collection",
     usage_type: "Social Ads",
     rate: 15000,
@@ -249,8 +251,10 @@ const exampleCampaigns = [
   {
     id: "example-skincare",
     brand: "Avo Beauty",
-    brand_logo: "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
-    brand_image_url: "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
+    brand_logo:
+      "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
+    brand_image_url:
+      "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
     campaign: "Natural Glow Collection",
     usage_type: "Social Ads",
     rate: 15000,
@@ -266,8 +270,10 @@ const exampleCampaigns = [
   {
     id: "example-pepsi",
     brand: "Pepsi",
-    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
-    brand_image_url: "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
+    brand_image_url:
+      "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
     campaign: "Thirsty for More, Best energy drink",
     usage_type: "Energy Drink",
     rate: 50000,
@@ -908,10 +914,10 @@ export default function CreatorDashboard() {
           voiceLibrary.map((rec) =>
             rec.id === recording.id
               ? {
-                ...rec,
-                voiceProfileCreated: true,
-                voice_id: response.data.voice_id,
-              }
+                  ...rec,
+                  voiceProfileCreated: true,
+                  voice_id: response.data.voice_id,
+                }
               : rec,
           ),
         );
@@ -920,8 +926,8 @@ export default function CreatorDashboard() {
       } else {
         throw new Error(
           response.data?.error ||
-          response.data?.details ||
-          "Unknown error creating voice profile",
+            response.data?.details ||
+            "Unknown error creating voice profile",
         );
       }
     } catch (error) {
@@ -957,12 +963,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -1180,19 +1187,13 @@ export default function CreatorDashboard() {
                   }}
                 >
                   <div className="absolute inset-0 bg-black bg-opacity-50 p-4 flex flex-col justify-end">
-                    <h4 className="font-bold text-xl mb-1">
-                      {campaign.brand}
-                    </h4>
-                    <p className="text-sm mb-2">
-                      {campaign.campaign}
-                    </p>
+                    <h4 className="font-bold text-xl mb-1">{campaign.brand}</h4>
+                    <p className="text-sm mb-2">{campaign.campaign}</p>
                     <div className="flex items-center justify-between text-sm">
                       <Badge className="bg-green-500 text-white border-none">
                         Active
                       </Badge>
-                      <span className="font-bold">
-                        ${campaign.rate}/mo
-                      </span>
+                      <span className="font-bold">${campaign.rate}/mo</span>
                     </div>
                   </div>
                 </Card>
@@ -1421,11 +1422,10 @@ export default function CreatorDashboard() {
         {/* MY CAMEO Section - NOW FIRST */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              MY CAMEO
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">MY CAMEO</h3>
             <p className="text-gray-600">
-              The video representation of you - brands use this for AI cameos and content generation
+              The video representation of you - brands use this for AI cameos
+              and content generation
             </p>
           </div>
 
@@ -1518,7 +1518,9 @@ export default function CreatorDashboard() {
               <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-amber-900 text-sm">
-                  <strong>Your cameo is required to start earning.</strong> Brands need this video reference to create content featuring you.
+                  <strong>Your cameo is required to start earning.</strong>{" "}
+                  Brands need this video reference to create content featuring
+                  you.
                 </p>
               </div>
             </div>
@@ -1766,7 +1768,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -1777,7 +1779,9 @@ export default function CreatorDashboard() {
                   Likeness Rights
                 </span>
               </div>
-              <Badge variant="outline" className="bg-green-100 text-green-700">Confirmed</Badge>
+              <Badge variant="outline" className="bg-green-100 text-green-700">
+                Confirmed
+              </Badge>
             </div>
             <div className="flex gap-2 pt-2">
               <Button
@@ -1824,7 +1828,10 @@ export default function CreatorDashboard() {
             Build your voice library for different emotions and tones
           </p>
         </div>
-        <Badge variant="outline" className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg">
+        <Badge
+          variant="outline"
+          className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
+        >
           {voiceLibrary.length} Voice{voiceLibrary.length !== 1 ? "s" : ""}
         </Badge>
       </div>
@@ -1876,16 +1883,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -1923,8 +1932,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2013,23 +2023,27 @@ export default function CreatorDashboard() {
 
   const renderCampaigns = () => {
     // Use example campaigns if activeCampaigns is empty, otherwise use real data
-    const campaignsToShow = activeCampaigns.length === 0 ? exampleCampaigns : activeCampaigns;
+    const campaignsToShow =
+      activeCampaigns.length === 0 ? exampleCampaigns : activeCampaigns;
     const showingExamples = activeCampaigns.length === 0;
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Active Campaigns</h2>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Active Campaigns
+            </h2>
             <p className="text-gray-600 mt-1">
               Track and manage your licensing agreements
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -2040,7 +2054,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Active Campaigns!</strong> This is an example of what your campaigns will look like. You don't have any active campaigns yet — but when brands start working with you, they'll appear here!
+              <strong>Welcome to your Active Campaigns!</strong> This is an
+              example of what your campaigns will look like. You don't have any
+              active campaigns yet — but when brands start working with you,
+              they'll appear here!
             </p>
           </div>
         )}
@@ -2099,33 +2116,42 @@ export default function CreatorDashboard() {
                             {campaign.brand}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {campaign.impressions_week?.toLocaleString() || campaign.campaign}
+                            {campaign.impressions_week?.toLocaleString() ||
+                              campaign.campaign}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-gray-700">
-                      {campaign.usage_type || campaign.campaign?.split(',')[0] || 'Social Ads'}
+                      {campaign.usage_type ||
+                        campaign.campaign?.split(",")[0] ||
+                        "Social Ads"}
                     </td>
                     <td className="py-4 px-4 font-bold text-gray-900">
                       ${campaign.rate.toLocaleString()}/mo
                     </td>
                     <td className="py-4 px-4 text-gray-700">
-                      {new Date(campaign.active_until || campaign.end_date).toLocaleDateString()}
+                      {new Date(
+                        campaign.active_until || campaign.end_date,
+                      ).toLocaleDateString()}
                       {campaign.auto_renewal && (
-                        <Badge className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs" variant="outline">
+                        <Badge
+                          className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs"
+                          variant="outline"
+                        >
                           Auto-Renew
                         </Badge>
                       )}
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -2135,7 +2161,9 @@ export default function CreatorDashboard() {
                       </Badge>
                     </td>
                     <td className="py-4 px-4 font-bold text-green-600">
-                      ${campaign.earnings_this_month || campaign.rate.toLocaleString()}
+                      $
+                      {campaign.earnings_this_month ||
+                        campaign.rate.toLocaleString()}
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex gap-2">
@@ -2181,7 +2209,9 @@ export default function CreatorDashboard() {
                     <h3 className="font-bold text-gray-900 text-lg">
                       {campaign.brand}
                     </h3>
-                    <p className="text-sm text-gray-600">{campaign.usage_type}</p>
+                    <p className="text-sm text-gray-600">
+                      {campaign.usage_type}
+                    </p>
                   </div>
                 </div>
                 <Badge
@@ -2807,19 +2837,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -2831,10 +2863,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3132,19 +3165,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -3421,10 +3456,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
@@ -3444,10 +3480,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
@@ -3647,7 +3684,10 @@ export default function CreatorDashboard() {
                   {creator.name}
                 </p>
                 {creator?.kyc_status === "approved" && (
-                  <Badge variant="outline" className="bg-green-100 text-green-700 border border-green-300">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-100 text-green-700 border border-green-300"
+                  >
                     <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Creator
                   </Badge>
                 )}
@@ -3786,7 +3826,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -3810,10 +3850,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
