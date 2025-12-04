@@ -254,7 +254,7 @@ const exampleCampaigns = [
     campaign: "Natural Glow Collection",
     usage_type: "Social Ads",
     rate: 15000,
-    status: "Expiring Soon",
+    status: "expiring_soon",
     start_date: "2024-02-01",
     end_date: "2024-08-01",
     active_until: "2024-08-01",
@@ -2032,7 +2032,12 @@ export default function CreatorDashboard() {
               Track and manage your licensing agreements
             </p>
           </div>
-          <Badge className="bg-green-100 text-green-700 border border-green-300 px-4 py-2 text-lg">
+          <Badge
+            className={`${activeCampaigns.length === 0
+              ? "bg-orange-100 text-orange-700 border border-orange-300"
+              : "bg-green-100 text-green-700 border border-green-300"
+              } px-4 py-2 text-lg`}
+          >
             {activeCampaigns.length} Active
           </Badge>
         </div>
