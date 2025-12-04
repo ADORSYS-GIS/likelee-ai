@@ -734,41 +734,34 @@ export default function CreatorDashboard() {
         }
         const json = await res.json();
 
-        // Refresh profile to get the permanent URL
-        const profileRes = await fetch(
-          `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
-          { cache: "no-cache" },
-        );
-        if (profileRes.ok) {
-          const profileJson = await profileRes.json();
-          const profile = profileJson.profile || {};
-          // Append timestamp to bust cache if URL is same
-          const newUrl = profile.profile_photo_url || json.public_url;
-          const urlWithTimestamp = newUrl
-            ? `${newUrl}?t=${Date.now()}`
-            : newUrl;
+        // Use the public_url directly from the upload response
+        // Backend generates unique filename with UUID, so no cache issues
+        const newPhotoUrl = json.public_url;
 
-          setCreator((prev) => ({
-            ...prev,
-            profile_photo: urlWithTimestamp,
-          }));
-        }
+        setCreator((prev) => ({
+          ...prev,
+          profile_photo: newPhotoUrl,
+        }));
 
         alert("Profile photo updated!");
       } catch (err: any) {
         alert(`Upload failed: ${err.message}`);
         // Revert optimistic update on error by refreshing dashboard
-        const profileRes = await fetch(
-          `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
-          { cache: "no-cache" },
-        );
-        if (profileRes.ok) {
-          const profileJson = await profileRes.json();
-          const profile = profileJson.profile || {};
-          setCreator((prev) => ({
-            ...prev,
-            profile_photo: profile.profile_photo_url,
-          }));
+        try {
+          const profileRes = await fetch(
+            `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
+            { cache: "no-cache" },
+          );
+          if (profileRes.ok) {
+            const profileJson = await profileRes.json();
+            const profile = profileJson.profile || {};
+            setCreator((prev) => ({
+              ...prev,
+              profile_photo: profile.profile_photo_url,
+            }));
+          }
+        } catch (revertErr) {
+          console.error("Failed to revert profile photo:", revertErr);
         }
       } finally {
         setUploadingPhoto(false);
