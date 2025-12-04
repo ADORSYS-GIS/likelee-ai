@@ -9,3 +9,4 @@ pub mod organization_profiles;
 pub mod profiles;
 pub mod reference_images;
 pub mod router;
+pub mod creator_rates;
