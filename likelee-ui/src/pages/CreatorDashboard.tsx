@@ -232,7 +232,7 @@ const exampleCampaigns = [
   {
     id: "example-nike",
     brand: "Nike",
-    brand_logo: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
+    brand_logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
     brand_image_url: "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
     campaign: "Best Nike Heritage Collection",
     usage_type: "Social Ads",
@@ -242,24 +242,24 @@ const exampleCampaigns = [
     end_date: "2024-07-15",
     active_until: "2024-07-15",
     regions: ["North America", "Europe"],
-    impressions_week: 125000,
+    impressions_week: "125000 impressions/week",
     auto_renewal: true,
     isExample: true,
   },
   {
     id: "example-skincare",
     brand: "Avo Beauty",
-    brand_logo: "",
+    brand_logo: "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
     brand_image_url: "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
     campaign: "Natural Glow Collection",
-    usage_type: "Web & Banner",
+    usage_type: "Social Ads",
     rate: 15000,
-    status: "active",
+    status: "Expiring Soon",
     start_date: "2024-02-01",
     end_date: "2024-08-01",
     active_until: "2024-08-01",
     regions: ["Global"],
-    impressions_week: 89000,
+    impressions_week: "89000 impressions/week",
     auto_renewal: false,
     isExample: true,
   },
@@ -269,14 +269,14 @@ const exampleCampaigns = [
     brand_logo: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
     brand_image_url: "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
     campaign: "Thirsty for More, Best energy drink",
-    usage_type: "TV Commercial",
+    usage_type: "Energy Drink",
     rate: 50000,
     status: "active",
     start_date: "2024-03-01",
     end_date: "2024-06-30",
     active_until: "2024-06-30",
     regions: ["North America"],
-    impressions_week: 250000,
+    impressions_week: "250000 impressions/week",
     auto_renewal: false,
     isExample: true,
   },
@@ -708,42 +708,68 @@ export default function CreatorDashboard() {
         return;
       }
       setUploadingPhoto(true);
+
+      // Optimistic update: Show local preview immediately
+      const objectUrl = URL.createObjectURL(file);
+      setCreator((prev) => ({
+        ...prev,
+        profile_photo: objectUrl,
+      }));
+
       try {
         const buf = await file.arrayBuffer();
         const res = await fetch(
-          `${API_BASE}/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`,
+          `${API_BASE}/api/profile/photo-upload?user_id=${encodeURIComponent(
+            user.id,
+          )}`,
           {
             method: "POST",
             headers: { "content-type": file.type || "image/jpeg" },
             body: new Uint8Array(buf),
             cache: "no-cache",
-          }
+          },
         );
         if (!res.ok) {
           throw new Error(await res.text());
         }
         const json = await res.json();
 
-        // Update local state immediately
-        setCreator({ ...creator, profile_photo: json.public_url });
-
-        // Refetch full profile data to ensure consistency
+        // Refresh profile to get the permanent URL
         const profileRes = await fetch(
           `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
-          { cache: "no-cache" }
+          { cache: "no-cache" },
         );
         if (profileRes.ok) {
           const profileJson = await profileRes.json();
           const profile = profileJson.profile || {};
-          setCreator(prev => ({
+          // Append timestamp to bust cache if URL is same
+          const newUrl = profile.profile_photo_url || json.public_url;
+          const urlWithTimestamp = newUrl
+            ? `${newUrl}?t=${Date.now()}`
+            : newUrl;
+
+          setCreator((prev) => ({
             ...prev,
-            profile_photo: profile.profile_photo_url || json.public_url,
+            profile_photo: urlWithTimestamp,
           }));
         }
 
         alert("Profile photo updated!");
       } catch (err: any) {
         alert(`Upload failed: ${err.message}`);
+        // Revert optimistic update on error by refreshing dashboard
+        const profileRes = await fetch(
+          `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
+          { cache: "no-cache" },
+        );
+        if (profileRes.ok) {
+          const profileJson = await profileRes.json();
+          const profile = profileJson.profile || {};
+          setCreator((prev) => ({
+            ...prev,
+            profile_photo: profile.profile_photo_url,
+          }));
+        }
       } finally {
         setUploadingPhoto(false);
       }
