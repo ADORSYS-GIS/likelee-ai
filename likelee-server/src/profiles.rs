@@ -146,10 +146,7 @@ pub async fn upload_profile_photo(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let user_id = q.user_id;
     if user_id.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "user_id is required".to_string(),
-        ));
+        return Err((StatusCode::BAD_REQUEST, "user_id is required".to_string()));
     }
 
     // Validate file size: max 5MB
@@ -183,15 +180,16 @@ pub async fn upload_profile_photo(
     let bucket = state.supabase_bucket_public.clone();
     let storage_url = format!(
         "{}/storage/v1/object/{}/{}",
-        state.supabase_url,
-        bucket,
-        path
+        state.supabase_url, bucket, path
     );
 
     let http = reqwest::Client::new();
     let res = http
         .post(&storage_url)
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .header("apikey", state.supabase_service_key.clone())
         .header("content-type", ct)
         .body(body)
@@ -226,8 +224,12 @@ pub async fn upload_profile_photo(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let profile = rows.get(0).cloned().unwrap_or(serde_json::json!({}));
 
