@@ -130,7 +130,6 @@ const VOICE_SCRIPTS = {
     "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
 };
 
-
 const IMAGE_SECTIONS = [
   {
     id: "headshot_neutral",
@@ -311,7 +310,9 @@ export default function CreatorDashboard() {
 
   // Custom Rates State
   const [customRates, setCustomRates] = useState<any[]>([]);
-  const [showRatesModal, setShowRatesModal] = useState<'content' | 'industry' | null>(null);
+  const [showRatesModal, setShowRatesModal] = useState<
+    "content" | "industry" | null
+  >(null);
   const [savingRates, setSavingRates] = useState(false);
 
   // Load persisted Reference Image Library on mount/auth ready
@@ -406,7 +407,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        console.log('Fetching dashboard data for user:', user.id);
+        console.log("Fetching dashboard data for user:", user.id);
         const res = await fetch(
           `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
           { signal: abort.signal },
@@ -414,7 +415,12 @@ export default function CreatorDashboard() {
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
         const profile = json.profile || {};
-        console.log('Dashboard loaded with content_types:', profile.content_types, 'industries:', profile.industries);
+        console.log(
+          "Dashboard loaded with content_types:",
+          profile.content_types,
+          "industries:",
+          profile.industries,
+        );
         setCreator({
           name: profile.full_name || creator.name,
           email: profile.email || creator.email,
@@ -826,10 +832,10 @@ export default function CreatorDashboard() {
           voiceLibrary.map((rec) =>
             rec.id === recording.id
               ? {
-                ...rec,
-                voiceProfileCreated: true,
-                voice_id: response.data.voice_id,
-              }
+                  ...rec,
+                  voiceProfileCreated: true,
+                  voice_id: response.data.voice_id,
+                }
               : rec,
           ),
         );
@@ -838,8 +844,8 @@ export default function CreatorDashboard() {
       } else {
         throw new Error(
           response.data?.error ||
-          response.data?.details ||
-          "Unknown error creating voice profile",
+            response.data?.details ||
+            "Unknown error creating voice profile",
         );
       }
     } catch (error) {
@@ -875,12 +881,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -958,7 +965,6 @@ export default function CreatorDashboard() {
     }
   };
 
-
   const handleSaveRules = async () => {
     if (!user) return;
 
@@ -968,15 +974,15 @@ export default function CreatorDashboard() {
       email: creator.email || user.email,
       full_name: creator.name,
       bio: creator.bio,
-      city: creator.location?.split(',')[0]?.trim(),
-      state: creator.location?.split(',')[1]?.trim(),
+      city: creator.location?.split(",")[0]?.trim(),
+      state: creator.location?.split(",")[1]?.trim(),
       content_types: creator.content_types,
       industries: creator.industries,
       base_monthly_price_cents: (creator.price_per_week || 0) * 400,
-      platform_handle: creator.instagram_handle?.replace('@', ''),
+      platform_handle: creator.instagram_handle?.replace("@", ""),
     };
 
-    console.log('Saving profile with data:', {
+    console.log("Saving profile with data:", {
       content_types: profileData.content_types,
       industries: profileData.industries,
       email: profileData.email,
@@ -986,24 +992,24 @@ export default function CreatorDashboard() {
 
     try {
       const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileData)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileData),
       });
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Save failed:', errorText);
+        console.error("Save failed:", errorText);
         throw new Error(`Server error: ${errorText}`);
       }
 
       const responseData = await res.json();
-      console.log('Save response:', responseData);
+      console.log("Save response:", responseData);
 
       // Update creator state with the saved data from the response
       if (Array.isArray(responseData) && responseData.length > 0) {
         const savedProfile = responseData[0];
-        setCreator(prev => ({
+        setCreator((prev) => ({
           ...prev,
           content_types: savedProfile.content_types || [],
           industries: savedProfile.industries || [],
@@ -1356,56 +1362,56 @@ export default function CreatorDashboard() {
         {(creator?.cameo_front_url ||
           creator?.cameo_left_url ||
           creator?.cameo_right_url) && (
-            <Card className="p-6 bg-white border border-gray-200 mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Reference Photos
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">Front</div>
-                  {creator?.cameo_front_url ? (
-                    <img
-                      src={creator.cameo_front_url}
-                      alt="Front"
-                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                      No image
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">Left</div>
-                  {creator?.cameo_left_url ? (
-                    <img
-                      src={creator.cameo_left_url}
-                      alt="Left"
-                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                      No image
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">Right</div>
-                  {creator?.cameo_right_url ? (
-                    <img
-                      src={creator.cameo_right_url}
-                      alt="Right"
-                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                      No image
-                    </div>
-                  )}
-                </div>
+          <Card className="p-6 bg-white border border-gray-200 mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Reference Photos
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">Front</div>
+                {creator?.cameo_front_url ? (
+                  <img
+                    src={creator.cameo_front_url}
+                    alt="Front"
+                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                    No image
+                  </div>
+                )}
               </div>
-            </Card>
-          )}
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">Left</div>
+                {creator?.cameo_left_url ? (
+                  <img
+                    src={creator.cameo_left_url}
+                    alt="Left"
+                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                    No image
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">Right</div>
+                {creator?.cameo_right_url ? (
+                  <img
+                    src={creator.cameo_right_url}
+                    alt="Right"
+                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                    No image
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
         <CameoUpload />
 
         {/* MY CAMEO Section */}
@@ -1769,7 +1775,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -1879,16 +1885,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -1926,8 +1934,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2097,12 +2106,13 @@ export default function CreatorDashboard() {
                   </td>
                   <td className="py-4 px-4">
                     <Badge
-                      className={`${campaign.status === "active"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : campaign.status === "expiring_soon"
-                          ? "bg-orange-100 text-orange-700 border border-orange-300"
-                          : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
+                      className={`${
+                        campaign.status === "active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
+                      }`}
                     >
                       {campaign.status === "active"
                         ? "Active"
@@ -2783,19 +2793,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -2807,10 +2819,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3101,33 +3114,44 @@ export default function CreatorDashboard() {
       const newRates: any[] = [];
 
       // Determine which modal is open and process only its rates
-      if (showRatesModal === 'content') {
-        creator.content_types?.filter(t => CONTENT_TYPES.includes(t)).forEach((type) => {
-          const val = formData.get(`rate_content_${type}`);
-          if (val && val.toString().trim() !== '') {
-            newRates.push({
-              rate_type: "content_type",
-              rate_name: type,
-              price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
-            });
-          }
-        });
-      } else if (showRatesModal === 'industry') {
-        creator.industries?.filter(i => INDUSTRIES.includes(i)).forEach((ind) => {
-          const val = formData.get(`rate_industry_${ind}`);
-          if (val && val.toString().trim() !== '') {
-            newRates.push({
-              rate_type: "industry",
-              rate_name: ind,
-              price_per_week_cents: Math.round(parseFloat(val.toString()) * 100),
-            });
-          }
-        });
+      if (showRatesModal === "content") {
+        creator.content_types
+          ?.filter((t) => CONTENT_TYPES.includes(t))
+          .forEach((type) => {
+            const val = formData.get(`rate_content_${type}`);
+            if (val && val.toString().trim() !== "") {
+              newRates.push({
+                rate_type: "content_type",
+                rate_name: type,
+                price_per_week_cents: Math.round(
+                  parseFloat(val.toString()) * 100,
+                ),
+              });
+            }
+          });
+      } else if (showRatesModal === "industry") {
+        creator.industries
+          ?.filter((i) => INDUSTRIES.includes(i))
+          .forEach((ind) => {
+            const val = formData.get(`rate_industry_${ind}`);
+            if (val && val.toString().trim() !== "") {
+              newRates.push({
+                rate_type: "industry",
+                rate_name: ind,
+                price_per_week_cents: Math.round(
+                  parseFloat(val.toString()) * 100,
+                ),
+              });
+            }
+          });
       }
 
       // Get the existing rates from the *other* category to preserve them
-      const otherRateType = showRatesModal === 'content' ? 'industry' : 'content_type';
-      const preservedRates = customRates.filter(r => r.rate_type === otherRateType);
+      const otherRateType =
+        showRatesModal === "content" ? "industry" : "content_type";
+      const preservedRates = customRates.filter(
+        (r) => r.rate_type === otherRateType,
+      );
 
       // Combine the new rates with the preserved rates
       const finalRates = [...newRates, ...preservedRates];
@@ -3181,19 +3205,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -3470,34 +3496,38 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
                   ))}
                 </div>
-                {!editingRules && creator.content_types && creator.content_types.length > 0 && (
-                  <>
-                    <Alert className="bg-blue-50 border border-blue-200 mb-3">
-                      <AlertCircle className="h-5 w-5 text-blue-600" />
-                      <AlertDescription className="text-blue-900 text-sm">
-                        Want different rates for each content type? Click below to customize.
-                      </AlertDescription>
-                    </Alert>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowRatesModal('content')}
-                      className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Initial Licensing Rate
-                    </Button>
-                  </>
-                )}
+                {!editingRules &&
+                  creator.content_types &&
+                  creator.content_types.length > 0 && (
+                    <>
+                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                        <AlertDescription className="text-blue-900 text-sm">
+                          Want different rates for each content type? Click
+                          below to customize.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRatesModal("content")}
+                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Initial Licensing Rate
+                      </Button>
+                    </>
+                  )}
               </div>
 
               {/* Industries */}
@@ -3512,34 +3542,38 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
                   ))}
                 </div>
-                {!editingRules && creator.industries && creator.industries.length > 0 && (
-                  <>
-                    <Alert className="bg-blue-50 border border-blue-200 mb-3">
-                      <AlertCircle className="h-5 w-5 text-blue-600" />
-                      <AlertDescription className="text-blue-900 text-sm">
-                        Want different rates for each industry? Click below to customize.
-                      </AlertDescription>
-                    </Alert>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowRatesModal('industry')}
-                      className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Initial Licensing Rate
-                    </Button>
-                  </>
-                )}
+                {!editingRules &&
+                  creator.industries &&
+                  creator.industries.length > 0 && (
+                    <>
+                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                        <AlertDescription className="text-blue-900 text-sm">
+                          Want different rates for each industry? Click below to
+                          customize.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRatesModal("industry")}
+                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Initial Licensing Rate
+                      </Button>
+                    </>
+                  )}
               </div>
 
               {/* Pricing */}
@@ -3566,7 +3600,7 @@ export default function CreatorDashboard() {
                           })
                         }
                         disabled={!editingRules}
-                        className={`border-2 text-lg ${!editingRules ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300'}`}
+                        className={`border-2 text-lg ${!editingRules ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
                         min="0"
                         step="50"
                       />
@@ -3831,7 +3865,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -3855,10 +3889,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -4492,13 +4527,16 @@ export default function CreatorDashboard() {
       </Dialog>
 
       {/* Custom Rates Modal */}
-      <Dialog open={showRatesModal !== null} onOpenChange={() => setShowRatesModal(null)}>
+      <Dialog
+        open={showRatesModal !== null}
+        onOpenChange={() => setShowRatesModal(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              {showRatesModal === 'content'
-                ? 'Customize Content Type Rates'
-                : 'Customize Industry Rates'}
+              {showRatesModal === "content"
+                ? "Customize Content Type Rates"
+                : "Customize Industry Rates"}
             </DialogTitle>
           </DialogHeader>
 
@@ -4509,14 +4547,20 @@ export default function CreatorDashboard() {
             <Alert className="bg-blue-50 border border-blue-200 mb-6">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                Set specific weekly rates for different {showRatesModal === 'content' ? 'content types' : 'industries'}. If left blank, your base rate (${creator.price_per_week}/week)
+                Set specific weekly rates for different{" "}
+                {showRatesModal === "content" ? "content types" : "industries"}.
+                If left blank, your base rate (${creator.price_per_week}/week)
                 will apply.
               </AlertDescription>
             </Alert>
 
             {/* Content Types - Only show if modal type is 'content' */}
-            {showRatesModal === 'content' && (
-              (creator.content_types?.filter(t => CONTENT_TYPES.includes(t)) || []).length > 0 ? (
+            {showRatesModal === "content" &&
+              ((
+                creator.content_types?.filter((t) =>
+                  CONTENT_TYPES.includes(t),
+                ) || []
+              ).length > 0 ? (
                 <div className="mb-8">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Video className="w-5 h-5 text-[#32C8D1]" />
@@ -4524,10 +4568,12 @@ export default function CreatorDashboard() {
                   </h4>
                   <div className="grid gap-4">
                     {creator.content_types
-                      ?.filter(type => CONTENT_TYPES.includes(type))
+                      ?.filter((type) => CONTENT_TYPES.includes(type))
                       .map((type) => {
                         const existing = customRates.find(
-                          (r) => r.rate_type === "content_type" && r.rate_name === type,
+                          (r) =>
+                            r.rate_type === "content_type" &&
+                            r.rate_name === type,
                         );
                         return (
                           <div
@@ -4544,7 +4590,9 @@ export default function CreatorDashboard() {
                                 name={`rate_content_${type}`}
                                 defaultValue={
                                   existing
-                                    ? (existing.price_per_week_cents / 100).toString()
+                                    ? (
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -4563,15 +4611,17 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>No content types selected.</strong> Please go back to "My Rules" and select the content types you're open to first.
+                    <strong>No content types selected.</strong> Please go back
+                    to "My Rules" and select the content types you're open to
+                    first.
                   </AlertDescription>
                 </Alert>
-              )
-            )}
+              ))}
 
             {/* Industries - Only show if modal type is 'industry' */}
-            {showRatesModal === 'industry' && (
-              (creator.industries?.filter(i => INDUSTRIES.includes(i)) || []).length > 0 ? (
+            {showRatesModal === "industry" &&
+              ((creator.industries?.filter((i) => INDUSTRIES.includes(i)) || [])
+                .length > 0 ? (
                 <div className="mb-6">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Briefcase className="w-5 h-5 text-purple-500" />
@@ -4579,10 +4629,11 @@ export default function CreatorDashboard() {
                   </h4>
                   <div className="grid gap-4">
                     {creator.industries
-                      ?.filter(ind => INDUSTRIES.includes(ind))
+                      ?.filter((ind) => INDUSTRIES.includes(ind))
                       .map((ind) => {
                         const existing = customRates.find(
-                          (r) => r.rate_type === "industry" && r.rate_name === ind,
+                          (r) =>
+                            r.rate_type === "industry" && r.rate_name === ind,
                         );
                         return (
                           <div
@@ -4599,7 +4650,9 @@ export default function CreatorDashboard() {
                                 name={`rate_industry_${ind}`}
                                 defaultValue={
                                   existing
-                                    ? (existing.price_per_week_cents / 100).toString()
+                                    ? (
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -4618,11 +4671,11 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>No industries selected.</strong> Please go back to "My Rules" and select the industries you work with first.
+                    <strong>No industries selected.</strong> Please go back to
+                    "My Rules" and select the industries you work with first.
                   </AlertDescription>
                 </Alert>
-              )
-            )}
+              ))}
 
             <DialogFooter className="mt-6">
               <Button
@@ -4634,23 +4687,27 @@ export default function CreatorDashboard() {
                 Cancel
               </Button>
               {/* Only show Save Rates button if there are items to customize */}
-              {((showRatesModal === 'content' && creator.content_types?.filter(t => CONTENT_TYPES.includes(t)).length > 0) ||
-                (showRatesModal === 'industry' && creator.industries?.filter(i => INDUSTRIES.includes(i)).length > 0)) && (
-                  <Button
-                    type="submit"
-                    disabled={savingRates}
-                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  >
-                    {savingRates ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Rates"
-                    )}
-                  </Button>
-                )}
+              {((showRatesModal === "content" &&
+                creator.content_types?.filter((t) => CONTENT_TYPES.includes(t))
+                  .length > 0) ||
+                (showRatesModal === "industry" &&
+                  creator.industries?.filter((i) => INDUSTRIES.includes(i))
+                    .length > 0)) && (
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                >
+                  {savingRates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Rates"
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
