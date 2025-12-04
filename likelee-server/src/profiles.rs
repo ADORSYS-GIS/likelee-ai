@@ -137,6 +137,7 @@ pub async fn upload_profile_photo(
         )
         .header("apikey", state.supabase_service_key.clone())
         .header("content-type", ct)
+        .header("x-upsert", "true")
         .body(body)
         .send()
         .await

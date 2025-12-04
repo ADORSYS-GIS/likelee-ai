@@ -1366,23 +1366,15 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
-        {/* MY CAMEO Section - NOW FIRST with Coming Soon */}
+        {/* MY CAMEO Section - NOW FIRST */}
         <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  MY CAMEO
-                </h3>
-                <Badge className="bg-red-100 text-red-700 border border-red-400">
-                  Coming Soon
-                </Badge>
-              </div>
-              <p className="text-gray-600">
-                The video representation of you - brands use this for AI cameos and content generation
-              </p>
-            </div>
-            {heroMedia && <CheckCircle2 className="w-8 h-8 text-green-600" />}
+          <div className="mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              MY CAMEO
+            </h3>
+            <p className="text-gray-600">
+              The video representation of you - brands use this for AI cameos and content generation
+            </p>
           </div>
 
           {heroMedia ? (
@@ -1458,35 +1450,23 @@ export default function CreatorDashboard() {
               </div>
             </div>
           ) : (
-            <div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-[#32C8D1] transition-colors mb-4">
-                <input
-                  type="file"
-                  id="heroUpload"
-                  accept="video/*"
-                  onChange={handleHeroUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-                <label htmlFor="heroUpload" className="cursor-pointer">
-                  {uploading ? (
-                    <Loader2 className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
-                  ) : (
-                    <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  )}
-                  <p className="text-lg text-gray-700 font-medium mb-2">
-                    {uploading ? "Uploading..." : "Upload Your Cameo Video"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    MP4 or MOV, 30-60 seconds recommended
-                  </p>
-                </label>
+            <div className="space-y-4">
+              {/* Coming Soon Upload Box */}
+              <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
+                <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-900 mb-2">
+                  Coming Soon
+                </p>
+                <p className="text-sm text-gray-600">
+                  Cameo video upload will be available soon
+                </p>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-blue-900 text-sm">
-                  <strong>Your cameo is required to start earning.</strong>{" "}
-                  Brands need this video reference to create content featuring you.
+
+              {/* Yellow Warning Alert */}
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-amber-900 text-sm">
+                  <strong>Your cameo is required to start earning.</strong> Brands need this video reference to create content featuring you.
                 </p>
               </div>
             </div>
