@@ -450,6 +450,29 @@ export default function CreatorDashboard() {
   >(null);
   const [savingRates, setSavingRates] = useState(false);
 
+  // Content Restrictions State
+  const [contentRestrictions, setContentRestrictions] = useState<string[]>([
+    "Political Content",
+    "Controversial Topics",
+    "Explicit/Adult Content",
+    "Pharmaceutical Claims",
+    "Financial/Investment Advice",
+    "Tobacco/Vaping Products",
+    "Gambling (Unlicensed)"
+  ]);
+  const [availableRestrictions, setAvailableRestrictions] = useState<string[]>([
+    "Alcohol",
+    "Weapons/Firearms",
+    "Cryptocurrency/NFT",
+    "MLM/Multi-Level Marketing",
+    "Unlicensed Financial Products",
+    "Health/Medical Claims"
+  ]);
+  const [brandExclusivity, setBrandExclusivity] = useState<string[]>([]);
+  const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
+  const [customRestriction, setCustomRestriction] = useState("");
+  const [newBrand, setNewBrand] = useState("");
+
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
@@ -1109,11 +1132,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-                ...rec,
-                voiceProfileCreated: true,
-                voice_id: cloned.voice_id,
-                server_recording_id: recordingId,
-              }
+              ...rec,
+              voiceProfileCreated: true,
+              voice_id: cloned.voice_id,
+              server_recording_id: recordingId,
+            }
             : rec,
         ),
       );
@@ -1152,13 +1175,12 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${
-                index === currentWord
-                  ? "text-[#32C8D1] font-bold scale-110"
-                  : index < currentWord
-                    ? "text-gray-400"
-                    : "text-gray-700"
-              }`}
+              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
+                ? "text-[#32C8D1] font-bold scale-110"
+                : index < currentWord
+                  ? "text-gray-400"
+                  : "text-gray-700"
+                }`}
             >
               {word}
             </span>
@@ -1234,6 +1256,52 @@ export default function CreatorDashboard() {
     } else {
       setCreator({ ...creator, industries: [...current, industry] });
     }
+  };
+
+  // Content Restrictions Helper Functions
+  const addRestriction = (restriction: string) => {
+    setContentRestrictions([...contentRestrictions, restriction]);
+    setAvailableRestrictions(availableRestrictions.filter(r => r !== restriction));
+  };
+
+  const removeRestriction = (restriction: string) => {
+    setContentRestrictions(contentRestrictions.filter(r => r !== restriction));
+    // Only add back to available if it was originally in the predefined list
+    const predefinedRestrictions = [
+      "Alcohol",
+      "Weapons/Firearms",
+      "Cryptocurrency/NFT",
+      "MLM/Multi-Level Marketing",
+      "Unlicensed Financial Products",
+      "Health/Medical Claims"
+    ];
+    if (predefinedRestrictions.includes(restriction)) {
+      setAvailableRestrictions([...availableRestrictions, restriction]);
+    }
+  };
+
+  const addCustomRestriction = () => {
+    if (customRestriction.trim() && customRestriction.length <= 25) {
+      setContentRestrictions([...contentRestrictions, customRestriction.trim()]);
+      setCustomRestriction("");
+    }
+  };
+
+  const addBrandExclusivity = () => {
+    if (newBrand.trim() && newBrand.length <= 25) {
+      setBrandExclusivity([...brandExclusivity, newBrand.trim()]);
+      setNewBrand("");
+    }
+  };
+
+  const removeBrandExclusivity = (brand: string) => {
+    setBrandExclusivity(brandExclusivity.filter(b => b !== brand));
+  };
+
+  const handleSaveRestrictions = () => {
+    // TODO: Save to backend
+    setShowRestrictionsModal(false);
+    alert("Restrictions saved! (Demo mode)");
   };
 
   const handleSaveRules = async () => {
@@ -2015,7 +2083,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                    creator.kyc_status.slice(1)
+                  creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -2130,18 +2198,16 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
-                  hasRecording
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-[#32C8D1]"
-                }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-200 hover:border-[#32C8D1]"
+                  }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                      }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -2179,9 +2245,8 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                        recording.accessible ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
+                        }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2286,11 +2351,10 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${
-              activeCampaigns.length === 0
-                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                : "bg-green-100 text-green-700 border border-green-300"
-            } px-4 py-2 text-lg`}
+            className={`${activeCampaigns.length === 0
+              ? "bg-orange-100 text-orange-700 border border-orange-300"
+              : "bg-green-100 text-green-700 border border-green-300"
+              } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -2392,13 +2456,12 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${
-                          campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
+                        className={`${campaign.status === "active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3258,21 +3321,19 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -3284,11 +3345,10 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${
-                  contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
-                }`}
+                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
+                  ? "border-orange-300"
+                  : "border-gray-200"
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3589,7 +3649,7 @@ export default function CreatorDashboard() {
                 rate_type: "content_type",
                 rate_name: type,
                 price_per_week_cents: Math.round(
-                  parseFloat(val.toString()) * 100,
+                  (parseFloat(val.toString()) / 4) * 100,
                 ),
               });
             }
@@ -3670,21 +3730,19 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "profile"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "rules"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
           My Rules
         </button>
@@ -3961,11 +4019,10 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
@@ -3989,7 +4046,7 @@ export default function CreatorDashboard() {
                         className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                       >
                         <Edit className="w-4 h-4 mr-2" />
-                        Edit Initial Licensing Rate
+                        Edit Rate
                       </Button>
                     </>
                   )}
@@ -4007,11 +4064,10 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
@@ -4020,25 +4076,44 @@ export default function CreatorDashboard() {
                 {!editingRules &&
                   creator.industries &&
                   creator.industries.length > 0 && (
-                    <>
-                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600" />
-                        <AlertDescription className="text-blue-900 text-sm">
-                          Want different rates for each industry? Click below to
-                          customize.
-                        </AlertDescription>
-                      </Alert>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowRatesModal("industry")}
-                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Initial Licensing Rate
-                      </Button>
-                    </>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRatesModal("industry")}
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
                   )}
+              </div>
+
+              {/* Content I'm NOT Comfortable With */}
+              <div className="pt-6 border-t border-gray-200">
+                <Label className="text-base font-semibold text-gray-900 block mb-3">
+                  Content I'm NOT Comfortable With
+                </Label>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {contentRestrictions.map((restriction) => (
+                    <Badge
+                      key={restriction}
+                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500"
+                    >
+                      ✕ {restriction}
+                    </Badge>
+                  ))}
+                </div>
+                {!editingRules && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRestrictionsModal(true)}
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
               </div>
 
               {/* Pricing */}
@@ -4047,7 +4122,7 @@ export default function CreatorDashboard() {
                   Initial Licensing Rate
                 </Label>
                 <p className="text-sm text-gray-600 mb-4">
-                  Base rate per week for cameo usage
+                  Base rate per month for cameo usage
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-md">
@@ -4057,11 +4132,11 @@ export default function CreatorDashboard() {
                       </span>
                       <Input
                         type="number"
-                        value={creator.price_per_week || 0}
+                        value={(creator.price_per_week || 0) * 4}
                         onChange={(e) =>
                           setCreator({
                             ...creator,
-                            price_per_week: parseInt(e.target.value) || 0,
+                            price_per_week: Math.round(parseInt(e.target.value) / 4) || 0,
                           })
                         }
                         disabled={!editingRules}
@@ -4070,7 +4145,7 @@ export default function CreatorDashboard() {
                         step="50"
                       />
                       <span className="text-gray-700 font-medium text-lg">
-                        / week
+                        / month
                       </span>
                     </div>
                   </div>
@@ -4333,7 +4408,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) {}
+                    } catch (_) { }
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -4357,11 +4432,10 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
+                    ? "bg-[#32C8D1] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -5010,8 +5084,8 @@ export default function CreatorDashboard() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {showRatesModal === "content"
-                ? "Customize Content Type Rates"
-                : "Customize Industry Rates"}
+                ? "Edit Content I'm Open To"
+                : "Edit Industries I Work With"}
             </DialogTitle>
           </DialogHeader>
 
@@ -5022,12 +5096,59 @@ export default function CreatorDashboard() {
             <Alert className="bg-blue-50 border border-blue-200 mb-6">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                Set specific weekly rates for different{" "}
-                {showRatesModal === "content" ? "content types" : "industries"}.
-                If left blank, your base rate (${creator.price_per_week}/week)
-                will apply.
+                {showRatesModal === "content" ? (
+                  <>
+                    Select the content types you're open to working with:
+                  </>
+                ) : (
+                  <>
+                    Select the industries you're open to working with:
+                  </>
+                )}
               </AlertDescription>
             </Alert>
+
+            {/* Content Type Selection - Only show if modal type is 'content' */}
+            {showRatesModal === "content" && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Select the content types you're open to working with:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {CONTENT_TYPES.map((type) => (
+                    <Badge
+                      key={type}
+                      onClick={() => handleToggleContentType(type)}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        }`}
+                    >
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Industry Selection - Only show if modal type is 'industry' */}
+            {showRatesModal === "industry" && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Select the industries you're open to working with:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {INDUSTRIES.map((industry) => (
+                    <Badge
+                      key={industry}
+                      onClick={() => handleToggleIndustry(industry)}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        }`}
+                    >
+                      {industry}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Content Types - Only show if modal type is 'content' */}
             {showRatesModal === "content" &&
@@ -5037,10 +5158,10 @@ export default function CreatorDashboard() {
                 ) || []
               ).length > 0 ? (
                 <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Video className="w-5 h-5 text-[#32C8D1]" />
-                    Content Types
-                  </h4>
+                  <h4 className="font-bold text-gray-900 mb-2">Custom Rates by Content Type</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Set custom rates for specific content types. Leave blank to use your base rate of ${(creator.price_per_week || 0) * 4}/month.
+                  </p>
                   <div className="grid gap-4">
                     {creator.content_types
                       ?.filter((type) => CONTENT_TYPES.includes(type))
@@ -5066,16 +5187,16 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                        existing.price_per_week_cents / 100
-                                      ).toString()
+                                      (existing.price_per_week_cents / 100) * 4
+                                    ).toString()
                                     : ""
                                 }
-                                placeholder={creator.price_per_week?.toString()}
+                                placeholder={((creator.price_per_week || 0) * 4).toString()}
                                 className="bg-white"
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">/wk</span>
+                              <span className="text-gray-500 text-sm">/mo</span>
                             </div>
                           </div>
                         );
@@ -5093,64 +5214,14 @@ export default function CreatorDashboard() {
                 </Alert>
               ))}
 
-            {/* Industries - Only show if modal type is 'industry' */}
-            {showRatesModal === "industry" &&
-              ((creator.industries?.filter((i) => INDUSTRIES.includes(i)) || [])
-                .length > 0 ? (
-                <div className="mb-6">
-                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-purple-500" />
-                    Industries
-                  </h4>
-                  <div className="grid gap-4">
-                    {creator.industries
-                      ?.filter((ind) => INDUSTRIES.includes(ind))
-                      .map((ind) => {
-                        const existing = customRates.find(
-                          (r) =>
-                            r.rate_type === "industry" && r.rate_name === ind,
-                        );
-                        return (
-                          <div
-                            key={ind}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                          >
-                            <Label className="font-medium text-gray-700">
-                              {ind}
-                            </Label>
-                            <div className="flex items-center gap-2 w-48">
-                              <span className="text-gray-500">$</span>
-                              <Input
-                                type="number"
-                                name={`rate_industry_${ind}`}
-                                defaultValue={
-                                  existing
-                                    ? (
-                                        existing.price_per_week_cents / 100
-                                      ).toString()
-                                    : ""
-                                }
-                                placeholder={creator.price_per_week?.toString()}
-                                className="bg-white"
-                                min="0"
-                                step="1"
-                              />
-                              <span className="text-gray-500 text-sm">/wk</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              ) : (
-                <Alert className="bg-amber-50 border border-amber-200 mb-6">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
-                  <AlertDescription className="text-amber-900">
-                    <strong>No industries selected.</strong> Please go back to
-                    "My Rules" and select the industries you work with first.
-                  </AlertDescription>
-                </Alert>
-              ))}
+            {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
+            {showRatesModal === "industry" && (
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  Simply select the industries you're open to working with. Your base rate will apply to all selected industries.
+                </p>
+              </div>
+            )}
 
             <DialogFooter className="mt-6">
               <Button
@@ -5161,30 +5232,167 @@ export default function CreatorDashboard() {
               >
                 Cancel
               </Button>
-              {/* Only show Save Rates button if there are items to customize */}
-              {((showRatesModal === "content" &&
-                creator.content_types?.filter((t) => CONTENT_TYPES.includes(t))
-                  .length > 0) ||
-                (showRatesModal === "industry" &&
-                  creator.industries?.filter((i) => INDUSTRIES.includes(i))
-                    .length > 0)) && (
-                <Button
-                  type="submit"
-                  disabled={savingRates}
-                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                >
-                  {savingRates ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Rates"
-                  )}
-                </Button>
-              )}
+              {/* Save button - always show, different text for each modal */}
+              <Button
+                type="submit"
+                disabled={savingRates}
+                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              >
+                {savingRates ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  showRatesModal === "content" ? "Save Rates" : "Save Changes"
+                )}
+              </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Restrictions Modal */}
+      <Dialog open={showRestrictionsModal} onOpenChange={() => setShowRestrictionsModal(false)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Edit Content I'm NOT Comfortable With
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
+            <p className="text-sm text-gray-600">
+              Manage content types and categories you don't want to be associated with:
+            </p>
+
+            {/* Current Restrictions */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Current Restrictions:</h4>
+              <div className="flex flex-wrap gap-2">
+                {contentRestrictions.map((restriction) => (
+                  <Badge
+                    key={restriction}
+                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:bg-red-600"
+                    onClick={() => removeRestriction(restriction)}
+                  >
+                    ✕ {restriction}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Click to add restrictions */}
+            {availableRestrictions.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Click to add restrictions:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {availableRestrictions.map((restriction) => (
+                    <Badge
+                      key={restriction}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:bg-gray-300"
+                      onClick={() => addRestriction(restriction)}
+                    >
+                      + {restriction}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add custom restriction */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Add custom restriction:</h4>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add custom restriction (max 25 chars)"
+                  maxLength={25}
+                  value={customRestriction}
+                  onChange={(e) => setCustomRestriction(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomRestriction();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={addCustomRestriction}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            {/* Brand Exclusivity */}
+            <div className="pt-4 border-t">
+              <h4 className="font-semibold text-gray-900 mb-2">Conflicting Campaigns (Brand Exclusivity)</h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Add brands you're exclusive with to prevent competing campaigns
+              </p>
+              
+              {brandExclusivity.length === 0 ? (
+                <p className="text-sm italic text-gray-500 mb-3">No brand exclusivity set</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {brandExclusivity.map((brand) => (
+                    <Badge
+                      key={brand}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2"
+                    >
+                      {brand}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover:text-red-600"
+                        onClick={() => removeBrandExclusivity(brand)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter brand name (max 25 chars)"
+                  maxLength={25}
+                  value={newBrand}
+                  onChange={(e) => setNewBrand(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addBrandExclusivity();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={addBrandExclusivity}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowRestrictionsModal(false)}
+              className="border-2 border-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              onClick={handleSaveRestrictions}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
