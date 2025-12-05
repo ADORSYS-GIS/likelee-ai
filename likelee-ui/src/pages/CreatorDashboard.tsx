@@ -274,7 +274,7 @@ const exampleCampaigns = [
     brand_logo:
       "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
     brand_image_url:
-      "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+      "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
     campaign: "Thirsty for More, Best energy drink",
     usage_type: "Energy Drink",
     rate: 50000,
@@ -309,6 +309,42 @@ const exampleApprovals = [
     perpetual: false,
     isExample: true,
   },
+  {
+    id: "example-samsung-approval",
+    brand: "Samsung Electronic",
+    brand_logo:
+      "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
+    campaign_type: "Product Launch",
+    requested_date: "2025-02-10",
+    proposed_rate: 800,
+    term_length: "3 months",
+    estimated_monthly: 720,
+    regions: ["Global"],
+    industries: ["Tech"],
+    usage_type: "TV & Digital",
+    duration: "3 months",
+    territory: "Global",
+    perpetual: false,
+    isExample: true,
+  },
+  {
+    id: "example-pepsi-approval",
+    brand: "Pepsi",
+    brand_logo:
+      "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
+    campaign_type: "Summer Campaign",
+    requested_date: "2025-02-12",
+    proposed_rate: 700,
+    term_length: "4 months",
+    estimated_monthly: 630,
+    regions: ["North America", "Europe"],
+    industries: ["Food & Beverage"],
+    usage_type: "Social Media",
+    duration: "4 months",
+    territory: "North America, Europe",
+    perpetual: false,
+    isExample: true,
+  },
 ];
 
 // Example archived campaign for blank users (shown when no real archived campaigns exist)
@@ -326,6 +362,36 @@ const exampleArchivedCampaigns = [
     total_earned: 1200,
     regions: ["Global"],
     show_on_portfolio: false,
+    isExample: true,
+  },
+  {
+    id: "example-lululemon-archive",
+    brand: "Lululemon",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
+    campaign: "Yoga Collection",
+    campaign_type: "Social Media Campaign",
+    completed_date: "1/15/2026",
+    duration: "3 months",
+    monthly_rate: 750,
+    total_earned: 2250,
+    regions: ["North America"],
+    show_on_portfolio: true,
+    isExample: true,
+  },
+  {
+    id: "example-shopify-archive",
+    brand: "Shopify",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
+    campaign: "Entrepreneur Stories",
+    campaign_type: "Digital Ad",
+    completed_date: "12/20/2025",
+    duration: "1 month",
+    monthly_rate: 900,
+    total_earned: 900,
+    regions: ["Global"],
+    show_on_portfolio: true,
     isExample: true,
   },
 ];
