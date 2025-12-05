@@ -4879,12 +4879,12 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <div className="bg-amber-50 border-2 border-amber-300">
-                    <AlertCircle className="h-5 w-5 text-amber-600" />
-                    <p className="text-amber-900">
-                      <strong>⚠️ IMPORTANT PAYMENT WARNING</strong>
+                  <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-lg flex gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="text-amber-900 text-sm">
+                      <p className="font-bold">⚠️ IMPORTANT PAYMENT WARNING</p>
                       <p className="mt-2">If you pause NOW (mid-month):</p>
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
+                      <ul className="list-disc ml-4 mt-1 space-y-1">
                         <li>You will NOT receive payment for {currentMonth}</li>
                         <li>
                           Even though you've earned ${proratedAmount} so far
@@ -4892,7 +4892,7 @@ export default function CreatorDashboard() {
                         </li>
                         <li>That money will be forfeited</li>
                       </ul>
-                    </p>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
