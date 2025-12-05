@@ -802,7 +802,6 @@ export default function CreatorDashboard() {
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "public-profile", label: "Public Profile", icon: Globe },
     { id: "content", label: "Content", icon: PlayCircle },
     { id: "likeness", label: "My Likeness", icon: ImageIcon },
     { id: "voice", label: "Voice & Recordings", icon: Mic },
@@ -4587,8 +4586,7 @@ export default function CreatorDashboard() {
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
                   onClick={() => {
-                    const url = `${window.location.origin}/PublicProfile`;
-                    window.open(url, "_blank");
+                    setActiveSection("public-profile");
                     setShowProfileMenu(false);
                   }}
                 >
