@@ -84,11 +84,22 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -euo pipefail
             sudo -n bash -lc '
               set -euo pipefail
               echo "Running deployment as root (user: $(whoami), home: $HOME)"
               cd "${{ env.REMOTE_DIR }}"
               echo "CWD: $(pwd)"
+              echo "Listing deploy directory:" && ls -la
+              # Preflight validations
+              if [ ! -f docker-compose.yml ]; then
+                echo "ERROR: docker-compose.yml not found in $(pwd)" >&2
+                exit 1
+              fi
+              if [ ! -f docker-compose.prod.yml ]; then
+                echo "ERROR: docker-compose.prod.yml not found in $(pwd)" >&2
+                exit 1
+              fi
               export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
               export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
               export IMAGE_TAG="${{ env.IMAGE_TAG }}"
@@ -110,5 +121,5 @@ jobs:
                 ./scripts/rollback.sh || true
                 exit 1
               fi
+              echo "Deployment succeeded for tag ${IMAGE_TAG}"
             '
-            echo "Deployment succeeded for tag ${IMAGE_TAG}"

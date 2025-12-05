@@ -33,9 +33,12 @@ export REGISTRY_IMAGE_SERVER
 export REGISTRY_IMAGE_UI
 export IMAGE_TAG
 
-docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+COMPOSE_BASE="${EC2_DIR}/docker-compose.yml"
+COMPOSE_PROD="${EC2_DIR}/docker-compose.prod.yml"
 
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
+
+docker compose -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d
 
 # Promote pending tag to current on success
 mv "${CUR_TAG_FILE}.pending" "${CUR_TAG_FILE}"
