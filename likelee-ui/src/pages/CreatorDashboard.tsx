@@ -989,10 +989,10 @@ export default function CreatorDashboard() {
             <Button
               variant="outline"
               className="gap-2"
-              onClick={() => setShowCardModal(true)}
+              onClick={() => setShowCardModal(!showCardModal)}
             >
               <LayoutDashboard className="h-4 w-4" />
-              View Card
+              {showCardModal ? "Hide Card" : "View Card"}
             </Button>
             <Button
               variant="outline"
@@ -1176,9 +1176,12 @@ export default function CreatorDashboard() {
             >
               {/* Card Header */}
               <div className="h-32 bg-[#32C8D1] flex items-center justify-center">
-                <div className="text-white text-6xl font-bold">
-                  {data.first_name[0] === "[" ? "U" : data.first_name[0]}
-                </div>
+                <Avatar className="h-20 w-20 border-4 border-white shadow-sm">
+                  <AvatarImage src={creator.profile_photo || user?.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-white/20 text-white text-4xl">
+                    {data.first_name[0] === "[" ? "U" : data.first_name[0]}
+                  </AvatarFallback>
+                </Avatar>
               </div>
 
               {/* Card Content */}
