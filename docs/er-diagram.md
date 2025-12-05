@@ -12,6 +12,7 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 2025-11-21_consolidated_profiles_wallet.sql
 - 2025-11-23_moderation_events.sql
 - 20251127_create_org_and_agency_users.sql
+- 2025-12-04_add_profile_photo_url.sql
 - 20251204101400_add_creator_custom_rates.sql
 
 Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
@@ -50,6 +51,7 @@ erDiagram
     %% modeling / talent
     text representation_status
     text headshot_url
+    text profile_photo_url
 
     %% athlete
     text sport
