@@ -734,6 +734,7 @@ export default function CreatorDashboard() {
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
   const [customRestriction, setCustomRestriction] = useState("");
   const [newBrand, setNewBrand] = useState("");
+  const [editingLicensingRate, setEditingLicensingRate] = useState(false);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -4802,141 +4803,86 @@ export default function CreatorDashboard() {
       {settingsTab === "rules" && (
         <div className="space-y-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  My Rules
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Set your licensing preferences and rates
-                </p>
-              </div>
-              {!editingRules ? (
-                <Button
-                  onClick={() => setEditingRules(true)}
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setEditingRules(false)}
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveRules}
-                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  >
-                    Save
-                  </Button>
-                </div>
-              )}
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">
+                My Rules
+              </h3>
+              <p className="text-sm text-gray-600">
+                Set your licensing preferences and rates
+              </p>
             </div>
 
             <div className="space-y-8">
               {/* Content Types */}
               <div>
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Content I'm Open To
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {CONTENT_TYPES.map((type) => (
-                    <Badge
-                      key={type}
-                      onClick={() =>
-                        editingRules && handleToggleContentType(type)
-                      }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
-                    >
-                      {type}
-                    </Badge>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Content I'm Open To
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRatesModal("content")}
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Rate
+                  </Button>
                 </div>
-                {!editingRules &&
-                  creator.content_types &&
-                  creator.content_types.length > 0 && (
-                    <>
-                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600" />
-                        <AlertDescription className="text-blue-900 text-sm">
-                          Want different rates for each content type? Click
-                          below to customize.
-                        </AlertDescription>
-                      </Alert>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowRatesModal("content")}
-                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                <div className="flex flex-wrap gap-2">
+                  {creator.content_types && creator.content_types.length > 0 ? (
+                    creator.content_types.map((type) => (
+                      <Badge
+                        key={type}
+                        className="bg-[#32C8D1] text-white px-4 py-2 border-2 border-[#32C8D1]"
                       >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Rate
-                      </Button>
-                    </>
+                        {type}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No content types selected</p>
                   )}
+                </div>
               </div>
 
               {/* Industries */}
               <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Industries I Work With
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {INDUSTRIES.map((industry) => (
-                    <Badge
-                      key={industry}
-                      onClick={() =>
-                        editingRules && handleToggleIndustry(industry)
-                      }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
-                    >
-                      {industry}
-                    </Badge>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Industries I Work With
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRatesModal("industry")}
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
                 </div>
-                {!editingRules &&
-                  creator.industries &&
-                  creator.industries.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowRatesModal("industry")}
-                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
+                <div className="flex flex-wrap gap-2">
+                  {creator.industries && creator.industries.length > 0 ? (
+                    creator.industries.map((industry) => (
+                      <Badge
+                        key={industry}
+                        className="bg-[#32C8D1] text-white px-4 py-2 border-2 border-[#32C8D1]"
+                      >
+                        {industry}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No industries selected</p>
                   )}
+                </div>
               </div>
 
               {/* Content I'm NOT Comfortable With */}
               <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Content I'm NOT Comfortable With
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {contentRestrictions.map((restriction) => (
-                    <Badge
-                      key={restriction}
-                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500"
-                    >
-                      ✕ {restriction}
-                    </Badge>
-                  ))}
-                </div>
-                {!editingRules && (
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Content I'm NOT Comfortable With
+                  </Label>
                   <Button
                     variant="outline"
                     size="sm"
@@ -4946,14 +4892,58 @@ export default function CreatorDashboard() {
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {contentRestrictions.map((restriction) => (
+                    <Badge
+                      key={restriction}
+                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500"
+                    >
+                      ✕ {restriction}
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
               {/* Pricing */}
               <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Initial Licensing Rate
-                </Label>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Initial Licensing Rate
+                  </Label>
+                  {!editingLicensingRate ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingLicensingRate(true)}
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingLicensingRate(false)}
+                        className="border-2 border-gray-300"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          handleSaveRules();
+                          setEditingLicensingRate(false);
+                        }}
+                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mb-4">
                   Base rate per month for cameo usage
                 </p>
@@ -4972,8 +4962,8 @@ export default function CreatorDashboard() {
                             price_per_week: Math.round(parseInt(e.target.value) / 4) || 0,
                           })
                         }
-                        disabled={!editingRules}
-                        className={`border-2 text-lg ${!editingRules ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
+                        disabled={!editingLicensingRate}
+                        className={`border-2 text-lg ${!editingLicensingRate ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
                         min="0"
                         step="50"
                       />
@@ -6165,7 +6155,7 @@ export default function CreatorDashboard() {
               <p className="text-sm text-gray-600 mb-3">
                 Add brands you're exclusive with to prevent competing campaigns
               </p>
-              
+
               {brandExclusivity.length === 0 ? (
                 <p className="text-sm italic text-gray-500 mb-3">No brand exclusivity set</p>
               ) : (
