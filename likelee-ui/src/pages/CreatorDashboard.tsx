@@ -994,10 +994,10 @@ export default function CreatorDashboard() {
           voiceLibrary.map((rec) =>
             rec.id === recording.id
               ? {
-                ...rec,
-                voiceProfileCreated: true,
-                voice_id: response.data.voice_id,
-              }
+                  ...rec,
+                  voiceProfileCreated: true,
+                  voice_id: response.data.voice_id,
+                }
               : rec,
           ),
         );
@@ -1006,8 +1006,8 @@ export default function CreatorDashboard() {
       } else {
         throw new Error(
           response.data?.error ||
-          response.data?.details ||
-          "Unknown error creating voice profile",
+            response.data?.details ||
+            "Unknown error creating voice profile",
         );
       }
     } catch (error) {
@@ -1043,12 +1043,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -1847,7 +1848,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -1962,16 +1963,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -2009,8 +2012,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2115,10 +2119,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -2220,12 +2225,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -2359,11 +2365,9 @@ export default function CreatorDashboard() {
   const renderApprovals = () => {
     if (showApprovalContract) {
       // Check both real approvals and examples
-      const approval = pendingApprovals.find(
-        (a) => a.id === showApprovalContract,
-      ) || exampleApprovals.find(
-        (a) => a.id === showApprovalContract,
-      );
+      const approval =
+        pendingApprovals.find((a) => a.id === showApprovalContract) ||
+        exampleApprovals.find((a) => a.id === showApprovalContract);
       if (!approval) return null;
 
       return (
@@ -2531,7 +2535,8 @@ export default function CreatorDashboard() {
     }
 
     // Use example approvals if pendingApprovals is empty, otherwise use real data
-    const approvalsToShow = pendingApprovals.length === 0 ? exampleApprovals : pendingApprovals;
+    const approvalsToShow =
+      pendingApprovals.length === 0 ? exampleApprovals : pendingApprovals;
     const showingExamples = pendingApprovals.length === 0;
 
     return (
@@ -2555,7 +2560,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Approval Queue!</strong> This is an example of what brand requests will look like. You don't have any pending approvals yet — but when brands want to work with you, their requests will appear here!
+              <strong>Welcome to your Approval Queue!</strong> This is an
+              example of what brand requests will look like. You don't have any
+              pending approvals yet — but when brands want to work with you,
+              their requests will appear here!
             </p>
           </div>
         )}
@@ -2603,9 +2611,7 @@ export default function CreatorDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-600">
-                      Term Length:
-                    </span>
+                    <span className="text-sm text-gray-600">Term Length:</span>
                     <span className="font-bold text-gray-900">
                       {approval.term_length}
                     </span>
@@ -2703,14 +2709,19 @@ export default function CreatorDashboard() {
   const renderCampaignArchive = () => {
     // Use example archived campaigns if none exist, otherwise use real data
     const archivedCampaigns: any[] = []; // This will be populated from real data later
-    const campaignsToShow = archivedCampaigns.length === 0 ? exampleArchivedCampaigns : archivedCampaigns;
+    const campaignsToShow =
+      archivedCampaigns.length === 0
+        ? exampleArchivedCampaigns
+        : archivedCampaigns;
     const showingExamples = archivedCampaigns.length === 0;
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Campaign Archive</h2>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Campaign Archive
+            </h2>
             <p className="text-gray-600 mt-1">
               View your completed campaigns and manage portfolio visibility
             </p>
@@ -2725,14 +2736,20 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Campaign Archive!</strong> This is an example of what your completed campaigns will look like. You don't have any archived campaigns yet — but when you do, they'll appear here just like this!
+              <strong>Welcome to your Campaign Archive!</strong> This is an
+              example of what your completed campaigns will look like. You don't
+              have any archived campaigns yet — but when you do, they'll appear
+              here just like this!
             </p>
           </div>
         )}
 
         <div className="space-y-6">
           {campaignsToShow.map((campaign) => (
-            <Card key={campaign.id} className="p-6 bg-white border-2 border-gray-200">
+            <Card
+              key={campaign.id}
+              className="p-6 bg-white border-2 border-gray-200"
+            >
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <img
@@ -2762,7 +2779,9 @@ export default function CreatorDashboard() {
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
-                  <p className="font-bold text-gray-900">${campaign.monthly_rate}</p>
+                  <p className="font-bold text-gray-900">
+                    ${campaign.monthly_rate}
+                  </p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
@@ -2793,16 +2812,22 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       // For examples, just show a message
                       if (campaign.isExample) {
-                        alert("This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.");
+                        alert(
+                          "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                        );
                         return;
                       }
                       // For real campaigns, update the state
                       // TODO: Add API call to update portfolio visibility
-                      console.log(`Toggle portfolio visibility for ${campaign.id}: ${checked}`);
+                      console.log(
+                        `Toggle portfolio visibility for ${campaign.id}: ${checked}`,
+                      );
                     }}
                   />
                   <div>
-                    <p className="font-semibold text-gray-900">Show on Portfolio</p>
+                    <p className="font-semibold text-gray-900">
+                      Show on Portfolio
+                    </p>
                     <p className="text-sm text-gray-600">
                       {campaign.show_on_portfolio
                         ? "Visible to brands viewing your profile"
@@ -2829,7 +2854,9 @@ export default function CreatorDashboard() {
   const renderContracts = () => {
     if (showContractDetails && selectedContract) {
       // Check both real contracts and examples
-      const contract = contracts.find((c) => c.id === selectedContract) || exampleContracts.find((c) => c.id === selectedContract);
+      const contract =
+        contracts.find((c) => c.id === selectedContract) ||
+        exampleContracts.find((c) => c.id === selectedContract);
       if (!contract) return null;
 
       const currentMonth = new Date().toLocaleString("default", {
@@ -3025,9 +3052,12 @@ export default function CreatorDashboard() {
     const realActiveContracts = contracts.filter(
       (c) => c.status === "active" || c.status === "expiring_soon",
     );
-    const realExpiredContracts = contracts.filter((c) => c.status === "expired");
+    const realExpiredContracts = contracts.filter(
+      (c) => c.status === "expired",
+    );
 
-    const activeContracts = realActiveContracts.length === 0 ? exampleContracts : realActiveContracts;
+    const activeContracts =
+      realActiveContracts.length === 0 ? exampleContracts : realActiveContracts;
     const expiredContracts = realExpiredContracts;
     const showingExamples = realActiveContracts.length === 0;
 
@@ -3049,7 +3079,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Licenses & Contracts!</strong> This is an example of what your active licensing deals will look like. You don't have any contracts yet — but when brands approve your work, they'll appear here just like this!
+              <strong>Welcome to your Licenses & Contracts!</strong> This is an
+              example of what your active licensing deals will look like. You
+              don't have any contracts yet — but when brands approve your work,
+              they'll appear here just like this!
             </p>
           </div>
         )}
@@ -3058,19 +3091,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -3082,10 +3117,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3383,19 +3419,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -3672,10 +3710,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
@@ -3695,10 +3734,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
@@ -4040,7 +4080,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -4064,10 +4104,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -4129,7 +4170,9 @@ export default function CreatorDashboard() {
           {selectedContract &&
             (() => {
               // Check both real contracts and examples
-              const contract = contracts.find((c) => c.id === selectedContract) || exampleContracts.find((c) => c.id === selectedContract);
+              const contract =
+                contracts.find((c) => c.id === selectedContract) ||
+                exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
               const currentMonth = new Date().toLocaleString("default", {
                 month: "long",
@@ -4251,7 +4294,9 @@ export default function CreatorDashboard() {
           {selectedContract &&
             (() => {
               // Check both real contracts and examples
-              const contract = contracts.find((c) => c.id === selectedContract) || exampleContracts.find((c) => c.id === selectedContract);
+              const contract =
+                contracts.find((c) => c.id === selectedContract) ||
+                exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
               const revocationDate = new Date();
               const finalDate = new Date(revocationDate);
