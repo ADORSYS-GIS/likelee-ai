@@ -26,11 +26,7 @@ export default function Landing() {
     return () => clearTimeout(id);
   }, [typedIndex]);
 
-  const phrases = [
-    "Ready to Use",
-    "Verified Protection",
-    "Licensed Faces",
-  ];
+  const phrases = ["Ready to Use", "Verified Protection", "Licensed Faces"];
   const [phraseIdx, setPhraseIdx] = useState(0);
   useEffect(() => {
     const id = setInterval(() => {
@@ -83,13 +79,22 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 py-8 text-center">
           <div className="mx-auto text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight">
             {typedHeadline}
-            <span className="inline-block w-1 bg-white ml-1 align-middle animate-pulse" style={{height:'1em'}}></span>
+            <span
+              className="inline-block w-1 bg-white ml-1 align-middle animate-pulse"
+              style={{ height: "1em" }}
+            ></span>
           </div>
-          <div className="relative mt-2 overflow-hidden" style={{height: '1.5rem'}}>
+          <div
+            className="relative mt-2 overflow-hidden"
+            style={{ height: "1.5rem" }}
+          >
             <div
               key={phraseIdx}
               className="absolute left-1/2 whitespace-nowrap text-xs sm:text-sm md:text-base font-bold opacity-95"
-              style={{ animation: 'center-marquee 6s ease-in-out infinite alternate, flicker 1.2s ease-in-out infinite' }}
+              style={{
+                animation:
+                  "center-marquee 6s ease-in-out infinite alternate, flicker 1.2s ease-in-out infinite",
+              }}
             >
               {phrases[phraseIdx]}
             </div>
@@ -161,7 +166,6 @@ export default function Landing() {
             <p className="mt-4 text-gray-600">
               From months of vetting to minutes of browsing.
             </p>
-            
           </div>
         </div>
       </section>
@@ -174,9 +178,9 @@ export default function Landing() {
               Don't Lose User Trust using Fake Avatars
             </h2>
             <p className="mt-4 text-gray-600">
-              Real creators bring genuine belief, and your audiences feel it instantly.
+              Real creators bring genuine belief, and your audiences feel it
+              instantly.
             </p>
-            
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -226,7 +230,8 @@ export default function Landing() {
               Premium Talent with Zero Production Headaches
             </h2>
             <p className="mt-4 text-gray-600">
-              Skip shoot day and access verified models from top agencies. All with premium results.
+              Skip shoot day and access verified models from top agencies. All
+              with premium results.
             </p>
           </div>
           <div className="flex justify-center">
@@ -264,7 +269,8 @@ export default function Landing() {
               Built for Brands of All Sizes
             </h2>
             <p className="mt-4 text-gray-600">
-              From ecom startups to enterprises—build high-touch campaigns with verified talent for every budget.
+              From ecom startups to enterprises—build high-touch campaigns with
+              verified talent for every budget.
             </p>
           </div>
         </div>

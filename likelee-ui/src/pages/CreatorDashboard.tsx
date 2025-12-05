@@ -810,9 +810,12 @@ export default function CreatorDashboard() {
       // If it exists on server, delete there too
       const sid = rec?.server_recording_id || rec?.id;
       if (sid) {
-        await fetch(`${API_BASE}/api/voice/recordings/${encodeURIComponent(sid)}`, {
-          method: "DELETE",
-        });
+        await fetch(
+          `${API_BASE}/api/voice/recordings/${encodeURIComponent(sid)}`,
+          {
+            method: "DELETE",
+          },
+        );
       }
     } catch (_) {
       // best-effort

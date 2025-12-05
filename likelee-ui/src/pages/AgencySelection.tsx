@@ -44,7 +44,10 @@ export default function AgencySelection() {
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto grid gap-8 md:grid-cols-3">
           {items.map(({ title, desc, icon: Icon, to }) => (
-            <Card key={title} className="p-8 border-2 border-black rounded-none bg-white">
+            <Card
+              key={title}
+              className="p-8 border-2 border-black rounded-none bg-white"
+            >
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="w-14 h-14 bg-gray-900 text-white flex items-center justify-center">
                   <Icon className="w-7 h-7" />
