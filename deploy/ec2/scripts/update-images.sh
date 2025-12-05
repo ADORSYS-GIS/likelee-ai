@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
 
 # Update EC2 stack to a specific image tag pulled from registry
 # Expected env vars:
@@ -36,9 +37,35 @@ export IMAGE_TAG
 COMPOSE_BASE="${EC2_DIR}/docker-compose.yml"
 COMPOSE_PROD="${EC2_DIR}/docker-compose.prod.yml"
 
-docker compose -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
+# Diagnostics for docker/compose and choose command
+command -v docker || true
+docker --version || true
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_BIN=(docker compose)
+else
+  command -v docker-compose || true
+  docker-compose version || true || true
+  if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_BIN=(docker-compose)
+  else
+    echo "ERROR: Neither 'docker compose' nor 'docker-compose' is available" >&2
+    exit 1
+  fi
+fi
 
-docker compose -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d
+# Run compose with absolute files, pin project directory and name
+PROJECT_NAME="likelee"
+export COMPOSE_FILE="${COMPOSE_BASE}:${COMPOSE_PROD}"
+
+pushd "${EC2_DIR}" >/dev/null
+if [ "${COMPOSE_BIN[0]} ${COMPOSE_BIN[1]:-}" = "docker compose" ]; then
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" pull
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" up -d
+else
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" pull
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" up -d
+fi
+popd >/dev/null
 
 # Promote pending tag to current on success
 mv "${CUR_TAG_FILE}.pending" "${CUR_TAG_FILE}"
