@@ -274,7 +274,7 @@ const exampleCampaigns = [
     brand_logo:
       "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
     brand_image_url:
-      "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
+      "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
     campaign: "Thirsty for More, Best energy drink",
     usage_type: "Energy Drink",
     rate: 50000,
@@ -430,7 +430,7 @@ const exampleContracts = [
     id: "example-glossier-contract",
     brand: "Glossier Beauty",
     brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/8/84/Glossier_Logo.svg",
+      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
     project_name: "Spring Beauty Collection",
     creator_earnings: 750,
     earnings_to_date: 4500,
@@ -3849,12 +3849,12 @@ export default function CreatorDashboard() {
                 </div>
 
                 {contract.status === "expiring_soon" && (
-                  <div className="mb-4 bg-orange-50 border-2 border-orange-300">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                    <p className="text-orange-900">
-                      <strong>
+                  <div className="mb-4 bg-orange-50 border border-orange-300 rounded-lg p-3 flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-orange-600 shrink-0" />
+                    <p className="text-orange-900 text-sm">
+                      <span className="font-bold">
                         Expiring in {contract.days_remaining} days!
-                      </strong>{" "}
+                      </span>{" "}
                       Would you like to renew this license?
                     </p>
                   </div>
