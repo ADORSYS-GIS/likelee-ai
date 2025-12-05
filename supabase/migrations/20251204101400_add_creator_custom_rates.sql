@@ -1,33 +1,62 @@
-CREATE TABLE creator_custom_rates (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  rate_type TEXT NOT NULL, -- 'content_type' or 'industry'
-  rate_name TEXT NOT NULL,
-  price_per_week_cents INT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+BEGIN;
+
+-- Ensure pgcrypto for UUIDs
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 1. Create Table
+CREATE TABLE IF NOT EXISTS public.creator_custom_rates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  creator_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  rate_type text NOT NULL, -- 'content_type' or 'industry'
+  rate_name text NOT NULL,
+  price_per_week_cents integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(creator_id, rate_type, rate_name)
 );
 
-ALTER TABLE creator_custom_rates ENABLE ROW LEVEL SECURITY;
+-- 2. Enable RLS
+ALTER TABLE public.creator_custom_rates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Creators can view their own custom rates" 
-ON creator_custom_rates FOR SELECT 
-USING (auth.uid() = creator_id);
+-- 3. Create RLS Policies (Idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'creator_custom_rates' AND policyname = 'Creators can view their own custom rates'
+  ) THEN
+    CREATE POLICY "Creators can view their own custom rates" 
+    ON public.creator_custom_rates FOR SELECT 
+    USING (auth.uid() = creator_id);
+  END IF;
 
-CREATE POLICY "Creators can insert their own custom rates" 
-ON creator_custom_rates FOR INSERT 
-WITH CHECK (auth.uid() = creator_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'creator_custom_rates' AND policyname = 'Creators can insert their own custom rates'
+  ) THEN
+    CREATE POLICY "Creators can insert their own custom rates" 
+    ON public.creator_custom_rates FOR INSERT 
+    WITH CHECK (auth.uid() = creator_id);
+  END IF;
 
-CREATE POLICY "Creators can update their own custom rates" 
-ON creator_custom_rates FOR UPDATE 
-USING (auth.uid() = creator_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'creator_custom_rates' AND policyname = 'Creators can update their own custom rates'
+  ) THEN
+    CREATE POLICY "Creators can update their own custom rates" 
+    ON public.creator_custom_rates FOR UPDATE 
+    USING (auth.uid() = creator_id) 
+    WITH CHECK (auth.uid() = creator_id);
+  END IF;
 
-CREATE POLICY "Creators can delete their own custom rates" 
-ON creator_custom_rates FOR DELETE 
-USING (auth.uid() = creator_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'creator_custom_rates' AND policyname = 'Creators can delete their own custom rates'
+  ) THEN
+    CREATE POLICY "Creators can delete their own custom rates" 
+    ON public.creator_custom_rates FOR DELETE 
+    USING (auth.uid() = creator_id);
+  END IF;
+END$$;
 
-CREATE OR REPLACE FUNCTION upsert_creator_rates(p_creator_id UUID, p_rates JSONB)
+-- 4. Create Upsert Function
+CREATE OR REPLACE FUNCTION public.upsert_creator_rates(p_creator_id UUID, p_rates JSONB)
 RETURNS void AS $$
 BEGIN
     -- Security check: ensure user can only update their own rates
@@ -35,7 +64,7 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized: You can only update your own rates';
     END IF;
 
-    -- First, delete all existing rates for this user
+    -- First, delete all existing rates for this user for the given types
     DELETE FROM public.creator_custom_rates
     WHERE creator_id = p_creator_id;
 
@@ -49,3 +78,5 @@ BEGIN
     FROM jsonb_array_elements(p_rates) AS rate;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMIT;
