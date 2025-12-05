@@ -77,6 +77,11 @@ pub fn build_router(state: AppState) -> Router {
             "/api/liveness/result",
             post(crate::liveness::liveness_result),
         )
+        .route(
+            "/api/creator-rates",
+            get(crate::creator_rates::get_creator_rates)
+                .post(crate::creator_rates::upsert_creator_rates),
+        )
         .with_state(state)
         .layer(DefaultBodyLimit::max(5_000_000)) // 5MB limit
         .layer(cors)
