@@ -51,6 +51,7 @@ import TestFalAPI from "./TestFalAPI";
 import SalesInquiry from "./SalesInquiry";
 
 import MarketingAgency from "./MarketingAgency";
+import AgencySelection from "./AgencySelection";
 
 import TalentAgency from "./TalentAgency";
 
@@ -240,7 +241,7 @@ function PagesContent() {
   return (
     <Layout currentPageName={currentPage}>
       <Routes>
-        <Route path="/" element={<BrandsStudios />} />
+        <Route path="/" element={<Landing />} />
 
         <Route path="/BrandsStudios" element={<BrandsStudios />} />
 
@@ -293,6 +294,8 @@ function PagesContent() {
         <Route path="/SalesInquiry" element={<SalesInquiry />} />
 
         <Route path="/MarketingAgency" element={<MarketingAgency />} />
+
+        <Route path="/AgencySelection" element={<AgencySelection />} />
 
         <Route path="/TalentAgency" element={<TalentAgency />} />
 

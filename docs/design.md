@@ -1,4 +1,10 @@
 # Likelee-AI – Global Design
+Voice assets and brand delivery (Supabase):
+- `voice_recordings` (private bucket) store Face-owned audio samples, with `accessible` flag to control inclusion in licensed delivery.
+- `voice_models` register cloned voice metadata per provider (e.g., ElevenLabs `provider_voice_id`).
+- `brand_licenses` link `brand_org_id` (organization_profiles.id) ↔ `face_user_id` with status and validity window.
+- `brand_voice_folders` and `brand_voice_assets` expose licensed voice assets under the Brand’s workspace without duplicating binaries.
+
 
 Version: 0.1 (draft)
 
@@ -31,6 +37,14 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   3. Import talents (CSV/drag-and-drop) to trigger invites.
   4. Seat activates when Face accepts terms.
 
+### Voice & Recordings and License Activation (P1)
+- Faces record/upload voice samples in their dashboard (private storage, consented).
+- Optional: create an AI cloned voice model via ElevenLabs from approved samples.
+- When a Brand’s likeness license is activated, Likelee provisions a Voice Folder in the Brand workspace and links:
+  - All accessible voice recordings of the Face
+  - Any ready cloned voice models (e.g., ElevenLabs)
+- Brands consume recordings via signed URLs and models via provider IDs within Likelee Studio workflows.
+
 ## 4. Architecture Overview
 
 - Web SPA (likelee-ui): React + TypeScript + Vite + Tailwind.
@@ -50,14 +64,15 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 
 ## 6. External Integrations
 
-| Capability                 | Provider/Tech                                                                         |
-| -------------------------- | ------------------------------------------------------------------------------------- |
-| Payments & Billing         | Stripe Connect, Stripe Checkout                                                       |
-| AI Generation/Rendering    | Replicate API, Hugging Face APIs, Together.ai                                         |
-| Storage & Database         | Supabase (Auth, Postgres, Storage)                                                    |
-| Asset Traceability         | Truepic Lens (invisible watermarking)                                                 |
-| Moderation & Liveness     | AWS Rekognition (Moderation, Face Liveness)                                           |
-| Royalty Tracking (P2)      | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only)                   |
+| Capability                  | Provider/Tech                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------- |
+| Payments & Billing          | Stripe Connect, Stripe Checkout                                                       |
+| AI Generation/Rendering     | Replicate API, Hugging Face APIs, Together.ai                                         |
+| Voice Cloning (optional)    | ElevenLabs                                                                            |
+| Storage & Database          | Supabase (Auth, Postgres, Storage)                                                    |
+| Asset Traceability          | Truepic Lens (invisible watermarking)                                                 |
+| Moderation & Liveness       | AWS Rekognition (Moderation, Face Liveness)                                           |
+| Royalty Tracking (P2)       | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only)                   |
 
 ## 7. Data Model (Conceptual)
 
@@ -135,6 +150,7 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - LIVENESS_ENABLED (default: "0"; set to "1" to enable Face Liveness endpoints)
 - LIVENESS_MIN_SCORE (default: 0.90)
 - COGNITO_IDENTITY_POOL_ID (required when LIVENESS_ENABLED=1)
+- ELEVENLABS_API_KEY (optional; required to enable server-side voice cloning)
 
 Notes:
 - All runtime config is read only via `ServerConfig` (envconfig). Do NOT call `std::env::var` in application code.
@@ -152,12 +168,14 @@ Notes:
   - likelee-public (public): publicly viewable reference images and approved assets.
   - likelee-temp (private): temporary uploads prior to moderation.
 - Paths
-  - likelee-public: `likeness/{user_id}/sections/{section_id}/{ts}.{ext}` (Images section is public by design.)
-  - likelee-private: `faces/{user_id}/reference/{front|left|right}.jpg` (legacy) → migrated to `reference_images` under sections.
+  - likelee-public: `likeness/{user_id}/sections/{section_id}/{ts}.{ext}` (images section is public by design.)
+  - likelee-private:
+    - `likeness/{user_id}/voice/recordings/{ts}.{ext}` (Face voice recordings)
+    - other legacy paths migrated into structured tables
   - likelee-temp: `tmp/{user_id}/{uuid}.{ext}` (auto-clean TTL ~24h).
 - Access
   - Public bucket is read-public; writes via server only.
-  - Private/temp buckets are non-public; access via signed URLs when required.
+  - Private/temp buckets are non-public; access via signed URLs when required (e.g., brand consumption of licensed voice recordings).
 - Moderation Flow
   - Pre-scan bytes → upload → post-scan (best-effort) → DB mark `approved` or move to quarantine.
 - Migration note

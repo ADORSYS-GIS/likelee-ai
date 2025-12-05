@@ -1,0 +1,538 @@
+use crate::config::AppState;
+use axum::{
+    body::Bytes,
+    extract::{Path, Query, State},
+    http::{HeaderMap, StatusCode},
+    Json,
+};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+pub struct UploadVoiceQuery {
+    pub user_id: String,
+    #[serde(default)]
+    pub emotion_tag: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct UploadVoiceResponse {
+    pub id: String,
+    pub storage_bucket: String,
+    pub storage_path: String,
+}
+
+pub async fn upload_voice_recording(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(q): Query<UploadVoiceQuery>,
+    body: Bytes,
+) -> Result<Json<UploadVoiceResponse>, (StatusCode, String)> {
+    if body.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "empty body".into()));
+    }
+
+    let ct = headers
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("audio/webm")
+        .to_string();
+
+    // Private bucket
+    let bucket = state.supabase_bucket_private.clone();
+    let owner = q.user_id.replace(
+        |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
+        "_",
+    );
+    let ext = if ct.contains("wav") {
+        "wav"
+    } else if ct.contains("ogg") {
+        "ogg"
+    } else if ct.contains("mp4") || ct.contains("m4a") {
+        "mp4"
+    } else {
+        "webm"
+    };
+
+    let path = format!(
+        "likeness/{}/voice/recordings/{}.{}",
+        owner,
+        chrono::Utc::now().timestamp_millis(),
+        ext
+    );
+
+    // Upload to Storage
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .header("content-type", ct.clone())
+        .body(body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    // Persist row
+    let payload = serde_json::json!({
+        "user_id": q.user_id,
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "mime_type": ct,
+        "emotion_tag": q.emotion_tag,
+        "accessible": true,
+    });
+    let ins = state
+        .pg
+        .from("voice_recordings")
+        .insert(payload.to_string())
+        .select("id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let txt = ins.text().await.unwrap_or_else(|_| "[]".into());
+    let arr: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
+    let rec_id = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    Ok(Json(UploadVoiceResponse {
+        id: rec_id,
+        storage_bucket: state.supabase_bucket_private.clone(),
+        storage_path: path,
+    }))
+}
+
+#[derive(Deserialize)]
+pub struct RegisterModelIn {
+    pub user_id: String,
+    pub provider: String,
+    pub provider_voice_id: String,
+    pub source_recording_id: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+pub struct RegisterModelOut {
+    pub id: String,
+}
+
+pub async fn register_voice_model(
+    State(state): State<AppState>,
+    Json(input): Json<RegisterModelIn>,
+) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
+    let payload = serde_json::json!({
+        "user_id": input.user_id,
+        "provider": input.provider,
+        "provider_voice_id": input.provider_voice_id,
+        "status": "ready",
+        "source_recording_id": input.source_recording_id,
+        "metadata": input.metadata,
+    });
+    let resp = state
+        .pg
+        .from("voice_models")
+        .insert(payload.to_string())
+        .select("id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let json: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    let id = json
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if id.is_empty() {
+        return Err((StatusCode::BAD_GATEWAY, "missing inserted id".into()));
+    }
+    Ok(Json(RegisterModelOut { id }))
+}
+
+#[derive(Deserialize)]
+pub struct SignedUrlQuery {
+    pub recording_id: String,
+    #[serde(default = "default_expiry")]
+    pub expires_sec: i64,
+}
+fn default_expiry() -> i64 {
+    300
+}
+
+#[derive(Serialize)]
+pub struct SignedUrlOut {
+    pub url: String,
+}
+
+pub async fn signed_url_for_recording(
+    State(state): State<AppState>,
+    Query(q): Query<SignedUrlQuery>,
+) -> Result<Json<SignedUrlOut>, (StatusCode, String)> {
+    // Fetch recording
+    let resp = state
+        .pg
+        .from("voice_recordings")
+        .select("storage_bucket,storage_path")
+        .eq("id", &q.recording_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let arr: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    let row = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+    let bucket = row
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+    let path = row
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+
+    // Request signed URL via Storage API
+    let url = format!(
+        "{}/storage/v1/object/sign/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let body = serde_json::json!({ "expiresIn": q.expires_sec });
+    let http = reqwest::Client::new();
+    let sign = http
+        .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !sign.status().is_success() {
+        let msg = sign.text().await.unwrap_or_default();
+        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
+    }
+    let signed_json: serde_json::Value = sign
+        .json()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let signed_path = signed_json
+        .get("signedURL")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
+    let full = format!("{}/storage/v1{}", state.supabase_url, signed_path);
+    Ok(Json(SignedUrlOut { url: full }))
+}
+
+#[derive(Deserialize)]
+pub struct CreateCloneIn {
+    pub user_id: String,
+    pub recording_id: String,
+    pub voice_name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct CreateCloneOut {
+    pub provider: String,
+    pub voice_id: String,
+    pub model_row_id: String,
+}
+
+// Creates an ElevenLabs voice from an existing private recording
+pub async fn create_clone_from_recording(
+    State(state): State<AppState>,
+    Json(input): Json<CreateCloneIn>,
+) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
+    if state.elevenlabs_api_key.is_empty() {
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            "ELEVENLABS_API_KEY not configured".into(),
+        ));
+    }
+
+    // 1) Lookup recording path
+    let rec_resp = state
+        .pg
+        .from("voice_recordings")
+        .select("storage_bucket,storage_path,mime_type,emotion_tag")
+        .eq("id", &input.recording_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let rec_txt = rec_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let arr: serde_json::Value = serde_json::from_str(&rec_txt).unwrap_or(serde_json::json!([]));
+    let rec = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .cloned()
+        .unwrap_or(serde_json::json!(null));
+    let bucket = rec
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+    let path = rec
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+    let mime = rec
+        .get("mime_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("audio/webm");
+
+    // 2) Download audio bytes from private storage using service key
+    let get_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let audio_resp = http
+        .get(&get_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !audio_resp.status().is_success() {
+        let msg = audio_resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("failed to download recording: {msg}"),
+        ));
+    }
+    let bytes = audio_resp
+        .bytes()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    // 3) POST to ElevenLabs voices/add
+    let form = reqwest::multipart::Form::new()
+        .text("name", input.voice_name.clone())
+        .text("description", input.description.clone().unwrap_or_default())
+        .part(
+            "files",
+            reqwest::multipart::Part::bytes(bytes.to_vec())
+                .mime_str(mime)
+                .unwrap()
+                .file_name("sample.".to_string()),
+        );
+
+    let el_http = reqwest::Client::new();
+    let el_resp = el_http
+        .post("https://api.elevenlabs.io/v1/voices/add")
+        .header("xi-api-key", state.elevenlabs_api_key.clone())
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !el_resp.status().is_success() {
+        let msg = el_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::BAD_GATEWAY, format!("elevenlabs error: {msg}")));
+    }
+    let el_json: serde_json::Value = el_resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let voice_id = el_json
+        .get("voice_id")
+        .or_else(|| el_json.get("voiceId"))
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::BAD_GATEWAY, "missing voice_id".into()))?
+        .to_string();
+
+    // 4) Persist voice_models row
+    let payload = serde_json::json!({
+        "user_id": input.user_id,
+        "provider": "elevenlabs",
+        "provider_voice_id": voice_id,
+        "status": "ready",
+        "metadata": el_json,
+        "source_recording_id": input.recording_id,
+    });
+    let ins = state
+        .pg
+        .from("voice_models")
+        .insert(payload.to_string())
+        .select("id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let txt = ins.text().await.unwrap_or_else(|_| "[]".into());
+    let arr: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
+    let model_row_id = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if model_row_id.is_empty() {
+        return Err((StatusCode::BAD_GATEWAY, "missing inserted id".into()));
+    }
+
+    Ok(Json(CreateCloneOut {
+        provider: "elevenlabs".into(),
+        voice_id,
+        model_row_id,
+    }))
+}
+
+#[derive(Deserialize)]
+pub struct ListVoiceQuery {
+    pub user_id: String,
+}
+
+// List persisted recordings for a user and include derived fields
+pub async fn list_voice_recordings(
+    State(state): State<AppState>,
+    Query(q): Query<ListVoiceQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("voice_recordings")
+        .select("*")
+        .eq("user_id", &q.user_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let json: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
+
+    // Enrich with whether a model exists for each recording (best-effort)
+    let mut out_arr = Vec::new();
+    if let Some(arr) = json.as_array() {
+        for row in arr {
+            let mut row_obj = row.clone();
+            let rec_id = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            if !rec_id.is_empty() {
+                let has_model = match state
+                    .pg
+                    .from("voice_models")
+                    .select("id")
+                    .eq("source_recording_id", rec_id)
+                    .limit(1)
+                    .execute()
+                    .await
+                {
+                    Ok(r) => {
+                        let t = r.text().await.unwrap_or_else(|_| "[]".into());
+                        let v: serde_json::Value =
+                            serde_json::from_str(&t).unwrap_or(serde_json::json!([]));
+                        v.as_array().map(|a| !a.is_empty()).unwrap_or(false)
+                    }
+                    Err(_) => false,
+                };
+                if let Some(obj) = row_obj.as_object_mut() {
+                    obj.insert("voice_profile_created".into(), serde_json::json!(has_model));
+                }
+            }
+            out_arr.push(row_obj);
+        }
+    }
+
+    Ok(Json(serde_json::json!(out_arr)))
+}
+
+#[derive(Serialize)]
+pub struct DeleteVoiceOut {
+    pub deleted: bool,
+}
+
+// Delete a recording: remove storage object, any brand_voice_assets references, then DB row
+pub async fn delete_voice_recording(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<DeleteVoiceOut>, (StatusCode, String)> {
+    // Lookup bucket/path
+    let resp = state
+        .pg
+        .from("voice_recordings")
+        .select("storage_bucket,storage_path")
+        .eq("id", &id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let arr: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
+    let row = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+    let bucket = row
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+    let path = row
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+
+    // Delete storage object (best-effort)
+    let del_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let _ = http
+        .delete(&del_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .send()
+        .await;
+
+    // Delete brand asset references (best-effort)
+    let _ = state
+        .pg
+        .from("brand_voice_assets")
+        .delete()
+        .eq("recording_id", &id)
+        .execute()
+        .await;
+
+    // Delete DB row
+    state
+        .pg
+        .from("voice_recordings")
+        .delete()
+        .eq("id", &id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    Ok(Json(DeleteVoiceOut { deleted: true }))
+}
