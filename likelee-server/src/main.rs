@@ -82,6 +82,8 @@ async fn main() {
         supabase_url: cfg.supabase_url.clone(),
         supabase_service_key: cfg.supabase_service_key.clone(),
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
+        supabase_bucket_private: cfg.supabase_bucket_private.clone(),
+        elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
     };
 
     let app = likelee_server::router::build_router(state);

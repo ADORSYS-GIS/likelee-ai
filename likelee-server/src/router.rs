@@ -1,6 +1,6 @@
 use crate::config::AppState;
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
@@ -63,6 +63,45 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/reference-images",
             get(crate::reference_images::list_reference_images),
+        )
+        // Voice
+        .route(
+            "/api/voice/recordings",
+            post(crate::voice::upload_voice_recording),
+        )
+        .route(
+            "/api/voice/recordings",
+            get(crate::voice::list_voice_recordings),
+        )
+        .route(
+            "/api/voice/models",
+            post(crate::voice::register_voice_model),
+        )
+        .route(
+            "/api/voice/models/clone",
+            post(crate::voice::create_clone_from_recording),
+        )
+        .route(
+            "/api/voice/recordings/signed-url",
+            get(crate::voice::signed_url_for_recording),
+        )
+        .route(
+            "/api/voice/recordings/:id",
+            delete(crate::voice::delete_voice_recording),
+        )
+        // Licensing activation stub (to be called by checkout flow)
+        .route(
+            "/api/licenses/activated",
+            post(crate::licenses::activated_stub),
+        )
+        // Brand voice folders/assets listing (implemented in licenses module)
+        .route(
+            "/api/brand/voice-folders",
+            get(crate::licenses::list_brand_voice_folders),
+        )
+        .route(
+            "/api/brand/voice-assets",
+            get(crate::licenses::list_brand_voice_assets),
         )
         .route(
             "/api/liveness/create",

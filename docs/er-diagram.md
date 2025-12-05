@@ -12,6 +12,8 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 2025-11-21_consolidated_profiles_wallet.sql
 - 2025-11-23_moderation_events.sql
 - 20251127_create_org_and_agency_users.sql
+ - 2025-11-29_reference_images.sql
+ - 2025-12-04_voice_assets.sql
 
 Currently, the schema includes `profiles` and the new `royalty_ledger` table (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
@@ -178,6 +180,62 @@ erDiagram
     timestamptz created_at
   }
 
+  VOICE_RECORDINGS {
+    uuid id PK
+    uuid user_id FK "REFERENCES profiles(id)"
+    text storage_bucket
+    text storage_path
+    text public_url
+    int duration_sec
+    text mime_type
+    text emotion_tag
+    bool accessible
+    timestamptz created_at
+  }
+
+  VOICE_MODELS {
+    uuid id PK
+    uuid user_id FK "REFERENCES profiles(id)"
+    text provider
+    text provider_voice_id
+    text status
+    uuid source_recording_id FK "REFERENCES voice_recordings(id)"
+    jsonb metadata
+    timestamptz created_at
+  }
+
+  BRAND_LICENSES {
+    uuid id PK
+    uuid brand_org_id FK "REFERENCES organization_profiles(id)"
+    uuid face_user_id FK "REFERENCES profiles(id)"
+    text type
+    text status
+    timestamptz start_at
+    timestamptz end_at
+    timestamptz created_at
+  }
+
+  BRAND_VOICE_FOLDERS {
+    uuid id PK
+    uuid brand_org_id FK "REFERENCES organization_profiles(id)"
+    uuid face_user_id FK "REFERENCES profiles(id)"
+    uuid license_id FK "REFERENCES brand_licenses(id)"
+    text name
+    timestamptz created_at
+  }
+
+  BRAND_VOICE_ASSETS {
+    uuid id PK
+    uuid folder_id FK "REFERENCES brand_voice_folders(id)"
+    text asset_type "recording | model"
+    uuid recording_id FK "REFERENCES voice_recordings(id)"
+    uuid model_id FK "REFERENCES voice_models(id)"
+    text storage_bucket
+    text storage_path
+    text public_url
+    timestamptz created_at
+  }
+
   V_FACE_PAYOUTS {
     uuid face_id
     text face_name
@@ -194,12 +252,21 @@ erDiagram
   PROFILES ||--o{ ORGANIZATION_PROFILES : owner_user_id
   ORGANIZATION_PROFILES ||--o{ AGENCY_USERS : agency_id
   PROFILES ||--o{ AGENCY_USERS : user_id
+  PROFILES ||--o{ VOICE_RECORDINGS : user_id
+  PROFILES ||--o{ VOICE_MODELS : user_id
+  ORGANIZATION_PROFILES ||--o{ BRAND_LICENSES : brand_org_id
+  PROFILES ||--o{ BRAND_LICENSES : face_user_id
+  BRAND_LICENSES ||--|| BRAND_VOICE_FOLDERS : license_id
+  BRAND_VOICE_FOLDERS ||--o{ BRAND_VOICE_ASSETS : folder_id
+  VOICE_RECORDINGS ||--o{ BRAND_VOICE_ASSETS : recording_id
+  VOICE_MODELS ||--o{ BRAND_VOICE_ASSETS : model_id
 ```
 
 ## Notes
 - The initial migration created `profiles.id` as `TEXT PRIMARY KEY`. The later migration `20251121_profiles_id_default.sql` ensures a UUID default via `gen_random_uuid()`. If your environment still has `id` as TEXT, apply a conversion migration.
 - `royalty_ledger.face_id` references `profiles(id)`; the view `v_face_payouts` aggregates paid/pending amounts by face and month for read-only dashboard usage.
 - The consolidated migration `2025-11-21_consolidated_profiles_wallet.sql` couples minimal `profiles` prerequisites and the Royalty Wallet schema (ledger, view, policies) to provision new environments consistently. Prefer running this single file in greenfield environments to avoid ordering issues.
+ - Voice/Brand delivery entities and relationships (VOICE_RECORDINGS, VOICE_MODELS, BRAND_LICENSES, BRAND_VOICE_FOLDERS, BRAND_VOICE_ASSETS) from `docs/er/voice_assets.mmd` are merged into this consolidated diagram and kept in sync with `2025-12-04_voice_assets.sql`.
 
 ## Relationship Details
 
