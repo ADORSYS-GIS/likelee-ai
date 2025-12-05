@@ -51,6 +51,6 @@ jobs:
         run: cargo test --verbose
 
       - name: Install cargo-audit
-        run: cargo install cargo-audit --force
+        run: cargo install cargo-audit
       - name: Run Security Audit (cargo audit)
         run: cargo audit
