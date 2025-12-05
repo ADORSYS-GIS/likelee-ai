@@ -11,6 +11,7 @@ set -x
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EC2_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${EC2_DIR}"
+echo "[update-images.sh] version=2025-12-05.2 EC2_DIR=${EC2_DIR}"
 
 if [[ -z "${REGISTRY_IMAGE_SERVER:-}" || -z "${REGISTRY_IMAGE_UI:-}" || -z "${IMAGE_TAG:-}" ]]; then
   echo "ERROR: REGISTRY_IMAGE_SERVER, REGISTRY_IMAGE_UI, and IMAGE_TAG must be set" >&2
@@ -55,17 +56,24 @@ fi
 
 # Run compose with absolute files, pin project directory and name
 PROJECT_NAME="likelee"
-export COMPOSE_FILE="${COMPOSE_BASE}:${COMPOSE_PROD}"
 
-pushd "${EC2_DIR}" >/dev/null
 if [ "${COMPOSE_BIN[0]} ${COMPOSE_BIN[1]:-}" = "docker compose" ]; then
-  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" pull
-  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" up -d
+  "${COMPOSE_BIN[@]}" \
+    --project-directory "${EC2_DIR}" \
+    -p "${PROJECT_NAME}" \
+    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
+
+  "${COMPOSE_BIN[@]}" \
+    --project-directory "${EC2_DIR}" \
+    -p "${PROJECT_NAME}" \
+    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d
 else
-  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" pull
-  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" up -d
+  # docker-compose (v1) fallback
+  pushd "${EC2_DIR}" >/dev/null
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d
+  popd >/dev/null
 fi
-popd >/dev/null
 
 # Promote pending tag to current on success
 mv "${CUR_TAG_FILE}.pending" "${CUR_TAG_FILE}"

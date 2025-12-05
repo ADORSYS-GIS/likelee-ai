@@ -77,6 +77,15 @@ jobs:
         run: |
           echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
+      - name: Upload deploy assets to EC2 (staging in /tmp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "deploy/ec2/**"
+          target: "/tmp/likelee-deploy"
+
       - name: Deploy and verify on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -88,6 +97,11 @@ jobs:
             sudo -n bash -lc '
               set -euo pipefail
               echo "Running deployment as root (user: $(whoami), home: $HOME)"
+              # Sync staged assets to target directory under /opt
+              mkdir -p "$(dirname "${{ env.REMOTE_DIR }}")"
+              rm -rf "${{ env.REMOTE_DIR }}"
+              mkdir -p "${{ env.REMOTE_DIR }}"
+              cp -a /tmp/likelee-deploy/deploy/ec2/. "${{ env.REMOTE_DIR }}/"
               cd "${{ env.REMOTE_DIR }}"
               echo "CWD: $(pwd)"
               echo "Listing deploy directory:" && ls -la
