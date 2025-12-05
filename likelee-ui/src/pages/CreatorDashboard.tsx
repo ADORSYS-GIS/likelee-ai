@@ -66,6 +66,7 @@ import {
   Link as LinkIcon,
   HelpCircle,
   LogOut,
+  Archive,
 } from "lucide-react";
 import {
   LineChart,
@@ -306,6 +307,51 @@ const exampleApprovals = [
     duration: "6 months",
     territory: "North America, Asia",
     perpetual: false,
+    isExample: true,
+  },
+];
+
+// Example archived campaign for blank users (shown when no real archived campaigns exist)
+const exampleArchivedCampaigns = [
+  {
+    id: "example-spotify-archive",
+    brand: "Spotify Premium",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
+    campaign: "Audio Campaign",
+    campaign_type: "Audio Campaign",
+    completed_date: "2/1/2026",
+    duration: "2 months",
+    monthly_rate: 600,
+    total_earned: 1200,
+    regions: ["Global"],
+    show_on_portfolio: false,
+    isExample: true,
+  },
+];
+
+// Example contract for blank users (shown when no real contracts exist)
+const exampleContracts = [
+  {
+    id: "example-nike-contract",
+    brand: "Nike Sportswear",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    project_name: "Spring Running Campaign",
+    creator_earnings: 500,
+    earnings_to_date: 3000,
+    amount_paid: 3000,
+    payment_status: "Paid",
+    start_date: "2026-01-01",
+    end_date: "2026-06-30",
+    status: "active",
+    days_until_expiration: 132,
+    usage_description: "Instagram Reels (15-30s each) Hero Image",
+    territory: "North America, Europe",
+    channels: "Social Media, Website",
+    restrictions: "Competitor brands, political content",
+    can_pause: true,
+    can_revoke: true,
     isExample: true,
   },
 ];
@@ -589,6 +635,12 @@ export default function CreatorDashboard() {
       icon: CheckSquare,
       badge: pendingCount,
       urgent: pendingCount > 0,
+    },
+    {
+      id: "archive",
+      label: "Campaign Archive",
+      icon: Archive,
+      badge: undefined,
     },
     {
       id: "contracts",
@@ -2300,7 +2352,10 @@ export default function CreatorDashboard() {
 
   const renderApprovals = () => {
     if (showApprovalContract) {
+      // Check both real approvals and examples
       const approval = pendingApprovals.find(
+        (a) => a.id === showApprovalContract,
+      ) || exampleApprovals.find(
         (a) => a.id === showApprovalContract,
       );
       if (!approval) return null;
@@ -2639,9 +2694,126 @@ export default function CreatorDashboard() {
     );
   };
 
+  const renderCampaignArchive = () => {
+    // Use example archived campaigns if none exist, otherwise use real data
+    const archivedCampaigns: any[] = []; // This will be populated from real data later
+    const campaignsToShow = archivedCampaigns.length === 0 ? exampleArchivedCampaigns : archivedCampaigns;
+    const showingExamples = archivedCampaigns.length === 0;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Campaign Archive</h2>
+            <p className="text-gray-600 mt-1">
+              View your completed campaigns and manage portfolio visibility
+            </p>
+          </div>
+          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg">
+            {archivedCampaigns.length} Completed
+          </Badge>
+        </div>
+
+        {/* Welcome banner for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Campaign Archive!</strong> This is an example of what your completed campaigns will look like. You don't have any archived campaigns yet — but when you do, they'll appear here just like this!
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {campaignsToShow.map((campaign) => (
+            <Card key={campaign.id} className="p-6 bg-white border-2 border-gray-200">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={campaign.brand_logo}
+                    alt={campaign.brand}
+                    className="w-16 h-16 rounded-lg object-contain border-2 border-gray-200 p-2"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-2xl">
+                      {campaign.brand}
+                    </h3>
+                    <p className="text-gray-600">{campaign.campaign_type}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Completed {campaign.completed_date}
+                    </p>
+                  </div>
+                </div>
+                <Badge className="bg-green-100 text-green-700 border border-green-300">
+                  Completed
+                </Badge>
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Duration:</p>
+                  <p className="font-bold text-gray-900">{campaign.duration}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
+                  <p className="font-bold text-gray-900">${campaign.monthly_rate}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
+                  <p className="font-bold text-green-600 text-lg">
+                    ${campaign.total_earned.toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Regions:</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {campaign.regions.map((region) => (
+                      <Badge
+                        key={region}
+                        className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
+                      >
+                        {region}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={campaign.show_on_portfolio}
+                    disabled={campaign.isExample}
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">Show on Portfolio</p>
+                    <p className="text-sm text-gray-600">
+                      {campaign.show_on_portfolio
+                        ? "Visible to brands viewing your profile"
+                        : "Hidden from public portfolio"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-2 border-gray-300"
+                  disabled={campaign.isExample}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderContracts = () => {
     if (showContractDetails && selectedContract) {
-      const contract = contracts.find((c) => c.id === selectedContract);
+      // Check both real contracts and examples
+      const contract = contracts.find((c) => c.id === selectedContract) || exampleContracts.find((c) => c.id === selectedContract);
       if (!contract) return null;
 
       const currentMonth = new Date().toLocaleString("default", {
@@ -2833,10 +3005,15 @@ export default function CreatorDashboard() {
       );
     }
 
-    const activeContracts = contracts.filter(
+    // Use example contracts if none exist, otherwise use real data
+    const realActiveContracts = contracts.filter(
       (c) => c.status === "active" || c.status === "expiring_soon",
     );
-    const expiredContracts = contracts.filter((c) => c.status === "expired");
+    const realExpiredContracts = contracts.filter((c) => c.status === "expired");
+
+    const activeContracts = realActiveContracts.length === 0 ? exampleContracts : realActiveContracts;
+    const expiredContracts = realExpiredContracts;
+    const showingExamples = realActiveContracts.length === 0;
 
     return (
       <div className="space-y-6">
@@ -2850,6 +3027,16 @@ export default function CreatorDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Welcome banner for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Licenses & Contracts!</strong> This is an example of what your active licensing deals will look like. You don't have any contracts yet — but when brands approve your work, they'll appear here just like this!
+            </p>
+          </div>
+        )}
 
         {/* Contract Tabs */}
         <div className="flex gap-2 border-b border-gray-200">
@@ -3907,6 +4094,7 @@ export default function CreatorDashboard() {
           {activeSection === "voice" && renderVoice()}
           {activeSection === "campaigns" && renderCampaigns()}
           {activeSection === "approvals" && renderApprovals()}
+          {activeSection === "archive" && renderCampaignArchive()}
           {activeSection === "contracts" && renderContracts()}
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
@@ -3924,7 +4112,8 @@ export default function CreatorDashboard() {
 
           {selectedContract &&
             (() => {
-              const contract = contracts.find((c) => c.id === selectedContract);
+              // Check both real contracts and examples
+              const contract = contracts.find((c) => c.id === selectedContract) || exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
               const currentMonth = new Date().toLocaleString("default", {
                 month: "long",
@@ -4045,7 +4234,8 @@ export default function CreatorDashboard() {
 
           {selectedContract &&
             (() => {
-              const contract = contracts.find((c) => c.id === selectedContract);
+              // Check both real contracts and examples
+              const contract = contracts.find((c) => c.id === selectedContract) || exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
               const revocationDate = new Date();
               const finalDate = new Date(revocationDate);
