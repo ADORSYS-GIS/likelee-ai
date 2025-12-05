@@ -89,7 +89,6 @@ jobs:
             export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
             export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
             export IMAGE_TAG="${{ env.IMAGE_TAG }}"
-            chmod +x scripts/update-images.sh scripts/rollback.sh || true
             if ! ./scripts/update-images.sh; then
               echo "Update step failed; attempting rollback" >&2
               ./scripts/rollback.sh || true
