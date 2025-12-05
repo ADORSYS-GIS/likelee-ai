@@ -101,9 +101,16 @@ jobs:
               echo "Running deployment as root (user: $(whoami), home: $HOME)"
               # Sync staged assets to target directory under /opt
               mkdir -p "$(dirname "${{ env.REMOTE_DIR }}")"
-              rm -rf "${{ env.REMOTE_DIR }}"
               mkdir -p "${{ env.REMOTE_DIR }}"
+              # Preserve instance-specific files
+              if [ -f "${{ env.REMOTE_DIR }}/.env" ]; then cp "${{ env.REMOTE_DIR }}/.env" /tmp/.env.backup || true; fi
+              if [ -d "${{ env.REMOTE_DIR }}/certs" ]; then cp -a "${{ env.REMOTE_DIR }}/certs" /tmp/certs.backup || true; fi
+              # Refresh managed assets
+              rm -rf "${{ env.REMOTE_DIR }}"/*
               cp -a /tmp/likelee-deploy/deploy/ec2/. "${{ env.REMOTE_DIR }}/"
+              # Restore preserved files
+              if [ -f /tmp/.env.backup ]; then mv -f /tmp/.env.backup "${{ env.REMOTE_DIR }}/.env"; fi
+              if [ -d /tmp/certs.backup ]; then rm -rf "${{ env.REMOTE_DIR }}/certs"; mv /tmp/certs.backup "${{ env.REMOTE_DIR }}/certs"; fi
               cd "${{ env.REMOTE_DIR }}"
               echo "CWD: $(pwd)"
               echo "Listing deploy directory:" && ls -la
@@ -115,6 +122,15 @@ jobs:
               if [ ! -f docker-compose.prod.yml ]; then
                 echo "ERROR: docker-compose.prod.yml not found in $(pwd)" >&2
                 exit 1
+              fi
+              # Optional GHCR login if credentials provided
+              GHCR_USER="${{ secrets.GHCR_USER }}"
+              GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
+              if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_TOKEN}" ]; then
+                echo "Logging into GHCR as ${GHCR_USER}"
+                echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin || true
+              else
+                echo "GHCR_USER/GHCR_TOKEN not set; assuming images are public or host already logged in."
               fi
               export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
               export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
