@@ -288,6 +288,28 @@ const exampleCampaigns = [
   },
 ];
 
+// Example approval for blank users (shown when no real approvals exist)
+const exampleApprovals = [
+  {
+    id: "example-adidas-approval",
+    brand: "Adidas Running",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
+    campaign_type: "Social Media Campaign",
+    requested_date: "2025-02-06",
+    proposed_rate: 600,
+    term_length: "6 months",
+    estimated_monthly: 540, // after 10% Likelee fee
+    regions: ["North America", "Asia"],
+    industries: ["Sports / Fitness"],
+    usage_type: "Social Media",
+    duration: "6 months",
+    territory: "North America, Asia",
+    perpetual: false,
+    isExample: true,
+  },
+];
+
 // Empty defaults for campaigns (until wired to real data)
 const mockActiveCampaigns: any[] = [];
 
@@ -964,10 +986,10 @@ export default function CreatorDashboard() {
             <span
               key={index}
               className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                  ? "text-[#32C8D1] font-bold scale-110"
-                  : index < currentWord
-                    ? "text-gray-400"
-                    : "text-gray-700"
+                ? "text-[#32C8D1] font-bold scale-110"
+                : index < currentWord
+                  ? "text-gray-400"
+                  : "text-gray-700"
                 }`}
             >
               {word}
@@ -1883,8 +1905,8 @@ export default function CreatorDashboard() {
               <Card
                 key={emotion}
                 className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-[#32C8D1]"
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-200 hover:border-[#32C8D1]"
                   }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
@@ -2036,8 +2058,8 @@ export default function CreatorDashboard() {
           </div>
           <Badge
             className={`${activeCampaigns.length === 0
-                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                : "bg-green-100 text-green-700 border border-green-300"
+              ? "bg-orange-100 text-orange-700 border border-orange-300"
+              : "bg-green-100 text-green-700 border border-green-300"
               } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
@@ -2141,10 +2163,10 @@ export default function CreatorDashboard() {
                     <td className="py-4 px-4">
                       <Badge
                         className={`${campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
                           }`}
                       >
                         {campaign.status === "active"
@@ -2447,6 +2469,10 @@ export default function CreatorDashboard() {
       );
     }
 
+    // Use example approvals if pendingApprovals is empty, otherwise use real data
+    const approvalsToShow = pendingApprovals.length === 0 ? exampleApprovals : pendingApprovals;
+    const showingExamples = pendingApprovals.length === 0;
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -2463,154 +2489,152 @@ export default function CreatorDashboard() {
           </Badge>
         </div>
 
-        {pendingApprovals.length === 0 ? (
-          <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
-            <CheckCircle2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No Pending Approvals
-            </h3>
-            <p className="text-gray-600">
-              You're all caught up! New requests will appear here.
+        {/* Welcome banner for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Approval Queue!</strong> This is an example of what brand requests will look like. You don't have any pending approvals yet — but when brands want to work with you, their requests will appear here!
             </p>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {pendingApprovals.map((approval) => (
-              <Card
-                key={approval.id}
-                className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
-              >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={approval.brand_logo}
-                      alt={approval.brand}
-                      className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200"
-                    />
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-2xl">
-                        {approval.brand}
-                      </h3>
-                      <p className="text-gray-600">{approval.usage_type}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Requested{" "}
-                        {new Date(approval.requested_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  {approval.perpetual && (
-                    <Badge className="bg-red-500 text-white">
-                      <AlertCircle className="w-4 h-4 mr-1" />
-                      Perpetual Request
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">
-                        Proposed Rate:
-                      </span>
-                      <span className="font-bold text-gray-900 text-lg">
-                        ${approval.proposed_rate}/month
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">
-                        Term Length:
-                      </span>
-                      <span className="font-bold text-gray-900">
-                        {approval.term_length}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">
-                        Estimated Monthly:
-                      </span>
-                      <span className="font-bold text-green-600 text-lg">
-                        ${approval.proposed_rate}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-2">Regions:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {approval.regions.map((region) => (
-                          <Badge
-                            key={region}
-                            className="bg-blue-100 text-blue-700 border border-blue-300"
-                          >
-                            {region}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-2">Industries:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {approval.industries.map((industry) => (
-                          <Badge
-                            key={industry}
-                            className="bg-purple-100 text-purple-700 border border-purple-300"
-                          >
-                            {industry}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {approval.perpetual && (
-                  <div className="mb-6 bg-red-50 border-2 border-red-300">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <p className="text-red-900">
-                      <strong>Warning:</strong> This is a perpetual-use request.
-                      You would give up long-term control of your likeness for
-                      this campaign. Consider negotiating for time-limited terms
-                      instead.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => setShowApprovalContract(approval.id)}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-blue-300 text-blue-600"
-                  >
-                    <FileText className="w-5 h-5 mr-2" />
-                    View Contract
-                  </Button>
-                  <Button
-                    onClick={() => handleDecline(approval.id)}
-                    variant="outline"
-                    className="h-12 border-2 border-gray-300"
-                  >
-                    <XCircle className="w-5 h-5 mr-2" />
-                    Decline
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-12 border-2 border-[#32C8D1] text-[#32C8D1]"
-                  >
-                    Counter Offer
-                  </Button>
-                  <Button
-                    onClick={() => handleApprove(approval.id)}
-                    className="h-12 bg-green-600 hover:bg-green-700 text-white px-8"
-                  >
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                    Accept & Sign
-                  </Button>
-                </div>
-              </Card>
-            ))}
           </div>
         )}
+
+        <div className="space-y-6">
+          {approvalsToShow.map((approval) => (
+            <Card
+              key={approval.id}
+              className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={approval.brand_logo}
+                    alt={approval.brand}
+                    className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-2xl">
+                      {approval.brand}
+                    </h3>
+                    <p className="text-gray-600">{approval.usage_type}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Requested{" "}
+                      {new Date(approval.requested_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                {approval.perpetual && (
+                  <Badge className="bg-red-500 text-white">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    Perpetual Request
+                  </Badge>
+                )}
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">
+                      Proposed Rate:
+                    </span>
+                    <span className="font-bold text-gray-900 text-lg">
+                      ${approval.proposed_rate}/month
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">
+                      Term Length:
+                    </span>
+                    <span className="font-bold text-gray-900">
+                      {approval.term_length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">
+                      Estimated Monthly:
+                    </span>
+                    <span className="font-bold text-green-600 text-lg">
+                      ${approval.proposed_rate}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Regions:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {approval.regions.map((region) => (
+                        <Badge
+                          key={region}
+                          className="bg-blue-100 text-blue-700 border border-blue-300"
+                        >
+                          {region}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Industries:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {approval.industries.map((industry) => (
+                        <Badge
+                          key={industry}
+                          className="bg-purple-100 text-purple-700 border border-purple-300"
+                        >
+                          {industry}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {approval.perpetual && (
+                <div className="mb-6 bg-red-50 border-2 border-red-300">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-red-900">
+                    <strong>Warning:</strong> This is a perpetual-use request.
+                    You would give up long-term control of your likeness for
+                    this campaign. Consider negotiating for time-limited terms
+                    instead.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowApprovalContract(approval.id)}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  View Contract
+                </Button>
+                <Button
+                  onClick={() => handleDecline(approval.id)}
+                  variant="outline"
+                  className="h-12 border-2 border-gray-300"
+                >
+                  <XCircle className="w-5 h-5 mr-2" />
+                  Decline
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1]"
+                >
+                  Counter Offer
+                </Button>
+                <Button
+                  onClick={() => handleApprove(approval.id)}
+                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8"
+                >
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                  Accept & Sign
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   };
@@ -2832,8 +2856,8 @@ export default function CreatorDashboard() {
           <button
             onClick={() => setContractsTab("active")}
             className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
           >
             Active ({activeContracts.length})
@@ -2841,8 +2865,8 @@ export default function CreatorDashboard() {
           <button
             onClick={() => setContractsTab("expired")}
             className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
           >
             Expired ({expiredContracts.length})
@@ -2856,8 +2880,8 @@ export default function CreatorDashboard() {
               <Card
                 key={contract.id}
                 className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
+                  ? "border-orange-300"
+                  : "border-gray-200"
                   }`}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -3157,8 +3181,8 @@ export default function CreatorDashboard() {
         <button
           onClick={() => setSettingsTab("profile")}
           className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
         >
           Profile Settings
@@ -3166,8 +3190,8 @@ export default function CreatorDashboard() {
         <button
           onClick={() => setSettingsTab("rules")}
           className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
         >
           My Rules
@@ -3446,8 +3470,8 @@ export default function CreatorDashboard() {
                         editingRules && handleToggleContentType(type)
                       }
                       className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                         } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
@@ -3469,8 +3493,8 @@ export default function CreatorDashboard() {
                         editingRules && handleToggleIndustry(industry)
                       }
                       className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                          ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                         } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
@@ -3838,8 +3862,8 @@ export default function CreatorDashboard() {
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#32C8D1] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
                     }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
