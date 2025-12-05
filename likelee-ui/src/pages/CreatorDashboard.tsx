@@ -531,6 +531,7 @@ export default function CreatorDashboard() {
     "content" | "industry" | null
   >(null);
   const [savingRates, setSavingRates] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -974,7 +975,7 @@ export default function CreatorDashboard() {
     };
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 relative">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
@@ -985,11 +986,22 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShowCardModal(true)}
+            >
               <LayoutDashboard className="h-4 w-4" />
               View Card
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                setActiveSection("settings");
+                setSettingsTab("profile");
+              }}
+            >
               <Edit className="h-4 w-4" />
               Edit Profile
             </Button>
@@ -1151,6 +1163,85 @@ export default function CreatorDashboard() {
             your information is up-to-date to attract more opportunities.
           </p>
         </div>
+
+        {/* Card Modal Overlay */}
+        {showCardModal && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowCardModal(false)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Card Header */}
+              <div className="h-32 bg-[#32C8D1] flex items-center justify-center">
+                <div className="text-white text-6xl font-bold">
+                  {data.first_name[0] === "[" ? "U" : data.first_name[0]}
+                </div>
+              </div>
+
+              {/* Card Content */}
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-bold text-gray-900">{data.first_name}</h3>
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-[10px]">
+                    Verified Creator
+                  </Badge>
+                </div>
+
+                <p className="text-xs text-gray-500 mb-4">{data.location}</p>
+
+                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                  {data.bio}
+                </p>
+
+                <div className="flex gap-2 mb-6">
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600">
+                    Fashion
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600">
+                    Tech
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-4 gap-x-8 mb-6">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-0.5">Followers</p>
+                    <p className="font-bold text-gray-900">{data.followers}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-0.5">Engagement</p>
+                    <p className="font-bold text-gray-900">4.2%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-0.5">Turnaround</p>
+                    <p className="font-bold text-gray-900">12h</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-0.5">From</p>
+                    <p className="font-bold text-gray-900">${data.base_rate}</p>
+                  </div>
+                </div>
+
+                <Button className="w-full bg-black hover:bg-gray-800 text-white mb-3 rounded-full">
+                  Request Cameo
+                </Button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="rounded-full border-gray-200">
+                    <Play className="h-4 w-4 mr-2" />
+                    Preview
+                  </Button>
+                  <Button variant="outline" className="rounded-full border-gray-200">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Profile
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
