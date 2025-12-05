@@ -350,6 +350,61 @@ export default function CreatorDashboard() {
     })();
     return () => abort.abort();
   }, [initialized, authenticated, user?.id, API_BASE]);
+
+  // Load persisted Voice Library from backend on mount/auth ready
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+    const abort = new AbortController();
+    (async () => {
+      try {
+        // 1) List recordings
+        const res = await fetch(
+          `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
+            user.id,
+          )}`,
+          { signal: abort.signal },
+        );
+        if (!res.ok) return; // best-effort
+        const rows = await res.json();
+        if (!Array.isArray(rows)) return;
+
+        // 2) Fetch signed URLs for playback
+        const withUrls = await Promise.all(
+          rows.map(async (row: any) => {
+            try {
+              const s = await fetch(
+                `${API_BASE}/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(
+                  row.id,
+                )}&expires_sec=600`,
+                { signal: abort.signal },
+              );
+              const j = s.ok ? await s.json() : { url: null };
+              return {
+                id: row.id,
+                emotion: row.emotion_tag || null,
+                url: j.url || null,
+                blob: null,
+                mimeType: row.mime_type || "audio/webm",
+                duration: row.duration_sec || 0,
+                date: row.created_at,
+                accessible: row.accessible ?? true,
+                voiceProfileCreated: !!row.voice_profile_created,
+                usageCount: 0,
+                server_recording_id: row.id,
+              };
+            } catch (_) {
+              return null;
+            }
+          }),
+        );
+
+        setVoiceLibrary((withUrls || []).filter(Boolean));
+      } catch (_) {
+        // ignore errors to avoid blocking dashboard
+      }
+    })();
+    return () => abort.abort();
+  }, [initialized, authenticated, user?.id, API_BASE]);
   const [contentPreferences, setContentPreferences] = useState({
     comfortable: [
       "Fashion & Beauty",
@@ -786,9 +841,23 @@ export default function CreatorDashboard() {
     );
   };
 
-  const deleteRecording = (id) => {
-    if (confirm("Are you sure you want to delete this recording?")) {
-      setVoiceLibrary(voiceLibrary.filter((rec) => rec.id !== id));
+  const deleteRecording = async (id) => {
+    if (!confirm("Delete this recording?")) return;
+    const rec = voiceLibrary.find((r) => r.id === id);
+    setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
+    try {
+      // If it exists on server, delete there too
+      const sid = rec?.server_recording_id || rec?.id;
+      if (sid) {
+        await fetch(
+          `${API_BASE}/api/voice/recordings/${encodeURIComponent(sid)}`,
+          {
+            method: "DELETE",
+          },
+        );
+      }
+    } catch (_) {
+      // best-effort
     }
   };
 
@@ -796,58 +865,58 @@ export default function CreatorDashboard() {
     try {
       setGeneratingVoice(true);
 
-      let extension = "webm";
-      if (recording.mimeType && recording.mimeType.includes("mp4")) {
-        extension = "mp4";
-      } else if (recording.mimeType && recording.mimeType.includes("ogg")) {
-        extension = "ogg";
-      } else if (recording.mimeType && recording.mimeType.includes("wav")) {
-        extension = "wav";
-      }
+      const ct = recording?.mimeType || recording?.blob?.type || "audio/webm";
 
-      const file = new File(
-        [recording.blob],
-        `voice_${recording.emotion}.${extension}`,
+      // 1) Upload recording to Likelee server (private bucket)
+      const uploadRes = await fetch(
+        `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
+          user.id,
+        )}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
         {
-          type: recording.mimeType || recording.blob.type,
-          lastModified: Date.now(),
+          method: "POST",
+          headers: { "content-type": ct },
+          body: recording.blob,
         },
       );
-
-      const formData = new FormData();
-      formData.append("audio_file", file);
-      formData.append("voice_name", `${creator.name}_${recording.emotion}`);
-      formData.append(
-        "description",
-        `${recording.emotion} voice profile for ${creator.name}`,
-      );
-
-      const response = await base44.functions.invoke(
-        "createVoiceProfile",
-        formData,
-      );
-
-      if (response.data && response.data.voice_id) {
-        setVoiceLibrary(
-          voiceLibrary.map((rec) =>
-            rec.id === recording.id
-              ? {
-                  ...rec,
-                  voiceProfileCreated: true,
-                  voice_id: response.data.voice_id,
-                }
-              : rec,
-          ),
-        );
-
-        alert("Voice profile created successfully with ElevenLabs!");
-      } else {
-        throw new Error(
-          response.data?.error ||
-            response.data?.details ||
-            "Unknown error creating voice profile",
-        );
+      if (!uploadRes.ok) {
+        const txt = await uploadRes.text();
+        throw new Error(`Upload failed: ${txt}`);
       }
+      const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
+      const recordingId = uploaded?.id;
+      if (!recordingId) throw new Error("Missing recording id after upload");
+
+      // 2) Create ElevenLabs clone via Likelee server
+      const cloneRes = await fetch(`${API_BASE}/api/voice/models/clone`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id,
+          recording_id: recordingId,
+          voice_name: `${creator.name}_${recording.emotion}`,
+          description: `${recording.emotion} voice profile for ${creator.name}`,
+        }),
+      });
+      if (!cloneRes.ok) {
+        const txt = await cloneRes.text();
+        throw new Error(`Clone failed: ${txt}`);
+      }
+      const cloned = await cloneRes.json(); // { provider, voice_id, model_row_id }
+
+      setVoiceLibrary(
+        voiceLibrary.map((rec) =>
+          rec.id === recording.id
+            ? {
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
+            : rec,
+        ),
+      );
+
+      alert("Voice profile created successfully with ElevenLabs!");
     } catch (error) {
       console.error("Voice profile creation error:", error);
 

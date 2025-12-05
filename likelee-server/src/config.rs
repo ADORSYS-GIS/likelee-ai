@@ -56,6 +56,9 @@ pub struct ServerConfig {
 
     #[envconfig(from = "AWS_REGION", default = "us-east-1")]
     pub aws_region: String,
+
+    #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
+    pub elevenlabs_api_key: String,
 }
 
 #[derive(Clone)]
@@ -67,4 +70,6 @@ pub struct AppState {
     pub supabase_url: String,
     pub supabase_service_key: String,
     pub supabase_bucket_public: String,
+    pub supabase_bucket_private: String,
+    pub elevenlabs_api_key: String,
 }

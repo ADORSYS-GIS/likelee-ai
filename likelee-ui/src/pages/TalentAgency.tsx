@@ -26,6 +26,10 @@ import { createPageUrl } from "@/utils";
 
 export default function TalentAgency() {
   const navigate = useNavigate();
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById("how-it-works");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     // Add JSON-LD structured data
@@ -97,15 +101,11 @@ export default function TalentAgency() {
                 Book a Demo
               </Button>
               <Button
-                onClick={() =>
-                  navigate(
-                    createPageUrl("OrganizationSignup") + "?type=talent_agency",
-                  )
-                }
+                onClick={scrollToHowItWorks}
                 variant="outline"
                 className="h-14 sm:h-16 px-8 sm:px-12 text-base sm:text-lg font-medium border-2 border-black rounded-none hover:bg-gray-50"
               >
-                Join as Partner
+                See How It Works
               </Button>
             </div>
           </div>
@@ -651,7 +651,7 @@ export default function TalentAgency() {
       </section>
 
       {/* Section 5: How It Actually Works */}
-      <section className="px-6 py-20 bg-gray-50">
+      <section id="how-it-works" className="px-6 py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -1525,15 +1525,11 @@ export default function TalentAgency() {
               Book a Demo
             </Button>
             <Button
-              onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") + "?type=talent_agency",
-                )
-              }
+              onClick={scrollToHowItWorks}
               variant="outline"
               className="h-14 sm:h-16 px-8 sm:px-12 text-base sm:text-lg font-medium bg-transparent hover:bg-white/10 text-white border-2 border-white rounded-none"
             >
-              Join as Partner
+              See How It Works
             </Button>
           </div>
         </div>
