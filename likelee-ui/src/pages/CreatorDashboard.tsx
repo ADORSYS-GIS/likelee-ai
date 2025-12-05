@@ -5000,11 +5000,11 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <div className="bg-red-50 border-2 border-red-300">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <p className="text-red-900">
-                      <strong>What happens when you revoke:</strong>
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
+                  <div className="bg-red-50 border-2 border-red-300 p-4 rounded-lg flex gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                    <div className="text-red-900 text-sm">
+                      <p className="font-bold">What happens when you revoke:</p>
+                      <ul className="list-disc ml-4 mt-1 space-y-1">
                         <li>
                           You're requesting to END this license permanently
                         </li>
@@ -5016,7 +5016,7 @@ export default function CreatorDashboard() {
                         <li>Your earnings STOP after the 30-day period ends</li>
                         <li>The license cannot be reactivated</li>
                       </ul>
-                    </p>
+                    </div>
                   </div>
 
                   <Card className="p-6 bg-gray-50 border border-gray-200">
