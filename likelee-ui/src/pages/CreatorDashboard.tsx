@@ -344,12 +344,18 @@ const exampleContracts = [
     payment_status: "Paid",
     start_date: "2026-01-01",
     end_date: "2026-06-30",
+    effective_date: "2026-01-01",
+    expiration_date: "2026-06-30",
     status: "active",
     days_until_expiration: 132,
+    days_remaining: 132,
     usage_description: "Instagram Reels (15-30s each) Hero Image",
+    deliverables: "Instagram Reels (15-30s each) Hero Image",
     territory: "North America, Europe",
-    channels: "Social Media, Website",
+    channels: ["Social Media", "Website"],
     restrictions: "Competitor brands, political content",
+    prohibited_uses: "Competitor brands, political content",
+    auto_renew: false,
     can_pause: true,
     can_revoke: true,
     isExample: true,
@@ -2783,7 +2789,17 @@ export default function CreatorDashboard() {
                 <div className="flex items-center gap-3">
                   <Switch
                     checked={campaign.show_on_portfolio}
-                    disabled={campaign.isExample}
+                    className="data-[state=checked]:bg-gray-900"
+                    onCheckedChange={(checked) => {
+                      // For examples, just show a message
+                      if (campaign.isExample) {
+                        alert("This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.");
+                        return;
+                      }
+                      // For real campaigns, update the state
+                      // TODO: Add API call to update portfolio visibility
+                      console.log(`Toggle portfolio visibility for ${campaign.id}: ${checked}`);
+                    }}
                   />
                   <div>
                     <p className="font-semibold text-gray-900">Show on Portfolio</p>
