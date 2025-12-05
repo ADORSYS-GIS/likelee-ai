@@ -73,8 +73,24 @@ const contentTypes = [
   "Music videos",
   "Video-game / VR characters",
   "Stock photo / video libraries",
-  "Educational / nonprofit spots",
   "Other",
+];
+
+const industries = [
+  "Fashion / Beauty",
+  "Tech / Electronics",
+  "Sports / Fitness",
+  "Food / Beverage",
+  "Film / Gaming / Music",
+  "Automotive",
+  "Finance / Fintech",
+  "Health / Wellness",
+  "Luxury & Lifestyle",
+  "Travel / Hospitality",
+  "Education",
+  "Real Estate",
+  "Entertainment",
+  "Open to any industry",
 ];
 
 const modelWorkTypes = [
@@ -94,23 +110,6 @@ const modelWorkTypes = [
   "Mature / Senior",
   "Petite",
   "Other",
-];
-
-const industries = [
-  "Fashion / Beauty",
-  "Tech / Electronics",
-  "Sports / Fitness",
-  "Food / Beverage",
-  "Film / Gaming / Music",
-  "Automotive",
-  "Finance / Fintech",
-  "Health / Wellness",
-  "Luxury & Lifestyle",
-  "Travel / Hospitality",
-  "Education",
-  "Real Estate",
-  "Entertainment",
-  "Open to any industry",
 ];
 
 const athleteBrandCategories = [

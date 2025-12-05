@@ -14,8 +14,9 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 20251127_create_org_and_agency_users.sql
  - 2025-11-29_reference_images.sql
  - 2025-12-04_voice_assets.sql
+- 20251204101400_add_creator_custom_rates.sql
 
-Currently, the schema includes `profiles` and the new `royalty_ledger` table (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
+Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
 ## Mermaid ER Diagram
 
@@ -180,60 +181,61 @@ erDiagram
     timestamptz created_at
   }
 
+  %% Voice & Brand Delivery (merged from docs/er/voice_assets.mmd)
   VOICE_RECORDINGS {
-    uuid id PK
-    uuid user_id FK "REFERENCES profiles(id)"
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
     text storage_bucket
     text storage_path
     text public_url
-    int duration_sec
+    integer duration_sec
     text mime_type
     text emotion_tag
-    bool accessible
-    timestamptz created_at
+    boolean accessible "default true"
+    timestamptz created_at "default now()"
   }
 
   VOICE_MODELS {
-    uuid id PK
-    uuid user_id FK "REFERENCES profiles(id)"
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
     text provider
     text provider_voice_id
-    text status
-    uuid source_recording_id FK "REFERENCES voice_recordings(id)"
+    text status "default 'ready'"
+    uuid source_recording_id FK "REFERENCES voice_recordings(id) ON DELETE SET NULL"
     jsonb metadata
-    timestamptz created_at
+    timestamptz created_at "default now()"
   }
 
   BRAND_LICENSES {
-    uuid id PK
-    uuid brand_org_id FK "REFERENCES organization_profiles(id)"
-    uuid face_user_id FK "REFERENCES profiles(id)"
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid brand_org_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
+    uuid face_user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
     text type
-    text status
+    text status "default 'active'"
     timestamptz start_at
     timestamptz end_at
-    timestamptz created_at
+    timestamptz created_at "default now()"
   }
 
   BRAND_VOICE_FOLDERS {
-    uuid id PK
-    uuid brand_org_id FK "REFERENCES organization_profiles(id)"
-    uuid face_user_id FK "REFERENCES profiles(id)"
-    uuid license_id FK "REFERENCES brand_licenses(id)"
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid brand_org_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
+    uuid face_user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+    uuid license_id FK "REFERENCES brand_licenses(id) ON DELETE CASCADE"
     text name
-    timestamptz created_at
+    timestamptz created_at "default now()"
   }
 
   BRAND_VOICE_ASSETS {
-    uuid id PK
-    uuid folder_id FK "REFERENCES brand_voice_folders(id)"
-    text asset_type "recording | model"
-    uuid recording_id FK "REFERENCES voice_recordings(id)"
-    uuid model_id FK "REFERENCES voice_models(id)"
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid folder_id FK "REFERENCES brand_voice_folders(id) ON DELETE CASCADE"
+    text asset_type "'recording' | 'model'"
+    uuid recording_id FK "REFERENCES voice_recordings(id) ON DELETE SET NULL"
+    uuid model_id FK "REFERENCES voice_models(id) ON DELETE SET NULL"
     text storage_bucket
     text storage_path
     text public_url
-    timestamptz created_at
+    timestamptz created_at "default now()"
   }
 
   V_FACE_PAYOUTS {
@@ -246,10 +248,21 @@ erDiagram
     integer event_count
   }
 
+  CREATOR_CUSTOM_RATES {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid creator_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+    text rate_type "'content_type' or 'industry'"
+    text rate_name
+    integer price_per_week_cents
+    timestamptz created_at "default now()"
+    timestamptz updated_at "default now()"
+  }
+
   PROFILES ||--o{ ROYALTY_LEDGER : face_id
   PROFILES ||--o{ MODERATION_EVENTS : user_id
   PROFILES ||--o{ REFERENCE_IMAGES : user_id
   PROFILES ||--o{ ORGANIZATION_PROFILES : owner_user_id
+  PROFILES ||--o{ CREATOR_CUSTOM_RATES : creator_id
   ORGANIZATION_PROFILES ||--o{ AGENCY_USERS : agency_id
   PROFILES ||--o{ AGENCY_USERS : user_id
   PROFILES ||--o{ VOICE_RECORDINGS : user_id
@@ -263,6 +276,7 @@ erDiagram
 ```
 
 ## Notes
+- **Primary Key Convention**: All primary key `id` columns MUST be of type `UUID` with a default value of `gen_random_uuid()`. Do not use `BIGINT` or serial types for primary keys.
 - The initial migration created `profiles.id` as `TEXT PRIMARY KEY`. The later migration `20251121_profiles_id_default.sql` ensures a UUID default via `gen_random_uuid()`. If your environment still has `id` as TEXT, apply a conversion migration.
 - `royalty_ledger.face_id` references `profiles(id)`; the view `v_face_payouts` aggregates paid/pending amounts by face and month for read-only dashboard usage.
 - The consolidated migration `2025-11-21_consolidated_profiles_wallet.sql` couples minimal `profiles` prerequisites and the Royalty Wallet schema (ledger, view, policies) to provision new environments consistently. Prefer running this single file in greenfield environments to avoid ordering issues.
@@ -294,6 +308,13 @@ erDiagram
 - **PROFILES → MODERATION_EVENTS (user_id)**
   - Moderation events are tied to the profile that submitted the image or action.
   - Cardinality: 1 profile can have 0..N moderation events; each event references exactly 1 profile.
+
+- **PROFILES → CREATOR_CUSTOM_RATES (creator_id)**
+  - Custom licensing rates for specific content types and industries set by creators.
+  - Cardinality: 1 profile can have 0..N custom rates; each rate references exactly 1 profile.
+  - UNIQUE constraint on `(creator_id, rate_type, rate_name)` prevents duplicate rates.
+  - Function `upsert_creator_rates(p_creator_id, p_rates)` handles batch updates with security checks.
+  - RLS policies ensure creators can only manage their own rates.
 
 - **V_FACE_PAYOUTS** (view)
   - Read-only aggregation across `ROYALTY_LEDGER` grouped by face and month.

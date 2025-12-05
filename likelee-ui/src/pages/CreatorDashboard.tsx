@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Upload,
@@ -83,29 +84,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
-
-// Voice recording scripts for different emotions
-const VOICE_SCRIPTS = {
-  happy:
-    "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
-
-  emotional:
-    "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-
-  excited:
-    "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-
-  mellow:
-    "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-
-  relaxed:
-    "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-
-  angry:
-    "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
-};
-
-// Content types and industries for My Rules
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -130,6 +108,27 @@ const INDUSTRIES = [
   "Luxury & Lifestyle",
   "Travel / Hospitality",
 ];
+
+// Voice recording scripts for different emotions
+const VOICE_SCRIPTS = {
+  happy:
+    "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+
+  emotional:
+    "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+
+  excited:
+    "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+
+  mellow:
+    "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+
+  relaxed:
+    "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+
+  angry:
+    "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
+};
 
 const IMAGE_SECTIONS = [
   {
@@ -309,6 +308,13 @@ export default function CreatorDashboard() {
     signature: null,
   });
 
+  // Custom Rates State
+  const [customRates, setCustomRates] = useState<any[]>([]);
+  const [showRatesModal, setShowRatesModal] = useState<
+    "content" | "industry" | null
+  >(null);
+  const [savingRates, setSavingRates] = useState(false);
+
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
@@ -430,6 +436,9 @@ export default function CreatorDashboard() {
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
 
+  // Track if we've loaded data for the current user to prevent unnecessary refetches
+  const loadedUserRef = useRef<string | null>(null);
+
   // Calculate metrics (fallback to computed if backend doesn't send)
   const totalMonthlyRevenue = activeCampaigns.reduce(
     (sum, c) => sum + (c.rate || 0),
@@ -445,9 +454,15 @@ export default function CreatorDashboard() {
   useEffect(() => {
     if (!initialized) return;
     if (!authenticated || !user?.id) return;
+
+    // Skip if we've already loaded data for this user
+    if (loadedUserRef.current === user.id) return;
+
+    loadedUserRef.current = user.id;
     const abort = new AbortController();
     (async () => {
       try {
+        console.log("Fetching dashboard data for user:", user.id);
         const res = await fetch(
           `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
           { signal: abort.signal },
@@ -455,6 +470,12 @@ export default function CreatorDashboard() {
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
         const profile = json.profile || {};
+        console.log(
+          "Dashboard loaded with content_types:",
+          profile.content_types,
+          "industries:",
+          profile.industries,
+        );
         setCreator({
           name: profile.full_name || creator.name,
           email: profile.email || creator.email,
@@ -496,6 +517,24 @@ export default function CreatorDashboard() {
     })();
     return () => abort.abort();
   }, [initialized, authenticated, user?.id]);
+
+  // Fetch custom rates
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setCustomRates(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch rates", e);
+      }
+    })();
+  }, [initialized, authenticated, user?.id, API_BASE]);
 
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
@@ -995,9 +1034,66 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleSaveRules = () => {
-    setEditingRules(false);
-    alert("Licensing preferences updated! (Demo mode)");
+  const handleSaveRules = async () => {
+    if (!user) return;
+
+    // Only send fields that exist in the profiles table
+    // Exclude frontend-only fields like accept_negotiations, royalty_percentage, etc.
+    const profileData = {
+      email: creator.email || user.email,
+      full_name: creator.name,
+      bio: creator.bio,
+      city: creator.location?.split(",")[0]?.trim(),
+      state: creator.location?.split(",")[1]?.trim(),
+      content_types: creator.content_types,
+      industries: creator.industries,
+      base_monthly_price_cents: (creator.price_per_week || 0) * 400,
+      platform_handle: creator.instagram_handle?.replace("@", ""),
+    };
+
+    console.log("Saving profile with data:", {
+      content_types: profileData.content_types,
+      industries: profileData.industries,
+      email: profileData.email,
+      price_per_week: creator.price_per_week,
+      base_monthly_price_cents: profileData.base_monthly_price_cents,
+    });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Save failed:", errorText);
+        throw new Error(`Server error: ${errorText}`);
+      }
+
+      const responseData = await res.json();
+      console.log("Save response:", responseData);
+
+      // Update creator state with the saved data from the response
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        const savedProfile = responseData[0];
+        setCreator((prev) => ({
+          ...prev,
+          content_types: savedProfile.content_types || [],
+          industries: savedProfile.industries || [],
+          price_per_week: savedProfile.base_monthly_price_cents
+            ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
+            : prev.price_per_week,
+        }));
+      }
+
+      setEditingRules(false);
+      alert("Licensing preferences updated!");
+    } catch (error: any) {
+      console.error("Failed to save rules:", error);
+      alert(`Failed to save preferences: ${error?.message || error}`);
+    }
   };
 
   const handleSaveProfile = () => {
@@ -3079,6 +3175,90 @@ export default function CreatorDashboard() {
     </div>
   );
 
+  const handleSaveRates = async (e) => {
+    e.preventDefault();
+    setSavingRates(true);
+    try {
+      const formData = new FormData(e.target);
+      const newRates: any[] = [];
+
+      // Determine which modal is open and process only its rates
+      if (showRatesModal === "content") {
+        creator.content_types
+          ?.filter((t) => CONTENT_TYPES.includes(t))
+          .forEach((type) => {
+            const val = formData.get(`rate_content_${type}`);
+            if (val && val.toString().trim() !== "") {
+              newRates.push({
+                rate_type: "content_type",
+                rate_name: type,
+                price_per_week_cents: Math.round(
+                  parseFloat(val.toString()) * 100,
+                ),
+              });
+            }
+          });
+      } else if (showRatesModal === "industry") {
+        creator.industries
+          ?.filter((i) => INDUSTRIES.includes(i))
+          .forEach((ind) => {
+            const val = formData.get(`rate_industry_${ind}`);
+            if (val && val.toString().trim() !== "") {
+              newRates.push({
+                rate_type: "industry",
+                rate_name: ind,
+                price_per_week_cents: Math.round(
+                  parseFloat(val.toString()) * 100,
+                ),
+              });
+            }
+          });
+      }
+
+      // Get the existing rates from the *other* category to preserve them
+      const otherRateType =
+        showRatesModal === "content" ? "industry" : "content_type";
+      const preservedRates = customRates.filter(
+        (r) => r.rate_type === otherRateType,
+      );
+
+      // Combine the new rates with the preserved rates
+      const finalRates = [...newRates, ...preservedRates];
+
+      const res = await fetch(
+        `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalRates),
+        },
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to save: ${errorText}`);
+      }
+
+      // Reload rates from database to confirm persistence
+      const reloadRes = await fetch(
+        `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+      );
+      if (reloadRes.ok) {
+        const reloadedRates = await reloadRes.json();
+        setCustomRates(reloadedRates);
+      }
+
+      setShowRatesModal(null);
+      setEditingRules(false);
+      alert("Rates saved successfully!");
+    } catch (e: any) {
+      console.error("Save error:", e);
+      alert(`Failed to save rates: ${e?.message || e}`);
+    } finally {
+      setSavingRates(false);
+    }
+  };
+
   const renderSettings = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -3378,7 +3558,7 @@ export default function CreatorDashboard() {
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
                   Content I'm Open To
                 </Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {CONTENT_TYPES.map((type) => (
                     <Badge
                       key={type}
@@ -3395,6 +3575,28 @@ export default function CreatorDashboard() {
                     </Badge>
                   ))}
                 </div>
+                {!editingRules &&
+                  creator.content_types &&
+                  creator.content_types.length > 0 && (
+                    <>
+                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                        <AlertDescription className="text-blue-900 text-sm">
+                          Want different rates for each content type? Click
+                          below to customize.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRatesModal("content")}
+                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Initial Licensing Rate
+                      </Button>
+                    </>
+                  )}
               </div>
 
               {/* Industries */}
@@ -3402,7 +3604,7 @@ export default function CreatorDashboard() {
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
                   Industries I Work With
                 </Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {INDUSTRIES.map((industry) => (
                     <Badge
                       key={industry}
@@ -3411,7 +3613,7 @@ export default function CreatorDashboard() {
                       }
                       className={`cursor-pointer transition-all px-4 py-2 ${
                         creator.industries?.includes(industry)
-                          ? "bg-purple-500 text-white hover:bg-purple-600 border-2 border-purple-500"
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                       } ${!editingRules && "cursor-default"}`}
                     >
@@ -3419,6 +3621,28 @@ export default function CreatorDashboard() {
                     </Badge>
                   ))}
                 </div>
+                {!editingRules &&
+                  creator.industries &&
+                  creator.industries.length > 0 && (
+                    <>
+                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                        <AlertDescription className="text-blue-900 text-sm">
+                          Want different rates for each industry? Click below to
+                          customize.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRatesModal("industry")}
+                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Initial Licensing Rate
+                      </Button>
+                    </>
+                  )}
               </div>
 
               {/* Pricing */}
@@ -3445,7 +3669,7 @@ export default function CreatorDashboard() {
                           })
                         }
                         disabled={!editingRules}
-                        className="border-2 border-gray-300 text-lg"
+                        className={`border-2 text-lg ${!editingRules ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
                         min="0"
                         step="50"
                       />
@@ -3453,48 +3677,6 @@ export default function CreatorDashboard() {
                         / week
                       </span>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Campaign Royalties */}
-              <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Campaign Royalties
-                </Label>
-                <p className="text-sm text-gray-600 mb-4">
-                  Percentage of campaign revenue from your likeness (0-5%)
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="0"
-                      max="5"
-                      step="0.5"
-                      value={creator.royalty_percentage || 0}
-                      onChange={(e) =>
-                        setCreator({
-                          ...creator,
-                          royalty_percentage: parseFloat(e.target.value),
-                        })
-                      }
-                      disabled={!editingRules}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#32C8D1]"
-                    />
-                    <div className="flex items-center gap-2 min-w-24">
-                      <span className="text-2xl font-bold text-[#32C8D1]">
-                        {creator.royalty_percentage || 0}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>0%</span>
-                    <span>1%</span>
-                    <span>2%</span>
-                    <span>3%</span>
-                    <span>4%</span>
-                    <span>5%</span>
                   </div>
                 </div>
               </div>
@@ -4410,6 +4592,193 @@ export default function CreatorDashboard() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Rates Modal */}
+      <Dialog
+        open={showRatesModal !== null}
+        onOpenChange={() => setShowRatesModal(null)}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {showRatesModal === "content"
+                ? "Customize Content Type Rates"
+                : "Customize Industry Rates"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleSaveRates}
+            className="flex-1 overflow-y-auto py-4 pr-2"
+          >
+            <Alert className="bg-blue-50 border border-blue-200 mb-6">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                Set specific weekly rates for different{" "}
+                {showRatesModal === "content" ? "content types" : "industries"}.
+                If left blank, your base rate (${creator.price_per_week}/week)
+                will apply.
+              </AlertDescription>
+            </Alert>
+
+            {/* Content Types - Only show if modal type is 'content' */}
+            {showRatesModal === "content" &&
+              ((
+                creator.content_types?.filter((t) =>
+                  CONTENT_TYPES.includes(t),
+                ) || []
+              ).length > 0 ? (
+                <div className="mb-8">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Video className="w-5 h-5 text-[#32C8D1]" />
+                    Content Types
+                  </h4>
+                  <div className="grid gap-4">
+                    {creator.content_types
+                      ?.filter((type) => CONTENT_TYPES.includes(type))
+                      .map((type) => {
+                        const existing = customRates.find(
+                          (r) =>
+                            r.rate_type === "content_type" &&
+                            r.rate_name === type,
+                        );
+                        return (
+                          <div
+                            key={type}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <Label className="font-medium text-gray-700">
+                              {type}
+                            </Label>
+                            <div className="flex items-center gap-2 w-48">
+                              <span className="text-gray-500">$</span>
+                              <Input
+                                type="number"
+                                name={`rate_content_${type}`}
+                                defaultValue={
+                                  existing
+                                    ? (
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
+                                    : ""
+                                }
+                                placeholder={creator.price_per_week?.toString()}
+                                className="bg-white"
+                                min="0"
+                                step="1"
+                              />
+                              <span className="text-gray-500 text-sm">/wk</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              ) : (
+                <Alert className="bg-amber-50 border border-amber-200 mb-6">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-900">
+                    <strong>No content types selected.</strong> Please go back
+                    to "My Rules" and select the content types you're open to
+                    first.
+                  </AlertDescription>
+                </Alert>
+              ))}
+
+            {/* Industries - Only show if modal type is 'industry' */}
+            {showRatesModal === "industry" &&
+              ((creator.industries?.filter((i) => INDUSTRIES.includes(i)) || [])
+                .length > 0 ? (
+                <div className="mb-6">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-purple-500" />
+                    Industries
+                  </h4>
+                  <div className="grid gap-4">
+                    {creator.industries
+                      ?.filter((ind) => INDUSTRIES.includes(ind))
+                      .map((ind) => {
+                        const existing = customRates.find(
+                          (r) =>
+                            r.rate_type === "industry" && r.rate_name === ind,
+                        );
+                        return (
+                          <div
+                            key={ind}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <Label className="font-medium text-gray-700">
+                              {ind}
+                            </Label>
+                            <div className="flex items-center gap-2 w-48">
+                              <span className="text-gray-500">$</span>
+                              <Input
+                                type="number"
+                                name={`rate_industry_${ind}`}
+                                defaultValue={
+                                  existing
+                                    ? (
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
+                                    : ""
+                                }
+                                placeholder={creator.price_per_week?.toString()}
+                                className="bg-white"
+                                min="0"
+                                step="1"
+                              />
+                              <span className="text-gray-500 text-sm">/wk</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              ) : (
+                <Alert className="bg-amber-50 border border-amber-200 mb-6">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-900">
+                    <strong>No industries selected.</strong> Please go back to
+                    "My Rules" and select the industries you work with first.
+                  </AlertDescription>
+                </Alert>
+              ))}
+
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRatesModal(null)}
+                className="border-2 border-gray-300"
+              >
+                Cancel
+              </Button>
+              {/* Only show Save Rates button if there are items to customize */}
+              {((showRatesModal === "content" &&
+                creator.content_types?.filter((t) => CONTENT_TYPES.includes(t))
+                  .length > 0) ||
+                (showRatesModal === "industry" &&
+                  creator.industries?.filter((i) => INDUSTRIES.includes(i))
+                    .length > 0)) && (
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                >
+                  {savingRates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Rates"
+                  )}
+                </Button>
+              )}
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
