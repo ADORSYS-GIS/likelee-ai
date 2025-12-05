@@ -12,14 +12,17 @@ permissions:
   contents: read
 
 env:
-  REGISTRY_IMAGE_SERVER: ghcr.io/${{ github.repository }}/likelee-server
-  REGISTRY_IMAGE_UI: ghcr.io/${{ github.repository }}/likelee-ui
   REMOTE_DIR: /opt/likelee/deploy/ec2
 
 jobs:
   rollback:
     runs-on: ubuntu-latest
     steps:
+      - name: Compute lowercase repository path
+        shell: bash
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: Trigger rollback on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -29,8 +32,8 @@ jobs:
           script: |
             set -euo pipefail
             cd ${{ env.REMOTE_DIR }}
-            export REGISTRY_IMAGE_SERVER='${{ env.REGISTRY_IMAGE_SERVER }}'
-            export REGISTRY_IMAGE_UI='${{ env.REGISTRY_IMAGE_UI }}'
+            export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
+            export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
             chmod +x scripts/rollback.sh || true
             if [ -n "${{ github.event.inputs.tag }}" ]; then
               ./scripts/rollback.sh "${{ github.event.inputs.tag }}"
