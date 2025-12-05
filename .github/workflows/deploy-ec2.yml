@@ -13,7 +13,7 @@ env:
   IMAGE_TAG: ${{ github.sha }}
   SERVER_IMAGE_NAME: likelee-server
   UI_IMAGE_NAME: likelee-ui
-  REMOTE_DIR: /opt/likelee/deploy/ec2
+  REMOTE_DIR: /root/likelee/deploy/ec2
 
 jobs:
   build-and-push:
