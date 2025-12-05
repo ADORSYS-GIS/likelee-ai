@@ -902,7 +902,7 @@ export default function ReserveProfile() {
     }
   };
 
-  const totalSteps = 5;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   // Verification state
@@ -2827,7 +2827,7 @@ export default function ReserveProfile() {
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
                           setShowSkipModal(false);
-                          setStep(5);
+                          finalizeProfile();
                         }}
                       >
                         Skip for Now - I'm Sure
@@ -2836,29 +2836,6 @@ export default function ReserveProfile() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Step 5: Reference Photos */}
-          {step === 5 && (
-            <div className="space-y-6">
-              <ReferencePhotosStep
-                kycStatus={kycStatus}
-                onBack={() => setStep(4)}
-                onUploaded={(
-                  front: string | null,
-                  left: string | null,
-                  right: string | null,
-                ) => {
-                  if (front) setCameoFrontUrl(front);
-                  if (left) setCameoLeftUrl(left);
-                  if (right) setCameoRightUrl(right);
-                }}
-                onComplete={finalizeProfile}
-                uploadFn={uploadCameoImage}
-                userId={user?.id}
-                apiBase={API_BASE}
-              />
             </div>
           )}
         </Card>

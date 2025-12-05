@@ -67,6 +67,7 @@ import {
   Link as LinkIcon,
   HelpCircle,
   LogOut,
+  Archive,
 } from "lucide-react";
 import {
   LineChart,
@@ -223,6 +224,140 @@ const IMAGE_SECTIONS = [
     description:
       "A photo that really represents YOU and how people recognize you.",
     bestFor: "A photo that really represents YOU",
+  },
+];
+
+// Example campaigns for blank users (shown when no real campaigns exist)
+const exampleCampaigns = [
+  {
+    id: "example-nike",
+    brand: "Nike",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    brand_image_url:
+      "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
+    campaign: "Best Nike Heritage Collection",
+    usage_type: "Social Ads",
+    rate: 15000,
+    status: "active",
+    start_date: "2024-01-15",
+    end_date: "2024-07-15",
+    active_until: "2024-07-15",
+    regions: ["North America", "Europe"],
+    impressions_week: "125000 impressions/week",
+    auto_renewal: true,
+    isExample: true,
+  },
+  {
+    id: "example-skincare",
+    brand: "Avo Beauty",
+    brand_logo:
+      "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
+    brand_image_url:
+      "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
+    campaign: "Natural Glow Collection",
+    usage_type: "Social Ads",
+    rate: 15000,
+    status: "expiring_soon",
+    start_date: "2024-02-01",
+    end_date: "2024-08-01",
+    active_until: "2024-08-01",
+    regions: ["Global"],
+    impressions_week: "89000 impressions/week",
+    auto_renewal: false,
+    isExample: true,
+  },
+  {
+    id: "example-pepsi",
+    brand: "Pepsi",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
+    brand_image_url:
+      "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+    campaign: "Thirsty for More, Best energy drink",
+    usage_type: "Energy Drink",
+    rate: 50000,
+    status: "active",
+    start_date: "2024-03-01",
+    end_date: "2024-06-30",
+    active_until: "2024-06-30",
+    regions: ["North America"],
+    impressions_week: "250000 impressions/week",
+    auto_renewal: false,
+    isExample: true,
+  },
+];
+
+// Example approval for blank users (shown when no real approvals exist)
+const exampleApprovals = [
+  {
+    id: "example-adidas-approval",
+    brand: "Adidas Running",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
+    campaign_type: "Social Media Campaign",
+    requested_date: "2025-02-06",
+    proposed_rate: 600,
+    term_length: "6 months",
+    estimated_monthly: 540, // after 10% Likelee fee
+    regions: ["North America", "Asia"],
+    industries: ["Sports / Fitness"],
+    usage_type: "Social Media",
+    duration: "6 months",
+    territory: "North America, Asia",
+    perpetual: false,
+    isExample: true,
+  },
+];
+
+// Example archived campaign for blank users (shown when no real archived campaigns exist)
+const exampleArchivedCampaigns = [
+  {
+    id: "example-spotify-archive",
+    brand: "Spotify Premium",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
+    campaign: "Audio Campaign",
+    campaign_type: "Audio Campaign",
+    completed_date: "2/1/2026",
+    duration: "2 months",
+    monthly_rate: 600,
+    total_earned: 1200,
+    regions: ["Global"],
+    show_on_portfolio: false,
+    isExample: true,
+  },
+];
+
+// Example contract for blank users (shown when no real contracts exist)
+const exampleContracts = [
+  {
+    id: "example-nike-contract",
+    brand: "Nike Sportswear",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    project_name: "Spring Running Campaign",
+    creator_earnings: 500,
+    earnings_to_date: 3000,
+    amount_paid: 3000,
+    payment_status: "Paid",
+    start_date: "2026-01-01",
+    end_date: "2026-06-30",
+    effective_date: "2026-01-01",
+    expiration_date: "2026-06-30",
+    status: "active",
+    days_until_expiration: 132,
+    days_remaining: 132,
+    usage_description: "Instagram Reels (15-30s each) Hero Image",
+    deliverables: "Instagram Reels (15-30s each) Hero Image",
+    territory: "North America, Europe",
+    channels: ["Social Media", "Website"],
+    restrictions: "Competitor brands, political content",
+    prohibited_uses: "Competitor brands, political content",
+    auto_renew: false,
+    can_pause: true,
+    can_revoke: true,
+    isExample: true,
   },
 ];
 
@@ -479,7 +614,7 @@ export default function CreatorDashboard() {
         setCreator({
           name: profile.full_name || creator.name,
           email: profile.email || creator.email,
-          profile_photo: creator.profile_photo,
+          profile_photo: profile.profile_photo_url || creator.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(", "),
           bio: profile.bio || creator.bio,
           instagram_handle: profile.platform_handle
@@ -602,6 +737,12 @@ export default function CreatorDashboard() {
       urgent: pendingCount > 0,
     },
     {
+      id: "archive",
+      label: "Campaign Archive",
+      icon: Archive,
+      badge: undefined,
+    },
+    {
       id: "contracts",
       label: "Licenses & Contracts",
       icon: FileText,
@@ -641,14 +782,14 @@ export default function CreatorDashboard() {
           </p>
         </div>
 
-        <Alert className="bg-blue-50 border border-blue-200">
+        <div className="bg-blue-50 border border-blue-200">
           <AlertCircle className="h-5 w-5 text-blue-600" />
-          <AlertDescription className="text-blue-900">
+          <p className="text-blue-900">
             Welcome to your Content page! You don't have any content yet — when
             brands publish content with your licensed likeness, it will appear
             here.
-          </AlertDescription>
-        </Alert>
+          </p>
+        </div>
 
         <div className="flex items-center gap-4">
           <Badge className="bg-gray-900 text-white">
@@ -726,7 +867,7 @@ export default function CreatorDashboard() {
         }));
         setPhotos([...photos, ...newPhotos]);
         setUploading(false);
-        alert(`${files.length} photo(s) uploaded! (Demo mode)`);
+        alert(`${files.length} photo(s) uploaded! `);
       }, 1000);
     }
   };
@@ -738,13 +879,73 @@ export default function CreatorDashboard() {
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!user?.id) {
+        alert("You must be logged in to upload a photo.");
+        return;
+      }
+      if (file.size > 5_000_000) {
+        alert("Please upload an image of 5 MB or less.");
+        return;
+      }
       setUploadingPhoto(true);
-      setTimeout(() => {
-        const url = URL.createObjectURL(file);
-        setCreator({ ...creator, profile_photo: url });
+
+      // Optimistic update: Show local preview immediately
+      const objectUrl = URL.createObjectURL(file);
+      setCreator((prev) => ({
+        ...prev,
+        profile_photo: objectUrl,
+      }));
+
+      try {
+        const buf = await file.arrayBuffer();
+        const res = await fetch(
+          `${API_BASE}/api/profile/photo-upload?user_id=${encodeURIComponent(
+            user.id,
+          )}`,
+          {
+            method: "POST",
+            headers: { "content-type": file.type || "image/jpeg" },
+            body: new Uint8Array(buf),
+            cache: "no-cache",
+          },
+        );
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        const json = await res.json();
+
+        // Use the public_url directly from the upload response
+        // Backend generates unique filename with UUID, so no cache issues
+        const newPhotoUrl = json.public_url;
+
+        setCreator((prev) => ({
+          ...prev,
+          profile_photo: newPhotoUrl,
+        }));
+
+        alert("Profile photo updated!");
+      } catch (err: any) {
+        alert(`Upload failed: ${err.message}`);
+        // Revert optimistic update on error by refreshing dashboard
+        try {
+          const profileRes = await fetch(
+            `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
+            { cache: "no-cache" },
+          );
+          if (profileRes.ok) {
+            const profileJson = await profileRes.json();
+            const profile = profileJson.profile || {};
+            setCreator((prev) => ({
+              ...prev,
+              profile_photo: profile.profile_photo_url,
+            }));
+          }
+        } catch (revertErr) {
+          console.error("Failed to revert profile photo:", revertErr);
+        }
+      } finally {
         setUploadingPhoto(false);
-        alert("Photo uploaded! (Demo mode)");
-      }, 1000);
+      }
     }
   };
 
@@ -1210,12 +1411,48 @@ export default function CreatorDashboard() {
         </div>
 
         <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-        <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
-          <p>Your campaign activity will show here once licenses activate</p>
-          <p className="text-sm text-gray-500 mt-1">
-            Complete your profile to start receiving brand opportunities
-          </p>
-        </Card>
+        {activeCampaigns.length === 0 ? (
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-blue-900">
+                <strong>Preview Examples:</strong> These are sample campaigns to
+                show you what opportunities look like. Complete your profile to
+                start receiving real brand deals!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {exampleCampaigns.map((campaign) => (
+                <Card
+                  key={campaign.id}
+                  className="relative overflow-hidden rounded-lg h-64 bg-cover bg-center text-white shadow-lg transform hover:scale-105 transition-transform duration-300"
+                  style={{
+                    backgroundImage: `url(${campaign.brand_image_url})`,
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black bg-opacity-50 p-4 flex flex-col justify-end">
+                    <h4 className="font-bold text-xl mb-1">{campaign.brand}</h4>
+                    <p className="text-sm mb-2">{campaign.campaign}</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <Badge className="bg-green-500 text-white border-none">
+                        Active
+                      </Badge>
+                      <span className="font-bold">${campaign.rate}/mo</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
+            <p>Your campaign activity will show here once licenses activate</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Complete your profile to start receiving brand opportunities
+            </p>
+          </Card>
+        )}
 
         <Card className="p-4 md:p-5 bg-white border border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -1418,84 +1655,23 @@ export default function CreatorDashboard() {
             </div>
           </div>
           <Progress value={completeness.percentage} className="h-3 mb-3" />
-          <Alert className="bg-white border border-blue-200">
-            <AlertCircle className="h-5 w-5 text-blue-600" />
-            <AlertDescription className="text-blue-900">
+          <div className="bg-white border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
               <strong>Complete profiles earn 15% more.</strong> Brands pay
               premium rates for creators with full reference libraries.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         </Card>
 
-        {/* Reference Photos (Front/Left/Right) before Cameo Video */}
-        {(creator?.cameo_front_url ||
-          creator?.cameo_left_url ||
-          creator?.cameo_right_url) && (
-          <Card className="p-6 bg-white border border-gray-200 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Reference Photos
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Front</div>
-                {creator?.cameo_front_url ? (
-                  <img
-                    src={creator.cameo_front_url}
-                    alt="Front"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Left</div>
-                {creator?.cameo_left_url ? (
-                  <img
-                    src={creator.cameo_left_url}
-                    alt="Left"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">Right</div>
-                {creator?.cameo_right_url ? (
-                  <img
-                    src={creator.cameo_right_url}
-                    alt="Right"
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        )}
-        <CameoUpload />
-
-        {/* MY CAMEO Section */}
+        {/* MY CAMEO Section - NOW FIRST */}
         <Card className="p-6 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                MY CAMEO
-              </h3>
-              <p className="text-gray-600">
-                The video representation of you - brands use this for AI cameos
-                and content generation
-              </p>
-            </div>
-            {heroMedia && <CheckCircle2 className="w-8 h-8 text-green-600" />}
+          <div className="mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">MY CAMEO</h3>
+            <p className="text-gray-600">
+              The video representation of you - brands use this for AI cameos
+              and content generation
+            </p>
           </div>
 
           {heroMedia ? (
@@ -1539,14 +1715,14 @@ export default function CreatorDashboard() {
                 )}
               </div>
 
-              <Alert className="bg-blue-50 border border-blue-200">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-                <AlertDescription className="text-blue-900 text-sm">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-blue-900 text-sm">
                   <strong>About Your Cameo:</strong> Brands use this to generate
                   AI cameos of you speaking, reference your voice/expressions,
                   and create photorealistic content featuring you.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
 
               <div className="flex gap-3">
                 <Button
@@ -1571,38 +1747,27 @@ export default function CreatorDashboard() {
               </div>
             </div>
           ) : (
-            <div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-[#32C8D1] transition-colors mb-4">
-                <input
-                  type="file"
-                  id="heroUpload"
-                  accept="video/*"
-                  onChange={handleHeroUpload}
-                  disabled={uploading}
-                  className="hidden"
-                />
-                <label htmlFor="heroUpload" className="cursor-pointer">
-                  {uploading ? (
-                    <Loader2 className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
-                  ) : (
-                    <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  )}
-                  <p className="text-lg text-gray-700 font-medium mb-2">
-                    {uploading ? "Uploading..." : "Upload Your Cameo Video"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    MP4 or MOV, 30-60 seconds recommended
-                  </p>
-                </label>
+            <div className="space-y-4">
+              {/* Coming Soon Upload Box */}
+              <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
+                <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-900 mb-2">
+                  Coming Soon
+                </p>
+                <p className="text-sm text-gray-600">
+                  Cameo video upload will be available soon
+                </p>
               </div>
-              <Alert className="bg-amber-50 border border-amber-200">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-                <AlertDescription className="text-amber-900 text-sm">
+
+              {/* Yellow Warning Alert */}
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-amber-900 text-sm">
                   <strong>Your cameo is required to start earning.</strong>{" "}
                   Brands need this video reference to create content featuring
                   you.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
             </div>
           )}
         </Card>
@@ -1636,15 +1801,15 @@ export default function CreatorDashboard() {
             </div>
           </div>
 
-          <Alert className="mb-6 bg-blue-50 border border-blue-200">
-            <AlertCircle className="h-5 w-5 text-blue-600" />
-            <AlertDescription className="text-blue-900">
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
               <strong>How This Works:</strong> Upload photos in 15 different
               categories. Brands use these to generate images of you that look
               consistent and photorealistic. More variety = better quality
               content = higher rates.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
 
           <div className="space-y-4">
             {IMAGE_SECTIONS.map((section, index) => {
@@ -1656,7 +1821,7 @@ export default function CreatorDashboard() {
                   className={`p-4 border-2 ${hasImage ? "border-green-200 bg-green-50" : "border-gray-200"}`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-sm">
                       {index + 1}
                     </div>
 
@@ -1670,13 +1835,14 @@ export default function CreatorDashboard() {
                             <strong>Best For:</strong> {section.bestFor}
                           </p>
                           <Badge
+                            variant="outline"
                             className={
                               hasImage
                                 ? "bg-green-500 text-white"
                                 : "bg-gray-300 text-gray-700"
                             }
                           >
-                            {hasImage ? "✓ UPLOADED" : "⚠️ MISSING"}
+                            {hasImage ? "UPLOADED" : "MISSING"}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -1745,14 +1911,14 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Quality Standards */}
-          <Alert className="mt-6 bg-amber-50 border border-amber-200">
+          <div className="mt-6 bg-amber-50 border border-amber-200">
             <AlertCircle className="h-5 w-5 text-amber-600" />
-            <AlertDescription className="text-amber-900">
+            <p className="text-amber-900">
               <strong>Quality Standards:</strong> High-resolution (minimum
               1080x1080), clear lighting, face/body clearly visible, no heavy
               filters, professional quality preferred.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         </Card>
 
         {/* Content Guidelines */}
@@ -1773,9 +1939,10 @@ export default function CreatorDashboard() {
                 {contentPreferences.comfortable.map((item) => (
                   <Badge
                     key={item}
+                    variant="outline"
                     className="bg-green-100 text-green-700 border border-green-300 px-3 py-2"
                   >
-                    ✓ {item}
+                    {item}
                   </Badge>
                 ))}
               </div>
@@ -1789,6 +1956,7 @@ export default function CreatorDashboard() {
                 {contentPreferences.not_comfortable.map((item) => (
                   <Badge
                     key={item}
+                    variant="outline"
                     className="bg-red-100 text-red-700 border border-red-300 px-3 py-2"
                   >
                     ✗ {item}
@@ -1832,6 +2000,7 @@ export default function CreatorDashboard() {
                 </span>
               </div>
               <Badge
+                variant="outline"
                 className={
                   creator?.kyc_status === "approved"
                     ? "bg-green-100 text-green-700"
@@ -1855,7 +2024,9 @@ export default function CreatorDashboard() {
                   Likeness Rights
                 </span>
               </div>
-              <Badge className="bg-green-100 text-green-700">Confirmed</Badge>
+              <Badge variant="outline" className="bg-green-100 text-green-700">
+                Confirmed
+              </Badge>
             </div>
             <div className="flex gap-2 pt-2">
               <Button
@@ -1902,7 +2073,10 @@ export default function CreatorDashboard() {
             Build your voice library for different emotions and tones
           </p>
         </div>
-        <Badge className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg">
+        <Badge
+          variant="outline"
+          className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
+        >
           {voiceLibrary.length} Voice{voiceLibrary.length !== 1 ? "s" : ""}
         </Badge>
       </div>
@@ -2081,237 +2255,284 @@ export default function CreatorDashboard() {
       )}
 
       {/* Voice Training Tips */}
-      <Alert className="bg-purple-50 border border-purple-200">
+      <div className="bg-purple-50 border border-purple-200">
         <Volume2 className="h-5 w-5 text-purple-600" />
-        <AlertDescription className="text-purple-900">
+        <p className="text-purple-900">
           <strong>Voice Training Tips:</strong> Speak clearly, avoid background
           noise, record in a quiet room, and maintain consistent volume
           throughout the recording.
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
     </div>
   );
 
-  const renderCampaigns = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Active Campaigns</h2>
-          <p className="text-gray-600 mt-1">
-            Track and manage your licensing agreements
-          </p>
-        </div>
-        <Badge className="bg-green-100 text-green-700 border border-green-300 px-4 py-2 text-lg">
-          {activeCampaigns.length} Active
-        </Badge>
-      </div>
+  const renderCampaigns = () => {
+    // Use example campaigns if activeCampaigns is empty, otherwise use real data
+    const campaignsToShow =
+      activeCampaigns.length === 0 ? exampleCampaigns : activeCampaigns;
+    const showingExamples = activeCampaigns.length === 0;
 
-      {/* Campaigns Table */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-gray-300">
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Brand
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Usage Type
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Rate
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Active Until
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Status
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  This Month
-                </th>
-                <th className="text-left py-4 px-4 font-bold text-gray-900">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeCampaigns.map((campaign) => (
-                <tr
-                  key={campaign.id}
-                  className="border-b border-gray-200 hover:bg-gray-50"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={campaign.brand_logo}
-                        alt={campaign.brand}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                      />
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.brand}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {campaign.impressions_week.toLocaleString()}{" "}
-                          impressions/week
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-gray-700">
-                    {campaign.usage_type}
-                  </td>
-                  <td className="py-4 px-4 font-bold text-gray-900">
-                    ${campaign.rate}/mo
-                  </td>
-                  <td className="py-4 px-4 text-gray-700">
-                    {new Date(campaign.active_until).toLocaleDateString()}
-                    {campaign.auto_renewal && (
-                      <Badge className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs">
-                        Auto-Renew
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="py-4 px-4">
-                    <Badge
-                      className={`${
-                        campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                      }`}
-                    >
-                      {campaign.status === "active"
-                        ? "Active"
-                        : campaign.status === "expiring_soon"
-                          ? "Expiring Soon"
-                          : campaign.status}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-4 font-bold text-green-600">
-                    ${campaign.earnings_this_month}
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handlePauseCampaign(campaign.id)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Pause className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleRevokeCampaign(campaign.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        Revoke
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Campaign Details Cards */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {activeCampaigns.slice(0, 2).map((campaign) => (
-          <Card
-            key={campaign.id}
-            className="p-6 bg-white border border-gray-200"
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Active Campaigns
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Track and manage your licensing agreements
+            </p>
+          </div>
+          <Badge
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src={campaign.brand_logo}
-                  alt={campaign.brand}
-                  className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
-                />
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">
-                    {campaign.brand}
-                  </h3>
-                  <p className="text-sm text-gray-600">{campaign.usage_type}</p>
+            {activeCampaigns.length} Active
+          </Badge>
+        </div>
+
+        {/* Welcome message for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Active Campaigns!</strong> This is an
+              example of what your campaigns will look like. You don't have any
+              active campaigns yet — but when brands start working with you,
+              they'll appear here!
+            </p>
+          </div>
+        )}
+
+        {/* Campaigns Table */}
+        <Card className="p-6 bg-white border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-gray-300">
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Brand
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Usage Type
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Rate
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Active Until
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Status
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    This Month
+                  </th>
+                  <th className="text-left py-4 px-4 font-bold text-gray-900">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaignsToShow.map((campaign) => (
+                  <tr
+                    key={campaign.id}
+                    className="border-b border-gray-200 hover:bg-gray-50"
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        {campaign.brand_logo && (
+                          <img
+                            src={campaign.brand_logo}
+                            alt={campaign.brand}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                          />
+                        )}
+                        {!campaign.brand_logo && (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                            {campaign.brand.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {campaign.brand}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {campaign.impressions_week?.toLocaleString() ||
+                              campaign.campaign}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {campaign.usage_type ||
+                        campaign.campaign?.split(",")[0] ||
+                        "Social Ads"}
+                    </td>
+                    <td className="py-4 px-4 font-bold text-gray-900">
+                      ${campaign.rate.toLocaleString()}/mo
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {new Date(
+                        campaign.active_until || campaign.end_date,
+                      ).toLocaleDateString()}
+                      {campaign.auto_renewal && (
+                        <Badge
+                          className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs"
+                          variant="outline"
+                        >
+                          Auto-Renew
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-4 px-4">
+                      <Badge
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        {campaign.status === "active"
+                          ? "Active"
+                          : campaign.status === "expiring_soon"
+                            ? "Expiring Soon"
+                            : campaign.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4 font-bold text-green-600">
+                      $
+                      {campaign.earnings_this_month ||
+                        campaign.rate.toLocaleString()}
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handlePauseCampaign(campaign.id)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Pause className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleRevokeCampaign(campaign.id)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          Revoke
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Campaign Details Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {campaignsToShow.slice(0, 2).map((campaign) => (
+            <Card
+              key={campaign.id}
+              className="p-6 bg-white border border-gray-200"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={campaign.brand_logo}
+                    alt={campaign.brand}
+                    className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">
+                      {campaign.brand}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {campaign.usage_type}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  className={
+                    campaign.status === "active"
+                      ? "bg-green-100 text-green-700 border border-green-300"
+                      : "bg-orange-100 text-orange-700 border border-orange-300"
+                  }
+                >
+                  {campaign.status === "active" ? "Active" : "Expiring Soon"}
+                </Badge>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Monthly Rate:</span>
+                  <span className="font-bold text-gray-900">
+                    ${campaign.rate.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Active Until:</span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(campaign.active_until).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Regions:</span>
+                  <span className="font-medium text-gray-900">
+                    {campaign.regions.join(", ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Weekly Impressions:</span>
+                  <span className="font-medium text-gray-900">
+                    {campaign.impressions_week.toLocaleString()}
+                  </span>
                 </div>
               </div>
-              <Badge
-                className={
-                  campaign.status === "active"
-                    ? "bg-green-100 text-green-700 border border-green-300"
-                    : "bg-orange-100 text-orange-700 border border-orange-300"
-                }
-              >
-                {campaign.status === "active" ? "Active" : "Expiring Soon"}
-              </Badge>
-            </div>
 
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Monthly Rate:</span>
-                <span className="font-bold text-gray-900">
-                  ${campaign.rate}
-                </span>
+              <div className="flex gap-2 mt-6">
+                <Button variant="outline" className="flex-1">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 text-red-600 hover:bg-red-50"
+                  onClick={() => handleRevokeCampaign(campaign.id)}
+                >
+                  Revoke
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Active Until:</span>
-                <span className="font-medium text-gray-900">
-                  {new Date(campaign.active_until).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Regions:</span>
-                <span className="font-medium text-gray-900">
-                  {campaign.regions.join(", ")}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Weekly Impressions:</span>
-                <span className="font-medium text-gray-900">
-                  {campaign.impressions_week.toLocaleString()}
-                </span>
-              </div>
-            </div>
+            </Card>
+          ))}
+        </div>
 
-            <div className="flex gap-2 mt-6">
-              <Button variant="outline" className="flex-1">
-                <Eye className="w-4 h-4 mr-2" />
-                View Details
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 text-red-600 hover:bg-red-50"
-                onClick={() => handleRevokeCampaign(campaign.id)}
-              >
-                Revoke
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {/* Rights Expiration Calendar */}
+        <div className="bg-blue-50 border border-blue-200">
+          <Calendar className="h-5 w-5 text-blue-600" />
+          <p className="text-blue-900">
+            <strong>Your consent required for all uses.</strong>{" "}
+            {activeCampaigns.length} active campaigns, all time-limited, all
+            approved by you. You can pause/revoke anytime.
+          </p>
+        </div>
       </div>
-
-      {/* Rights Expiration Calendar */}
-      <Alert className="bg-blue-50 border border-blue-200">
-        <Calendar className="h-5 w-5 text-blue-600" />
-        <AlertDescription className="text-blue-900">
-          <strong>Your consent required for all uses.</strong>{" "}
-          {activeCampaigns.length} active campaigns, all time-limited, all
-          approved by you. You can pause/revoke anytime.
-        </AlertDescription>
-      </Alert>
-    </div>
-  );
+    );
+  };
 
   const renderApprovals = () => {
     if (showApprovalContract) {
-      const approval = pendingApprovals.find(
-        (a) => a.id === showApprovalContract,
-      );
+      // Check both real approvals and examples
+      const approval =
+        pendingApprovals.find((a) => a.id === showApprovalContract) ||
+        exampleApprovals.find((a) => a.id === showApprovalContract);
       if (!approval) return null;
 
       return (
@@ -2439,14 +2660,14 @@ export default function CreatorDashboard() {
           </Card>
 
           {approval.perpetual && (
-            <Alert className="bg-red-50 border-2 border-red-400">
+            <div className="bg-red-50 border-2 border-red-400">
               <AlertCircle className="h-5 w-5 text-red-600" />
-              <AlertDescription className="text-red-900">
+              <p className="text-red-900">
                 <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
                 use your likeness forever. You should negotiate for time-limited
                 terms (6 months, 1 year) instead.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
           )}
 
           {/* Actions */}
@@ -2478,6 +2699,11 @@ export default function CreatorDashboard() {
       );
     }
 
+    // Use example approvals if pendingApprovals is empty, otherwise use real data
+    const approvalsToShow =
+      pendingApprovals.length === 0 ? exampleApprovals : pendingApprovals;
+    const showingExamples = pendingApprovals.length === 0;
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -2494,161 +2720,308 @@ export default function CreatorDashboard() {
           </Badge>
         </div>
 
-        {pendingApprovals.length === 0 ? (
-          <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
-            <CheckCircle2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No Pending Approvals
-            </h3>
-            <p className="text-gray-600">
-              You're all caught up! New requests will appear here.
+        {/* Welcome banner for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Approval Queue!</strong> This is an
+              example of what brand requests will look like. You don't have any
+              pending approvals yet — but when brands want to work with you,
+              their requests will appear here!
             </p>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {pendingApprovals.map((approval) => (
-              <Card
-                key={approval.id}
-                className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
-              >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={approval.brand_logo}
-                      alt={approval.brand}
-                      className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200"
-                    />
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-2xl">
-                        {approval.brand}
-                      </h3>
-                      <p className="text-gray-600">{approval.usage_type}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Requested{" "}
-                        {new Date(approval.requested_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  {approval.perpetual && (
-                    <Badge className="bg-red-500 text-white">
-                      <AlertCircle className="w-4 h-4 mr-1" />
-                      Perpetual Request
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">
-                        Proposed Rate:
-                      </span>
-                      <span className="font-bold text-gray-900 text-lg">
-                        ${approval.proposed_rate}/month
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">
-                        Term Length:
-                      </span>
-                      <span className="font-bold text-gray-900">
-                        {approval.term_length}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">
-                        Estimated Monthly:
-                      </span>
-                      <span className="font-bold text-green-600 text-lg">
-                        ${approval.proposed_rate}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-2">Regions:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {approval.regions.map((region) => (
-                          <Badge
-                            key={region}
-                            className="bg-blue-100 text-blue-700 border border-blue-300"
-                          >
-                            {region}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-600 mb-2">Industries:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {approval.industries.map((industry) => (
-                          <Badge
-                            key={industry}
-                            className="bg-purple-100 text-purple-700 border border-purple-300"
-                          >
-                            {industry}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {approval.perpetual && (
-                  <Alert className="mb-6 bg-red-50 border-2 border-red-300">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <AlertDescription className="text-red-900">
-                      <strong>Warning:</strong> This is a perpetual-use request.
-                      You would give up long-term control of your likeness for
-                      this campaign. Consider negotiating for time-limited terms
-                      instead.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => setShowApprovalContract(approval.id)}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-blue-300 text-blue-600"
-                  >
-                    <FileText className="w-5 h-5 mr-2" />
-                    View Contract
-                  </Button>
-                  <Button
-                    onClick={() => handleDecline(approval.id)}
-                    variant="outline"
-                    className="h-12 border-2 border-gray-300"
-                  >
-                    <XCircle className="w-5 h-5 mr-2" />
-                    Decline
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-12 border-2 border-[#32C8D1] text-[#32C8D1]"
-                  >
-                    Counter Offer
-                  </Button>
-                  <Button
-                    onClick={() => handleApprove(approval.id)}
-                    className="h-12 bg-green-600 hover:bg-green-700 text-white px-8"
-                  >
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                    Accept & Sign
-                  </Button>
-                </div>
-              </Card>
-            ))}
           </div>
         )}
+
+        <div className="space-y-6">
+          {approvalsToShow.map((approval) => (
+            <Card
+              key={approval.id}
+              className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={approval.brand_logo}
+                    alt={approval.brand}
+                    className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-2xl">
+                      {approval.brand}
+                    </h3>
+                    <p className="text-gray-600">{approval.usage_type}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Requested{" "}
+                      {new Date(approval.requested_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                {approval.perpetual && (
+                  <Badge className="bg-red-500 text-white">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    Perpetual Request
+                  </Badge>
+                )}
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">
+                      Proposed Rate:
+                    </span>
+                    <span className="font-bold text-gray-900 text-lg">
+                      ${approval.proposed_rate}/month
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Term Length:</span>
+                    <span className="font-bold text-gray-900">
+                      {approval.term_length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">
+                      Estimated Monthly:
+                    </span>
+                    <span className="font-bold text-green-600 text-lg">
+                      ${approval.proposed_rate}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Regions:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {approval.regions.map((region) => (
+                        <Badge
+                          key={region}
+                          className="bg-blue-100 text-blue-700 border border-blue-300"
+                        >
+                          {region}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">Industries:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {approval.industries.map((industry) => (
+                        <Badge
+                          key={industry}
+                          className="bg-purple-100 text-purple-700 border border-purple-300"
+                        >
+                          {industry}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {approval.perpetual && (
+                <div className="mb-6 bg-red-50 border-2 border-red-300">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-red-900">
+                    <strong>Warning:</strong> This is a perpetual-use request.
+                    You would give up long-term control of your likeness for
+                    this campaign. Consider negotiating for time-limited terms
+                    instead.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowApprovalContract(approval.id)}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  View Contract
+                </Button>
+                <Button
+                  onClick={() => handleDecline(approval.id)}
+                  variant="outline"
+                  className="h-12 border-2 border-gray-300"
+                >
+                  <XCircle className="w-5 h-5 mr-2" />
+                  Decline
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1]"
+                >
+                  Counter Offer
+                </Button>
+                <Button
+                  onClick={() => handleApprove(approval.id)}
+                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8"
+                >
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                  Accept & Sign
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCampaignArchive = () => {
+    // Use example archived campaigns if none exist, otherwise use real data
+    const archivedCampaigns: any[] = []; // This will be populated from real data later
+    const campaignsToShow =
+      archivedCampaigns.length === 0
+        ? exampleArchivedCampaigns
+        : archivedCampaigns;
+    const showingExamples = archivedCampaigns.length === 0;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Campaign Archive
+            </h2>
+            <p className="text-gray-600 mt-1">
+              View your completed campaigns and manage portfolio visibility
+            </p>
+          </div>
+          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg">
+            {archivedCampaigns.length} Completed
+          </Badge>
+        </div>
+
+        {/* Welcome banner for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Campaign Archive!</strong> This is an
+              example of what your completed campaigns will look like. You don't
+              have any archived campaigns yet — but when you do, they'll appear
+              here just like this!
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          {campaignsToShow.map((campaign) => (
+            <Card
+              key={campaign.id}
+              className="p-6 bg-white border-2 border-gray-200"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={campaign.brand_logo}
+                    alt={campaign.brand}
+                    className="w-16 h-16 rounded-lg object-contain border-2 border-gray-200 p-2"
+                  />
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-2xl">
+                      {campaign.brand}
+                    </h3>
+                    <p className="text-gray-600">{campaign.campaign_type}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Completed {campaign.completed_date}
+                    </p>
+                  </div>
+                </div>
+                <Badge className="bg-green-100 text-green-700 border border-green-300">
+                  Completed
+                </Badge>
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Duration:</p>
+                  <p className="font-bold text-gray-900">{campaign.duration}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
+                  <p className="font-bold text-gray-900">
+                    ${campaign.monthly_rate}
+                  </p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
+                  <p className="font-bold text-green-600 text-lg">
+                    ${campaign.total_earned.toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Regions:</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {campaign.regions.map((region) => (
+                      <Badge
+                        key={region}
+                        className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
+                      >
+                        {region}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={campaign.show_on_portfolio}
+                    className="data-[state=checked]:bg-gray-900"
+                    onCheckedChange={(checked) => {
+                      // For examples, just show a message
+                      if (campaign.isExample) {
+                        alert(
+                          "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                        );
+                        return;
+                      }
+                      // For real campaigns, update the state
+                      // TODO: Add API call to update portfolio visibility
+                      console.log(
+                        `Toggle portfolio visibility for ${campaign.id}: ${checked}`,
+                      );
+                    }}
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      Show on Portfolio
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {campaign.show_on_portfolio
+                        ? "Visible to brands viewing your profile"
+                        : "Hidden from public portfolio"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-2 border-gray-300"
+                  disabled={campaign.isExample}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   };
 
   const renderContracts = () => {
     if (showContractDetails && selectedContract) {
-      const contract = contracts.find((c) => c.id === selectedContract);
+      // Check both real contracts and examples
+      const contract =
+        contracts.find((c) => c.id === selectedContract) ||
+        exampleContracts.find((c) => c.id === selectedContract);
       if (!contract) return null;
 
       const currentMonth = new Date().toLocaleString("default", {
@@ -2744,13 +3117,13 @@ export default function CreatorDashboard() {
               </p>
             </div>
             {contract.auto_renew && (
-              <Alert className="mt-4 bg-blue-50 border border-blue-200">
+              <div className="mt-4 bg-blue-50 border border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-900 text-sm">
+                <p className="text-blue-900 text-sm">
                   <strong>Auto-Renewal Enabled:</strong> After expiration, you
                   can decide whether to renew on new terms.
-                </AlertDescription>
-              </Alert>
+                </p>
+              </div>
             )}
           </Card>
 
@@ -2840,10 +3213,18 @@ export default function CreatorDashboard() {
       );
     }
 
-    const activeContracts = contracts.filter(
+    // Use example contracts if none exist, otherwise use real data
+    const realActiveContracts = contracts.filter(
       (c) => c.status === "active" || c.status === "expiring_soon",
     );
-    const expiredContracts = contracts.filter((c) => c.status === "expired");
+    const realExpiredContracts = contracts.filter(
+      (c) => c.status === "expired",
+    );
+
+    const activeContracts =
+      realActiveContracts.length === 0 ? exampleContracts : realActiveContracts;
+    const expiredContracts = realExpiredContracts;
+    const showingExamples = realActiveContracts.length === 0;
 
     return (
       <div className="space-y-6">
@@ -2857,6 +3238,19 @@ export default function CreatorDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Welcome banner for blank users showing examples */}
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-900">
+              <strong>Welcome to your Licenses & Contracts!</strong> This is an
+              example of what your active licensing deals will look like. You
+              don't have any contracts yet — but when brands approve your work,
+              they'll appear here just like this!
+            </p>
+          </div>
+        )}
 
         {/* Contract Tabs */}
         <div className="flex gap-2 border-b border-gray-200">
@@ -2949,15 +3343,15 @@ export default function CreatorDashboard() {
                 </div>
 
                 {contract.status === "expiring_soon" && (
-                  <Alert className="mb-4 bg-orange-50 border-2 border-orange-300">
+                  <div className="mb-4 bg-orange-50 border-2 border-orange-300">
                     <Clock className="h-5 w-5 text-orange-600" />
-                    <AlertDescription className="text-orange-900">
+                    <p className="text-orange-900">
                       <strong>
                         Expiring in {contract.days_remaining} days!
                       </strong>{" "}
                       Would you like to renew this license?
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
                 )}
 
                 <div className="flex gap-2">
@@ -3015,16 +3409,16 @@ export default function CreatorDashboard() {
       </div>
 
       {/* Info banner */}
-      <Alert className="bg-blue-50 border border-blue-200 text-blue-900">
-        <AlertCircle className="h-5 w-5 text-blue-600" />
-        <AlertDescription>
+      <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
+        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <p>
           <span className="font-semibold">
             Your earnings dashboard is ready!
           </span>{" "}
           Once your licenses activate, you'll see real-time earnings here.
           Currently, you have no active contracts.
-        </AlertDescription>
-      </Alert>
+        </p>
+      </div>
 
       {/* Key metrics */}
       <div className="grid md:grid-cols-4 gap-6">
@@ -3795,7 +4189,10 @@ export default function CreatorDashboard() {
                   {creator.name}
                 </p>
                 {creator?.kyc_status === "approved" && (
-                  <Badge className="bg-gray-900 text-green-400 border border-green-500">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-100 text-green-700 border border-green-300"
+                  >
                     <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Creator
                   </Badge>
                 )}
@@ -4005,6 +4402,7 @@ export default function CreatorDashboard() {
           {activeSection === "voice" && renderVoice()}
           {activeSection === "campaigns" && renderCampaigns()}
           {activeSection === "approvals" && renderApprovals()}
+          {activeSection === "archive" && renderCampaignArchive()}
           {activeSection === "contracts" && renderContracts()}
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
@@ -4022,7 +4420,10 @@ export default function CreatorDashboard() {
 
           {selectedContract &&
             (() => {
-              const contract = contracts.find((c) => c.id === selectedContract);
+              // Check both real contracts and examples
+              const contract =
+                contracts.find((c) => c.id === selectedContract) ||
+                exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
               const currentMonth = new Date().toLocaleString("default", {
                 month: "long",
@@ -4033,9 +4434,9 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <Alert className="bg-amber-50 border-2 border-amber-300">
+                  <div className="bg-amber-50 border-2 border-amber-300">
                     <AlertCircle className="h-5 w-5 text-amber-600" />
-                    <AlertDescription className="text-amber-900">
+                    <p className="text-amber-900">
                       <strong>⚠️ IMPORTANT PAYMENT WARNING</strong>
                       <p className="mt-2">If you pause NOW (mid-month):</p>
                       <ul className="list-disc ml-6 mt-2 space-y-1">
@@ -4046,8 +4447,8 @@ export default function CreatorDashboard() {
                         </li>
                         <li>That money will be forfeited</li>
                       </ul>
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
 
                   <div className="space-y-4">
                     <Card
@@ -4143,7 +4544,10 @@ export default function CreatorDashboard() {
 
           {selectedContract &&
             (() => {
-              const contract = contracts.find((c) => c.id === selectedContract);
+              // Check both real contracts and examples
+              const contract =
+                contracts.find((c) => c.id === selectedContract) ||
+                exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
               const revocationDate = new Date();
               const finalDate = new Date(revocationDate);
@@ -4151,9 +4555,9 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <Alert className="bg-red-50 border-2 border-red-300">
+                  <div className="bg-red-50 border-2 border-red-300">
                     <AlertCircle className="h-5 w-5 text-red-600" />
-                    <AlertDescription className="text-red-900">
+                    <p className="text-red-900">
                       <strong>What happens when you revoke:</strong>
                       <ul className="list-disc ml-6 mt-2 space-y-1">
                         <li>
@@ -4167,8 +4571,8 @@ export default function CreatorDashboard() {
                         <li>Your earnings STOP after the 30-day period ends</li>
                         <li>The license cannot be reactivated</li>
                       </ul>
-                    </AlertDescription>
-                  </Alert>
+                    </p>
+                  </div>
 
                   <Card className="p-6 bg-gray-50 border border-gray-200">
                     <h3 className="font-bold text-gray-900 mb-4">
@@ -4311,9 +4715,9 @@ export default function CreatorDashboard() {
               </div>
             </div>
 
-            <Alert className="bg-blue-50 border-2 border-blue-300">
+            <div className="bg-blue-50 border-2 border-blue-300">
               <AlertCircle className="h-5 w-5 text-blue-600" />
-              <AlertDescription className="text-blue-900">
+              <p className="text-blue-900">
                 <strong>What Happens After You Upload:</strong>
                 <ul className="list-disc ml-6 mt-2 space-y-1">
                   <li>New cameo goes through verification (24 hours)</li>
@@ -4325,17 +4729,17 @@ export default function CreatorDashboard() {
                   </li>
                   <li>New licenses will use the new cameo</li>
                 </ul>
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
 
-            <Alert className="bg-amber-50 border-2 border-amber-300">
+            <div className="bg-amber-50 border-2 border-amber-300">
               <AlertCircle className="h-5 w-5 text-amber-600" />
-              <AlertDescription className="text-amber-900">
+              <p className="text-amber-900">
                 <strong>Important:</strong> Existing contracts will NOT change.
                 Brands who signed with your old cameo will continue using that
                 version. Only new projects will use the updated cameo.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
 
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
               <input

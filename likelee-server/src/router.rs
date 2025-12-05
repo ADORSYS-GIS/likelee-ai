@@ -1,5 +1,6 @@
 use crate::config::AppState;
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{delete, get, post},
     Router,
 };
@@ -40,6 +41,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::profiles::check_email))
         .route("/api/profile", post(crate::profiles::upsert_profile))
+        .route(
+            "/api/profile/photo-upload",
+            post(crate::profiles::upload_profile_photo),
+        )
         .route(
             "/api/face-profiles",
             post(crate::face_profiles::create_face_profile),
@@ -117,5 +122,6 @@ pub fn build_router(state: AppState) -> Router {
                 .post(crate::creator_rates::upsert_creator_rates),
         )
         .with_state(state)
+        .layer(DefaultBodyLimit::max(5_000_000)) // 5MB limit
         .layer(cors)
 }

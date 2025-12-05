@@ -131,3 +131,111 @@ pub async fn check_email(
         }
     }
 }
+
+#[derive(Deserialize)]
+pub struct PhotoUploadQuery {
+    pub user_id: String,
+}
+
+/// Handles the profile photo upload and updates the user's profile.
+pub async fn upload_profile_photo(
+    State(state): State<AppState>,
+    Query(q): Query<PhotoUploadQuery>,
+    headers: axum::http::HeaderMap,
+    body: axum::body::Bytes,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user_id = q.user_id;
+    if user_id.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "user_id is required".to_string()));
+    }
+
+    // Validate file size: max 5MB
+    const MAX_FILE_SIZE: usize = 5_000_000; // 5MB
+    if body.len() > MAX_FILE_SIZE {
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            format!(
+                "File size ({} bytes) exceeds maximum allowed size of {} bytes (5MB)",
+                body.len(),
+                MAX_FILE_SIZE
+            ),
+        ));
+    }
+
+    let ct = headers
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("image/jpeg")
+        .to_string();
+
+    let ext = match ct.as_str() {
+        "image/png" => "png",
+        "image/webp" => "webp",
+        _ => "jpg",
+    };
+
+    let file_name = format!("profile_{}_{}.{}", user_id, uuid::Uuid::new_v4(), ext);
+    let path = format!("{}/profile-photos/{}", user_id, file_name);
+
+    let bucket = state.supabase_bucket_public.clone();
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+
+    let http = reqwest::Client::new();
+    let res = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .header("content-type", ct)
+        .body(body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !res.status().is_success() {
+        let err_body = res.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to upload to storage: {}", err_body),
+        ));
+    }
+
+    let public_url = format!(
+        "{}/storage/v1/object/public/{}/{}",
+        state.supabase_url, bucket, path
+    );
+
+    let update_body = serde_json::json!({
+        "profile_photo_url": public_url,
+        "updated_date": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("profiles")
+        .eq("id", &user_id)
+        .update(update_body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let profile = rows.first().cloned().unwrap_or(serde_json::json!({}));
+
+    Ok(Json(serde_json::json!({
+        "message": "Upload successful",
+        "public_url": public_url,
+        "profile": profile,
+    })))
+}
