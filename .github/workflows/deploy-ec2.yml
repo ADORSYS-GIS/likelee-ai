@@ -67,4 +67,44 @@ jobs:
             VITE_AWS_REGION=${{ secrets.VITE_AWS_REGION }}
             VITE_COGNITO_IDENTITY_POOL_ID=${{ secrets.VITE_COGNITO_IDENTITY_POOL_ID }}
 
-  # Optional deploy job can be re-added later; for now fix image tagging and pushing
+  deploy:
+    name: Deploy on EC2 via SSH
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Compute lowercase repository path
+        shell: bash
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Deploy and verify on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd "${{ env.REMOTE_DIR }}"
+            export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
+            export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
+            export IMAGE_TAG="${{ env.IMAGE_TAG }}"
+            chmod +x scripts/update-images.sh scripts/rollback.sh || true
+            if ! ./scripts/update-images.sh; then
+              echo "Update step failed; attempting rollback" >&2
+              ./scripts/rollback.sh || true
+              exit 1
+            fi
+            sleep 5
+            set +e
+            curl -ksS --max-time 10 https://localhost/ >/dev/null
+            WEB_OK=$?
+            curl -ksS --max-time 10 https://localhost/api/ >/dev/null
+            API_OK=$?
+            set -e
+            if [ "$WEB_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
+              echo "Health checks failed (WEB=$WEB_OK API=$API_OK); rolling back" >&2
+              ./scripts/rollback.sh || true
+              exit 1
+            fi
+            echo "Deployment succeeded for tag ${IMAGE_TAG}"
