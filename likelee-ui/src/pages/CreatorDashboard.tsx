@@ -26,6 +26,8 @@ import {
   Image as ImageIcon,
   Video,
   AlertCircle,
+  Check,
+  CheckCircle,
   CheckCircle2,
   Loader2,
   Trash2,
@@ -680,29 +682,6 @@ export default function CreatorDashboard() {
   const [pauseOption, setPauseOption] = useState(null);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showApprovalContract, setShowApprovalContract] = useState(null);
-  const [contractsTab, setContractsTab] = useState("active");
-  const [showReuploadCameoModal, setShowReuploadCameoModal] = useState(false);
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
-  const [selectedImageSection, setSelectedImageSection] = useState(null);
-  const [uploadingToSection, setUploadingToSection] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [referenceImages, setReferenceImages] = useState({
-    headshot_neutral: null,
-    headshot_smiling: null,
-    fullbody_casual: null,
-    fullbody_formal: null,
-    side_profile: null,
-    three_quarter: null,
-    hair_down: null,
-    hair_up: null,
-    hair_styling: null,
-    upper_body: null,
-    outdoors: null,
-    indoors: null,
-    makeup_variation: null,
-    seasonal: null,
-    signature: null,
-  });
 
   // Custom Rates State
   const [customRates, setCustomRates] = useState<any[]>([]);
@@ -720,7 +699,7 @@ export default function CreatorDashboard() {
     "Pharmaceutical Claims",
     "Financial/Investment Advice",
     "Tobacco/Vaping Products",
-    "Gambling (Unlicensed)"
+    "Gambling (Unlicensed)",
   ]);
   const [availableRestrictions, setAvailableRestrictions] = useState<string[]>([
     "Alcohol",
@@ -728,20 +707,43 @@ export default function CreatorDashboard() {
     "Cryptocurrency/NFT",
     "MLM/Multi-Level Marketing",
     "Unlicensed Financial Products",
-    "Health/Medical Claims"
+    "Health/Medical Claims",
   ]);
   const [brandExclusivity, setBrandExclusivity] = useState<string[]>([]);
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
   const [customRestriction, setCustomRestriction] = useState("");
   const [newBrand, setNewBrand] = useState("");
   const [editingLicensingRate, setEditingLicensingRate] = useState(false);
+  const [localMonthlyRate, setLocalMonthlyRate] = useState("");
+  const [savingRules, setSavingRules] = useState(false);
 
-  // Load persisted Reference Image Library on mount/auth ready
+  // Sync local rate when creator data loads or when entering edit mode
+  useEffect(() => {
+    // If we are not editing, keep the local value in sync with the saved data
+    if (!editingLicensingRate) {
+      if (
+        creator?.base_monthly_price_cents !== undefined &&
+        creator?.base_monthly_price_cents !== null
+      ) {
+        setLocalMonthlyRate(
+          (creator.base_monthly_price_cents / 100).toString(),
+        );
+      } else if (creator?.price_per_week !== undefined) {
+        setLocalMonthlyRate(((creator.price_per_week || 0) * 4).toString());
+      }
+    }
+  }, [
+    creator?.price_per_week,
+    creator?.base_monthly_price_cents,
+    editingLicensingRate,
+  ]);
+
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
     const abort = new AbortController();
     (async () => {
       try {
+        // ... (rest of the code remains the same)
         const full = api(
           `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
         );
@@ -920,6 +922,14 @@ export default function CreatorDashboard() {
           cameo_left_url: profile.cameo_left_url,
           cameo_right_url: profile.cameo_right_url,
         });
+
+        // Populate restrictions state
+        if (profile.content_restrictions && Array.isArray(profile.content_restrictions)) {
+          setContentRestrictions(profile.content_restrictions);
+        }
+        if (profile.brand_exclusivity && Array.isArray(profile.brand_exclusivity)) {
+          setBrandExclusivity(profile.brand_exclusivity);
+        }
         // If backend provides arrays later, replace mocks
         if (Array.isArray(json.campaigns) && json.campaigns.length)
           setActiveCampaigns(json.campaigns);
@@ -2137,36 +2147,15 @@ export default function CreatorDashboard() {
     setBrandExclusivity(brandExclusivity.filter(b => b !== brand));
   };
 
-  const handleSaveRestrictions = () => {
-    // TODO: Save to backend
-    setShowRestrictionsModal(false);
-    alert("Restrictions saved! (Demo mode)");
-  };
-
-  const handleSaveRules = async () => {
+  const handleSaveRestrictions = async () => {
     if (!user) return;
 
-    // Only send fields that exist in the profiles table
-    // Exclude frontend-only fields like accept_negotiations, royalty_percentage, etc.
+    // Save restrictions to backend
     const profileData = {
       email: creator.email || user.email,
-      full_name: creator.name,
-      bio: creator.bio,
-      city: creator.location?.split(",")[0]?.trim(),
-      state: creator.location?.split(",")[1]?.trim(),
-      content_types: creator.content_types,
-      industries: creator.industries,
-      base_monthly_price_cents: (creator.price_per_week || 0) * 400,
-      platform_handle: creator.instagram_handle?.replace("@", ""),
+      content_restrictions: contentRestrictions,
+      brand_exclusivity: brandExclusivity,
     };
-
-    console.log("Saving profile with data:", {
-      content_types: profileData.content_types,
-      industries: profileData.industries,
-      email: profileData.email,
-      price_per_week: creator.price_per_week,
-      base_monthly_price_cents: profileData.base_monthly_price_cents,
-    });
 
     try {
       const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
@@ -2176,32 +2165,81 @@ export default function CreatorDashboard() {
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Save failed:", errorText);
-        throw new Error(`Server error: ${errorText}`);
+        throw new Error("Failed to save restrictions");
       }
 
-      const responseData = await res.json();
-      console.log("Save response:", responseData);
+      setShowRestrictionsModal(false);
+    } catch (e) {
+      console.error("Error saving restrictions:", e);
+      alert("Failed to save restrictions. Please try again.");
+    }
+  };
 
-      // Update creator state with the saved data from the response
-      if (Array.isArray(responseData) && responseData.length > 0) {
-        const savedProfile = responseData[0];
-        setCreator((prev) => ({
-          ...prev,
-          content_types: savedProfile.content_types || [],
-          industries: savedProfile.industries || [],
-          price_per_week: savedProfile.base_monthly_price_cents
-            ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
-            : prev.price_per_week,
-        }));
+  const handleSaveRules = async (creatorOverride?: any) => {
+    setSavingRules(true);
+    try {
+      // Use override if provided, otherwise use current state
+      const dataToSave = creatorOverride || creator;
+
+      const profileData = {
+        email: dataToSave.email || user.email,
+        content_types: dataToSave.content_types,
+        industries: dataToSave.industries,
+        price_per_week: dataToSave.price_per_week,
+        accept_negotiations: dataToSave.accept_negotiations,
+        content_restrictions: contentRestrictions,
+        brand_exclusivity: brandExclusivity,
+        base_monthly_price_cents: dataToSave.base_monthly_price_cents,
+      };
+
+      console.log("Saving profile with data:", {
+        content_types: profileData.content_types,
+        industries: profileData.industries,
+        email: profileData.email,
+        price_per_week: creator.price_per_week,
+        base_monthly_price_cents: profileData.base_monthly_price_cents,
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profileData),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Save failed:", errorText);
+          throw new Error(`Server error: ${errorText}`);
+        }
+
+        const responseData = await res.json();
+        console.log("Save response:", responseData);
+
+        // Update creator state with the saved data from the response
+        if (Array.isArray(responseData) && responseData.length > 0) {
+          const savedProfile = responseData[0];
+          setCreator((prev) => ({
+            ...prev,
+            content_types: savedProfile.content_types || [],
+            industries: savedProfile.industries || [],
+            base_monthly_price_cents: savedProfile.base_monthly_price_cents,
+            price_per_week: savedProfile.base_monthly_price_cents
+              ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
+              : prev.price_per_week,
+          }));
+        }
+
+        setEditingRules(false);
+        alert("Licensing preferences updated!");
+      } catch (error: any) {
+        console.error("Failed to save rules:", error);
+        alert(`Failed to save preferences: ${error?.message || error}`);
       }
-
-      setEditingRules(false);
-      alert("Licensing preferences updated!");
-    } catch (error: any) {
-      console.error("Failed to save rules:", error);
-      alert(`Failed to save preferences: ${error?.message || error}`);
+    } catch (e) {
+      console.error("Unexpected error in handleSaveRules:", e);
+    } finally {
+      setSavingRules(false);
     }
   };
 
@@ -4488,30 +4526,26 @@ export default function CreatorDashboard() {
               });
             }
           });
+      }
+      // 1. Save the selection (content_types or industries) to the profile
+      const profileUpdate: any = {
+        email: creator.email || user.email,
+      };
+
+      if (showRatesModal === "content") {
+        profileUpdate.content_types = creator.content_types;
       } else if (showRatesModal === "industry") {
-        creator.industries
-          ?.filter((i) => INDUSTRIES.includes(i))
-          .forEach((ind) => {
-            const val = formData.get(`rate_industry_${ind}`);
-            if (val && val.toString().trim() !== "") {
-              newRates.push({
-                rate_type: "industry",
-                rate_name: ind,
-                price_per_week_cents: Math.round(
-                  parseFloat(val.toString()) * 100,
-                ),
-              });
-            }
-          });
+        profileUpdate.industries = creator.industries;
       }
 
-      // Get the existing rates from the *other* category to preserve them
-      const otherRateType =
-        showRatesModal === "content" ? "industry" : "content_type";
-      const preservedRates = customRates.filter(
-        (r) => r.rate_type === otherRateType,
-      );
+      // Save profile selection
+      const profileRes = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileUpdate),
+      });
 
+<<<<<<< HEAD
       // Combine the new rates with the preserved rates
       const finalRates = [...newRates, ...preservedRates];
 
@@ -4536,14 +4570,62 @@ export default function CreatorDashboard() {
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
         setCustomRates(reloadedRates);
+=======
+      if (!profileRes.ok) {
+        throw new Error("Failed to save selection to profile");
+      }
+
+      // 2. Save rates (only for content types)
+      // If we are editing content rates, we use the new ones.
+      // If we are editing industries (which have no rates now), we must preserve the existing content rates.
+      // We explicitly DO NOT preserve industry rates, effectively deleting them.
+      if (showRatesModal !== "content") {
+        const existingContentRates = customRates.filter(
+          (r) => r.rate_type === "content_type",
+        );
+        newRates.push(...existingContentRates);
+      }
+
+      const finalRates = [...newRates];
+
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(finalRates),
+          },
+        );
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText);
+        }
+
+        // Reload rates from database to confirm persistence
+        const reloadRes = await fetch(
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        );
+        if (reloadRes.ok) {
+          const reloadedRates = await reloadRes.json();
+          setCustomRates(reloadedRates);
+        }
+
+        alert("Changes saved successfully!");
+      } catch (rateError: any) {
+        console.error("Rate save error:", rateError);
+        // If profile saved but rates failed, we still consider it a partial success
+        // and close the modal, but warn the user.
+        alert(`Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`);
+>>>>>>> d83b9bc (fix(ui): refine dashboard UI, fix rate rounding, and add visual indicators)
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
-      alert("Rates saved successfully!");
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(`Failed to save rates: ${e?.message || e}`);
+      alert(`Failed to save: ${e?.message || e}`);
     } finally {
       setSavingRates(false);
     }
@@ -4830,18 +4912,21 @@ export default function CreatorDashboard() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {creator.content_types && creator.content_types.length > 0 ? (
-                    creator.content_types.map((type) => (
+                  {CONTENT_TYPES.map((type) => {
+                    const isSelected = creator.content_types?.includes(type);
+                    return (
                       <Badge
                         key={type}
-                        className="bg-[#32C8D1] text-white px-4 py-2 border-2 border-[#32C8D1]"
+                        className={`px-4 py-2 border-2 ${isSelected
+                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                          }`}
                       >
+                        {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
                       </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No content types selected</p>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -4862,18 +4947,21 @@ export default function CreatorDashboard() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {creator.industries && creator.industries.length > 0 ? (
-                    creator.industries.map((industry) => (
+                  {INDUSTRIES.map((industry) => {
+                    const isSelected = creator.industries?.includes(industry);
+                    return (
                       <Badge
                         key={industry}
-                        className="bg-[#32C8D1] text-white px-4 py-2 border-2 border-[#32C8D1]"
+                        className={`px-4 py-2 border-2 ${isSelected
+                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                          }`}
                       >
+                        {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
                       </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No industries selected</p>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -4897,11 +4985,30 @@ export default function CreatorDashboard() {
                   {contentRestrictions.map((restriction) => (
                     <Badge
                       key={restriction}
-                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500"
+                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500 hover:!bg-red-500"
                     >
                       ✕ {restriction}
                     </Badge>
                   ))}
+                </div>
+
+                {/* Conflicting Campaigns (Brand Exclusivity) */}
+                <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-1">Conflicting Campaigns (Brand Exclusivity)</h4>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Add brands you're exclusive with to prevent competing campaigns
+                  </p>
+                  {brandExclusivity.length === 0 ? (
+                    <p className="text-sm italic text-gray-500">No brand exclusivity set</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {brandExclusivity.map((brand) => (
+                        <span key={brand} className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]">
+                          {brand}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -4934,7 +5041,44 @@ export default function CreatorDashboard() {
                       <Button
                         size="sm"
                         onClick={() => {
-                          handleSaveRules();
+                          // Commit local rate to creator state before saving
+                          const val = parseInt(localMonthlyRate);
+                          if (!isNaN(val)) {
+                            // We need to update the creator state reference that handleSaveRules uses
+                            // Since handleSaveRules uses the 'creator' state variable, we need to update it
+                            // However, setState is async. So we might need to pass the value or update it differently.
+                            // Actually, handleSaveRules uses the current state.
+                            // Let's update it and then call save? No, race condition.
+                            // Better: Update the creator object directly in handleSaveRules or pass it.
+                            // For now, let's update state and assume the user clicks save again? No.
+                            // Let's manually update the creator state and wait a tick? No.
+                            // Let's modify handleSaveRules to accept an override or read from a ref?
+                            // Or simpler: Just update the state here, and handleSaveRules will read it?
+                            // Wait, handleSaveRules reads 'creator'. If I setCreator here, it won't be updated in the same closure if I call handleSaveRules immediately.
+                            // I will update handleSaveRules to take an optional override.
+                            // But I can't easily change handleSaveRules signature without checking all calls.
+                            // Let's just update the state and rely on the fact that we are in a functional component?
+                            // No, the closure captures the old state.
+                            // I will update the creator state, and then call handleSaveRules in a useEffect or similar?
+                            // Actually, I can just update the creator object in place? No, immutable.
+                            // I will modify handleSaveRules to read from a ref?
+                            // Or I can just pass the new price to handleSaveRules?
+                            // Let's try passing the price to handleSaveRules.
+                            // Let's try passing the price to handleSaveRules.
+                            const val = parseFloat(localMonthlyRate);
+                            const monthlyCents = Math.round(val * 100);
+                            const newWeeklyRate = Math.round(val / 4);
+                            const updatedCreator = {
+                              ...creator,
+                              price_per_week: newWeeklyRate,
+                              base_monthly_price_cents: monthlyCents
+                            };
+                            setCreator(updatedCreator);
+                            // We need to pass this updated object to save function
+                            handleSaveRules(updatedCreator);
+                          } else {
+                            handleSaveRules();
+                          }
                           setEditingLicensingRate(false);
                         }}
                         className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -4955,13 +5099,10 @@ export default function CreatorDashboard() {
                       </span>
                       <Input
                         type="number"
-                        value={(creator.price_per_week || 0) * 4}
-                        onChange={(e) =>
-                          setCreator({
-                            ...creator,
-                            price_per_week: Math.round(parseInt(e.target.value) / 4) || 0,
-                          })
-                        }
+                        value={localMonthlyRate}
+                        onChange={(e) => {
+                          setLocalMonthlyRate(e.target.value);
+                        }}
                         disabled={!editingLicensingRate}
                         className={`border-2 text-lg ${!editingLicensingRate ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
                         min="0"
@@ -4990,13 +5131,8 @@ export default function CreatorDashboard() {
                     checked={creator.accept_negotiations || false}
                     onCheckedChange={(checked) => {
                       setCreator({ ...creator, accept_negotiations: checked });
-                      if (!editingRules) {
-                        alert(
-                          `Negotiation ${checked ? "enabled" : "disabled"}! (Demo mode)`,
-                        );
-                      }
+                      // Note: accept_negotiations is currently frontend-only state
                     }}
-                    disabled={!editingRules}
                   />
                 </div>
               </div>
@@ -5916,35 +6052,23 @@ export default function CreatorDashboard() {
             onSubmit={handleSaveRates}
             className="flex-1 overflow-y-auto py-4 pr-2"
           >
-            <Alert className="bg-blue-50 border border-blue-200 mb-6">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                {showRatesModal === "content" ? (
-                  <>
-                    Select the content types you're open to working with:
-                  </>
-                ) : (
-                  <>
-                    Select the industries you're open to working with:
-                  </>
-                )}
-              </AlertDescription>
-            </Alert>
+
 
             {/* Content Type Selection - Only show if modal type is 'content' */}
             {showRatesModal === "content" && (
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Select the content types you're open to working with:</h4>
+                <h4 className="font-normal text-gray-900 mb-3">Select the content types you're open to working with:</h4>
                 <div className="flex flex-wrap gap-2">
                   {CONTENT_TYPES.map((type) => (
                     <Badge
                       key={type}
                       onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
+                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
                         }`}
                     >
+                      {creator.content_types?.includes(type) && <Check className="w-3 h-3" />}
                       {type}
                     </Badge>
                   ))}
@@ -5955,17 +6079,18 @@ export default function CreatorDashboard() {
             {/* Industry Selection - Only show if modal type is 'industry' */}
             {showRatesModal === "industry" && (
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Select the industries you're open to working with:</h4>
+                <h4 className="font-normal text-gray-900 mb-3">Select the industries you're open to working with:</h4>
                 <div className="flex flex-wrap gap-2">
                   {INDUSTRIES.map((industry) => (
                     <Badge
                       key={industry}
                       onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
+                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
                         }`}
                     >
+                      {creator.industries?.includes(industry) && <Check className="w-3 h-3" />}
                       {industry}
                     </Badge>
                   ))}
@@ -6026,23 +6151,11 @@ export default function CreatorDashboard() {
                       })}
                   </div>
                 </div>
-              ) : (
-                <Alert className="bg-amber-50 border border-amber-200 mb-6">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
-                  <AlertDescription className="text-amber-900">
-                    <strong>No content types selected.</strong> Please go back
-                    to "My Rules" and select the content types you're open to
-                    first.
-                  </AlertDescription>
-                </Alert>
-              ))}
+              ) : null)}
 
             {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
             {showRatesModal === "industry" && (
               <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  Simply select the industries you're open to working with. Your base rate will apply to all selected industries.
-                </p>
               </div>
             )}
 
@@ -6067,7 +6180,17 @@ export default function CreatorDashboard() {
                     Saving...
                   </>
                 ) : (
-                  showRatesModal === "content" ? "Save Rates" : "Save Changes"
+                  showRatesModal === "content" ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Save Rates
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Save Changes
+                    </>
+                  )
                 )}
               </Button>
             </DialogFooter>
@@ -6096,7 +6219,7 @@ export default function CreatorDashboard() {
                 {contentRestrictions.map((restriction) => (
                   <Badge
                     key={restriction}
-                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:bg-red-600"
+                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
                     onClick={() => removeRestriction(restriction)}
                   >
                     ✕ {restriction}
@@ -6113,7 +6236,7 @@ export default function CreatorDashboard() {
                   {availableRestrictions.map((restriction) => (
                     <Badge
                       key={restriction}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:bg-gray-300"
+                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
                       onClick={() => addRestriction(restriction)}
                     >
                       + {restriction}
@@ -6132,6 +6255,7 @@ export default function CreatorDashboard() {
                   maxLength={25}
                   value={customRestriction}
                   onChange={(e) => setCustomRestriction(e.target.value)}
+                  className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -6141,8 +6265,9 @@ export default function CreatorDashboard() {
                 />
                 <Button
                   type="button"
+                  variant="outline"
                   onClick={addCustomRestriction}
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  className="border-red-500 text-red-500 hover:bg-red-50"
                 >
                   +
                 </Button>
@@ -6163,7 +6288,7 @@ export default function CreatorDashboard() {
                   {brandExclusivity.map((brand) => (
                     <Badge
                       key={brand}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2"
+                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
                     >
                       {brand}
                       <X
@@ -6181,6 +6306,7 @@ export default function CreatorDashboard() {
                   maxLength={25}
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
+                  className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -6190,8 +6316,9 @@ export default function CreatorDashboard() {
                 />
                 <Button
                   type="button"
+                  variant="outline"
                   onClick={addBrandExclusivity}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                  className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
                 >
                   +
                 </Button>
@@ -6213,6 +6340,7 @@ export default function CreatorDashboard() {
               className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               onClick={handleSaveRestrictions}
             >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
               Save Changes
             </Button>
           </DialogFooter>
