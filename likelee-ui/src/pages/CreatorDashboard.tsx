@@ -460,7 +460,7 @@ export default function CreatorDashboard() {
     "Pharmaceutical Claims",
     "Financial/Investment Advice",
     "Tobacco/Vaping Products",
-    "Gambling (Unlicensed)"
+    "Gambling (Unlicensed)",
   ]);
   const [availableRestrictions, setAvailableRestrictions] = useState<string[]>([
     "Alcohol",
@@ -468,7 +468,7 @@ export default function CreatorDashboard() {
     "Cryptocurrency/NFT",
     "MLM/Multi-Level Marketing",
     "Unlicensed Financial Products",
-    "Health/Medical Claims"
+    "Health/Medical Claims",
   ]);
   const [brandExclusivity, setBrandExclusivity] = useState<string[]>([]);
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
@@ -478,19 +478,27 @@ export default function CreatorDashboard() {
   const [localMonthlyRate, setLocalMonthlyRate] = useState("");
   const [savingRules, setSavingRules] = useState(false);
 
-
   // Sync local rate when creator data loads or when entering edit mode
   // Sync local rate when creator data loads or when entering edit mode
   useEffect(() => {
     // If we are not editing, keep the local value in sync with the saved data
     if (!editingLicensingRate) {
-      if (creator?.base_monthly_price_cents !== undefined && creator?.base_monthly_price_cents !== null) {
-        setLocalMonthlyRate((creator.base_monthly_price_cents / 100).toString());
+      if (
+        creator?.base_monthly_price_cents !== undefined &&
+        creator?.base_monthly_price_cents !== null
+      ) {
+        setLocalMonthlyRate(
+          (creator.base_monthly_price_cents / 100).toString(),
+        );
       } else if (creator?.price_per_week !== undefined) {
         setLocalMonthlyRate(((creator.price_per_week || 0) * 4).toString());
       }
     }
-  }, [creator?.price_per_week, creator?.base_monthly_price_cents, editingLicensingRate]);
+  }, [
+    creator?.price_per_week,
+    creator?.base_monthly_price_cents,
+    editingLicensingRate,
+  ]);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -683,10 +691,16 @@ export default function CreatorDashboard() {
         });
 
         // Populate restrictions state
-        if (profile.content_restrictions && Array.isArray(profile.content_restrictions)) {
+        if (
+          profile.content_restrictions &&
+          Array.isArray(profile.content_restrictions)
+        ) {
           setContentRestrictions(profile.content_restrictions);
         }
-        if (profile.brand_exclusivity && Array.isArray(profile.brand_exclusivity)) {
+        if (
+          profile.brand_exclusivity &&
+          Array.isArray(profile.brand_exclusivity)
+        ) {
           setBrandExclusivity(profile.brand_exclusivity);
         }
         // If backend provides arrays later, replace mocks
@@ -1159,11 +1173,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -1202,12 +1216,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -1288,11 +1303,15 @@ export default function CreatorDashboard() {
   // Content Restrictions Helper Functions
   const addRestriction = (restriction: string) => {
     setContentRestrictions([...contentRestrictions, restriction]);
-    setAvailableRestrictions(availableRestrictions.filter(r => r !== restriction));
+    setAvailableRestrictions(
+      availableRestrictions.filter((r) => r !== restriction),
+    );
   };
 
   const removeRestriction = (restriction: string) => {
-    setContentRestrictions(contentRestrictions.filter(r => r !== restriction));
+    setContentRestrictions(
+      contentRestrictions.filter((r) => r !== restriction),
+    );
     // Only add back to available if it was originally in the predefined list
     const predefinedRestrictions = [
       "Alcohol",
@@ -1300,7 +1319,7 @@ export default function CreatorDashboard() {
       "Cryptocurrency/NFT",
       "MLM/Multi-Level Marketing",
       "Unlicensed Financial Products",
-      "Health/Medical Claims"
+      "Health/Medical Claims",
     ];
     if (predefinedRestrictions.includes(restriction)) {
       setAvailableRestrictions([...availableRestrictions, restriction]);
@@ -1309,7 +1328,10 @@ export default function CreatorDashboard() {
 
   const addCustomRestriction = () => {
     if (customRestriction.trim() && customRestriction.length <= 25) {
-      setContentRestrictions([...contentRestrictions, customRestriction.trim()]);
+      setContentRestrictions([
+        ...contentRestrictions,
+        customRestriction.trim(),
+      ]);
       setCustomRestriction("");
     }
   };
@@ -1322,7 +1344,7 @@ export default function CreatorDashboard() {
   };
 
   const removeBrandExclusivity = (brand: string) => {
-    setBrandExclusivity(brandExclusivity.filter(b => b !== brand));
+    setBrandExclusivity(brandExclusivity.filter((b) => b !== brand));
   };
 
   const handleSaveRestrictions = async () => {
@@ -2138,7 +2160,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -2253,16 +2275,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -2300,8 +2324,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2406,10 +2431,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -2511,12 +2537,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3376,19 +3403,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -3400,10 +3429,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3722,11 +3752,14 @@ export default function CreatorDashboard() {
       }
 
       // Save profile selection
-      const profileRes = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileUpdate),
-      });
+      const profileRes = await fetch(
+        `${API_BASE}/api/profile?user_id=${user.id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profileUpdate),
+        },
+      );
 
       if (!profileRes.ok) {
         throw new Error("Failed to save selection to profile");
@@ -3774,7 +3807,9 @@ export default function CreatorDashboard() {
         console.error("Rate save error:", rateError);
         // If profile saved but rates failed, we still consider it a partial success
         // and close the modal, but warn the user.
-        alert(`Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`);
+        alert(
+          `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+        );
       }
 
       setShowRatesModal(null);
@@ -3802,19 +3837,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -4042,9 +4079,7 @@ export default function CreatorDashboard() {
         <div className="space-y-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
-                My Rules
-              </h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-1">My Rules</h3>
               <p className="text-sm text-gray-600">
                 Set your licensing preferences and rates
               </p>
@@ -4073,10 +4108,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -4108,10 +4144,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -4150,16 +4187,24 @@ export default function CreatorDashboard() {
 
                 {/* Conflicting Campaigns (Brand Exclusivity) */}
                 <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-1">Conflicting Campaigns (Brand Exclusivity)</h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Conflicting Campaigns (Brand Exclusivity)
+                  </h4>
                   <p className="text-sm text-gray-600 mb-2">
-                    Add brands you're exclusive with to prevent competing campaigns
+                    Add brands you're exclusive with to prevent competing
+                    campaigns
                   </p>
                   {brandExclusivity.length === 0 ? (
-                    <p className="text-sm italic text-gray-500">No brand exclusivity set</p>
+                    <p className="text-sm italic text-gray-500">
+                      No brand exclusivity set
+                    </p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {brandExclusivity.map((brand) => (
-                        <span key={brand} className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]">
+                        <span
+                          key={brand}
+                          className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]"
+                        >
                           {brand}
                         </span>
                       ))}
@@ -4227,7 +4272,7 @@ export default function CreatorDashboard() {
                             const updatedCreator = {
                               ...creator,
                               price_per_week: newWeeklyRate,
-                              base_monthly_price_cents: monthlyCents
+                              base_monthly_price_cents: monthlyCents,
                             };
                             setCreator(updatedCreator);
                             // We need to pass this updated object to save function
@@ -4523,7 +4568,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -4547,10 +4592,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -5208,23 +5254,26 @@ export default function CreatorDashboard() {
             onSubmit={handleSaveRates}
             className="flex-1 overflow-y-auto py-4 pr-2"
           >
-
-
             {/* Content Type Selection - Only show if modal type is 'content' */}
             {showRatesModal === "content" && (
               <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">Select the content types you're open to working with:</h4>
+                <h4 className="font-normal text-gray-900 mb-3">
+                  Select the content types you're open to working with:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {CONTENT_TYPES.map((type) => (
                     <Badge
                       key={type}
                       onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
-                      {creator.content_types?.includes(type) && <Check className="w-3 h-3" />}
+                      {creator.content_types?.includes(type) && (
+                        <Check className="w-3 h-3" />
+                      )}
                       {type}
                     </Badge>
                   ))}
@@ -5235,18 +5284,23 @@ export default function CreatorDashboard() {
             {/* Industry Selection - Only show if modal type is 'industry' */}
             {showRatesModal === "industry" && (
               <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">Select the industries you're open to working with:</h4>
+                <h4 className="font-normal text-gray-900 mb-3">
+                  Select the industries you're open to working with:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {INDUSTRIES.map((industry) => (
                     <Badge
                       key={industry}
                       onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
-                      {creator.industries?.includes(industry) && <Check className="w-3 h-3" />}
+                      {creator.industries?.includes(industry) && (
+                        <Check className="w-3 h-3" />
+                      )}
                       {industry}
                     </Badge>
                   ))}
@@ -5262,9 +5316,13 @@ export default function CreatorDashboard() {
                 ) || []
               ).length > 0 ? (
                 <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-2">Custom Rates by Content Type</h4>
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    Custom Rates by Content Type
+                  </h4>
                   <p className="text-sm text-gray-600 mb-4">
-                    Set custom rates for specific content types. Leave blank to use your base rate of ${(creator.price_per_week || 0) * 4}/month.
+                    Set custom rates for specific content types. Leave blank to
+                    use your base rate of ${(creator.price_per_week || 0) * 4}
+                    /month.
                   </p>
                   <div className="grid gap-4">
                     {creator.content_types
@@ -5291,11 +5349,14 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      (existing.price_per_week_cents / 100) * 4
-                                    ).toString()
+                                        (existing.price_per_week_cents / 100) *
+                                        4
+                                      ).toString()
                                     : ""
                                 }
-                                placeholder={((creator.price_per_week || 0) * 4).toString()}
+                                placeholder={(
+                                  (creator.price_per_week || 0) * 4
+                                ).toString()}
                                 className="bg-white"
                                 min="0"
                                 step="1"
@@ -5310,10 +5371,7 @@ export default function CreatorDashboard() {
               ) : null)}
 
             {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
-            {showRatesModal === "industry" && (
-              <div className="mb-6">
-              </div>
-            )}
+            {showRatesModal === "industry" && <div className="mb-6"></div>}
 
             <DialogFooter className="mt-6">
               <Button
@@ -5335,18 +5393,16 @@ export default function CreatorDashboard() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Saving...
                   </>
+                ) : showRatesModal === "content" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Save Rates
+                  </>
                 ) : (
-                  showRatesModal === "content" ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Save Rates
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </>
-                  )
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -5355,7 +5411,10 @@ export default function CreatorDashboard() {
       </Dialog>
 
       {/* Content Restrictions Modal */}
-      <Dialog open={showRestrictionsModal} onOpenChange={() => setShowRestrictionsModal(false)}>
+      <Dialog
+        open={showRestrictionsModal}
+        onOpenChange={() => setShowRestrictionsModal(false)}
+      >
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
@@ -5365,12 +5424,15 @@ export default function CreatorDashboard() {
 
           <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
             <p className="text-sm text-gray-600">
-              Manage content types and categories you don't want to be associated with:
+              Manage content types and categories you don't want to be
+              associated with:
             </p>
 
             {/* Current Restrictions */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Current Restrictions:</h4>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Current Restrictions:
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {contentRestrictions.map((restriction) => (
                   <Badge
@@ -5387,7 +5449,9 @@ export default function CreatorDashboard() {
             {/* Click to add restrictions */}
             {availableRestrictions.length > 0 && (
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Click to add restrictions:</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Click to add restrictions:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {availableRestrictions.map((restriction) => (
                     <Badge
@@ -5404,7 +5468,9 @@ export default function CreatorDashboard() {
 
             {/* Add custom restriction */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Add custom restriction:</h4>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Add custom restriction:
+              </h4>
               <div className="flex gap-2">
                 <Input
                   placeholder="Add custom restriction (max 25 chars)"
@@ -5413,7 +5479,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setCustomRestriction(e.target.value)}
                   className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addCustomRestriction();
                     }
@@ -5432,13 +5498,17 @@ export default function CreatorDashboard() {
 
             {/* Brand Exclusivity */}
             <div className="pt-4 border-t">
-              <h4 className="font-semibold text-gray-900 mb-2">Conflicting Campaigns (Brand Exclusivity)</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Conflicting Campaigns (Brand Exclusivity)
+              </h4>
               <p className="text-sm text-gray-600 mb-3">
                 Add brands you're exclusive with to prevent competing campaigns
               </p>
 
               {brandExclusivity.length === 0 ? (
-                <p className="text-sm italic text-gray-500 mb-3">No brand exclusivity set</p>
+                <p className="text-sm italic text-gray-500 mb-3">
+                  No brand exclusivity set
+                </p>
               ) : (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {brandExclusivity.map((brand) => (
@@ -5464,7 +5534,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addBrandExclusivity();
                     }
