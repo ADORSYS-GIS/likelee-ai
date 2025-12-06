@@ -70,12 +70,6 @@ import {
   HelpCircle,
   LogOut,
   Archive,
-  Globe,
-  ShieldAlert,
-  ExternalLink,
-  AlertTriangle,
-  Check,
-  Youtube,
 } from "lucide-react";
 import {
   LineChart,
@@ -316,42 +310,6 @@ const exampleApprovals = [
     perpetual: false,
     isExample: true,
   },
-  {
-    id: "example-samsung-approval",
-    brand: "Samsung Electronic",
-    brand_logo:
-      "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
-    campaign_type: "Product Launch",
-    requested_date: "2025-02-10",
-    proposed_rate: 800,
-    term_length: "3 months",
-    estimated_monthly: 720,
-    regions: ["Global"],
-    industries: ["Tech"],
-    usage_type: "TV & Digital",
-    duration: "3 months",
-    territory: "Global",
-    perpetual: false,
-    isExample: true,
-  },
-  {
-    id: "example-pepsi-approval",
-    brand: "Pepsi",
-    brand_logo:
-      "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
-    campaign_type: "Summer Campaign",
-    requested_date: "2025-02-12",
-    proposed_rate: 700,
-    term_length: "4 months",
-    estimated_monthly: 630,
-    regions: ["North America", "Europe"],
-    industries: ["Food & Beverage"],
-    usage_type: "Social Media",
-    duration: "4 months",
-    territory: "North America, Europe",
-    perpetual: false,
-    isExample: true,
-  },
 ];
 
 // Example archived campaign for blank users (shown when no real archived campaigns exist)
@@ -369,36 +327,6 @@ const exampleArchivedCampaigns = [
     total_earned: 1200,
     regions: ["Global"],
     show_on_portfolio: false,
-    isExample: true,
-  },
-  {
-    id: "example-lululemon-archive",
-    brand: "Lululemon",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
-    campaign: "Yoga Collection",
-    campaign_type: "Social Media Campaign",
-    completed_date: "1/15/2026",
-    duration: "3 months",
-    monthly_rate: 750,
-    total_earned: 2250,
-    regions: ["North America"],
-    show_on_portfolio: true,
-    isExample: true,
-  },
-  {
-    id: "example-shopify-archive",
-    brand: "Shopify",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
-    campaign: "Entrepreneur Stories",
-    campaign_type: "Digital Ad",
-    completed_date: "12/20/2025",
-    duration: "1 month",
-    monthly_rate: 900,
-    total_earned: 900,
-    regions: ["Global"],
-    show_on_portfolio: true,
     isExample: true,
   },
 ];
@@ -433,186 +361,7 @@ const exampleContracts = [
     can_revoke: true,
     isExample: true,
   },
-  {
-    id: "example-glossier-contract",
-    brand: "Glossier Beauty",
-    brand_logo:
-      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    project_name: "Spring Beauty Collection",
-    creator_earnings: 750,
-    earnings_to_date: 4500,
-    amount_paid: 4500,
-    payment_status: "Paid",
-    start_date: "2026-01-01",
-    end_date: "2026-04-15",
-    effective_date: "2026-01-01",
-    expiration_date: "2026-04-15",
-    status: "active",
-    days_until_expiration: 75,
-    days_remaining: 75,
-    usage_description: "Social Media, Website",
-    deliverables: "TikTok Videos, Instagram Posts",
-    territory: "North America",
-    channels: ["Social Media", "Website"],
-    restrictions: "Competitor brands",
-    prohibited_uses: "Competitor brands",
-    auto_renew: false,
-    can_pause: true,
-    can_revoke: true,
-    isExample: true,
-  },
-  {
-    id: "example-tesla-contract",
-    brand: "Tesla Motors",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    project_name: "Model Y Launch",
-    creator_earnings: 1200,
-    earnings_to_date: 7200,
-    amount_paid: 7200,
-    payment_status: "Paid",
-    start_date: "2026-01-01",
-    end_date: "2026-03-15",
-    effective_date: "2026-01-01",
-    expiration_date: "2026-03-15",
-    status: "expiring_soon",
-    days_until_expiration: 45,
-    days_remaining: 45,
-    usage_description: "TV Commercial, Digital Ads",
-    deliverables: "TV Commercial, Digital Ads",
-    territory: "Global",
-    channels: ["TV", "Digital"],
-    restrictions: "Competitor automotive brands",
-    prohibited_uses: "Competitor automotive brands",
-    auto_renew: false,
-    can_pause: true,
-    can_revoke: true,
-    isExample: true,
-  },
 ];
-
-// Example content items for blank users
-const exampleContentItems = [
-  {
-    id: "content-nike",
-    brand: "Nike Sportswear",
-    brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    title: "Instagram Reel",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
-    platform: "Instagram",
-    views: "125,000",
-    engagement: "4.2%",
-    published_at: "2026-03-20",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-glossier",
-    brand: "Glossier Beauty",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/8/84/Glossier_Logo.svg",
-    title: "Web Banner",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1596462502278-27bfdd403348?q=80&w=2000&auto=format&fit=crop",
-    platform: "Website",
-    views: "89,000",
-    engagement: "2.8%",
-    published_at: "2026-03-18",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-tesla",
-    brand: "Tesla Motors",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    title: "TV Commercial",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
-    platform: "YouTube",
-    views: "450,000",
-    engagement: "5.1%",
-    published_at: "2026-02-15",
-    is_live: true,
-    url: "#",
-  },
-];
-
-const exampleDetections = [
-  {
-    id: "det-1",
-    account: "@crypto_gains_2026",
-    platform: "TikTok",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-    status: "needs_review",
-    match_confidence: 94,
-    detected_at: "2026-03-24",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
-  },
-  {
-    id: "det-2",
-    account: "@beauty_deals_shop",
-    platform: "Instagram",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611262588024-d12430b98920?q=80&w=1000&auto=format&fit=crop",
-    status: "takedown_requested",
-    match_confidence: 87,
-    detected_at: "2026-03-22",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png",
-  },
-  {
-    id: "det-3",
-    account: "Quick Weight Loss Co.",
-    platform: "Facebook",
-    thumbnail_url:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Facebook_icon_2013.svg/2048px-Facebook_icon_2013.svg.png",
-    status: "resolved",
-    match_confidence: 91,
-    detected_at: "2026-03-19",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
-  },
-];
-
-// Example public profile data
-const exampleProfilePreviewData = {
-  first_name: "[Insert user first name]",
-  location: "[Auto-Insert Location signed up with]",
-  handles: "[Auto-Insert handles signed up with]",
-  followers: "28.4K",
-  bio: "UGC creator & influencer specializing in beauty, lifestyle, and product reviews. Passionate about authentic storytelling.",
-  active_campaigns: 3,
-  completed_projects: 3,
-  voice_profiles: 0,
-  open_to_work: ["Social-media ads", "Web & banner campaigns"],
-  industries: ["Fashion / Beauty", "Tech / Electronics"],
-  base_rate: 500,
-  portfolio: [
-    {
-      id: "p1",
-      brand: "Target Retail",
-      campaign: "Holiday Campaign",
-      duration: "3 months",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Target_Corporation_logo_%28vector%29.svg/1024px-Target_Corporation_logo_%28vector%29.svg.png",
-    },
-    {
-      id: "p2",
-      brand: "Spotify Premium",
-      campaign: "Audio Campaign",
-      duration: "2 months",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
-    },
-    {
-      id: "p3",
-      brand: "Lululemon",
-      campaign: "Fitness Series",
-      duration: "4 months",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Lululemon_Athletica_logo.svg/2048px-Lululemon_Athletica_logo.svg.png",
-    },
-  ],
-};
 
 // Empty defaults for campaigns (until wired to real data)
 const mockActiveCampaigns: any[] = [];
@@ -637,16 +386,6 @@ export default function CreatorDashboard() {
   const [searchParams] = useSearchParams();
   const { user, initialized, authenticated, logout } = useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
-  const API_BASE_ABS = (() => {
-    try {
-      if (!API_BASE) return new URL("/", window.location.origin).toString();
-      if (API_BASE.startsWith("http")) return API_BASE;
-      return new URL(API_BASE, window.location.origin).toString();
-    } catch {
-      return new URL("/", window.location.origin).toString();
-    }
-  })();
-  const api = (path: string) => new URL(path, API_BASE_ABS).toString();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -682,6 +421,29 @@ export default function CreatorDashboard() {
   const [pauseOption, setPauseOption] = useState(null);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showApprovalContract, setShowApprovalContract] = useState(null);
+  const [contractsTab, setContractsTab] = useState("active");
+  const [showReuploadCameoModal, setShowReuploadCameoModal] = useState(false);
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
+  const [selectedImageSection, setSelectedImageSection] = useState(null);
+  const [uploadingToSection, setUploadingToSection] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [referenceImages, setReferenceImages] = useState({
+    headshot_neutral: null,
+    headshot_smiling: null,
+    fullbody_casual: null,
+    fullbody_formal: null,
+    side_profile: null,
+    three_quarter: null,
+    hair_down: null,
+    hair_up: null,
+    hair_styling: null,
+    upper_body: null,
+    outdoors: null,
+    indoors: null,
+    makeup_variation: null,
+    seasonal: null,
+    signature: null,
+  });
 
   // Custom Rates State
   const [customRates, setCustomRates] = useState<any[]>([]);
@@ -689,7 +451,6 @@ export default function CreatorDashboard() {
     "content" | "industry" | null
   >(null);
   const [savingRates, setSavingRates] = useState(false);
-  const [showCardModal, setShowCardModal] = useState(false);
 
   // Content Restrictions State
   const [contentRestrictions, setContentRestrictions] = useState<string[]>([
@@ -718,6 +479,7 @@ export default function CreatorDashboard() {
   const [savingRules, setSavingRules] = useState(false);
 
   // Sync local rate when creator data loads or when entering edit mode
+  // Sync local rate when creator data loads or when entering edit mode
   useEffect(() => {
     // If we are not editing, keep the local value in sync with the saved data
     if (!editingLicensingRate) {
@@ -738,16 +500,16 @@ export default function CreatorDashboard() {
     editingLicensingRate,
   ]);
 
+  // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
     const abort = new AbortController();
     (async () => {
       try {
-        // ... (rest of the code remains the same)
-        const full = api(
-          `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
+        const res = await fetch(
+          `${API_BASE}/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
+          { signal: abort.signal },
         );
-        const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
         if (Array.isArray(items)) {
@@ -782,7 +544,9 @@ export default function CreatorDashboard() {
       try {
         // 1) List recordings
         const res = await fetch(
-          api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}`),
+          `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
+            user.id,
+          )}`,
           { signal: abort.signal },
         );
         if (!res.ok) return; // best-effort
@@ -794,7 +558,9 @@ export default function CreatorDashboard() {
           rows.map(async (row: any) => {
             try {
               const s = await fetch(
-                api(`/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`),
+                `${API_BASE}/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(
+                  row.id,
+                )}&expires_sec=600`,
                 { signal: abort.signal },
               );
               const j = s.ok ? await s.json() : { url: null };
@@ -883,7 +649,7 @@ export default function CreatorDashboard() {
       try {
         console.log("Fetching dashboard data for user:", user.id);
         const res = await fetch(
-          api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
+          `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
           { signal: abort.signal },
         );
         if (!res.ok) throw new Error(await res.text());
@@ -924,10 +690,16 @@ export default function CreatorDashboard() {
         });
 
         // Populate restrictions state
-        if (profile.content_restrictions && Array.isArray(profile.content_restrictions)) {
+        if (
+          profile.content_restrictions &&
+          Array.isArray(profile.content_restrictions)
+        ) {
           setContentRestrictions(profile.content_restrictions);
         }
-        if (profile.brand_exclusivity && Array.isArray(profile.brand_exclusivity)) {
+        if (
+          profile.brand_exclusivity &&
+          Array.isArray(profile.brand_exclusivity)
+        ) {
           setBrandExclusivity(profile.brand_exclusivity);
         }
         // If backend provides arrays later, replace mocks
@@ -951,7 +723,7 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         const res = await fetch(
-          api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
         );
         if (res.ok) {
           const data = await res.json();
@@ -971,7 +743,7 @@ export default function CreatorDashboard() {
     }
     try {
       setKycLoading(true);
-      const res = await fetch(api(`/api/kyc/session`), {
+      const res = await fetch(`${API_BASE}/api/kyc/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.id }),
@@ -991,7 +763,7 @@ export default function CreatorDashboard() {
     try {
       setKycLoading(true);
       const res = await fetch(
-        api(`/api/kyc/status?user_id=${encodeURIComponent(user.id)}`),
+        `${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.id)}`,
       );
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();
@@ -1063,15 +835,8 @@ export default function CreatorDashboard() {
     }
   };
 
-  const [contentTab, setContentTab] = useState("brand_content");
-
   const renderContent = () => {
-    const showingExamples = contentItems.length === 0;
-    const itemsToShow = showingExamples ? exampleContentItems : contentItems;
-    // For now, we don't have real detections state, so we assume empty if not showing examples
-    const detectionsToShow = showingExamples ? exampleDetections : [];
-    const detectionsCount = detectionsToShow.length;
-
+    const detectionsCount = 0;
     return (
       <div className="space-y-6">
         <div>
@@ -1081,655 +846,74 @@ export default function CreatorDashboard() {
           </p>
         </div>
 
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-blue-900 text-sm">
-              Welcome to your Content page! This is an example of what brand
-              content and detections will look like. You don't have any content
-              yet — but when brands create content with your likeness, it will
-              appear here!
-            </p>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <div className="flex gap-6">
-            <button
-              onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
-                contentTab === "brand_content"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Brand Content
-              <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
-                {itemsToShow.length}
-              </Badge>
-            </button>
-            <button
-              onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
-                contentTab === "detections"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Detections
-              <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
-                {detectionsCount}
-              </Badge>
-            </button>
-          </div>
-        </div>
-
-        {contentTab === "brand_content" && (
-          <>
-            <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <Eye className="h-4 w-4" />
-              This feed shows all authorized content that brands have published
-              using your likeness.
-            </div>
-
-            {itemsToShow.length > 0 ? (
-              <div className="grid md:grid-cols-3 gap-6">
-                {itemsToShow.map((item) => (
-                  <Card
-                    key={item.id}
-                    className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="relative aspect-video bg-gray-100">
-                      <img
-                        src={item.thumbnail_url}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                      {item.is_live && (
-                        <Badge className="absolute top-3 right-3 bg-green-500 text-white border-none px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
-                          Live
-                        </Badge>
-                      )}
-                      {item.brand_logo && (
-                        <div className="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-white p-1 shadow-sm">
-                          <img
-                            src={item.brand_logo}
-                            alt={item.brand}
-                            className="w-full h-full object-contain rounded-full"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-base">
-                            {item.brand}
-                          </h3>
-                          <p className="text-sm text-gray-500">{item.title}</p>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs font-normal"
-                        >
-                          {item.platform}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Views</p>
-                          <p className="font-bold text-gray-900 text-sm">
-                            {item.views}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">
-                            Engagement
-                          </p>
-                          <p className="font-bold text-gray-900 text-sm">
-                            {item.engagement}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-                        Published {item.published_at}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">No brand content found.</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {contentTab === "detections" && (
-          <>
-            <div className="flex items-center gap-2 text-sm text-orange-800 bg-orange-50 p-3 rounded-lg border border-orange-100">
-              <ShieldAlert className="h-4 w-4" />
-              Likeness Protection Active. We continuously scan the web for
-              unauthorized use of your likeness. Review detected content below.
-            </div>
-
-            {detectionsToShow.length > 0 ? (
-              <div className="space-y-4">
-                {detectionsToShow.map((item) => (
-                  <Card
-                    key={item.id}
-                    className={`p-4 border ${
-                      item.status === "needs_review"
-                        ? "border-red-200 bg-red-50"
-                        : item.status === "takedown_requested"
-                          ? "border-orange-200 bg-orange-50"
-                          : "border-green-200 bg-green-50"
-                    }`}
-                  >
-                    <div className="flex gap-4">
-                      <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
-                        <img
-                          src={item.thumbnail_url}
-                          alt="Detected content"
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ExternalLink className="w-6 h-6 text-white" />
-                        </div>
-                        {item.logo && (
-                          <div className="absolute bottom-1 right-1 w-8 h-8 bg-white rounded-full p-0.5 shadow-sm">
-                            <img
-                              src={item.logo}
-                              alt={item.platform}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-gray-900 text-lg">
-                                {item.account}
-                              </h3>
-                              {item.status === "needs_review" && (
-                                <Badge className="bg-red-500 text-white hover:bg-red-600 border-none">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  Needs Review
-                                </Badge>
-                              )}
-                              {item.status === "takedown_requested" && (
-                                <Badge className="bg-orange-400 text-white hover:bg-orange-500 border-none">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Takedown Requested
-                                </Badge>
-                              )}
-                              {item.status === "resolved" && (
-                                <Badge className="bg-green-500 text-white hover:bg-green-600 border-none">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Resolved
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {item.platform}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500 mb-1">
-                              Detected
-                            </p>
-                            <p className="font-medium text-gray-900">
-                              {item.detected_at}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-6 mb-4">
-                          <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
-                              Match Confidence
-                            </p>
-                            <p className="font-bold text-lg text-red-500">
-                              {item.match_confidence}%
-                            </p>
-                          </div>
-                          <button className="text-sm text-[#32C8D1] hover:underline flex items-center gap-1 font-medium">
-                            View Original Content{" "}
-                            <ExternalLink className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          {item.status === "needs_review" && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="bg-red-600 hover:bg-red-700 text-white gap-2"
-                              >
-                                <XCircle className="w-4 h-4" />
-                                Request Takedown
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50"
-                              >
-                                Dismiss (It's Authorized)
-                              </Button>
-                            </>
-                          )}
-                          {item.status === "takedown_requested" && (
-                            <p className="text-sm text-orange-700 flex items-center gap-2">
-                              Takedown request sent. Platforms typically respond
-                              within 24-72 hours.
-                            </p>
-                          )}
-                          {item.status === "resolved" && (
-                            <p className="text-sm text-green-700 flex items-center gap-2">
-                              <Check className="w-4 h-4" />
-                              Content has been removed or verified as
-                              authorized.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">No detections found.</p>
-              </div>
-            )}
-
-            {/* How Detection Works */}
-            <div className="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
-              <h3 className="font-bold text-gray-900 mb-4">
-                How Detection Works
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="mb-3">
-                    <Eye className="w-6 h-6 text-[#32C8D1]" />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm mb-1">
-                    Continuous Scanning
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    We scan major platforms for facial matches
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="mb-3">
-                    <AlertCircle className="w-6 h-6 text-orange-500" />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm mb-1">
-                    AI Matching
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Advanced AI compares against your likeness
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                  <div className="mb-3">
-                    <Shield className="w-6 h-6 text-green-500" />
-                  </div>
-                  <p className="font-bold text-gray-900 text-sm mb-1">
-                    Takedown Support
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    We help file DMCA and platform reports
-                  </p>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  const renderPublicProfilePreview = () => {
-    // Use real user data if available, otherwise example data
-    const data = {
-      ...exampleProfilePreviewData,
-      first_name:
-        user?.user_metadata?.full_name?.split(" ")[0] ||
-        exampleProfilePreviewData.first_name,
-      location:
-        user?.user_metadata?.location || exampleProfilePreviewData.location,
-      // Add other real fields mapping here
-    };
-
-    return (
-      <div className="space-y-6 relative">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Public Profile Preview
-            </h2>
-            <p className="text-gray-600 mt-1">
-              This is how brands see your profile
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setShowCardModal(!showCardModal)}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              {showCardModal ? "Hide Card" : "View Card"}
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => {
-                setActiveSection("settings");
-                setSettingsTab("profile");
-              }}
-            >
-              <Edit className="h-4 w-4" />
-              Edit Profile
-            </Button>
-          </div>
-        </div>
-
-        <Card className="overflow-hidden border-gray-200 bg-white">
-          {/* Banner */}
-          <div className="h-48 bg-[#32C8D1]"></div>
-
-          <div className="px-8 pb-8">
-            {/* Header Section with Avatar */}
-            <div className="relative flex justify-between items-start mb-6">
-              <div className="flex items-end -mt-16 mb-4">
-                <div className="relative">
-                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage
-                      src={
-                        creator.profile_photo || user?.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                      {data.first_name[0] === "[" ? "U" : data.first_name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="ml-6 mb-2">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                      {data.first_name}
-                    </h1>
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      Verified creator
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-gray-600 text-sm">
-                    <span>{data.location}</span>
-                    <span className="flex items-center gap-1">
-                      <Badge
-                        variant="secondary"
-                        className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
-                      >
-                        {data.handles}
-                      </Badge>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {data.followers} followers
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bio */}
-            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.active_campaigns}
-                </div>
-                <div className="text-sm text-gray-500">Active Campaigns</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.completed_projects}
-                </div>
-                <div className="text-sm text-gray-500">Completed Projects</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.voice_profiles}
-                </div>
-                <div className="text-sm text-gray-500">Voice Profiles</div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-6 mb-8">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">
-                  Open to Work With
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.open_to_work.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="default"
-                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">
-                  Industries
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.industries.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Licensing Rate */}
-            <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-gray-900 mb-1">Licensing Rate</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  Base rate for cameo usage
-                </p>
-                <div className="flex items-center gap-2 text-green-700 text-sm">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Open to negotiations
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-[#32C8D1]">
-                  ${data.base_rate}
-                </div>
-                <div className="text-sm text-gray-500">per week</div>
-              </div>
-            </div>
-
-            {/* Portfolio */}
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">Portfolio</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {data.portfolio.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
-                  >
-                    <img
-                      src={item.logo}
-                      alt={item.brand}
-                      className="w-10 h-10 object-contain"
-                    />
-                    <div>
-                      <div className="font-bold text-gray-900 text-sm">
-                        {item.brand}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.campaign}
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="mt-1 text-[10px] h-5"
-                      >
-                        {item.duration}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Social Links */}
-            <div className="flex gap-3 mt-8">
-              <Button variant="outline" className="gap-2">
-                <Instagram className="h-4 w-4" />
-                Instagram
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <Video className="h-4 w-4" />
-                TikTok
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start">
-          <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-blue-900 text-sm">
-            This is a preview of how your profile appears to brands. Make sure
-            your information is up-to-date to attract more opportunities.
+        <div className="bg-blue-50 border border-blue-200">
+          <AlertCircle className="h-5 w-5 text-blue-600" />
+          <p className="text-blue-900">
+            Welcome to your Content page! You don't have any content yet — when
+            brands publish content with your licensed likeness, it will appear
+            here.
           </p>
         </div>
 
-        {/* Card Modal Overlay */}
-        {showCardModal && (
-          <div
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowCardModal(false)}
-          >
-            <div
-              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Card Header */}
-              <div className="h-32 bg-[#32C8D1] flex items-center justify-center">
-                <Avatar className="h-20 w-20 border-4 border-white shadow-sm">
-                  <AvatarImage
-                    src={
-                      creator.profile_photo || user?.user_metadata?.avatar_url
-                    }
+        <div className="flex items-center gap-4">
+          <Badge className="bg-gray-900 text-white">
+            Brand Content ({contentItems.length})
+          </Badge>
+          <Badge className="bg-red-100 text-red-700 border border-red-300">
+            Detections ({detectionsCount})
+          </Badge>
+        </div>
+
+        {contentItems.length === 0 ? (
+          <Card className="p-10 text-center text-gray-600">
+            <p>No brand content yet.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Complete your profile to get discovered and start receiving
+              opportunities.
+            </p>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {contentItems.map((item) => (
+              <Card key={item.id} className="overflow-hidden">
+                {item.thumbnail_url ? (
+                  <img
+                    src={item.thumbnail_url}
+                    alt={item.title || "Content"}
+                    className="w-full h-40 object-cover"
                   />
-                  <AvatarFallback className="bg-white/20 text-white text-4xl">
-                    {data.first_name[0] === "[" ? "U" : data.first_name[0]}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-
-              {/* Card Content */}
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {data.first_name}
-                  </h3>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
-                  >
-                    Verified Creator
-                  </Badge>
-                </div>
-
-                <p className="text-xs text-gray-500 mb-4">{data.location}</p>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                  {data.bio}
-                </p>
-
-                <div className="flex gap-2 mb-6">
-                  <Badge
-                    variant="outline"
-                    className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600"
-                  >
-                    Fashion
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600"
-                  >
-                    Tech
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 gap-y-4 gap-x-8 mb-6">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Followers</p>
-                    <p className="font-bold text-gray-900">{data.followers}</p>
+                ) : null}
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-gray-900 truncate">
+                      {item.title || "Untitled Content"}
+                    </div>
+                    {item.platform && (
+                      <Badge className="bg-gray-100 text-gray-700 border border-gray-300">
+                        {item.platform}
+                      </Badge>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Engagement</p>
-                    <p className="font-bold text-gray-900">4.2%</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Turnaround</p>
-                    <p className="font-bold text-gray-900">12h</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-0.5">From</p>
-                    <p className="font-bold text-gray-900">${data.base_rate}</p>
-                  </div>
+                  {item.published_at && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Published{" "}
+                      {new Date(item.published_at).toLocaleDateString()}
+                    </div>
+                  )}
+                  {item.url && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="w-full mt-3 border-2 border-gray-300"
+                    >
+                      <a href={item.url} target="_blank" rel="noreferrer">
+                        Open
+                      </a>
+                    </Button>
+                  )}
                 </div>
-
-                <Button className="w-full bg-black hover:bg-gray-800 text-white mb-3 rounded-full">
-                  Request Cameo
-                </Button>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    className="rounded-full border-gray-200"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="rounded-full border-gray-200"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Profile
-                  </Button>
-                </div>
-              </div>
-            </div>
+              </Card>
+            ))}
           </div>
         )}
       </div>
@@ -1779,7 +963,9 @@ export default function CreatorDashboard() {
       try {
         const buf = await file.arrayBuffer();
         const res = await fetch(
-          api(`/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`),
+          `${API_BASE}/api/profile/photo-upload?user_id=${encodeURIComponent(
+            user.id,
+          )}`,
           {
             method: "POST",
             headers: { "content-type": file.type || "image/jpeg" },
@@ -1807,7 +993,7 @@ export default function CreatorDashboard() {
         // Revert optimistic update on error by refreshing dashboard
         try {
           const profileRes = await fetch(
-            api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
+            `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
             { cache: "no-cache" },
           );
           if (profileRes.ok) {
@@ -1928,9 +1114,12 @@ export default function CreatorDashboard() {
       // If it exists on server, delete there too
       const sid = rec?.server_recording_id || rec?.id;
       if (sid) {
-        await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
-          method: "DELETE",
-        });
+        await fetch(
+          `${API_BASE}/api/voice/recordings/${encodeURIComponent(sid)}`,
+          {
+            method: "DELETE",
+          },
+        );
       }
     } catch (_) {
       // best-effort
@@ -1945,7 +1134,9 @@ export default function CreatorDashboard() {
 
       // 1) Upload recording to Likelee server (private bucket)
       const uploadRes = await fetch(
-        api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`),
+        `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
+          user.id,
+        )}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
         {
           method: "POST",
           headers: { "content-type": ct },
@@ -1961,7 +1152,7 @@ export default function CreatorDashboard() {
       if (!recordingId) throw new Error("Missing recording id after upload");
 
       // 2) Create ElevenLabs clone via Likelee server
-      const cloneRes = await fetch(api(`/api/voice/models/clone`), {
+      const cloneRes = await fetch(`${API_BASE}/api/voice/models/clone`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -1981,11 +1172,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -2024,12 +1215,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2110,11 +1302,15 @@ export default function CreatorDashboard() {
   // Content Restrictions Helper Functions
   const addRestriction = (restriction: string) => {
     setContentRestrictions([...contentRestrictions, restriction]);
-    setAvailableRestrictions(availableRestrictions.filter(r => r !== restriction));
+    setAvailableRestrictions(
+      availableRestrictions.filter((r) => r !== restriction),
+    );
   };
 
   const removeRestriction = (restriction: string) => {
-    setContentRestrictions(contentRestrictions.filter(r => r !== restriction));
+    setContentRestrictions(
+      contentRestrictions.filter((r) => r !== restriction),
+    );
     // Only add back to available if it was originally in the predefined list
     const predefinedRestrictions = [
       "Alcohol",
@@ -2122,7 +1318,7 @@ export default function CreatorDashboard() {
       "Cryptocurrency/NFT",
       "MLM/Multi-Level Marketing",
       "Unlicensed Financial Products",
-      "Health/Medical Claims"
+      "Health/Medical Claims",
     ];
     if (predefinedRestrictions.includes(restriction)) {
       setAvailableRestrictions([...availableRestrictions, restriction]);
@@ -2131,7 +1327,10 @@ export default function CreatorDashboard() {
 
   const addCustomRestriction = () => {
     if (customRestriction.trim() && customRestriction.length <= 25) {
-      setContentRestrictions([...contentRestrictions, customRestriction.trim()]);
+      setContentRestrictions([
+        ...contentRestrictions,
+        customRestriction.trim(),
+      ]);
       setCustomRestriction("");
     }
   };
@@ -2144,7 +1343,7 @@ export default function CreatorDashboard() {
   };
 
   const removeBrandExclusivity = (brand: string) => {
-    setBrandExclusivity(brandExclusivity.filter(b => b !== brand));
+    setBrandExclusivity(brandExclusivity.filter((b) => b !== brand));
   };
 
   const handleSaveRestrictions = async () => {
@@ -2158,7 +1357,7 @@ export default function CreatorDashboard() {
     };
 
     try {
-      const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
+      const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),
@@ -2504,15 +1703,19 @@ export default function CreatorDashboard() {
       setUploadingToSection(true);
 
       // Upload via backend (Option B: server-only writes)
+      const apiBase =
+        (import.meta as any).env.VITE_API_BASE_URL ||
+        (import.meta as any).env.VITE_API_BASE ||
+        "http://localhost:8787";
       const buf = await file.arrayBuffer();
-      const full = api(
-        `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
+      const res = await fetch(
+        `${apiBase}/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
+        {
+          method: "POST",
+          headers: { "content-type": file.type || "image/jpeg" },
+          body: new Uint8Array(buf),
+        },
       );
-      const res = await fetch(full, {
-        method: "POST",
-        headers: { "content-type": file.type || "image/jpeg" },
-        body: new Uint8Array(buf),
-      });
       if (!res.ok) {
         const raw = await res.text();
         try {
@@ -2955,7 +2158,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -3070,16 +2273,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3117,8 +2322,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3223,10 +2429,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -3328,12 +2535,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -4193,19 +3401,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -4217,10 +3427,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4277,12 +3488,12 @@ export default function CreatorDashboard() {
                 </div>
 
                 {contract.status === "expiring_soon" && (
-                  <div className="mb-4 bg-orange-50 border border-orange-300 rounded-lg p-3 flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-orange-600 shrink-0" />
-                    <p className="text-orange-900 text-sm">
-                      <span className="font-bold">
+                  <div className="mb-4 bg-orange-50 border-2 border-orange-300">
+                    <Clock className="h-5 w-5 text-orange-600" />
+                    <p className="text-orange-900">
+                      <strong>
                         Expiring in {contract.days_remaining} days!
-                      </span>{" "}
+                      </strong>{" "}
                       Would you like to renew this license?
                     </p>
                   </div>
@@ -4539,38 +3750,15 @@ export default function CreatorDashboard() {
       }
 
       // Save profile selection
-      const profileRes = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileUpdate),
-      });
-
-<<<<<<< HEAD
-      // Combine the new rates with the preserved rates
-      const finalRates = [...newRates, ...preservedRates];
-
-      const res = await fetch(
-        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+      const profileRes = await fetch(
+        `${API_BASE}/api/profile?user_id=${user.id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalRates),
+          body: JSON.stringify(profileUpdate),
         },
       );
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to save: ${errorText}`);
-      }
-
-      // Reload rates from database to confirm persistence
-      const reloadRes = await fetch(
-        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
-      );
-      if (reloadRes.ok) {
-        const reloadedRates = await reloadRes.json();
-        setCustomRates(reloadedRates);
-=======
       if (!profileRes.ok) {
         throw new Error("Failed to save selection to profile");
       }
@@ -4617,8 +3805,9 @@ export default function CreatorDashboard() {
         console.error("Rate save error:", rateError);
         // If profile saved but rates failed, we still consider it a partial success
         // and close the modal, but warn the user.
-        alert(`Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`);
->>>>>>> d83b9bc (fix(ui): refine dashboard UI, fix rate rounding, and add visual indicators)
+        alert(
+          `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+        );
       }
 
       setShowRatesModal(null);
@@ -4646,19 +3835,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -4805,7 +3996,7 @@ export default function CreatorDashboard() {
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   <LinkIcon className="w-4 h-4 inline mr-2" />
-                  Portfolio Link
+                  External Portfolio URL
                 </Label>
                 <Input
                   value={creator.portfolio_url || ""}
@@ -4886,9 +4077,7 @@ export default function CreatorDashboard() {
         <div className="space-y-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
-                My Rules
-              </h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-1">My Rules</h3>
               <p className="text-sm text-gray-600">
                 Set your licensing preferences and rates
               </p>
@@ -4917,10 +4106,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -4952,10 +4142,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -4994,16 +4185,24 @@ export default function CreatorDashboard() {
 
                 {/* Conflicting Campaigns (Brand Exclusivity) */}
                 <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-1">Conflicting Campaigns (Brand Exclusivity)</h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Conflicting Campaigns (Brand Exclusivity)
+                  </h4>
                   <p className="text-sm text-gray-600 mb-2">
-                    Add brands you're exclusive with to prevent competing campaigns
+                    Add brands you're exclusive with to prevent competing
+                    campaigns
                   </p>
                   {brandExclusivity.length === 0 ? (
-                    <p className="text-sm italic text-gray-500">No brand exclusivity set</p>
+                    <p className="text-sm italic text-gray-500">
+                      No brand exclusivity set
+                    </p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {brandExclusivity.map((brand) => (
-                        <span key={brand} className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]">
+                        <span
+                          key={brand}
+                          className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]"
+                        >
                           {brand}
                         </span>
                       ))}
@@ -5071,7 +4270,7 @@ export default function CreatorDashboard() {
                             const updatedCreator = {
                               ...creator,
                               price_per_week: newWeeklyRate,
-                              base_monthly_price_cents: monthlyCents
+                              base_monthly_price_cents: monthlyCents,
                             };
                             setCreator(updatedCreator);
                             // We need to pass this updated object to save function
@@ -5336,7 +4535,8 @@ export default function CreatorDashboard() {
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
                   onClick={() => {
-                    setActiveSection("public-profile");
+                    const url = `${window.location.origin}/PublicProfile`;
+                    window.open(url, "_blank");
                     setShowProfileMenu(false);
                   }}
                 >
@@ -5366,7 +4566,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -5390,10 +4590,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -5431,7 +4632,6 @@ export default function CreatorDashboard() {
       >
         <div className="p-8">
           {activeSection === "dashboard" && renderDashboard()}
-          {activeSection === "public-profile" && renderPublicProfilePreview()}
           {activeSection === "content" && renderContent()}
           {activeSection === "likeness" && renderLikeness()}
           {activeSection === "voice" && renderVoice()}
@@ -5469,12 +4669,12 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-lg flex gap-3">
-                    <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div className="text-amber-900 text-sm">
-                      <p className="font-bold">⚠️ IMPORTANT PAYMENT WARNING</p>
+                  <div className="bg-amber-50 border-2 border-amber-300">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                    <p className="text-amber-900">
+                      <strong>⚠️ IMPORTANT PAYMENT WARNING</strong>
                       <p className="mt-2">If you pause NOW (mid-month):</p>
-                      <ul className="list-disc ml-4 mt-1 space-y-1">
+                      <ul className="list-disc ml-6 mt-2 space-y-1">
                         <li>You will NOT receive payment for {currentMonth}</li>
                         <li>
                           Even though you've earned ${proratedAmount} so far
@@ -5482,7 +4682,7 @@ export default function CreatorDashboard() {
                         </li>
                         <li>That money will be forfeited</li>
                       </ul>
-                    </div>
+                    </p>
                   </div>
 
                   <div className="space-y-4">
@@ -5590,11 +4790,11 @@ export default function CreatorDashboard() {
 
               return (
                 <div className="py-4 space-y-6">
-                  <div className="bg-red-50 border-2 border-red-300 p-4 rounded-lg flex gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-                    <div className="text-red-900 text-sm">
-                      <p className="font-bold">What happens when you revoke:</p>
-                      <ul className="list-disc ml-4 mt-1 space-y-1">
+                  <div className="bg-red-50 border-2 border-red-300">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                    <p className="text-red-900">
+                      <strong>What happens when you revoke:</strong>
+                      <ul className="list-disc ml-6 mt-2 space-y-1">
                         <li>
                           You're requesting to END this license permanently
                         </li>
@@ -5606,7 +4806,7 @@ export default function CreatorDashboard() {
                         <li>Your earnings STOP after the 30-day period ends</li>
                         <li>The license cannot be reactivated</li>
                       </ul>
-                    </div>
+                    </p>
                   </div>
 
                   <Card className="p-6 bg-gray-50 border border-gray-200">
@@ -6052,23 +5252,26 @@ export default function CreatorDashboard() {
             onSubmit={handleSaveRates}
             className="flex-1 overflow-y-auto py-4 pr-2"
           >
-
-
             {/* Content Type Selection - Only show if modal type is 'content' */}
             {showRatesModal === "content" && (
               <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">Select the content types you're open to working with:</h4>
+                <h4 className="font-normal text-gray-900 mb-3">
+                  Select the content types you're open to working with:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {CONTENT_TYPES.map((type) => (
                     <Badge
                       key={type}
                       onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
-                      {creator.content_types?.includes(type) && <Check className="w-3 h-3" />}
+                      {creator.content_types?.includes(type) && (
+                        <Check className="w-3 h-3" />
+                      )}
                       {type}
                     </Badge>
                   ))}
@@ -6079,18 +5282,23 @@ export default function CreatorDashboard() {
             {/* Industry Selection - Only show if modal type is 'industry' */}
             {showRatesModal === "industry" && (
               <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">Select the industries you're open to working with:</h4>
+                <h4 className="font-normal text-gray-900 mb-3">
+                  Select the industries you're open to working with:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {INDUSTRIES.map((industry) => (
                     <Badge
                       key={industry}
                       onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
-                      {creator.industries?.includes(industry) && <Check className="w-3 h-3" />}
+                      {creator.industries?.includes(industry) && (
+                        <Check className="w-3 h-3" />
+                      )}
                       {industry}
                     </Badge>
                   ))}
@@ -6106,9 +5314,13 @@ export default function CreatorDashboard() {
                 ) || []
               ).length > 0 ? (
                 <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-2">Custom Rates by Content Type</h4>
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    Custom Rates by Content Type
+                  </h4>
                   <p className="text-sm text-gray-600 mb-4">
-                    Set custom rates for specific content types. Leave blank to use your base rate of ${(creator.price_per_week || 0) * 4}/month.
+                    Set custom rates for specific content types. Leave blank to
+                    use your base rate of ${(creator.price_per_week || 0) * 4}
+                    /month.
                   </p>
                   <div className="grid gap-4">
                     {creator.content_types
@@ -6135,11 +5347,14 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      (existing.price_per_week_cents / 100) * 4
-                                    ).toString()
+                                        (existing.price_per_week_cents / 100) *
+                                        4
+                                      ).toString()
                                     : ""
                                 }
-                                placeholder={((creator.price_per_week || 0) * 4).toString()}
+                                placeholder={(
+                                  (creator.price_per_week || 0) * 4
+                                ).toString()}
                                 className="bg-white"
                                 min="0"
                                 step="1"
@@ -6154,10 +5369,7 @@ export default function CreatorDashboard() {
               ) : null)}
 
             {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
-            {showRatesModal === "industry" && (
-              <div className="mb-6">
-              </div>
-            )}
+            {showRatesModal === "industry" && <div className="mb-6"></div>}
 
             <DialogFooter className="mt-6">
               <Button
@@ -6179,18 +5391,16 @@ export default function CreatorDashboard() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Saving...
                   </>
+                ) : showRatesModal === "content" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Save Rates
+                  </>
                 ) : (
-                  showRatesModal === "content" ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Save Rates
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </>
-                  )
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -6199,7 +5409,10 @@ export default function CreatorDashboard() {
       </Dialog>
 
       {/* Content Restrictions Modal */}
-      <Dialog open={showRestrictionsModal} onOpenChange={() => setShowRestrictionsModal(false)}>
+      <Dialog
+        open={showRestrictionsModal}
+        onOpenChange={() => setShowRestrictionsModal(false)}
+      >
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
@@ -6209,12 +5422,15 @@ export default function CreatorDashboard() {
 
           <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
             <p className="text-sm text-gray-600">
-              Manage content types and categories you don't want to be associated with:
+              Manage content types and categories you don't want to be
+              associated with:
             </p>
 
             {/* Current Restrictions */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Current Restrictions:</h4>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Current Restrictions:
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {contentRestrictions.map((restriction) => (
                   <Badge
@@ -6231,7 +5447,9 @@ export default function CreatorDashboard() {
             {/* Click to add restrictions */}
             {availableRestrictions.length > 0 && (
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Click to add restrictions:</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Click to add restrictions:
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {availableRestrictions.map((restriction) => (
                     <Badge
@@ -6248,7 +5466,9 @@ export default function CreatorDashboard() {
 
             {/* Add custom restriction */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3">Add custom restriction:</h4>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Add custom restriction:
+              </h4>
               <div className="flex gap-2">
                 <Input
                   placeholder="Add custom restriction (max 25 chars)"
@@ -6257,7 +5477,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setCustomRestriction(e.target.value)}
                   className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addCustomRestriction();
                     }
@@ -6276,13 +5496,17 @@ export default function CreatorDashboard() {
 
             {/* Brand Exclusivity */}
             <div className="pt-4 border-t">
-              <h4 className="font-semibold text-gray-900 mb-2">Conflicting Campaigns (Brand Exclusivity)</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Conflicting Campaigns (Brand Exclusivity)
+              </h4>
               <p className="text-sm text-gray-600 mb-3">
                 Add brands you're exclusive with to prevent competing campaigns
               </p>
 
               {brandExclusivity.length === 0 ? (
-                <p className="text-sm italic text-gray-500 mb-3">No brand exclusivity set</p>
+                <p className="text-sm italic text-gray-500 mb-3">
+                  No brand exclusivity set
+                </p>
               ) : (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {brandExclusivity.map((brand) => (
@@ -6308,7 +5532,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addBrandExclusivity();
                     }
