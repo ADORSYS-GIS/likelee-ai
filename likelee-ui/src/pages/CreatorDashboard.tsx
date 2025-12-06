@@ -69,6 +69,11 @@ import {
   LogOut,
   Archive,
   Globe,
+  ShieldAlert,
+  ExternalLink,
+  AlertTriangle,
+  Check,
+  Youtube,
 } from "lucide-react";
 import {
   LineChart,
@@ -489,41 +494,83 @@ const exampleContentItems = [
   {
     id: "content-nike",
     brand: "Nike Sportswear",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
     title: "Instagram Reel",
     thumbnail_url:
       "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
     platform: "Instagram",
     views: "125,000",
     engagement: "4.2%",
-    published_at: "2025-03-23",
+    published_at: "2026-03-20",
     is_live: true,
     url: "#",
   },
   {
     id: "content-glossier",
     brand: "Glossier Beauty",
+    brand_logo:
+      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
     title: "Web Banner",
     thumbnail_url:
-      "https://images.unsplash.com/photo-1596462502278-27bfdd403348?q=80&w=2000&auto=format&fit=crop",
+      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
     platform: "Website",
     views: "89,000",
     engagement: "2.8%",
-    published_at: "2025-05-15",
+    published_at: "2026-03-18",
     is_live: true,
     url: "#",
   },
   {
     id: "content-tesla",
     brand: "Tesla Motors",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
     title: "TV Commercial",
     thumbnail_url:
       "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
     platform: "YouTube",
     views: "450,000",
     engagement: "5.1%",
-    published_at: "2025-02-15",
+    published_at: "2026-02-15",
     is_live: true,
     url: "#",
+  },
+];
+
+const exampleDetections = [
+  {
+    id: "det-1",
+    account: "@crypto_gains_2026",
+    platform: "TikTok",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
+    status: "needs_review",
+    match_confidence: 94,
+    detected_at: "2026-03-24",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
+  },
+  {
+    id: "det-2",
+    account: "@beauty_deals_shop",
+    platform: "Instagram",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1611262588024-d12430b98920?q=80&w=1000&auto=format&fit=crop",
+    status: "takedown_requested",
+    match_confidence: 87,
+    detected_at: "2026-03-22",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png",
+  },
+  {
+    id: "det-3",
+    account: "Quick Weight Loss Co.",
+    platform: "Facebook",
+    thumbnail_url:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Facebook_icon_2013.svg/2048px-Facebook_icon_2013.svg.png",
+    status: "resolved",
+    match_confidence: 91,
+    detected_at: "2026-03-19",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
   },
 ];
 
@@ -976,10 +1023,14 @@ export default function CreatorDashboard() {
     }
   };
 
+  const [contentTab, setContentTab] = useState("brand_content");
+
   const renderContent = () => {
-    const itemsToShow =
-      contentItems.length > 0 ? contentItems : exampleContentItems;
-    const detectionsCount = 1; // Example count
+    const showingExamples = contentItems.length === 0;
+    const itemsToShow = showingExamples ? exampleContentItems : contentItems;
+    // For now, we don't have real detections state, so we assume empty if not showing examples
+    const detectionsToShow = showingExamples ? exampleDetections : [];
+    const detectionsCount = detectionsToShow.length;
 
     return (
       <div className="space-y-6">
@@ -990,99 +1041,313 @@ export default function CreatorDashboard() {
           </p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-blue-900 text-sm">
-            Welcome to your Content page! This is an example of what brand
-            content and detections will look like. You don't have any content
-            yet — but when brands create content with your likeness, it will
-            appear here!
-          </p>
-        </div>
+        {showingExamples && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+            <p className="text-blue-900 text-sm">
+              Welcome to your Content page! This is an example of what brand
+              content and detections will look like. You don't have any content
+              yet — but when brands create content with your likeness, it will
+              appear here!
+            </p>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
           <div className="flex gap-6">
-            <button className="pb-3 border-b-2 border-[#32C8D1] text-[#32C8D1] font-medium flex items-center gap-2">
+            <button
+              onClick={() => setContentTab("brand_content")}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+            >
               Brand Content
-              <Badge variant="secondary" className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
+              <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
                 {itemsToShow.length}
               </Badge>
             </button>
-            <button className="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium flex items-center gap-2">
+            <button
+              onClick={() => setContentTab("detections")}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+            >
               Detections
-              <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200 ml-1">
+              <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
                 {detectionsCount}
               </Badge>
             </button>
           </div>
         </div>
 
-        <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-800">
-          <Eye className="h-4 w-4" />
-          This feed shows all authorized content that brands have published using
-          your likeness.
-        </div>
+        {contentTab === "brand_content" && (
+          <>
+            <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <Eye className="h-4 w-4" />
+              This feed shows all authorized content that brands have published
+              using your likeness.
+            </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {itemsToShow.map((item) => (
-            <Card key={item.id} className="overflow-hidden border-gray-200">
-              <div className="relative h-48">
-                <img
-                  src={item.thumbnail_url}
-                  alt={item.title}
-                  className="w-full h-full object-cover"
-                />
-                {item.is_live && (
-                  <Badge variant="default" className="absolute top-3 right-3 bg-green-500 hover:bg-green-600 text-white border-0">
-                    Live
-                  </Badge>
-                )}
-                {item.platform === "Instagram" && (
-                  <div className="absolute bottom-3 right-3 bg-white p-1.5 rounded-full shadow-sm">
-                    <Instagram className="h-4 w-4 text-pink-600" />
-                  </div>
-                )}
-                {item.platform === "YouTube" && (
-                  <div className="absolute bottom-3 right-3 bg-white p-1.5 rounded-full shadow-sm">
-                    <Play className="h-4 w-4 text-red-600" />
-                  </div>
-                )}
-                {item.platform === "Website" && (
-                  <div className="absolute bottom-3 right-3 bg-white p-1.5 rounded-full shadow-sm">
-                    <Globe className="h-4 w-4 text-blue-600" />
-                  </div>
-                )}
+            {itemsToShow.length > 0 ? (
+              <div className="grid md:grid-cols-3 gap-6">
+                {itemsToShow.map((item) => (
+                  <Card
+                    key={item.id}
+                    className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="relative aspect-video bg-gray-100">
+                      <img
+                        src={item.thumbnail_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                      {item.is_live && (
+                        <Badge className="absolute top-3 right-3 bg-green-500 text-white border-none px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
+                          Live
+                        </Badge>
+                      )}
+                      {item.brand_logo && (
+                        <div className="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-white p-1 shadow-sm">
+                          <img
+                            src={item.brand_logo}
+                            alt={item.brand}
+                            className="w-full h-full object-contain rounded-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-base">
+                            {item.brand}
+                          </h3>
+                          <p className="text-sm text-gray-500">{item.title}</p>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="text-xs font-normal"
+                        >
+                          {item.platform}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">Views</p>
+                          <p className="font-bold text-gray-900 text-sm">
+                            {item.views}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-0.5">
+                            Engagement
+                          </p>
+                          <p className="font-bold text-gray-900 text-sm">
+                            {item.engagement}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
+                        Published {item.published_at}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-1">
-                  <div>
-                    <h3 className="font-bold text-gray-900">{item.brand}</h3>
-                    <p className="text-sm text-gray-500">{item.title}</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs text-gray-500">
-                    {item.platform}
-                  </Badge>
-                </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-500">No brand content found.</p>
+              </div>
+            )}
+          </>
+        )}
 
-                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Views</p>
-                    <p className="font-bold text-gray-900">{item.views}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Engagement</p>
-                    <p className="font-bold text-gray-900">{item.engagement}</p>
-                  </div>
-                </div>
+        {contentTab === "detections" && (
+          <>
+            <div className="flex items-center gap-2 text-sm text-orange-800 bg-orange-50 p-3 rounded-lg border border-orange-100">
+              <ShieldAlert className="h-4 w-4" />
+              Likeness Protection Active. We continuously scan the web for
+              unauthorized use of your likeness. Review detected content below.
+            </div>
 
-                <div className="mt-3 text-xs text-gray-400">
-                  Published {new Date(item.published_at).toLocaleDateString()}
+            {detectionsToShow.length > 0 ? (
+              <div className="space-y-4">
+                {detectionsToShow.map((item) => (
+                  <Card
+                    key={item.id}
+                    className={`p-4 border ${item.status === "needs_review"
+                      ? "border-red-200 bg-red-50"
+                      : item.status === "takedown_requested"
+                        ? "border-orange-200 bg-orange-50"
+                        : "border-green-200 bg-green-50"
+                      }`}
+                  >
+                    <div className="flex gap-4">
+                      <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
+                        <img
+                          src={item.thumbnail_url}
+                          alt="Detected content"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ExternalLink className="w-6 h-6 text-white" />
+                        </div>
+                        {item.logo && (
+                          <div className="absolute bottom-1 right-1 w-8 h-8 bg-white rounded-full p-0.5 shadow-sm">
+                            <img
+                              src={item.logo}
+                              alt={item.platform}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-bold text-gray-900 text-lg">
+                                {item.account}
+                              </h3>
+                              {item.status === "needs_review" && (
+                                <Badge className="bg-red-500 text-white hover:bg-red-600 border-none">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  Needs Review
+                                </Badge>
+                              )}
+                              {item.status === "takedown_requested" && (
+                                <Badge className="bg-orange-400 text-white hover:bg-orange-500 border-none">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Takedown Requested
+                                </Badge>
+                              )}
+                              {item.status === "resolved" && (
+                                <Badge className="bg-green-500 text-white hover:bg-green-600 border-none">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Resolved
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {item.platform}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 mb-1">
+                              Detected
+                            </p>
+                            <p className="font-medium text-gray-900">
+                              {item.detected_at}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 mb-4">
+                          <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
+                            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
+                              Match Confidence
+                            </p>
+                            <p className="font-bold text-lg text-red-500">
+                              {item.match_confidence}%
+                            </p>
+                          </div>
+                          <button className="text-sm text-[#32C8D1] hover:underline flex items-center gap-1 font-medium">
+                            View Original Content{" "}
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {item.status === "needs_review" && (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-red-600 hover:bg-red-700 text-white gap-2"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Request Takedown
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50"
+                              >
+                                Dismiss (It's Authorized)
+                              </Button>
+                            </>
+                          )}
+                          {item.status === "takedown_requested" && (
+                            <p className="text-sm text-orange-700 flex items-center gap-2">
+                              Takedown request sent. Platforms typically respond
+                              within 24-72 hours.
+                            </p>
+                          )}
+                          {item.status === "resolved" && (
+                            <p className="text-sm text-green-700 flex items-center gap-2">
+                              <Check className="w-4 h-4" />
+                              Content has been removed or verified as authorized.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-500">No detections found.</p>
+              </div>
+            )}
+
+            {/* How Detection Works */}
+            <div className="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
+              <h3 className="font-bold text-gray-900 mb-4">
+                How Detection Works
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="mb-3">
+                    <Eye className="w-6 h-6 text-[#32C8D1]" />
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm mb-1">
+                    Continuous Scanning
+                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    We scan major platforms for facial matches
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="mb-3">
+                    <AlertCircle className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm mb-1">
+                    AI Matching
+                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Advanced AI compares against your likeness
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="mb-3">
+                    <Shield className="w-6 h-6 text-green-500" />
+                  </div>
+                  <p className="font-bold text-gray-900 text-sm mb-1">
+                    Takedown Support
+                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    We help file DMCA and platform reports
+                  </p>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     );
   };
