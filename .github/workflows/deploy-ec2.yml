@@ -99,6 +99,15 @@ jobs:
             sudo -n bash -lc '
               set -euo pipefail
               echo "Running deployment as root (user: $(whoami), home: $HOME)"
+              # Ensure openssl exists for cert generation
+              if ! command -v openssl >/dev/null 2>&1; then
+                echo "openssl not found; installing..."
+                if command -v apt-get >/dev/null 2>&1; then
+                  apt-get update -y && apt-get install -y openssl
+                elif command -v yum >/dev/null 2>&1; then
+                  yum install -y openssl
+                fi
+              fi
               # Sync staged assets to target directory under /opt
               mkdir -p "$(dirname "${{ env.REMOTE_DIR }}")"
               mkdir -p "${{ env.REMOTE_DIR }}"
@@ -141,6 +150,8 @@ jobs:
                 ./scripts/rollback.sh || true
                 exit 1
               fi
+              echo "Certificates present (if any):"
+              ls -la certs || true
               sleep 5
               set +e
               curl -ksS --max-time 10 https://localhost/ >/dev/null

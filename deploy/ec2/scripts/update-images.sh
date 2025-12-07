@@ -38,6 +38,19 @@ export IMAGE_TAG
 COMPOSE_BASE="${EC2_DIR}/docker-compose.yml"
 COMPOSE_PROD="${EC2_DIR}/docker-compose.prod.yml"
 
+# Ensure TLS certs exist for gateway (nginx)
+CERT_DIR="${EC2_DIR}/certs"
+if [ ! -f "${CERT_DIR}/server.crt" ] || [ ! -f "${CERT_DIR}/server.key" ]; then
+  mkdir -p "${CERT_DIR}"
+  echo "[update-images.sh] generating self-signed TLS certs in ${CERT_DIR}"
+  openssl req -x509 -nodes -days 365 \
+    -newkey rsa:2048 \
+    -subj "/CN=${TLS_CN:-localhost}" \
+    -keyout "${CERT_DIR}/server.key" \
+    -out "${CERT_DIR}/server.crt"
+  chmod 600 "${CERT_DIR}/server.key" || true
+fi
+
 # Diagnostics for docker/compose and choose command
 command -v docker || true
 docker --version || true
@@ -65,7 +78,7 @@ if [ "${COMPOSE_BIN[0]} ${COMPOSE_BIN[1]:-}" = "docker compose" ]; then
 
   # 
   "${COMPOSE_BIN[@]}" \
-    -Ensure idempotent restart to avoid container name conflicts-project-directory "${EC2_DIR}" \
+    --project-directory "${EC2_DIR}" \
     -p "${PROJECT_NAME}" \
     -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" down --remove-orphans || true
 
