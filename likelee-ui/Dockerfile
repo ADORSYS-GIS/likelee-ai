@@ -37,6 +37,7 @@ COPY likelee-ui/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Static assets
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY likelee-ui/media /usr/share/nginx/html/media
 
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
