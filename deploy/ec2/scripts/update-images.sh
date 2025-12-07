@@ -63,15 +63,26 @@ if [ "${COMPOSE_BIN[0]} ${COMPOSE_BIN[1]:-}" = "docker compose" ]; then
     -p "${PROJECT_NAME}" \
     -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
 
+  # 
+  "${COMPOSE_BIN[@]}" \
+    -Ensure idempotent restart to avoid container name conflicts-project-directory "${EC2_DIR}" \
+    -p "${PROJECT_NAME}" \
+    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" down --remove-orphans || true
+
+  # Fallback hard remove if any old containers still exist with fixed names
+  docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+
   "${COMPOSE_BIN[@]}" \
     --project-directory "${EC2_DIR}" \
     -p "${PROJECT_NAME}" \
-    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d
+    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
 else
   # docker-compose (v1) fallback
   pushd "${EC2_DIR}" >/dev/null
   "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
-  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" down --remove-orphans || true
+  docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+  "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
   popd >/dev/null
 fi
 
