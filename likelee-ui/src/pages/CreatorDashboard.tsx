@@ -718,10 +718,9 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const full = new URL(
+        const full = api(
           `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-          API_BASE || "/",
-        ).toString();
+        );
         const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
@@ -2398,15 +2397,10 @@ export default function CreatorDashboard() {
       setUploadingToSection(true);
 
       // Upload via backend (Option B: server-only writes)
-      const apiBase =
-        (import.meta as any).env.VITE_API_BASE_URL ||
-        (import.meta as any).env.VITE_API_BASE ||
-        "http://localhost:8787";
       const buf = await file.arrayBuffer();
-      const full = new URL(
+      const full = api(
         `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
-        apiBase || "/",
-      ).toString();
+      );
       const res = await fetch(full, {
         method: "POST",
         headers: { "content-type": file.type || "image/jpeg" },
