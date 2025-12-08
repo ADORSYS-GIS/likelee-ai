@@ -384,7 +384,16 @@ export default function CreatorDashboard() {
   const [searchParams] = useSearchParams();
   const { user, initialized, authenticated, logout } = useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
-  const api = (path: string) => new URL(path, API_BASE || "/").toString();
+  const API_BASE_ABS = (() => {
+    try {
+      if (!API_BASE) return new URL("/", window.location.origin).toString();
+      if (API_BASE.startsWith("http")) return API_BASE;
+      return new URL(API_BASE, window.location.origin).toString();
+    } catch {
+      return new URL("/", window.location.origin).toString();
+    }
+  })();
+  const api = (path: string) => new URL(path, API_BASE_ABS).toString();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -657,7 +666,7 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+          api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         );
         if (res.ok) {
           const data = await res.json();
@@ -1046,12 +1055,9 @@ export default function CreatorDashboard() {
       // If it exists on server, delete there too
       const sid = rec?.server_recording_id || rec?.id;
       if (sid) {
-        await fetch(
-          `${API_BASE}/api/voice/recordings/${encodeURIComponent(sid)}`,
-          {
-            method: "DELETE",
-          },
-        );
+        await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
+          method: "DELETE",
+        });
       }
     } catch (_) {
       // best-effort
@@ -1066,9 +1072,7 @@ export default function CreatorDashboard() {
 
       // 1) Upload recording to Likelee server (private bucket)
       const uploadRes = await fetch(
-        `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
-          user.id,
-        )}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+        api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`),
         {
           method: "POST",
           headers: { "content-type": ct },
@@ -1084,7 +1088,7 @@ export default function CreatorDashboard() {
       if (!recordingId) throw new Error("Missing recording id after upload");
 
       // 2) Create ElevenLabs clone via Likelee server
-      const cloneRes = await fetch(`${API_BASE}/api/voice/models/clone`, {
+      const cloneRes = await fetch(api(`/api/voice/models/clone`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -1257,7 +1261,7 @@ export default function CreatorDashboard() {
     });
 
     try {
-      const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+      const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),
@@ -3617,7 +3621,7 @@ export default function CreatorDashboard() {
       const finalRates = [...newRates, ...preservedRates];
 
       const res = await fetch(
-        `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -3632,7 +3636,7 @@ export default function CreatorDashboard() {
 
       // Reload rates from database to confirm persistence
       const reloadRes = await fetch(
-        `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
       );
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
