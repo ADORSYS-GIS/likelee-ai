@@ -407,7 +407,7 @@ const exampleContracts = [
     id: "example-nike-contract",
     brand: "Nike Sportswear",
     brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+      "https://cdn.worldvectorlogo.com/logos/nike-5.svg ",
     project_name: "Spring Running Campaign",
     creator_earnings: 500,
     earnings_to_date: 3000,
@@ -495,7 +495,7 @@ const exampleContentItems = [
     id: "content-nike",
     brand: "Nike Sportswear",
     brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+      "https://cdn.worldvectorlogo.com/logos/nike-5.svg",
     title: "Instagram Reel",
     thumbnail_url:
       "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
