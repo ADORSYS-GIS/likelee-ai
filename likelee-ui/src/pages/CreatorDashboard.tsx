@@ -384,6 +384,7 @@ export default function CreatorDashboard() {
   const [searchParams] = useSearchParams();
   const { user, initialized, authenticated, logout } = useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
+  const api = (path: string) => new URL(path, API_BASE || "/").toString();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -495,9 +496,7 @@ export default function CreatorDashboard() {
       try {
         // 1) List recordings
         const res = await fetch(
-          `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
-            user.id,
-          )}`,
+          api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}`),
           { signal: abort.signal },
         );
         if (!res.ok) return; // best-effort
@@ -509,9 +508,7 @@ export default function CreatorDashboard() {
           rows.map(async (row: any) => {
             try {
               const s = await fetch(
-                `${API_BASE}/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(
-                  row.id,
-                )}&expires_sec=600`,
+                api(`/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`),
                 { signal: abort.signal },
               );
               const j = s.ok ? await s.json() : { url: null };
@@ -600,7 +597,7 @@ export default function CreatorDashboard() {
       try {
         console.log("Fetching dashboard data for user:", user.id);
         const res = await fetch(
-          `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
+          api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
           { signal: abort.signal },
         );
         if (!res.ok) throw new Error(await res.text());
@@ -680,7 +677,7 @@ export default function CreatorDashboard() {
     }
     try {
       setKycLoading(true);
-      const res = await fetch(`${API_BASE}/api/kyc/session`, {
+      const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.id }),
@@ -700,7 +697,7 @@ export default function CreatorDashboard() {
     try {
       setKycLoading(true);
       const res = await fetch(
-        `${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(user.id)}`,
+        api(`/api/kyc/status?user_id=${encodeURIComponent(user.id)}`),
       );
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();
@@ -900,9 +897,7 @@ export default function CreatorDashboard() {
       try {
         const buf = await file.arrayBuffer();
         const res = await fetch(
-          `${API_BASE}/api/profile/photo-upload?user_id=${encodeURIComponent(
-            user.id,
-          )}`,
+          api(`/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`),
           {
             method: "POST",
             headers: { "content-type": file.type || "image/jpeg" },
@@ -930,7 +925,7 @@ export default function CreatorDashboard() {
         // Revert optimistic update on error by refreshing dashboard
         try {
           const profileRes = await fetch(
-            `${API_BASE}/api/dashboard?user_id=${encodeURIComponent(user.id)}`,
+            api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
             { cache: "no-cache" },
           );
           if (profileRes.ok) {
