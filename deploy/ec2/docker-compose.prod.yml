@@ -12,3 +12,5 @@ services:
 
   ui:
     image: ${REGISTRY_IMAGE_UI}:${IMAGE_TAG}
+    env_file:
+      - ./.env
