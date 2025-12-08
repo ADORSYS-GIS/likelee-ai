@@ -456,10 +456,11 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const res = await fetch(
-          `${API_BASE}/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-          { signal: abort.signal },
-        );
+        const full = new URL(
+          `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
+          API_BASE || "/",
+        ).toString();
+        const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
         if (Array.isArray(items)) {
@@ -1563,14 +1564,15 @@ export default function CreatorDashboard() {
         (import.meta as any).env.VITE_API_BASE ||
         "http://localhost:8787";
       const buf = await file.arrayBuffer();
-      const res = await fetch(
-        `${apiBase}/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
-        {
-          method: "POST",
-          headers: { "content-type": file.type || "image/jpeg" },
-          body: new Uint8Array(buf),
-        },
-      );
+      const full = new URL(
+        `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
+        apiBase || "/",
+      ).toString();
+      const res = await fetch(full, {
+        method: "POST",
+        headers: { "content-type": file.type || "image/jpeg" },
+        body: new Uint8Array(buf),
+      });
       if (!res.ok) {
         const raw = await res.text();
         try {
