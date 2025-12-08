@@ -819,7 +819,9 @@ export default function CreatorDashboard() {
           rows.map(async (row: any) => {
             try {
               const s = await fetch(
-                api(`/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`),
+                api(
+                  `/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`,
+                ),
                 { signal: abort.signal },
               );
               const j = s.ok ? await s.json() : { url: null };
@@ -1812,7 +1814,9 @@ export default function CreatorDashboard() {
       try {
         const buf = await file.arrayBuffer();
         const res = await fetch(
-          api(`/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`),
+          api(
+            `/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`,
+          ),
           {
             method: "POST",
             headers: { "content-type": file.type || "image/jpeg" },
@@ -2027,7 +2031,9 @@ export default function CreatorDashboard() {
 
       // 1) Upload recording to Likelee server (private bucket)
       const uploadRes = await fetch(
-        api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`),
+        api(
+          `/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+        ),
         {
           method: "POST",
           headers: { "content-type": ct },
