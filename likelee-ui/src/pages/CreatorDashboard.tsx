@@ -1147,6 +1147,7 @@ export default function CreatorDashboard() {
     setShowRecordingModal(true);
     setRecordingTime(0);
     setCurrentWord(0);
+    setCountdown(null);
   };
 
   const toggleRecordingAccess = (id) => {
@@ -5274,16 +5275,6 @@ export default function CreatorDashboard() {
           </div>
 
           {renderScript()}
-
-          <div className="flex justify-center gap-4 mt-6">
-            <Button
-              onClick={stopRecording}
-              className="h-12 px-8 bg-red-500 hover:bg-red-600 text-white"
-            >
-              <Square className="w-5 h-5 mr-2" />
-              Stop Recording
-            </Button>
-          </div>
 
           <Progress value={(recordingTime / 60) * 100} className="mt-6 h-2" />
         </DialogContent>
