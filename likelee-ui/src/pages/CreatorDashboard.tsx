@@ -616,6 +616,7 @@ export default function CreatorDashboard() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [generatingVoice, setGeneratingVoice] = useState(false);
 
   const mediaRecorderRef = useRef(null);
@@ -1058,6 +1059,30 @@ export default function CreatorDashboard() {
         stream.getTracks().forEach((track) => track.stop());
       };
 
+      // Start countdown
+      setCountdown(3);
+      let count = 3;
+
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          setCountdown(count);
+        } else {
+          clearInterval(countdownInterval);
+          setCountdown(null);
+          startActualRecording();
+        }
+      }, 1000);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      alert("Failed to access microphone. Please check permissions.");
+    }
+  };
+
+  const startActualRecording = () => {
+    try {
+      if (!mediaRecorderRef.current) return;
+
       mediaRecorderRef.current.start();
       setIsRecording(true);
 
@@ -1105,7 +1130,6 @@ export default function CreatorDashboard() {
       }, 100);
     } catch (error) {
       console.error("Error starting recording:", error);
-      alert("Failed to access microphone. Please check permissions.");
     }
   };
 
@@ -1199,11 +1223,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-                ...rec,
-                voiceProfileCreated: true,
-                voice_id: cloned.voice_id,
-                server_recording_id: recordingId,
-              }
+              ...rec,
+              voiceProfileCreated: true,
+              voice_id: cloned.voice_id,
+              server_recording_id: recordingId,
+            }
             : rec,
         ),
       );
@@ -1242,13 +1266,12 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${
-                index === currentWord
+              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
                   ? "text-[#32C8D1] font-bold scale-110"
                   : index < currentWord
                     ? "text-gray-400"
                     : "text-gray-700"
-              }`}
+                }`}
             >
               {word}
             </span>
@@ -2186,7 +2209,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                    creator.kyc_status.slice(1)
+                  creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -2301,18 +2324,16 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
-                  hasRecording
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
                     ? "border-green-300 bg-green-50"
                     : "border-gray-200 hover:border-[#32C8D1]"
-                }`}
+                  }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                      }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -2350,9 +2371,8 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                        recording.accessible ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
+                        }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -2457,11 +2477,10 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${
-              activeCampaigns.length === 0
+            className={`${activeCampaigns.length === 0
                 ? "bg-orange-100 text-orange-700 border border-orange-300"
                 : "bg-green-100 text-green-700 border border-green-300"
-            } px-4 py-2 text-lg`}
+              } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -2563,13 +2582,12 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${
-                          campaign.status === "active"
+                        className={`${campaign.status === "active"
                             ? "bg-green-100 text-green-700 border border-green-300"
                             : campaign.status === "expiring_soon"
                               ? "bg-orange-100 text-orange-700 border border-orange-300"
                               : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
+                          }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3429,21 +3447,19 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "active"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
                 ? "border-[#32C8D1] text-[#32C8D1]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+              }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "expired"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
                 ? "border-[#32C8D1] text-[#32C8D1]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+              }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -3455,11 +3471,10 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${
-                  contract.status === "expiring_soon"
+                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
                     ? "border-orange-300"
                     : "border-gray-200"
-                }`}
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -3863,21 +3878,19 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "profile"
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "rules"
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
               ? "border-[#32C8D1] text-[#32C8D1]"
               : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           My Rules
         </button>
@@ -4134,11 +4147,10 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
+                        className={`px-4 py-2 border-2 ${isSelected
                             ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
                             : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                          }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -4170,11 +4182,10 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
+                        className={`px-4 py-2 border-2 ${isSelected
                             ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
                             : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                          }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -4598,7 +4609,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) {}
+                    } catch (_) { }
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -4622,11 +4633,10 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
                       ? "bg-[#32C8D1] text-white"
                       : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -5213,395 +5223,399 @@ export default function CreatorDashboard() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-4">
-            {!isRecording ? (
-              <div className="text-center py-8">
-                <div className="w-20 h-20 bg-[#32C8D1] rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Mic className="w-10 h-10 text-white" />
+          <div className="flex flex-col items-center justify-center py-8 relative">
+            {countdown !== null && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm">
+                <div className="text-8xl font-bold text-[#32C8D1] animate-bounce">
+                  {countdown}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  Ready to Record?
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  The script will scroll slowly. Speak naturally and
-                  expressively.
-                </p>
-                <Button
-                  onClick={startRecording}
-                  className="h-14 px-8 bg-red-500 hover:bg-red-600 text-white text-lg"
-                >
-                  <Mic className="w-5 h-5 mr-2" />
-                  Start Recording
-                </Button>
               </div>
+            )}
+
+            {!isRecording && !countdown ? (
+              <button
+                onClick={startRecording}
+                className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-all hover:scale-105 shadow-lg"
+              >
+                <Mic className="w-8 h-8 text-white" />
+              </button>
             ) : (
-              <div>
-                <div className="flex items-center justify-center gap-3 mb-6">
-                  <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-2xl font-bold text-gray-900">
-                    {Math.floor(recordingTime / 60)}:
-                    {(recordingTime % 60).toString().padStart(2, "0")}
-                  </span>
+              <div className="flex flex-col items-center gap-4">
+                <div className="text-4xl font-mono font-bold text-gray-900">
+                  00:{recordingTime.toString().padStart(2, "0")}
                 </div>
-
-                {renderScript()}
-
-                <div className="flex justify-center gap-4 mt-6">
-                  <Button
-                    onClick={stopRecording}
-                    className="h-12 px-8 bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    <Square className="w-5 h-5 mr-2" />
-                    Stop Recording
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-red-500 font-medium">Recording</span>
                 </div>
-
-                <Progress
-                  value={(recordingTime / 60) * 100}
-                  className="mt-6 h-2"
-                />
+                <Button
+                  variant="outline"
+                  onClick={stopRecording}
+                  className="mt-4 border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  Stop Recording
+                </Button>
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Custom Rates Modal */}
-      <Dialog
-        open={showRatesModal !== null}
-        onOpenChange={() => setShowRatesModal(null)}
-      >
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              {showRatesModal === "content"
-                ? "Edit Content I'm Open To"
-                : "Edit Industries I Work With"}
-            </DialogTitle>
-          </DialogHeader>
+          {renderScript()}
 
-          <form
-            onSubmit={handleSaveRates}
-            className="flex-1 overflow-y-auto py-4 pr-2"
-          >
-            {/* Content Type Selection - Only show if modal type is 'content' */}
-            {showRatesModal === "content" && (
-              <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">
-                  Select the content types you're open to working with:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {CONTENT_TYPES.map((type) => (
-                    <Badge
-                      key={type}
-                      onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                      }`}
-                    >
-                      {creator.content_types?.includes(type) && (
-                        <Check className="w-3 h-3" />
-                      )}
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Industry Selection - Only show if modal type is 'industry' */}
-            {showRatesModal === "industry" && (
-              <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">
-                  Select the industries you're open to working with:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {INDUSTRIES.map((industry) => (
-                    <Badge
-                      key={industry}
-                      onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                      }`}
-                    >
-                      {creator.industries?.includes(industry) && (
-                        <Check className="w-3 h-3" />
-                      )}
-                      {industry}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Content Types - Only show if modal type is 'content' */}
-            {showRatesModal === "content" &&
-              ((
-                creator.content_types?.filter((t) =>
-                  CONTENT_TYPES.includes(t),
-                ) || []
-              ).length > 0 ? (
-                <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    Custom Rates by Content Type
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Set custom rates for specific content types. Leave blank to
-                    use your base rate of ${(creator.price_per_week || 0) * 4}
-                    /month.
-                  </p>
-                  <div className="grid gap-4">
-                    {creator.content_types
-                      ?.filter((type) => CONTENT_TYPES.includes(type))
-                      .map((type) => {
-                        const existing = customRates.find(
-                          (r) =>
-                            r.rate_type === "content_type" &&
-                            r.rate_name === type,
-                        );
-                        return (
-                          <div
-                            key={type}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                          >
-                            <Label className="font-medium text-gray-700">
-                              {type}
-                            </Label>
-                            <div className="flex items-center gap-2 w-48">
-                              <span className="text-gray-500">$</span>
-                              <Input
-                                type="number"
-                                name={`rate_content_${type}`}
-                                defaultValue={
-                                  existing
-                                    ? (
-                                        (existing.price_per_week_cents / 100) *
-                                        4
-                                      ).toString()
-                                    : ""
-                                }
-                                placeholder={(
-                                  (creator.price_per_week || 0) * 4
-                                ).toString()}
-                                className="bg-white"
-                                min="0"
-                                step="1"
-                              />
-                              <span className="text-gray-500 text-sm">/mo</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              ) : null)}
-
-            {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
-            {showRatesModal === "industry" && <div className="mb-6"></div>}
-
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowRatesModal(null)}
-                className="border-2 border-gray-300"
-              >
-                Cancel
-              </Button>
-              {/* Save button - always show, different text for each modal */}
-              <Button
-                type="submit"
-                disabled={savingRates}
-                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              >
-                {savingRates ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : showRatesModal === "content" ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Save Rates
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Content Restrictions Modal */}
-      <Dialog
-        open={showRestrictionsModal}
-        onOpenChange={() => setShowRestrictionsModal(false)}
-      >
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Edit Content I'm NOT Comfortable With
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
-            <p className="text-sm text-gray-600">
-              Manage content types and categories you don't want to be
-              associated with:
-            </p>
-
-            {/* Current Restrictions */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Current Restrictions:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {contentRestrictions.map((restriction) => (
-                  <Badge
-                    key={restriction}
-                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
-                    onClick={() => removeRestriction(restriction)}
-                  >
-                    ✕ {restriction}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Click to add restrictions */}
-            {availableRestrictions.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">
-                  Click to add restrictions:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {availableRestrictions.map((restriction) => (
-                    <Badge
-                      key={restriction}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
-                      onClick={() => addRestriction(restriction)}
-                    >
-                      + {restriction}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add custom restriction */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Add custom restriction:
-              </h4>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add custom restriction (max 25 chars)"
-                  maxLength={25}
-                  value={customRestriction}
-                  onChange={(e) => setCustomRestriction(e.target.value)}
-                  className="px-3 pl-4 bg-white"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addCustomRestriction();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addCustomRestriction}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            {/* Brand Exclusivity */}
-            <div className="pt-4 border-t">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Conflicting Campaigns (Brand Exclusivity)
-              </h4>
-              <p className="text-sm text-gray-600 mb-3">
-                Add brands you're exclusive with to prevent competing campaigns
-              </p>
-
-              {brandExclusivity.length === 0 ? (
-                <p className="text-sm italic text-gray-500 mb-3">
-                  No brand exclusivity set
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {brandExclusivity.map((brand) => (
-                    <Badge
-                      key={brand}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
-                    >
-                      {brand}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-red-600"
-                        onClick={() => removeBrandExclusivity(brand)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter brand name (max 25 chars)"
-                  maxLength={25}
-                  value={newBrand}
-                  onChange={(e) => setNewBrand(e.target.value)}
-                  className="px-3 pl-4 bg-white"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addBrandExclusivity();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addBrandExclusivity}
-                  className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
+          <div className="flex justify-center gap-4 mt-6">
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowRestrictionsModal(false)}
-              className="border-2 border-gray-300"
+              onClick={stopRecording}
+              className="h-12 px-8 bg-red-500 hover:bg-red-600 text-white"
             >
-              Cancel
+              <Square className="w-5 h-5 mr-2" />
+              Stop Recording
             </Button>
-            <Button
-              type="button"
-              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              onClick={handleSaveRestrictions}
-            >
+          </div>
+
+          <Progress
+            value={(recordingTime / 60) * 100}
+            className="mt-6 h-2"
+          />
+        </div>
+            )}
+    </div>
+        </DialogContent >
+      </Dialog >
+
+    {/* Custom Rates Modal */ }
+    < Dialog
+  open = { showRatesModal !== null
+}
+onOpenChange = {() => setShowRatesModal(null)}
+      >
+  <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+    <DialogHeader>
+      <DialogTitle className="text-2xl font-bold text-gray-900">
+        {showRatesModal === "content"
+          ? "Edit Content I'm Open To"
+          : "Edit Industries I Work With"}
+      </DialogTitle>
+    </DialogHeader>
+
+    <form
+      onSubmit={handleSaveRates}
+      className="flex-1 overflow-y-auto py-4 pr-2"
+    >
+      {/* Content Type Selection - Only show if modal type is 'content' */}
+      {showRatesModal === "content" && (
+        <div className="mb-6">
+          <h4 className="font-normal text-gray-900 mb-3">
+            Select the content types you're open to working with:
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {CONTENT_TYPES.map((type) => (
+              <Badge
+                key={type}
+                onClick={() => handleToggleContentType(type)}
+                className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
+                    ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                    : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                  }`}
+              >
+                {creator.content_types?.includes(type) && (
+                  <Check className="w-3 h-3" />
+                )}
+                {type}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Industry Selection - Only show if modal type is 'industry' */}
+      {showRatesModal === "industry" && (
+        <div className="mb-6">
+          <h4 className="font-normal text-gray-900 mb-3">
+            Select the industries you're open to working with:
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {INDUSTRIES.map((industry) => (
+              <Badge
+                key={industry}
+                onClick={() => handleToggleIndustry(industry)}
+                className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
+                    ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                    : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                  }`}
+              >
+                {creator.industries?.includes(industry) && (
+                  <Check className="w-3 h-3" />
+                )}
+                {industry}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Content Types - Only show if modal type is 'content' */}
+      {showRatesModal === "content" &&
+        ((
+          creator.content_types?.filter((t) =>
+            CONTENT_TYPES.includes(t),
+          ) || []
+        ).length > 0 ? (
+          <div className="mb-8">
+            <h4 className="font-bold text-gray-900 mb-2">
+              Custom Rates by Content Type
+            </h4>
+            <p className="text-sm text-gray-600 mb-4">
+              Set custom rates for specific content types. Leave blank to
+              use your base rate of ${(creator.price_per_week || 0) * 4}
+              /month.
+            </p>
+            <div className="grid gap-4">
+              {creator.content_types
+                ?.filter((type) => CONTENT_TYPES.includes(type))
+                .map((type) => {
+                  const existing = customRates.find(
+                    (r) =>
+                      r.rate_type === "content_type" &&
+                      r.rate_name === type,
+                  );
+                  return (
+                    <div
+                      key={type}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <Label className="font-medium text-gray-700">
+                        {type}
+                      </Label>
+                      <div className="flex items-center gap-2 w-48">
+                        <span className="text-gray-500">$</span>
+                        <Input
+                          type="number"
+                          name={`rate_content_${type}`}
+                          defaultValue={
+                            existing
+                              ? (
+                                (existing.price_per_week_cents / 100) *
+                                4
+                              ).toString()
+                              : ""
+                          }
+                          placeholder={(
+                            (creator.price_per_week || 0) * 4
+                          ).toString()}
+                          className="bg-white"
+                          min="0"
+                          step="1"
+                        />
+                        <span className="text-gray-500 text-sm">/mo</span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        ) : null)}
+
+      {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
+      {showRatesModal === "industry" && <div className="mb-6"></div>}
+
+      <DialogFooter className="mt-6">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowRatesModal(null)}
+          className="border-2 border-gray-300"
+        >
+          Cancel
+        </Button>
+        {/* Save button - always show, different text for each modal */}
+        <Button
+          type="submit"
+          disabled={savingRates}
+          className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+        >
+          {savingRates ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : showRatesModal === "content" ? (
+            <>
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Save Rates
+            </>
+          ) : (
+            <>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </>
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+      </Dialog >
+
+  {/* Content Restrictions Modal */ }
+  < Dialog
+open = { showRestrictionsModal }
+onOpenChange = {() => setShowRestrictionsModal(false)}
+      >
+  <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+    <DialogHeader>
+      <DialogTitle className="text-2xl font-bold text-gray-900">
+        Edit Content I'm NOT Comfortable With
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
+      <p className="text-sm text-gray-600">
+        Manage content types and categories you don't want to be
+        associated with:
+      </p>
+
+      {/* Current Restrictions */}
+      <div>
+        <h4 className="font-semibold text-gray-900 mb-3">
+          Current Restrictions:
+        </h4>
+        <div className="flex flex-wrap gap-2">
+          {contentRestrictions.map((restriction) => (
+            <Badge
+              key={restriction}
+              className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
+              onClick={() => removeRestriction(restriction)}
+            >
+              ✕ {restriction}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {/* Click to add restrictions */}
+      {availableRestrictions.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-gray-900 mb-3">
+            Click to add restrictions:
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {availableRestrictions.map((restriction) => (
+              <Badge
+                key={restriction}
+                className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
+                onClick={() => addRestriction(restriction)}
+              >
+                + {restriction}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add custom restriction */}
+      <div>
+        <h4 className="font-semibold text-gray-900 mb-3">
+          Add custom restriction:
+        </h4>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add custom restriction (max 25 chars)"
+            maxLength={25}
+            value={customRestriction}
+            onChange={(e) => setCustomRestriction(e.target.value)}
+            className="px-3 pl-4 bg-white"
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCustomRestriction();
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addCustomRestriction}
+            className="border-red-500 text-red-500 hover:bg-red-50"
+          >
+            +
+          </Button>
+        </div>
+      </div>
+
+      {/* Brand Exclusivity */}
+      <div className="pt-4 border-t">
+        <h4 className="font-semibold text-gray-900 mb-2">
+          Conflicting Campaigns (Brand Exclusivity)
+        </h4>
+        <p className="text-sm text-gray-600 mb-3">
+          Add brands you're exclusive with to prevent competing campaigns
+        </p>
+
+        {brandExclusivity.length === 0 ? (
+          <p className="text-sm italic text-gray-500 mb-3">
+            No brand exclusivity set
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {brandExclusivity.map((brand) => (
+              <Badge
+                key={brand}
+                className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
+              >
+                {brand}
+                <X
+                  className="w-3 h-3 cursor-pointer hover:text-red-600"
+                  onClick={() => removeBrandExclusivity(brand)}
+                />
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Input
+            placeholder="Enter brand name (max 25 chars)"
+            maxLength={25}
+            value={newBrand}
+            onChange={(e) => setNewBrand(e.target.value)}
+            className="px-3 pl-4 bg-white"
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addBrandExclusivity();
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addBrandExclusivity}
+            className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
+          >
+            +
+          </Button>
+        </div>
+      </div>
     </div>
+
+    <DialogFooter>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setShowRestrictionsModal(false)}
+        className="border-2 border-gray-300"
+      >
+        Cancel
+      </Button>
+      <Button
+        type="button"
+        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+        onClick={handleSaveRestrictions}
+      >
+        <CheckCircle2 className="w-4 h-4 mr-2" />
+        Save Changes
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+      </Dialog >
+    </div >
   );
 }
