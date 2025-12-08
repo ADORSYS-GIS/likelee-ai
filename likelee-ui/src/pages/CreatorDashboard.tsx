@@ -1067,7 +1067,8 @@ export default function CreatorDashboard() {
 
         const script = VOICE_SCRIPTS[selectedEmotion];
         const words = script.split(" ");
-        const wordsPerSecond = words.length / 60;
+        // Use natural speech rate of ~2.5 words per second for accurate karaoke highlighting
+        const wordsPerSecond = 2.5;
         const wordIndex = Math.min(
           Math.floor(elapsed * wordsPerSecond),
           words.length - 1,
