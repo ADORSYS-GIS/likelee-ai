@@ -738,55 +738,6 @@ export default function CreatorDashboard() {
     })();
   }, [initialized, authenticated, user?.id, API_BASE]);
 
-  // Fetch voice recordings
-  useEffect(() => {
-    if (!initialized || !authenticated || !user?.id) return;
-
-    (async () => {
-      try {
-        // 1. List recordings
-        const res = await fetch(
-          `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(user.id)}`,
-        );
-        if (!res.ok) throw new Error("Failed to fetch recordings");
-        const recordings = await res.json();
-
-        // 2. Enrich with signed URLs
-        const enriched = await Promise.all(
-          recordings.map(async (rec: any) => {
-            try {
-              const signRes = await fetch(
-                `${API_BASE}/api/voice/recordings/signed-url?recording_id=${rec.id}`,
-              );
-              const signData = await signRes.json();
-
-              return {
-                id: rec.id,
-                emotion: rec.emotion_tag,
-                url: signData.url,
-                blob: null, // No blob for remote files
-                mimeType: rec.mime_type,
-                duration: 0, // Duration not stored in DB yet
-                date: rec.created_at,
-                accessible: rec.accessible,
-                voiceProfileCreated: rec.voice_profile_created,
-                usageCount: 0,
-                server_recording_id: rec.id,
-              };
-            } catch (e) {
-              console.error("Failed to sign url for", rec.id, e);
-              return null;
-            }
-          }),
-        );
-
-        setVoiceLibrary(enriched.filter(Boolean));
-      } catch (e) {
-        console.error("Failed to load voice library", e);
-      }
-    })();
-  }, [initialized, authenticated, user?.id, API_BASE]);
-
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
@@ -1106,37 +1057,6 @@ export default function CreatorDashboard() {
         setCurrentWord(0);
 
         stream.getTracks().forEach((track) => track.stop());
-
-        // Upload immediately to persist
-        try {
-          const ct = mimeType;
-          const uploadRes = await fetch(
-            `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
-              user.id,
-            )}&emotion_tag=${encodeURIComponent(selectedEmotion || "")}`,
-            {
-              method: "POST",
-              headers: { "content-type": ct },
-              body: audioBlob,
-            },
-          );
-
-          if (uploadRes.ok) {
-            const uploaded = await uploadRes.json();
-            if (uploaded?.id) {
-              // Update the recording in state with the server ID
-              setVoiceLibrary((prev) =>
-                prev.map((r) =>
-                  r.id === newRecording.id
-                    ? { ...r, server_recording_id: uploaded.id }
-                    : r,
-                ),
-              );
-            }
-          }
-        } catch (e) {
-          console.error("Failed to auto-upload recording", e);
-        }
       };
 
       // Start countdown
@@ -1265,29 +1185,22 @@ export default function CreatorDashboard() {
       const ct = recording?.mimeType || recording?.blob?.type || "audio/webm";
 
       // 1) Upload recording to Likelee server (private bucket)
-      // 1) Upload recording to Likelee server (private bucket) if not already uploaded
-      let recordingId = recording.server_recording_id;
-
-      if (!recordingId) {
-        const uploadRes = await fetch(
-          `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
-            user.id,
-          )}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
-          {
-            method: "POST",
-            headers: { "content-type": ct },
-            body: recording.blob,
-          },
-        );
-        if (!uploadRes.ok) {
-          const txt = await uploadRes.text();
-          throw new Error(`Upload failed: ${txt}`);
-        }
-        const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
-        recordingId = uploaded?.id;
+      const uploadRes = await fetch(
+        `${API_BASE}/api/voice/recordings?user_id=${encodeURIComponent(
+          user.id,
+        )}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+        {
+          method: "POST",
+          headers: { "content-type": ct },
+          body: recording.blob,
+        },
+      );
+      if (!uploadRes.ok) {
+        const txt = await uploadRes.text();
+        throw new Error(`Upload failed: ${txt}`);
       }
-
-      if (!recordingId) throw new Error("Missing recording id after upload");
+      const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
+      const recordingId = uploaded?.id;
       if (!recordingId) throw new Error("Missing recording id after upload");
 
       // 2) Create ElevenLabs clone via Likelee server
