@@ -815,6 +815,12 @@ export default function Layout({ children, currentPageName }) {
                 >
                   About Us
                 </Link>
+                <Link
+                  to={createPageUrl("Faces")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Creators
+                </Link>
               </div>
             </div>
           </div>
