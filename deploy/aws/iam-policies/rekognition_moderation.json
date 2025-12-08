@@ -4,9 +4,7 @@
     {
       "Sid": "RekognitionDetectModeration",
       "Effect": "Allow",
-      "Action": [
-        "rekognition:DetectModerationLabels"
-      ],
+      "Action": ["rekognition:DetectModerationLabels"],
       "Resource": "*"
     }
   ]

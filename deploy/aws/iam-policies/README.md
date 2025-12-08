@@ -3,6 +3,7 @@
 Reusable, reviewable JSON policies stored in-repo for quick application in any environment.
 
 ## Files
+
 - rekognition_moderation.json — Allow DetectModerationLabels
 - rekognition_liveness.json — Allow CreateFaceLivenessSession and GetFaceLivenessSessionResults
 - rekognition_readonly.json — Read-only/list/describe and basic detect operations
@@ -11,6 +12,7 @@ Reusable, reviewable JSON policies stored in-repo for quick application in any e
 - cognito_admin_user_mgmt.json — Admin user management APIs
 
 ## How to apply with AWS CLI
+
 Replace placeholders in angle brackets.
 
 ```bash
@@ -52,6 +54,7 @@ aws iam attach-role-policy \
 ```
 
 ## Optional hardening
+
 - Add a condition on `aws:RequestedRegion` to restrict usage to your region:
 
 ```json
@@ -67,16 +70,19 @@ aws iam attach-role-policy \
 Place it as an additional statement to deny calls outside the allowed region.
 
 ## Supabase bucket quick-fix (Bucket not found)
+
 - Verify env names match backend config: `SUPABASE_BUCKET_PUBLIC`, `SUPABASE_BUCKET_PRIVATE`, `SUPABASE_BUCKET_TEMP`.
 - The backend calls `public.ensure_storage(p_public_bucket, p_private_bucket, p_temp_bucket)` at startup. Ensure it ran.
 
 List buckets via REST (replace vars accordingly):
+
 ```bash
 curl -s -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
   "$SUPABASE_URL/rest/v1/storage.buckets?select=name"
 ```
 
 Manually run the RPC to (re)create buckets and policies:
+
 ```bash
 curl -s -X POST \
   -H "apikey: $SUPABASE_SERVICE_KEY" \
