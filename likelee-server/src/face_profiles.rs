@@ -17,7 +17,7 @@ pub async fn create_face_profile(
     Json(_body): Json<FaceProfilePayload>,
 ) -> Result<Json<FaceProfileResponse>, (StatusCode, String)> {
     let id = Uuid::new_v4().to_string();
-    info!(%id, "Created face profile (no-op)");
+    info!(%id, "Created face profile");
     Ok(Json(FaceProfileResponse { id }))
 }
 

@@ -11,6 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
+const API_BASE_ABS = (() => {
+  try {
+    if (!API_BASE) return new URL("/", window.location.origin).toString();
+    if (API_BASE.startsWith("http")) return API_BASE;
+    return new URL(API_BASE, window.location.origin).toString();
+  } catch {
+    return new URL("/", window.location.origin).toString();
+  }
+})();
+const api = (path: string) => new URL(path, API_BASE_ABS).toString();
 
 interface CustomRate {
   rate_type: string;
@@ -44,7 +54,7 @@ export const CustomRatesModal: React.FC<CustomRatesModalProps> = ({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE}/api/creator-rates?user_id=${creator.id}`,
+        api(`/api/creator-rates?user_id=${creator.id}`),
       );
       if (!response.ok) throw new Error("Failed to fetch rates");
       const data = await response.json();
