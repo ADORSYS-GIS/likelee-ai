@@ -149,11 +149,9 @@ pub async fn upload_reference_image(
         let mut reasons: Vec<String> = vec![];
 
         // Decode to get resolution
-        if let Ok(img) = image::load_from_memory(&body) {
-            let (w, h) = img.dimensions();
-            if w < 1080 || h < 1080 {
-                reasons.push(format!("Minimum resolution is 1080x1080 (got {w}x{h})"));
-            }
+        if let Ok(_img) = image::load_from_memory(&body) {
+            let (_w, _h) = _img.dimensions();
+            // No minimum resolution enforcement
         } else {
             reasons.push("We couldn't read the image data.".into());
         }
