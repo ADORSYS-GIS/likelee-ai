@@ -406,8 +406,7 @@ const exampleContracts = [
   {
     id: "example-nike-contract",
     brand: "Nike Sportswear",
-    brand_logo:
-      "https://cdn.worldvectorlogo.com/logos/nike-5.svg ",
+    brand_logo: "https://cdn.worldvectorlogo.com/logos/nike-5.svg ",
     project_name: "Spring Running Campaign",
     creator_earnings: 500,
     earnings_to_date: 3000,
@@ -494,8 +493,7 @@ const exampleContentItems = [
   {
     id: "content-nike",
     brand: "Nike Sportswear",
-    brand_logo:
-      "https://cdn.worldvectorlogo.com/logos/nike-5.svg",
+    brand_logo: "https://cdn.worldvectorlogo.com/logos/nike-5.svg",
     title: "Instagram Reel",
     thumbnail_url:
       "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
@@ -1058,10 +1056,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Brand Content
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1070,10 +1069,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Detections
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1179,12 +1179,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex gap-4">
                       <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -1290,7 +1291,8 @@ export default function CreatorDashboard() {
                           {item.status === "resolved" && (
                             <p className="text-sm text-green-700 flex items-center gap-2">
                               <Check className="w-4 h-4" />
-                              Content has been removed or verified as authorized.
+                              Content has been removed or verified as
+                              authorized.
                             </p>
                           )}
                         </div>
@@ -1356,8 +1358,11 @@ export default function CreatorDashboard() {
     // Use real user data if available, otherwise example data
     const data = {
       ...exampleProfilePreviewData,
-      first_name: user?.user_metadata?.full_name?.split(" ")[0] || exampleProfilePreviewData.first_name,
-      location: user?.user_metadata?.location || exampleProfilePreviewData.location,
+      first_name:
+        user?.user_metadata?.full_name?.split(" ")[0] ||
+        exampleProfilePreviewData.first_name,
+      location:
+        user?.user_metadata?.location || exampleProfilePreviewData.location,
       // Add other real fields mapping here
     };
 
@@ -1405,7 +1410,11 @@ export default function CreatorDashboard() {
               <div className="flex items-end -mt-16 mb-4">
                 <div className="relative">
                   <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage src={creator.profile_photo || user?.user_metadata?.avatar_url} />
+                    <AvatarImage
+                      src={
+                        creator.profile_photo || user?.user_metadata?.avatar_url
+                      }
+                    />
                     <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
                       {data.first_name[0] === "[" ? "U" : data.first_name[0]}
                     </AvatarFallback>
@@ -1416,7 +1425,10 @@ export default function CreatorDashboard() {
                     <h1 className="text-3xl font-bold text-gray-900">
                       {data.first_name}
                     </h1>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1">
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
+                    >
                       <CheckCircle2 className="h-3 w-3" />
                       Verified creator
                     </Badge>
@@ -1424,7 +1436,10 @@ export default function CreatorDashboard() {
                   <div className="flex items-center gap-4 text-gray-600 text-sm">
                     <span>{data.location}</span>
                     <span className="flex items-center gap-1">
-                      <Badge variant="secondary" className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                      >
                         {data.handles}
                       </Badge>
                     </span>
@@ -1470,7 +1485,11 @@ export default function CreatorDashboard() {
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {data.open_to_work.map((tag: string) => (
-                    <Badge key={tag} variant="default" className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0">
+                    <Badge
+                      key={tag}
+                      variant="default"
+                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
+                    >
                       {tag}
                     </Badge>
                   ))}
@@ -1482,7 +1501,11 @@ export default function CreatorDashboard() {
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {data.industries.map((tag: string) => (
-                    <Badge key={tag} variant="secondary" className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200">
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
+                    >
                       {tag}
                     </Badge>
                   ))}
@@ -1515,12 +1538,26 @@ export default function CreatorDashboard() {
               <h3 className="font-bold text-gray-900 mb-4">Portfolio</h3>
               <div className="grid md:grid-cols-3 gap-4">
                 {data.portfolio.map((item: any) => (
-                  <div key={item.id} className="border border-gray-200 rounded-lg p-4 flex items-center gap-4">
-                    <img src={item.logo} alt={item.brand} className="w-10 h-10 object-contain" />
+                  <div
+                    key={item.id}
+                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
+                  >
+                    <img
+                      src={item.logo}
+                      alt={item.brand}
+                      className="w-10 h-10 object-contain"
+                    />
                     <div>
-                      <div className="font-bold text-gray-900 text-sm">{item.brand}</div>
-                      <div className="text-xs text-gray-500">{item.campaign}</div>
-                      <Badge variant="secondary" className="mt-1 text-[10px] h-5">
+                      <div className="font-bold text-gray-900 text-sm">
+                        {item.brand}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {item.campaign}
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="mt-1 text-[10px] h-5"
+                      >
                         {item.duration}
                       </Badge>
                     </div>
@@ -1564,7 +1601,11 @@ export default function CreatorDashboard() {
               {/* Card Header */}
               <div className="h-32 bg-[#32C8D1] flex items-center justify-center">
                 <Avatar className="h-20 w-20 border-4 border-white shadow-sm">
-                  <AvatarImage src={creator.profile_photo || user?.user_metadata?.avatar_url} />
+                  <AvatarImage
+                    src={
+                      creator.profile_photo || user?.user_metadata?.avatar_url
+                    }
+                  />
                   <AvatarFallback className="bg-white/20 text-white text-4xl">
                     {data.first_name[0] === "[" ? "U" : data.first_name[0]}
                   </AvatarFallback>
@@ -1574,8 +1615,13 @@ export default function CreatorDashboard() {
               {/* Card Content */}
               <div className="p-6">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold text-gray-900">{data.first_name}</h3>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-[10px]">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {data.first_name}
+                  </h3>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
+                  >
                     Verified Creator
                   </Badge>
                 </div>
@@ -1587,10 +1633,16 @@ export default function CreatorDashboard() {
                 </p>
 
                 <div className="flex gap-2 mb-6">
-                  <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600">
+                  <Badge
+                    variant="outline"
+                    className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600"
+                  >
                     Fashion
                   </Badge>
-                  <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600">
+                  <Badge
+                    variant="outline"
+                    className="rounded-full px-3 py-1 text-xs font-normal border-gray-300 text-gray-600"
+                  >
                     Tech
                   </Badge>
                 </div>
@@ -1619,11 +1671,17 @@ export default function CreatorDashboard() {
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="rounded-full border-gray-200">
+                  <Button
+                    variant="outline"
+                    className="rounded-full border-gray-200"
+                  >
                     <Play className="h-4 w-4 mr-2" />
                     Preview
                   </Button>
-                  <Button variant="outline" className="rounded-full border-gray-200">
+                  <Button
+                    variant="outline"
+                    className="rounded-full border-gray-200"
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     Profile
                   </Button>
@@ -1888,11 +1946,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -1931,12 +1989,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2792,7 +2851,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -2907,16 +2966,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -2954,8 +3015,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3060,10 +3122,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -3165,12 +3228,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -4030,19 +4094,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -4054,10 +4120,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4439,19 +4506,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -4728,10 +4797,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
@@ -4773,10 +4843,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
@@ -5097,7 +5168,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -5121,10 +5192,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -5830,8 +5902,8 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      existing.price_per_week_cents / 100
-                                    ).toString()
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -5890,8 +5962,8 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      existing.price_per_week_cents / 100
-                                    ).toString()
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -5932,21 +6004,21 @@ export default function CreatorDashboard() {
                 (showRatesModal === "industry" &&
                   creator.industries?.filter((i) => INDUSTRIES.includes(i))
                     .length > 0)) && (
-                  <Button
-                    type="submit"
-                    disabled={savingRates}
-                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  >
-                    {savingRates ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Rates"
-                    )}
-                  </Button>
-                )}
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                >
+                  {savingRates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Rates"
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
