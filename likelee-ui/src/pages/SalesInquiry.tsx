@@ -94,10 +94,10 @@ ${data.message}
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            See Likelee in Action
+            Talk to Sales
           </h1>
           <p className="text-xl text-gray-600">
-            We'd love to show you a product demo with expert Q&A.
+            Let's discuss how Likelee can help scale your creative production
           </p>
         </div>
 
