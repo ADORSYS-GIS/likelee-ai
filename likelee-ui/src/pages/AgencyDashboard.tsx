@@ -84,6 +84,7 @@ import {
 } from "../api/functions";
 import { KycStatusResponse } from "../types/kyc";
 import { OrganizationProfile } from "../api/entities";
+import { useToast } from "@/components/ui/use-toast";
 
 // Mock agency data
 const mockAgency = {
@@ -488,6 +489,7 @@ export default function AgencyDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [analyticsTab, setAnalyticsTab] = useState("overview");
+  const { toast } = useToast();
 
   const activeTalent = mockRoster.filter((t) => t.status === "active").length;
   const totalEarnings = mockRoster.reduce((sum, t) => sum + t.earnings_30d, 0);
@@ -573,11 +575,11 @@ export default function AgencyDashboard() {
       if (url) {
         window.location.href = url;
       } else {
-        alert("Unable to start verification. Please try again later.");
+        toast({ title: "Error", description: "Unable to start verification. Please try again later.", variant: "destructive" });
       }
     } catch (e) {
       console.error("Error starting KYC session", e);
-      alert("Failed to start KYC verification.");
+      toast({ title: "Error", description: "Failed to start KYC verification.", variant: "destructive" });
     }
   };
 

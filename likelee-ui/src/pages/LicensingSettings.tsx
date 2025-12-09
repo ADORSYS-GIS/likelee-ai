@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Label as UILabel } from "@/components/ui/label";
 import { Input as UIInput } from "@/components/ui/input";
 import { Button as UIButton } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 const Label: any = UILabel;
 const Input: any = UIInput;
@@ -14,6 +15,7 @@ export default function LicensingSettings() {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [monthlyUsd, setMonthlyUsd] = React.useState<string>("");
+  const { toast } = useToast();
 
   React.useEffect(() => {
     if (!initialized || !authenticated || !user || !supabase) return;
@@ -45,7 +47,7 @@ export default function LicensingSettings() {
     if (!user) return;
     const monthly = Number(monthlyUsd);
     if (!Number.isFinite(monthly) || monthly < 150) {
-      alert("Minimum $150/month");
+      toast({ title: "Invalid Price", description: "Minimum $150/month" });
       return;
     }
     try {
@@ -60,9 +62,9 @@ export default function LicensingSettings() {
         .from("profiles")
         .upsert(payload, { onConflict: "id" });
       if (error) throw error;
-      alert("Pricing updated");
+      toast({ title: "Success", description: "Pricing updated" });
     } catch (e: any) {
-      alert(e?.message || String(e));
+      toast({ title: "Error", description: e?.message || String(e), variant: "destructive" });
     } finally {
       setSaving(false);
     }

@@ -38,6 +38,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
@@ -266,7 +267,7 @@ function ReferencePhotosStep(props: any) {
       setCameraOpen(true);
       setTimeout(attachStreamToVideo, 50);
     } catch (_e) {
-      alert("Unable to access camera. Please allow camera permissions.");
+      toast({ title: "Camera Error", description: "Unable to access camera. Please allow camera permissions.", variant: "destructive" });
     }
   };
 
@@ -300,11 +301,11 @@ function ReferencePhotosStep(props: any) {
 
   const doUpload = async () => {
     if (!consent) {
-      alert("Please give consent before uploading.");
+      toast({ title: "Consent Required", description: "Please give consent before uploading.", variant: "destructive" });
       return;
     }
     if (!captures.front || !captures.left || !captures.right) {
-      alert("Please capture all three views.");
+      toast({ title: "Missing Photos", description: "Please capture all three views.", variant: "destructive" });
       return;
     }
     try {
@@ -320,7 +321,7 @@ function ReferencePhotosStep(props: any) {
       onComplete && onComplete();
       closeCamera();
     } catch (e: any) {
-      alert(`Failed to upload reference photos: ${e?.message || e}`);
+      toast({ title: "Upload Failed", description: `Failed to upload reference photos: ${e?.message || e}`, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -328,7 +329,7 @@ function ReferencePhotosStep(props: any) {
 
   const generateAvatar = async () => {
     if (!userId) {
-      alert("Missing user id.");
+      toast({ title: "Error", description: "Missing user id.", variant: "destructive" });
       return;
     }
     // Ensure we have uploaded URLs
@@ -353,7 +354,7 @@ function ReferencePhotosStep(props: any) {
       const data = await res.json();
       if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url);
     } catch (e: any) {
-      alert(`Failed to generate avatar: ${e?.message || e}`);
+      toast({ title: "Avatar Generation Failed", description: `Failed to generate avatar: ${e?.message || e}`, variant: "destructive" });
     } finally {
       setGenerating(false);
     }
@@ -572,6 +573,7 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -632,7 +634,7 @@ export default function ReserveProfile() {
     side: "front" | "left" | "right",
   ) => {
     if (!supabase) {
-      alert("Image upload not configured. Missing Supabase keys.");
+      toast({ title: "Configuration Error", description: "Image upload not configured. Missing Supabase keys.", variant: "destructive" });
       return;
     }
     try {
@@ -659,9 +661,7 @@ export default function ReserveProfile() {
         if (resScan.ok) {
           const out = await resScan.json();
           if (out?.flagged) {
-            alert(
-              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-            );
+            toast({ title: "Image Flagged", description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`, variant: "destructive" });
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -693,9 +693,7 @@ export default function ReserveProfile() {
         if (res.ok) {
           const out = await res.json();
           if (out?.flagged) {
-            alert(
-              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-            );
+            toast({ title: "Image Flagged", description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`, variant: "destructive" });
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -724,7 +722,7 @@ export default function ReserveProfile() {
       } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
-      alert(`Failed to upload image: ${e?.message || e}`);
+      toast({ title: "Upload Failed", description: `Failed to upload image: ${e?.message || e}`, variant: "destructive" });
     } finally {
       setUploadingCameo(false);
     }
@@ -733,7 +731,7 @@ export default function ReserveProfile() {
   const startVerification = async () => {
     const targetId = user?.id || profileId;
     if (!targetId) {
-      alert("Profile not ready yet. Please complete previous steps.");
+      toast({ title: "Profile Not Ready", description: "Profile not ready yet. Please complete previous steps.", variant: "destructive" });
       return;
     }
     try {
@@ -755,7 +753,7 @@ export default function ReserveProfile() {
       setLivenessStatus("pending");
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      alert(`Failed to start verification: ${e?.message || e}`);
+      toast({ title: "Verification Error", description: `Failed to start verification: ${e?.message || e}`, variant: "destructive" });
     } finally {
       setKycLoading(false);
     }
@@ -782,14 +780,12 @@ export default function ReserveProfile() {
           !cameoLeftUrl &&
           !cameoRightUrl
         ) {
-          alert(
-            "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
-          );
+          toast({ title: "Verification Success", description: "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup." });
         }
       }
       return row;
     } catch (e: any) {
-      alert(`Failed to fetch verification status: ${e?.message || e}`);
+      toast({ title: "Error", description: `Failed to fetch verification status: ${e?.message || e}`, variant: "destructive" });
     } finally {
       setKycLoading(false);
     }
@@ -813,9 +809,7 @@ export default function ReserveProfile() {
         await startVerification();
         return;
       }
-      alert(
-        `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
-      );
+      toast({ title: "Verification Incomplete", description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`, variant: "destructive" });
     } finally {
       setKycLoading(false);
     }
@@ -825,11 +819,11 @@ export default function ReserveProfile() {
     try {
       // Prevent starting new sessions after approval (cost control)
       if (livenessStatus === "approved") {
-        alert("Liveness is already approved. No further checks needed.");
+        toast({ title: "Liveness Approved", description: "Liveness is already approved. No further checks needed." });
         return;
       }
       if (!COGNITO_IDENTITY_POOL_ID) {
-        alert("Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.");
+        toast({ title: "Configuration Error", description: "Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.", variant: "destructive" });
         return;
       }
       setLivenessRunning(true);
@@ -898,7 +892,7 @@ export default function ReserveProfile() {
       setLivenessRunning(false);
       setShowLiveness(true);
       setLivenessError(e?.message || String(e));
-      alert(e?.message || String(e));
+      toast({ title: "Error", description: e?.message || String(e), variant: "destructive" });
     }
   };
 
@@ -1076,7 +1070,7 @@ export default function ReserveProfile() {
         (error as any)?.response?.data?.message ||
         (error as any)?.message ||
         "Unknown error occurred";
-      alert(`Failed to create profile: ${errorMessage}. Please try again.`);
+      toast({ title: "Profile Creation Failed", description: `Failed to create profile: ${errorMessage}. Please try again.`, variant: "destructive" });
     },
   });
 
@@ -1146,25 +1140,25 @@ export default function ReserveProfile() {
         (error as any)?.response?.data?.message ||
         (error as any)?.message ||
         "Unknown error occurred";
-      alert(`Failed to update profile: ${errorMessage}. Please try again.`);
+      toast({ title: "Profile Update Failed", description: `Failed to update profile: ${errorMessage}. Please try again.`, variant: "destructive" });
     },
   });
 
   const handleFirstContinue = () => {
     if (!formData.email) {
-      alert("Please enter your email address.");
+      toast({ title: "Missing Field", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
     if (!formData.password) {
-      alert("Please enter a password.");
+      toast({ title: "Missing Field", description: "Please enter a password.", variant: "destructive" });
       return;
     }
     if (!formData.confirmPassword) {
-      alert("Please confirm your password.");
+      toast({ title: "Missing Field", description: "Please confirm your password.", variant: "destructive" });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match.");
+      toast({ title: "Password Mismatch", description: "Passwords do not match.", variant: "destructive" });
       return;
     }
     if (
@@ -1172,11 +1166,11 @@ export default function ReserveProfile() {
       !formData.stage_name &&
       !formData.full_name
     ) {
-      alert("Please enter your full name or stage name.");
+      toast({ title: "Missing Field", description: "Please enter your full name or stage name.", variant: "destructive" });
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
-      alert("Please enter your full name.");
+      toast({ title: "Missing Field", description: "Please enter your full name.", variant: "destructive" });
       return;
     }
 
@@ -1202,12 +1196,12 @@ export default function ReserveProfile() {
               options: { emailRedirectTo: `${window.location.origin}/Login` },
             });
             if (error) {
-              alert(error.message);
+              toast({ title: "Error", description: error.message, variant: "destructive" });
             } else {
-              alert("Magic link sent. Check your email to complete sign-in.");
+              toast({ title: "Magic Link Sent", description: "Check your email to complete sign-in." });
             }
           } else {
-            alert("This email is already registered. Please log in instead.");
+            toast({ title: "Email Already Registered", description: "This email is already registered. Please log in instead.", variant: "destructive" });
           }
           return;
         }
