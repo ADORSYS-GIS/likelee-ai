@@ -42,14 +42,14 @@ The system aims to keep humans at the center of AI-generated content, whether fo
 
 Likelee relies on several external integrations for essential functionality:
 
-| Service                     | Function                                                                 | Provider / Technology                                                                |
-| --------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Payments & Billing          | Transactions, royalties, subscriptions (Seat Billing), Stripe Tier Gate. | Stripe Connect, Stripe Checkout.                                                     |
-| AI Generation/Rendering     | Model routing for image/video generation by AI Creators.                 | Replicate API, Hugging Face APIs, Together.ai.                                       |
-| Storage & Database          | User profiles, waitlist submissions, and uploaded photos.                | Firebase Realtime Database, Firebase Storage.                                        |
-| Asset Traceability          | Invisible watermarking for exports.                                      | Truepic Lens.                                                                        |
-| Moderation                  | Analysis of uploaded images.                                             | AWS Rekognition.                                                                     |
-| Royalty Tracking            | Fetching ad-spend and sales data for spend-share/revenue-share models.   | Meta Ads API, TikTok Ads API, Google Ads API, Shopify Admin API, Stripe (read-only). |
+| Service                 | Function                                                                 | Provider / Technology                                                                |
+| ----------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Payments & Billing      | Transactions, royalties, subscriptions (Seat Billing), Stripe Tier Gate. | Stripe Connect, Stripe Checkout.                                                     |
+| AI Generation/Rendering | Model routing for image/video generation by AI Creators.                 | Replicate API, Hugging Face APIs, Together.ai.                                       |
+| Storage & Database      | User profiles, waitlist submissions, and uploaded photos.                | Firebase Realtime Database, Firebase Storage.                                        |
+| Asset Traceability      | Invisible watermarking for exports.                                      | Truepic Lens.                                                                        |
+| Moderation              | Analysis of uploaded images.                                             | AWS Rekognition.                                                                     |
+| Royalty Tracking        | Fetching ad-spend and sales data for spend-share/revenue-share models.   | Meta Ads API, TikTok Ads API, Google Ads API, Shopify Admin API, Stripe (read-only). |
 
 ## 4. Solution Strategy
 
@@ -130,11 +130,11 @@ The solution strategy remains: SPA frontend consuming API(s), modular services a
 
 The system supports multiple licensing models to generate revenue for Likelee and Faces:
 
-| License Model     | Description                                            | Attribution / Tracking                                                               | Priority |
-| ----------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------- |
-| Flat Fee          | Face sets a fixed price ($5–$200) per time unit.       | Recorded in the Royalty Ledger at booking payment.                                   | P0/P1    |
-| Spend-Share       | Face earns a % (5%–15%) of real ad spend by the brand. | Tracked via OAuth with ad APIs; nightly cost-metric retrieval.                       | Phase 2  |
-| Revenue-Share     | Face earns a % (2%–10%) of total sales.                | Tracked via UTM or Face-specific coupon codes + data from Shopify or Stripe.         | Phase 2  |
+| License Model | Description                                            | Attribution / Tracking                                                       | Priority |
+| ------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------- | -------- |
+| Flat Fee      | Face sets a fixed price ($5–$200) per time unit.       | Recorded in the Royalty Ledger at booking payment.                           | P0/P1    |
+| Spend-Share   | Face earns a % (5%–15%) of real ad spend by the brand. | Tracked via OAuth with ad APIs; nightly cost-metric retrieval.               | Phase 2  |
+| Revenue-Share | Face earns a % (2%–10%) of total sales.                | Tracked via UTM or Face-specific coupon codes + data from Shopify or Stripe. | Phase 2  |
 
 To reinforce the advanced royalty model: Likelee’s royalty system works like a digital bank ledger. Instead of selling the “item” (the face) for a one-time price (Flat Fee), the system allows the Face to receive ongoing earnings from the money flowing through the brand’s account (Spend-Share or Revenue-Share). The C2PA manifest is like a serial number engraved on a banknote, ensuring all financial flows linked to that “note” are trackable and attributable to the face’s owner.
 
@@ -180,4 +180,3 @@ To reinforce the advanced royalty model: Likelee’s royalty system works like a
 ---
 
 Appendix: Add diagrams (C4/arc42) as needed: Context, Container, Component, Runtime, Deployment.
-
