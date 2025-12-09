@@ -74,7 +74,6 @@ import {
   ShieldAlert,
   ExternalLink,
   AlertTriangle,
-  Check,
   Youtube,
 } from "lucide-react";
 import {
