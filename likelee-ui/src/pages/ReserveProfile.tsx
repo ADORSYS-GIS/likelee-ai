@@ -1186,7 +1186,9 @@ export default function ReserveProfile() {
     (async () => {
       try {
         const res = await fetch(
-          api(`/api/email/available?email=${encodeURIComponent(formData.email)}`),
+          api(
+            `/api/email/available?email=${encodeURIComponent(formData.email)}`,
+          ),
         );
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
