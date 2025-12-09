@@ -462,52 +462,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left || uploadedUrls.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right || uploadedUrls.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -645,8 +645,7 @@ export default function ReserveProfile() {
       {
         const apiBase =
           (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE ||
-          "http://localhost:8787";
+          (import.meta as any).env.VITE_API_BASE;
         const buf = await file.arrayBuffer();
         const resScan = await fetch(
           `${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user?.id || owner)}&image_role=${encodeURIComponent(side)}`,
@@ -679,8 +678,7 @@ export default function ReserveProfile() {
       try {
         const apiBase =
           (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE ||
-          "http://localhost:8787";
+          (import.meta as any).env.VITE_API_BASE;
         const res = await fetch(`${apiBase}/api/moderation/image`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -721,7 +719,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       alert(`Failed to upload image: ${e?.message || e}`);
@@ -1152,19 +1150,35 @@ export default function ReserveProfile() {
 
   const handleFirstContinue = () => {
     if (!formData.email) {
-      alert("Please enter your email address.");
+      toast({
+        variant: "destructive",
+        title: "Email required",
+        description: "Please enter your email address.",
+      });
       return;
     }
     if (!formData.password) {
-      alert("Please enter a password.");
+      toast({
+        variant: "destructive",
+        title: "Password required",
+        description: "Please enter a password.",
+      });
       return;
     }
     if (!formData.confirmPassword) {
-      alert("Please confirm your password.");
+      toast({
+        variant: "destructive",
+        title: "Confirm password",
+        description: "Please confirm your password.",
+      });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match.");
+      toast({
+        variant: "destructive",
+        title: "Password mismatch",
+        description: "Passwords do not match.",
+      });
       return;
     }
     if (
@@ -1172,11 +1186,19 @@ export default function ReserveProfile() {
       !formData.stage_name &&
       !formData.full_name
     ) {
-      alert("Please enter your full name or stage name.");
+      toast({
+        variant: "destructive",
+        title: "Name required",
+        description: "Please enter your full name or stage name.",
+      });
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
-      alert("Please enter your full name.");
+      toast({
+        variant: "destructive",
+        title: "Name required",
+        description: "Please enter your full name.",
+      });
       return;
     }
 
@@ -1186,7 +1208,9 @@ export default function ReserveProfile() {
     (async () => {
       try {
         const res = await fetch(
-          api(`/api/email/available?email=${encodeURIComponent(formData.email)}`),
+          api(
+            `/api/email/available?email=${encodeURIComponent(formData.email)}`,
+          ),
         );
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
@@ -1231,15 +1255,27 @@ export default function ReserveProfile() {
       // Common validations for step 2 per creator type
       if (creatorType === "influencer") {
         if (!formData.city?.trim()) {
-          alert("City is required.");
+          toast({
+            variant: "destructive",
+            title: "City is required",
+            description: "Please enter your city.",
+          });
           return;
         }
         if (!formData.state?.trim()) {
-          alert("State is required.");
+          toast({
+            variant: "destructive",
+            title: "State is required",
+            description: "Please enter your state.",
+          });
           return;
         }
         if (!formData.birthdate) {
-          alert("Birthdate is required.");
+          toast({
+            variant: "destructive",
+            title: "Birthdate is required",
+            description: "Please enter your birthdate.",
+          });
           return;
         }
         // 18+ check
@@ -1249,8 +1285,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1258,14 +1294,22 @@ export default function ReserveProfile() {
           return;
         }
         if (!formData.gender?.trim()) {
-          alert("Please select how you identify.");
+          toast({
+            variant: "destructive",
+            title: "Identity required",
+            description: "Please select how you identify.",
+          });
           return;
         }
       }
       // Pricing required in onboarding step (applies to all creator types)
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
-        alert("Please set your base monthly license price (minimum $150).");
+        toast({
+          variant: "destructive",
+          title: "Price required",
+          description: "Please set your base monthly license price (minimum $150).",
+        });
         return;
       }
     }
@@ -1280,23 +1324,43 @@ export default function ReserveProfile() {
     // Step 3 validations for influencer
     if (creatorType === "influencer") {
       if (!formData.content_types || formData.content_types.length === 0) {
-        alert("Select at least one campaign type.");
+        toast({
+          variant: "destructive",
+          title: "Campaign type required",
+          description: "Select at least one campaign type.",
+        });
         return;
       }
       if (!formData.industries || formData.industries.length === 0) {
-        alert("Select at least one industry.");
+        toast({
+          variant: "destructive",
+          title: "Industry required",
+          description: "Select at least one industry.",
+        });
         return;
       }
       if (!formData.primary_platform?.trim()) {
-        alert("Primary platform is required.");
+        toast({
+          variant: "destructive",
+          title: "Platform required",
+          description: "Primary platform is required.",
+        });
         return;
       }
       if (!formData.platform_handle?.trim()) {
-        alert("Handle is required.");
+        toast({
+          variant: "destructive",
+          title: "Handle required",
+          description: "Handle is required.",
+        });
         return;
       }
       if (!formData.visibility) {
-        alert("Please select a profile visibility.");
+        toast({
+          variant: "destructive",
+          title: "Visibility required",
+          description: "Please select a profile visibility.",
+        });
         return;
       }
     }

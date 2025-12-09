@@ -68,18 +68,13 @@ export default function MarketingAgency() {
               For Marketing Agencies
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-              Scale Your Creative Output
-              <span className="block bg-gradient-to-r from-[#32C8D1] to-teal-500 bg-clip-text text-transparent">
-                Without Scaling Your Team
-              </span>
+              One Platform For AI-Powered Creator Campaigns
             </h1>
             <p className="text-lg md:text-xl text-gray-700 max-w-4xl mx-auto mb-8 leading-relaxed">
-              Access verified creators and AI talent. Use one streamlined
-              platform. Get campaigns to clients faster.{" "}
-              <span className="font-bold text-gray-900">
-                Likelee gives agencies the infrastructure to deliver more
-                creative—in less time, with zero legal risk.
-              </span>
+              Your clients are moving to AI-powered creator content. Your team is juggling multiple vendors and
+              platforms to source, manage, and deliver these campaigns. Likelee consolidates everything—
+              verified creator licensing, production workflows, compliance, and brand exposure—into one
+              streamlined platform so you deliver AI campaigns faster without building infrastructure.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -92,7 +87,7 @@ export default function MarketingAgency() {
                 onClick={() =>
                   navigate(
                     createPageUrl("OrganizationSignup") +
-                      "?type=marketing_agency",
+                    "?type=marketing_agency",
                   )
                 }
                 variant="outline"
@@ -1065,7 +1060,7 @@ export default function MarketingAgency() {
               onClick={() =>
                 navigate(
                   createPageUrl("OrganizationSignup") +
-                    "?type=marketing_agency",
+                  "?type=marketing_agency",
                 )
               }
               variant="outline"

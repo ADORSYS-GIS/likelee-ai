@@ -136,8 +136,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Arrow from Hero to Section 2 */}
+      <div className="hidden lg:block relative h-0">
+        <svg
+          className="absolute left-1/2 -translate-x-1/2 -top-32"
+          width="800"
+          height="900"
+          viewBox="0 0 800 900"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 580 0 C 580 450, 220 450, 220 895"
+            stroke="#32C8D1"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <polygon points="220,895 232,885 208,885" fill="#32C8D1" />
+        </svg>
+      </div>
+
       {/* SECTION 2: Phone left, copy right with two CTAs */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-last lg:order-first flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -162,8 +183,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Arrow from Section 2 to Section 3 */}
+      <div className="hidden lg:block relative h-0">
+        <svg
+          className="absolute left-1/2 -translate-x-1/2 -top-32"
+          width="800"
+          height="900"
+          viewBox="0 0 800 900"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 220 0 C 220 450, 580 450, 580 895"
+            stroke="#F7B750"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <polygon points="580,895 568,885 592,885" fill="#F7B750" />
+        </svg>
+      </div>
+
       {/* SECTION 3: Copy left, phone right */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -188,8 +230,29 @@ export default function Landing() {
           </div>
         </div>
       </section>
+      {/* Arrow from Section 3 to Section 4 */}
+      <div className="hidden lg:block relative h-0">
+        <svg
+          className="absolute left-1/2 -translate-x-1/2 -top-32"
+          width="800"
+          height="900"
+          viewBox="0 0 800 900"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 580 0 C 580 450, 220 450, 220 895"
+            stroke="#32C8D1"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <polygon points="220,895 232,885 208,885" fill="#32C8D1" />
+        </svg>
+      </div>
+
       {/* SECTION 4: Example - Scale Catalog without Scaling Costs */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -214,8 +277,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Arrow from Section 4 to Section 5 */}
+      <div className="hidden lg:block relative h-0">
+        <svg
+          className="absolute left-1/2 -translate-x-1/2 -top-32"
+          width="800"
+          height="900"
+          viewBox="0 0 800 900"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 220 0 C 220 450, 580 450, 580 895"
+            stroke="#F7B750"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <polygon points="580,895 568,885 592,885" fill="#F7B750" />
+        </svg>
+      </div>
+
       {/* SECTION 5: Example - Premium Talent (phone right) */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -241,8 +325,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Arrow from Section 5 to Section 6 */}
+      <div className="hidden lg:block relative h-0">
+        <svg
+          className="absolute left-1/2 -translate-x-1/2 -top-32"
+          width="800"
+          height="900"
+          viewBox="0 0 800 900"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 580 0 C 580 450, 220 450, 220 895"
+            stroke="#32C8D1"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <polygon points="220,895 232,885 208,885" fill="#32C8D1" />
+        </svg>
+      </div>
+
       {/* SECTION 6: Example - Built for Brands of All Sizes (phone left) */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-last lg:order-first flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
