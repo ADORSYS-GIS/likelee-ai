@@ -510,10 +510,10 @@ const exampleContentItems = [
     id: "content-glossier",
     brand: "Glossier Beauty",
     brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/8/84/Glossier_Logo.svg",
+      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
     title: "Web Banner",
     thumbnail_url:
-      "https://images.unsplash.com/photo-1596462502278-27bfdd403348?q=80&w=2000&auto=format&fit=crop",
+      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
     platform: "Website",
     views: "89,000",
     engagement: "2.8%",
