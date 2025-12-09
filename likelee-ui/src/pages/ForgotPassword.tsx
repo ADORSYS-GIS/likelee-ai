@@ -31,10 +31,24 @@ export default function ForgotPassword() {
               const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${window.location.origin}/update-password`,
               });
+
               if (error) {
-                throw error;
+                // Check for a specific error message to provide a better user experience
+                if (error.message.includes("user not found")) {
+                  // To avoid leaking user existence, show a generic success message
+                  // This is a security best practice
+                  setMessage(
+                    "If an account exists for this email, a password reset link has been sent.",
+                  );
+                } else {
+                  // For other errors, throw them to be caught by the catch block
+                  throw error;
+                }
+              } else {
+                setMessage(
+                  "If an account exists for this email, a password reset link has been sent.",
+                );
               }
-              setMessage("Password reset link sent. Please check your email.");
             } catch (err: any) {
               const msg = err?.message ?? "Failed to send reset link";
               setError(msg);
