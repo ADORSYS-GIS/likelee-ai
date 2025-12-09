@@ -56,97 +56,54 @@ export default function SportsAgency() {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section className="px-6 pt-24 pb-16 bg-white">
-        <div className="max-w-5xl mx-auto text-center">
-          <Badge className="mb-6 bg-gray-100 text-gray-900 px-4 py-2 rounded-none border-2 border-black">
-            For Sports Agencies & Athlete Representatives
-          </Badge>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-            License Your Athletes' Likenesses for
-            <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-              AI-Powered Content
-            </span>
+      <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            Turn Your Athletes Into Year-Round Earners
           </h1>
-          <Card className="p-8 bg-white border-2 border-black shadow-xl rounded-none mb-8">
-            <p className="text-xl md:text-2xl text-gray-700 leading-relaxed mb-6">
-              Brands are building AI-powered campaigns right now. They need
-              verified athlete likenesses. Your athletes should be earning
-              recurring royalties from every use.
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <Zap className="w-8 h-8 text-emerald-600" />
-              <p className="text-2xl font-bold text-gray-900">
-                Likelee is the infrastructure to make it happen at scale.
-              </p>
-            </div>
-          </Card>
+          <p className="text-xl md:text-2xl font-semibold mb-4">
+            NIL licensing that grows while booking slows
+          </p>
+          <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-8">
+            Traditional endorsements pay once. Likelee licensing pays monthly,
+            forever. Your athletes earn recurring revenue from their name, image,
+            and likeness while you manage contracts in one place and collect
+            commission on every renewal.
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
-              className="h-16 px-10 text-lg font-medium bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white border-2 border-black shadow-xl transition-all hover:scale-105 rounded-none"
+              className="h-12 px-8 text-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-all"
             >
-              <Rocket className="w-5 h-5 mr-2" />
-              Book a Demo
+              Book Demo
+            </Button>
+            <Button
+              onClick={() => {
+                const el = document.getElementById("how-it-works");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="h-12 px-8 text-lg font-medium bg-white text-[#0D1B3A] hover:bg-gray-200 rounded-md transition-all"
+            >
+              See How It Works
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Section 1: The Opportunity */}
+      {/* Section 1: Endorsement Deals Aren't Enough */}
       <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <Target className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              You Already Know Licensing.
-              <span className="block text-emerald-600">
-                You're Missing the AI-Powered Opportunity.
-              </span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-10">
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <CheckCircle2 className="w-10 h-10 text-green-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                What You Know
-              </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>✓ You manage athlete sponsorships</p>
-                <p>✓ You understand licensing</p>
-                <p>✓ You negotiate deals</p>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-600 rounded-none">
-              <Zap className="w-10 h-10 text-emerald-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                What You're Missing
-              </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Licensing athlete likenesses for AI campaigns</p>
-                <p>→ Digital content & synthetic media deals</p>
-                <p>→ Recurring royalty infrastructure</p>
-              </div>
-            </Card>
-          </div>
-
-          <Card className="p-8 bg-gradient-to-r from-emerald-600 to-green-600 border-2 border-black rounded-none text-center">
-            <p className="text-2xl md:text-3xl font-bold text-white mb-3">
-              Brands need this. Athletes should be earning from it.
-            </p>
-            <p className="text-xl text-white mb-4">
-              You're not set up to offer it.
-            </p>
-            <div className="flex items-center justify-center gap-3 mt-6">
-              <DollarSign className="w-10 h-10 text-yellow-300" />
-              <p className="text-3xl font-bold text-yellow-300">
-                That's recurring revenue you're leaving on the table.
-              </p>
-            </div>
-          </Card>
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Endorsement Deals Aren't Enough Anymore
+          </h2>
+          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+            Your athletes are looking for stable income beyond traditional
+            sponsorships. Endorsement opportunities are unpredictable and
+            one-time. Likelee creates additional revenue streams where athletes
+            earn recurring money from brands using their likeness for marketing,
+            social content, and digital campaigns without requiring new contracts
+            each time.
+          </p>
         </div>
       </section>
 
