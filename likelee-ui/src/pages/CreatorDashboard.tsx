@@ -26,6 +26,8 @@ import {
   Image as ImageIcon,
   Video,
   AlertCircle,
+  Check,
+  CheckCircle,
   CheckCircle2,
   Loader2,
   Trash2,
@@ -72,7 +74,6 @@ import {
   ShieldAlert,
   ExternalLink,
   AlertTriangle,
-  Check,
   Youtube,
 } from "lucide-react";
 import {
@@ -712,15 +713,64 @@ export default function CreatorDashboard() {
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
 
+  // Content Restrictions State
+  const [contentRestrictions, setContentRestrictions] = useState<string[]>([
+    "Political Content",
+    "Controversial Topics",
+    "Explicit/Adult Content",
+    "Pharmaceutical Claims",
+    "Financial/Investment Advice",
+    "Tobacco/Vaping Products",
+    "Gambling (Unlicensed)",
+  ]);
+  const [availableRestrictions, setAvailableRestrictions] = useState<string[]>([
+    "Alcohol",
+    "Weapons/Firearms",
+    "Cryptocurrency/NFT",
+    "MLM/Multi-Level Marketing",
+    "Unlicensed Financial Products",
+    "Health/Medical Claims",
+  ]);
+  const [brandExclusivity, setBrandExclusivity] = useState<string[]>([]);
+  const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
+  const [customRestriction, setCustomRestriction] = useState("");
+  const [newBrand, setNewBrand] = useState("");
+  const [editingLicensingRate, setEditingLicensingRate] = useState(false);
+  const [localMonthlyRate, setLocalMonthlyRate] = useState("");
+  const [savingRules, setSavingRules] = useState(false);
+
+  // Sync local rate when creator data loads or when entering edit mode
+  // Sync local rate when creator data loads or when entering edit mode
+  useEffect(() => {
+    // If we are not editing, keep the local value in sync with the saved data
+    if (!editingLicensingRate) {
+      if (
+        creator?.base_monthly_price_cents !== undefined &&
+        creator?.base_monthly_price_cents !== null
+      ) {
+        setLocalMonthlyRate(
+          (creator.base_monthly_price_cents / 100).toString(),
+        );
+      } else if (creator?.price_per_week !== undefined) {
+        setLocalMonthlyRate(((creator.price_per_week || 0) * 4).toString());
+      }
+    }
+  }, [
+    creator?.price_per_week,
+    creator?.base_monthly_price_cents,
+    editingLicensingRate,
+  ]);
+
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
     const abort = new AbortController();
     (async () => {
       try {
-        const full = api(
+        const full = new URL(
           `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-        );
+          API_BASE || "/",
+        ).toString();
         const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
@@ -768,7 +818,9 @@ export default function CreatorDashboard() {
           rows.map(async (row: any) => {
             try {
               const s = await fetch(
-                api(`/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`),
+                api(
+                  `/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`,
+                ),
                 { signal: abort.signal },
               );
               const j = s.ok ? await s.json() : { url: null };
@@ -896,6 +948,20 @@ export default function CreatorDashboard() {
           cameo_left_url: profile.cameo_left_url,
           cameo_right_url: profile.cameo_right_url,
         });
+
+        // Populate restrictions state
+        if (
+          profile.content_restrictions &&
+          Array.isArray(profile.content_restrictions)
+        ) {
+          setContentRestrictions(profile.content_restrictions);
+        }
+        if (
+          profile.brand_exclusivity &&
+          Array.isArray(profile.brand_exclusivity)
+        ) {
+          setBrandExclusivity(profile.brand_exclusivity);
+        }
         // If backend provides arrays later, replace mocks
         if (Array.isArray(json.campaigns) && json.campaigns.length)
           setActiveCampaigns(json.campaigns);
@@ -1745,7 +1811,9 @@ export default function CreatorDashboard() {
       try {
         const buf = await file.arrayBuffer();
         const res = await fetch(
-          api(`/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`),
+          api(
+            `/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`,
+          ),
           {
             method: "POST",
             headers: { "content-type": file.type || "image/jpeg" },
@@ -1911,7 +1979,9 @@ export default function CreatorDashboard() {
 
       // 1) Upload recording to Likelee server (private bucket)
       const uploadRes = await fetch(
-        api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`),
+        api(
+          `/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+        ),
         {
           method: "POST",
           headers: { "content-type": ct },
@@ -2074,30 +2144,62 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleSaveRules = async () => {
+  // Content Restrictions Helper Functions
+  const addRestriction = (restriction: string) => {
+    setContentRestrictions([...contentRestrictions, restriction]);
+    setAvailableRestrictions(
+      availableRestrictions.filter((r) => r !== restriction),
+    );
+  };
+
+  const removeRestriction = (restriction: string) => {
+    setContentRestrictions(
+      contentRestrictions.filter((r) => r !== restriction),
+    );
+    // Only add back to available if it was originally in the predefined list
+    const predefinedRestrictions = [
+      "Alcohol",
+      "Weapons/Firearms",
+      "Cryptocurrency/NFT",
+      "MLM/Multi-Level Marketing",
+      "Unlicensed Financial Products",
+      "Health/Medical Claims",
+    ];
+    if (predefinedRestrictions.includes(restriction)) {
+      setAvailableRestrictions([...availableRestrictions, restriction]);
+    }
+  };
+
+  const addCustomRestriction = () => {
+    if (customRestriction.trim() && customRestriction.length <= 25) {
+      setContentRestrictions([
+        ...contentRestrictions,
+        customRestriction.trim(),
+      ]);
+      setCustomRestriction("");
+    }
+  };
+
+  const addBrandExclusivity = () => {
+    if (newBrand.trim() && newBrand.length <= 25) {
+      setBrandExclusivity([...brandExclusivity, newBrand.trim()]);
+      setNewBrand("");
+    }
+  };
+
+  const removeBrandExclusivity = (brand: string) => {
+    setBrandExclusivity(brandExclusivity.filter((b) => b !== brand));
+  };
+
+  const handleSaveRestrictions = async () => {
     if (!user) return;
 
-    // Only send fields that exist in the profiles table
-    // Exclude frontend-only fields like accept_negotiations, royalty_percentage, etc.
+    // Save restrictions to backend
     const profileData = {
       email: creator.email || user.email,
-      full_name: creator.name,
-      bio: creator.bio,
-      city: creator.location?.split(",")[0]?.trim(),
-      state: creator.location?.split(",")[1]?.trim(),
-      content_types: creator.content_types,
-      industries: creator.industries,
-      base_monthly_price_cents: (creator.price_per_week || 0) * 400,
-      platform_handle: creator.instagram_handle?.replace("@", ""),
+      content_restrictions: contentRestrictions,
+      brand_exclusivity: brandExclusivity,
     };
-
-    console.log("Saving profile with data:", {
-      content_types: profileData.content_types,
-      industries: profileData.industries,
-      email: profileData.email,
-      price_per_week: creator.price_per_week,
-      base_monthly_price_cents: profileData.base_monthly_price_cents,
-    });
 
     try {
       const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
@@ -2107,32 +2209,81 @@ export default function CreatorDashboard() {
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Save failed:", errorText);
-        throw new Error(`Server error: ${errorText}`);
+        throw new Error("Failed to save restrictions");
       }
 
-      const responseData = await res.json();
-      console.log("Save response:", responseData);
+      setShowRestrictionsModal(false);
+    } catch (e) {
+      console.error("Error saving restrictions:", e);
+      alert("Failed to save restrictions. Please try again.");
+    }
+  };
 
-      // Update creator state with the saved data from the response
-      if (Array.isArray(responseData) && responseData.length > 0) {
-        const savedProfile = responseData[0];
-        setCreator((prev) => ({
-          ...prev,
-          content_types: savedProfile.content_types || [],
-          industries: savedProfile.industries || [],
-          price_per_week: savedProfile.base_monthly_price_cents
-            ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
-            : prev.price_per_week,
-        }));
+  const handleSaveRules = async (creatorOverride?: any) => {
+    setSavingRules(true);
+    try {
+      // Use override if provided, otherwise use current state
+      const dataToSave = creatorOverride || creator;
+
+      const profileData = {
+        email: dataToSave.email || user.email,
+        content_types: dataToSave.content_types,
+        industries: dataToSave.industries,
+        price_per_week: dataToSave.price_per_week,
+        accept_negotiations: dataToSave.accept_negotiations,
+        content_restrictions: contentRestrictions,
+        brand_exclusivity: brandExclusivity,
+        base_monthly_price_cents: dataToSave.base_monthly_price_cents,
+      };
+
+      console.log("Saving profile with data:", {
+        content_types: profileData.content_types,
+        industries: profileData.industries,
+        email: profileData.email,
+        price_per_week: creator.price_per_week,
+        base_monthly_price_cents: profileData.base_monthly_price_cents,
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profileData),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Save failed:", errorText);
+          throw new Error(`Server error: ${errorText}`);
+        }
+
+        const responseData = await res.json();
+        console.log("Save response:", responseData);
+
+        // Update creator state with the saved data from the response
+        if (Array.isArray(responseData) && responseData.length > 0) {
+          const savedProfile = responseData[0];
+          setCreator((prev) => ({
+            ...prev,
+            content_types: savedProfile.content_types || [],
+            industries: savedProfile.industries || [],
+            base_monthly_price_cents: savedProfile.base_monthly_price_cents,
+            price_per_week: savedProfile.base_monthly_price_cents
+              ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
+              : prev.price_per_week,
+          }));
+        }
+
+        setEditingRules(false);
+        alert("Licensing preferences updated!");
+      } catch (error: any) {
+        console.error("Failed to save rules:", error);
+        alert(`Failed to save preferences: ${error?.message || error}`);
       }
-
-      setEditingRules(false);
-      alert("Licensing preferences updated!");
-    } catch (error: any) {
-      console.error("Failed to save rules:", error);
-      alert(`Failed to save preferences: ${error?.message || error}`);
+    } catch (e) {
+      console.error("Unexpected error in handleSaveRules:", e);
+    } finally {
+      setSavingRules(false);
     }
   };
 
@@ -2397,10 +2548,15 @@ export default function CreatorDashboard() {
       setUploadingToSection(true);
 
       // Upload via backend (Option B: server-only writes)
+      const apiBase =
+        (import.meta as any).env.VITE_API_BASE_URL ||
+        (import.meta as any).env.VITE_API_BASE ||
+        "http://localhost:8787";
       const buf = await file.arrayBuffer();
-      const full = api(
+      const full = new URL(
         `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
-      );
+        apiBase || "/",
+      ).toString();
       const res = await fetch(full, {
         method: "POST",
         headers: { "content-type": file.type || "image/jpeg" },
@@ -4422,67 +4578,89 @@ export default function CreatorDashboard() {
                 rate_type: "content_type",
                 rate_name: type,
                 price_per_week_cents: Math.round(
-                  parseFloat(val.toString()) * 100,
-                ),
-              });
-            }
-          });
-      } else if (showRatesModal === "industry") {
-        creator.industries
-          ?.filter((i) => INDUSTRIES.includes(i))
-          .forEach((ind) => {
-            const val = formData.get(`rate_industry_${ind}`);
-            if (val && val.toString().trim() !== "") {
-              newRates.push({
-                rate_type: "industry",
-                rate_name: ind,
-                price_per_week_cents: Math.round(
-                  parseFloat(val.toString()) * 100,
+                  (parseFloat(val.toString()) / 4) * 100,
                 ),
               });
             }
           });
       }
+      // 1. Save the selection (content_types or industries) to the profile
+      const profileUpdate: any = {
+        email: creator.email || user.email,
+      };
 
-      // Get the existing rates from the *other* category to preserve them
-      const otherRateType =
-        showRatesModal === "content" ? "industry" : "content_type";
-      const preservedRates = customRates.filter(
-        (r) => r.rate_type === otherRateType,
-      );
+      if (showRatesModal === "content") {
+        profileUpdate.content_types = creator.content_types;
+      } else if (showRatesModal === "industry") {
+        profileUpdate.industries = creator.industries;
+      }
 
-      // Combine the new rates with the preserved rates
-      const finalRates = [...newRates, ...preservedRates];
-
-      const res = await fetch(
-        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+      // Save profile selection
+      const profileRes = await fetch(
+        `${API_BASE}/api/profile?user_id=${user.id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalRates),
+          body: JSON.stringify(profileUpdate),
         },
       );
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to save: ${errorText}`);
+      if (!profileRes.ok) {
+        throw new Error("Failed to save selection to profile");
       }
 
-      // Reload rates from database to confirm persistence
-      const reloadRes = await fetch(
-        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
-      );
-      if (reloadRes.ok) {
-        const reloadedRates = await reloadRes.json();
-        setCustomRates(reloadedRates);
+      // 2. Save rates (only for content types)
+      // If we are editing content rates, we use the new ones.
+      // If we are editing industries (which have no rates now), we must preserve the existing content rates.
+      // We explicitly DO NOT preserve industry rates, effectively deleting them.
+      if (showRatesModal !== "content") {
+        const existingContentRates = customRates.filter(
+          (r) => r.rate_type === "content_type",
+        );
+        newRates.push(...existingContentRates);
+      }
+
+      const finalRates = [...newRates];
+
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(finalRates),
+          },
+        );
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText);
+        }
+
+        // Reload rates from database to confirm persistence
+        const reloadRes = await fetch(
+          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
+        );
+        if (reloadRes.ok) {
+          const reloadedRates = await reloadRes.json();
+          setCustomRates(reloadedRates);
+        }
+
+        alert("Changes saved successfully!");
+      } catch (rateError: any) {
+        console.error("Rate save error:", rateError);
+        // If profile saved but rates failed, we still consider it a partial success
+        // and close the modal, but warn the user.
+        alert(
+          `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+        );
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
-      alert("Rates saved successfully!");
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(`Failed to save rates: ${e?.message || e}`);
+      alert(`Failed to save: ${e?.message || e}`);
     } finally {
       setSavingRates(false);
     }
@@ -4744,143 +4922,219 @@ export default function CreatorDashboard() {
       {settingsTab === "rules" && (
         <div className="space-y-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  My Rules
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Set your licensing preferences and rates
-                </p>
-              </div>
-              {!editingRules ? (
-                <Button
-                  onClick={() => setEditingRules(true)}
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setEditingRules(false)}
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveRules}
-                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  >
-                    Save
-                  </Button>
-                </div>
-              )}
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">My Rules</h3>
+              <p className="text-sm text-gray-600">
+                Set your licensing preferences and rates
+              </p>
             </div>
 
             <div className="space-y-8">
               {/* Content Types */}
               <div>
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Content I'm Open To
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {CONTENT_TYPES.map((type) => (
-                    <Badge
-                      key={type}
-                      onClick={() =>
-                        editingRules && handleToggleContentType(type)
-                      }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
-                    >
-                      {type}
-                    </Badge>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Content I'm Open To
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRatesModal("content")}
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Rate
+                  </Button>
                 </div>
-                {!editingRules &&
-                  creator.content_types &&
-                  creator.content_types.length > 0 && (
-                    <>
-                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600" />
-                        <AlertDescription className="text-blue-900 text-sm">
-                          Want different rates for each content type? Click
-                          below to customize.
-                        </AlertDescription>
-                      </Alert>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowRatesModal("content")}
-                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                <div className="flex flex-wrap gap-2">
+                  {CONTENT_TYPES.map((type) => {
+                    const isSelected = creator.content_types?.includes(type);
+                    return (
+                      <Badge
+                        key={type}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Initial Licensing Rate
-                      </Button>
-                    </>
-                  )}
+                        {isSelected && <Check className="w-3 h-3 mr-1" />}
+                        {type}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Industries */}
               <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Industries I Work With
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {INDUSTRIES.map((industry) => (
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Industries I Work With
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRatesModal("industry")}
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {INDUSTRIES.map((industry) => {
+                    const isSelected = creator.industries?.includes(industry);
+                    return (
+                      <Badge
+                        key={industry}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3 h-3 mr-1" />}
+                        {industry}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Content I'm NOT Comfortable With */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Content I'm NOT Comfortable With
+                  </Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRestrictionsModal(true)}
+                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {contentRestrictions.map((restriction) => (
                     <Badge
-                      key={industry}
-                      onClick={() =>
-                        editingRules && handleToggleIndustry(industry)
-                      }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      key={restriction}
+                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500 hover:!bg-red-500"
                     >
-                      {industry}
+                      ✕ {restriction}
                     </Badge>
                   ))}
                 </div>
-                {!editingRules &&
-                  creator.industries &&
-                  creator.industries.length > 0 && (
-                    <>
-                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
-                        <AlertCircle className="h-5 w-5 text-blue-600" />
-                        <AlertDescription className="text-blue-900 text-sm">
-                          Want different rates for each industry? Click below to
-                          customize.
-                        </AlertDescription>
-                      </Alert>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowRatesModal("industry")}
-                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Initial Licensing Rate
-                      </Button>
-                    </>
+
+                {/* Conflicting Campaigns (Brand Exclusivity) */}
+                <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Conflicting Campaigns (Brand Exclusivity)
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Add brands you're exclusive with to prevent competing
+                    campaigns
+                  </p>
+                  {brandExclusivity.length === 0 ? (
+                    <p className="text-sm italic text-gray-500">
+                      No brand exclusivity set
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {brandExclusivity.map((brand) => (
+                        <span
+                          key={brand}
+                          className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]"
+                        >
+                          {brand}
+                        </span>
+                      ))}
+                    </div>
                   )}
+                </div>
               </div>
 
               {/* Pricing */}
               <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Initial Licensing Rate
-                </Label>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold text-gray-900">
+                    Initial Licensing Rate
+                  </Label>
+                  {!editingLicensingRate ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingLicensingRate(true)}
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingLicensingRate(false)}
+                        className="border-2 border-gray-300"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          // Commit local rate to creator state before saving
+                          const val = parseInt(localMonthlyRate);
+                          if (!isNaN(val)) {
+                            // We need to update the creator state reference that handleSaveRules uses
+                            // Since handleSaveRules uses the 'creator' state variable, we need to update it
+                            // However, setState is async. So we might need to pass the value or update it differently.
+                            // Actually, handleSaveRules uses the current state.
+                            // Let's update it and then call save? No, race condition.
+                            // Better: Update the creator object directly in handleSaveRules or pass it.
+                            // For now, let's update state and assume the user clicks save again? No.
+                            // Let's manually update the creator state and wait a tick? No.
+                            // Let's modify handleSaveRules to accept an override or read from a ref?
+                            // Or simpler: Just update the state here, and handleSaveRules will read it?
+                            // Wait, handleSaveRules reads 'creator'. If I setCreator here, it won't be updated in the same closure if I call handleSaveRules immediately.
+                            // I will update handleSaveRules to take an optional override.
+                            // But I can't easily change handleSaveRules signature without checking all calls.
+                            // Let's just update the state and rely on the fact that we are in a functional component?
+                            // No, the closure captures the old state.
+                            // I will update the creator state, and then call handleSaveRules in a useEffect or similar?
+                            // Actually, I can just update the creator object in place? No, immutable.
+                            // I will modify handleSaveRules to read from a ref?
+                            // Or I can just pass the new price to handleSaveRules?
+                            // Let's try passing the price to handleSaveRules.
+                            // Let's try passing the price to handleSaveRules.
+                            const val = parseFloat(localMonthlyRate);
+                            const monthlyCents = Math.round(val * 100);
+                            const newWeeklyRate = Math.round(val / 4);
+                            const updatedCreator = {
+                              ...creator,
+                              price_per_week: newWeeklyRate,
+                              base_monthly_price_cents: monthlyCents,
+                            };
+                            setCreator(updatedCreator);
+                            // We need to pass this updated object to save function
+                            handleSaveRules(updatedCreator);
+                          } else {
+                            handleSaveRules();
+                          }
+                          setEditingLicensingRate(false);
+                        }}
+                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600 mb-4">
-                  Base rate per week for cameo usage
+                  Base rate per month for cameo usage
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-md">
@@ -4890,20 +5144,17 @@ export default function CreatorDashboard() {
                       </span>
                       <Input
                         type="number"
-                        value={creator.price_per_week || 0}
-                        onChange={(e) =>
-                          setCreator({
-                            ...creator,
-                            price_per_week: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        disabled={!editingRules}
-                        className={`border-2 text-lg ${!editingRules ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
+                        value={localMonthlyRate}
+                        onChange={(e) => {
+                          setLocalMonthlyRate(e.target.value);
+                        }}
+                        disabled={!editingLicensingRate}
+                        className={`border-2 text-lg ${!editingLicensingRate ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
                         min="0"
                         step="50"
                       />
                       <span className="text-gray-700 font-medium text-lg">
-                        / week
+                        / month
                       </span>
                     </div>
                   </div>
@@ -4924,14 +5175,13 @@ export default function CreatorDashboard() {
                   <Switch
                     checked={creator.accept_negotiations || false}
                     onCheckedChange={(checked) => {
-                      setCreator({ ...creator, accept_negotiations: checked });
-                      if (!editingRules) {
-                        alert(
-                          `Negotiation ${checked ? "enabled" : "disabled"}! (Demo mode)`,
-                        );
-                      }
+                      const updated = {
+                        ...creator,
+                        accept_negotiations: checked,
+                      };
+                      setCreator(updated);
+                      handleSaveRules(updated);
                     }}
-                    disabled={!editingRules}
                   />
                 </div>
               </div>
@@ -5843,8 +6093,8 @@ export default function CreatorDashboard() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {showRatesModal === "content"
-                ? "Customize Content Type Rates"
-                : "Customize Industry Rates"}
+                ? "Edit Content I'm Open To"
+                : "Edit Industries I Work With"}
             </DialogTitle>
           </DialogHeader>
 
@@ -5852,15 +6102,59 @@ export default function CreatorDashboard() {
             onSubmit={handleSaveRates}
             className="flex-1 overflow-y-auto py-4 pr-2"
           >
-            <Alert className="bg-blue-50 border border-blue-200 mb-6">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                Set specific weekly rates for different{" "}
-                {showRatesModal === "content" ? "content types" : "industries"}.
-                If left blank, your base rate (${creator.price_per_week}/week)
-                will apply.
-              </AlertDescription>
-            </Alert>
+            {/* Content Type Selection - Only show if modal type is 'content' */}
+            {showRatesModal === "content" && (
+              <div className="mb-6">
+                <h4 className="font-normal text-gray-900 mb-3">
+                  Select the content types you're open to working with:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {CONTENT_TYPES.map((type) => (
+                    <Badge
+                      key={type}
+                      onClick={() => handleToggleContentType(type)}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
+                    >
+                      {creator.content_types?.includes(type) && (
+                        <Check className="w-3 h-3" />
+                      )}
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Industry Selection - Only show if modal type is 'industry' */}
+            {showRatesModal === "industry" && (
+              <div className="mb-6">
+                <h4 className="font-normal text-gray-900 mb-3">
+                  Select the industries you're open to working with:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {INDUSTRIES.map((industry) => (
+                    <Badge
+                      key={industry}
+                      onClick={() => handleToggleIndustry(industry)}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
+                    >
+                      {creator.industries?.includes(industry) && (
+                        <Check className="w-3 h-3" />
+                      )}
+                      {industry}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Content Types - Only show if modal type is 'content' */}
             {showRatesModal === "content" &&
@@ -5870,10 +6164,14 @@ export default function CreatorDashboard() {
                 ) || []
               ).length > 0 ? (
                 <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Video className="w-5 h-5 text-[#32C8D1]" />
-                    Content Types
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    Custom Rates by Content Type
                   </h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Set custom rates for specific content types. Leave blank to
+                    use your base rate of ${(creator.price_per_week || 0) * 4}
+                    /month.
+                  </p>
                   <div className="grid gap-4">
                     {creator.content_types
                       ?.filter((type) => CONTENT_TYPES.includes(type))
@@ -5899,91 +6197,29 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                        existing.price_per_week_cents / 100
+                                        (existing.price_per_week_cents / 100) *
+                                        4
                                       ).toString()
                                     : ""
                                 }
-                                placeholder={creator.price_per_week?.toString()}
+                                placeholder={(
+                                  (creator.price_per_week || 0) * 4
+                                ).toString()}
                                 className="bg-white"
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">/wk</span>
+                              <span className="text-gray-500 text-sm">/mo</span>
                             </div>
                           </div>
                         );
                       })}
                   </div>
                 </div>
-              ) : (
-                <Alert className="bg-amber-50 border border-amber-200 mb-6">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
-                  <AlertDescription className="text-amber-900">
-                    <strong>No content types selected.</strong> Please go back
-                    to "My Rules" and select the content types you're open to
-                    first.
-                  </AlertDescription>
-                </Alert>
-              ))}
+              ) : null)}
 
-            {/* Industries - Only show if modal type is 'industry' */}
-            {showRatesModal === "industry" &&
-              ((creator.industries?.filter((i) => INDUSTRIES.includes(i)) || [])
-                .length > 0 ? (
-                <div className="mb-6">
-                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-purple-500" />
-                    Industries
-                  </h4>
-                  <div className="grid gap-4">
-                    {creator.industries
-                      ?.filter((ind) => INDUSTRIES.includes(ind))
-                      .map((ind) => {
-                        const existing = customRates.find(
-                          (r) =>
-                            r.rate_type === "industry" && r.rate_name === ind,
-                        );
-                        return (
-                          <div
-                            key={ind}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                          >
-                            <Label className="font-medium text-gray-700">
-                              {ind}
-                            </Label>
-                            <div className="flex items-center gap-2 w-48">
-                              <span className="text-gray-500">$</span>
-                              <Input
-                                type="number"
-                                name={`rate_industry_${ind}`}
-                                defaultValue={
-                                  existing
-                                    ? (
-                                        existing.price_per_week_cents / 100
-                                      ).toString()
-                                    : ""
-                                }
-                                placeholder={creator.price_per_week?.toString()}
-                                className="bg-white"
-                                min="0"
-                                step="1"
-                              />
-                              <span className="text-gray-500 text-sm">/wk</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              ) : (
-                <Alert className="bg-amber-50 border border-amber-200 mb-6">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
-                  <AlertDescription className="text-amber-900">
-                    <strong>No industries selected.</strong> Please go back to
-                    "My Rules" and select the industries you work with first.
-                  </AlertDescription>
-                </Alert>
-              ))}
+            {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
+            {showRatesModal === "industry" && <div className="mb-6"></div>}
 
             <DialogFooter className="mt-6">
               <Button
@@ -5994,30 +6230,194 @@ export default function CreatorDashboard() {
               >
                 Cancel
               </Button>
-              {/* Only show Save Rates button if there are items to customize */}
-              {((showRatesModal === "content" &&
-                creator.content_types?.filter((t) => CONTENT_TYPES.includes(t))
-                  .length > 0) ||
-                (showRatesModal === "industry" &&
-                  creator.industries?.filter((i) => INDUSTRIES.includes(i))
-                    .length > 0)) && (
-                <Button
-                  type="submit"
-                  disabled={savingRates}
-                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                >
-                  {savingRates ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Rates"
-                  )}
-                </Button>
-              )}
+              {/* Save button - always show, different text for each modal */}
+              <Button
+                type="submit"
+                disabled={savingRates}
+                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              >
+                {savingRates ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : showRatesModal === "content" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Save Rates
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Restrictions Modal */}
+      <Dialog
+        open={showRestrictionsModal}
+        onOpenChange={() => setShowRestrictionsModal(false)}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Edit Content I'm NOT Comfortable With
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
+            <p className="text-sm text-gray-600">
+              Manage content types and categories you don't want to be
+              associated with:
+            </p>
+
+            {/* Current Restrictions */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Current Restrictions:
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {contentRestrictions.map((restriction) => (
+                  <Badge
+                    key={restriction}
+                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
+                    onClick={() => removeRestriction(restriction)}
+                  >
+                    ✕ {restriction}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Click to add restrictions */}
+            {availableRestrictions.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Click to add restrictions:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {availableRestrictions.map((restriction) => (
+                    <Badge
+                      key={restriction}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
+                      onClick={() => addRestriction(restriction)}
+                    >
+                      + {restriction}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add custom restriction */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Add custom restriction:
+              </h4>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add custom restriction (max 25 chars)"
+                  maxLength={25}
+                  value={customRestriction}
+                  onChange={(e) => setCustomRestriction(e.target.value)}
+                  className="px-3 pl-4 bg-white"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomRestriction();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addCustomRestriction}
+                  className="border-red-500 text-red-500 hover:bg-red-50"
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            {/* Brand Exclusivity */}
+            <div className="pt-4 border-t">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Conflicting Campaigns (Brand Exclusivity)
+              </h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Add brands you're exclusive with to prevent competing campaigns
+              </p>
+
+              {brandExclusivity.length === 0 ? (
+                <p className="text-sm italic text-gray-500 mb-3">
+                  No brand exclusivity set
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {brandExclusivity.map((brand) => (
+                    <Badge
+                      key={brand}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
+                    >
+                      {brand}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover:text-red-600"
+                        onClick={() => removeBrandExclusivity(brand)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter brand name (max 25 chars)"
+                  maxLength={25}
+                  value={newBrand}
+                  onChange={(e) => setNewBrand(e.target.value)}
+                  className="px-3 pl-4 bg-white"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addBrandExclusivity();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addBrandExclusivity}
+                  className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowRestrictionsModal(false)}
+              className="border-2 border-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              onClick={handleSaveRestrictions}
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
