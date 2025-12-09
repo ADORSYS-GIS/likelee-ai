@@ -2,10 +2,11 @@ import React from "react";
 import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function ForgotPassword() {
   const { supabase } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [message, setMessage] = React.useState<string | null>(null);
@@ -67,9 +68,13 @@ export default function ForgotPassword() {
             >
               {loading ? "Sending…" : "Send Reset Link"}
             </button>
-            <Link to="/login" className="text-sm text-gray-600 hover:underline">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="text-sm text-cyan-600 hover:underline"
+            >
               Back to Sign In
-            </Link>
+            </button>
           </div>
         </form>
       </div>
