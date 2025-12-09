@@ -1,7 +1,7 @@
 import React from "react";
 import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Login() {
@@ -86,6 +86,11 @@ export default function Login() {
                 required
                 className="w-full border rounded px-3 py-2"
               />
+              <div className="text-right mt-1">
+                <Link to="/forgot-password" className="text-sm text-gray-600 hover:underline">
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <div className="flex items-center gap-3">
