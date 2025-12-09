@@ -136,24 +136,36 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow from Hero to Section 2 */}
-      <div className="hidden lg:block relative h-0">
+      {/* Arrow 1: Hero Phone to Section 2 Phone */}
+      <div className="hidden lg:block relative h-32">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-32"
-          width="800"
-          height="900"
-          viewBox="0 0 800 900"
+          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          width="400"
+          height="800"
+          viewBox="0 0 400 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <defs>
+            <marker
+              id="arrowhead-1"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
+              orient="auto"
+            >
+              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
+            </marker>
+          </defs>
           <path
-            d="M 580 0 C 580 450, 220 450, 220 895"
-            stroke="#32C8D1"
+            d="M 280 50 Q 50 300, 120 750"
+            stroke="#000000"
             strokeWidth="3"
             fill="none"
             strokeLinecap="round"
+            markerEnd="url(#arrowhead-1)"
           />
-          <polygon points="220,895 232,885 208,885" fill="#32C8D1" />
         </svg>
       </div>
 
@@ -183,26 +195,39 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow from Section 2 to Section 3 */}
-      <div className="hidden lg:block relative h-0">
+      {/* Arrow 2: Section 2 Phone to Section 3 Phone */}
+      <div className="hidden lg:block relative h-32">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-32"
-          width="800"
-          height="900"
-          viewBox="0 0 800 900"
+          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          width="400"
+          height="800"
+          viewBox="0 0 400 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <defs>
+            <marker
+              id="arrowhead-2"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
+              orient="auto"
+            >
+              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
+            </marker>
+          </defs>
           <path
-            d="M 220 0 C 220 450, 580 450, 580 895"
-            stroke="#F7B750"
+            d="M 120 50 Q 350 300, 280 750"
+            stroke="#000000"
             strokeWidth="3"
             fill="none"
             strokeLinecap="round"
+            markerEnd="url(#arrowhead-2)"
           />
-          <polygon points="580,895 568,885 592,885" fill="#F7B750" />
         </svg>
       </div>
+
 
       {/* SECTION 3: Copy left, phone right */}
       <section className="py-20 bg-white relative">
@@ -230,26 +255,40 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      {/* Arrow from Section 3 to Section 4 */}
-      <div className="hidden lg:block relative h-0">
+
+      {/* Arrow 3: Section 3 Phone to Section 4 Phone */}
+      <div className="hidden lg:block relative h-32">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-32"
-          width="800"
-          height="900"
-          viewBox="0 0 800 900"
+          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          width="400"
+          height="800"
+          viewBox="0 0 400 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <defs>
+            <marker
+              id="arrowhead-3"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
+              orient="auto"
+            >
+              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
+            </marker>
+          </defs>
           <path
-            d="M 580 0 C 580 450, 220 450, 220 895"
-            stroke="#32C8D1"
+            d="M 280 50 Q 50 300, 120 750"
+            stroke="#000000"
             strokeWidth="3"
             fill="none"
             strokeLinecap="round"
+            markerEnd="url(#arrowhead-3)"
           />
-          <polygon points="220,895 232,885 208,885" fill="#32C8D1" />
         </svg>
       </div>
+
 
       {/* SECTION 4: Example - Scale Catalog without Scaling Costs */}
       <section className="py-20 bg-white relative">
@@ -277,26 +316,39 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow from Section 4 to Section 5 */}
-      <div className="hidden lg:block relative h-0">
+      {/* Arrow 4: Section 4 Phone to Section 5 Phone */}
+      <div className="hidden lg:block relative h-32">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-32"
-          width="800"
-          height="900"
-          viewBox="0 0 800 900"
+          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          width="400"
+          height="800"
+          viewBox="0 0 400 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <defs>
+            <marker
+              id="arrowhead-4"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
+              orient="auto"
+            >
+              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
+            </marker>
+          </defs>
           <path
-            d="M 220 0 C 220 450, 580 450, 580 895"
-            stroke="#F7B750"
+            d="M 120 50 Q 350 300, 280 750"
+            stroke="#000000"
             strokeWidth="3"
             fill="none"
             strokeLinecap="round"
+            markerEnd="url(#arrowhead-4)"
           />
-          <polygon points="580,895 568,885 592,885" fill="#F7B750" />
         </svg>
       </div>
+
 
       {/* SECTION 5: Example - Premium Talent (phone right) */}
       <section className="py-20 bg-white relative">
@@ -325,26 +377,40 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow from Section 5 to Section 6 */}
-      <div className="hidden lg:block relative h-0">
+      {/* Arrow 5: Section 5 Phone to Section 6 Phone */}
+      <div className="hidden lg:block relative h-32">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-32"
-          width="800"
-          height="900"
-          viewBox="0 0 800 900"
+          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          width="400"
+          height="800"
+          viewBox="0 0 400 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <defs>
+            <marker
+              id="arrowhead-5"
+              markerWidth="12"
+              markerHeight="12"
+              refX="10"
+              refY="6"
+              orient="auto"
+            >
+              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
+            </marker>
+          </defs>
           <path
-            d="M 580 0 C 580 450, 220 450, 220 895"
-            stroke="#32C8D1"
+            d="M 280 50 Q 50 300, 120 750"
+            stroke="#000000"
             strokeWidth="3"
             fill="none"
             strokeLinecap="round"
+            markerEnd="url(#arrowhead-5)"
           />
-          <polygon points="220,895 232,885 208,885" fill="#32C8D1" />
         </svg>
       </div>
+
+
 
       {/* SECTION 6: Example - Built for Brands of All Sizes (phone left) */}
       <section className="py-20 bg-white relative">
