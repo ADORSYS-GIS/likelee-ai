@@ -523,7 +523,13 @@ function ReferencePhotosStep(props: any) {
         <div className="flex gap-4">
           <Button
             onClick={doUpload}
-            disabled={uploading || !consent || !captures.front || !captures.left || !captures.right}
+            disabled={
+              uploading ||
+              !consent ||
+              !captures.front ||
+              !captures.left ||
+              !captures.right
+            }
             className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none"
           >
             {uploading ? "Uploading…" : "Save & Finish"}
