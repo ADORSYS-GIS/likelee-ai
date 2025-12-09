@@ -74,6 +74,7 @@ import {
   AlertTriangle,
   Check,
   Youtube,
+  ArrowLeft,
 } from "lucide-react";
 import {
   LineChart,
@@ -711,6 +712,7 @@ export default function CreatorDashboard() {
   >(null);
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -4236,182 +4238,246 @@ export default function CreatorDashboard() {
     );
   };
 
-  const renderEarnings = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Earnings Dashboard
-          </h2>
-          <p className="text-gray-600 mt-1">Track your revenue and payments</p>
-        </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2">
-          <DollarSign className="w-4 h-4" />
-          Cash Out
-        </Button>
-      </div>
-
-      {/* Info banner */}
-      <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
-        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <p>
-          <span className="font-semibold">
-            Your earnings dashboard is ready!
-          </span>{" "}
-          Once your licenses activate, you'll see real-time earnings here.
-          Currently, you have no active contracts.
-        </p>
-      </div>
-
-      {/* Key metrics */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
-          <p className="text-3xl font-bold text-gray-900">$0</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Will update once your first license activates
-          </p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
-          <p className="text-3xl font-bold text-gray-900">$0</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Waiting for active campaigns
-          </p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
-          <p className="text-3xl font-bold text-gray-900">$0</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Will calculate based on active licenses
-          </p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Next Payment</p>
-          <p className="text-2xl font-bold text-gray-900">To be determined</p>
-          <p className="text-sm text-gray-600 mt-1">No active contracts yet</p>
-        </Card>
-      </div>
-
-      {/* Charts row */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Revenue Trend (Last 6 Months)
-          </h3>
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div>Your revenue trend will appear here</div>
-            <div className="text-sm text-gray-500 mt-1">
-              Once you have active campaigns
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Earnings by Industry
-          </h3>
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div>Your industry breakdown will appear here</div>
-            <div className="text-sm text-gray-500 mt-1">
-              Once you have active campaigns
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Comparison Banner */}
-      <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            This is what your earnings could look like
-          </h3>
-          <p className="text-sm text-gray-600">
-            See how Likelee's recurring model compares to traditional one-time
-            payments
-          </p>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="p-5 bg-white rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
-            <p className="text-3xl font-bold text-gray-900">$500</p>
-            <p className="text-sm text-gray-600">
-              One-time payment per campaign
-            </p>
-          </div>
-          <div className="p-5 bg-white rounded-lg border border-cyan-300">
-            <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
-            <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
-            <p className="text-sm text-gray-600">
-              Per active license • Recurring revenue
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Earnings by Campaign */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Earnings by Campaign
-        </h3>
-        {activeCampaigns.length === 0 ? (
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div className="font-semibold text-gray-900">
-              Your campaigns will appear here
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Once you have active licenses generating revenue
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {activeCampaigns.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
-              >
-                <div className="font-semibold text-gray-900 truncate">
-                  {c.name || c.brand || "Campaign"}
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-gray-900">
-                    ${(c.earnings_this_month || 0).toLocaleString()}
-                  </div>
-                  <div className="text-xs text-gray-500">this month</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Payment History */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Payment History
-        </h3>
-        <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-          <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <div className="font-semibold text-gray-900">
-            Your payment history will appear here
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            Once you receive your first payout
-          </div>
-        </div>
-      </Card>
+  const renderConnectBankAccount = () => (
+    <div className="max-w-2xl mx-auto py-12">
       <Button
         variant="outline"
-        disabled
-        className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
+        onClick={() => setShowConnectBankAccount(false)}
+        className="mb-8 flex items-center gap-2"
       >
-        Download Tax Summary (1099)
+        <ArrowLeft className="w-4 h-4" />
+        Back
       </Button>
+      <Card className="p-10 text-center bg-white border border-gray-200 shadow-sm">
+        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <FileText className="w-8 h-8 text-green-600" />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          Connect Your Bank Account
+        </h2>
+        <p className="text-gray-600 mb-8">
+          Link your bank account to receive your earnings directly.
+        </p>
+
+        <div className="space-y-4 text-left mb-8">
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-gray-900">Bank-level Security</h3>
+              <p className="text-sm text-gray-600">
+                Your information is encrypted and protected
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <Lock className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-gray-900">Private & Secure</h3>
+              <p className="text-sm text-gray-600">
+                We never store your banking credentials
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Button
+          size="lg"
+          className="w-full h-12 bg-green-500 hover:bg-green-600 text-white text-base"
+        >
+          Connect Bank Account
+        </Button>
+        <p className="text-xs text-gray-500 mt-4">
+          Bank connection coming soon. We're integrating secure payment processing.
+        </p>
+      </Card>
     </div>
   );
 
+  const renderEarnings = () => {
+    if (showConnectBankAccount) {
+      return renderConnectBankAccount();
+    }
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Earnings Dashboard
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Track your revenue and payments
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowConnectBankAccount(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
+          >
+            <DollarSign className="w-4 h-4" />
+            Cash Out
+          </Button>
+        </div>
+
+        {/* Info banner */}
+        <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p>
+            <span className="font-semibold">
+              Your earnings dashboard is ready!
+            </span>{" "}
+            Once your licenses activate, you'll see real-time earnings here.
+            Currently, you have no active contracts.
+          </p>
+        </div>
+
+        {/* Key metrics */}
+        <div className="grid md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Will update once your first license activates
+            </p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Waiting for active campaigns
+            </p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Will calculate based on active licenses
+            </p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Next Payment</p>
+            <p className="text-2xl font-bold text-gray-900">To be determined</p>
+            <p className="text-sm text-gray-600 mt-1">No active contracts yet</p>
+          </Card>
+        </div>
+
+        {/* Charts row */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="p-6 bg-white border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Revenue Trend (Last 6 Months)
+            </h3>
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div>Your revenue trend will appear here</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Once you have active campaigns
+              </div>
+            </div>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Earnings by Industry
+            </h3>
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div>Your industry breakdown will appear here</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Once you have active campaigns
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Comparison Banner */}
+        <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              This is what your earnings could look like
+            </h3>
+            <p className="text-sm text-gray-600">
+              See how Likelee's recurring model compares to traditional one-time
+              payments
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-5 bg-white rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
+              <p className="text-3xl font-bold text-gray-900">$500</p>
+              <p className="text-sm text-gray-600">
+                One-time payment per campaign
+              </p>
+            </div>
+            <div className="p-5 bg-white rounded-lg border border-cyan-300">
+              <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
+              <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
+              <p className="text-sm text-gray-600">
+                Per active license • Recurring revenue
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Earnings by Campaign */}
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Earnings by Campaign
+          </h3>
+          {activeCampaigns.length === 0 ? (
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div className="font-semibold text-gray-900">
+                Your campaigns will appear here
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                Once you have active licenses generating revenue
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activeCampaigns.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <div className="font-semibold text-gray-900 truncate">
+                    {c.name || c.brand || "Campaign"}
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900">
+                      ${(c.earnings_this_month || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-500">this month</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Payment History */}
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Payment History
+          </h3>
+          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+            <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div className="font-semibold text-gray-900">
+              Your payment history will appear here
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              Once you receive your first payout
+            </div>
+          </div>
+        </Card>
+        <Button
+          variant="outline"
+          disabled
+          className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
+        >
+          Download Tax Summary (1099)
+        </Button>
+      </div>
+    );
+  };
   const handleSaveRates = async (e) => {
     e.preventDefault();
     setSavingRates(true);
