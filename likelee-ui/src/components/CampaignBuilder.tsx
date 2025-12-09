@@ -152,7 +152,11 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
 
   const handleGenerateObjective = async () => {
     if (!formData.uploaded_brief) {
-      toast({ title: "Upload Required", description: "Please upload a brief first to generate objective", variant: "destructive" });
+      toast({
+        title: "Upload Required",
+        description: "Please upload a brief first to generate objective",
+        variant: "destructive",
+      });
       return;
     }
 

@@ -9,9 +9,20 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Play,
   Edit,
@@ -211,7 +222,11 @@ export default function DemoTalentDashboard() {
   const isPro = false;
 
   const handleGeneratePackage = () => {
-    toast({ title: "Info", description: "Package generated! (Demo mode - download would start in production)" });
+    toast({
+      title: "Info",
+      description:
+        "Package generated! (Demo mode - download would start in production)",
+    });
   };
 
   const handleSaveProfile = () => {
@@ -786,7 +801,12 @@ export default function DemoTalentDashboard() {
 
                   <div className="mt-6 pt-6 border-t-2 border-gray-200 flex gap-3">
                     <Button
-                      onClick={() => toast({ title: "Info", description: "Settings saved! (Demo mode)" })}
+                      onClick={() =>
+                        toast({
+                          title: "Info",
+                          description: "Settings saved! (Demo mode)",
+                        })
+                      }
                       className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-none"
                     >
                       Save Settings

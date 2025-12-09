@@ -575,11 +575,19 @@ export default function AgencyDashboard() {
       if (url) {
         window.location.href = url;
       } else {
-        toast({ title: "Error", description: "Unable to start verification. Please try again later.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Unable to start verification. Please try again later.",
+          variant: "destructive",
+        });
       }
     } catch (e) {
       console.error("Error starting KYC session", e);
-      toast({ title: "Error", description: "Failed to start KYC verification.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to start KYC verification.",
+        variant: "destructive",
+      });
     }
   };
 

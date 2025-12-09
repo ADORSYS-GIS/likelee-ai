@@ -185,7 +185,11 @@ export default function StudioVideo() {
       ) {
         setShowSubscriptionModal(true);
       } else {
-        toast({ title: "Error", description: `Generation failed: ${error.message || "An unknown error occurred."}`, variant: "destructive" });
+        toast({
+          title: "Error",
+          description: `Generation failed: ${error.message || "An unknown error occurred."}`,
+          variant: "destructive",
+        });
       }
     },
   });
@@ -245,7 +249,11 @@ export default function StudioVideo() {
 
   const handleGenerate = () => {
     if (!prompt && !imageUrl) {
-      toast({ title: "Input Required", description: "Please provide a prompt or a reference image.", variant: "destructive" });
+      toast({
+        title: "Input Required",
+        description: "Please provide a prompt or a reference image.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -272,7 +280,11 @@ export default function StudioVideo() {
       setImageUrl(data.file_url);
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast({ title: "Upload Failed", description: "Failed to upload image. Please try again.", variant: "destructive" });
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

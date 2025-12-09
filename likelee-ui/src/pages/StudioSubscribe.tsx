@@ -58,7 +58,11 @@ export default function StudioSubscribe() {
     },
     onError: (error) => {
       console.error("Checkout failed:", error);
-      toast({ title: "Error", description: `Checkout failed: ${error.message || "An unknown error occurred."}`, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: `Checkout failed: ${error.message || "An unknown error occurred."}`,
+        variant: "destructive",
+      });
       setCheckingOut(false);
     },
   });

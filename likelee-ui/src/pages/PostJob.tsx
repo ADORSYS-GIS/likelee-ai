@@ -1388,7 +1388,9 @@ export default function PostJob() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => toast({ title: "Success", description: "Saved as draft!" })}
+                  onClick={() =>
+                    toast({ title: "Success", description: "Saved as draft!" })
+                  }
                   className="flex-1 border-2 border-gray-300 rounded-none"
                 >
                   Save as Draft

@@ -174,7 +174,11 @@ export default function OrganizationSignup() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      toast({ title: "Error", description: "Failed to create profile. Please try again.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to create profile. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -218,7 +222,11 @@ export default function OrganizationSignup() {
     onError: (error) => {
       console.error("Error updating profile:", error);
       // Optionally handle error, e.g., show a toast notification
-      toast({ title: "Error", description: "Failed to update profile. Please try again.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -232,11 +240,20 @@ export default function OrganizationSignup() {
         !formData.organization_name ||
         !formData.contact_name
       ) {
-        toast({ title: "Missing Fields", description: "Please fill in all required fields for Company Information.", variant: "destructive" });
+        toast({
+          title: "Missing Fields",
+          description:
+            "Please fill in all required fields for Company Information.",
+          variant: "destructive",
+        });
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        toast({ title: "Password Mismatch", description: "Passwords do not match.", variant: "destructive" });
+        toast({
+          title: "Password Mismatch",
+          description: "Passwords do not match.",
+          variant: "destructive",
+        });
         return;
       }
       // Create initial profile and move to step 2
@@ -294,7 +311,12 @@ export default function OrganizationSignup() {
     // Handlers for Step 3 (Verification)
     const startOrgKyc = async () => {
       if (!profileId) {
-        toast({ title: "Profile Not Found", description: "Organization profile not found yet. Complete Step 1 first.", variant: "destructive" });
+        toast({
+          title: "Profile Not Found",
+          description:
+            "Organization profile not found yet. Complete Step 1 first.",
+          variant: "destructive",
+        });
         return;
       }
       try {
@@ -306,11 +328,20 @@ export default function OrganizationSignup() {
         if (url) {
           window.location.href = url;
         } else {
-          toast({ title: "Error", description: "Unable to start organization KYC. Please try again later.", variant: "destructive" });
+          toast({
+            title: "Error",
+            description:
+              "Unable to start organization KYC. Please try again later.",
+            variant: "destructive",
+          });
         }
       } catch (e) {
         console.error("Error starting organization KYC", e);
-        toast({ title: "Error", description: "Failed to start organization KYC.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Failed to start organization KYC.",
+          variant: "destructive",
+        });
       }
     };
 
@@ -319,13 +350,25 @@ export default function OrganizationSignup() {
         const res = await createLivenessSession({ user_id: user?.id });
         const sid = (res as any)?.session_id || (res as any)?.data?.session_id;
         if (sid) {
-          toast({ title: "Liveness Session Created", description: `Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.` });
+          toast({
+            title: "Liveness Session Created",
+            description: `Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`,
+          });
         } else {
-          toast({ title: "Error", description: "Could not create liveness session. Check server configuration.", variant: "destructive" });
+          toast({
+            title: "Error",
+            description:
+              "Could not create liveness session. Check server configuration.",
+            variant: "destructive",
+          });
         }
       } catch (e) {
         console.error("Error creating liveness session", e);
-        toast({ title: "Error", description: "Failed to create liveness session.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Failed to create liveness session.",
+          variant: "destructive",
+        });
       }
     };
 

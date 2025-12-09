@@ -210,7 +210,10 @@ export default function StudioImageToVideo() {
 
   const handleGenerate = () => {
     if (!imageUrl) {
-      toast({ title: "Upload Required", description: "Please upload an image first" });
+      toast({
+        title: "Upload Required",
+        description: "Please upload an image first",
+      });
       return;
     }
 

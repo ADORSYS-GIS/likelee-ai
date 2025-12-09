@@ -105,7 +105,12 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      toast({ title: "Error", description: "Failed to create initial profile. Please check your inputs and try again.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description:
+          "Failed to create initial profile. Please check your inputs and try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -146,7 +151,11 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      toast({ title: "Error", description: "Failed to update profile. Please try again.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -158,11 +167,19 @@ export default function CreatorSignup() {
         !formData.password ||
         !formData.confirmPassword
       ) {
-        toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" });
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        toast({ title: "Validation Error", description: "Passwords do not match.", variant: "destructive" });
+        toast({
+          title: "Validation Error",
+          description: "Passwords do not match.",
+          variant: "destructive",
+        });
         return;
       }
       // Check that at least one social handle is provided
@@ -171,7 +188,12 @@ export default function CreatorSignup() {
         !formData.tiktok_handle &&
         !formData.youtube_handle
       ) {
-        toast({ title: "Validation Error", description: "Please provide at least one social media handle (Instagram, TikTok, or YouTube).", variant: "destructive" });
+        toast({
+          title: "Validation Error",
+          description:
+            "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
+          variant: "destructive",
+        });
         return;
       }
       createInitialProfileMutation.mutate(formData);
@@ -190,33 +212,58 @@ export default function CreatorSignup() {
 
   const handleSubmit = () => {
     if (!formData.content_types.length && !formData.content_other) {
-      toast({ title: "Validation Error", description: "Please select at least one content type or specify 'Other'.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description:
+          "Please select at least one content type or specify 'Other'.",
+        variant: "destructive",
+      });
       return;
     }
     if (
       formData.content_types.includes("Other") &&
       !formData.content_other.trim()
     ) {
-      toast({ title: "Validation Error", description: "Please specify your 'Other' content type.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please specify your 'Other' content type.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.ai_tools.length && !formData.ai_tools_other) {
-      toast({ title: "Validation Error", description: "Please select at least one AI tool or specify 'Other'.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one AI tool or specify 'Other'.",
+        variant: "destructive",
+      });
       return;
     }
     if (
       formData.ai_tools.includes("Other") &&
       !formData.ai_tools_other.trim()
     ) {
-      toast({ title: "Validation Error", description: "Please specify your 'Other' AI tool.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please specify your 'Other' AI tool.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.city || !formData.state) {
-      toast({ title: "Validation Error", description: "Please fill in your city and state/country.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please fill in your city and state/country.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.experience) {
-      toast({ title: "Validation Error", description: "Please select your years of AI creative experience.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please select your years of AI creative experience.",
+        variant: "destructive",
+      });
       return;
     }
 

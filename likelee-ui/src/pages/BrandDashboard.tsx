@@ -700,7 +700,10 @@ export default function BrandDashboard() {
   const handleShareBrief = (campaignId) => {
     const campaign = mockCampaigns.find((c) => c.id === campaignId);
     if (campaign) {
-      toast({ title: "Success", description: `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.` });
+      toast({
+        title: "Success",
+        description: `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.`,
+      });
     }
   };
 
@@ -720,16 +723,25 @@ export default function BrandDashboard() {
         budget: selectedCreator.price,
       });
     } else if (option === "agency") {
-      toast({ title: "Coming Soon", description: "Agency invitation flow coming soon! (Demo mode)" });
+      toast({
+        title: "Coming Soon",
+        description: "Agency invitation flow coming soon! (Demo mode)",
+      });
       setShowHireModal(false);
     } else if (option === "browse") {
-      toast({ title: "Coming Soon", description: "Browse agencies feature coming soon! (Demo mode)" });
+      toast({
+        title: "Coming Soon",
+        description: "Browse agencies feature coming soon! (Demo mode)",
+      });
       setShowHireModal(false);
     }
   };
 
   const handleContractSubmit = () => {
-    toast({ title: "Success", description: `Contract created and sent to ${selectedCreator.name}! (Demo mode)\n\nCreator will receive:\n- Full project brief\n- Contract terms\n- Payment details\n\nThey have 48 hours to accept.` });
+    toast({
+      title: "Success",
+      description: `Contract created and sent to ${selectedCreator.name}! (Demo mode)\n\nCreator will receive:\n- Full project brief\n- Contract terms\n- Payment details\n\nThey have 48 hours to accept.`,
+    });
     setShowContractBuilder(false);
     setContractStep(1);
     setSelectedCreator(null);
@@ -738,10 +750,18 @@ export default function BrandDashboard() {
   const handleUpdateRequestOption = (option) => {
     if (option === "self") {
       setShowUpdateRequestModal(false);
-      toast({ title: "Coming Soon", description: "Contract update form coming soon! (Demo mode)\nYou'll be able to modify terms, pricing, and deliverables." });
+      toast({
+        title: "Coming Soon",
+        description:
+          "Contract update form coming soon! (Demo mode)\nYou'll be able to modify terms, pricing, and deliverables.",
+      });
     } else if (option === "agency") {
       setShowUpdateRequestModal(false);
-      toast({ title: "Success", description: "Contract update request sent to partner agency! (Demo mode)\nThey'll review and make the necessary changes." });
+      toast({
+        title: "Success",
+        description:
+          "Contract update request sent to partner agency! (Demo mode)\nThey'll review and make the necessary changes.",
+      });
     }
     setUpdateRequestType(null);
   };

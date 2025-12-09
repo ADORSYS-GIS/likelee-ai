@@ -64,7 +64,11 @@ export default function LicensingSettings() {
       if (error) throw error;
       toast({ title: "Success", description: "Pricing updated" });
     } catch (e: any) {
-      toast({ title: "Error", description: e?.message || String(e), variant: "destructive" });
+      toast({
+        title: "Error",
+        description: e?.message || String(e),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }

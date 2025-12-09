@@ -75,14 +75,21 @@ export default function UploadProject() {
 
   const handleSubmit = () => {
     if (!project.title || !project.description || !project.project_type) {
-      toast({ title: "Missing Fields", description: "Please fill in all required fields", variant: "destructive" });
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
     setUploading(true);
     setTimeout(() => {
       setUploading(false);
-      toast({ title: "Success", description: "Project uploaded! (Demo mode - not persisted)" });
+      toast({
+        title: "Success",
+        description: "Project uploaded! (Demo mode - not persisted)",
+      });
       navigate(createPageUrl("DemoTalentDashboard"));
     }, 2000);
   };

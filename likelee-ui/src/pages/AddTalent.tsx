@@ -192,7 +192,10 @@ export default function AddTalent() {
 
   const handleSubmit = () => {
     console.log("Submitting talent data:", formData);
-    toast({ title: "Success", description: "Talent added successfully! (Demo mode)" });
+    toast({
+      title: "Success",
+      description: "Talent added successfully! (Demo mode)",
+    });
     navigate(createPageUrl("AgencyDashboard"));
   };
 

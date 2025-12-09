@@ -547,7 +547,11 @@ export default function AITalentBoard() {
       }
     } catch (err) {
       console.error("Error saving job:", err);
-      toast({ title: "Error", description: "Failed to save job. Please try again.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to save job. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
