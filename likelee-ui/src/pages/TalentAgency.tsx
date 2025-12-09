@@ -93,8 +93,8 @@ export default function TalentAgency() {
             Bookings are dropping, licensing is rising.
           </h2>
           <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
-            Brands are shifting budgets toward AI experiments, but they still need
-            real verified talent for authentic campaigns. Likelee creates
+            Brands are shifting budgets toward AI experiments, but they still
+            need real verified talent for authentic campaigns. Likelee creates
             recurring income streams for your talent while booking frequency
             fluctuates. You earn recurring commission every month they stay
             licensed.

@@ -71,10 +71,12 @@ export default function MarketingAgency() {
               One Platform For AI-Powered Creator Campaigns
             </h1>
             <p className="text-lg md:text-xl text-gray-700 max-w-4xl mx-auto mb-8 leading-relaxed">
-              Your clients are moving to AI-powered creator content. Your team is juggling multiple vendors and
-              platforms to source, manage, and deliver these campaigns. Likelee consolidates everything—
-              verified creator licensing, production workflows, compliance, and brand exposure—into one
-              streamlined platform so you deliver AI campaigns faster without building infrastructure.
+              Your clients are moving to AI-powered creator content. Your team
+              is juggling multiple vendors and platforms to source, manage, and
+              deliver these campaigns. Likelee consolidates everything— verified
+              creator licensing, production workflows, compliance, and brand
+              exposure—into one streamlined platform so you deliver AI campaigns
+              faster without building infrastructure.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -87,7 +89,7 @@ export default function MarketingAgency() {
                 onClick={() =>
                   navigate(
                     createPageUrl("OrganizationSignup") +
-                    "?type=marketing_agency",
+                      "?type=marketing_agency",
                   )
                 }
                 variant="outline"
@@ -1060,7 +1062,7 @@ export default function MarketingAgency() {
               onClick={() =>
                 navigate(
                   createPageUrl("OrganizationSignup") +
-                  "?type=marketing_agency",
+                    "?type=marketing_agency",
                 )
               }
               variant="outline"

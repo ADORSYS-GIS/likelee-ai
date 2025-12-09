@@ -66,9 +66,9 @@ export default function SportsAgency() {
           </p>
           <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-8">
             Traditional endorsements pay once. Likelee licensing pays monthly,
-            forever. Your athletes earn recurring revenue from their name, image,
-            and likeness while you manage contracts in one place and collect
-            commission on every renewal.
+            forever. Your athletes earn recurring revenue from their name,
+            image, and likeness while you manage contracts in one place and
+            collect commission on every renewal.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -101,8 +101,8 @@ export default function SportsAgency() {
             sponsorships. Endorsement opportunities are unpredictable and
             one-time. Likelee creates additional revenue streams where athletes
             earn recurring money from brands using their likeness for marketing,
-            social content, and digital campaigns without requiring new contracts
-            each time.
+            social content, and digital campaigns without requiring new
+            contracts each time.
           </p>
         </div>
       </section>
