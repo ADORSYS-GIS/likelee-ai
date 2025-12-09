@@ -524,8 +524,8 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("BrandCompany")}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 Brands
@@ -536,8 +536,8 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AgencySelection")}
                   className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                 >
                   Agencies
@@ -586,18 +586,18 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("AboutUs")}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 About Us
               </Link>
 
               <Link
-                to={createPageUrl("SalesInquiry")}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("SalesInquiry")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                to={createPageUrl("Contact")}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 Contact
@@ -628,8 +628,8 @@ export default function Layout({ children, currentPageName }) {
                 to={createPageUrl("BrandCompany")}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 Brands
@@ -641,8 +641,8 @@ export default function Layout({ children, currentPageName }) {
                   to={createPageUrl("AgencySelection")}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:bg-gray-50"
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
                     }`}
                 >
                   Agencies
@@ -676,19 +676,19 @@ export default function Layout({ children, currentPageName }) {
                 to={createPageUrl("AboutUs")}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 About Us
               </Link>
 
               <Link
-                to={createPageUrl("SalesInquiry")}
+                to={createPageUrl("Contact")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("SalesInquiry")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 Contact
@@ -721,7 +721,7 @@ export default function Layout({ children, currentPageName }) {
                 <span className="text-xl font-bold text-gray-900">Likelee</span>
               </Link>
               <p className="text-gray-600 text-sm leading-relaxed max-w-md">
-                The Verified Talent Ecosystem for the AI Era.
+                The Verified Talent Ecosystem for AI-powered Media.
               </p>
             </div>
 
@@ -730,21 +730,30 @@ export default function Layout({ children, currentPageName }) {
                 Resources
               </h3>
               <div className="space-y-3">
-                {[
-                  { label: "Blog", href: "#" },
-                  { label: "Impact", href: createPageUrl("Impact") },
-                  { label: "Support", href: createPageUrl("Support") },
-                  { label: "Contact Us", href: "mailto:help@likelee.ai" },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <Link
-                      to={item.href}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  </div>
-                ))}
+                <Link
+                  to="#"
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Blog
+                </Link>
+                <Link
+                  to={createPageUrl("Impact")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Impact
+                </Link>
+                <Link
+                  to={createPageUrl("Support")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Support
+                </Link>
+                <Link
+                  to={createPageUrl("SalesInquiry")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Contact Us
+                </Link>
               </div>
             </div>
 
@@ -795,9 +804,20 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
               © 2025 Likelee. All rights reserved.
+            </p>
+            <p className="text-sm text-gray-500">
+              Follow us on Instagram{" "}
+              <a
+                href="https://instagram.com/@likelee.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              >
+                @likelee.ai
+              </a>
             </p>
           </div>
         </div>
