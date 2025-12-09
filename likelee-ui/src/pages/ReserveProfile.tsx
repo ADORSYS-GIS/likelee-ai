@@ -1664,7 +1664,7 @@ export default function ReserveProfile() {
                       placeholder="••••••••"
                     />
                     <div className="text-right mt-1">
-                      <Link to="/forgot-password" className="text-sm text-gray-600 hover:underline">
+                      <Link to="/forgot-password" className="text-sm text-cyan-600 hover:underline">
                         Forgot Password?
                       </Link>
                     </div>
