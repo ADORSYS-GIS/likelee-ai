@@ -763,15 +763,64 @@ export default function CreatorDashboard() {
     editingLicensingRate,
   ]);
 
+  // Content Restrictions State
+  const [contentRestrictions, setContentRestrictions] = useState<string[]>([
+    "Political Content",
+    "Controversial Topics",
+    "Explicit/Adult Content",
+    "Pharmaceutical Claims",
+    "Financial/Investment Advice",
+    "Tobacco/Vaping Products",
+    "Gambling (Unlicensed)",
+  ]);
+  const [availableRestrictions, setAvailableRestrictions] = useState<string[]>([
+    "Alcohol",
+    "Weapons/Firearms",
+    "Cryptocurrency/NFT",
+    "MLM/Multi-Level Marketing",
+    "Unlicensed Financial Products",
+    "Health/Medical Claims",
+  ]);
+  const [brandExclusivity, setBrandExclusivity] = useState<string[]>([]);
+  const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
+  const [customRestriction, setCustomRestriction] = useState("");
+  const [newBrand, setNewBrand] = useState("");
+  const [editingLicensingRate, setEditingLicensingRate] = useState(false);
+  const [localMonthlyRate, setLocalMonthlyRate] = useState("");
+  const [savingRules, setSavingRules] = useState(false);
+
+  // Sync local rate when creator data loads or when entering edit mode
+  // Sync local rate when creator data loads or when entering edit mode
+  useEffect(() => {
+    // If we are not editing, keep the local value in sync with the saved data
+    if (!editingLicensingRate) {
+      if (
+        creator?.base_monthly_price_cents !== undefined &&
+        creator?.base_monthly_price_cents !== null
+      ) {
+        setLocalMonthlyRate(
+          (creator.base_monthly_price_cents / 100).toString(),
+        );
+      } else if (creator?.price_per_week !== undefined) {
+        setLocalMonthlyRate(((creator.price_per_week || 0) * 4).toString());
+      }
+    }
+  }, [
+    creator?.price_per_week,
+    creator?.base_monthly_price_cents,
+    editingLicensingRate,
+  ]);
+
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
     if (!initialized || !authenticated || !user?.id) return;
     const abort = new AbortController();
     (async () => {
       try {
-        const full = api(
+        const full = new URL(
           `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-        );
+          API_BASE || "/",
+        ).toString();
         const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
@@ -2600,10 +2649,15 @@ export default function CreatorDashboard() {
       setUploadingToSection(true);
 
       // Upload via backend (Option B: server-only writes)
+      const apiBase =
+        (import.meta as any).env.VITE_API_BASE_URL ||
+        (import.meta as any).env.VITE_API_BASE ||
+        "http://localhost:8787";
       const buf = await file.arrayBuffer();
-      const full = api(
+      const full = new URL(
         `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
-      );
+        apiBase || "/",
+      ).toString();
       const res = await fetch(full, {
         method: "POST",
         headers: { "content-type": file.type || "image/jpeg" },
