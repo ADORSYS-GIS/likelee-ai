@@ -92,6 +92,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
+import { useToast } from "@/components/ui/use-toast";
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -712,6 +713,7 @@ export default function CreatorDashboard() {
   >(null);
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
+  const { toast } = useToast();
 
   // Content Restrictions State
   const [contentRestrictions, setContentRestrictions] = useState<string[]>([
@@ -4691,21 +4693,19 @@ export default function CreatorDashboard() {
           setCustomRates(reloadedRates);
         }
 
-        alert("Changes saved successfully!");
+        toast({ title: "Success", description: "Changes saved successfully!" });
       } catch (rateError: any) {
         console.error("Rate save error:", rateError);
         // If profile saved but rates failed, we still consider it a partial success
         // and close the modal, but warn the user.
-        alert(
-          `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
-        );
+        toast({ title: "Partial Success", description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`, variant: "destructive" });
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(`Failed to save: ${e?.message || e}`);
+      toast({ title: "Save Failed", description: `Failed to save: ${e?.message || e}`, variant: "destructive" });
     } finally {
       setSavingRates(false);
     }
