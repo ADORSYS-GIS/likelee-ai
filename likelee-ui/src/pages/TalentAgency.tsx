@@ -72,25 +72,15 @@ export default function TalentAgency() {
               For Talent & Modeling Agencies
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-              Your Models Are Sitting on
-              <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Untapped Value
-              </span>
+              Your Talent Could Earn 10x More
             </h1>
             <div className="max-w-4xl mx-auto mb-8">
-              <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6">
-                <span className="font-bold">Traditional modeling:</span>{" "}
-                One-time $1.5K shoot. Brand profits for years. Model gets paid
-                once.
+              <p className="text-xl md:text-2xl font-bold text-gray-900 mb-6">
+                Turn one-time shoots into recurring revenue
               </p>
               <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6">
-                <span className="font-bold">Likelee:</span> License your models'
-                likenesses. Earn recurring revenue from the same photos and
-                faces—year after year.
-              </p>
-              <p className="text-xl font-bold text-gray-900">
-                Your models deserve more than one-time payouts. Your agency
-                deserves recurring income. Likelee makes both possible.
+                Traditional bookings pay $1.5K once and you're done. Likelee licensing pays monthly, forever, and
+                your roster earns consistently.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

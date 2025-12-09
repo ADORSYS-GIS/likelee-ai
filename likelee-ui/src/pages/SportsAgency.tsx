@@ -62,23 +62,17 @@ export default function SportsAgency() {
             For Sports Agencies & Athlete Representatives
           </Badge>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-            License Your Athletes' Likenesses for
-            <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-              AI-Powered Content
-            </span>
+            Turn Your Athletes Into Year-Round Earners
           </h1>
           <Card className="p-8 bg-white border-2 border-black shadow-xl rounded-none mb-8">
-            <p className="text-xl md:text-2xl text-gray-700 leading-relaxed mb-6">
-              Brands are building AI-powered campaigns right now. They need
-              verified athlete likenesses. Your athletes should be earning
-              recurring royalties from every use.
+            <p className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+              NIL licensing that grows while booking slows
             </p>
-            <div className="flex items-center justify-center gap-3">
-              <Zap className="w-8 h-8 text-emerald-600" />
-              <p className="text-2xl font-bold text-gray-900">
-                Likelee is the infrastructure to make it happen at scale.
-              </p>
-            </div>
+            <p className="text-lg md:text-xl text-gray-700 leading-relaxed">
+              Traditional endorsements pay once. Likelee licensing pays monthly, forever. Your athletes earn
+              recurring revenue from their name, image, and likeness while you manage contracts in one place
+              and collect commission on every renewal.
+            </p>
           </Card>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
