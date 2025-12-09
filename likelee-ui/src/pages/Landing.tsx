@@ -159,7 +159,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 280 50 Q 50 200, 200 450"
+            d="M 280 50 Q 50 200, 200 480"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -218,7 +218,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 120 50 Q 350 200, 200 450"
+            d="M 120 50 Q 350 200, 200 480"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -279,7 +279,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 280 50 Q 50 200, 200 450"
+            d="M 280 50 Q 50 200, 200 480"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -339,7 +339,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 120 50 Q 350 200, 200 450"
+            d="M 120 50 Q 350 200, 200 480"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -400,7 +400,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 280 50 Q 50 200, 200 450"
+            d="M 280 50 Q 50 200, 200 480"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
