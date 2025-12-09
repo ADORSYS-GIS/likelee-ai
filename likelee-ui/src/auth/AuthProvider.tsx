@@ -6,9 +6,10 @@ import React, {
   useState,
 } from "react";
 import { supabase } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 interface AuthContextValue {
+  supabase: SupabaseClient;
   initialized: boolean;
   authenticated: boolean;
   token?: string | undefined;
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = useMemo(
     () => ({
+      supabase,
       initialized,
       authenticated: !!user,
       user,
