@@ -122,19 +122,14 @@ const INDUSTRIES = [
 const VOICE_SCRIPTS = {
   happy:
     "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
-
   emotional:
     "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-
   excited:
     "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-
   mellow:
     "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-
   relaxed:
     "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-
   angry:
     "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
 };
