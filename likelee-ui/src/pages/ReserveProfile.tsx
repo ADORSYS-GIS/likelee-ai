@@ -1663,6 +1663,11 @@ export default function ReserveProfile() {
                       className="border-2 border-gray-300 rounded-none"
                       placeholder="••••••••"
                     />
+                    <div className="text-right mt-1">
+                      <Link to="/forgot-password" className="text-sm text-gray-600 hover:underline">
+                        Forgot Password?
+                      </Link>
+                    </div>
                   </div>
                   <Button
                     type="submit"
