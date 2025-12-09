@@ -111,6 +111,8 @@ const __pagesQueryClient = new QueryClient();
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import Login from "./Login";
 import Register from "./Register";
+import ForgotPassword from "./ForgotPassword";
+import UpdatePassword from "./UpdatePassword";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 
@@ -452,6 +454,8 @@ function PagesContent() {
 
         <Route path="/Login" element={<Login />} />
         <Route path="/Register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
         <Route
           path="/TwoFactorSetup"
           element={
