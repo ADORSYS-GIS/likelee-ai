@@ -1004,7 +1004,10 @@ export default function CreatorDashboard() {
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
-      toast({ title: "Info", description: "Please log in to start verification." });
+      toast({
+        title: "Info",
+        description: "Please log in to start verification.",
+      });
       return;
     }
     try {
@@ -1018,7 +1021,10 @@ export default function CreatorDashboard() {
       const data = await res.json();
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      toast({ title: "Info", description: `Failed to start verification: ${e?.message || e}` });
+      toast({
+        title: "Info",
+        description: `Failed to start verification: ${e?.message || e}`,
+      });
     } finally {
       setKycLoading(false);
     }
@@ -1096,7 +1102,10 @@ export default function CreatorDashboard() {
           name: file.name,
         });
         setUploading(false);
-        toast({ title: "Info", description: "Hero media uploaded! (Demo mode)" });
+        toast({
+          title: "Info",
+          description: "Hero media uploaded! (Demo mode)",
+        });
       }, 1000);
     }
   };
@@ -1136,10 +1145,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Brand Content
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1148,10 +1158,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Detections
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1257,12 +1268,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex gap-4">
                       <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -1782,7 +1794,10 @@ export default function CreatorDashboard() {
         }));
         setPhotos([...photos, ...newPhotos]);
         setUploading(false);
-        toast({ title: "Info", description: `${files.length} photo(s) uploaded! ` });
+        toast({
+          title: "Info",
+          description: `${files.length} photo(s) uploaded! `,
+        });
       }, 1000);
     }
   };
@@ -1795,11 +1810,17 @@ export default function CreatorDashboard() {
     const file = e.target.files[0];
     if (file) {
       if (!user?.id) {
-        toast({ title: "Info", description: "You must be logged in to upload a photo." });
+        toast({
+          title: "Info",
+          description: "You must be logged in to upload a photo.",
+        });
         return;
       }
       if (file.size > 5_000_000) {
-        toast({ title: "Info", description: "Please upload an image of 5 MB or less." });
+        toast({
+          title: "Info",
+          description: "Please upload an image of 5 MB or less.",
+        });
         return;
       }
       setUploadingPhoto(true);
@@ -1923,7 +1944,10 @@ export default function CreatorDashboard() {
       }, 1000);
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      toast({ title: "Info", description: "Failed to access microphone. Please check permissions." });
+      toast({
+        title: "Info",
+        description: "Failed to access microphone. Please check permissions.",
+      });
     }
   };
 
@@ -2078,16 +2102,19 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
 
-      toast({ title: "Info", description: "Voice profile created successfully with ElevenLabs!" });
+      toast({
+        title: "Info",
+        description: "Voice profile created successfully with ElevenLabs!",
+      });
     } catch (error) {
       console.error("Voice profile creation error:", error);
 
@@ -2104,7 +2131,7 @@ export default function CreatorDashboard() {
       toast({
         title: "Error creating voice profile",
         description: `Error: ${errorMessage}. Possible issues: low quality, unsupported format, or recording too short (30s+). Try re-recording with better audio.`,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setGeneratingVoice(false);
@@ -2123,12 +2150,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2141,7 +2169,10 @@ export default function CreatorDashboard() {
   const handleApprove = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    toast({ title: "Info", description: "Campaign approved! Contract signed! (Demo mode)" });
+    toast({
+      title: "Info",
+      description: "Campaign approved! Contract signed! (Demo mode)",
+    });
   };
 
   const handleDecline = (approvalId) => {
@@ -2156,7 +2187,7 @@ export default function CreatorDashboard() {
     setShowPauseModal(false);
     toast({
       title: "Info",
-      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode). ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`
+      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode). ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
     });
   };
 
@@ -2164,7 +2195,7 @@ export default function CreatorDashboard() {
     setShowRevokeModal(false);
     toast({
       title: "Info",
-      description: `License revoked! (Demo mode). 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`
+      description: `License revoked! (Demo mode). 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
     });
   };
 
@@ -2274,11 +2305,17 @@ export default function CreatorDashboard() {
         throw new Error("Failed to save restrictions");
       }
 
-      toast({ title: "Success", description: "Your content restrictions have been saved." });
+      toast({
+        title: "Success",
+        description: "Your content restrictions have been saved.",
+      });
       setShowRestrictionsModal(false);
     } catch (e) {
       console.error("Error saving restrictions:", e);
-      toast({ title: "Info", description: "Failed to save restrictions. Please try again." });
+      toast({
+        title: "Info",
+        description: "Failed to save restrictions. Please try again.",
+      });
     }
   };
 
@@ -2338,10 +2375,17 @@ export default function CreatorDashboard() {
         }
 
         setEditingRules(false);
-        toast({ title: "Success", description: "Licensing preferences updated!" });
+        toast({
+          title: "Success",
+          description: "Licensing preferences updated!",
+        });
       } catch (error: any) {
         console.error("Failed to save rules:", error);
-        toast({ title: "Error", description: `Failed to save preferences: ${error?.message || error}`, variant: "destructive" });
+        toast({
+          title: "Error",
+          description: `Failed to save preferences: ${error?.message || error}`,
+          variant: "destructive",
+        });
       }
     } catch (e) {
       console.error("Unexpected error in handleSaveRules:", e);
@@ -2384,14 +2428,14 @@ export default function CreatorDashboard() {
       // Show specific negotiation status toast
       toast({
         title: "Success",
-        description: `Negotiations are now ${checked ? 'accepted' : 'not accepted'}.`
+        description: `Negotiations are now ${checked ? "accepted" : "not accepted"}.`,
       });
     } catch (error: any) {
       console.error("Failed to save negotiation preference:", error);
       toast({
         title: "Error",
         description: "Failed to save negotiation preference. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -2682,7 +2726,7 @@ export default function CreatorDashboard() {
           toast({
             title: "Upload Error",
             description: `${msg}${reasons.length ? " Details: " + reasons.join(", ") : ""}`,
-            variant: "destructive"
+            variant: "destructive",
           });
         } catch {
           toast({ title: "Info", description: raw || "Upload failed" });
@@ -2702,7 +2746,10 @@ export default function CreatorDashboard() {
       setPreviewImage(null);
       toast({ title: "Info", description: "Reference image uploaded!" });
     } catch (e: any) {
-      toast({ title: "Info", description: `Upload failed: ${e?.message || e}` });
+      toast({
+        title: "Info",
+        description: `Upload failed: ${e?.message || e}`,
+      });
     } finally {
       setUploadingToSection(false);
     }
@@ -3114,7 +3161,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -3229,16 +3276,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3276,8 +3325,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3382,10 +3432,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -3487,12 +3538,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -4075,7 +4127,8 @@ export default function CreatorDashboard() {
                       if (campaign.isExample) {
                         toast({
                           title: "Info",
-                          description: "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings."
+                          description:
+                            "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
                         });
                         return;
                       }
@@ -4353,19 +4406,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -4377,10 +4432,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4754,14 +4810,22 @@ export default function CreatorDashboard() {
         console.error("Rate save error:", rateError);
         // If profile saved but rates failed, we still consider it a partial success
         // and close the modal, but warn the user.
-        toast({ title: "Partial Success", description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`, variant: "destructive" });
+        toast({
+          title: "Partial Success",
+          description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+          variant: "destructive",
+        });
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
     } catch (e: any) {
       console.error("Save error:", e);
-      toast({ title: "Save Failed", description: `Failed to save: ${e?.message || e}`, variant: "destructive" });
+      toast({
+        title: "Save Failed",
+        description: `Failed to save: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setSavingRates(false);
     }
@@ -4782,19 +4846,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -4984,7 +5050,7 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, is_public_brands: checked });
                     toast({
                       title: "Info",
-                      description: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`
+                      description: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
                     });
                   }}
                 />
@@ -5052,10 +5118,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -5087,10 +5154,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -5506,7 +5574,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -5530,10 +5598,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -6193,10 +6262,11 @@ export default function CreatorDashboard() {
                     <Badge
                       key={type}
                       onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
                       {creator.content_types?.includes(type) && (
                         <Check className="w-3 h-3" />
@@ -6219,10 +6289,11 @@ export default function CreatorDashboard() {
                     <Badge
                       key={industry}
                       onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
                       {creator.industries?.includes(industry) && (
                         <Check className="w-3 h-3" />
@@ -6275,9 +6346,9 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      (existing.price_per_week_cents / 100) *
-                                      4
-                                    ).toString()
+                                        (existing.price_per_week_cents / 100) *
+                                        4
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={(
@@ -6345,9 +6416,17 @@ export default function CreatorDashboard() {
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you want to delete this recording? This action cannot be undone.</p>
+          <p>
+            Are you sure you want to delete this recording? This action cannot
+            be undone.
+          </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteConfirmation(false)}>No</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirmation(false)}
+            >
+              No
+            </Button>
             <Button onClick={confirmDelete}>Yes</Button>
           </DialogFooter>
         </DialogContent>
@@ -6476,7 +6555,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addBrandExclusivity();
                     }
@@ -6606,7 +6685,7 @@ export default function CreatorDashboard() {
                   onChange={(e) => setNewBrand(e.target.value)}
                   className="px-3 pl-4 bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addBrandExclusivity();
                     }
