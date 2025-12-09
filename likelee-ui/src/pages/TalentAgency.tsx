@@ -65,137 +65,40 @@ export default function TalentAgency() {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section className="relative px-6 pt-16 pb-12 overflow-hidden bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-6 bg-gray-100 text-gray-900 hover:bg-gray-100 px-4 py-2 rounded-none border-2 border-black">
-              For Talent & Modeling Agencies
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-              Your Models Are Sitting on
-              <span className="block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Untapped Value
-              </span>
-            </h1>
-            <div className="max-w-4xl mx-auto mb-8">
-              <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6">
-                <span className="font-bold">Traditional modeling:</span>{" "}
-                One-time $1.5K shoot. Brand profits for years. Model gets paid
-                once.
-              </p>
-              <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6">
-                <span className="font-bold">Likelee:</span> License your models'
-                likenesses. Earn recurring revenue from the same photos and
-                faces—year after year.
-              </p>
-              <p className="text-xl font-bold text-gray-900">
-                Your models deserve more than one-time payouts. Your agency
-                deserves recurring income. Likelee makes both possible.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                onClick={() => navigate(createPageUrl("SalesInquiry"))}
-                className="h-14 sm:h-16 px-8 sm:px-12 text-base sm:text-lg font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white border-2 border-black shadow-2xl transition-all hover:scale-105 rounded-none"
-              >
-                Book a Demo
-              </Button>
-              <Button
-                onClick={scrollToHowItWorks}
-                variant="outline"
-                className="h-14 sm:h-16 px-8 sm:px-12 text-base sm:text-lg font-medium border-2 border-black rounded-none hover:bg-gray-50"
-              >
-                See How It Works
-              </Button>
-            </div>
-          </div>
+      <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+            Your Talent Could Earn 10x More
+          </h1>
+          <p className="text-xl md:text-2xl font-semibold mb-4">
+            Turn one-time shoots into recurring revenue
+          </p>
+          <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-8">
+            Traditional bookings pay $1.5K once and you're done. Likelee
+            licensing pays monthly, forever, and your roster earns consistently.
+          </p>
+          <Button
+            onClick={() => navigate(createPageUrl("SalesInquiry"))}
+            className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
+          >
+            Book Demo
+          </Button>
         </div>
       </section>
 
-      {/* Section 1: The Problem (And the Opportunity) */}
-      <section className="px-6 py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              The Problem (And the Opportunity)
-            </h2>
-            <p className="text-xl text-gray-600">The Booking Era is Changing</p>
-          </div>
-
-          <Card className="p-8 md:p-12 bg-white border-2 border-black shadow-xl rounded-none mb-12">
-            <p className="text-xl text-gray-700 mb-6 leading-relaxed">
-              Your agency has thrived on one model: book shoots, collect fees,
-              move on.
-            </p>
-            <p className="text-xl font-bold text-gray-900 mb-6">
-              But here's what's happening:
-            </p>
-            <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-              Brands are experimenting with AI. They're testing AI-generated
-              models. Testing AI video production. Testing faster, cheaper
-              alternatives.
-            </p>
-            <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-              Does that mean they'll stop booking real talent entirely? No. But
-              it means:
-            </p>
-            <div className="space-y-3 text-lg text-gray-700 mb-8">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" />
-                <p>Booking frequency might decrease</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" />
-                <p>Booking rates face pressure</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" />
-                <p>
-                  Client budgets get split between shoots AND AI experiments
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" />
-                <p>Your models' year-round income becomes less predictable</p>
-              </div>
-            </div>
-            <p className="text-xl font-bold text-gray-900">
-              Traditional agencies are vulnerable right now.
-            </p>
-          </Card>
-
-          <Card className="p-8 md:p-12 bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-black rounded-none mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              But here's the opportunity:
-            </h3>
-            <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-              While brands explore AI, they still need{" "}
-              <span className="font-bold">real people with real consent</span>.
-              Real faces for authentic campaigns. Real voices for real stories.
-              Verified talent that audiences trust.
-            </p>
-            <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-              Likelee positions your agency—and your models—as the{" "}
-              <span className="font-bold">
-                antidote to AI's uncanny valley problem
-              </span>
-              . Real talent. Real consent. Real trust.
-            </p>
-            <p className="text-lg text-gray-700 leading-relaxed">
-              And more importantly: Likelee gives your models{" "}
-              <span className="font-bold">recurring revenue that GROWS</span> as
-              booking uncertainty increases.
-            </p>
-          </Card>
-
-          <Card className="p-8 bg-gradient-to-r from-indigo-600 to-purple-600 border-2 border-black rounded-none text-center">
-            <p className="text-xl text-white font-semibold leading-relaxed">
-              Your models aren't dependent on shoot bookings anymore. They're
-              earning from licensing—which is MORE stable, MORE predictable, and
-              GROWS as more brands realize they need verified human talent in an
-              AI world.
-            </p>
-          </Card>
+      {/* Section 1: Bookings are dropping */}
+      <section className="px-6 py-20 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Bookings are dropping, licensing is rising.
+          </h2>
+          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+            Brands are shifting budgets toward AI experiments, but they still
+            need real verified talent for authentic campaigns. Likelee creates
+            recurring income streams for your talent while booking frequency
+            fluctuates. You earn recurring commission every month they stay
+            licensed.
+          </p>
         </div>
       </section>
 

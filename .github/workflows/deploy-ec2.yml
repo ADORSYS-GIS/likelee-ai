@@ -99,27 +99,16 @@ jobs:
             sudo -n bash -lc '
               set -euo pipefail
               echo "Running deployment as root (user: $(whoami), home: $HOME)"
-              # Ensure openssl exists for cert generation
-              if ! command -v openssl >/dev/null 2>&1; then
-                echo "openssl not found; installing..."
-                if command -v apt-get >/dev/null 2>&1; then
-                  apt-get update -y && apt-get install -y openssl
-                elif command -v yum >/dev/null 2>&1; then
-                  yum install -y openssl
-                fi
-              fi
               # Sync staged assets to target directory under /opt
               mkdir -p "$(dirname "${{ env.REMOTE_DIR }}")"
               mkdir -p "${{ env.REMOTE_DIR }}"
               # Preserve instance-specific files
               if [ -f "${{ env.REMOTE_DIR }}/.env" ]; then cp "${{ env.REMOTE_DIR }}/.env" /tmp/.env.backup || true; fi
-              if [ -d "${{ env.REMOTE_DIR }}/certs" ]; then cp -a "${{ env.REMOTE_DIR }}/certs" /tmp/certs.backup || true; fi
               # Refresh managed assets
               rm -rf "${{ env.REMOTE_DIR }}"/*
               cp -a /tmp/likelee-deploy/deploy/ec2/. "${{ env.REMOTE_DIR }}/"
               # Restore preserved files
               if [ -f /tmp/.env.backup ]; then mv -f /tmp/.env.backup "${{ env.REMOTE_DIR }}/.env"; fi
-              if [ -d /tmp/certs.backup ]; then rm -rf "${{ env.REMOTE_DIR }}/certs"; mv /tmp/certs.backup "${{ env.REMOTE_DIR }}/certs"; fi
               cd "${{ env.REMOTE_DIR }}"
               echo "CWD: $(pwd)"
               echo "Listing deploy directory:" && ls -la
@@ -131,6 +120,27 @@ jobs:
               if [ ! -f docker-compose.prod.yml ]; then
                 echo "ERROR: docker-compose.prod.yml not found in $(pwd)" >&2
                 exit 1
+              fi
+              # Load DOMAIN and CERTBOT_EMAIL from .env if present
+              if [ -f .env ]; then set -a; . ./.env; set +a; fi
+              DOMAIN="${DOMAIN:-likelee.ai}"
+              CERTBOT_EMAIL="${CERTBOT_EMAIL:-admin@likelee.ai}"
+              echo "Using DOMAIN=$DOMAIN CERTBOT_EMAIL=$CERTBOT_EMAIL"
+              # Prepare cert directories
+              mkdir -p ./letsencrypt ./certbot-www
+              # Bootstrap certificates if missing (standalone mode binds :80)
+              if [ ! -f "./letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+                echo "No existing certs found for ${DOMAIN}; obtaining via certbot (standalone)"
+                # Stop any service on :80 to free the port
+                docker ps --format '{{"{{.ID}} {{.Names}} {{.Ports}}"}}' | grep -E '0.0.0.0:80->|:80->' && docker stop likelee-gateway || true
+                docker run --rm -p 80:80 \
+                  -v "$(pwd)/letsencrypt:/etc/letsencrypt" \
+                  certbot/certbot:latest certonly --standalone \
+                  --agree-tos --no-eff-email -m "$CERTBOT_EMAIL" -d "$DOMAIN" \
+                  --non-interactive --keep-until-expiring
+                echo "Certbot issuance completed"
+              else
+                echo "Certificates already present; skipping issuance"
               fi
               # Optional GHCR login if credentials provided
               GHCR_USER="${{ secrets.GHCR_USER }}"
@@ -150,8 +160,10 @@ jobs:
                 ./scripts/rollback.sh || true
                 exit 1
               fi
-              echo "Certificates present (if any):"
-              ls -la certs || true
+              echo "Certificates present:"
+              ls -la ./letsencrypt/live/${DOMAIN} || true
+              # Ensure certbot-renew is up
+              docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d certbot-renew || true
               sleep 5
               set +e
               curl -ksS --max-time 10 https://localhost/ >/dev/null
