@@ -20,15 +20,15 @@ The system aims to keep humans at the center of AI-generated content, whether fo
 
 ### 2.1 Technical and Strategic Constraints
 
-* **Performance & Cost:** The initial architecture uses **Firebase Realtime Database**, but the team may need to switch some services if scalability or cost becomes an issue.
-* **Early Monetization:** The model must support **Immediate Recurring Revenue** (MRR) from day one, especially through agency integration and studio credits.
-* **Integrated Workflow:** The system must evolve from a directory to a **creation platform** to enable workflow lock-in.
+- **Performance & Cost:** The initial architecture uses **Firebase Realtime Database**, but the team may need to switch some services if scalability or cost becomes an issue.
+- **Early Monetization:** The model must support **Immediate Recurring Revenue** (MRR) from day one, especially through agency integration and studio credits.
+- **Integrated Workflow:** The system must evolve from a directory to a **creation platform** to enable workflow lock-in.
 
 ### 2.2 Compliance and Ethics (Crosscutting)
 
-* **Verification:** Mandatory **KYC** and **liveness** checks for Faces and before “Create Agency” becomes available.
-* **Trust/Traceability:** Use of **Invisible Watermarking** and **C2PA manifest** (future/P2) for royalty tracking and conversion attribution.
-* **Privacy:** A **privacy-first design** with clear consent steps for uploading face photos.
+- **Verification:** Mandatory **KYC** and **liveness** checks for Faces and before “Create Agency” becomes available.
+- **Trust/Traceability:** Use of **Invisible Watermarking** and **C2PA manifest** (future/P2) for royalty tracking and conversion attribution.
+- **Privacy:** A **privacy-first design** with clear consent steps for uploading face photos.
 
 ## 3. Context and Scope
 
@@ -51,15 +51,14 @@ The architecture is built around several layers and core services:
 
 ### 4.1 Tech Stack Overview
 
-* **Frontend:** React 18.2.0, TypeScript, Vite 6.5, Tailwind CSS 3.4.16.
-* **Backend & Database:** Firebase Realtime Database (NoSQL), Firebase Authentication, Firebase Storage.
-* **Key System Services:**
-
-    * **Royalty Ledger:** Records booking events (flat-fee transactions) and provides read access for dashboards.
-    * **Watermark API:** Applies invisible watermarks on exports, storing a hash tied to the booking ID.
-    * **Payment (Stripe Connect):** Manages split payments (Brand → Platform → Face + Creator) and transfers to Stripe Express accounts.
-    * **Localization (i18n):** Default English; Spanish and French prioritized for MVP.
-    * **Likelee Studio:** Includes the Model Router (Replicate/Hugging Face routing) and Simple Prompt UI.
+- **Frontend:** React 18.2.0, TypeScript, Vite 6.5, Tailwind CSS 3.4.16.
+- **Backend & Database:** Firebase Realtime Database (NoSQL), Firebase Authentication, Firebase Storage.
+- **Key System Services:**
+  - **Royalty Ledger:** Records booking events (flat-fee transactions) and provides read access for dashboards.
+  - **Watermark API:** Applies invisible watermarks on exports, storing a hash tied to the booking ID.
+  - **Payment (Stripe Connect):** Manages split payments (Brand → Platform → Face + Creator) and transfers to Stripe Express accounts.
+  - **Localization (i18n):** Default English; Spanish and French prioritized for MVP.
+  - **Likelee Studio:** Includes the Model Router (Replicate/Hugging Face routing) and Simple Prompt UI.
 
 ## 5. Runtime View: Creator and Agency Flows
 
@@ -70,10 +69,10 @@ The creator flow is optimized for monetization and collaboration (P1 must-have):
 1. **Discovery:** Creator searches/browses Faces using filters.
 2. **Booking:** Creator adds a Face to the **project basket** and proceeds to **checkout** via Stripe.
 3. **License/Generation:** They pay for **short-term likeness rights**. In the **Likelee Studio**, they can:
+   - Select a model via the Model Router (2–3 max).
+   - Use the Simple Prompt UI.
+   - **Pay** credits (Creator Tier) or monthly access (Pro Tier) for generation.
 
-    * Select a model via the Model Router (2–3 max).
-    * Use the Simple Prompt UI.
-    * **Pay** credits (Creator Tier) or monthly access (Pro Tier) for generation.
 4. **Collaboration:** A **simple chat thread** allows communication with brands/studios or other creators.
 
 ### 5.2 P0 Flow: Agency Onboarding
@@ -101,6 +100,5 @@ The system supports multiple licensing models to generate revenue for Likelee an
 
 The design aims to bridge AI and humanity.
 
-* **Vibe:** Futuristic yet Familiar, Raw yet Refined, Ethical and Transparent.
-* **Visual Style:** Clean grids, futuristic typography, **organic overlays** (hand-drawn lines, sketches, pencil textures). A black/white palette with muted neon orange, pale blue, and soft yellow accents.
-
+- **Vibe:** Futuristic yet Familiar, Raw yet Refined, Ethical and Transparent.
+- **Visual Style:** Clean grids, futuristic typography, **organic overlays** (hand-drawn lines, sketches, pencil textures). A black/white palette with muted neon orange, pale blue, and soft yellow accents.

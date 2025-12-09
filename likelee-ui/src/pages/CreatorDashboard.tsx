@@ -92,6 +92,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
+import { useToast } from "@/components/ui/use-toast";
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -121,19 +122,14 @@ const INDUSTRIES = [
 const VOICE_SCRIPTS = {
   happy:
     "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
-
   emotional:
     "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-
   excited:
     "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-
   mellow:
     "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-
   relaxed:
     "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-
   angry:
     "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
 };
@@ -635,7 +631,7 @@ export default function CreatorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, initialized, authenticated, logout } = useAuth();
-  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL;
+  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
     try {
       if (!API_BASE) return new URL("/", window.location.origin).toString();
@@ -712,6 +708,7 @@ export default function CreatorDashboard() {
   >(null);
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
+  const { toast } = useToast();
 
   // Content Restrictions State
   const [contentRestrictions, setContentRestrictions] = useState<string[]>([
@@ -738,6 +735,8 @@ export default function CreatorDashboard() {
   const [editingLicensingRate, setEditingLicensingRate] = useState(false);
   const [localMonthlyRate, setLocalMonthlyRate] = useState("");
   const [savingRules, setSavingRules] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [recordingToDelete, setRecordingToDelete] = useState(null);
 
   // Sync local rate when creator data loads or when entering edit mode
   // Sync local rate when creator data loads or when entering edit mode
@@ -875,11 +874,13 @@ export default function CreatorDashboard() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [generatingVoice, setGeneratingVoice] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const wordTimeoutRef = useRef(null);
 
   // Track if we've loaded data for the current user to prevent unnecessary refetches
   const loadedUserRef = useRef<string | null>(null);
@@ -998,7 +999,10 @@ export default function CreatorDashboard() {
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
-      alert("Please log in to start verification.");
+      toast({
+        title: "Info",
+        description: "Please log in to start verification.",
+      });
       return;
     }
     try {
@@ -1012,7 +1016,10 @@ export default function CreatorDashboard() {
       const data = await res.json();
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      alert(`Failed to start verification: ${e?.message || e}`);
+      toast({
+        title: "Info",
+        description: `Failed to start verification: ${e?.message || e}`,
+      });
     } finally {
       setKycLoading(false);
     }
@@ -1090,7 +1097,10 @@ export default function CreatorDashboard() {
           name: file.name,
         });
         setUploading(false);
-        alert("Hero media uploaded! (Demo mode)");
+        toast({
+          title: "Info",
+          description: "Hero media uploaded! (Demo mode)",
+        });
       }, 1000);
     }
   };
@@ -1130,10 +1140,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Brand Content
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1142,10 +1153,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Detections
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1251,12 +1263,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex gap-4">
                       <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -1776,7 +1789,10 @@ export default function CreatorDashboard() {
         }));
         setPhotos([...photos, ...newPhotos]);
         setUploading(false);
-        alert(`${files.length} photo(s) uploaded! `);
+        toast({
+          title: "Info",
+          description: `${files.length} photo(s) uploaded! `,
+        });
       }, 1000);
     }
   };
@@ -1789,11 +1805,17 @@ export default function CreatorDashboard() {
     const file = e.target.files[0];
     if (file) {
       if (!user?.id) {
-        alert("You must be logged in to upload a photo.");
+        toast({
+          title: "Info",
+          description: "You must be logged in to upload a photo.",
+        });
         return;
       }
       if (file.size > 5_000_000) {
-        alert("Please upload an image of 5 MB or less.");
+        toast({
+          title: "Info",
+          description: "Please upload an image of 5 MB or less.",
+        });
         return;
       }
       setUploadingPhoto(true);
@@ -1832,12 +1854,9 @@ export default function CreatorDashboard() {
           profile_photo: newPhotoUrl,
         }));
 
-        toast({
-          title: "Success",
-          description: "Profile photo updated!",
-        });
+        toast({ title: "Info", description: "Profile photo updated!" });
       } catch (err: any) {
-        alert(`Upload failed: ${err.message}`);
+        toast({ title: "Info", description: `Upload failed: ${err.message}` });
         // Revert optimistic update on error by refreshing dashboard
         try {
           const profileRes = await fetch(
@@ -1904,30 +1923,80 @@ export default function CreatorDashboard() {
         stream.getTracks().forEach((track) => track.stop());
       };
 
+      // Start countdown
+      setCountdown(3);
+      let count = 3;
+
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          setCountdown(count);
+        } else {
+          clearInterval(countdownInterval);
+          setCountdown(null);
+          startActualRecording();
+        }
+      }, 1000);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast({
+        title: "Info",
+        description: "Failed to access microphone. Please check permissions.",
+      });
+    }
+  };
+
+  const startActualRecording = () => {
+    try {
+      if (!mediaRecorderRef.current) return;
+
       mediaRecorderRef.current.start();
       setIsRecording(true);
 
       const startTime = Date.now();
+      const script = VOICE_SCRIPTS[selectedEmotion];
+      const words = script.split(" ");
+      let currentWordIndex = 0;
+
+      const processNextWord = () => {
+        if (currentWordIndex >= words.length) return;
+
+        setCurrentWord(currentWordIndex);
+        const word = words[currentWordIndex];
+        currentWordIndex++;
+
+        // Base delay for ~2.5 words/sec (400ms)
+        let delay = 400;
+
+        // Add pauses for punctuation
+        if (word.endsWith(",") || word.endsWith(";")) {
+          delay += 200; // Short pause
+        } else if (
+          word.endsWith(".") ||
+          word.endsWith("?") ||
+          word.endsWith("!")
+        ) {
+          delay += 400; // Longer pause
+        }
+
+        wordTimeoutRef.current = setTimeout(processNextWord, delay);
+      };
+
+      // Start the word processing loop
+      processNextWord();
+
+      // Update recording time every 100ms
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setRecordingTime(elapsed);
 
-        const script = VOICE_SCRIPTS[selectedEmotion];
-        const words = script.split(" ");
-        const wordsPerSecond = words.length / 60;
-        const wordIndex = Math.min(
-          Math.floor(elapsed * wordsPerSecond),
-          words.length - 1,
-        );
-        setCurrentWord(wordIndex);
-
         if (elapsed >= 60) {
+          if (wordTimeoutRef.current) clearTimeout(wordTimeoutRef.current);
           stopRecording();
         }
       }, 100);
     } catch (error) {
       console.error("Error starting recording:", error);
-      alert("Failed to access microphone. Please check permissions.");
     }
   };
 
@@ -1936,6 +2005,7 @@ export default function CreatorDashboard() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       clearInterval(timerRef.current);
+      if (wordTimeoutRef.current) clearTimeout(wordTimeoutRef.current);
     }
   };
 
@@ -1944,6 +2014,7 @@ export default function CreatorDashboard() {
     setShowRecordingModal(true);
     setRecordingTime(0);
     setCurrentWord(0);
+    setCountdown(null);
   };
 
   const toggleRecordingAccess = (id) => {
@@ -1954,20 +2025,29 @@ export default function CreatorDashboard() {
     );
   };
 
-  const deleteRecording = async (id) => {
-    if (!confirm("Delete this recording?")) return;
-    const rec = voiceLibrary.find((r) => r.id === id);
-    setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
-    try {
-      // If it exists on server, delete there too
-      const sid = rec?.server_recording_id || rec?.id;
-      if (sid) {
-        await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
-          method: "DELETE",
-        });
+  const deleteRecording = (id) => {
+    setRecordingToDelete(id);
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDelete = async () => {
+    if (recordingToDelete) {
+      const rec = voiceLibrary.find((r) => r.id === recordingToDelete);
+      setVoiceLibrary(voiceLibrary.filter((r) => r.id !== recordingToDelete));
+      toast({ title: "Success", description: "Recording deleted." });
+      try {
+        // If it exists on server, delete there too
+        const sid = rec?.server_recording_id || rec?.id;
+        if (sid) {
+          await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
+            method: "DELETE",
+          });
+        }
+      } catch (_) {
+        // best-effort
       }
-    } catch (_) {
-      // best-effort
+      setRecordingToDelete(null);
+      setShowDeleteConfirmation(false);
     }
   };
 
@@ -2017,16 +2097,19 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
 
-      alert("Voice profile created successfully with ElevenLabs!");
+      toast({
+        title: "Info",
+        description: "Voice profile created successfully with ElevenLabs!",
+      });
     } catch (error) {
       console.error("Voice profile creation error:", error);
 
@@ -2040,9 +2123,11 @@ export default function CreatorDashboard() {
         errorMessage = error.message;
       }
 
-      alert(
-        `Error: ${errorMessage}\n\nPossible issues:\n• Recording quality too low\n• File format not supported by ElevenLabs\n• Recording too short (need 30+ seconds)\n• Try re-recording with better audio`,
-      );
+      toast({
+        title: "Error creating voice profile",
+        description: `Error: ${errorMessage}. Possible issues: low quality, unsupported format, or recording too short (30s+). Try re-recording with better audio.`,
+        variant: "destructive",
+      });
     } finally {
       setGeneratingVoice(false);
     }
@@ -2060,12 +2145,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2078,29 +2164,34 @@ export default function CreatorDashboard() {
   const handleApprove = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    alert("Campaign approved! Contract signed! (Demo mode)");
+    toast({
+      title: "Info",
+      description: "Campaign approved! Contract signed! (Demo mode)",
+    });
   };
 
   const handleDecline = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    alert("Campaign declined! (Demo mode)");
+    toast({ title: "Info", description: "Campaign declined! (Demo mode)" });
   };
 
   const handlePauseLicense = (contract, immediate) => {
     const option = immediate ? "immediate" : "next_month";
     setPauseOption(option);
     setShowPauseModal(false);
-    alert(
-      `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode)\n\n${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
-    );
+    toast({
+      title: "Info",
+      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode). ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
+    });
   };
 
   const handleRevokeLicense = (contract) => {
     setShowRevokeModal(false);
-    alert(
-      `License revoked! (Demo mode)\n\n30-day notice period has begun.\nYou'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
-    );
+    toast({
+      title: "Info",
+      description: `License revoked! (Demo mode). 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
+    });
   };
 
   const handlePauseCampaign = (campaignId) => {
@@ -2109,14 +2200,12 @@ export default function CreatorDashboard() {
         c.id === campaignId ? { ...c, status: "paused" } : c,
       ),
     );
-    alert("Campaign paused! (Demo mode)");
+    toast({ title: "Info", description: "Campaign paused! (Demo mode)" });
   };
 
   const handleRevokeCampaign = (campaignId) => {
-    if (confirm("Are you sure you want to revoke this campaign license?")) {
-      setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
-      alert("Campaign revoked! (Demo mode)");
-    }
+    setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
+    toast({ title: "Success", description: "Campaign revoked! (Demo mode)" });
   };
 
   const handleToggleContentType = (type) => {
@@ -2211,10 +2300,17 @@ export default function CreatorDashboard() {
         throw new Error("Failed to save restrictions");
       }
 
+      toast({
+        title: "Success",
+        description: "Your content restrictions have been saved.",
+      });
       setShowRestrictionsModal(false);
     } catch (e) {
       console.error("Error saving restrictions:", e);
-      alert("Failed to save restrictions. Please try again.");
+      toast({
+        title: "Info",
+        description: "Failed to save restrictions. Please try again.",
+      });
     }
   };
 
@@ -2274,10 +2370,17 @@ export default function CreatorDashboard() {
         }
 
         setEditingRules(false);
-        alert("Licensing preferences updated!");
+        toast({
+          title: "Success",
+          description: "Licensing preferences updated!",
+        });
       } catch (error: any) {
         console.error("Failed to save rules:", error);
-        alert(`Failed to save preferences: ${error?.message || error}`);
+        toast({
+          title: "Error",
+          description: `Failed to save preferences: ${error?.message || error}`,
+          variant: "destructive",
+        });
       }
     } catch (e) {
       console.error("Unexpected error in handleSaveRules:", e);
@@ -2286,8 +2389,54 @@ export default function CreatorDashboard() {
     }
   };
 
+  // Separate handler for Accept Negotiations toggle (saves silently)
+  const handleToggleNegotiations = async (checked: boolean) => {
+    const updated = {
+      ...creator,
+      accept_negotiations: checked,
+    };
+    setCreator(updated);
+
+    // Save to backend silently (no generic toast)
+    try {
+      const profileData = {
+        email: updated.email || user.email,
+        content_types: updated.content_types,
+        industries: updated.industries,
+        price_per_week: updated.price_per_week,
+        accept_negotiations: updated.accept_negotiations,
+        content_restrictions: contentRestrictions,
+        brand_exclusivity: brandExclusivity,
+        base_monthly_price_cents: updated.base_monthly_price_cents,
+      };
+
+      const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      // Show specific negotiation status toast
+      toast({
+        title: "Success",
+        description: `Negotiations are now ${checked ? "accepted" : "not accepted"}.`,
+      });
+    } catch (error: any) {
+      console.error("Failed to save negotiation preference:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save negotiation preference. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSaveProfile = () => {
-    alert("Profile updated! (Demo mode)");
+    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
   };
 
   const renderDashboard = () => {
@@ -2530,17 +2679,17 @@ export default function CreatorDashboard() {
     try {
       if (!previewImage || !selectedImageSection) return;
       if (!user) {
-        alert("Please log in to upload.");
+        toast({ title: "Info", description: "Please log in to upload." });
         return;
       }
       const file: File = previewImage.file;
       if (!file) {
-        alert("No file selected.");
+        toast({ title: "Info", description: "No file selected." });
         return;
       }
       // Server pre-scan is limited to 5MB
       if (file.size > 5_000_000) {
-        alert("Please upload an image ≤ 5MB.");
+        toast({ title: "Info", description: "Please upload an image ≤ 5MB." });
         return;
       }
 
@@ -2550,7 +2699,7 @@ export default function CreatorDashboard() {
       const apiBase =
         (import.meta as any).env.VITE_API_BASE_URL ||
         (import.meta as any).env.VITE_API_BASE ||
-        (import.meta as any).env.VITE_API_BASE;
+        "http://localhost:8787";
       const buf = await file.arrayBuffer();
       const full = new URL(
         `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
@@ -2569,11 +2718,13 @@ export default function CreatorDashboard() {
           const reasons: string[] = Array.isArray(err?.reasons)
             ? err.reasons
             : [];
-          alert(
-            `${msg}${reasons.length ? "\n\nDetails:\n- " + reasons.join("\n- ") : ""}`,
-          );
+          toast({
+            title: "Upload Error",
+            description: `${msg}${reasons.length ? " Details: " + reasons.join(", ") : ""}`,
+            variant: "destructive",
+          });
         } catch {
-          alert(raw || "Upload failed");
+          toast({ title: "Info", description: raw || "Upload failed" });
         }
         setUploadingToSection(false);
         return;
@@ -2588,21 +2739,23 @@ export default function CreatorDashboard() {
       setShowImageUploadModal(false);
       setSelectedImageSection(null);
       setPreviewImage(null);
-      alert("Reference image uploaded!");
+      toast({ title: "Info", description: "Reference image uploaded!" });
     } catch (e: any) {
-      alert(`Upload failed: ${e?.message || e}`);
+      toast({
+        title: "Info",
+        description: `Upload failed: ${e?.message || e}`,
+      });
     } finally {
       setUploadingToSection(false);
     }
   };
 
   const deleteReferenceImage = (sectionId) => {
-    if (confirm("Delete this reference image?")) {
-      setReferenceImages({
-        ...referenceImages,
-        [sectionId]: null,
-      });
-    }
+    setReferenceImages({
+      ...referenceImages,
+      [sectionId]: null,
+    });
+    toast({ title: "Success", description: "Reference image deleted" });
   };
 
   const getCompleteness = () => {
@@ -3003,7 +3156,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -3118,16 +3271,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3165,8 +3320,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3271,10 +3427,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -3376,12 +3533,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3962,9 +4120,11 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       // For examples, just show a message
                       if (campaign.isExample) {
-                        alert(
-                          "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                        );
+                        toast({
+                          title: "Info",
+                          description:
+                            "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                        });
                         return;
                       }
                       // For real campaigns, update the state
@@ -4241,19 +4401,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -4265,10 +4427,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4637,21 +4800,27 @@ export default function CreatorDashboard() {
           setCustomRates(reloadedRates);
         }
 
-        alert("Changes saved successfully!");
+        toast({ title: "Success", description: "Changes saved successfully!" });
       } catch (rateError: any) {
         console.error("Rate save error:", rateError);
         // If profile saved but rates failed, we still consider it a partial success
         // and close the modal, but warn the user.
-        alert(
-          `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
-        );
+        toast({
+          title: "Partial Success",
+          description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+          variant: "destructive",
+        });
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(`Failed to save: ${e?.message || e}`);
+      toast({
+        title: "Save Failed",
+        description: `Failed to save: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setSavingRates(false);
     }
@@ -4672,19 +4841,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -4872,9 +5043,10 @@ export default function CreatorDashboard() {
                   checked={creator.is_public_brands || false}
                   onCheckedChange={(checked) => {
                     setCreator({ ...creator, is_public_brands: checked });
-                    alert(
-                      `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
-                    );
+                    toast({
+                      title: "Info",
+                      description: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
+                    });
                   }}
                 />
               </div>
@@ -4941,10 +5113,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -4976,10 +5149,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -5161,14 +5335,7 @@ export default function CreatorDashboard() {
                   </div>
                   <Switch
                     checked={creator.accept_negotiations || false}
-                    onCheckedChange={(checked) => {
-                      const updated = {
-                        ...creator,
-                        accept_negotiations: checked,
-                      };
-                      setCreator(updated);
-                      handleSaveRules(updated);
-                    }}
+                    onCheckedChange={handleToggleNegotiations}
                   />
                 </div>
               </div>
@@ -5402,7 +5569,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -5426,10 +5593,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -6017,56 +6185,46 @@ export default function CreatorDashboard() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-4">
-            {!isRecording ? (
-              <div className="text-center py-8">
-                <div className="w-20 h-20 bg-[#32C8D1] rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Mic className="w-10 h-10 text-white" />
+          <div className="flex flex-col items-center justify-center py-8 relative">
+            {countdown !== null && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm">
+                <div className="text-8xl font-bold text-[#32C8D1] animate-bounce">
+                  {countdown}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  Ready to Record?
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  The script will scroll slowly. Speak naturally and
-                  expressively.
-                </p>
-                <Button
-                  onClick={startRecording}
-                  className="h-14 px-8 bg-red-500 hover:bg-red-600 text-white text-lg"
-                >
-                  <Mic className="w-5 h-5 mr-2" />
-                  Start Recording
-                </Button>
               </div>
+            )}
+
+            {!isRecording && !countdown ? (
+              <Button
+                onClick={startRecording}
+                className="h-14 px-8 bg-red-500 hover:bg-red-600 text-white text-lg rounded-full shadow-lg transition-all hover:scale-105"
+              >
+                <Mic className="w-6 h-6 mr-2" />
+                Start Recording
+              </Button>
             ) : (
-              <div>
-                <div className="flex items-center justify-center gap-3 mb-6">
-                  <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-2xl font-bold text-gray-900">
-                    {Math.floor(recordingTime / 60)}:
-                    {(recordingTime % 60).toString().padStart(2, "0")}
-                  </span>
+              <div className="flex flex-col items-center gap-4">
+                <div className="text-4xl font-mono font-bold text-gray-900">
+                  00:{recordingTime.toString().padStart(2, "0")}
                 </div>
-
-                {renderScript()}
-
-                <div className="flex justify-center gap-4 mt-6">
-                  <Button
-                    onClick={stopRecording}
-                    className="h-12 px-8 bg-red-500 hover:bg-red-600 text-white"
-                  >
-                    <Square className="w-5 h-5 mr-2" />
-                    Stop Recording
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-red-500 font-medium">Recording</span>
                 </div>
-
-                <Progress
-                  value={(recordingTime / 60) * 100}
-                  className="mt-6 h-2"
-                />
+                <Button
+                  variant="outline"
+                  onClick={stopRecording}
+                  className="mt-4 border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  Stop Recording
+                </Button>
               </div>
             )}
           </div>
+
+          {renderScript()}
+
+          <Progress value={(recordingTime / 60) * 100} className="mt-6 h-2" />
         </DialogContent>
       </Dialog>
 
@@ -6099,10 +6257,11 @@ export default function CreatorDashboard() {
                     <Badge
                       key={type}
                       onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
                       {creator.content_types?.includes(type) && (
                         <Check className="w-3 h-3" />
@@ -6125,10 +6284,11 @@ export default function CreatorDashboard() {
                     <Badge
                       key={industry}
                       onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
+                      }`}
                     >
                       {creator.industries?.includes(industry) && (
                         <Check className="w-3 h-3" />
@@ -6181,9 +6341,9 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      (existing.price_per_week_cents / 100) *
-                                      4
-                                    ).toString()
+                                        (existing.price_per_week_cents / 100) *
+                                        4
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={(
@@ -6244,6 +6404,30 @@ export default function CreatorDashboard() {
 
       {/* Content Restrictions Modal */}
       <Dialog
+        open={showDeleteConfirmation}
+        onOpenChange={setShowDeleteConfirmation}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+          </DialogHeader>
+          <p>
+            Are you sure you want to delete this recording? This action cannot
+            be undone.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirmation(false)}
+            >
+              No
+            </Button>
+            <Button onClick={confirmDelete}>Yes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={showRestrictionsModal}
         onOpenChange={() => setShowRestrictionsModal(false)}
       >
@@ -6253,6 +6437,136 @@ export default function CreatorDashboard() {
               Edit Content I'm NOT Comfortable With
             </DialogTitle>
           </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
+            <p className="text-sm text-gray-600">
+              Manage content types and categories you don't want to be
+              associated with:
+            </p>
+
+            {/* Current Restrictions */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Current Restrictions:
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {contentRestrictions.map((restriction) => (
+                  <Badge
+                    key={restriction}
+                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
+                    onClick={() => removeRestriction(restriction)}
+                  >
+                    ✕ {restriction}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Click to add restrictions */}
+            {availableRestrictions.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Click to add restrictions:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {availableRestrictions.map((restriction) => (
+                    <Badge
+                      key={restriction}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
+                      onClick={() => addRestriction(restriction)}
+                    >
+                      + {restriction}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add custom restriction */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">
+                Add custom restriction:
+              </h4>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add custom restriction (max 25 chars)"
+                  maxLength={25}
+                  value={customRestriction}
+                  onChange={(e) => setCustomRestriction(e.target.value)}
+                  className="px-3 pl-4 bg-white"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomRestriction();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addCustomRestriction}
+                  className="border-red-500 text-red-500 hover:bg-red-50"
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+
+            {/* Brand Exclusivity */}
+            <div className="pt-4 border-t">
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Conflicting Campaigns (Brand Exclusivity)
+              </h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Add brands you're exclusive with to prevent competing campaigns
+              </p>
+
+              {brandExclusivity.length === 0 ? (
+                <p className="text-sm italic text-gray-500 mb-3">
+                  No brand exclusivity set
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {brandExclusivity.map((brand) => (
+                    <Badge
+                      key={brand}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
+                    >
+                      {brand}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover:text-red-600"
+                        onClick={() => removeBrandExclusivity(brand)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter brand name (max 25 chars)"
+                  maxLength={25}
+                  value={newBrand}
+                  onChange={(e) => setNewBrand(e.target.value)}
+                  className="px-3 pl-4 bg-white"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addBrandExclusivity();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addBrandExclusivity}
+                  className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+          </div>
 
           <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
             <p className="text-sm text-gray-600">

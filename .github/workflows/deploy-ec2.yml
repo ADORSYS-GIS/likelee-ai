@@ -2,7 +2,7 @@ name: Deploy to EC2 (Active on main)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
