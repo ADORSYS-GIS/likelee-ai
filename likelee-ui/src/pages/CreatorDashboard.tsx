@@ -3434,7 +3434,11 @@ export default function CreatorDashboard() {
                   <p className="text-sm text-gray-600 mb-1">Territory:</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.regions.map((region) => (
-                      <Badge key={region} className="bg-blue-100 text-blue-700">
+                      <Badge
+                        key={region}
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-700"
+                      >
                         {region}
                       </Badge>
                     ))}
@@ -3454,6 +3458,7 @@ export default function CreatorDashboard() {
                     {approval.industries.map((industry) => (
                       <Badge
                         key={industry}
+                        variant="secondary"
                         className="bg-purple-100 text-purple-700"
                       >
                         {industry}
@@ -3549,6 +3554,7 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
+            variant="secondary"
             className={`${pendingCount > 0 ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-gray-100 text-gray-700 border border-gray-300"} px-4 py-2 text-lg`}
           >
             {pendingCount} Pending
@@ -3593,7 +3599,7 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
                 {approval.perpetual && (
-                  <Badge className="bg-red-500 text-white">
+                  <Badge variant="destructive" className="bg-red-500 text-white">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     Perpetual Request
                   </Badge>
@@ -3602,7 +3608,7 @@ export default function CreatorDashboard() {
 
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
                       Proposed Rate:
                     </span>
@@ -3610,13 +3616,13 @@ export default function CreatorDashboard() {
                       ${approval.proposed_rate}/month
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">Term Length:</span>
                     <span className="font-bold text-gray-900">
                       {approval.term_length}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
                       Estimated Monthly:
                     </span>
@@ -3627,12 +3633,13 @@ export default function CreatorDashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-2">Regions:</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.regions.map((region) => (
                         <Badge
                           key={region}
+                          variant="secondary"
                           className="bg-blue-100 text-blue-700 border border-blue-300"
                         >
                           {region}
@@ -3640,12 +3647,13 @@ export default function CreatorDashboard() {
                       ))}
                     </div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-2">Industries:</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.industries.map((industry) => (
                         <Badge
                           key={industry}
+                          variant="secondary"
                           className="bg-purple-100 text-purple-700 border border-purple-300"
                         >
                           {industry}
@@ -3773,23 +3781,23 @@ export default function CreatorDashboard() {
               </div>
 
               <div className="grid md:grid-cols-4 gap-4 mb-6">
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600 mb-1">Duration:</p>
                   <p className="font-bold text-gray-900">{campaign.duration}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
                   <p className="font-bold text-gray-900">
                     ${campaign.monthly_rate}
                   </p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-lg">
+                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
                   <p className="font-bold text-green-600 text-lg">
                     ${campaign.total_earned.toLocaleString()}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600 mb-1">Regions:</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {campaign.regions.map((region) => (
