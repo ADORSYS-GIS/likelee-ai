@@ -217,7 +217,7 @@ export default function CameoUpload() {
               },
             }) as any,
         );
-      } catch (_) {}
+      } catch (_) { }
     })();
   }, [user]);
 
@@ -228,8 +228,7 @@ export default function CameoUpload() {
     try {
       const apiBase =
         (import.meta as any).env.VITE_API_BASE_URL ||
-        (import.meta as any).env.VITE_API_BASE ||
-        "http://localhost:8787";
+        (import.meta as any).env.VITE_API_BASE;
       const buf = await file.arrayBuffer();
       const res = await fetch(
         `${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user.id)}&image_role=${encodeURIComponent(key)}`,
@@ -289,8 +288,7 @@ export default function CameoUpload() {
     try {
       const apiBase =
         (import.meta as any).env.VITE_API_BASE_URL ||
-        (import.meta as any).env.VITE_API_BASE ||
-        "http://localhost:8787";
+        (import.meta as any).env.VITE_API_BASE;
       const res = await fetch(`${apiBase}/api/moderation/image`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -343,7 +341,7 @@ export default function CameoUpload() {
         .from("profiles")
         .update({ [column]: url })
         .eq("id", user.id);
-    } catch (_) {}
+    } catch (_) { }
     return url;
   };
 
@@ -364,7 +362,7 @@ export default function CameoUpload() {
       toast.success("Reference photos uploaded successfully");
 
       // Optional: notify backend to create/update face profile (no-op persistence in server now)
-      const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8787";
+      const apiBase = import.meta.env.VITE_API_BASE;
       try {
         await fetch(`${apiBase}/api/face-profiles`, {
           method: "POST",
