@@ -742,7 +742,7 @@ export default function ReserveProfile() {
       u.searchParams.set("step", "4");
       u.searchParams.set("verified", "1");
       const returnUrl = u.toString();
-      const res = await fetch(`${API_BASE}/api/kyc/session`, {
+      const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
@@ -767,7 +767,7 @@ export default function ReserveProfile() {
     try {
       setKycLoading(true);
       const res = await fetch(
-        `${API_BASE}/api/kyc/status?user_id=${encodeURIComponent(targetId)}`,
+        api(`/api/kyc/status?user_id=${encodeURIComponent(targetId)}`),
       );
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();
@@ -847,7 +847,7 @@ export default function ReserveProfile() {
         console.warn("[liveness] fetchAuthSession failed (will continue):", e);
       }
 
-      const res = await fetch(`${API_BASE}/api/liveness/create`, {
+      const res = await fetch(api(`/api/liveness/create`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
@@ -917,6 +917,16 @@ export default function ReserveProfile() {
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
   const [kycLoading, setKycLoading] = useState(false);
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
+  const API_BASE_ABS = (() => {
+    try {
+      if (!API_BASE) return new URL("/api", window.location.origin).toString();
+      if (API_BASE.startsWith("http")) return API_BASE;
+      return new URL(API_BASE, window.location.origin).toString();
+    } catch {
+      return new URL("/api", window.location.origin).toString();
+    }
+  })();
+  const api = (path: string) => new URL(path, API_BASE_ABS).toString();
   const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "eu-central-1";
   const COGNITO_IDENTITY_POOL_ID =
     (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || "";
@@ -1176,7 +1186,7 @@ export default function ReserveProfile() {
     (async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/email/available?email=${encodeURIComponent(formData.email)}`,
+          api(`/api/email/available?email=${encodeURIComponent(formData.email)}`),
         );
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
@@ -1696,7 +1706,7 @@ export default function ReserveProfile() {
                                 "[liveness] analysis complete; fetching results",
                               );
                               const r = await fetch(
-                                `${API_BASE}/api/liveness/result`,
+                                api(`/api/liveness/result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -2687,7 +2697,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                `${API_BASE}/api/liveness/result`,
+                                api(`/api/liveness/result`),
                                 {
                                   method: "POST",
                                   headers: {

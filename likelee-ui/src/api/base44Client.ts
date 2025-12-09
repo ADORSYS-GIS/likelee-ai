@@ -20,20 +20,32 @@ function buildUrl(
   return u.toString();
 }
 
-let API_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL as
+let RAW_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL as
   | string
   | undefined;
-if (!API_BASE) {
+if (!RAW_BASE) {
   const stored =
     typeof window !== "undefined"
       ? window.localStorage?.getItem("API_BASE_URL") || undefined
       : undefined;
-  API_BASE = stored || "http://localhost:8787"; // sensible dev default for likelee-server
+  // Default to '/api' so production behind a reverse proxy works out of the box
+  RAW_BASE = stored || "/api";
   // eslint-disable-next-line no-console
   console.warn(
-    `[api] VITE_API_BASE_URL not set; using ${API_BASE}. Set VITE_API_BASE_URL to avoid proxying to the Vite dev server.`,
+    `[api] VITE_API_BASE_URL not set; using ${RAW_BASE}. Set VITE_API_BASE_URL at build-time for explicit control.`,
   );
 }
+
+// Ensure absolute base URL by resolving relative values against the current origin
+const API_BASE = (() => {
+  try {
+    if (RAW_BASE && RAW_BASE.startsWith("http")) return RAW_BASE;
+    const abs = new URL(RAW_BASE || "/api", window.location.origin).toString();
+    return abs;
+  } catch {
+    return new URL("/api", window.location.origin).toString();
+  }
+})();
 
 export const base44 = {
   async get<T = any>(url: string, config?: RequestConfig): Promise<T> {
