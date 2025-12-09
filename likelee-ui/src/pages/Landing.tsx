@@ -137,12 +137,12 @@ export default function Landing() {
       </section>
 
       {/* Arrow 1: Hero Phone to Section 2 Phone */}
-      <div className="hidden lg:block relative h-32">
+      <div className="hidden lg:block relative h-32 z-10">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          className="absolute left-1/2 -translate-x-1/2 -top-40"
           width="400"
-          height="800"
-          viewBox="0 0 400 800"
+          height="500"
+          viewBox="0 0 400 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -159,7 +159,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 280 50 Q 50 300, 120 750"
+            d="M 280 50 Q 50 200, 200 450"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -196,12 +196,12 @@ export default function Landing() {
       </section>
 
       {/* Arrow 2: Section 2 Phone to Section 3 Phone */}
-      <div className="hidden lg:block relative h-32">
+      <div className="hidden lg:block relative h-32 z-10">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          className="absolute left-1/2 -translate-x-1/2 -top-40"
           width="400"
-          height="800"
-          viewBox="0 0 400 800"
+          height="500"
+          viewBox="0 0 400 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -218,7 +218,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 120 50 Q 350 300, 280 750"
+            d="M 120 50 Q 350 200, 200 450"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -257,12 +257,12 @@ export default function Landing() {
       </section>
 
       {/* Arrow 3: Section 3 Phone to Section 4 Phone */}
-      <div className="hidden lg:block relative h-32">
+      <div className="hidden lg:block relative h-32 z-10">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          className="absolute left-1/2 -translate-x-1/2 -top-40"
           width="400"
-          height="800"
-          viewBox="0 0 400 800"
+          height="500"
+          viewBox="0 0 400 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -279,7 +279,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 280 50 Q 50 300, 120 750"
+            d="M 280 50 Q 50 200, 200 450"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -317,12 +317,12 @@ export default function Landing() {
       </section>
 
       {/* Arrow 4: Section 4 Phone to Section 5 Phone */}
-      <div className="hidden lg:block relative h-32">
+      <div className="hidden lg:block relative h-32 z-10">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          className="absolute left-1/2 -translate-x-1/2 -top-40"
           width="400"
-          height="800"
-          viewBox="0 0 400 800"
+          height="500"
+          viewBox="0 0 400 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -339,7 +339,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 120 50 Q 350 300, 280 750"
+            d="M 120 50 Q 350 200, 200 450"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
@@ -378,12 +378,12 @@ export default function Landing() {
       </section>
 
       {/* Arrow 5: Section 5 Phone to Section 6 Phone */}
-      <div className="hidden lg:block relative h-32">
+      <div className="hidden lg:block relative h-32 z-10">
         <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-20"
+          className="absolute left-1/2 -translate-x-1/2 -top-40"
           width="400"
-          height="800"
-          viewBox="0 0 400 800"
+          height="500"
+          viewBox="0 0 400 500"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -400,7 +400,7 @@ export default function Landing() {
             </marker>
           </defs>
           <path
-            d="M 280 50 Q 50 300, 120 750"
+            d="M 280 50 Q 50 200, 200 450"
             stroke="#000000"
             strokeWidth="3"
             fill="none"
