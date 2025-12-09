@@ -1,35 +1,21 @@
 import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { CheckCircle2, DollarSign, Users, Shield, Calendar, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import {
-  Trophy,
-  TrendingUp,
-  DollarSign,
-  Users,
-  Shield,
-  Target,
-  CheckCircle2,
-  Zap,
-  BarChart3,
-  Rocket,
-  Award,
-  Clock,
-  AlertCircle,
-} from "lucide-react";
 
 export default function SportsAgency() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Add JSON-LD structured data
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      name: "Sports Agency NIL Management",
+      name: "Sports Agency Solutions",
       description:
-        "License your athletes' likenesses for AI-powered content. Earn recurring revenue.",
+        "Turn your athletes into year-round earners with NIL licensing that grows while booking slows.",
       provider: {
         "@type": "Organization",
         name: "Likelee",
@@ -53,36 +39,37 @@ export default function SportsAgency() {
     };
   }, []);
 
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById("how-it-works");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
       <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
             Turn Your Athletes Into Year-Round Earners
           </h1>
-          <p className="text-xl md:text-2xl font-semibold mb-4">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">
             NIL licensing that grows while booking slows
-          </p>
-          <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-8">
-            Traditional endorsements pay once. Likelee licensing pays monthly,
-            forever. Your athletes earn recurring revenue from their name, image,
-            and likeness while you manage contracts in one place and collect
-            commission on every renewal.
+          </h2>
+          <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
+            Traditional endorsements pay once. Likelee licensing pays monthly, forever. Your athletes earn
+            recurring revenue from their name, image, and likeness while you manage contracts in one place
+            and collect commission on every renewal.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
-              className="h-12 px-8 text-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-all"
+              className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
               Book Demo
             </Button>
             <Button
-              onClick={() => {
-                const el = document.getElementById("how-it-works");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="h-12 px-8 text-lg font-medium bg-white text-[#0D1B3A] hover:bg-gray-200 rounded-md transition-all"
+              onClick={scrollToHowItWorks}
+              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
             >
               See How It Works
             </Button>
@@ -90,324 +77,326 @@ export default function SportsAgency() {
         </div>
       </section>
 
-      {/* Section 1: Endorsement Deals Aren't Enough */}
+      {/* Section 1: Endorsement Deals Aren't Enough Anymore */}
       <section className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
             Endorsement Deals Aren't Enough Anymore
           </h2>
-          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
-            Your athletes are looking for stable income beyond traditional
-            sponsorships. Endorsement opportunities are unpredictable and
-            one-time. Likelee creates additional revenue streams where athletes
-            earn recurring money from brands using their likeness for marketing,
-            social content, and digital campaigns without requiring new contracts
-            each time.
+          <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+            Your athletes are looking for stable income beyond traditional sponsorships. Endorsement
+            opportunities are unpredictable and one-time. Likelee creates additional revenue streams where
+            athletes earn recurring money from brands using their likeness for marketing, social content, and
+            digital campaigns without requiring new contracts each time.
           </p>
         </div>
       </section>
 
-      {/* Section 2: The Dashboard */}
+      {/* Section 2: Two NIL Revenue Streams */}
       <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-emerald-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <BarChart3 className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
-              One Dashboard. All Licenses.
-              <span className="block text-green-600">Real Revenue.</span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-6 mb-10">
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <Shield className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">
-                License athlete likenesses
-              </p>
-            </Card>
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <BarChart3 className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">Track usage</p>
-            </Card>
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <DollarSign className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">
-                Collect recurring payments
-              </p>
-            </Card>
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">Manage compliance</p>
-            </Card>
-          </div>
-
-          <Card className="p-10 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black rounded-none text-center shadow-2xl">
-            <div className="space-y-6">
-              <div className="flex items-center justify-center gap-4">
-                <TrendingUp className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">
-                  Your athletes earn more.
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-4">
-                <Users className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">
-                  Your team doesn't grow.
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-4">
-                <Award className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">
-                  You capture a revenue stream competitors haven't figured out
-                  yet.
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      {/* Section 3: How It Works */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-teal-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <Rocket className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              How It Works
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
-                <span className="text-3xl font-bold text-white">1</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Register</h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Upload verified athlete data</p>
-                <p>→ Government ID verification</p>
-                <p>→ Liveness check</p>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-teal-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
-                <span className="text-3xl font-bold text-white">2</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Set Terms
-              </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Athletes define what they're OK with</p>
-                <p>→ Set pricing</p>
-                <p>→ Choose territories & use cases</p>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
-                <span className="text-3xl font-bold text-white">3</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Brands License
-              </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Brands search your roster</p>
-                <p>→ Submit license requests</p>
-                <p>→ You approve each one</p>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-teal-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
-                <span className="text-3xl font-bold text-white">4</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Get Paid</h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Payment into escrow</p>
-                <p>→ Usage tracked real-time</p>
-                <p>→ Recurring royalties flow automatically</p>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: Real Results */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <BarChart3 className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Real Results
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Two NIL Revenue Streams
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="p-10 bg-white border-2 border-black rounded-none shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <Trophy className="w-12 h-12 text-emerald-600" />
-                <h3 className="text-2xl font-bold text-gray-900">
-                  15-Athlete Regional Agency
-                </h3>
+            {/* Fixed-Term NIL Licensing */}
+            <Card className="p-10 md:p-12 bg-white border-2 border-black rounded-none flex flex-col">
+              <div className="w-16 h-16 bg-green-600 flex items-center justify-center mb-6">
+                <Calendar className="w-8 h-8 text-white" />
               </div>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <DollarSign className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">
-                    <span className="font-bold text-gray-900">
-                      $2.5K-$5K/month
-                    </span>{" "}
-                    per athlete in recurring likeness licensing
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <TrendingUp className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">
-                    <span className="font-bold text-emerald-600">
-                      3-5× more revenue
-                    </span>
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">
-                    <span className="font-bold">Same team</span>
-                  </p>
-                </div>
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Fixed-Term NIL Licensing
+              </h3>
+              <p className="text-base text-gray-700 mb-6 leading-relaxed">
+                Brand licenses athlete's image for a specific campaign duration like 6 months, pays <span className="font-bold text-green-600">$5K upfront</span>, and can renew
+                the agreement when it expires.
+              </p>
+              <p className="text-base text-gray-700 leading-relaxed">
+                Your athlete earns $5K per renewal cycle. Over three years, that's <span className="font-bold text-green-600">$15K from the same likeness</span> versus a single $5K
+                traditional endorsement deal.
+              </p>
             </Card>
 
-            <Card className="p-10 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black rounded-none shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <Award className="w-12 h-12 text-yellow-300" />
-                <h3 className="text-2xl font-bold text-white">
-                  50+ Athlete National Agency
-                </h3>
+            {/* Recurring Monthly NIL */}
+            <Card className="p-10 md:p-12 bg-white border-2 border-black rounded-none flex flex-col">
+              <div className="w-16 h-16 bg-green-600 flex items-center justify-center mb-6">
+                <TrendingUp className="w-8 h-8 text-white" />
               </div>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <DollarSign className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">
-                    <span className="font-bold">$150K+/month</span> new
-                    recurring revenue from AI-powered likeness licensing
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">
-                    <span className="font-bold">No new hires needed</span>
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Rocket className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">
-                    Infrastructure scales with you
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 5: Why This Matters Now */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <Clock className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
-              Why This Matters
-              <span className="block text-emerald-600">Right Now</span>
-            </h2>
-          </div>
-
-          <div className="space-y-8">
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="flex items-start gap-4">
-                <CheckCircle2 className="w-8 h-8 text-green-600 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-xl font-bold text-gray-900 mb-2">
-                    AI-powered content is standard
-                  </p>
-                  <p className="text-lg text-gray-700">
-                    Brands are using athlete likenesses in AI campaigns every
-                    day
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-600 rounded-none">
-              <div className="flex items-start gap-4">
-                <AlertCircle className="w-8 h-8 text-red-600 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 mb-2">
-                    The Question:
-                  </p>
-                  <p className="text-xl text-gray-700">
-                    Are your athletes getting paid?
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-10 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black rounded-none text-center shadow-2xl">
-              <div className="flex items-center justify-center gap-4 mb-4">
-                <Award className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">
-                  Your Competitive Advantage
-                </p>
-              </div>
-              <p className="text-xl text-white">
-                Most agencies aren't set up to offer this. You can be first.
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Recurring Monthly NIL
+              </h3>
+              <p className="text-base text-gray-700 mb-6 leading-relaxed">
+                Brand uses athlete's image on their website or in ongoing marketing and pays <span className="font-bold text-green-600">$1K every month</span> while those assets
+                remain active.
+              </p>
+              <p className="text-base text-gray-700 leading-relaxed">
+                Your athlete controls the arrangement and can revoke access anytime they want. Over three years, that same
+                athlete earns <span className="font-bold text-green-600">$36K versus a one-time $5K endorsement payment</span>.
               </p>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="px-6 py-24 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-600">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="w-24 h-24 bg-white border-2 border-black flex items-center justify-center mx-auto mb-8 shadow-2xl rounded-none">
-            <Rocket className="w-12 h-12 text-emerald-600" />
+      {/* Section 3: The Math */}
+      <section className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              The Math
+            </h2>
           </div>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
-            Ready to Scale AI-Powered Likeness Licensing?
-          </h2>
-          <Card className="p-8 bg-white/10 backdrop-blur-sm border-2 border-white rounded-none mb-10">
-            <div className="space-y-4">
-              <div className="flex items-center justify-center gap-3">
-                <DollarSign className="w-10 h-10 text-yellow-300" />
-                <p className="text-2xl font-bold text-white">
-                  Your athletes have a revenue stream most agencies aren't
-                  offering yet.
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-3">
-                <Award className="w-10 h-10 text-yellow-300" />
-                <p className="text-2xl text-white">
-                  Let's talk about bringing your roster live.
-                </p>
-              </div>
+
+          <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-black">
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">Scenario</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">Traditional</th>
+                    <th className="text-left py-4 px-4 font-bold text-[#32C8D1]">Likelee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-4 px-4 text-gray-700">Sports drink endorsement (1 year)</td>
+                    <td className="py-4 px-4 text-gray-700">$5K</td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">$5K + renewals</td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-4 px-4 text-gray-700">Recurring brand partnership (ongoing)</td>
+                    <td className="py-4 px-4 text-gray-700">$5K</td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">$1K/mo = $36K/3yrs</td>
+                  </tr>
+                  <tr>
+                    <td className="py-4 px-4 text-gray-700">Apparel brand NIL licensing (6 mo)</td>
+                    <td className="py-4 px-4 text-gray-700">$3K</td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">$5K + renewals</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </Card>
-          <Button
-            onClick={() => navigate(createPageUrl("SalesInquiry"))}
-            className="h-20 px-14 text-xl font-bold bg-white hover:bg-gray-100 text-emerald-600 border-2 border-black shadow-2xl transition-all hover:scale-105 rounded-none"
-          >
-            <Trophy className="w-6 h-6 mr-3" />
-            Book a Demo
-          </Button>
+
+          <p className="text-center text-xl font-semibold text-gray-900 mt-8">
+            Same athlete. Multiple income streams. <span className="text-[#32C8D1]">2-7x more earning potential.</span>
+          </p>
+        </div>
+      </section>
+
+      {/* Section 4: How It Works */}
+      <section id="how-it-works" className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              How It Works
+            </h2>
+          </div>
+
+          <div className="space-y-8">
+            {/* Step 1 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">1</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                Add your athletes to Likelee so brands can discover their verified likeness rights, review past sponsorships, and submit
+                licensing requests directly.
+              </p>
+            </Card>
+
+            {/* Step 2 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                Brands request NIL licenses by specifying their intended use, campaign duration, territories, and proposed compensation
+                through the platform.
+              </p>
+            </Card>
+
+            {/* Step 3 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                You review and approve terms, set the final compensation amount, and the brand pays into escrow so the transaction is
+                protected.
+              </p>
+            </Card>
+
+            {/* Step 4 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">4</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                Money releases after 48 hours of no disputes straight to your agency account, where you decide how to split earnings with
+                your athlete.
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 5: Why Sports Agencies Win */}
+      <section className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Why Sports Agencies Win
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Diversified Athlete Income */}
+            <Card className="p-10 md:p-12 bg-white border-2 border-black rounded-none flex flex-col">
+              <div className="w-12 h-12 mb-6">
+                <DollarSign className="w-12 h-12 text-green-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Diversified Athlete Income
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                Traditional endorsements are volatile and unpredictable. NIL licensing creates stable monthly
+                income that compounds over time.
+              </p>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Year one brings in $60K from athlete licensing. Year two you're at $180K. Year three breaks $360K.
+                Same roster. Same team. No additional negotiation burden.
+              </p>
+            </Card>
+
+            {/* Athletes Stay Because They're Protected */}
+            <Card className="p-10 md:p-12 bg-white border-2 border-black rounded-none flex flex-col">
+              <div className="w-12 h-12 mb-6">
+                <Users className="w-12 h-12 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Athletes Stay Because They're Protected
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Recurring NIL income replaces the uncertainty of endorsement deals,
+                so your athletes don't chase other representation or feel financially
+                vulnerable. They know they're earning predictable money with you
+                while you manage every licensing agreement legally.
+              </p>
+            </Card>
+
+            {/* Full Compliance and Control */}
+            <Card className="p-10 md:p-12 bg-white border-2 border-black rounded-none flex flex-col">
+              <div className="w-12 h-12 mb-6">
+                <Shield className="w-12 h-12 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Full Compliance and Control
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Every NIL license is verified with smart contracts that specify exactly
+                what the brand can do, for how long, and in which regions.
+                Everything aligns with NCAA regulations, state NIL laws, and
+                player union standards so you're never exposing your athletes to
+                legal risk.
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 6: Verified Athlete Access */}
+      <section className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Verified Athlete Access
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* What You Get */}
+            <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
+                What You Get:
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    Verified identity (government ID matched)
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    Confirmed NIL ownership (athlete controls their likeness)
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    Pre-cleared licensing (smart contracts ready)
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    One-click licensing (SAG-AFTRA aligned agreements)
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    Repeatable usage (license the same athlete across multiple brand campaigns)
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Why It Matters */}
+            <Card className="p-8 md:p-10 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black rounded-none">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
+                Why It Matters:
+              </h3>
+              <p className="text-base text-gray-700 leading-relaxed">
+                Your compliance team spends hours on NIL contracts and verification. Likelee eliminates that friction and puts verified
+                athletes in front of brands actively looking to license NIL rights.
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="px-6 py-20 bg-[#0D1B3A] text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Adapt or Watch Opportunities Pass
+          </h2>
+          <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
+            Athletes today expect diversified income streams, not just one-time endorsements.
+            The agencies capturing market share are the ones that offer stable recurring NIL
+            revenue alongside traditional sponsorships. Likelee gives you the infrastructure to
+            deliver both at scale.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
+            >
+              Book a Demo
+            </Button>
+            <Button
+              onClick={() => navigate(createPageUrl("Faces"))}
+              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
+            >
+              Explore Athlete Marketplace
+            </Button>
+          </div>
         </div>
       </section>
     </div>
