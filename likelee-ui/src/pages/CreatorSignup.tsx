@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +56,7 @@ const aiTools = [
 ];
 
 export default function CreatorSignup() {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [profileId, setProfileId] = useState(null);
@@ -103,9 +105,7 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      alert(
-        "Failed to create initial profile. Please check your inputs and try again.",
-      );
+      toast({ title: "Error", description: "Failed to create initial profile. Please check your inputs and try again.", variant: "destructive" });
     },
   });
 
@@ -146,7 +146,7 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      toast({ title: "Error", description: "Failed to update profile. Please try again.", variant: "destructive" });
     },
   });
 
@@ -158,11 +158,11 @@ export default function CreatorSignup() {
         !formData.password ||
         !formData.confirmPassword
       ) {
-        alert("Please fill in all required fields.");
+        toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" });
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        alert("Passwords do not match.");
+        toast({ title: "Validation Error", description: "Passwords do not match.", variant: "destructive" });
         return;
       }
       // Check that at least one social handle is provided
@@ -171,9 +171,7 @@ export default function CreatorSignup() {
         !formData.tiktok_handle &&
         !formData.youtube_handle
       ) {
-        alert(
-          "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
-        );
+        toast({ title: "Validation Error", description: "Please provide at least one social media handle (Instagram, TikTok, or YouTube).", variant: "destructive" });
         return;
       }
       createInitialProfileMutation.mutate(formData);
@@ -192,33 +190,33 @@ export default function CreatorSignup() {
 
   const handleSubmit = () => {
     if (!formData.content_types.length && !formData.content_other) {
-      alert("Please select at least one content type or specify 'Other'.");
+      toast({ title: "Validation Error", description: "Please select at least one content type or specify 'Other'.", variant: "destructive" });
       return;
     }
     if (
       formData.content_types.includes("Other") &&
       !formData.content_other.trim()
     ) {
-      alert("Please specify your 'Other' content type.");
+      toast({ title: "Validation Error", description: "Please specify your 'Other' content type.", variant: "destructive" });
       return;
     }
     if (!formData.ai_tools.length && !formData.ai_tools_other) {
-      alert("Please select at least one AI tool or specify 'Other'.");
+      toast({ title: "Validation Error", description: "Please select at least one AI tool or specify 'Other'.", variant: "destructive" });
       return;
     }
     if (
       formData.ai_tools.includes("Other") &&
       !formData.ai_tools_other.trim()
     ) {
-      alert("Please specify your 'Other' AI tool.");
+      toast({ title: "Validation Error", description: "Please specify your 'Other' AI tool.", variant: "destructive" });
       return;
     }
     if (!formData.city || !formData.state) {
-      alert("Please fill in your city and state/country.");
+      toast({ title: "Validation Error", description: "Please fill in your city and state/country.", variant: "destructive" });
       return;
     }
     if (!formData.experience) {
-      alert("Please select your years of AI creative experience.");
+      toast({ title: "Validation Error", description: "Please select your years of AI creative experience.", variant: "destructive" });
       return;
     }
 
