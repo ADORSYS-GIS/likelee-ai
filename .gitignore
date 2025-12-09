@@ -131,3 +131,11 @@ public/build/
 # OS files
 .DS_Store
 Thumbs.db
+docs/BASE44_INTEGRATION_GUIDE.md
+docs/MIGRATION_GUIDE.md
+supabase/scripts/profiles_to_import_temp.csv
+supabase/scripts/profiles_to_import.csv
+supabase/scripts/remove_columns.py
+supabase/scripts/transform_csv.py
+supabase/scripts/transform_csv.ts
+supabase/scripts/transformed_import.sql
