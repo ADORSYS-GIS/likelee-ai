@@ -73,16 +73,11 @@ export default function Landing() {
     <div className="relative">
       <section className="bg-[#32C8D1] text-white">
         <style>{`
-          @keyframes center-marquee { 0% { transform: translate(-50%,0) translateX(25%); } 100% { transform: translate(-50%,0) translateX(-25%); } }
-          @keyframes flicker { 0%,100% { opacity: 0.9; } 50% { opacity: 1; } }
+          @keyframes blink-change { 0%, 100% { opacity: 1; } 45%, 55% { opacity: 0; } }
         `}</style>
         <div className="max-w-7xl mx-auto px-6 py-8 text-center">
           <div className="mx-auto text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight">
             {typedHeadline}
-            <span
-              className="inline-block w-1 bg-white ml-1 align-middle animate-pulse"
-              style={{ height: "1em" }}
-            ></span>
           </div>
           <div
             className="relative mt-2 overflow-hidden"
@@ -90,11 +85,8 @@ export default function Landing() {
           >
             <div
               key={phraseIdx}
-              className="absolute left-1/2 whitespace-nowrap text-xs sm:text-sm md:text-base font-bold opacity-95"
-              style={{
-                animation:
-                  "center-marquee 6s ease-in-out infinite alternate, flicker 1.2s ease-in-out infinite",
-              }}
+              className="absolute inset-0 flex items-center justify-center whitespace-nowrap text-xs sm:text-sm md:text-base font-bold opacity-95"
+              style={{ animation: "blink-change 180ms linear 1" }}
             >
               {phrases[phraseIdx]}
             </div>
