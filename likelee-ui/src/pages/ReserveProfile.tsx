@@ -925,7 +925,7 @@ export default function ReserveProfile() {
     }
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
-  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "eu-central-1";
+  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "us-east-1";
   const COGNITO_IDENTITY_POOL_ID =
     (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || "";
   const [firstContinueLoading, setFirstContinueLoading] = useState(false);
