@@ -14,6 +14,7 @@ if (VITE_POOL) {
     Auth: {
       Cognito: {
         identityPoolId: VITE_POOL,
+        allowGuestAccess: true,
       },
     },
   });
