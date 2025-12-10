@@ -1010,6 +1010,26 @@ export default function ReserveProfile() {
     return "";
   };
 
+  // Handle email verification redirect
+  useEffect(() => {
+    const verified = urlParams.get("verified");
+    if (verified === "true") {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          setStep(2);
+          // Clean URL
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialMode) {
+      setAuthMode(initialMode);
+    }
+  }, [initialMode]);
+
   useEffect(() => {
     if (step !== 4) return;
     // Initial fetch
@@ -1202,22 +1222,8 @@ export default function ReserveProfile() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         if (!data.available) {
-          const proceed = window.confirm(
-            "This email is already registered. Would you like us to send a magic link to sign in?",
-          );
-          if (proceed) {
-            const { error } = await supabase.auth.signInWithOtp({
-              email: formData.email.trim().toLowerCase(),
-              options: { emailRedirectTo: `${window.location.origin}/Login` },
-            });
-            if (error) {
-              alert(error.message);
-            } else {
-              alert("Magic link sent. Check your email to complete sign-in.");
-            }
-          } else {
-            alert("This email is already registered. Please log in instead.");
-          }
+          alert("This email is already registered. Please log in.");
+          setAuthMode("login");
           return;
         }
         // Create Supabase auth user so login works
@@ -2899,10 +2905,14 @@ export default function ReserveProfile() {
           <DialogFooter className="flex flex-col sm:flex-col gap-2 mt-4 pb-2">
             <Button
               className="w-full bg-[#32C8D1] hover:bg-[#2ab0b8] text-white font-semibold h-12 rounded-lg"
-              onClick={() => {
-                setShowVerificationModal(false);
-                // Optionally redirect to login or keep them here
-                // setAuthMode("login");
+              onClick={async () => {
+                const { data } = await supabase.auth.refreshSession();
+                if (data.session) {
+                  setShowVerificationModal(false);
+                  setStep(2);
+                } else {
+                  alert("Email not verified yet. Please check your inbox.");
+                }
               }}
             >
               I've verified my email
