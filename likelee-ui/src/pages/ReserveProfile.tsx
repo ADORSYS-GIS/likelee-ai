@@ -39,12 +39,12 @@ import {
   AlertDescription as UIAlertDescription,
 } from "@/components/ui/alert";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog as UIDialog,
+  DialogContent as UIDialogContent,
+  DialogHeader as UIDialogHeader,
+  DialogTitle as UIDialogTitle,
+  DialogDescription as UIDialogDescription,
+  DialogFooter as UIDialogFooter,
 } from "@/components/ui/dialog";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -62,6 +62,12 @@ const Input: any = UIInput;
 const Label: any = UILabel;
 const Checkbox: any = UICheckbox;
 const Card: any = UICard;
+const Dialog: any = UIDialog;
+const DialogContent: any = UIDialogContent;
+const DialogHeader: any = UIDialogHeader;
+const DialogTitle: any = UIDialogTitle;
+const DialogDescription: any = UIDialogDescription;
+const DialogFooter: any = UIDialogFooter;
 const Badge: any = UIBadge;
 const Textarea: any = UITextarea;
 const RadioGroup: any = UIRadioGroup;
@@ -1892,6 +1898,7 @@ export default function ReserveProfile() {
                        <Link to="/forgot-password" className="text-sm text-cyan-600 hover:underline">
                          Forgot Password?
                        </Link>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setShowLoginPassword(!showLoginPassword)}
@@ -1903,6 +1910,11 @@ export default function ReserveProfile() {
                           <Eye className="w-5 h-5" />
                         )}
                       </button>
+                        className="text-sm text-cyan-600 hover:underline"
+                      >
+                        Forgot Password?
+                      </Link>
+>>>>>>> aed03b6 (refactor: Alias UI components to resolve TypeScript forwardRef issues and update minor text content.)
                     </div>
                   </div>
                   <Button
@@ -1912,227 +1924,702 @@ export default function ReserveProfile() {
                     Log in
                   </Button>
                 </form>
-              )}
-
-              {/* Liveness Modal */}
-              {showLiveness &&
-                createPortal(
-                  <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50" />
-                    <div className="relative z-10 w-full max-w-2xl bg-white border-2 border-black p-3">
-                      <div className="mb-2 font-semibold">Face Liveness</div>
-                      <div className="text-xs text-gray-600 mb-2">
-                        Session: {livenessSessionId} • Region: {AWS_REGION}
-                      </div>
-                      {livenessError && (
-                        <div className="mb-2 p-2 border-2 border-red-400 bg-red-50 text-red-800 text-xs">
-                          Error: {livenessError}
-                        </div>
-                      )}
-                      {livenessSessionId && livenessCreds && (
-                        <FaceLivenessDetectorCoreAny
-                          sessionId={livenessSessionId}
-                          region={AWS_REGION}
-                          // Provide multiple shapes to satisfy various lib expectations
-                          credentialProvider={async () => livenessCreds}
-                          credentialsProvider={async () => livenessCreds}
-                          credentials={livenessCreds}
-                          config={{
-                            awsCredentials: livenessCreds,
-                            credentialProvider: async () => livenessCreds,
-                            region: AWS_REGION,
-                          }}
-                          onAnalysisComplete={async () => {
-                            try {
-                              console.log(
-                                "[liveness] analysis complete; fetching results",
-                              );
-                              const r = await fetch(
-                                api(`/api/liveness/result`),
-                                {
-                                  method: "POST",
-                                  headers: {
-                                    "content-type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    session_id: livenessSessionId,
-                                  }),
-                                },
-                              );
-                              if (r.ok) {
-                                const data = await r.json();
-                                console.log("[liveness] result", data);
-                                setLivenessStatus(
-                                  data.passed ? "approved" : "rejected",
-                                );
-                                // Close modal and clear session/creds on either outcome to reset UI.
-                                // For rejection, user can re-open and retry cleanly.
-                                if (!data.passed) {
-                                  toast({
-                                    title: "Liveness Check Failed",
-                                    description:
-                                      "Please try again with good lighting and follow prompts.",
-                                    variant: "destructive",
-                                  });
-                                }
-                                setTimeout(() => {
-                                  setShowLiveness(false);
-                                  setLivenessSessionId(null);
-                                  setLivenessCreds(null);
-                                }, 300);
-                              } else {
-                                toast({
-                                  title: "Error",
-                                  description: `Failed to fetch liveness result: ${await r.text()}`,
-                                  variant: "destructive",
-                                });
-                              }
-                            } finally {
-                              setLivenessRunning(false);
-                              // Keep modal and session so user can see result and retry/close manually
-                            }
-                          }}
-                          onError={(e: any) => {
-                            console.error("Liveness error", e);
-                            setLivenessError(e?.message || String(e));
-                            toast({
-                              title: "Liveness Error",
-                              description: `Liveness error: ${e?.message || e}`,
-                              variant: "destructive",
-                            });
-                            setLivenessRunning(false);
-                            // Keep modal open to present the error
-                            // Do not clear session id; keep it for retry/diagnostics
-                          }}
-                        />
-                      )}
-                      <div className="mt-3 text-sm text-gray-600">
-                        Follow the on-screen prompts. This uses secure AWS
-                        Rekognition.
-                      </div>
-
-                      <div className="mt-3 flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          className="h-8 border-2 border-black rounded-none"
-                          onClick={() => {
-                            setShowLiveness(false);
-                            setLivenessError(null);
-                          }}
-                        >
-                          Close
-                        </Button>
-                      </div>
-                    </div>
-                  </div>,
-                  document.body,
-                )}
-            </div>
           )}
 
-          {/* Step 2: Profile Details (varies by type) */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {getStepTitle()}
-                </h3>
-                <p className="text-gray-600">
-                  {creatorType === "influencer" &&
-                    "Tell us a little about yourself"}
-                  {creatorType === "model_actor" &&
-                    "Let's start your portfolio"}
-                  {creatorType === "athlete" && "Tell us about your sport"}
-                </p>
-              </div>
+          {/* Liveness Modal */}
+          {showLiveness &&
+            createPortal(
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50" />
+                <div className="relative z-10 w-full max-w-2xl bg-white border-2 border-black p-3">
+                  <div className="mb-2 font-semibold">Face Liveness</div>
+                  <div className="text-xs text-gray-600 mb-2">
+                    Session: {livenessSessionId} • Region: {AWS_REGION}
+                  </div>
+                  {livenessError && (
+                    <div className="mb-2 p-2 border-2 border-red-400 bg-red-50 text-red-800 text-xs">
+                      Error: {livenessError}
+                    </div>
+                  )}
+                  {livenessSessionId && livenessCreds && (
+                    <FaceLivenessDetectorCoreAny
+                      sessionId={livenessSessionId}
+                      region={AWS_REGION}
+                      // Provide multiple shapes to satisfy various lib expectations
+                      credentialProvider={async () => livenessCreds}
+                      credentialsProvider={async () => livenessCreds}
+                      credentials={livenessCreds}
+                      config={{
+                        awsCredentials: livenessCreds,
+                        credentialProvider: async () => livenessCreds,
+                        region: AWS_REGION,
+                      }}
+                      onAnalysisComplete={async () => {
+                        try {
+                          console.log(
+                            "[liveness] analysis complete; fetching results",
+                          );
+                          const r = await fetch(
+                            api(`/api/liveness/result`),
+                            {
+                              method: "POST",
+                              headers: {
+                                "content-type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                session_id: livenessSessionId,
+                              }),
+                            },
+                          );
+                          if (r.ok) {
+                            const data = await r.json();
+                            console.log("[liveness] result", data);
+                            setLivenessStatus(
+                              data.passed ? "approved" : "rejected",
+                            );
+                            // Close modal and clear session/creds on either outcome to reset UI.
+                            // For rejection, user can re-open and retry cleanly.
+                            if (!data.passed) {
+                              toast({
+                                title: "Liveness Check Failed",
+                                description:
+                                  "Please try again with good lighting and follow prompts.",
+                                variant: "destructive",
+                              });
+                            }
+                            setTimeout(() => {
+                              setShowLiveness(false);
+                              setLivenessSessionId(null);
+                              setLivenessCreds(null);
+                            }, 300);
+                          } else {
+                            toast({
+                              title: "Error",
+                              description: `Failed to fetch liveness result: ${await r.text()}`,
+                              variant: "destructive",
+                            });
+                          }
+                        } finally {
+                          setLivenessRunning(false);
+                          // Keep modal and session so user can see result and retry/close manually
+                        }
+                      }}
+                      onError={(e: any) => {
+                        console.error("Liveness error", e);
+                        setLivenessError(e?.message || String(e));
+                        toast({
+                          title: "Liveness Error",
+                          description: `Liveness error: ${e?.message || e}`,
+                          variant: "destructive",
+                        });
+                        setLivenessRunning(false);
+                        // Keep modal open to present the error
+                        // Do not clear session id; keep it for retry/diagnostics
+                      }}
+                    />
+                  )}
+                  <div className="mt-3 text-sm text-gray-600">
+                    Follow the on-screen prompts. This uses secure AWS
+                    Rekognition.
+                  </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label
-                      htmlFor="city"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
+                  <div className="mt-3 flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-8 border-2 border-black rounded-none"
+                      onClick={() => {
+                        setShowLiveness(false);
+                        setLivenessError(null);
+                      }}
                     >
-                      City
-                    </Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) =>
-                        setFormData({ ...formData, city: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="Los Angeles"
-                    />
+                      Close
+                    </Button>
                   </div>
-                  <div>
-                    <Label
-                      htmlFor="state"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
+                </div>
+              </div>,
+              document.body,
+            )}
+      </div>
+          )}
+
+      {/* Step 2: Profile Details (varies by type) */}
+      {step === 2 && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              {getStepTitle()}
+            </h3>
+            <p className="text-gray-600">
+              {creatorType === "influencer" &&
+                "Tell us a little about yourself"}
+              {creatorType === "model_actor" &&
+                "Let's start your portfolio"}
+              {creatorType === "athlete" && "Tell us about your sport"}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="city"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  City
+                </Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                  className="border-2 border-gray-300 rounded-none"
+                  placeholder="Los Angeles"
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="state"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  State
+                </Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                  className="border-2 border-gray-300 rounded-none"
+                  placeholder="CA"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label
+                htmlFor="birthdate"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
+                {creatorType === "athlete" ? "Age" : "Birthdate"}
+              </Label>
+              {creatorType === "athlete" ? (
+                <Input
+                  id="age"
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) =>
+                    setFormData({ ...formData, age: e.target.value })
+                  }
+                  className="border-2 border-gray-300 rounded-none"
+                  placeholder="21"
+                />
+              ) : (
+                <Input
+                  id="birthdate"
+                  type="date"
+                  value={formData.birthdate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, birthdate: e.target.value })
+                  }
+                  className="border-2 border-gray-300 rounded-none"
+                />
+              )}
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                How do you identify?
+              </Label>
+              <RadioGroup
+                value={formData.gender}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, gender: value })
+                }
+              >
+                <div className="space-y-2">
+                  {[
+                    "Female",
+                    "Male",
+                    "Nonbinary",
+                    "Gender fluid",
+                    "Prefer not to say",
+                  ].map((option) => (
+                    <div
+                      key={option}
+                      className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                     >
-                      State
-                    </Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) =>
-                        setFormData({ ...formData, state: e.target.value })
+                      <RadioGroupItem
+                        value={option}
+                        id={option}
+                        className="border-2 border-gray-400"
+                      />
+                      <Label
+                        htmlFor={option}
+                        className="text-sm text-gray-700 cursor-pointer flex-1"
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                Race/Ethnicity (select all that apply)
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {ethnicities.map((ethnicity) => (
+                  <div
+                    key={ethnicity}
+                    className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                  >
+                    <Checkbox
+                      id={ethnicity}
+                      checked={formData.ethnicity.includes(ethnicity)}
+                      onCheckedChange={() =>
+                        toggleArrayItem("ethnicity", ethnicity)
                       }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="CA"
+                      className="border-2 border-gray-400"
                     />
+                    <label
+                      htmlFor={ethnicity}
+                      className="text-sm text-gray-700 cursor-pointer flex-1"
+                    >
+                      {ethnicity}
+                    </label>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Athlete-specific fields */}
+            {creatorType === "athlete" && (
+              <>
+                <div>
+                  <Label
+                    htmlFor="sport"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Sport
+                  </Label>
+                  <Select
+                    value={formData.sport}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, sport: value })
+                    }
+                  >
+                    <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                      <SelectValue placeholder="Select your sport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sportsOptions.map((sport) => (
+                        <SelectItem key={sport} value={sport}>
+                          {sport}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Athlete Type
+                  </Label>
+                  <RadioGroup
+                    value={formData.athlete_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, athlete_type: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["University", "Professional", "Independent"].map(
+                        (option) => (
+                          <div
+                            key={option}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
+                            <RadioGroupItem
+                              value={option}
+                              id={option}
+                              className="border-2 border-gray-400"
+                            />
+                            <Label
+                              htmlFor={option}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
+                            >
+                              {option}
+                            </Label>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {formData.athlete_type === "University" && (
+                  <div>
+                    <Label
+                      htmlFor="school_name"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      School Name
+                    </Label>
+                    <Input
+                      id="school_name"
+                      value={formData.school_name}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          school_name: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="University name"
+                    />
+                  </div>
+                )}
+
+                <div>
                   <Label
-                    htmlFor="birthdate"
+                    htmlFor="languages"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {creatorType === "athlete" ? "Age" : "Birthdate"}
+                    Languages
                   </Label>
-                  {creatorType === "athlete" ? (
+                  <Input
+                    id="languages"
+                    value={formData.languages}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        languages: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="e.g., English, Spanish"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Model-specific fields */}
+            {creatorType === "model_actor" && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-sm font-medium text-gray-900">
+                    Type of work (select up to 3)
+                  </Label>
+                  <span className="text-xs text-gray-500">
+                    You can specify more later
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
+                  {modelWorkTypes.map((type) => (
+                    <div
+                      key={type}
+                      className="flex items-center space-x-2 p-2 hover:bg-gray-50"
+                    >
+                      <Checkbox
+                        id={type}
+                        checked={formData.work_types.includes(type)}
+                        onCheckedChange={() => {
+                          if (formData.work_types.includes(type)) {
+                            toggleArrayItem("work_types", type);
+                          } else if (formData.work_types.length < 3) {
+                            toggleArrayItem("work_types", type);
+                          } else {
+                            toast({
+                              title: "Info",
+                              description:
+                                "Please select up to 3 options for now. You can add more later.",
+                            });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor={type}
+                        className="text-sm text-gray-700 cursor-pointer flex-1"
+                      >
+                        {type}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Influencer vibes */}
+            {creatorType === "influencer" && (
+              <div>
+                <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                  Vibe / Style Tags
+                </Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {vibes.map((vibe) => (
+                    <div
+                      key={vibe}
+                      className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                    >
+                      <Checkbox
+                        id={vibe}
+                        checked={formData.vibes.includes(vibe)}
+                        onCheckedChange={() =>
+                          toggleArrayItem("vibes", vibe)
+                        }
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor={vibe}
+                        className="text-sm text-gray-700 cursor-pointer flex-1"
+                      >
+                        {vibe}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Pricing (USD-only) */}
+          <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">
+              Licensing Pricing
+            </h4>
+            <div className="w-full flex justify-center">
+              <div className="w-full max-w-sm">
+                <Label
+                  htmlFor="base_monthly_price"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Base monthly license price (USD)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-700">$</span>
+                  <Input
+                    id="base_monthly_price"
+                    type="number"
+                    min={150}
+                    step={1}
+                    value={formData.base_monthly_price_usd}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9.]/g, "");
+                      setFormData({
+                        ...formData,
+                        base_monthly_price_usd: v,
+                      });
+                    }}
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="150"
+                  />
+                  <span className="text-sm text-gray-600">/month</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Minimum $150/month. Currency is locked to USD.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              onClick={handleBack}
+              variant="outline"
+              className="flex-1 h-12 border-2 border-black rounded-none"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back
+            </Button>
+            <Button
+              onClick={handleNext}
+              className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+            >
+              {creatorType === "athlete" ? "Next: Brand Setup" : "Continue"}
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Opportunities/Preferences/Brand Setup (varies by type) */}
+      {step === 3 && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              {getStepTitle()}
+            </h3>
+            <p className="text-gray-600">
+              {creatorType === "influencer" &&
+                "Help us match you with the right campaigns"}
+              {creatorType === "model_actor" &&
+                "Help us tailor your opportunities"}
+              {creatorType === "athlete" &&
+                "Get ready to attract sponsorship and brand deals"}
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Influencer Step 3 */}
+            {creatorType === "influencer" && (
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium text-gray-900">
+                      What kind of content are you interested in being
+                      featured in?
+                    </Label>
+                    <span className="text-xs text-gray-500">
+                      Select up to 3 for now
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {contentTypes.map((type) => (
+                      <div
+                        key={type}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          id={type}
+                          checked={formData.content_types.includes(type)}
+                          onCheckedChange={() =>
+                            toggleArrayItem("content_types", type)
+                          }
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor={type}
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          {type}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {formData.content_types.includes("Other") && (
                     <Input
-                      id="age"
-                      type="number"
-                      value={formData.age}
+                      value={formData.content_other}
                       onChange={(e) =>
-                        setFormData({ ...formData, age: e.target.value })
+                        setFormData({
+                          ...formData,
+                          content_other: e.target.value,
+                        })
                       }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="21"
-                    />
-                  ) : (
-                    <Input
-                      id="birthdate"
-                      type="date"
-                      value={formData.birthdate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birthdate: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
+                      className="mt-3 border-2 border-gray-300 rounded-none"
+                      placeholder="Please specify..."
                     />
                   )}
                 </div>
 
                 <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium text-gray-900">
+                      What types of brands or industries do you want to work
+                      with?
+                    </Label>
+                    <span className="text-xs text-gray-500">
+                      Select up to 3 for now
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {industries.map((industry) => (
+                      <div
+                        key={industry}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          id={industry}
+                          checked={formData.industries.includes(industry)}
+                          onCheckedChange={() =>
+                            toggleArrayItem("industries", industry)
+                          }
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor={industry}
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          {industry}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="primary_platform"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Primary Platform
+                    </Label>
+                    <Select
+                      value={formData.primary_platform}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          primary_platform: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                        <SelectValue placeholder="Select platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                        <SelectItem value="tiktok">TikTok</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="twitter">Twitter/X</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="platform_handle"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Handle
+                    </Label>
+                    <Input
+                      id="platform_handle"
+                      value={formData.platform_handle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          platform_handle: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="@yourhandle"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Model/Actor Step 3 */}
+            {creatorType === "model_actor" && (
+              <>
+                <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    How do you identify?
+                    Representation Status
                   </Label>
                   <RadioGroup
-                    value={formData.gender}
+                    value={formData.representation_status}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, gender: value })
+                      setFormData({
+                        ...formData,
+                        representation_status: value,
+                      })
                     }
                   >
                     <div className="space-y-2">
-                      {[
-                        "Female",
-                        "Male",
-                        "Nonbinary",
-                        "Gender fluid",
-                        "Prefer not to say",
-                      ].map((option) => (
+                      {["Agency", "Independent"].map((option) => (
                         <div
                           key={option}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -2156,1023 +2643,550 @@ export default function ReserveProfile() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    Race/Ethnicity (select all that apply)
+                    Vibe / Style Tags
                   </Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {ethnicities.map((ethnicity) => (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {vibes.map((vibe) => (
                       <div
-                        key={ethnicity}
+                        key={vibe}
                         className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                       >
                         <Checkbox
-                          id={ethnicity}
-                          checked={formData.ethnicity.includes(ethnicity)}
+                          id={vibe}
+                          checked={formData.vibes.includes(vibe)}
                           onCheckedChange={() =>
-                            toggleArrayItem("ethnicity", ethnicity)
+                            toggleArrayItem("vibes", vibe)
                           }
                           className="border-2 border-gray-400"
                         />
                         <label
-                          htmlFor={ethnicity}
+                          htmlFor={vibe}
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {ethnicity}
+                          {vibe}
                         </label>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Athlete-specific fields */}
-                {creatorType === "athlete" && (
-                  <>
-                    <div>
-                      <Label
-                        htmlFor="sport"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        Sport
-                      </Label>
-                      <Select
-                        value={formData.sport}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, sport: value })
-                        }
-                      >
-                        <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                          <SelectValue placeholder="Select your sport" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sportsOptions.map((sport) => (
-                            <SelectItem key={sport} value={sport}>
-                              {sport}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div>
+                  <Label
+                    htmlFor="headshot_url"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Upload Headshot (optional)
+                  </Label>
+                  <Input
+                    id="headshot_url"
+                    type="text"
+                    value={formData.headshot_url}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        headshot_url: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="Image URL"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    You can upload your headshot after creating your account
+                  </p>
+                </div>
+              </>
+            )}
 
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        Athlete Type
-                      </Label>
-                      <RadioGroup
-                        value={formData.athlete_type}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, athlete_type: value })
-                        }
-                      >
-                        <div className="space-y-2">
-                          {["University", "Professional", "Independent"].map(
-                            (option) => (
-                              <div
-                                key={option}
-                                className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                              >
-                                <RadioGroupItem
-                                  value={option}
-                                  id={option}
-                                  className="border-2 border-gray-400"
-                                />
-                                <Label
-                                  htmlFor={option}
-                                  className="text-sm text-gray-700 cursor-pointer flex-1"
-                                >
-                                  {option}
-                                </Label>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    {formData.athlete_type === "University" && (
-                      <div>
-                        <Label
-                          htmlFor="school_name"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          School Name
-                        </Label>
-                        <Input
-                          id="school_name"
-                          value={formData.school_name}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              school_name: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder="University name"
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <Label
-                        htmlFor="languages"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        Languages
-                      </Label>
-                      <Input
-                        id="languages"
-                        value={formData.languages}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            languages: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder="e.g., English, Spanish"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* Model-specific fields */}
-                {creatorType === "model_actor" && (
+            {/* Athlete Step 3 */}
+            {creatorType === "athlete" && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-sm font-medium text-gray-900">
-                        Type of work (select up to 3)
-                      </Label>
-                      <span className="text-xs text-gray-500">
-                        You can specify more later
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
-                      {modelWorkTypes.map((type) => (
-                        <div
-                          key={type}
-                          className="flex items-center space-x-2 p-2 hover:bg-gray-50"
-                        >
-                          <Checkbox
-                            id={type}
-                            checked={formData.work_types.includes(type)}
-                            onCheckedChange={() => {
-                              if (formData.work_types.includes(type)) {
-                                toggleArrayItem("work_types", type);
-                              } else if (formData.work_types.length < 3) {
-                                toggleArrayItem("work_types", type);
-                              } else {
-                                toast({
-                                  title: "Info",
-                                  description:
-                                    "Please select up to 3 options for now. You can add more later.",
-                                });
-                              }
-                            }}
-                            className="border-2 border-gray-400"
-                          />
-                          <label
-                            htmlFor={type}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            {type}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Influencer vibes */}
-                {creatorType === "influencer" && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      Vibe / Style Tags
-                    </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {vibes.map((vibe) => (
-                        <div
-                          key={vibe}
-                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                        >
-                          <Checkbox
-                            id={vibe}
-                            checked={formData.vibes.includes(vibe)}
-                            onCheckedChange={() =>
-                              toggleArrayItem("vibes", vibe)
-                            }
-                            className="border-2 border-gray-400"
-                          />
-                          <label
-                            htmlFor={vibe}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            {vibe}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Pricing (USD-only) */}
-              <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  Licensing Pricing
-                </h4>
-                <div className="w-full flex justify-center">
-                  <div className="w-full max-w-sm">
                     <Label
-                      htmlFor="base_monthly_price"
+                      htmlFor="instagram_handle"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Base monthly license price (USD)
+                      Instagram (optional)
                     </Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700">$</span>
-                      <Input
-                        id="base_monthly_price"
-                        type="number"
-                        min={150}
-                        step={1}
-                        value={formData.base_monthly_price_usd}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9.]/g, "");
-                          setFormData({
-                            ...formData,
-                            base_monthly_price_usd: v,
-                          });
-                        }}
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder="150"
-                      />
-                      <span className="text-sm text-gray-600">/month</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum $150/month. Currency is locked to USD.
-                    </p>
+                    <Input
+                      id="instagram_handle"
+                      value={formData.instagram_handle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          instagram_handle: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="@yourhandle"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="twitter_handle"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Twitter/X (optional)
+                    </Label>
+                    <Input
+                      id="twitter_handle"
+                      value={formData.twitter_handle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          twitter_handle: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="@yourhandle"
+                    />
                   </div>
                 </div>
-              </div>
 
-              <div className="flex gap-4">
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  className="flex-1 h-12 border-2 border-black rounded-none"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                >
-                  {creatorType === "athlete" ? "Next: Brand Setup" : "Continue"}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Opportunities/Preferences/Brand Setup (varies by type) */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {getStepTitle()}
-                </h3>
-                <p className="text-gray-600">
-                  {creatorType === "influencer" &&
-                    "Help us match you with the right campaigns"}
-                  {creatorType === "model_actor" &&
-                    "Help us tailor your opportunities"}
-                  {creatorType === "athlete" &&
-                    "Get ready to attract sponsorship and brand deals"}
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                {/* Influencer Step 3 */}
-                {creatorType === "influencer" && (
-                  <>
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          What kind of content are you interested in being
-                          featured in?
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          Select up to 3 for now
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {contentTypes.map((type) => (
-                          <div
-                            key={type}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={type}
-                              checked={formData.content_types.includes(type)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("content_types", type)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={type}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {type}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                      {formData.content_types.includes("Other") && (
-                        <Input
-                          value={formData.content_other}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              content_other: e.target.value,
-                            })
-                          }
-                          className="mt-3 border-2 border-gray-300 rounded-none"
-                          placeholder="Please specify..."
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          What types of brands or industries do you want to work
-                          with?
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          Select up to 3 for now
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {industries.map((industry) => (
-                          <div
-                            key={industry}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={industry}
-                              checked={formData.industries.includes(industry)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("industries", industry)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={industry}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {industry}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label
-                          htmlFor="primary_platform"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          Primary Platform
-                        </Label>
-                        <Select
-                          value={formData.primary_platform}
-                          onValueChange={(value) =>
-                            setFormData({
-                              ...formData,
-                              primary_platform: value,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                            <SelectValue placeholder="Select platform" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="instagram">Instagram</SelectItem>
-                            <SelectItem value="tiktok">TikTok</SelectItem>
-                            <SelectItem value="youtube">YouTube</SelectItem>
-                            <SelectItem value="twitter">Twitter/X</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label
-                          htmlFor="platform_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          Handle
-                        </Label>
-                        <Input
-                          id="platform_handle"
-                          value={formData.platform_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              platform_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder="@yourhandle"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Model/Actor Step 3 */}
-                {creatorType === "model_actor" && (
-                  <>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        Representation Status
-                      </Label>
-                      <RadioGroup
-                        value={formData.representation_status}
-                        onValueChange={(value) =>
-                          setFormData({
-                            ...formData,
-                            representation_status: value,
-                          })
-                        }
-                      >
-                        <div className="space-y-2">
-                          {["Agency", "Independent"].map((option) => (
-                            <div
-                              key={option}
-                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                            >
-                              <RadioGroupItem
-                                value={option}
-                                id={option}
-                                className="border-2 border-gray-400"
-                              />
-                              <Label
-                                htmlFor={option}
-                                className="text-sm text-gray-700 cursor-pointer flex-1"
-                              >
-                                {option}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                        Vibe / Style Tags
-                      </Label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {vibes.map((vibe) => (
-                          <div
-                            key={vibe}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={vibe}
-                              checked={formData.vibes.includes(vibe)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("vibes", vibe)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={vibe}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {vibe}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="headshot_url"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        Upload Headshot (optional)
-                      </Label>
-                      <Input
-                        id="headshot_url"
-                        type="text"
-                        value={formData.headshot_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            headshot_url: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder="Image URL"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        You can upload your headshot after creating your account
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* Athlete Step 3 */}
-                {creatorType === "athlete" && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label
-                          htmlFor="instagram_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          Instagram (optional)
-                        </Label>
-                        <Input
-                          id="instagram_handle"
-                          value={formData.instagram_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              instagram_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder="@yourhandle"
-                        />
-                      </div>
-                      <div>
-                        <Label
-                          htmlFor="twitter_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          Twitter/X (optional)
-                        </Label>
-                        <Input
-                          id="twitter_handle"
-                          value={formData.twitter_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              twitter_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder="@yourhandle"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          Interests / Brand Categories
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          Select up to 3 for now
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {athleteBrandCategories.map((category) => (
-                          <div
-                            key={category}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={category}
-                              checked={formData.brand_categories.includes(
-                                category,
-                              )}
-                              onCheckedChange={() =>
-                                toggleArrayItem("brand_categories", category)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={category}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {category}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="bio"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        Short Bio
-                      </Label>
-                      <Textarea
-                        id="bio"
-                        value={formData.bio}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bio: e.target.value })
-                        }
-                        className="border-2 border-gray-300 rounded-none h-24"
-                        placeholder="Tell brands a bit about you..."
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* Profile Visibility - Common for all */}
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Profile Visibility
-                  </Label>
-                  <RadioGroup
-                    value={formData.visibility}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, visibility: value })
-                    }
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="public"
-                          id="public"
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium text-gray-900">
+                      Interests / Brand Categories
+                    </Label>
+                    <span className="text-xs text-gray-500">
+                      Select up to 3 for now
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {athleteBrandCategories.map((category) => (
+                      <div
+                        key={category}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          id={category}
+                          checked={formData.brand_categories.includes(
+                            category,
+                          )}
+                          onCheckedChange={() =>
+                            toggleArrayItem("brand_categories", category)
+                          }
                           className="border-2 border-gray-400"
                         />
-                        <Label
-                          htmlFor="public"
+                        <label
+                          htmlFor={category}
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          <span className="font-medium">Public</span> - Visible
-                          to everyone
-                        </Label>
+                          {category}
+                        </label>
                       </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                        <RadioGroupItem
-                          value="private"
-                          id="private"
-                          className="border-2 border-gray-400"
-                        />
-                        <Label
-                          htmlFor="private"
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
-                        >
-                          <span className="font-medium">Private</span> - Only
-                          discoverable to brands and AI creators
-                        </Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-4 justify-between">
+                <div>
+                  <Label
+                    htmlFor="bio"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Short Bio
+                  </Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bio: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none h-24"
+                    placeholder="Tell brands a bit about you..."
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Profile Visibility - Common for all */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                Profile Visibility
+              </Label>
+              <RadioGroup
+                value={formData.visibility}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, visibility: value })
+                }
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                    <RadioGroupItem
+                      value="public"
+                      id="public"
+                      className="border-2 border-gray-400"
+                    />
+                    <Label
+                      htmlFor="public"
+                      className="text-sm text-gray-700 cursor-pointer flex-1"
+                    >
+                      <span className="font-medium">Public</span> - Visible
+                      to everyone
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                    <RadioGroupItem
+                      value="private"
+                      id="private"
+                      className="border-2 border-gray-400"
+                    />
+                    <Label
+                      htmlFor="private"
+                      className="text-sm text-gray-700 cursor-pointer flex-1"
+                    >
+                      <span className="font-medium">Private</span> - Only
+                      discoverable to brands and AI creators
+                    </Label>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 justify-between">
+            <Button
+              onClick={handleBack}
+              variant="outline"
+              className="h-12 border-2 border-black rounded-none"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={updateProfileMutation.isPending}
+              className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+            >
+              {updateProfileMutation.isPending
+                ? "Saving..."
+                : "Save & Continue to Verification"}
+              <CheckCircle2 className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Verify Identity - redesigned */}
+      {step === 4 && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-3xl font-bold text-gray-900 mb-2">
+              Identity Verification
+            </h3>
+            <p className="text-gray-700">
+              Verify your identity to become visible to brands and unlock
+              opportunities
+            </p>
+          </div>
+
+          {/* Why verify box */}
+          <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
+            <h4 className="font-bold text-gray-900 mb-3">
+              Why verify your identity?
+            </h4>
+            <ul className="space-y-2 text-gray-800">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Get
+                discovered by brands looking for verified creators
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
+                Build trust and credibility with licensing partners
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
+                Unlock higher-value campaign opportunities
+              </li>
+            </ul>
+          </div>
+
+          <p className="text-gray-700">
+            We use secure identity verification to ensure all creators on
+            Likelee are authentic. This process typically takes 2–3 minutes.
+          </p>
+
+          {/* Requirements box */}
+          <div className="p-5 border-2 border-gray-300 bg-gray-50">
+            <h4 className="font-bold text-gray-900 mb-2">
+              What you'll need:
+            </h4>
+            <ul className="list-disc list-inside text-gray-800 space-y-1">
+              <li>
+                Government-issued ID (driver's license, passport, or state
+                ID)
+              </li>
+              <li>Good lighting and camera/mic access</li>
+              <li>2–3 minutes in a quiet space</li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              onClick={startVerification}
+              disabled={kycLoading}
+              className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+            >
+              {kycLoading ? "Starting…" : "Verify Identity Now"}
+            </Button>
+            <Button
+              onClick={startLiveness}
+              disabled={livenessRunning || livenessStatus === "approved"}
+              variant="outline"
+              className="w-full h-12 border-2 border-black rounded-none"
+            >
+              {livenessStatus === "approved"
+                ? "Liveness Approved"
+                : livenessRunning
+                  ? "Preparing…"
+                  : "Start Liveness Check"}
+            </Button>
+            {LIVENESS_DEBUG && showLiveness && (
+              <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
+                <div>
+                  Debug: step={step} • showLiveness={String(showLiveness)} •
+                  session={livenessSessionId || "—"} • region={AWS_REGION}
+                </div>
+                {livenessSessionId && livenessCreds && (
+                  <div className="border border-gray-200">
+                    <FaceLivenessDetectorCoreAny
+                      sessionId={livenessSessionId}
+                      region={"us-east-1"}
+                      credentialProvider={async () => livenessCreds}
+                      credentialsProvider={async () => livenessCreds}
+                      credentials={livenessCreds}
+                      config={{
+                        awsCredentials: livenessCreds,
+                        credentialProvider: async () => livenessCreds,
+                      }}
+                      onAnalysisComplete={async () => {
+                        try {
+                          const r = await fetch(
+                            api(`/api/liveness/result`),
+                            {
+                              method: "POST",
+                              headers: {
+                                "content-type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                session_id: livenessSessionId,
+                              }),
+                            },
+                          );
+                          if (r.ok) {
+                            const data = await r.json();
+                            setLivenessStatus(
+                              data.passed ? "approved" : "rejected",
+                            );
+                            if (!data.passed) {
+                              toast({
+                                title: "Liveness Check Failed",
+                                description:
+                                  "Please try again with good lighting and follow prompts.",
+                                variant: "destructive",
+                              });
+                            }
+                            // Always close and clear after a result to avoid lingering "Verifying" UI
+                            setTimeout(() => {
+                              setShowLiveness(false);
+                              setLivenessSessionId(null);
+                              setLivenessCreds(null);
+                            }, 300);
+                          } else {
+                            console.error(
+                              "Failed to fetch liveness result",
+                              await r.text(),
+                            );
+                          }
+                        } finally {
+                          setLivenessRunning(false);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="text-sm text-gray-700 flex items-center justify-between">
+              <span>
+                KYC:{" "}
+                <strong className="capitalize">
+                  {kycStatus.replace("_", " ")}
+                </strong>
+              </span>
+              <span className="flex items-center gap-1">
+                <span>Liveness:</span>
+                {livenessStatus === "approved" && (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <strong className="capitalize text-green-700">
+                      approved
+                    </strong>
+                  </>
+                )}
+                {livenessStatus === "rejected" && (
+                  <>
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <strong className="capitalize text-red-700">
+                      rejected
+                    </strong>
+                  </>
+                )}
+                {livenessStatus === "pending" && (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <strong className="capitalize text-blue-700">
+                      verifying
+                    </strong>
+                  </>
+                )}
+                {livenessStatus === "not_started" && (
+                  <strong className="capitalize text-gray-700">
+                    not started
+                  </strong>
+                )}
+              </span>
+            </div>
+            <div className="w-full">
+              <div className="grid grid-cols-3 gap-2 w-full max-w-xl mx-auto">
                 <Button
                   onClick={handleBack}
-                  variant="outline"
-                  className="h-12 border-2 border-black rounded-none"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={updateProfileMutation.isPending}
-                  className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                >
-                  {updateProfileMutation.isPending
-                    ? "Saving..."
-                    : "Save & Continue to Verification"}
-                  <CheckCircle2 className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Verify Identity - redesigned */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                  Identity Verification
-                </h3>
-                <p className="text-gray-700">
-                  Verify your identity to become visible to brands and unlock
-                  opportunities
-                </p>
-              </div>
-
-              {/* Why verify box */}
-              <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
-                <h4 className="font-bold text-gray-900 mb-3">
-                  Why verify your identity?
-                </h4>
-                <ul className="space-y-2 text-gray-800">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Get
-                    discovered by brands looking for verified creators
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    Build trust and credibility with licensing partners
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    Unlock higher-value campaign opportunities
-                  </li>
-                </ul>
-              </div>
-
-              <p className="text-gray-700">
-                We use secure identity verification to ensure all creators on
-                Likelee are authentic. This process typically takes 2–3 minutes.
-              </p>
-
-              {/* Requirements box */}
-              <div className="p-5 border-2 border-gray-300 bg-gray-50">
-                <h4 className="font-bold text-gray-900 mb-2">
-                  What you'll need:
-                </h4>
-                <ul className="list-disc list-inside text-gray-800 space-y-1">
-                  <li>
-                    Government-issued ID (driver's license, passport, or state
-                    ID)
-                  </li>
-                  <li>Good lighting and camera/mic access</li>
-                  <li>2–3 minutes in a quiet space</li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={startVerification}
-                  disabled={kycLoading}
-                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                >
-                  {kycLoading ? "Starting…" : "Verify Identity Now"}
-                </Button>
-                <Button
-                  onClick={startLiveness}
-                  disabled={livenessRunning || livenessStatus === "approved"}
                   variant="outline"
                   className="w-full h-12 border-2 border-black rounded-none"
                 >
-                  {livenessStatus === "approved"
-                    ? "Liveness Approved"
-                    : livenessRunning
-                      ? "Preparing…"
-                      : "Start Liveness Check"}
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back
                 </Button>
-                {LIVENESS_DEBUG && showLiveness && (
-                  <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
-                    <div>
-                      Debug: step={step} • showLiveness={String(showLiveness)} •
-                      session={livenessSessionId || "—"} • region={AWS_REGION}
-                    </div>
-                    {livenessSessionId && livenessCreds && (
-                      <div className="border border-gray-200">
-                        <FaceLivenessDetectorCoreAny
-                          sessionId={livenessSessionId}
-                          region={"us-east-1"}
-                          credentialProvider={async () => livenessCreds}
-                          credentialsProvider={async () => livenessCreds}
-                          credentials={livenessCreds}
-                          config={{
-                            awsCredentials: livenessCreds,
-                            credentialProvider: async () => livenessCreds,
-                          }}
-                          onAnalysisComplete={async () => {
-                            try {
-                              const r = await fetch(
-                                api(`/api/liveness/result`),
-                                {
-                                  method: "POST",
-                                  headers: {
-                                    "content-type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    session_id: livenessSessionId,
-                                  }),
-                                },
-                              );
-                              if (r.ok) {
-                                const data = await r.json();
-                                setLivenessStatus(
-                                  data.passed ? "approved" : "rejected",
-                                );
-                                if (!data.passed) {
-                                  toast({
-                                    title: "Liveness Check Failed",
-                                    description:
-                                      "Please try again with good lighting and follow prompts.",
-                                    variant: "destructive",
-                                  });
-                                }
-                                // Always close and clear after a result to avoid lingering "Verifying" UI
-                                setTimeout(() => {
-                                  setShowLiveness(false);
-                                  setLivenessSessionId(null);
-                                  setLivenessCreds(null);
-                                }, 300);
-                              } else {
-                                console.error(
-                                  "Failed to fetch liveness result",
-                                  await r.text(),
-                                );
-                              }
-                            } finally {
-                              setLivenessRunning(false);
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="text-sm text-gray-700 flex items-center justify-between">
-                  <span>
-                    KYC:{" "}
-                    <strong className="capitalize">
-                      {kycStatus.replace("_", " ")}
-                    </strong>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span>Liveness:</span>
-                    {livenessStatus === "approved" && (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <strong className="capitalize text-green-700">
-                          approved
-                        </strong>
-                      </>
-                    )}
-                    {livenessStatus === "rejected" && (
-                      <>
-                        <XCircle className="w-4 h-4 text-red-600" />
-                        <strong className="capitalize text-red-700">
-                          rejected
-                        </strong>
-                      </>
-                    )}
-                    {livenessStatus === "pending" && (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                        <strong className="capitalize text-blue-700">
-                          verifying
-                        </strong>
-                      </>
-                    )}
-                    {livenessStatus === "not_started" && (
-                      <strong className="capitalize text-gray-700">
-                        not started
-                      </strong>
-                    )}
-                  </span>
+                <Button
+                  onClick={() => setShowSkipModal(true)}
+                  variant="outline"
+                  className="w-full h-12 border-2 border-gray-300 rounded-none"
+                >
+                  Skip for Now
+                </Button>
+                <Button
+                  onClick={verifyAndContinue}
+                  disabled={kycLoading}
+                  className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
+                >
+                  {kycLoading ? "Checking…" : "Verify & Continue"}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Skip Confirmation Modal */}
+          {showSkipModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={() => setShowSkipModal(false)}
+              />
+              <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
+                <h4 className="text-lg font-bold mb-2">
+                  Skip Identity Verification?
+                </h4>
+                <p className="text-sm text-gray-700 mb-4">
+                  If you skip now, your profile will be created, but brands
+                  won't see you until you complete verification.
+                </p>
+                <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
+                  You can complete verification anytime from your dashboard.
                 </div>
-                <div className="w-full">
-                  <div className="grid grid-cols-3 gap-2 w-full max-w-xl mx-auto">
-                    <Button
-                      onClick={handleBack}
-                      variant="outline"
-                      className="w-full h-12 border-2 border-black rounded-none"
-                    >
-                      <ArrowLeft className="w-5 h-5 mr-2" />
-                      Back
-                    </Button>
-                    <Button
-                      onClick={() => setShowSkipModal(true)}
-                      variant="outline"
-                      className="w-full h-12 border-2 border-gray-300 rounded-none"
-                    >
-                      Skip for Now
-                    </Button>
-                    <Button
-                      onClick={verifyAndContinue}
-                      disabled={kycLoading}
-                      className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
-                    >
-                      {kycLoading ? "Checking…" : "Verify & Continue"}
-                    </Button>
-                  </div>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    className="rounded-none border-2 border-black"
+                    onClick={() => setShowSkipModal(false)}
+                  >
+                    ← Go Back
+                  </Button>
+                  <Button
+                    className="rounded-none border-2 border-black bg-black text-white"
+                    onClick={() => {
+                      setShowSkipModal(false);
+                      finalizeProfile();
+                    }}
+                  >
+                    Skip for Now - I'm Sure
+                  </Button>
                 </div>
               </div>
-
-              {/* Skip Confirmation Modal */}
-              {showSkipModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                  <div
-                    className="absolute inset-0 bg-black/50"
-                    onClick={() => setShowSkipModal(false)}
-                  />
-                  <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
-                    <h4 className="text-lg font-bold mb-2">
-                      Skip Identity Verification?
-                    </h4>
-                    <p className="text-sm text-gray-700 mb-4">
-                      If you skip now, your profile will be created, but brands
-                      won't see you until you complete verification.
-                    </p>
-                    <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
-                      You can complete verification anytime from your dashboard.
-                    </div>
-                    <div className="flex gap-3 justify-end">
-                      <Button
-                        variant="outline"
-                        className="rounded-none border-2 border-black"
-                        onClick={() => setShowSkipModal(false)}
-                      >
-                        ← Go Back
-                      </Button>
-                      <Button
-                        className="rounded-none border-2 border-black bg-black text-white"
-                        onClick={() => {
-                          setShowSkipModal(false);
-                          finalizeProfile();
-                        }}
-                      >
-                        Skip for Now - I'm Sure
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
-        </Card>
-      </div>
-      {/* Email Verification Modal */}
-      {/* Email Verification Modal */}
-      <Dialog
-        open={showVerificationModal}
-        onOpenChange={setShowVerificationModal}
-      >
-        <DialogContent className="sm:max-w-md border-t-4 border-t-[#32C8D1]">
-          <DialogHeader className="flex flex-col items-center text-center space-y-4 pt-4">
-            <div className="h-16 w-16 bg-[#32C8D1]/10 rounded-full flex items-center justify-center">
-              <Mail className="h-8 w-8 text-[#32C8D1]" />
-            </div>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Verify your email
-            </DialogTitle>
-            <DialogDescription className="text-gray-600 text-base max-w-[300px]">
-              We've sent a verification link to{" "}
-              <span className="font-semibold text-gray-900">
-                {formData.email}
-              </span>
-              . Please check your inbox to activate your account.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-col gap-2 mt-4 pb-2">
-            <Button
-              className="w-full bg-[#32C8D1] hover:bg-[#2ab0b8] text-white font-semibold h-12 rounded-lg"
-              onClick={async () => {
-                const { data } = await supabase.auth.refreshSession();
-                if (data.session) {
-                  setShowVerificationModal(false);
-                  setStep(2);
-                } else {
-                  alert("Email not verified yet. Please check your inbox.");
-                }
-              }}
-            >
-              I've verified my email
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full text-[#32C8D1] hover:text-[#2ab0b8] hover:bg-[#32C8D1]/10"
-              disabled={resending}
-              onClick={async () => {
-                if (resendEmailConfirmation) {
-                  try {
-                    setResending(true);
-                    await resendEmailConfirmation(formData.email);
-                    alert("Verification email resent! Please check your inbox.");
-                  } catch (e: any) {
-                    alert(`Failed to resend email: ${e.message}`);
-                  } finally {
-                    setResending(false);
-                  }
-                }
-              }}
-            >
-              {resending ? "Resending..." : "Resend verification email"}
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full text-gray-500 hover:text-gray-700"
-              onClick={() => setShowVerificationModal(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      )}
+    </Card>
+      </div >
+    {/* Email Verification Modal */ }
+
+    < Dialog
+  open = { showVerificationModal }
+  onOpenChange = { setShowVerificationModal }
+    >
+    <DialogContent className="sm:max-w-md border-t-4 border-t-[#32C8D1]">
+      <DialogHeader className="flex flex-col items-center text-center space-y-4 pt-4">
+        <div className="h-16 w-16 bg-[#32C8D1]/10 rounded-full flex items-center justify-center">
+          <Mail className="h-8 w-8 text-[#32C8D1]" />
+        </div>
+        <DialogTitle className="text-2xl font-bold text-gray-900">
+          Verify your email
+        </DialogTitle>
+        <DialogDescription className="text-gray-600 text-base max-w-[300px]">
+          We've sent a verification link to{" "}
+          <span className="font-semibold text-gray-900">
+            {formData.email}
+          </span>
+          . Please check your inbox to activate your account.
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter className="flex flex-col sm:flex-col gap-2 mt-4 pb-2">
+        <Button
+          className="w-full bg-[#32C8D1] hover:bg-[#2ab0b8] text-white font-semibold h-12 rounded-lg"
+          onClick={async () => {
+            const { data } = await supabase.auth.refreshSession();
+            if (data.session) {
+              setShowVerificationModal(false);
+              setStep(2);
+            } else {
+              alert("Email not verified yet. Please check your inbox.");
+            }
+          }}
+        >
+          I've verified my email
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full text-[#32C8D1] hover:text-[#2ab0b8] hover:bg-[#32C8D1]/10"
+          disabled={resending}
+          onClick={async () => {
+            if (resendEmailConfirmation) {
+              try {
+                setResending(true);
+                await resendEmailConfirmation(formData.email);
+                alert(
+                  "Verification email resent! Please check your inbox.",
+                );
+              } catch (e: any) {
+                alert(`Failed to resend email: ${e.message}`);
+              } finally {
+                setResending(false);
+              }
+            }
+          }}
+        >
+          {resending ? "Resending..." : "Resend verification email"}
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full text-gray-500 hover:text-gray-700"
+          onClick={() => setShowVerificationModal(false)}
+        >
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+      </Dialog >
+    </div >
   );
 }

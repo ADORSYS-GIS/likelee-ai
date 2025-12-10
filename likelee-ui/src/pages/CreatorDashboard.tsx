@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
+import { Button as UIButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge as UIBadge } from "@/components/ui/badge";
+import { Label as UILabel } from "@/components/ui/label";
+import { Switch as UISwitch } from "@/components/ui/switch";
+import {
+  Alert as UIAlert,
+  AlertDescription as UIAlertDescription,
+} from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Input as UIInput } from "@/components/ui/input";
+import { Textarea as UITextarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -94,6 +97,16 @@ import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
 import { useToast } from "@/components/ui/use-toast";
+
+// Cast UI components to any to avoid TS forwardRef prop typing frictions
+const Button: any = UIButton;
+const Alert: any = UIAlert;
+const AlertDescription: any = UIAlertDescription;
+const Label: any = UILabel;
+const Badge: any = UIBadge;
+const Input: any = UIInput;
+const Switch: any = UISwitch;
+const Textarea: any = UITextarea;
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -3910,7 +3923,10 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
                 {approval.perpetual && (
-                  <Badge variant="destructive" className="bg-red-500 text-white">
+                  <Badge
+                    variant="destructive"
+                    className="bg-red-500 text-white"
+                  >
                     <AlertCircle className="w-4 h-4 mr-1" />
                     Perpetual Request
                   </Badge>
@@ -4571,7 +4587,9 @@ export default function CreatorDashboard() {
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
             <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-gray-900">Bank-level Security</h3>
+              <h3 className="font-semibold text-gray-900">
+                Bank-level Security
+              </h3>
               <p className="text-sm text-gray-600">
                 Your information is encrypted and protected
               </p>
@@ -4595,7 +4613,8 @@ export default function CreatorDashboard() {
           Connect Bank Account
         </Button>
         <p className="text-xs text-gray-500 mt-4">
-          Bank connection coming soon. We're integrating secure payment processing.
+          Bank connection coming soon. We're integrating secure payment
+          processing.
         </p>
       </Card>
     </div>
@@ -4663,7 +4682,9 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <p className="text-sm text-gray-600 mb-2">Next Payment</p>
             <p className="text-2xl font-bold text-gray-900">To be determined</p>
-            <p className="text-sm text-gray-600 mt-1">No active contracts yet</p>
+            <p className="text-sm text-gray-600 mt-1">
+              No active contracts yet
+            </p>
           </Card>
         </div>
 
@@ -5183,11 +5204,10 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
+                        className={`px-4 py-2 border-2 ${isSelected
                             ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
                             : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                          }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -5219,11 +5239,10 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
+                        className={`px-4 py-2 border-2 ${isSelected
                             ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
                             : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                          }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -5369,75 +5388,75 @@ export default function CreatorDashboard() {
                       </Button>
                     </div>
                   )}
-              </div>
-
-              {/* Industries */}
-              <div className="pt-6 border-t border-gray-200">
-                <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  Industries I Work With
-                </Label>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {INDUSTRIES.map((industry) => (
-                    <Badge
-                      key={industry}
-                      onClick={() =>
-                        editingRules && handleToggleIndustry(industry)
-                      }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
-                    >
-                      {industry}
-                    </Badge>
-                  ))}
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Base rate per month for cameo usage
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 max-w-md">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700 font-medium text-lg">
-                        $
-                      </span>
-                      <Input
-                        type="number"
-                        value={localMonthlyRate}
-                        onChange={(e) => {
-                          setLocalMonthlyRate(e.target.value);
-                        }}
-                        disabled={!editingLicensingRate}
-                        className={`border-2 text-lg ${!editingLicensingRate ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
-                        min="0"
-                        step="50"
-                      />
-                      <span className="text-gray-700 font-medium text-lg">
-                        / month
-                      </span>
+
+                {/* Industries */}
+                <div className="pt-6 border-t border-gray-200">
+                  <Label className="text-base font-semibold text-gray-900 block mb-3">
+                    Industries I Work With
+                  </Label>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {INDUSTRIES.map((industry) => (
+                      <Badge
+                        key={industry}
+                        onClick={() =>
+                          editingRules && handleToggleIndustry(industry)
+                        }
+                        className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                          } ${!editingRules && "cursor-default"}`}
+                      >
+                        {industry}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Base rate per month for cameo usage
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 max-w-md">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-700 font-medium text-lg">
+                          $
+                        </span>
+                        <Input
+                          type="number"
+                          value={localMonthlyRate}
+                          onChange={(e) => {
+                            setLocalMonthlyRate(e.target.value);
+                          }}
+                          disabled={!editingLicensingRate}
+                          className={`border-2 text-lg ${!editingLicensingRate ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
+                          min="0"
+                          step="50"
+                        />
+                        <span className="text-gray-700 font-medium text-lg">
+                          / month
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Negotiation Acceptance */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base font-semibold text-gray-900 block mb-1">
-                      Accept Negotiations
-                    </Label>
-                    <p className="text-sm text-gray-600">
-                      Allow brands to propose counter-offers to your base rate
-                    </p>
+                {/* Negotiation Acceptance */}
+                <div className="pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-base font-semibold text-gray-900 block mb-1">
+                        Accept Negotiations
+                      </Label>
+                      <p className="text-sm text-gray-600">
+                        Allow brands to propose counter-offers to your base rate
+                      </p>
+                    </div>
+                    <Switch
+                      checked={creator.accept_negotiations || false}
+                      onCheckedChange={handleToggleNegotiations}
+                    />
                   </div>
-                  <Switch
-                    checked={creator.accept_negotiations || false}
-                    onCheckedChange={handleToggleNegotiations}
-                  />
                 </div>
               </div>
-            </div>
           </Card>
         </div>
       )}
@@ -6354,11 +6373,10 @@ export default function CreatorDashboard() {
                     <Badge
                       key={type}
                       onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
-                        creator.content_types?.includes(type)
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.content_types?.includes(type)
                           ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
                           : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {creator.content_types?.includes(type) && (
                         <Check className="w-3 h-3" />
@@ -6381,11 +6399,10 @@ export default function CreatorDashboard() {
                     <Badge
                       key={industry}
                       onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
-                        creator.industries?.includes(industry)
+                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${creator.industries?.includes(industry)
                           ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
                           : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {creator.industries?.includes(industry) && (
                         <Check className="w-3 h-3" />
@@ -6438,9 +6455,9 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                        (existing.price_per_week_cents / 100) *
-                                        4
-                                      ).toString()
+                                      (existing.price_per_week_cents / 100) *
+                                      4
+                                    ).toString()
                                     : ""
                                 }
                                 placeholder={(
