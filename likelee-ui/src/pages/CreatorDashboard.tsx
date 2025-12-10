@@ -26,8 +26,6 @@ import {
   Image as ImageIcon,
   Video,
   AlertCircle,
-  Check,
-  CheckCircle,
   CheckCircle2,
   Loader2,
   Trash2,
@@ -74,7 +72,9 @@ import {
   ShieldAlert,
   ExternalLink,
   AlertTriangle,
+  Check,
   Youtube,
+  ArrowLeft,
 } from "lucide-react";
 import {
   LineChart,
@@ -92,7 +92,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
-import { useToast } from "@/components/ui/use-toast";
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -122,14 +121,19 @@ const INDUSTRIES = [
 const VOICE_SCRIPTS = {
   happy:
     "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+
   emotional:
     "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+
   excited:
     "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+
   mellow:
     "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+
   relaxed:
     "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+
   angry:
     "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
 };
@@ -507,10 +511,10 @@ const exampleContentItems = [
     id: "content-glossier",
     brand: "Glossier Beauty",
     brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/8/84/Glossier_Logo.svg",
+      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
     title: "Web Banner",
     thumbnail_url:
-      "https://images.unsplash.com/photo-1596462502278-27bfdd403348?q=80&w=2000&auto=format&fit=crop",
+      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
     platform: "Website",
     views: "89,000",
     engagement: "2.8%",
@@ -630,7 +634,8 @@ const mockContracts: any[] = [];
 export default function CreatorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, initialized, authenticated, logout } = useAuth();
+  const { user, profile, initialized, authenticated, logout, refreshProfile } =
+    useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
     try {
@@ -708,57 +713,7 @@ export default function CreatorDashboard() {
   >(null);
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
-  const { toast } = useToast();
-
-  // Content Restrictions State
-  const [contentRestrictions, setContentRestrictions] = useState<string[]>([
-    "Political Content",
-    "Controversial Topics",
-    "Explicit/Adult Content",
-    "Pharmaceutical Claims",
-    "Financial/Investment Advice",
-    "Tobacco/Vaping Products",
-    "Gambling (Unlicensed)",
-  ]);
-  const [availableRestrictions, setAvailableRestrictions] = useState<string[]>([
-    "Alcohol",
-    "Weapons/Firearms",
-    "Cryptocurrency/NFT",
-    "MLM/Multi-Level Marketing",
-    "Unlicensed Financial Products",
-    "Health/Medical Claims",
-  ]);
-  const [brandExclusivity, setBrandExclusivity] = useState<string[]>([]);
-  const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
-  const [customRestriction, setCustomRestriction] = useState("");
-  const [newBrand, setNewBrand] = useState("");
-  const [editingLicensingRate, setEditingLicensingRate] = useState(false);
-  const [localMonthlyRate, setLocalMonthlyRate] = useState("");
-  const [savingRules, setSavingRules] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [recordingToDelete, setRecordingToDelete] = useState(null);
-
-  // Sync local rate when creator data loads or when entering edit mode
-  // Sync local rate when creator data loads or when entering edit mode
-  useEffect(() => {
-    // If we are not editing, keep the local value in sync with the saved data
-    if (!editingLicensingRate) {
-      if (
-        creator?.base_monthly_price_cents !== undefined &&
-        creator?.base_monthly_price_cents !== null
-      ) {
-        setLocalMonthlyRate(
-          (creator.base_monthly_price_cents / 100).toString(),
-        );
-      } else if (creator?.price_per_week !== undefined) {
-        setLocalMonthlyRate(((creator.price_per_week || 0) * 4).toString());
-      }
-    }
-  }, [
-    creator?.price_per_week,
-    creator?.base_monthly_price_cents,
-    editingLicensingRate,
-  ]);
+  const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -766,10 +721,9 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const full = new URL(
+        const full = api(
           `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-          API_BASE || "/",
-        ).toString();
+        );
         const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
@@ -874,13 +828,11 @@ export default function CreatorDashboard() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [generatingVoice, setGeneratingVoice] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
-  const wordTimeoutRef = useRef(null);
 
   // Track if we've loaded data for the current user to prevent unnecessary refetches
   const loadedUserRef = useRef<string | null>(null);
@@ -949,20 +901,6 @@ export default function CreatorDashboard() {
           cameo_left_url: profile.cameo_left_url,
           cameo_right_url: profile.cameo_right_url,
         });
-
-        // Populate restrictions state
-        if (
-          profile.content_restrictions &&
-          Array.isArray(profile.content_restrictions)
-        ) {
-          setContentRestrictions(profile.content_restrictions);
-        }
-        if (
-          profile.brand_exclusivity &&
-          Array.isArray(profile.brand_exclusivity)
-        ) {
-          setBrandExclusivity(profile.brand_exclusivity);
-        }
         // If backend provides arrays later, replace mocks
         if (Array.isArray(json.campaigns) && json.campaigns.length)
           setActiveCampaigns(json.campaigns);
@@ -999,10 +937,7 @@ export default function CreatorDashboard() {
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
-      toast({
-        title: "Info",
-        description: "Please log in to start verification.",
-      });
+      alert("Please log in to start verification.");
       return;
     }
     try {
@@ -1016,10 +951,7 @@ export default function CreatorDashboard() {
       const data = await res.json();
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      toast({
-        title: "Info",
-        description: `Failed to start verification: ${e?.message || e}`,
-      });
+      alert(`Failed to start verification: ${e?.message || e}`);
     } finally {
       setKycLoading(false);
     }
@@ -1097,10 +1029,7 @@ export default function CreatorDashboard() {
           name: file.name,
         });
         setUploading(false);
-        toast({
-          title: "Info",
-          description: "Hero media uploaded! (Demo mode)",
-        });
+        alert("Hero media uploaded! (Demo mode)");
       }, 1000);
     }
   };
@@ -1443,7 +1372,10 @@ export default function CreatorDashboard() {
     const data = {
       ...exampleProfilePreviewData,
       first_name:
-        user?.user_metadata?.full_name?.split(" ")[0] ||
+        creator.name ||
+        profile?.full_name ||
+        user?.user_metadata?.full_name ||
+        user?.email?.split("@")[0] ||
         exampleProfilePreviewData.first_name,
       location:
         user?.user_metadata?.location || exampleProfilePreviewData.location,
@@ -1496,11 +1428,15 @@ export default function CreatorDashboard() {
                   <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
                     <AvatarImage
                       src={
-                        creator.profile_photo || user?.user_metadata?.avatar_url
+                        profile?.profile_photo_url ||
+                        creator.profile_photo ||
+                        user?.user_metadata?.avatar_url
                       }
                     />
                     <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                      {data.first_name[0] === "[" ? "U" : data.first_name[0]}
+                      {data.first_name && data.first_name[0] !== "["
+                        ? data.first_name[0].toUpperCase()
+                        : user?.email?.[0].toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -1691,7 +1627,9 @@ export default function CreatorDashboard() {
                     }
                   />
                   <AvatarFallback className="bg-white/20 text-white text-4xl">
-                    {data.first_name[0] === "[" ? "U" : data.first_name[0]}
+                    {data.first_name && data.first_name[0] !== "["
+                      ? data.first_name[0].toUpperCase()
+                      : user?.email?.[0].toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -1789,10 +1727,7 @@ export default function CreatorDashboard() {
         }));
         setPhotos([...photos, ...newPhotos]);
         setUploading(false);
-        toast({
-          title: "Info",
-          description: `${files.length} photo(s) uploaded! `,
-        });
+        alert(`${files.length} photo(s) uploaded! `);
       }, 1000);
     }
   };
@@ -1805,17 +1740,11 @@ export default function CreatorDashboard() {
     const file = e.target.files[0];
     if (file) {
       if (!user?.id) {
-        toast({
-          title: "Info",
-          description: "You must be logged in to upload a photo.",
-        });
+        alert("You must be logged in to upload a photo.");
         return;
       }
       if (file.size > 5_000_000) {
-        toast({
-          title: "Info",
-          description: "Please upload an image of 5 MB or less.",
-        });
+        alert("Please upload an image of 5 MB or less.");
         return;
       }
       setUploadingPhoto(true);
@@ -1854,9 +1783,10 @@ export default function CreatorDashboard() {
           profile_photo: newPhotoUrl,
         }));
 
-        toast({ title: "Info", description: "Profile photo updated!" });
+        await refreshProfile();
+        alert("Profile photo updated!");
       } catch (err: any) {
-        toast({ title: "Info", description: `Upload failed: ${err.message}` });
+        alert(`Upload failed: ${err.message}`);
         // Revert optimistic update on error by refreshing dashboard
         try {
           const profileRes = await fetch(
@@ -1923,80 +1853,30 @@ export default function CreatorDashboard() {
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      // Start countdown
-      setCountdown(3);
-      let count = 3;
-
-      const countdownInterval = setInterval(() => {
-        count--;
-        if (count > 0) {
-          setCountdown(count);
-        } else {
-          clearInterval(countdownInterval);
-          setCountdown(null);
-          startActualRecording();
-        }
-      }, 1000);
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
-      toast({
-        title: "Info",
-        description: "Failed to access microphone. Please check permissions.",
-      });
-    }
-  };
-
-  const startActualRecording = () => {
-    try {
-      if (!mediaRecorderRef.current) return;
-
       mediaRecorderRef.current.start();
       setIsRecording(true);
 
       const startTime = Date.now();
-      const script = VOICE_SCRIPTS[selectedEmotion];
-      const words = script.split(" ");
-      let currentWordIndex = 0;
-
-      const processNextWord = () => {
-        if (currentWordIndex >= words.length) return;
-
-        setCurrentWord(currentWordIndex);
-        const word = words[currentWordIndex];
-        currentWordIndex++;
-
-        // Base delay for ~2.5 words/sec (400ms)
-        let delay = 400;
-
-        // Add pauses for punctuation
-        if (word.endsWith(",") || word.endsWith(";")) {
-          delay += 200; // Short pause
-        } else if (
-          word.endsWith(".") ||
-          word.endsWith("?") ||
-          word.endsWith("!")
-        ) {
-          delay += 400; // Longer pause
-        }
-
-        wordTimeoutRef.current = setTimeout(processNextWord, delay);
-      };
-
-      // Start the word processing loop
-      processNextWord();
-
-      // Update recording time every 100ms
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setRecordingTime(elapsed);
 
+        const script = VOICE_SCRIPTS[selectedEmotion];
+        const words = script.split(" ");
+        const wordsPerSecond = words.length / 60;
+        const wordIndex = Math.min(
+          Math.floor(elapsed * wordsPerSecond),
+          words.length - 1,
+        );
+        setCurrentWord(wordIndex);
+
         if (elapsed >= 60) {
-          if (wordTimeoutRef.current) clearTimeout(wordTimeoutRef.current);
           stopRecording();
         }
       }, 100);
     } catch (error) {
       console.error("Error starting recording:", error);
+      alert("Failed to access microphone. Please check permissions.");
     }
   };
 
@@ -2005,7 +1885,6 @@ export default function CreatorDashboard() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       clearInterval(timerRef.current);
-      if (wordTimeoutRef.current) clearTimeout(wordTimeoutRef.current);
     }
   };
 
@@ -2014,7 +1893,6 @@ export default function CreatorDashboard() {
     setShowRecordingModal(true);
     setRecordingTime(0);
     setCurrentWord(0);
-    setCountdown(null);
   };
 
   const toggleRecordingAccess = (id) => {
@@ -2025,29 +1903,20 @@ export default function CreatorDashboard() {
     );
   };
 
-  const deleteRecording = (id) => {
-    setRecordingToDelete(id);
-    setShowDeleteConfirmation(true);
-  };
-
-  const confirmDelete = async () => {
-    if (recordingToDelete) {
-      const rec = voiceLibrary.find((r) => r.id === recordingToDelete);
-      setVoiceLibrary(voiceLibrary.filter((r) => r.id !== recordingToDelete));
-      toast({ title: "Success", description: "Recording deleted." });
-      try {
-        // If it exists on server, delete there too
-        const sid = rec?.server_recording_id || rec?.id;
-        if (sid) {
-          await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
-            method: "DELETE",
-          });
-        }
-      } catch (_) {
-        // best-effort
+  const deleteRecording = async (id) => {
+    if (!confirm("Delete this recording?")) return;
+    const rec = voiceLibrary.find((r) => r.id === id);
+    setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
+    try {
+      // If it exists on server, delete there too
+      const sid = rec?.server_recording_id || rec?.id;
+      if (sid) {
+        await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
+          method: "DELETE",
+        });
       }
-      setRecordingToDelete(null);
-      setShowDeleteConfirmation(false);
+    } catch (_) {
+      // best-effort
     }
   };
 
@@ -2106,10 +1975,7 @@ export default function CreatorDashboard() {
         ),
       );
 
-      toast({
-        title: "Info",
-        description: "Voice profile created successfully with ElevenLabs!",
-      });
+      alert("Voice profile created successfully with ElevenLabs!");
     } catch (error) {
       console.error("Voice profile creation error:", error);
 
@@ -2123,11 +1989,9 @@ export default function CreatorDashboard() {
         errorMessage = error.message;
       }
 
-      toast({
-        title: "Error creating voice profile",
-        description: `Error: ${errorMessage}. Possible issues: low quality, unsupported format, or recording too short (30s+). Try re-recording with better audio.`,
-        variant: "destructive",
-      });
+      alert(
+        `Error: ${errorMessage}\n\nPossible issues:\n• Recording quality too low\n• File format not supported by ElevenLabs\n• Recording too short (need 30+ seconds)\n• Try re-recording with better audio`,
+      );
     } finally {
       setGeneratingVoice(false);
     }
@@ -2164,34 +2028,29 @@ export default function CreatorDashboard() {
   const handleApprove = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    toast({
-      title: "Info",
-      description: "Campaign approved! Contract signed! (Demo mode)",
-    });
+    alert("Campaign approved! Contract signed! (Demo mode)");
   };
 
   const handleDecline = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    toast({ title: "Info", description: "Campaign declined! (Demo mode)" });
+    alert("Campaign declined! (Demo mode)");
   };
 
   const handlePauseLicense = (contract, immediate) => {
     const option = immediate ? "immediate" : "next_month";
     setPauseOption(option);
     setShowPauseModal(false);
-    toast({
-      title: "Info",
-      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode). ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
-    });
+    alert(
+      `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode)\n\n${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
+    );
   };
 
   const handleRevokeLicense = (contract) => {
     setShowRevokeModal(false);
-    toast({
-      title: "Info",
-      description: `License revoked! (Demo mode). 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
-    });
+    alert(
+      `License revoked! (Demo mode)\n\n30-day notice period has begun.\nYou'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
+    );
   };
 
   const handlePauseCampaign = (campaignId) => {
@@ -2200,12 +2059,14 @@ export default function CreatorDashboard() {
         c.id === campaignId ? { ...c, status: "paused" } : c,
       ),
     );
-    toast({ title: "Info", description: "Campaign paused! (Demo mode)" });
+    alert("Campaign paused! (Demo mode)");
   };
 
   const handleRevokeCampaign = (campaignId) => {
-    setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
-    toast({ title: "Success", description: "Campaign revoked! (Demo mode)" });
+    if (confirm("Are you sure you want to revoke this campaign license?")) {
+      setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
+      alert("Campaign revoked! (Demo mode)");
+    }
   };
 
   const handleToggleContentType = (type) => {
@@ -2232,62 +2093,30 @@ export default function CreatorDashboard() {
     }
   };
 
-  // Content Restrictions Helper Functions
-  const addRestriction = (restriction: string) => {
-    setContentRestrictions([...contentRestrictions, restriction]);
-    setAvailableRestrictions(
-      availableRestrictions.filter((r) => r !== restriction),
-    );
-  };
-
-  const removeRestriction = (restriction: string) => {
-    setContentRestrictions(
-      contentRestrictions.filter((r) => r !== restriction),
-    );
-    // Only add back to available if it was originally in the predefined list
-    const predefinedRestrictions = [
-      "Alcohol",
-      "Weapons/Firearms",
-      "Cryptocurrency/NFT",
-      "MLM/Multi-Level Marketing",
-      "Unlicensed Financial Products",
-      "Health/Medical Claims",
-    ];
-    if (predefinedRestrictions.includes(restriction)) {
-      setAvailableRestrictions([...availableRestrictions, restriction]);
-    }
-  };
-
-  const addCustomRestriction = () => {
-    if (customRestriction.trim() && customRestriction.length <= 25) {
-      setContentRestrictions([
-        ...contentRestrictions,
-        customRestriction.trim(),
-      ]);
-      setCustomRestriction("");
-    }
-  };
-
-  const addBrandExclusivity = () => {
-    if (newBrand.trim() && newBrand.length <= 25) {
-      setBrandExclusivity([...brandExclusivity, newBrand.trim()]);
-      setNewBrand("");
-    }
-  };
-
-  const removeBrandExclusivity = (brand: string) => {
-    setBrandExclusivity(brandExclusivity.filter((b) => b !== brand));
-  };
-
-  const handleSaveRestrictions = async () => {
+  const handleSaveRules = async () => {
     if (!user) return;
 
-    // Save restrictions to backend
+    // Only send fields that exist in the profiles table
+    // Exclude frontend-only fields like accept_negotiations, royalty_percentage, etc.
     const profileData = {
       email: creator.email || user.email,
-      content_restrictions: contentRestrictions,
-      brand_exclusivity: brandExclusivity,
+      full_name: creator.name,
+      bio: creator.bio,
+      city: creator.location?.split(",")[0]?.trim(),
+      state: creator.location?.split(",")[1]?.trim(),
+      content_types: creator.content_types,
+      industries: creator.industries,
+      base_monthly_price_cents: (creator.price_per_week || 0) * 400,
+      platform_handle: creator.instagram_handle?.replace("@", ""),
     };
+
+    console.log("Saving profile with data:", {
+      content_types: profileData.content_types,
+      industries: profileData.industries,
+      email: profileData.email,
+      price_per_week: creator.price_per_week,
+      base_monthly_price_cents: profileData.base_monthly_price_cents,
+    });
 
     try {
       const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
@@ -2297,146 +2126,37 @@ export default function CreatorDashboard() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to save restrictions");
+        const errorText = await res.text();
+        console.error("Save failed:", errorText);
+        throw new Error(`Server error: ${errorText}`);
       }
 
-      toast({
-        title: "Success",
-        description: "Your content restrictions have been saved.",
-      });
-      setShowRestrictionsModal(false);
-    } catch (e) {
-      console.error("Error saving restrictions:", e);
-      toast({
-        title: "Info",
-        description: "Failed to save restrictions. Please try again.",
-      });
-    }
-  };
+      const responseData = await res.json();
+      console.log("Save response:", responseData);
 
-  const handleSaveRules = async (creatorOverride?: any) => {
-    setSavingRules(true);
-    try {
-      // Use override if provided, otherwise use current state
-      const dataToSave = creatorOverride || creator;
-
-      const profileData = {
-        email: dataToSave.email || user.email,
-        content_types: dataToSave.content_types,
-        industries: dataToSave.industries,
-        price_per_week: dataToSave.price_per_week,
-        accept_negotiations: dataToSave.accept_negotiations,
-        content_restrictions: contentRestrictions,
-        brand_exclusivity: brandExclusivity,
-        base_monthly_price_cents: dataToSave.base_monthly_price_cents,
-      };
-
-      console.log("Saving profile with data:", {
-        content_types: profileData.content_types,
-        industries: profileData.industries,
-        email: profileData.email,
-        price_per_week: creator.price_per_week,
-        base_monthly_price_cents: profileData.base_monthly_price_cents,
-      });
-
-      try {
-        const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(profileData),
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Save failed:", errorText);
-          throw new Error(`Server error: ${errorText}`);
-        }
-
-        const responseData = await res.json();
-        console.log("Save response:", responseData);
-
-        // Update creator state with the saved data from the response
-        if (Array.isArray(responseData) && responseData.length > 0) {
-          const savedProfile = responseData[0];
-          setCreator((prev) => ({
-            ...prev,
-            content_types: savedProfile.content_types || [],
-            industries: savedProfile.industries || [],
-            base_monthly_price_cents: savedProfile.base_monthly_price_cents,
-            price_per_week: savedProfile.base_monthly_price_cents
-              ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
-              : prev.price_per_week,
-          }));
-        }
-
-        setEditingRules(false);
-        toast({
-          title: "Success",
-          description: "Licensing preferences updated!",
-        });
-      } catch (error: any) {
-        console.error("Failed to save rules:", error);
-        toast({
-          title: "Error",
-          description: `Failed to save preferences: ${error?.message || error}`,
-          variant: "destructive",
-        });
-      }
-    } catch (e) {
-      console.error("Unexpected error in handleSaveRules:", e);
-    } finally {
-      setSavingRules(false);
-    }
-  };
-
-  // Separate handler for Accept Negotiations toggle (saves silently)
-  const handleToggleNegotiations = async (checked: boolean) => {
-    const updated = {
-      ...creator,
-      accept_negotiations: checked,
-    };
-    setCreator(updated);
-
-    // Save to backend silently (no generic toast)
-    try {
-      const profileData = {
-        email: updated.email || user.email,
-        content_types: updated.content_types,
-        industries: updated.industries,
-        price_per_week: updated.price_per_week,
-        accept_negotiations: updated.accept_negotiations,
-        content_restrictions: contentRestrictions,
-        brand_exclusivity: brandExclusivity,
-        base_monthly_price_cents: updated.base_monthly_price_cents,
-      };
-
-      const res = await fetch(`${API_BASE}/api/profile?user_id=${user.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileData),
-      });
-
-      if (!res.ok) {
-        throw new Error(await res.text());
+      // Update creator state with the saved data from the response
+      if (Array.isArray(responseData) && responseData.length > 0) {
+        const savedProfile = responseData[0];
+        setCreator((prev) => ({
+          ...prev,
+          content_types: savedProfile.content_types || [],
+          industries: savedProfile.industries || [],
+          price_per_week: savedProfile.base_monthly_price_cents
+            ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4)
+            : prev.price_per_week,
+        }));
       }
 
-      // Show specific negotiation status toast
-      toast({
-        title: "Success",
-        description: `Negotiations are now ${checked ? "accepted" : "not accepted"}.`,
-      });
+      setEditingRules(false);
+      alert("Licensing preferences updated!");
     } catch (error: any) {
-      console.error("Failed to save negotiation preference:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save negotiation preference. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Failed to save rules:", error);
+      alert(`Failed to save preferences: ${error?.message || error}`);
     }
   };
 
   const handleSaveProfile = () => {
-    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
+    alert("Profile updated! (Demo mode)");
   };
 
   const renderDashboard = () => {
@@ -2679,32 +2399,27 @@ export default function CreatorDashboard() {
     try {
       if (!previewImage || !selectedImageSection) return;
       if (!user) {
-        toast({ title: "Info", description: "Please log in to upload." });
+        alert("Please log in to upload.");
         return;
       }
       const file: File = previewImage.file;
       if (!file) {
-        toast({ title: "Info", description: "No file selected." });
+        alert("No file selected.");
         return;
       }
       // Server pre-scan is limited to 5MB
       if (file.size > 5_000_000) {
-        toast({ title: "Info", description: "Please upload an image ≤ 5MB." });
+        alert("Please upload an image ≤ 5MB.");
         return;
       }
 
       setUploadingToSection(true);
 
       // Upload via backend (Option B: server-only writes)
-      const apiBase =
-        (import.meta as any).env.VITE_API_BASE_URL ||
-        (import.meta as any).env.VITE_API_BASE ||
-        "http://localhost:8787";
       const buf = await file.arrayBuffer();
-      const full = new URL(
+      const full = api(
         `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
-        apiBase || "/",
-      ).toString();
+      );
       const res = await fetch(full, {
         method: "POST",
         headers: { "content-type": file.type || "image/jpeg" },
@@ -2718,13 +2433,11 @@ export default function CreatorDashboard() {
           const reasons: string[] = Array.isArray(err?.reasons)
             ? err.reasons
             : [];
-          toast({
-            title: "Upload Error",
-            description: `${msg}${reasons.length ? " Details: " + reasons.join(", ") : ""}`,
-            variant: "destructive",
-          });
+          alert(
+            `${msg}${reasons.length ? "\n\nDetails:\n- " + reasons.join("\n- ") : ""}`,
+          );
         } catch {
-          toast({ title: "Info", description: raw || "Upload failed" });
+          alert(raw || "Upload failed");
         }
         setUploadingToSection(false);
         return;
@@ -2739,23 +2452,21 @@ export default function CreatorDashboard() {
       setShowImageUploadModal(false);
       setSelectedImageSection(null);
       setPreviewImage(null);
-      toast({ title: "Info", description: "Reference image uploaded!" });
+      alert("Reference image uploaded!");
     } catch (e: any) {
-      toast({
-        title: "Info",
-        description: `Upload failed: ${e?.message || e}`,
-      });
+      alert(`Upload failed: ${e?.message || e}`);
     } finally {
       setUploadingToSection(false);
     }
   };
 
   const deleteReferenceImage = (sectionId) => {
-    setReferenceImages({
-      ...referenceImages,
-      [sectionId]: null,
-    });
-    toast({ title: "Success", description: "Reference image deleted" });
+    if (confirm("Delete this reference image?")) {
+      setReferenceImages({
+        ...referenceImages,
+        [sectionId]: null,
+      });
+    }
   };
 
   const getCompleteness = () => {
@@ -3742,7 +3453,11 @@ export default function CreatorDashboard() {
                   <p className="text-sm text-gray-600 mb-1">Territory:</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.regions.map((region) => (
-                      <Badge key={region} className="bg-blue-100 text-blue-700">
+                      <Badge
+                        key={region}
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-700"
+                      >
                         {region}
                       </Badge>
                     ))}
@@ -3762,6 +3477,7 @@ export default function CreatorDashboard() {
                     {approval.industries.map((industry) => (
                       <Badge
                         key={industry}
+                        variant="secondary"
                         className="bg-purple-100 text-purple-700"
                       >
                         {industry}
@@ -3857,6 +3573,7 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
+            variant="secondary"
             className={`${pendingCount > 0 ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-gray-100 text-gray-700 border border-gray-300"} px-4 py-2 text-lg`}
           >
             {pendingCount} Pending
@@ -3901,7 +3618,10 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
                 {approval.perpetual && (
-                  <Badge className="bg-red-500 text-white">
+                  <Badge
+                    variant="destructive"
+                    className="bg-red-500 text-white"
+                  >
                     <AlertCircle className="w-4 h-4 mr-1" />
                     Perpetual Request
                   </Badge>
@@ -3910,7 +3630,7 @@ export default function CreatorDashboard() {
 
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
                       Proposed Rate:
                     </span>
@@ -3918,13 +3638,13 @@ export default function CreatorDashboard() {
                       ${approval.proposed_rate}/month
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">Term Length:</span>
                     <span className="font-bold text-gray-900">
                       {approval.term_length}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
                       Estimated Monthly:
                     </span>
@@ -3935,12 +3655,13 @@ export default function CreatorDashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-2">Regions:</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.regions.map((region) => (
                         <Badge
                           key={region}
+                          variant="secondary"
                           className="bg-blue-100 text-blue-700 border border-blue-300"
                         >
                           {region}
@@ -3948,12 +3669,13 @@ export default function CreatorDashboard() {
                       ))}
                     </div>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-2">Industries:</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.industries.map((industry) => (
                         <Badge
                           key={industry}
+                          variant="secondary"
                           className="bg-purple-100 text-purple-700 border border-purple-300"
                         >
                           {industry}
@@ -4081,23 +3803,23 @@ export default function CreatorDashboard() {
               </div>
 
               <div className="grid md:grid-cols-4 gap-4 mb-6">
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600 mb-1">Duration:</p>
                   <p className="font-bold text-gray-900">{campaign.duration}</p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
                   <p className="font-bold text-gray-900">
                     ${campaign.monthly_rate}
                   </p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-lg">
+                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
                   <p className="font-bold text-green-600 text-lg">
                     ${campaign.total_earned.toLocaleString()}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
                   <p className="text-sm text-gray-600 mb-1">Regions:</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {campaign.regions.map((region) => (
@@ -4120,11 +3842,9 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       // For examples, just show a message
                       if (campaign.isExample) {
-                        toast({
-                          title: "Info",
-                          description:
-                            "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                        });
+                        alert(
+                          "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                        );
                         return;
                       }
                       // For real campaigns, update the state
@@ -4538,182 +4258,251 @@ export default function CreatorDashboard() {
     );
   };
 
-  const renderEarnings = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Earnings Dashboard
-          </h2>
-          <p className="text-gray-600 mt-1">Track your revenue and payments</p>
-        </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2">
-          <DollarSign className="w-4 h-4" />
-          Cash Out
-        </Button>
-      </div>
-
-      {/* Info banner */}
-      <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
-        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <p>
-          <span className="font-semibold">
-            Your earnings dashboard is ready!
-          </span>{" "}
-          Once your licenses activate, you'll see real-time earnings here.
-          Currently, you have no active contracts.
-        </p>
-      </div>
-
-      {/* Key metrics */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
-          <p className="text-3xl font-bold text-gray-900">$0</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Will update once your first license activates
-          </p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
-          <p className="text-3xl font-bold text-gray-900">$0</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Waiting for active campaigns
-          </p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
-          <p className="text-3xl font-bold text-gray-900">$0</p>
-          <p className="text-sm text-gray-600 mt-1">
-            Will calculate based on active licenses
-          </p>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">Next Payment</p>
-          <p className="text-2xl font-bold text-gray-900">To be determined</p>
-          <p className="text-sm text-gray-600 mt-1">No active contracts yet</p>
-        </Card>
-      </div>
-
-      {/* Charts row */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Revenue Trend (Last 6 Months)
-          </h3>
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div>Your revenue trend will appear here</div>
-            <div className="text-sm text-gray-500 mt-1">
-              Once you have active campaigns
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Earnings by Industry
-          </h3>
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div>Your industry breakdown will appear here</div>
-            <div className="text-sm text-gray-500 mt-1">
-              Once you have active campaigns
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Comparison Banner */}
-      <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            This is what your earnings could look like
-          </h3>
-          <p className="text-sm text-gray-600">
-            See how Likelee's recurring model compares to traditional one-time
-            payments
-          </p>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="p-5 bg-white rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
-            <p className="text-3xl font-bold text-gray-900">$500</p>
-            <p className="text-sm text-gray-600">
-              One-time payment per campaign
-            </p>
-          </div>
-          <div className="p-5 bg-white rounded-lg border border-cyan-300">
-            <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
-            <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
-            <p className="text-sm text-gray-600">
-              Per active license • Recurring revenue
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Earnings by Campaign */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Earnings by Campaign
-        </h3>
-        {activeCampaigns.length === 0 ? (
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div className="font-semibold text-gray-900">
-              Your campaigns will appear here
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Once you have active licenses generating revenue
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {activeCampaigns.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
-              >
-                <div className="font-semibold text-gray-900 truncate">
-                  {c.name || c.brand || "Campaign"}
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-gray-900">
-                    ${(c.earnings_this_month || 0).toLocaleString()}
-                  </div>
-                  <div className="text-xs text-gray-500">this month</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Payment History */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Payment History
-        </h3>
-        <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-          <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <div className="font-semibold text-gray-900">
-            Your payment history will appear here
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            Once you receive your first payout
-          </div>
-        </div>
-      </Card>
+  const renderConnectBankAccount = () => (
+    <div className="max-w-2xl mx-auto py-12">
       <Button
         variant="outline"
-        disabled
-        className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
+        onClick={() => setShowConnectBankAccount(false)}
+        className="mb-8 flex items-center gap-2"
       >
-        Download Tax Summary (1099)
+        <ArrowLeft className="w-4 h-4" />
+        Back
       </Button>
+      <Card className="p-10 text-center bg-white border border-gray-200 shadow-sm">
+        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <FileText className="w-8 h-8 text-green-600" />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          Connect Your Bank Account
+        </h2>
+        <p className="text-gray-600 mb-8">
+          Link your bank account to receive your earnings directly.
+        </p>
+
+        <div className="space-y-4 text-left mb-8">
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-gray-900">
+                Bank-level Security
+              </h3>
+              <p className="text-sm text-gray-600">
+                Your information is encrypted and protected
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <Lock className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-gray-900">Private & Secure</h3>
+              <p className="text-sm text-gray-600">
+                We never store your banking credentials
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Button
+          size="lg"
+          className="w-full h-12 bg-green-500 hover:bg-green-600 text-white text-base"
+        >
+          Connect Bank Account
+        </Button>
+        <p className="text-xs text-gray-500 mt-4">
+          Bank connection coming soon. We're integrating secure payment
+          processing.
+        </p>
+      </Card>
     </div>
   );
 
+  const renderEarnings = () => {
+    if (showConnectBankAccount) {
+      return renderConnectBankAccount();
+    }
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Earnings Dashboard
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Track your revenue and payments
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowConnectBankAccount(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
+          >
+            <DollarSign className="w-4 h-4" />
+            Cash Out
+          </Button>
+        </div>
+
+        {/* Info banner */}
+        <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p>
+            <span className="font-semibold">
+              Your earnings dashboard is ready!
+            </span>{" "}
+            Once your licenses activate, you'll see real-time earnings here.
+            Currently, you have no active contracts.
+          </p>
+        </div>
+
+        {/* Key metrics */}
+        <div className="grid md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Will update once your first license activates
+            </p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Waiting for active campaigns
+            </p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Will calculate based on active licenses
+            </p>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Next Payment</p>
+            <p className="text-2xl font-bold text-gray-900">To be determined</p>
+            <p className="text-sm text-gray-600 mt-1">
+              No active contracts yet
+            </p>
+          </Card>
+        </div>
+
+        {/* Charts row */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="p-6 bg-white border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Revenue Trend (Last 6 Months)
+            </h3>
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div>Your revenue trend will appear here</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Once you have active campaigns
+              </div>
+            </div>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Earnings by Industry
+            </h3>
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div>Your industry breakdown will appear here</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Once you have active campaigns
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Comparison Banner */}
+        <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              This is what your earnings could look like
+            </h3>
+            <p className="text-sm text-gray-600">
+              See how Likelee's recurring model compares to traditional one-time
+              payments
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-5 bg-white rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
+              <p className="text-3xl font-bold text-gray-900">$500</p>
+              <p className="text-sm text-gray-600">
+                One-time payment per campaign
+              </p>
+            </div>
+            <div className="p-5 bg-white rounded-lg border border-cyan-300">
+              <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
+              <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
+              <p className="text-sm text-gray-600">
+                Per active license • Recurring revenue
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Earnings by Campaign */}
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Earnings by Campaign
+          </h3>
+          {activeCampaigns.length === 0 ? (
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div className="font-semibold text-gray-900">
+                Your campaigns will appear here
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                Once you have active licenses generating revenue
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activeCampaigns.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <div className="font-semibold text-gray-900 truncate">
+                    {c.name || c.brand || "Campaign"}
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-gray-900">
+                      ${(c.earnings_this_month || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-500">this month</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Payment History */}
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Payment History
+          </h3>
+          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+            <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <div className="font-semibold text-gray-900">
+              Your payment history will appear here
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              Once you receive your first payout
+            </div>
+          </div>
+        </Card>
+        <Button
+          variant="outline"
+          disabled
+          className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
+        >
+          Download Tax Summary (1099)
+        </Button>
+      </div>
+    );
+  };
   const handleSaveRates = async (e) => {
     e.preventDefault();
     setSavingRates(true);
@@ -4732,95 +4521,67 @@ export default function CreatorDashboard() {
                 rate_type: "content_type",
                 rate_name: type,
                 price_per_week_cents: Math.round(
-                  (parseFloat(val.toString()) / 4) * 100,
+                  parseFloat(val.toString()) * 100,
+                ),
+              });
+            }
+          });
+      } else if (showRatesModal === "industry") {
+        creator.industries
+          ?.filter((i) => INDUSTRIES.includes(i))
+          .forEach((ind) => {
+            const val = formData.get(`rate_industry_${ind}`);
+            if (val && val.toString().trim() !== "") {
+              newRates.push({
+                rate_type: "industry",
+                rate_name: ind,
+                price_per_week_cents: Math.round(
+                  parseFloat(val.toString()) * 100,
                 ),
               });
             }
           });
       }
-      // 1. Save the selection (content_types or industries) to the profile
-      const profileUpdate: any = {
-        email: creator.email || user.email,
-      };
 
-      if (showRatesModal === "content") {
-        profileUpdate.content_types = creator.content_types;
-      } else if (showRatesModal === "industry") {
-        profileUpdate.industries = creator.industries;
-      }
+      // Get the existing rates from the *other* category to preserve them
+      const otherRateType =
+        showRatesModal === "content" ? "industry" : "content_type";
+      const preservedRates = customRates.filter(
+        (r) => r.rate_type === otherRateType,
+      );
 
-      // Save profile selection
-      const profileRes = await fetch(
-        `${API_BASE}/api/profile?user_id=${user.id}`,
+      // Combine the new rates with the preserved rates
+      const finalRates = [...newRates, ...preservedRates];
+
+      const res = await fetch(
+        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(profileUpdate),
+          body: JSON.stringify(finalRates),
         },
       );
 
-      if (!profileRes.ok) {
-        throw new Error("Failed to save selection to profile");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to save: ${errorText}`);
       }
 
-      // 2. Save rates (only for content types)
-      // If we are editing content rates, we use the new ones.
-      // If we are editing industries (which have no rates now), we must preserve the existing content rates.
-      // We explicitly DO NOT preserve industry rates, effectively deleting them.
-      if (showRatesModal !== "content") {
-        const existingContentRates = customRates.filter(
-          (r) => r.rate_type === "content_type",
-        );
-        newRates.push(...existingContentRates);
-      }
-
-      const finalRates = [...newRates];
-
-      try {
-        const res = await fetch(
-          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(finalRates),
-          },
-        );
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(errorText);
-        }
-
-        // Reload rates from database to confirm persistence
-        const reloadRes = await fetch(
-          `${API_BASE}/api/creator-rates?user_id=${encodeURIComponent(user.id)}`,
-        );
-        if (reloadRes.ok) {
-          const reloadedRates = await reloadRes.json();
-          setCustomRates(reloadedRates);
-        }
-
-        toast({ title: "Success", description: "Changes saved successfully!" });
-      } catch (rateError: any) {
-        console.error("Rate save error:", rateError);
-        // If profile saved but rates failed, we still consider it a partial success
-        // and close the modal, but warn the user.
-        toast({
-          title: "Partial Success",
-          description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
-          variant: "destructive",
-        });
+      // Reload rates from database to confirm persistence
+      const reloadRes = await fetch(
+        api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+      );
+      if (reloadRes.ok) {
+        const reloadedRates = await reloadRes.json();
+        setCustomRates(reloadedRates);
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
+      alert("Rates saved successfully!");
     } catch (e: any) {
       console.error("Save error:", e);
-      toast({
-        title: "Save Failed",
-        description: `Failed to save: ${e?.message || e}`,
-        variant: "destructive",
-      });
+      alert(`Failed to save rates: ${e?.message || e}`);
     } finally {
       setSavingRates(false);
     }
@@ -4872,7 +4633,7 @@ export default function CreatorDashboard() {
             <div className="flex items-center gap-6">
               <div className="relative">
                 <img
-                  src={creator.profile_photo}
+                  src={profile?.profile_photo_url || creator.profile_photo}
                   alt={creator.name}
                   className={`w-32 h-32 rounded-full object-cover border-4 ${creator?.kyc_status === "approved" ? "border-red-500" : "border-[#32C8D1]"}`}
                 />
@@ -5043,10 +4804,9 @@ export default function CreatorDashboard() {
                   checked={creator.is_public_brands || false}
                   onCheckedChange={(checked) => {
                     setCreator({ ...creator, is_public_brands: checked });
-                    toast({
-                      title: "Info",
-                      description: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
-                    });
+                    alert(
+                      `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
+                    );
                   }}
                 />
               </div>
@@ -5083,219 +4843,143 @@ export default function CreatorDashboard() {
       {settingsTab === "rules" && (
         <div className="space-y-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">My Rules</h3>
-              <p className="text-sm text-gray-600">
-                Set your licensing preferences and rates
-              </p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">
+                  My Rules
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Set your licensing preferences and rates
+                </p>
+              </div>
+              {!editingRules ? (
+                <Button
+                  onClick={() => setEditingRules(true)}
+                  variant="outline"
+                  className="border-2 border-gray-300"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setEditingRules(false)}
+                    variant="outline"
+                    className="border-2 border-gray-300"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveRules}
+                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                  >
+                    Save
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-8">
               {/* Content Types */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Content I'm Open To
-                  </Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRatesModal("content")}
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Rate
-                  </Button>
+                <Label className="text-base font-semibold text-gray-900 block mb-3">
+                  Content I'm Open To
+                </Label>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {CONTENT_TYPES.map((type) => (
+                    <Badge
+                      key={type}
+                      onClick={() =>
+                        editingRules && handleToggleContentType(type)
+                      }
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
+                    >
+                      {type}
+                    </Badge>
+                  ))}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {CONTENT_TYPES.map((type) => {
-                    const isSelected = creator.content_types?.includes(type);
-                    return (
-                      <Badge
-                        key={type}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
-                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
+                {!editingRules &&
+                  creator.content_types &&
+                  creator.content_types.length > 0 && (
+                    <>
+                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                        <AlertDescription className="text-blue-900 text-sm">
+                          Want different rates for each content type? Click
+                          below to customize.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRatesModal("content")}
+                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                       >
-                        {isSelected && <Check className="w-3 h-3 mr-1" />}
-                        {type}
-                      </Badge>
-                    );
-                  })}
-                </div>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Initial Licensing Rate
+                      </Button>
+                    </>
+                  )}
               </div>
 
               {/* Industries */}
               <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Industries I Work With
-                  </Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRatesModal("industry")}
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {INDUSTRIES.map((industry) => {
-                    const isSelected = creator.industries?.includes(industry);
-                    return (
-                      <Badge
-                        key={industry}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
-                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3 h-3 mr-1" />}
-                        {industry}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Content I'm NOT Comfortable With */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Content I'm NOT Comfortable With
-                  </Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRestrictionsModal(true)}
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {contentRestrictions.map((restriction) => (
+                <Label className="text-base font-semibold text-gray-900 block mb-3">
+                  Industries I Work With
+                </Label>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {INDUSTRIES.map((industry) => (
                     <Badge
-                      key={restriction}
-                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500 hover:!bg-red-500"
+                      key={industry}
+                      onClick={() =>
+                        editingRules && handleToggleIndustry(industry)
+                      }
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
-                      ✕ {restriction}
+                      {industry}
                     </Badge>
                   ))}
                 </div>
-
-                {/* Conflicting Campaigns (Brand Exclusivity) */}
-                <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    Conflicting Campaigns (Brand Exclusivity)
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Add brands you're exclusive with to prevent competing
-                    campaigns
-                  </p>
-                  {brandExclusivity.length === 0 ? (
-                    <p className="text-sm italic text-gray-500">
-                      No brand exclusivity set
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {brandExclusivity.map((brand) => (
-                        <span
-                          key={brand}
-                          className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]"
-                        >
-                          {brand}
-                        </span>
-                      ))}
-                    </div>
+                {!editingRules &&
+                  creator.industries &&
+                  creator.industries.length > 0 && (
+                    <>
+                      <Alert className="bg-blue-50 border border-blue-200 mb-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600" />
+                        <AlertDescription className="text-blue-900 text-sm">
+                          Want different rates for each industry? Click below to
+                          customize.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRatesModal("industry")}
+                        className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Initial Licensing Rate
+                      </Button>
+                    </>
                   )}
-                </div>
               </div>
 
               {/* Pricing */}
               <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Initial Licensing Rate
-                  </Label>
-                  {!editingLicensingRate ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingLicensingRate(true)}
-                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingLicensingRate(false)}
-                        className="border-2 border-gray-300"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          // Commit local rate to creator state before saving
-                          const val = parseInt(localMonthlyRate);
-                          if (!isNaN(val)) {
-                            // We need to update the creator state reference that handleSaveRules uses
-                            // Since handleSaveRules uses the 'creator' state variable, we need to update it
-                            // However, setState is async. So we might need to pass the value or update it differently.
-                            // Actually, handleSaveRules uses the current state.
-                            // Let's update it and then call save? No, race condition.
-                            // Better: Update the creator object directly in handleSaveRules or pass it.
-                            // For now, let's update state and assume the user clicks save again? No.
-                            // Let's manually update the creator state and wait a tick? No.
-                            // Let's modify handleSaveRules to accept an override or read from a ref?
-                            // Or simpler: Just update the state here, and handleSaveRules will read it?
-                            // Wait, handleSaveRules reads 'creator'. If I setCreator here, it won't be updated in the same closure if I call handleSaveRules immediately.
-                            // I will update handleSaveRules to take an optional override.
-                            // But I can't easily change handleSaveRules signature without checking all calls.
-                            // Let's just update the state and rely on the fact that we are in a functional component?
-                            // No, the closure captures the old state.
-                            // I will update the creator state, and then call handleSaveRules in a useEffect or similar?
-                            // Actually, I can just update the creator object in place? No, immutable.
-                            // I will modify handleSaveRules to read from a ref?
-                            // Or I can just pass the new price to handleSaveRules?
-                            // Let's try passing the price to handleSaveRules.
-                            // Let's try passing the price to handleSaveRules.
-                            const val = parseFloat(localMonthlyRate);
-                            const monthlyCents = Math.round(val * 100);
-                            const newWeeklyRate = Math.round(val / 4);
-                            const updatedCreator = {
-                              ...creator,
-                              price_per_week: newWeeklyRate,
-                              base_monthly_price_cents: monthlyCents,
-                            };
-                            setCreator(updatedCreator);
-                            // We need to pass this updated object to save function
-                            handleSaveRules(updatedCreator);
-                          } else {
-                            handleSaveRules();
-                          }
-                          setEditingLicensingRate(false);
-                        }}
-                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                      >
-                        Save
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <Label className="text-base font-semibold text-gray-900 block mb-3">
+                  Initial Licensing Rate
+                </Label>
                 <p className="text-sm text-gray-600 mb-4">
-                  Base rate per month for cameo usage
+                  Base rate per week for cameo usage
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-md">
@@ -5305,17 +4989,20 @@ export default function CreatorDashboard() {
                       </span>
                       <Input
                         type="number"
-                        value={localMonthlyRate}
-                        onChange={(e) => {
-                          setLocalMonthlyRate(e.target.value);
-                        }}
-                        disabled={!editingLicensingRate}
-                        className={`border-2 text-lg ${!editingLicensingRate ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
+                        value={creator.price_per_week || 0}
+                        onChange={(e) =>
+                          setCreator({
+                            ...creator,
+                            price_per_week: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        disabled={!editingRules}
+                        className={`border-2 text-lg ${!editingRules ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"}`}
                         min="0"
                         step="50"
                       />
                       <span className="text-gray-700 font-medium text-lg">
-                        / month
+                        / week
                       </span>
                     </div>
                   </div>
@@ -5335,7 +5022,15 @@ export default function CreatorDashboard() {
                   </div>
                   <Switch
                     checked={creator.accept_negotiations || false}
-                    onCheckedChange={handleToggleNegotiations}
+                    onCheckedChange={(checked) => {
+                      setCreator({ ...creator, accept_negotiations: checked });
+                      if (!editingRules) {
+                        alert(
+                          `Negotiation ${checked ? "enabled" : "disabled"}! (Demo mode)`,
+                        );
+                      }
+                    }}
+                    disabled={!editingRules}
                   />
                 </div>
               </div>
@@ -6185,46 +5880,56 @@ export default function CreatorDashboard() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col items-center justify-center py-8 relative">
-            {countdown !== null && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm">
-                <div className="text-8xl font-bold text-[#32C8D1] animate-bounce">
-                  {countdown}
+          <div className="py-4">
+            {!isRecording ? (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-[#32C8D1] rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Mic className="w-10 h-10 text-white" />
                 </div>
-              </div>
-            )}
-
-            {!isRecording && !countdown ? (
-              <Button
-                onClick={startRecording}
-                className="h-14 px-8 bg-red-500 hover:bg-red-600 text-white text-lg rounded-full shadow-lg transition-all hover:scale-105"
-              >
-                <Mic className="w-6 h-6 mr-2" />
-                Start Recording
-              </Button>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-                <div className="text-4xl font-mono font-bold text-gray-900">
-                  00:{recordingTime.toString().padStart(2, "0")}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-red-500 font-medium">Recording</span>
-                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  Ready to Record?
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  The script will scroll slowly. Speak naturally and
+                  expressively.
+                </p>
                 <Button
-                  variant="outline"
-                  onClick={stopRecording}
-                  className="mt-4 border-red-200 text-red-600 hover:bg-red-50"
+                  onClick={startRecording}
+                  className="h-14 px-8 bg-red-500 hover:bg-red-600 text-white text-lg"
                 >
-                  Stop Recording
+                  <Mic className="w-5 h-5 mr-2" />
+                  Start Recording
                 </Button>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-2xl font-bold text-gray-900">
+                    {Math.floor(recordingTime / 60)}:
+                    {(recordingTime % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+
+                {renderScript()}
+
+                <div className="flex justify-center gap-4 mt-6">
+                  <Button
+                    onClick={stopRecording}
+                    className="h-12 px-8 bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    <Square className="w-5 h-5 mr-2" />
+                    Stop Recording
+                  </Button>
+                </div>
+
+                <Progress
+                  value={(recordingTime / 60) * 100}
+                  className="mt-6 h-2"
+                />
               </div>
             )}
           </div>
-
-          {renderScript()}
-
-          <Progress value={(recordingTime / 60) * 100} className="mt-6 h-2" />
         </DialogContent>
       </Dialog>
 
@@ -6237,8 +5942,8 @@ export default function CreatorDashboard() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {showRatesModal === "content"
-                ? "Edit Content I'm Open To"
-                : "Edit Industries I Work With"}
+                ? "Customize Content Type Rates"
+                : "Customize Industry Rates"}
             </DialogTitle>
           </DialogHeader>
 
@@ -6246,59 +5951,15 @@ export default function CreatorDashboard() {
             onSubmit={handleSaveRates}
             className="flex-1 overflow-y-auto py-4 pr-2"
           >
-            {/* Content Type Selection - Only show if modal type is 'content' */}
-            {showRatesModal === "content" && (
-              <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">
-                  Select the content types you're open to working with:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {CONTENT_TYPES.map((type) => (
-                    <Badge
-                      key={type}
-                      onClick={() => handleToggleContentType(type)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                      }`}
-                    >
-                      {creator.content_types?.includes(type) && (
-                        <Check className="w-3 h-3" />
-                      )}
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Industry Selection - Only show if modal type is 'industry' */}
-            {showRatesModal === "industry" && (
-              <div className="mb-6">
-                <h4 className="font-normal text-gray-900 mb-3">
-                  Select the industries you're open to working with:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {INDUSTRIES.map((industry) => (
-                    <Badge
-                      key={industry}
-                      onClick={() => handleToggleIndustry(industry)}
-                      className={`cursor-pointer transition-all px-4 py-2 flex items-center gap-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-[#32C8D1] text-white font-bold border-2 border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-2 border-gray-300 hover:!bg-gray-100"
-                      }`}
-                    >
-                      {creator.industries?.includes(industry) && (
-                        <Check className="w-3 h-3" />
-                      )}
-                      {industry}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Alert className="bg-blue-50 border border-blue-200 mb-6">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                Set specific weekly rates for different{" "}
+                {showRatesModal === "content" ? "content types" : "industries"}.
+                If left blank, your base rate (${creator.price_per_week}/week)
+                will apply.
+              </AlertDescription>
+            </Alert>
 
             {/* Content Types - Only show if modal type is 'content' */}
             {showRatesModal === "content" &&
@@ -6308,14 +5969,10 @@ export default function CreatorDashboard() {
                 ) || []
               ).length > 0 ? (
                 <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    Custom Rates by Content Type
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Video className="w-5 h-5 text-[#32C8D1]" />
+                    Content Types
                   </h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Set custom rates for specific content types. Leave blank to
-                    use your base rate of ${(creator.price_per_week || 0) * 4}
-                    /month.
-                  </p>
                   <div className="grid gap-4">
                     {creator.content_types
                       ?.filter((type) => CONTENT_TYPES.includes(type))
@@ -6341,29 +5998,91 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                        (existing.price_per_week_cents / 100) *
-                                        4
+                                        existing.price_per_week_cents / 100
                                       ).toString()
                                     : ""
                                 }
-                                placeholder={(
-                                  (creator.price_per_week || 0) * 4
-                                ).toString()}
+                                placeholder={creator.price_per_week?.toString()}
                                 className="bg-white"
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">/mo</span>
+                              <span className="text-gray-500 text-sm">/wk</span>
                             </div>
                           </div>
                         );
                       })}
                   </div>
                 </div>
-              ) : null)}
+              ) : (
+                <Alert className="bg-amber-50 border border-amber-200 mb-6">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-900">
+                    <strong>No content types selected.</strong> Please go back
+                    to "My Rules" and select the content types you're open to
+                    first.
+                  </AlertDescription>
+                </Alert>
+              ))}
 
-            {/* Industries - Only show if modal type is 'industry' - NO CUSTOM RATES */}
-            {showRatesModal === "industry" && <div className="mb-6"></div>}
+            {/* Industries - Only show if modal type is 'industry' */}
+            {showRatesModal === "industry" &&
+              ((creator.industries?.filter((i) => INDUSTRIES.includes(i)) || [])
+                .length > 0 ? (
+                <div className="mb-6">
+                  <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-purple-500" />
+                    Industries
+                  </h4>
+                  <div className="grid gap-4">
+                    {creator.industries
+                      ?.filter((ind) => INDUSTRIES.includes(ind))
+                      .map((ind) => {
+                        const existing = customRates.find(
+                          (r) =>
+                            r.rate_type === "industry" && r.rate_name === ind,
+                        );
+                        return (
+                          <div
+                            key={ind}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <Label className="font-medium text-gray-700">
+                              {ind}
+                            </Label>
+                            <div className="flex items-center gap-2 w-48">
+                              <span className="text-gray-500">$</span>
+                              <Input
+                                type="number"
+                                name={`rate_industry_${ind}`}
+                                defaultValue={
+                                  existing
+                                    ? (
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
+                                    : ""
+                                }
+                                placeholder={creator.price_per_week?.toString()}
+                                className="bg-white"
+                                min="0"
+                                step="1"
+                              />
+                              <span className="text-gray-500 text-sm">/wk</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              ) : (
+                <Alert className="bg-amber-50 border border-amber-200 mb-6">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-amber-900">
+                    <strong>No industries selected.</strong> Please go back to
+                    "My Rules" and select the industries you work with first.
+                  </AlertDescription>
+                </Alert>
+              ))}
 
             <DialogFooter className="mt-6">
               <Button
@@ -6374,348 +6093,30 @@ export default function CreatorDashboard() {
               >
                 Cancel
               </Button>
-              {/* Save button - always show, different text for each modal */}
-              <Button
-                type="submit"
-                disabled={savingRates}
-                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              >
-                {savingRates ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : showRatesModal === "content" ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Save Rates
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </>
-                )}
-              </Button>
+              {/* Only show Save Rates button if there are items to customize */}
+              {((showRatesModal === "content" &&
+                creator.content_types?.filter((t) => CONTENT_TYPES.includes(t))
+                  .length > 0) ||
+                (showRatesModal === "industry" &&
+                  creator.industries?.filter((i) => INDUSTRIES.includes(i))
+                    .length > 0)) && (
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                >
+                  {savingRates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Rates"
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Content Restrictions Modal */}
-      <Dialog
-        open={showDeleteConfirmation}
-        onOpenChange={setShowDeleteConfirmation}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
-          </DialogHeader>
-          <p>
-            Are you sure you want to delete this recording? This action cannot
-            be undone.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirmation(false)}
-            >
-              No
-            </Button>
-            <Button onClick={confirmDelete}>Yes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={showRestrictionsModal}
-        onOpenChange={() => setShowRestrictionsModal(false)}
-      >
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Edit Content I'm NOT Comfortable With
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
-            <p className="text-sm text-gray-600">
-              Manage content types and categories you don't want to be
-              associated with:
-            </p>
-
-            {/* Current Restrictions */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Current Restrictions:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {contentRestrictions.map((restriction) => (
-                  <Badge
-                    key={restriction}
-                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
-                    onClick={() => removeRestriction(restriction)}
-                  >
-                    ✕ {restriction}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Click to add restrictions */}
-            {availableRestrictions.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">
-                  Click to add restrictions:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {availableRestrictions.map((restriction) => (
-                    <Badge
-                      key={restriction}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
-                      onClick={() => addRestriction(restriction)}
-                    >
-                      + {restriction}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add custom restriction */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Add custom restriction:
-              </h4>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add custom restriction (max 25 chars)"
-                  maxLength={25}
-                  value={customRestriction}
-                  onChange={(e) => setCustomRestriction(e.target.value)}
-                  className="px-3 pl-4 bg-white"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addCustomRestriction();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addCustomRestriction}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            {/* Brand Exclusivity */}
-            <div className="pt-4 border-t">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Conflicting Campaigns (Brand Exclusivity)
-              </h4>
-              <p className="text-sm text-gray-600 mb-3">
-                Add brands you're exclusive with to prevent competing campaigns
-              </p>
-
-              {brandExclusivity.length === 0 ? (
-                <p className="text-sm italic text-gray-500 mb-3">
-                  No brand exclusivity set
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {brandExclusivity.map((brand) => (
-                    <Badge
-                      key={brand}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
-                    >
-                      {brand}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-red-600"
-                        onClick={() => removeBrandExclusivity(brand)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter brand name (max 25 chars)"
-                  maxLength={25}
-                  value={newBrand}
-                  onChange={(e) => setNewBrand(e.target.value)}
-                  className="px-3 pl-4 bg-white"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addBrandExclusivity();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addBrandExclusivity}
-                  className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto py-4 pr-2 space-y-6">
-            <p className="text-sm text-gray-600">
-              Manage content types and categories you don't want to be
-              associated with:
-            </p>
-
-            {/* Current Restrictions */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Current Restrictions:
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {contentRestrictions.map((restriction) => (
-                  <Badge
-                    key={restriction}
-                    className="bg-red-500 text-white px-3 py-1 cursor-pointer hover:!bg-red-500"
-                    onClick={() => removeRestriction(restriction)}
-                  >
-                    ✕ {restriction}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Click to add restrictions */}
-            {availableRestrictions.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-3">
-                  Click to add restrictions:
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {availableRestrictions.map((restriction) => (
-                    <Badge
-                      key={restriction}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 cursor-pointer hover:!bg-gray-200"
-                      onClick={() => addRestriction(restriction)}
-                    >
-                      + {restriction}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add custom restriction */}
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-3">
-                Add custom restriction:
-              </h4>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add custom restriction (max 25 chars)"
-                  maxLength={25}
-                  value={customRestriction}
-                  onChange={(e) => setCustomRestriction(e.target.value)}
-                  className="px-3 pl-4 bg-white"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addCustomRestriction();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addCustomRestriction}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            {/* Brand Exclusivity */}
-            <div className="pt-4 border-t">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Conflicting Campaigns (Brand Exclusivity)
-              </h4>
-              <p className="text-sm text-gray-600 mb-3">
-                Add brands you're exclusive with to prevent competing campaigns
-              </p>
-
-              {brandExclusivity.length === 0 ? (
-                <p className="text-sm italic text-gray-500 mb-3">
-                  No brand exclusivity set
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {brandExclusivity.map((brand) => (
-                    <Badge
-                      key={brand}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 flex items-center gap-2 hover:!bg-gray-200"
-                    >
-                      {brand}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-red-600"
-                        onClick={() => removeBrandExclusivity(brand)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter brand name (max 25 chars)"
-                  maxLength={25}
-                  value={newBrand}
-                  onChange={(e) => setNewBrand(e.target.value)}
-                  className="px-3 pl-4 bg-white"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addBrandExclusivity();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addBrandExclusivity}
-                  className="border-yellow-500 text-yellow-500 hover:bg-yellow-50"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowRestrictionsModal(false)}
-              className="border-2 border-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-              onClick={handleSaveRestrictions}
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

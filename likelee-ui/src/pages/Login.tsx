@@ -1,7 +1,7 @@
 import React from "react";
 import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
