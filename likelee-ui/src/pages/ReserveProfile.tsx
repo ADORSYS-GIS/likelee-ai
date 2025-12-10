@@ -2875,6 +2875,7 @@ export default function ReserveProfile() {
         </Card>
       </div>
       {/* Email Verification Modal */}
+      {/* Email Verification Modal */}
       <Dialog
         open={showVerificationModal}
         onOpenChange={setShowVerificationModal}
