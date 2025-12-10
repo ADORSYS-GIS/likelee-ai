@@ -903,10 +903,9 @@ export default function ReserveProfile() {
       try {
         const session = await fetchAuthSession();
         const accessKeyId = (session as any)?.credentials?.accessKeyId;
-        if (accessKeyId)
-          console.log("[liveness] Amplify session creds ready", {
-            accessKeyId,
-          });
+        if (accessKeyId) {
+          // credentials available
+        }
       } catch (e) {
         console.warn("[liveness] fetchAuthSession failed (will continue):", e);
       }
@@ -931,9 +930,7 @@ export default function ReserveProfile() {
             secretAccessKey: creds.secretAccessKey,
             sessionToken: creds.sessionToken,
           };
-          console.log("[liveness] pre-resolved Amplify creds", {
-            accessKeyId: resolvedCreds.accessKeyId,
-          });
+          // pre-resolved using Amplify
         }
       } catch (e) {
         console.warn("[liveness] fetchAuthSession failed (pre-resolve):", e);
@@ -942,13 +939,11 @@ export default function ReserveProfile() {
         const { fromCognitoIdentityPool } =
           await import("@aws-sdk/credential-providers");
         const provider = fromCognitoIdentityPool({
-          clientConfig: { region: "us-east-1" },
+          clientConfig: { region: AWS_REGION },
           identityPoolId: COGNITO_IDENTITY_POOL_ID,
         });
         resolvedCreds = await provider();
-        console.log("[liveness] pre-resolved fallback creds", {
-          accessKeyId: resolvedCreds.accessKeyId,
-        });
+        // pre-resolved using identity pool fallback
       }
 
       setLivenessCreds(resolvedCreds);
@@ -1013,9 +1008,6 @@ export default function ReserveProfile() {
       const session = await fetchAuthSession();
       const creds: any = (session as any)?.credentials;
       if (creds?.accessKeyId && creds?.secretAccessKey) {
-        console.log("[liveness] using Amplify creds", {
-          accessKeyId: creds.accessKeyId,
-        });
         return {
           accessKeyId: creds.accessKeyId,
           secretAccessKey: creds.secretAccessKey,
@@ -1034,13 +1026,11 @@ export default function ReserveProfile() {
     const { fromCognitoIdentityPool } =
       await import("@aws-sdk/credential-providers");
     const provider = fromCognitoIdentityPool({
-      clientConfig: { region: "us-east-1" },
+      clientConfig: { region: AWS_REGION },
       identityPoolId: COGNITO_IDENTITY_POOL_ID,
     });
     const c = await provider();
-    console.log("[liveness] using fallback identity-pool creds", {
-      accessKeyId: c.accessKeyId,
-    });
+    // resolved using identity pool
     return c;
   }, [COGNITO_IDENTITY_POOL_ID]);
 
@@ -1852,7 +1842,7 @@ export default function ReserveProfile() {
                       {livenessSessionId && livenessCreds && (
                         <FaceLivenessDetectorCoreAny
                           sessionId={livenessSessionId}
-                          region={"us-east-1"}
+                          region={AWS_REGION}
                           // Provide multiple shapes to satisfy various lib expectations
                           credentialProvider={async () => livenessCreds}
                           credentialsProvider={async () => livenessCreds}
