@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Search,
   Filter,
@@ -69,6 +70,7 @@ export default function JobBoardContent() {
   const [expandingJobId, setExpandingJobId] = useState(null);
   const [enhancedJobs, setEnhancedJobs] = useState(new Set());
   const jobDetailsRef = useRef(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     checkUser();
@@ -432,7 +434,11 @@ export default function JobBoardContent() {
       }
     } catch (err) {
       console.error("Error saving job:", err);
-      alert("Failed to save job. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to save job. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 # EC2 Deployment (with self-signed TLS)
 
 This stack runs three containers:
+
 - gateway (Nginx): terminates HTTPS and reverse-proxies
 - server (Rust likelee-server): API on port 8787, mounted under `/api/*` (and `/webhooks/*`)
 - ui (Nginx): serves the Vite-built SPA
@@ -84,6 +85,7 @@ docker compose --env-file ./.env up -d
 ```
 
 Access the app over HTTPS:
+
 - https://<EC2_PUBLIC_IP>/
 - API: https://<EC2_PUBLIC_IP>/api/...
 
@@ -96,10 +98,12 @@ docker compose logs -f ui
 ```
 
 Common issues:
+
 - 502 from gateway → ensure `server` and `ui` are healthy (`docker ps`, `compose logs`).
 - Mixed content errors → ensure the frontend uses relative `VITE_API_BASE_URL=/api` (already in `.env.example`).
 - TLS handshake or browser warnings → expected for self-signed; confirm cert files are mounted and paths match.
 
 ## 5) Optional hardening
+
 - Switch runtime base of `likelee-server` to distroless and add a health endpoint for Nginx `location /health`.
 - Use an ALB with a proper certificate (ACM) instead of self-signed, and run gateway on HTTP-only behind ALB.

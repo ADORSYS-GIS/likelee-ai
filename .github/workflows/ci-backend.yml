@@ -3,10 +3,10 @@ name: CI - Backend (likelee-server)
 
 on:
   pull_request:
-    branches: [ main, develop ] # Run on PRs to main or develop
+    branches: [main, develop] # Run on PRs to main or develop
     # Only run this pipeline if changes were made in the 'likelee-server' folder
     paths:
-      - 'likelee-server/**'
+      - "likelee-server/**"
 
 jobs:
   check-backend:

@@ -11,9 +11,9 @@ services:
       # You can set an auth token that our backend will pass via Authorization: Bearer
       - DUIX_AUTH_TOKEN=${DUIX_AUTH_TOKEN:-change-me}
     ports:
-      - "7860:7860"  # HTTP API/UI
+      - "7860:7860" # HTTP API/UI
     volumes:
-      - duix-models:/opt/duix/models  # large download (~70GB)
+      - duix-models:/opt/duix/models # large download (~70GB)
       - duix-data:/opt/duix/data
     # CPU-only: do not pass through NVIDIA runtime
     # If you later have GPU, add:
