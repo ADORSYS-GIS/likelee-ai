@@ -106,14 +106,10 @@ jobs:
 
             # Preserve instance-specific files and existing certificates
             if [ -f "${{ env.REMOTE_DIR }}/.env" ]; then cp "${{ env.REMOTE_DIR }}/.env" /tmp/.env.backup || true; fi
-            if [ -d "${{ env.REMOTE_DIR }}/letsencrypt" ]; then rm -rf /tmp/letsencrypt.backup && mv "${{ env.REMOTE_DIR }}/letsencrypt" /tmp/letsencrypt.backup || true; fi
-            if [ -d "${{ env.REMOTE_DIR }}/certbot-www" ]; then rm -rf /tmp/certbot-www.backup && mv "${{ env.REMOTE_DIR }}/certbot-www" /tmp/certbot-www.backup || true; fi
 
-            # Refresh managed assets (preserve letsencrypt, certbot-www, .env)
+            # Refresh managed assets (preserve only .env)
             if command -v rsync >/dev/null 2>&1; then
               rsync -a --delete \
-                --exclude 'letsencrypt' \
-                --exclude 'certbot-www' \
                 --exclude '.env' \
                 /tmp/likelee-deploy/deploy/ec2/ "${{ env.REMOTE_DIR }}"/
             else
@@ -121,10 +117,8 @@ jobs:
               cp -a /tmp/likelee-deploy/deploy/ec2/. "${{ env.REMOTE_DIR }}"/
             fi
 
-            # Restore preserved files and certificates
+            # Restore preserved files
             if [ -f /tmp/.env.backup ]; then mv -f /tmp/.env.backup "${{ env.REMOTE_DIR }}/.env"; fi
-            if [ -d /tmp/letsencrypt.backup ]; then rm -rf "${{ env.REMOTE_DIR }}/letsencrypt" && mv /tmp/letsencrypt.backup "${{ env.REMOTE_DIR }}/letsencrypt"; fi
-            if [ -d /tmp/certbot-www.backup ]; then rm -rf "${{ env.REMOTE_DIR }}/certbot-www" && mv /tmp/certbot-www.backup "${{ env.REMOTE_DIR }}/certbot-www"; fi
 
             cd "${{ env.REMOTE_DIR }}"
             echo "CWD: $(pwd)"
@@ -140,45 +134,12 @@ jobs:
               exit 1
             fi
 
-            # Load DOMAIN and CERTBOT_EMAIL from .env if present
+            # Load variables from .env if present (no TLS management here)
             if [ -f .env ]; then set -a; . ./.env; set +a; fi
-            DOMAIN="${DOMAIN:-likelee.ai}"
-            CERTBOT_EMAIL="${CERTBOT_EMAIL:-admin@likelee.ai}"
-            echo "Using DOMAIN=$DOMAIN CERTBOT_EMAIL=$CERTBOT_EMAIL"
-            export DOMAIN CERTBOT_EMAIL
             PROJECT_NAME="likelee"
-
-            # Prepare cert directories
-            mkdir -p ./letsencrypt ./certbot-www
-
-            # Bootstrap certificates if missing (standalone mode binds :80)
-            if [ ! -f "./letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
-              echo "No existing certs found for ${DOMAIN}; obtaining via certbot (standalone)"
-              # Stop any container publishing :80 to free the port
-              PORT80_IDS=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/0.0.0.0:80->|:80->/ {print $1}')
-              if [ -n "${PORT80_IDS}" ]; then echo "Stopping containers on :80 -> ${PORT80_IDS}"; echo "${PORT80_IDS}" | xargs -r docker stop || true; fi
-
-              if ! docker run --rm -p 80:80 \
-                -v "$(pwd)/letsencrypt:/etc/letsencrypt" \
-                certbot/certbot:latest certonly --standalone \
-                --agree-tos --no-eff-email -m "$CERTBOT_EMAIL" -d "$DOMAIN" \
-                --non-interactive --keep-until-expiring; then
-                echo "Certbot issuance failed; continuing with any existing certs if present" >&2
-              else
-                echo "Certbot issuance completed"
-              fi
-            else
-              echo "Certificates already present; skipping issuance"
-            fi
-
-            # Determine if certs are available and switch gateway config if not
-            if [ ! -f "./letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
-              echo "No certs available; switching gateway to HTTP-only"
-              cp -f nginx.http.conf nginx.conf || true
-              HAS_CERT=0
-            else
-              HAS_CERT=1
-            fi
+            # Always run gateway in HTTP-only mode behind ALB
+            cp -f nginx.http.conf nginx.conf || true
+            HAS_CERT=0
 
             # Optional GHCR login if credentials provided
             GHCR_USER="${{ secrets.GHCR_USER }}"
@@ -210,25 +171,14 @@ jobs:
               echo "No live certificate directory at ./letsencrypt/live/${DOMAIN}"
             fi
 
-            # Ensure certbot-renew is up (use the same project and directory as the main stack)
-            docker compose \
-              --project-directory "${{ env.REMOTE_DIR }}" \
-              -p "${PROJECT_NAME}" \
-              -f docker-compose.yml -f docker-compose.prod.yml up -d certbot-renew || true
+            # No certbot services in ALB/ACM mode
 
             sleep 5
             set +e
-            if [ "${HAS_CERT}" = "1" ]; then
-              curl -ksS --max-time 10 https://localhost/ >/dev/null
-              WEB_OK=$?
-              curl -ksS --max-time 10 https://localhost/api/ >/dev/null
-              API_OK=$?
-            else
-              curl -sS --max-time 10 http://localhost/ >/dev/null
-              WEB_OK=$?
-              curl -sS --max-time 10 http://localhost/api/ >/dev/null
-              API_OK=$?
-            fi
+            curl -sS --max-time 10 http://localhost/ >/dev/null
+            WEB_OK=$?
+            curl -sS --max-time 10 http://localhost/api/ >/dev/null
+            API_OK=$?
             set -e
 
             if [ "$WEB_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
