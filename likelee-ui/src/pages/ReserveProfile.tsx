@@ -942,7 +942,7 @@ export default function ReserveProfile() {
         const { fromCognitoIdentityPool } =
           await import("@aws-sdk/credential-providers");
         const provider = fromCognitoIdentityPool({
-          clientConfig: { region: "us-east-1" },
+          clientConfig: { region: AWS_REGION },
           identityPoolId: COGNITO_IDENTITY_POOL_ID,
         });
         resolvedCreds = await provider();
@@ -1034,7 +1034,7 @@ export default function ReserveProfile() {
     const { fromCognitoIdentityPool } =
       await import("@aws-sdk/credential-providers");
     const provider = fromCognitoIdentityPool({
-      clientConfig: { region: "us-east-1" },
+      clientConfig: { region: AWS_REGION },
       identityPoolId: COGNITO_IDENTITY_POOL_ID,
     });
     const c = await provider();
@@ -1852,7 +1852,7 @@ export default function ReserveProfile() {
                       {livenessSessionId && livenessCreds && (
                         <FaceLivenessDetectorCoreAny
                           sessionId={livenessSessionId}
-                          region={"us-east-1"}
+                          region={AWS_REGION}
                           // Provide multiple shapes to satisfy various lib expectations
                           credentialProvider={async () => livenessCreds}
                           credentialsProvider={async () => livenessCreds}
@@ -1860,6 +1860,7 @@ export default function ReserveProfile() {
                           config={{
                             awsCredentials: livenessCreds,
                             credentialProvider: async () => livenessCreds,
+                            region: AWS_REGION,
                           }}
                           onAnalysisComplete={async () => {
                             try {
