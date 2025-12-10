@@ -76,10 +76,12 @@ export default function MarketingAgency() {
             The Problem We Solve
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            Your clients are moving to AI-powered creator content. Your team is juggling multiple vendors and
-            platforms to source, manage, and deliver these campaigns. Likelee consolidates everything—
-            verified creator licensing, production workflows, compliance, and brand exposure—into one
-            streamlined platform so you deliver AI campaigns faster without building infrastructure.
+            Your clients are moving to AI-powered creator content. Your team is
+            juggling multiple vendors and platforms to source, manage, and
+            deliver these campaigns. Likelee consolidates everything— verified
+            creator licensing, production workflows, compliance, and brand
+            exposure—into one streamlined platform so you deliver AI campaigns
+            faster without building infrastructure.
           </p>
         </div>
       </section>
@@ -100,8 +102,10 @@ export default function MarketingAgency() {
                 Verified Creator Licensing Marketplace
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Browse pre-verified creators already cleared for AI-powered commercial campaigns. License their likeness for AI content production.
-                No hunting. No vetting. Everything's pre-cleared. Your sourcing goes from weeks to minutes.
+                Browse pre-verified creators already cleared for AI-powered
+                commercial campaigns. License their likeness for AI content
+                production. No hunting. No vetting. Everything's pre-cleared.
+                Your sourcing goes from weeks to minutes.
               </p>
             </Card>
 
@@ -111,8 +115,10 @@ export default function MarketingAgency() {
                 Streamlined AI Campaign Workflow
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Brief → License creators → Manage AI production → Approve deliverables → Client handoff. Same workflow your team knows. 3-5
-                day turnaround. All creator licensing embedded in final assets.
+                Brief → License creators → Manage AI production → Approve
+                deliverables → Client handoff. Same workflow your team knows.
+                3-5 day turnaround. All creator licensing embedded in final
+                assets.
               </p>
             </Card>
 
@@ -122,8 +128,9 @@ export default function MarketingAgency() {
                 Direct Brand Exposure
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Brands discover your agency on Likelee when searching for AI campaign partners. Inbound pipeline. New business finds you because
-                you're positioned as AI-campaign ready.
+                Brands discover your agency on Likelee when searching for AI
+                campaign partners. Inbound pipeline. New business finds you
+                because you're positioned as AI-campaign ready.
               </p>
             </Card>
           </div>
@@ -144,26 +151,44 @@ export default function MarketingAgency() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b-2 border-black">
-                    <th className="text-left py-4 px-4 font-bold text-gray-900">Challenge</th>
-                    <th className="text-left py-4 px-4 font-bold text-gray-900">Before</th>
-                    <th className="text-left py-4 px-4 font-bold text-[#32C8D1]">After</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      Challenge
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      Before
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-[#32C8D1]">
+                      After
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-200">
-                    <td className="py-4 px-4 text-gray-700">Creator licensing + compliance time</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      Creator licensing + compliance time
+                    </td>
                     <td className="py-4 px-4 text-gray-700">8 hours</td>
-                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">2 hours</td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">
+                      2 hours
+                    </td>
                   </tr>
                   <tr className="border-b border-gray-200">
-                    <td className="py-4 px-4 text-gray-700">AI campaigns per team per month</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      AI campaigns per team per month
+                    </td>
                     <td className="py-4 px-4 text-gray-700">4</td>
-                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">12</td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">
+                      12
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 text-gray-700">Time to deliver AI campaign</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      Time to deliver AI campaign
+                    </td>
                     <td className="py-4 px-4 text-gray-700">2-3 weeks</td>
-                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">3-5 days</td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">
+                      3-5 days
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -171,7 +196,10 @@ export default function MarketingAgency() {
           </Card>
 
           <p className="text-center text-xl font-semibold text-gray-900 mt-8">
-            Same team. <span className="text-[#32C8D1]">3x more AI campaigns. Better margins.</span>
+            Same team.{" "}
+            <span className="text-[#32C8D1]">
+              3x more AI campaigns. Better margins.
+            </span>
           </p>
         </div>
       </section>
@@ -192,7 +220,8 @@ export default function MarketingAgency() {
                 <span className="text-2xl font-bold text-white">1</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Client briefs you on their AI campaign needs with brand assets and timeline.
+                Client briefs you on their AI campaign needs with brand assets
+                and timeline.
               </p>
             </Card>
 
@@ -202,8 +231,10 @@ export default function MarketingAgency() {
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                You license verified creators and manage production all in one dashboard. Select creators, license their likenesses, manage
-                AI production workflows, approve deliverables, track all creator licensing centrally.
+                You license verified creators and manage production all in one
+                dashboard. Select creators, license their likenesses, manage AI
+                production workflows, approve deliverables, track all creator
+                licensing centrally.
               </p>
             </Card>
 
@@ -213,7 +244,8 @@ export default function MarketingAgency() {
                 <span className="text-2xl font-bold text-white">3</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Deliverables go to client with verified creator licensing fully embedded and documented. Done.
+                Deliverables go to client with verified creator licensing fully
+                embedded and documented. Done.
               </p>
             </Card>
           </div>
@@ -239,9 +271,10 @@ export default function MarketingAgency() {
                 Operational Simplicity for AI Campaigns
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                One dashboard replaces five tools for managing creator-licensed content. Your team doesn't learn
-                new systems. No more spreadsheets tracking who licensed what. No more vendor coordination
-                across compliance, licensing, and production.
+                One dashboard replaces five tools for managing creator-licensed
+                content. Your team doesn't learn new systems. No more
+                spreadsheets tracking who licensed what. No more vendor
+                coordination across compliance, licensing, and production.
               </p>
             </Card>
 
@@ -254,9 +287,10 @@ export default function MarketingAgency() {
                 Faster AI Campaign Delivery
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                2-3 weeks becomes 3-5 days because everything's in one place. Creator licensing is pre-cleared.
-                Compliance is built in. No back-and-forth delays. Your clients see you as fast and capable of executing AI
-                campaigns reliably.
+                2-3 weeks becomes 3-5 days because everything's in one place.
+                Creator licensing is pre-cleared. Compliance is built in. No
+                back-and-forth delays. Your clients see you as fast and capable
+                of executing AI campaigns reliably.
               </p>
             </Card>
 
@@ -269,9 +303,10 @@ export default function MarketingAgency() {
                 New Business From Brands Moving to AI
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Brands actively search Likelee for agencies that can execute verified creator AI campaigns. You get
-                inbound leads just by being on the platform. Less cold calling. More inbound from brands shifting to AI-
-                powered creator content.
+                Brands actively search Likelee for agencies that can execute
+                verified creator AI campaigns. You get inbound leads just by
+                being on the platform. Less cold calling. More inbound from
+                brands shifting to AI- powered creator content.
               </p>
             </Card>
           </div>
@@ -285,10 +320,11 @@ export default function MarketingAgency() {
             Lead AI-Powered Creator Campaigns
           </h2>
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            Likelee gives you one platform for licensing verified creators, managing AI
-            production, compliance, and brand exposure. Your team focuses on creative
-            strategy. Your clients get faster AI-powered campaigns. You operate with less
-            overhead while positioning as an AI-forward agency.
+            Likelee gives you one platform for licensing verified creators,
+            managing AI production, compliance, and brand exposure. Your team
+            focuses on creative strategy. Your clients get faster AI-powered
+            campaigns. You operate with less overhead while positioning as an
+            AI-forward agency.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

@@ -230,8 +230,12 @@ ${data.message}
                   <SelectValue placeholder="Select use case" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ecommerce">E-commerce Product Photos</SelectItem>
-                  <SelectItem value="advertising">Advertising Campaigns</SelectItem>
+                  <SelectItem value="ecommerce">
+                    E-commerce Product Photos
+                  </SelectItem>
+                  <SelectItem value="advertising">
+                    Advertising Campaigns
+                  </SelectItem>
                   <SelectItem value="social">Social Media Content</SelectItem>
                   <SelectItem value="video">Video Production</SelectItem>
                   <SelectItem value="other">Other</SelectItem>

@@ -217,7 +217,7 @@ export default function CameoUpload() {
               },
             }) as any,
         );
-      } catch (_) { }
+      } catch (_) {}
     })();
   }, [user]);
 
@@ -341,7 +341,7 @@ export default function CameoUpload() {
         .from("profiles")
         .update({ [column]: url })
         .eq("id", user.id);
-    } catch (_) { }
+    } catch (_) {}
     return url;
   };
 

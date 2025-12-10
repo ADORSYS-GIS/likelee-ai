@@ -77,8 +77,8 @@ export default function TalentAgency() {
             Bookings are dropping, licensing is rising.
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            Brands are shifting budgets toward AI experiments, but they still need
-            real verified talent for authentic campaigns. Likelee creates
+            Brands are shifting budgets toward AI experiments, but they still
+            need real verified talent for authentic campaigns. Likelee creates
             recurring income streams for your talent while booking frequency
             fluctuates. You earn recurring commission every month they stay
             licensed.
@@ -106,8 +106,11 @@ export default function TalentAgency() {
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
                 Brand uses your talent's likeness on their website indefinitely
-                and pays <span className="font-bold text-indigo-600">$400 every month</span> while those photos
-                remain live.
+                and pays{" "}
+                <span className="font-bold text-indigo-600">
+                  $400 every month
+                </span>{" "}
+                while those photos remain live.
               </p>
             </Card>
 
@@ -121,13 +124,17 @@ export default function TalentAgency() {
               </h3>
               <p className="text-base text-gray-700 mb-6 leading-relaxed">
                 Brand licenses your talent's face for a specific campaign
-                duration like 6 months, pays <span className="font-bold text-purple-600">$2.5K upfront</span>, and renews at
-                the end of the term.
+                duration like 6 months, pays{" "}
+                <span className="font-bold text-purple-600">$2.5K upfront</span>
+                , and renews at the end of the term.
               </p>
               <p className="text-base text-gray-700 leading-relaxed">
                 Your talent earns $2.5K per renewal cycle. Over three years,
-                that's <span className="font-bold text-purple-600">$7.5K from the same talent</span> versus $1.5K with
-                traditional booking.
+                that's{" "}
+                <span className="font-bold text-purple-600">
+                  $7.5K from the same talent
+                </span>{" "}
+                versus $1.5K with traditional booking.
               </p>
             </Card>
           </div>

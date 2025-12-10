@@ -228,7 +228,6 @@ export default function Landing() {
         </svg>
       </div>
 
-
       {/* SECTION 3: Copy left, phone right */}
       <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -289,7 +288,6 @@ export default function Landing() {
         </svg>
       </div>
 
-
       {/* SECTION 4: Example - Scale Catalog without Scaling Costs */}
       <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -348,7 +346,6 @@ export default function Landing() {
           />
         </svg>
       </div>
-
 
       {/* SECTION 5: Example - Premium Talent (phone right) */}
       <section className="py-20 bg-white relative">
@@ -409,8 +406,6 @@ export default function Landing() {
           />
         </svg>
       </div>
-
-
 
       {/* SECTION 6: Example - Built for Brands of All Sizes (phone left) */}
       <section className="py-20 bg-white relative">
