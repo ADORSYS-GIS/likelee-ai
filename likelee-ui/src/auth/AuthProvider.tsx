@@ -21,7 +21,7 @@ interface AuthContextValue {
     email: string,
     password: string,
     displayName?: string,
-  ) => Promise<void>;
+  ) => Promise<{ user: User | null; session: any | null }>;
   refreshToken: () => Promise<void>;
   resendEmailConfirmation?: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register: async (email, password, displayName) => {
         if (!supabase) throw new Error("Supabase not configured");
         const emailNormalized = (email || "").trim().toLowerCase();
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: emailNormalized,
           password,
           options: {
@@ -144,15 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         });
         if (error) throw error;
-        // Ensure session exists (in some configs signUp may not start a session)
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: emailNormalized,
-            password,
-          });
-          if (signInErr) throw signInErr;
-        }
+        return { user: data.user, session: data.session };
       },
       resendEmailConfirmation: async (email: string) => {
         if (!supabase) throw new Error("Supabase not configured");
