@@ -145,6 +145,7 @@ jobs:
             DOMAIN="${DOMAIN:-likelee.ai}"
             CERTBOT_EMAIL="${CERTBOT_EMAIL:-admin@likelee.ai}"
             echo "Using DOMAIN=$DOMAIN CERTBOT_EMAIL=$CERTBOT_EMAIL"
+            export DOMAIN CERTBOT_EMAIL
 
             # Prepare cert directories
             mkdir -p ./letsencrypt ./certbot-www
@@ -168,6 +169,15 @@ jobs:
               echo "Certificates already present; skipping issuance"
             fi
 
+            # Determine if certs are available and switch gateway config if not
+            if [ ! -f "./letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+              echo "No certs available; switching gateway to HTTP-only"
+              cp -f nginx.http.conf nginx.conf || true
+              HAS_CERT=0
+            else
+              HAS_CERT=1
+            fi
+
             # Optional GHCR login if credentials provided
             GHCR_USER="${{ secrets.GHCR_USER }}"
             GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
@@ -181,6 +191,8 @@ jobs:
             export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
             export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
             export IMAGE_TAG="${{ env.IMAGE_TAG }}"
+            # Defensive cleanup: remove any existing containers with fixed names to avoid name conflicts
+            docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
             chmod +x scripts/update-images.sh scripts/rollback.sh || true
 
             if ! ./scripts/update-images.sh; then
@@ -189,23 +201,38 @@ jobs:
               exit 1
             fi
 
-            echo "Certificates present:"
-            ls -la ./letsencrypt/live/${DOMAIN} || true
+            if [ -d "./letsencrypt/live/${DOMAIN}" ]; then
+              echo "Certificates present:"
+              ls -la ./letsencrypt/live/${DOMAIN} || true
+            else
+              echo "No live certificate directory at ./letsencrypt/live/${DOMAIN}"
+            fi
 
             # Ensure certbot-renew is up
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d certbot-renew || true
 
             sleep 5
             set +e
-            curl -ksS --max-time 10 https://localhost/ >/dev/null
-            WEB_OK=$?
-            curl -ksS --max-time 10 https://localhost/api/ >/dev/null
-            API_OK=$?
+            if [ "${HAS_CERT}" = "1" ]; then
+              curl -ksS --max-time 10 https://localhost/ >/dev/null
+              WEB_OK=$?
+              curl -ksS --max-time 10 https://localhost/api/ >/dev/null
+              API_OK=$?
+            else
+              curl -sS --max-time 10 http://localhost/ >/dev/null
+              WEB_OK=$?
+              curl -sS --max-time 10 http://localhost/api/ >/dev/null
+              API_OK=$?
+            fi
             set -e
 
             if [ "$WEB_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
-              echo "Health checks failed (WEB=$WEB_OK API=$API_OK); rolling back" >&2
-              ./scripts/rollback.sh || true
+              echo "Health checks failed (WEB=$WEB_OK API=$API_OK); attempting rollback if possible" >&2
+              if [ -f ./.state/previous_tag ]; then
+                ./scripts/rollback.sh || true
+              else
+                echo "No previous tag recorded; skipping rollback" >&2
+              fi
               exit 1
             fi
 
