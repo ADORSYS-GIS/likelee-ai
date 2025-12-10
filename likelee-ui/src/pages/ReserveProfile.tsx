@@ -30,11 +30,20 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  Mail,
 } from "lucide-react";
 import {
   Alert as UIAlert,
   AlertDescription as UIAlertDescription,
 } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
@@ -570,13 +579,15 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
-  const { login, register } = useAuth();
+  const { login, register, resendEmailConfirmation } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [resending, setResending] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
@@ -1220,9 +1231,7 @@ export default function ReserveProfile() {
           displayName,
         );
         if (!session) {
-          alert(
-            "Registration successful! Please check your email to verify your account before continuing.",
-          );
+          setShowVerificationModal(true);
           return;
         }
         // Move to next step; profile will be saved at the end (step 5)
@@ -2865,6 +2874,68 @@ export default function ReserveProfile() {
           )}
         </Card>
       </div>
+      {/* Email Verification Modal */}
+      <Dialog
+        open={showVerificationModal}
+        onOpenChange={setShowVerificationModal}
+      >
+        <DialogContent className="sm:max-w-md border-t-4 border-t-[#32C8D1]">
+          <DialogHeader className="flex flex-col items-center text-center space-y-4 pt-4">
+            <div className="h-16 w-16 bg-[#32C8D1]/10 rounded-full flex items-center justify-center">
+              <Mail className="h-8 w-8 text-[#32C8D1]" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Verify your email
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 text-base max-w-[300px]">
+              We've sent a verification link to{" "}
+              <span className="font-semibold text-gray-900">
+                {formData.email}
+              </span>
+              . Please check your inbox to activate your account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-col gap-2 mt-4 pb-2">
+            <Button
+              className="w-full bg-[#32C8D1] hover:bg-[#2ab0b8] text-white font-semibold h-12 rounded-lg"
+              onClick={() => {
+                setShowVerificationModal(false);
+                // Optionally redirect to login or keep them here
+                // setAuthMode("login");
+              }}
+            >
+              I've verified my email
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full text-[#32C8D1] hover:text-[#2ab0b8] hover:bg-[#32C8D1]/10"
+              disabled={resending}
+              onClick={async () => {
+                if (resendEmailConfirmation) {
+                  try {
+                    setResending(true);
+                    await resendEmailConfirmation(formData.email);
+                    alert("Verification email resent! Please check your inbox.");
+                  } catch (e: any) {
+                    alert(`Failed to resend email: ${e.message}`);
+                  } finally {
+                    setResending(false);
+                  }
+                }
+              }}
+            >
+              {resending ? "Resending..." : "Resend verification email"}
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full text-gray-500 hover:text-gray-700"
+              onClick={() => setShowVerificationModal(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
