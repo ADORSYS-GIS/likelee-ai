@@ -146,6 +146,7 @@ jobs:
             CERTBOT_EMAIL="${CERTBOT_EMAIL:-admin@likelee.ai}"
             echo "Using DOMAIN=$DOMAIN CERTBOT_EMAIL=$CERTBOT_EMAIL"
             export DOMAIN CERTBOT_EMAIL
+            PROJECT_NAME="likelee"
 
             # Prepare cert directories
             mkdir -p ./letsencrypt ./certbot-www
@@ -153,8 +154,9 @@ jobs:
             # Bootstrap certificates if missing (standalone mode binds :80)
             if [ ! -f "./letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
               echo "No existing certs found for ${DOMAIN}; obtaining via certbot (standalone)"
-              # Stop any service on :80 to free the port
-              docker ps --format '{{.ID}} {{.Names}} {{.Ports}}' | grep -E '0.0.0.0:80->|:80->' && docker stop likelee-gateway || true
+              # Stop any container publishing :80 to free the port
+              PORT80_IDS=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/0.0.0.0:80->|:80->/ {print $1}')
+              if [ -n "${PORT80_IDS}" ]; then echo "Stopping containers on :80 -> ${PORT80_IDS}"; echo "${PORT80_IDS}" | xargs -r docker stop || true; fi
 
               if ! docker run --rm -p 80:80 \
                 -v "$(pwd)/letsencrypt:/etc/letsencrypt" \
@@ -208,8 +210,11 @@ jobs:
               echo "No live certificate directory at ./letsencrypt/live/${DOMAIN}"
             fi
 
-            # Ensure certbot-renew is up
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d certbot-renew || true
+            # Ensure certbot-renew is up (use the same project and directory as the main stack)
+            docker compose \
+              --project-directory "${{ env.REMOTE_DIR }}" \
+              -p "${PROJECT_NAME}" \
+              -f docker-compose.yml -f docker-compose.prod.yml up -d certbot-renew || true
 
             sleep 5
             set +e
@@ -233,6 +238,24 @@ jobs:
               else
                 echo "No previous tag recorded; skipping rollback" >&2
               fi
+              exit 1
+            fi
+
+            # Verify that the running containers belong to the expected project and tag
+            VERIFY_OK=1
+            for svc in server ui; do
+              CID=$(docker ps -q --filter "label=com.docker.compose.project=${PROJECT_NAME}" --filter "label=com.docker.compose.service=${svc}" | head -n1)
+              if [ -z "$CID" ]; then echo "Service ${svc} not running under project ${PROJECT_NAME}" >&2; VERIFY_OK=0; continue; fi
+              IMG=$(docker inspect -f '{{.Config.Image}}' "$CID" 2>/dev/null || true)
+              echo "Service ${svc} container=$CID image=$IMG"
+              case "$IMG" in
+                *:"${IMAGE_TAG}") : ;; 
+                *) echo "Service ${svc} image tag does not match ${IMAGE_TAG}" >&2; VERIFY_OK=0 ;;
+              esac
+            done
+            if [ "$VERIFY_OK" -ne 1 ]; then
+              echo "Image verification failed; attempting rollback if possible" >&2
+              if [ -f ./.state/previous_tag ]; then ./scripts/rollback.sh || true; else echo "No previous tag recorded; skipping rollback" >&2; fi
               exit 1
             fi
 
