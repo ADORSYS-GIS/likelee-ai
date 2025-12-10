@@ -53,7 +53,9 @@ export default function UpdatePassword() {
           }}
         >
           <div>
-            <label className="block text-sm font-medium mb-1">New Password</label>
+            <label className="block text-sm font-medium mb-1">
+              New Password
+            </label>
             <input
               type="password"
               value={password}
@@ -63,7 +65,9 @@ export default function UpdatePassword() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+            <label className="block text-sm font-medium mb-1">
+              Confirm New Password
+            </label>
             <input
               type="password"
               value={confirmPassword}
