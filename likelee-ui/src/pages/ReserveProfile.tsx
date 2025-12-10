@@ -38,6 +38,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
+import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
@@ -266,7 +267,12 @@ function ReferencePhotosStep(props: any) {
       setCameraOpen(true);
       setTimeout(attachStreamToVideo, 50);
     } catch (_e) {
-      alert("Unable to access camera. Please allow camera permissions.");
+      toast({
+        title: "Camera Error",
+        description:
+          "Unable to access camera. Please allow camera permissions.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -300,11 +306,19 @@ function ReferencePhotosStep(props: any) {
 
   const doUpload = async () => {
     if (!consent) {
-      alert("Please give consent before uploading.");
+      toast({
+        title: "Consent Required",
+        description: "Please give consent before uploading.",
+        variant: "destructive",
+      });
       return;
     }
     if (!captures.front || !captures.left || !captures.right) {
-      alert("Please capture all three views.");
+      toast({
+        title: "Missing Photos",
+        description: "Please capture all three views.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -320,7 +334,11 @@ function ReferencePhotosStep(props: any) {
       onComplete && onComplete();
       closeCamera();
     } catch (e: any) {
-      alert(`Failed to upload reference photos: ${e?.message || e}`);
+      toast({
+        title: "Upload Failed",
+        description: `Failed to upload reference photos: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setUploading(false);
     }
@@ -328,7 +346,11 @@ function ReferencePhotosStep(props: any) {
 
   const generateAvatar = async () => {
     if (!userId) {
-      alert("Missing user id.");
+      toast({
+        title: "Error",
+        description: "Missing user id.",
+        variant: "destructive",
+      });
       return;
     }
     // Ensure we have uploaded URLs
@@ -353,7 +375,11 @@ function ReferencePhotosStep(props: any) {
       const data = await res.json();
       if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url);
     } catch (e: any) {
-      alert(`Failed to generate avatar: ${e?.message || e}`);
+      toast({
+        title: "Avatar Generation Failed",
+        description: `Failed to generate avatar: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setGenerating(false);
     }
@@ -462,52 +488,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Front</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.front || uploadedUrls.front ? (
-                    <img
-                      src={
-                        captures.front ? captures.front.url : uploadedUrls.front
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Left</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left || uploadedUrls.left ? (
-                    <img
-                      src={captures.left ? captures.left.url : uploadedUrls.left}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Right</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right || uploadedUrls.right ? (
-                    <img
-                      src={
-                        captures.right ? captures.right.url : uploadedUrls.right
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front || uploadedUrls.front ? (
+                  <img
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
               </div>
             </div>
-          )}
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left || uploadedUrls.left ? (
+                  <img
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right || uploadedUrls.right ? (
+                  <img
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -572,6 +598,7 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -632,7 +659,11 @@ export default function ReserveProfile() {
     side: "front" | "left" | "right",
   ) => {
     if (!supabase) {
-      alert("Image upload not configured. Missing Supabase keys.");
+      toast({
+        title: "Configuration Error",
+        description: "Image upload not configured. Missing Supabase keys.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -645,7 +676,8 @@ export default function ReserveProfile() {
       {
         const apiBase =
           (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE;
+          (import.meta as any).env.VITE_API_BASE ||
+          "http://localhost:8787";
         const buf = await file.arrayBuffer();
         const resScan = await fetch(
           `${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user?.id || owner)}&image_role=${encodeURIComponent(side)}`,
@@ -658,9 +690,11 @@ export default function ReserveProfile() {
         if (resScan.ok) {
           const out = await resScan.json();
           if (out?.flagged) {
-            alert(
-              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-            );
+            toast({
+              title: "Image Flagged",
+              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+              variant: "destructive",
+            });
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -678,7 +712,8 @@ export default function ReserveProfile() {
       try {
         const apiBase =
           (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE;
+          (import.meta as any).env.VITE_API_BASE ||
+          "http://localhost:8787";
         const res = await fetch(`${apiBase}/api/moderation/image`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -691,9 +726,11 @@ export default function ReserveProfile() {
         if (res.ok) {
           const out = await res.json();
           if (out?.flagged) {
-            alert(
-              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-            );
+            toast({
+              title: "Image Flagged",
+              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+              variant: "destructive",
+            });
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -719,10 +756,14 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) { }
+      } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
-      alert(`Failed to upload image: ${e?.message || e}`);
+      toast({
+        title: "Upload Failed",
+        description: `Failed to upload image: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setUploadingCameo(false);
     }
@@ -731,7 +772,11 @@ export default function ReserveProfile() {
   const startVerification = async () => {
     const targetId = user?.id || profileId;
     if (!targetId) {
-      alert("Profile not ready yet. Please complete previous steps.");
+      toast({
+        title: "Profile Not Ready",
+        description: "Profile not ready yet. Please complete previous steps.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -753,7 +798,11 @@ export default function ReserveProfile() {
       setLivenessStatus("pending");
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      alert(`Failed to start verification: ${e?.message || e}`);
+      toast({
+        title: "Verification Error",
+        description: `Failed to start verification: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setKycLoading(false);
     }
@@ -780,14 +829,20 @@ export default function ReserveProfile() {
           !cameoLeftUrl &&
           !cameoRightUrl
         ) {
-          alert(
-            "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
-          );
+          toast({
+            title: "Verification Success",
+            description:
+              "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+          });
         }
       }
       return row;
     } catch (e: any) {
-      alert(`Failed to fetch verification status: ${e?.message || e}`);
+      toast({
+        title: "Error",
+        description: `Failed to fetch verification status: ${e?.message || e}`,
+        variant: "destructive",
+      });
     } finally {
       setKycLoading(false);
     }
@@ -811,9 +866,11 @@ export default function ReserveProfile() {
         await startVerification();
         return;
       }
-      alert(
-        `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
-      );
+      toast({
+        title: "Verification Incomplete",
+        description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
+        variant: "destructive",
+      });
     } finally {
       setKycLoading(false);
     }
@@ -823,11 +880,20 @@ export default function ReserveProfile() {
     try {
       // Prevent starting new sessions after approval (cost control)
       if (livenessStatus === "approved") {
-        alert("Liveness is already approved. No further checks needed.");
+        toast({
+          title: "Liveness Approved",
+          description:
+            "Liveness is already approved. No further checks needed.",
+        });
         return;
       }
       if (!COGNITO_IDENTITY_POOL_ID) {
-        alert("Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.");
+        toast({
+          title: "Configuration Error",
+          description:
+            "Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.",
+          variant: "destructive",
+        });
         return;
       }
       setLivenessRunning(true);
@@ -896,7 +962,11 @@ export default function ReserveProfile() {
       setLivenessRunning(false);
       setShowLiveness(true);
       setLivenessError(e?.message || String(e));
-      alert(e?.message || String(e));
+      toast({
+        title: "Error",
+        description: e?.message || String(e),
+        variant: "destructive",
+      });
     }
   };
 
@@ -1074,7 +1144,11 @@ export default function ReserveProfile() {
         (error as any)?.response?.data?.message ||
         (error as any)?.message ||
         "Unknown error occurred";
-      alert(`Failed to create profile: ${errorMessage}. Please try again.`);
+      toast({
+        title: "Profile Creation Failed",
+        description: `Failed to create profile: ${errorMessage}. Please try again.`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -1144,40 +1218,44 @@ export default function ReserveProfile() {
         (error as any)?.response?.data?.message ||
         (error as any)?.message ||
         "Unknown error occurred";
-      alert(`Failed to update profile: ${errorMessage}. Please try again.`);
+      toast({
+        title: "Profile Update Failed",
+        description: `Failed to update profile: ${errorMessage}. Please try again.`,
+        variant: "destructive",
+      });
     },
   });
 
   const handleFirstContinue = () => {
     if (!formData.email) {
       toast({
-        variant: "destructive",
-        title: "Email required",
+        title: "Missing Field",
         description: "Please enter your email address.",
+        variant: "destructive",
       });
       return;
     }
     if (!formData.password) {
       toast({
-        variant: "destructive",
-        title: "Password required",
+        title: "Missing Field",
         description: "Please enter a password.",
+        variant: "destructive",
       });
       return;
     }
     if (!formData.confirmPassword) {
       toast({
-        variant: "destructive",
-        title: "Confirm password",
+        title: "Missing Field",
         description: "Please confirm your password.",
+        variant: "destructive",
       });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
       toast({
-        variant: "destructive",
-        title: "Password mismatch",
+        title: "Password Mismatch",
         description: "Passwords do not match.",
+        variant: "destructive",
       });
       return;
     }
@@ -1187,17 +1265,17 @@ export default function ReserveProfile() {
       !formData.full_name
     ) {
       toast({
-        variant: "destructive",
-        title: "Name required",
+        title: "Missing Field",
         description: "Please enter your full name or stage name.",
+        variant: "destructive",
       });
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
       toast({
-        variant: "destructive",
-        title: "Name required",
+        title: "Missing Field",
         description: "Please enter your full name.",
+        variant: "destructive",
       });
       return;
     }
@@ -1215,21 +1293,23 @@ export default function ReserveProfile() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         if (!data.available) {
-          const proceed = window.confirm(
-            "This email is already registered. Would you like us to send a magic link to sign in?",
-          );
-          if (proceed) {
-            const { error } = await supabase.auth.signInWithOtp({
-              email: formData.email.trim().toLowerCase(),
-              options: { emailRedirectTo: `${window.location.origin}/Login` },
+          // Email already registered - send magic link
+          const { error } = await supabase.auth.signInWithOtp({
+            email: formData.email.trim().toLowerCase(),
+            options: { emailRedirectTo: `${window.location.origin}/Login` },
+          });
+          if (error) {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive",
             });
-            if (error) {
-              alert(error.message);
-            } else {
-              alert("Magic link sent. Check your email to complete sign-in.");
-            }
           } else {
-            alert("This email is already registered. Please log in instead.");
+            toast({
+              title: "Email Already Registered",
+              description:
+                "This email is already registered. We've sent you a magic link to sign in. Check your email!",
+            });
           }
           return;
         }
@@ -1242,7 +1322,11 @@ export default function ReserveProfile() {
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
-        alert(`Failed to sign up: ${e?.message || e}`);
+        toast({
+          title: "Error",
+          description: `Failed to sign up: ${e?.message || e}`,
+          variant: "destructive",
+        });
       } finally {
         setFirstContinueLoading(false);
       }
@@ -1256,25 +1340,25 @@ export default function ReserveProfile() {
       if (creatorType === "influencer") {
         if (!formData.city?.trim()) {
           toast({
+            title: "Validation Error",
+            description: "City is required.",
             variant: "destructive",
-            title: "City is required",
-            description: "Please enter your city.",
           });
           return;
         }
         if (!formData.state?.trim()) {
           toast({
+            title: "Validation Error",
+            description: "State is required.",
             variant: "destructive",
-            title: "State is required",
-            description: "Please enter your state.",
           });
           return;
         }
         if (!formData.birthdate) {
           toast({
+            title: "Validation Error",
+            description: "Birthdate is required.",
             variant: "destructive",
-            title: "Birthdate is required",
-            description: "Please enter your birthdate.",
           });
           return;
         }
@@ -1285,19 +1369,23 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-            (today.getMonth() === birth.getMonth() &&
-              today.getDate() < birth.getDate())
+          (today.getMonth() === birth.getMonth() &&
+            today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
-          alert("You must be 18 or older.");
+          toast({
+            title: "Validation Error",
+            description: "You must be 18 or older.",
+            variant: "destructive",
+          });
           return;
         }
         if (!formData.gender?.trim()) {
           toast({
-            variant: "destructive",
-            title: "Identity required",
+            title: "Validation Error",
             description: "Please select how you identify.",
+            variant: "destructive",
           });
           return;
         }
@@ -1306,9 +1394,10 @@ export default function ReserveProfile() {
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
         toast({
+          title: "Validation Error",
+          description:
+            "Please set your base monthly license price (minimum $150).",
           variant: "destructive",
-          title: "Price required",
-          description: "Please set your base monthly license price (minimum $150).",
         });
         return;
       }
@@ -1325,41 +1414,41 @@ export default function ReserveProfile() {
     if (creatorType === "influencer") {
       if (!formData.content_types || formData.content_types.length === 0) {
         toast({
-          variant: "destructive",
-          title: "Campaign type required",
+          title: "Validation Error",
           description: "Select at least one campaign type.",
+          variant: "destructive",
         });
         return;
       }
       if (!formData.industries || formData.industries.length === 0) {
         toast({
-          variant: "destructive",
-          title: "Industry required",
+          title: "Validation Error",
           description: "Select at least one industry.",
+          variant: "destructive",
         });
         return;
       }
       if (!formData.primary_platform?.trim()) {
         toast({
-          variant: "destructive",
-          title: "Platform required",
+          title: "Validation Error",
           description: "Primary platform is required.",
+          variant: "destructive",
         });
         return;
       }
       if (!formData.platform_handle?.trim()) {
         toast({
-          variant: "destructive",
-          title: "Handle required",
+          title: "Validation Error",
           description: "Handle is required.",
+          variant: "destructive",
         });
         return;
       }
       if (!formData.visibility) {
         toast({
-          variant: "destructive",
-          title: "Visibility required",
+          title: "Validation Error",
           description: "Please select a profile visibility.",
+          variant: "destructive",
         });
         return;
       }
@@ -1370,7 +1459,11 @@ export default function ReserveProfile() {
 
   const finalizeProfile = async () => {
     if (!user) {
-      alert("Please log in.");
+      toast({
+        title: "Error",
+        description: "Please log in.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -1447,7 +1540,11 @@ export default function ReserveProfile() {
       setProfileId(user.id);
       setSubmitted(true);
     } catch (e: any) {
-      alert(`Failed to save your profile: ${e?.message || e}`);
+      toast({
+        title: "Error",
+        description: `Failed to save your profile: ${e?.message || e}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -1790,9 +1887,12 @@ export default function ReserveProfile() {
                                 // Close modal and clear session/creds on either outcome to reset UI.
                                 // For rejection, user can re-open and retry cleanly.
                                 if (!data.passed) {
-                                  alert(
-                                    "Liveness check failed. Please try again with good lighting and follow prompts.",
-                                  );
+                                  toast({
+                                    title: "Liveness Check Failed",
+                                    description:
+                                      "Please try again with good lighting and follow prompts.",
+                                    variant: "destructive",
+                                  });
                                 }
                                 setTimeout(() => {
                                   setShowLiveness(false);
@@ -1800,9 +1900,11 @@ export default function ReserveProfile() {
                                   setLivenessCreds(null);
                                 }, 300);
                               } else {
-                                alert(
-                                  `Failed to fetch liveness result: ${await r.text()}`,
-                                );
+                                toast({
+                                  title: "Error",
+                                  description: `Failed to fetch liveness result: ${await r.text()}`,
+                                  variant: "destructive",
+                                });
                               }
                             } finally {
                               setLivenessRunning(false);
@@ -1812,7 +1914,11 @@ export default function ReserveProfile() {
                           onError={(e: any) => {
                             console.error("Liveness error", e);
                             setLivenessError(e?.message || String(e));
-                            alert(`Liveness error: ${e?.message || e}`);
+                            toast({
+                              title: "Liveness Error",
+                              description: `Liveness error: ${e?.message || e}`,
+                              variant: "destructive",
+                            });
                             setLivenessRunning(false);
                             // Keep modal open to present the error
                             // Do not clear session id; keep it for retry/diagnostics
@@ -2132,9 +2238,11 @@ export default function ReserveProfile() {
                               } else if (formData.work_types.length < 3) {
                                 toggleArrayItem("work_types", type);
                               } else {
-                                alert(
-                                  "Please select up to 3 options for now. You can add more later.",
-                                );
+                                toast({
+                                  title: "Info",
+                                  description:
+                                    "Please select up to 3 options for now. You can add more later.",
+                                });
                               }
                             }}
                             className="border-2 border-gray-400"
@@ -2778,9 +2886,12 @@ export default function ReserveProfile() {
                                   data.passed ? "approved" : "rejected",
                                 );
                                 if (!data.passed) {
-                                  alert(
-                                    "Liveness check failed. Please try again with good lighting and follow prompts.",
-                                  );
+                                  toast({
+                                    title: "Liveness Check Failed",
+                                    description:
+                                      "Please try again with good lighting and follow prompts.",
+                                    variant: "destructive",
+                                  });
                                 }
                                 // Always close and clear after a result to avoid lingering "Verifying" UI
                                 setTimeout(() => {

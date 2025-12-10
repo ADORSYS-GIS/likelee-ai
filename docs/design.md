@@ -1,10 +1,11 @@
 # Likelee-AI – Global Design
+
 Voice assets and brand delivery (Supabase):
+
 - `voice_recordings` (private bucket) store Face-owned audio samples, with `accessible` flag to control inclusion in licensed delivery.
 - `voice_models` register cloned voice metadata per provider (e.g., ElevenLabs `provider_voice_id`).
 - `brand_licenses` link `brand_org_id` (organization_profiles.id) ↔ `face_user_id` with status and validity window.
 - `brand_voice_folders` and `brand_voice_assets` expose licensed voice assets under the Brand’s workspace without duplicating binaries.
-
 
 Version: 0.1 (draft)
 
@@ -18,11 +19,11 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 
 ## 2. Personas and Goals
 
-| Persona              | Goal                                                                                                            | Core Value                                                                             |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Faces (Talents)      | License their likeness, get discovered, earn royalties.                                                          | Turn face into an asset; visibility, royalties, usage tracking.                        |
-| Brands & Studios     | Find approved likenesses, generate ethical content, manage contracts.                                            | Verified pool of talents/creators; one interface for discovery → creation → licensing. |
-| AI Creators          | Collaborate, access paid opportunities, showcase portfolios, license faces for creative work.                    | Gigs, licensed usage, portfolio.                                                       |
+| Persona          | Goal                                                                                          | Core Value                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Faces (Talents)  | License their likeness, get discovered, earn royalties.                                       | Turn face into an asset; visibility, royalties, usage tracking.                        |
+| Brands & Studios | Find approved likenesses, generate ethical content, manage contracts.                         | Verified pool of talents/creators; one interface for discovery → creation → licensing. |
+| AI Creators      | Collaborate, access paid opportunities, showcase portfolios, license faces for creative work. | Gigs, licensed usage, portfolio.                                                       |
 
 ## 3. Key User Flows
 
@@ -38,6 +39,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   4. Seat activates when Face accepts terms.
 
 ### Voice & Recordings and License Activation (P1)
+
 - Faces record/upload voice samples in their dashboard (private storage, consented).
 - Optional: create an AI cloned voice model via ElevenLabs from approved samples.
 - When a Brand’s likeness license is activated, Likelee provisions a Voice Folder in the Brand workspace and links:
@@ -64,15 +66,15 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 
 ## 6. External Integrations
 
-| Capability                  | Provider/Tech                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------- |
-| Payments & Billing          | Stripe Connect, Stripe Checkout                                                       |
-| AI Generation/Rendering     | Replicate API, Hugging Face APIs, Together.ai                                         |
-| Voice Cloning (optional)    | ElevenLabs                                                                            |
-| Storage & Database          | Supabase (Auth, Postgres, Storage)                                                    |
-| Asset Traceability          | Truepic Lens (invisible watermarking)                                                 |
-| Moderation & Liveness       | AWS Rekognition (Moderation, Face Liveness)                                           |
-| Royalty Tracking (P2)       | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only)                   |
+| Capability               | Provider/Tech                                                       |
+| ------------------------ | ------------------------------------------------------------------- |
+| Payments & Billing       | Stripe Connect, Stripe Checkout                                     |
+| AI Generation/Rendering  | Replicate API, Hugging Face APIs, Together.ai                       |
+| Voice Cloning (optional) | ElevenLabs                                                          |
+| Storage & Database       | Supabase (Auth, Postgres, Storage)                                  |
+| Asset Traceability       | Truepic Lens (invisible watermarking)                               |
+| Moderation & Liveness    | AWS Rekognition (Moderation, Face Liveness)                         |
+| Royalty Tracking (P2)    | Meta Ads, TikTok Ads, Google Ads, Shopify Admin, Stripe (read-only) |
 
 ## 7. Data Model (Conceptual)
 
@@ -84,6 +86,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   - Explicit consent steps for uploading face photos and licensing terms.
 
 Reference images storage model (Supabase):
+
 - `reference_images` table stores creator reference images (including the three cameo angles). Columns include: user_id, section_id (e.g., headshot_neutral, headshot_smiling, etc.), storage_bucket, storage_path, public_url (if public), width, height, size_bytes, mime_type, sha256, moderation_status, moderation_reason, created_at, created_by, deleted_at.
 - The three cameo images (front/left/right) are fully migrated into `reference_images` and no longer kept as separate columns on profiles for new writes. Legacy reads can be supported via a one-time backfill or view.
 
@@ -97,11 +100,11 @@ Reference images storage model (Supabase):
 
 ## 9. Monetization Model
 
-| Model          | Description                                        | Tracking/Attribution                                                     | Priority |
-| -------------- | -------------------------------------------------- | ------------------------------------------------------------------------ | -------- |
-| Flat Fee       | Fixed price per time unit set by Face.             | Royalty Ledger entry at booking payment.                                  | P0/P1    |
-| Spend-Share    | % of real ad spend earned by Face.                 | OAuth to ad APIs; nightly retrieval of cost metrics.                      | Phase 2  |
-| Revenue-Share  | % of sales earned by Face.                         | UTM or Face-specific coupons + Shopify/Stripe data.                       | Phase 2  |
+| Model         | Description                            | Tracking/Attribution                                 | Priority |
+| ------------- | -------------------------------------- | ---------------------------------------------------- | -------- |
+| Flat Fee      | Fixed price per time unit set by Face. | Royalty Ledger entry at booking payment.             | P0/P1    |
+| Spend-Share   | % of real ad spend earned by Face.     | OAuth to ad APIs; nightly retrieval of cost metrics. | Phase 2  |
+| Revenue-Share | % of sales earned by Face.             | UTM or Face-specific coupons + Shopify/Stripe data.  | Phase 2  |
 
 Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnings flow from brand spend/revenue. C2PA acts like a serial number on a banknote to keep flows attributable to the face’s owner.
 
@@ -134,6 +137,7 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - Single source of truth struct: `ServerConfig` (`likelee-server/src/config.rs`).
 
 ### Environment Variables (Backend – likelee-server)
+
 - SUPABASE_URL (required)
 - SUPABASE_SERVICE_KEY (required)
 - SUPABASE_BUCKET_PRIVATE (default: likelee-private)
@@ -153,16 +157,19 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - ELEVENLABS_API_KEY (optional; required to enable server-side voice cloning)
 
 Notes:
+
 - All runtime config is read only via `ServerConfig` (envconfig). Do NOT call `std::env::var` in application code.
 - Keep `likelee-server/.env.example` in sync with these variables and defaults.
 
 ### Environment Variables (Frontend – likelee-ui)
+
 - VITE_API_BASE_URL – e.g. http://localhost:8787
 - VITE_AWS_REGION – must be a valid AWS region (e.g., us-east-1, eu-west-1)
 - VITE_COGNITO_IDENTITY_POOL_ID – e.g., us-east-1:xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
 - VITE_LIVENESS_DEBUG – set "1" to show in-app debug panel (optional)
 
 ### Storage Architecture (Supabase)
+
 - Buckets
   - likelee-private (private): sensitive creator assets and drafts.
   - likelee-public (public): publicly viewable reference images and approved assets.
@@ -182,6 +189,7 @@ Notes:
   - The three cameo images (front, left, right) are fully moved into `reference_images` using section_ids (e.g., `cameo_front`, `cameo_left`, `cameo_right`) or mapped to existing headshot sections. Profiles no longer store separate cameo URL columns for new writes.
 
 ### Rekognition Face Liveness – Region Alignment
+
 - Face Liveness is available only in specific regions. Use a supported region (e.g., us-east-1 or eu-west-1).
 - The following must MATCH the same region:
   - Backend `AWS_REGION`
@@ -190,6 +198,7 @@ Notes:
 - Invalid regions (e.g., `eu-east-1`) or mismatched regions will cause DNS errors or AccessDenied.
 
 ### Rekognition Face Liveness – Browser IAM Permissions (Cognito Identity Pool Role)
+
 - Required actions (unauth or auth role depending on usage):
   - `cognito-identity:GetId`
   - `cognito-identity:GetCredentialsForIdentity`
@@ -199,6 +208,7 @@ Notes:
   - `"ForAnyValue:StringLike": { "cognito-identity.amazonaws.com:amr": "unauthenticated" }`
 
 ### IAM Requirements
+
 - Server IAM principal (keys used by likelee-server):
   - `rekognition:CreateFaceLivenessSession`
   - `rekognition:GetFaceLivenessSessionResults`
@@ -210,6 +220,7 @@ Notes:
 - Ensure the Rekognition service-linked role exists (AWSServiceRoleForRekognition) or allow `iam:CreateServiceLinkedRole`.
 
 ### Frontend Integration Notes (Amplify UI Face Liveness)
+
 - Prefer `FaceLivenessDetectorCore` for explicit credentials control when debugging credential issues.
 - Import styles in `src/main.tsx`:
   - `@aws-amplify/ui-react/styles.css`
@@ -221,6 +232,7 @@ Notes:
 - Pin region consistently (e.g., `us-east-1`).
 
 ### Face Liveness Integration Playbook
+
 - Goal: ensure the browser can start the WebRTC/WebSocket session with Rekognition using Cognito creds; avoid “Missing credentials” loops.
 - Steps:
   1. Create session on server: `create_face_liveness_session` (server role permissions required).
@@ -233,6 +245,7 @@ Notes:
   6. Color-code status in the parent UI (green approved, red rejected, yellow pending, gray not started).
 
 ### UI Lifecycle Requirements (Detector Modal)
+
 - Render states:
   - Waiting: show detector only while `livenessOutcome` is null.
   - Result: replace detector with a result card (tick/cross, status, confidence, hints).
@@ -241,6 +254,7 @@ Notes:
 - Retry: either reuse the same session (if allowed) or create a fresh session. Recommended: create a fresh session for reliability.
 
 ### Diagnostics & Observability
+
 - Frontend logs:
   - Log pre-resolved credential source and partial AccessKeyId.
   - Log session creation, modal open/close, analysis complete, and result payload.
@@ -251,6 +265,7 @@ Notes:
   - Client: `StartFaceLivenessSession`.
 
 ### Pitfalls to Avoid
+
 - Passing wrong or unsupported prop names to older versions of `@aws-amplify/ui-react-liveness`. If stuck, upgrade `aws-amplify` and `@aws-amplify/ui-react-liveness` to latest.
 - Region mismatch among server, frontend, and Cognito Identity Pool.
 - Not granting `cognito-identity:*` actions to the unauth role.
@@ -258,6 +273,7 @@ Notes:
 - Reading env vars directly in runtime code outside the config module (server). Always use `ServerConfig`.
 
 ### Build/Test Checklist (Face Liveness)
+
 - Config
   - Backend `AWS_REGION` == Frontend `VITE_AWS_REGION` == Cognito pool region.
   - `COGNITO_IDENTITY_POOL_ID` configured on server and `VITE_COGNITO_IDENTITY_POOL_ID` on frontend.
@@ -275,6 +291,7 @@ Notes:
   - CloudTrail shows expected Rekognition activity in the chosen region.
 
 ### Operational Guidance
+
 - If session creation succeeds but UI stays pending: verify CloudTrail for `StartFaceLivenessSession` in the selected region.
 - If no event appears: fix Cognito role trust/policy or region mismatch; ensure camera/mic are allowed.
 

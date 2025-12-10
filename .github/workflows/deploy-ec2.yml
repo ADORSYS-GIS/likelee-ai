@@ -2,7 +2,7 @@ name: Deploy to EC2 (Active on main)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -96,73 +96,86 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -euo pipefail
-            sudo -n bash -lc '
-              set -euo pipefail
-              echo "Running deployment as root (user: $(whoami), home: $HOME)"
-              # Ensure openssl exists for cert generation
-              if ! command -v openssl >/dev/null 2>&1; then
-                echo "openssl not found; installing..."
-                if command -v apt-get >/dev/null 2>&1; then
-                  apt-get update -y && apt-get install -y openssl
-                elif command -v yum >/dev/null 2>&1; then
-                  yum install -y openssl
-                fi
-              fi
-              # Sync staged assets to target directory under /opt
-              mkdir -p "$(dirname "${{ env.REMOTE_DIR }}")"
-              mkdir -p "${{ env.REMOTE_DIR }}"
-              # Preserve instance-specific files
-              if [ -f "${{ env.REMOTE_DIR }}/.env" ]; then cp "${{ env.REMOTE_DIR }}/.env" /tmp/.env.backup || true; fi
-              if [ -d "${{ env.REMOTE_DIR }}/certs" ]; then cp -a "${{ env.REMOTE_DIR }}/certs" /tmp/certs.backup || true; fi
-              # Refresh managed assets
-              rm -rf "${{ env.REMOTE_DIR }}"/*
-              cp -a /tmp/likelee-deploy/deploy/ec2/. "${{ env.REMOTE_DIR }}/"
-              # Restore preserved files
-              if [ -f /tmp/.env.backup ]; then mv -f /tmp/.env.backup "${{ env.REMOTE_DIR }}/.env"; fi
-              if [ -d /tmp/certs.backup ]; then rm -rf "${{ env.REMOTE_DIR }}/certs"; mv /tmp/certs.backup "${{ env.REMOTE_DIR }}/certs"; fi
-              cd "${{ env.REMOTE_DIR }}"
-              echo "CWD: $(pwd)"
-              echo "Listing deploy directory:" && ls -la
-              # Preflight validations
-              if [ ! -f docker-compose.yml ]; then
-                echo "ERROR: docker-compose.yml not found in $(pwd)" >&2
-                exit 1
-              fi
-              if [ ! -f docker-compose.prod.yml ]; then
-                echo "ERROR: docker-compose.prod.yml not found in $(pwd)" >&2
-                exit 1
-              fi
-              # Optional GHCR login if credentials provided
-              GHCR_USER="${{ secrets.GHCR_USER }}"
-              GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
-              if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_TOKEN}" ]; then
-                echo "Logging into GHCR as ${GHCR_USER}"
-                echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin || true
-              else
-                echo "GHCR_USER/GHCR_TOKEN not set; assuming images are public or host already logged in."
-              fi
-              export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
-              export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
-              export IMAGE_TAG="${{ env.IMAGE_TAG }}"
-              chmod +x scripts/update-images.sh scripts/rollback.sh || true
-              if ! ./scripts/update-images.sh; then
-                echo "Update step failed; attempting rollback" >&2
-                ./scripts/rollback.sh || true
-                exit 1
-              fi
-              echo "Certificates present (if any):"
-              ls -la certs || true
-              sleep 5
-              set +e
-              curl -ksS --max-time 10 https://localhost/ >/dev/null
-              WEB_OK=$?
-              curl -ksS --max-time 10 https://localhost/api/ >/dev/null
-              API_OK=$?
-              set -e
-              if [ "$WEB_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
-                echo "Health checks failed (WEB=$WEB_OK API=$API_OK); rolling back" >&2
-                ./scripts/rollback.sh || true
-                exit 1
-              fi
-              echo "Deployment succeeded for tag ${IMAGE_TAG}"
-            '
+            # Run the remote script with a single-quoted heredoc to avoid any quoting/expansion issues.
+            sudo -n bash -lc 'bash -s' <<'REMOTE_SCRIPT'
+            set -euo pipefail
+            echo "Running deployment as root (user: $(whoami), home: $HOME)"
+            # Sync staged assets to target directory under /opt
+            mkdir -p "$(dirname "${{ env.REMOTE_DIR }}")"
+            mkdir -p "${{ env.REMOTE_DIR }}"
+            # Preserve instance-specific files
+            if [ -f "${{ env.REMOTE_DIR }}/.env" ]; then cp "${{ env.REMOTE_DIR }}/.env" /tmp/.env.backup || true; fi
+            # Refresh managed assets
+            rm -rf "${{ env.REMOTE_DIR }}"/*
+            cp -a /tmp/likelee-deploy/deploy/ec2/. "${{ env.REMOTE_DIR }}/"
+            # Restore preserved files
+            if [ -f /tmp/.env.backup ]; then mv -f /tmp/.env.backup "${{ env.REMOTE_DIR }}/.env"; fi
+            cd "${{ env.REMOTE_DIR }}"
+            echo "CWD: $(pwd)"
+            echo "Listing deploy directory:" && ls -la
+            # Preflight validations
+            if [ ! -f docker-compose.yml ]; then
+              echo "ERROR: docker-compose.yml not found in $(pwd)" >&2
+              exit 1
+            fi
+            if [ ! -f docker-compose.prod.yml ]; then
+              echo "ERROR: docker-compose.prod.yml not found in $(pwd)" >&2
+              exit 1
+            fi
+            # Load DOMAIN and CERTBOT_EMAIL from .env if present
+            if [ -f .env ]; then set -a; . ./.env; set +a; fi
+            DOMAIN="${DOMAIN:-likelee.ai}"
+            CERTBOT_EMAIL="${CERTBOT_EMAIL:-admin@likelee.ai}"
+            echo "Using DOMAIN=$DOMAIN CERTBOT_EMAIL=$CERTBOT_EMAIL"
+            # Prepare cert directories
+            mkdir -p ./letsencrypt ./certbot-www
+            # Bootstrap certificates if missing (standalone mode binds :80)
+            if [ ! -f "./letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+              echo "No existing certs found for ${DOMAIN}; obtaining via certbot (standalone)"
+              # Stop any service on :80 to free the port
+              docker ps --format '{{.ID}} {{.Names}} {{.Ports}}' | grep -E '0.0.0.0:80->|:80->' && docker stop likelee-gateway || true
+              docker run --rm -p 80:80 \
+                -v "$(pwd)/letsencrypt:/etc/letsencrypt" \
+                certbot/certbot:latest certonly --standalone \
+                --agree-tos --no-eff-email -m "$CERTBOT_EMAIL" -d "$DOMAIN" \
+                --non-interactive --keep-until-expiring
+              echo "Certbot issuance completed"
+            else
+              echo "Certificates already present; skipping issuance"
+            fi
+            # Optional GHCR login if credentials provided
+            GHCR_USER="${{ secrets.GHCR_USER }}"
+            GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
+            if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_TOKEN}" ]; then
+              echo "Logging into GHCR as ${GHCR_USER}"
+              echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin || true
+            else
+              echo "GHCR_USER/GHCR_TOKEN not set; assuming images are public or host already logged in."
+            fi
+            export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
+            export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
+            export IMAGE_TAG="${{ env.IMAGE_TAG }}"
+            chmod +x scripts/update-images.sh scripts/rollback.sh || true
+            if ! ./scripts/update-images.sh; then
+              echo "Update step failed; attempting rollback" >&2
+              ./scripts/rollback.sh || true
+              exit 1
+            fi
+            echo "Certificates present:"
+            ls -la ./letsencrypt/live/${DOMAIN} || true
+            # Ensure certbot-renew is up
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d certbot-renew || true
+            sleep 5
+            set +e
+            curl -ksS --max-time 10 https://localhost/ >/dev/null
+            WEB_OK=$?
+            curl -ksS --max-time 10 https://localhost/api/ >/dev/null
+            API_OK=$?
+            set -e
+            if [ "$WEB_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
+              echo "Health checks failed (WEB=$WEB_OK API=$API_OK); rolling back" >&2
+              ./scripts/rollback.sh || true
+              exit 1
+            fi
+            echo "Deployment succeeded for tag ${IMAGE_TAG}"
+            REMOTE_SCRIPT

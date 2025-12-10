@@ -61,6 +61,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
 import {
   LineChart,
   Line,
@@ -603,6 +604,7 @@ export default function BrandDashboard() {
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
+  const { toast } = useToast();
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [filters, setFilters] = useState({
     creator_types: [],
@@ -686,21 +688,22 @@ export default function BrandDashboard() {
       setTimeout(() => {
         setBrand({ ...brand, logo: URL.createObjectURL(file) });
         setUploadingLogo(false);
-        alert("Logo uploaded! (Demo mode)");
+        toast({ title: "Success", description: "Logo uploaded! (Demo mode)" });
       }, 1000);
     }
   };
 
   const handleSaveProfile = () => {
-    alert("Profile updated! (Demo mode)");
+    toast({ title: "Success", description: "Profile updated! (Demo mode)" });
   };
 
   const handleShareBrief = (campaignId) => {
     const campaign = mockCampaigns.find((c) => c.id === campaignId);
     if (campaign) {
-      alert(
-        `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.`,
-      );
+      toast({
+        title: "Success",
+        description: `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.`,
+      });
     }
   };
 
@@ -720,18 +723,25 @@ export default function BrandDashboard() {
         budget: selectedCreator.price,
       });
     } else if (option === "agency") {
-      alert("Agency invitation flow coming soon! (Demo mode)");
+      toast({
+        title: "Coming Soon",
+        description: "Agency invitation flow coming soon! (Demo mode)",
+      });
       setShowHireModal(false);
     } else if (option === "browse") {
-      alert("Browse agencies feature coming soon! (Demo mode)");
+      toast({
+        title: "Coming Soon",
+        description: "Browse agencies feature coming soon! (Demo mode)",
+      });
       setShowHireModal(false);
     }
   };
 
   const handleContractSubmit = () => {
-    alert(
-      `Contract created and sent to ${selectedCreator.name}! (Demo mode)\n\nCreator will receive:\n- Full project brief\n- Contract terms\n- Payment details\n\nThey have 48 hours to accept.`,
-    );
+    toast({
+      title: "Success",
+      description: `Contract created and sent to ${selectedCreator.name}! (Demo mode)\n\nCreator will receive:\n- Full project brief\n- Contract terms\n- Payment details\n\nThey have 48 hours to accept.`,
+    });
     setShowContractBuilder(false);
     setContractStep(1);
     setSelectedCreator(null);
@@ -740,14 +750,18 @@ export default function BrandDashboard() {
   const handleUpdateRequestOption = (option) => {
     if (option === "self") {
       setShowUpdateRequestModal(false);
-      alert(
-        "Contract update form coming soon! (Demo mode)\nYou'll be able to modify terms, pricing, and deliverables.",
-      );
+      toast({
+        title: "Coming Soon",
+        description:
+          "Contract update form coming soon! (Demo mode)\nYou'll be able to modify terms, pricing, and deliverables.",
+      });
     } else if (option === "agency") {
       setShowUpdateRequestModal(false);
-      alert(
-        "Contract update request sent to partner agency! (Demo mode)\nThey'll review and make the necessary changes.",
-      );
+      toast({
+        title: "Success",
+        description:
+          "Contract update request sent to partner agency! (Demo mode)\nThey'll review and make the necessary changes.",
+      });
     }
     setUpdateRequestType(null);
   };
