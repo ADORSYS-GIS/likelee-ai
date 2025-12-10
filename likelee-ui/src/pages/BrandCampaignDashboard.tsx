@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -86,6 +87,7 @@ const mockMetrics = {
 
 export default function BrandCampaignDashboard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [showInviteAgencyModal, setShowInviteAgencyModal] = useState(false);
   const [showInviteCreatorModal, setShowInviteCreatorModal] = useState(false);
@@ -107,7 +109,7 @@ export default function BrandCampaignDashboard() {
 
   const handleCreateCampaign = () => {
     console.log("Creating campaign:", campaignForm);
-    alert("Campaign created successfully!");
+    toast({ title: "Success", description: "Campaign created successfully!" });
     setShowNewCampaignModal(false);
     setNewCampaignStep(1);
     setCampaignForm({

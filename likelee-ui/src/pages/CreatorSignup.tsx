@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,10 @@ import {
   ArrowLeft,
   Upload,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 const contentTypes = [
   "AI-generated films",
@@ -55,10 +59,13 @@ const aiTools = [
 ];
 
 export default function CreatorSignup() {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [profileId, setProfileId] = useState(null);
   const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -103,9 +110,11 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      alert(
-        "Failed to create initial profile. Please check your inputs and try again.",
-      );
+      toast({
+        title: "Error",
+        description: getFriendlyErrorMessage(error),
+        variant: "destructive",
+      });
     },
   });
 
@@ -146,7 +155,11 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      toast({
+        title: "Error",
+        description: getFriendlyErrorMessage(error),
+        variant: "destructive",
+      });
     },
   });
 
@@ -158,11 +171,19 @@ export default function CreatorSignup() {
         !formData.password ||
         !formData.confirmPassword
       ) {
-        alert("Please fill in all required fields.");
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        alert("Passwords do not match.");
+        toast({
+          title: "Validation Error",
+          description: "Passwords do not match.",
+          variant: "destructive",
+        });
         return;
       }
       // Check that at least one social handle is provided
@@ -171,9 +192,12 @@ export default function CreatorSignup() {
         !formData.tiktok_handle &&
         !formData.youtube_handle
       ) {
-        alert(
-          "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
-        );
+        toast({
+          title: "Validation Error",
+          description:
+            "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
+          variant: "destructive",
+        });
         return;
       }
       createInitialProfileMutation.mutate(formData);
@@ -192,33 +216,58 @@ export default function CreatorSignup() {
 
   const handleSubmit = () => {
     if (!formData.content_types.length && !formData.content_other) {
-      alert("Please select at least one content type or specify 'Other'.");
+      toast({
+        title: "Validation Error",
+        description:
+          "Please select at least one content type or specify 'Other'.",
+        variant: "destructive",
+      });
       return;
     }
     if (
       formData.content_types.includes("Other") &&
       !formData.content_other.trim()
     ) {
-      alert("Please specify your 'Other' content type.");
+      toast({
+        title: "Validation Error",
+        description: "Please specify your 'Other' content type.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.ai_tools.length && !formData.ai_tools_other) {
-      alert("Please select at least one AI tool or specify 'Other'.");
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one AI tool or specify 'Other'.",
+        variant: "destructive",
+      });
       return;
     }
     if (
       formData.ai_tools.includes("Other") &&
       !formData.ai_tools_other.trim()
     ) {
-      alert("Please specify your 'Other' AI tool.");
+      toast({
+        title: "Validation Error",
+        description: "Please specify your 'Other' AI tool.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.city || !formData.state) {
-      alert("Please fill in your city and state/country.");
+      toast({
+        title: "Validation Error",
+        description: "Please fill in your city and state/country.",
+        variant: "destructive",
+      });
       return;
     }
     if (!formData.experience) {
-      alert("Please select your years of AI creative experience.");
+      toast({
+        title: "Validation Error",
+        description: "Please select your years of AI creative experience.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -386,16 +435,29 @@ export default function CreatorSignup() {
                   >
                     Password *
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="border-2 border-gray-300 rounded-none pr-10"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -405,19 +467,34 @@ export default function CreatorSignup() {
                   >
                     Confirm Password *
                   </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none pr-10"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t-2 border-gray-200">

@@ -49,6 +49,7 @@ import StudioImageToVideo from "./StudioImageToVideo";
 import TestFalAPI from "./TestFalAPI";
 
 import SalesInquiry from "./SalesInquiry";
+import Contact from "./Contact";
 
 import MarketingAgency from "./MarketingAgency";
 import AgencySelection from "./AgencySelection";
@@ -166,6 +167,8 @@ const PAGES = {
   TestFalAPI: TestFalAPI,
 
   SalesInquiry: SalesInquiry,
+
+  Contact: Contact,
 
   MarketingAgency: MarketingAgency,
 
@@ -294,6 +297,8 @@ function PagesContent() {
         <Route path="/TestFalAPI" element={<TestFalAPI />} />
 
         <Route path="/SalesInquiry" element={<SalesInquiry />} />
+
+        <Route path="/Contact" element={<Contact />} />
 
         <Route path="/MarketingAgency" element={<MarketingAgency />} />
 

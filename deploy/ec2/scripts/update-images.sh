@@ -88,7 +88,14 @@ if [ "${COMPOSE_BIN[0]} ${COMPOSE_BIN[1]:-}" = "docker compose" ]; then
   "${COMPOSE_BIN[@]}" \
     --project-directory "${EC2_DIR}" \
     -p "${PROJECT_NAME}" \
-    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
+    -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate || {
+      echo "[update-images.sh] compose up failed; attempting to resolve name conflicts and retry once" >&2
+      docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+      "${COMPOSE_BIN[@]}" \
+        --project-directory "${EC2_DIR}" \
+        -p "${PROJECT_NAME}" \
+        -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
+    }
 else
   # docker-compose (v1) fallback
   pushd "${EC2_DIR}" >/dev/null
@@ -96,6 +103,11 @@ else
   "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" down --remove-orphans || true
   docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
   "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
+  if [ $? -ne 0 ]; then
+    echo "[update-images.sh] compose up failed; attempting to resolve name conflicts and retry once" >&2
+    docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+    "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
+  fi
   popd >/dev/null
 fi
 

@@ -5,28 +5,32 @@ trigger: always_on
 # Repository Rules
 
 ## General
+
 - Always implement based on the design.md file located at `./docs/design.md`. If anything is unclear, ask questions in the PR and propose options.
 
 ## Code
+
 - Follow `docs/design.md` for architecture, configuration, and integration details.
 - Keep code changes minimal and cohesive. Avoid adding files that aren’t necessary to the task.
 - Do not add or delete comments/documentation unless requested.
 - Include request IDs and label counts/results where helpful. Avoid logging sensitive data.
 - always update this file when a milestone is hit and also update the design.md doc
-  
+
 ## Configuration Management (Server)
+
 - Centralize all runtime config in `likelee-server/src/config.rs` using the Rust `envconfig` crate with `#[derive(Envconfig)]`.
 - Do NOT read environment variables directly in application code (`std::env::var`) outside the configuration module.
 - Keep `likelee-server/.env.example` in sync with `ServerConfig` fields and defaults.
 - `.env` files must be one `KEY=VALUE` per line (no commas, no inline comments).
 
 ## AWS Rekognition – Moderation & Face Liveness
+
 - Use only valid and supported AWS regions. INVALID examples: `eu-east-1`, `us-central-1`.
 - Region alignment is mandatory across:
   - Backend: `AWS_REGION`
   - Frontend: `VITE_AWS_REGION`
   - Cognito Identity Pool region
-  All three MUST match (e.g., `us-east-1` or `eu-west-1`).
+    All three MUST match (e.g., `us-east-1` or `eu-west-1`).
 - IAM (server credentials used by likelee-server):
   - Allow `rekognition:CreateFaceLivenessSession`
   - Allow `rekognition:GetFaceLivenessSessionResults`
@@ -39,6 +43,7 @@ trigger: always_on
 - Image moderation request limits: max 5MB payloads.
 
 ## Frontend – Face Liveness Integration
+
 - Use `@aws-amplify/ui-react-liveness` FaceLivenessDetector.
 - Import CSS in `src/main.tsx`:
   - `@aws-amplify/ui-react/styles.css`
@@ -48,12 +53,15 @@ trigger: always_on
 - On completion, call `/api/liveness/result` and evaluate `passed` vs `LIVENESS_MIN_SCORE`.
 
 ## Security
+
 - Never commit real secrets. Rotate keys immediately if they appear in logs or commits.
 - Prefer IAM roles over long‑lived access keys where feasible.
 
 ## Database/Migrations
+
 - When adding migrations (`supabase/migrations/*.sql`), generate a Mermaid ER diagram for table relations and include it in the PR.
 
 ## Logging/Diagnostics
+
 - Log effective AWS region at startup and warn on non‑supported or mismatched regions.
 - Include request IDs and label counts/results where helpful. Avoid logging sensitive data.

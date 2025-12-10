@@ -13,9 +13,10 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 2025-11-23_moderation_events.sql
 - 20251127_create_org_and_agency_users.sql
 - 2025-12-04_add_profile_photo_url.sql
- - 2025-11-29_reference_images.sql
- - 2025-12-04_voice_assets.sql
+- 2025-11-29_reference_images.sql
+- 2025-12-04_voice_assets.sql
 - 20251204101400_add_creator_custom_rates.sql
+- 20251205160000_add_negotiations_and_restrictions.sql
 
 Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
@@ -93,6 +94,11 @@ erDiagram
     integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
     text currency_code "check = 'USD'"
     timestamptz pricing_updated_at
+
+    %% negotiations & restrictions
+    boolean accept_negotiations "default false"
+    text[] content_restrictions
+    text[] brand_exclusivity
 
     %% legacy timestamps (from initial table)
     timestamptz created_at "default now()"
@@ -278,11 +284,12 @@ erDiagram
 ```
 
 ## Notes
+
 - **Primary Key Convention**: All primary key `id` columns MUST be of type `UUID` with a default value of `gen_random_uuid()`. Do not use `BIGINT` or serial types for primary keys.
 - The initial migration created `profiles.id` as `TEXT PRIMARY KEY`. The later migration `20251121_profiles_id_default.sql` ensures a UUID default via `gen_random_uuid()`. If your environment still has `id` as TEXT, apply a conversion migration.
 - `royalty_ledger.face_id` references `profiles(id)`; the view `v_face_payouts` aggregates paid/pending amounts by face and month for read-only dashboard usage.
 - The consolidated migration `2025-11-21_consolidated_profiles_wallet.sql` couples minimal `profiles` prerequisites and the Royalty Wallet schema (ledger, view, policies) to provision new environments consistently. Prefer running this single file in greenfield environments to avoid ordering issues.
- - Voice/Brand delivery entities and relationships (VOICE_RECORDINGS, VOICE_MODELS, BRAND_LICENSES, BRAND_VOICE_FOLDERS, BRAND_VOICE_ASSETS) from `docs/er/voice_assets.mmd` are merged into this consolidated diagram and kept in sync with `2025-12-04_voice_assets.sql`.
+- Voice/Brand delivery entities and relationships (VOICE_RECORDINGS, VOICE_MODELS, BRAND_LICENSES, BRAND_VOICE_FOLDERS, BRAND_VOICE_ASSETS) from `docs/er/voice_assets.mmd` are merged into this consolidated diagram and kept in sync with `2025-12-04_voice_assets.sql`.
 
 ## Relationship Details
 
@@ -323,11 +330,13 @@ erDiagram
   - No direct writes; used for analytics/overview.
 
 ### Compliance and KYC/Liveness Context
+
 - KYC status for user profiles is stored on `PROFILES` and is used to gate sensitive actions.
 - Organization owner’s KYC must be approved to unlock “Create Agency” tools in the UI.
 - Organization-level KYC (via Veriff) is initiated on creation and tracked via status endpoints.
 
 ### Practical Flows
+
 - Create Organization
   - User (owner profile) creates `ORGANIZATION_PROFILES` row → Triggers organization KYC session.
   - On approval, owner can add members by inserting rows into `AGENCY_USERS` (subject to RLS: owner-only insert).

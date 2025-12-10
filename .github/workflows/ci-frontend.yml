@@ -1,13 +1,12 @@
-
 # This workflow runs ALL checks for the 'likelee-ui' (frontend) code.
 name: CI - Frontend (likelee-ui)
 
 on:
   pull_request:
-    branches: [ main, develop ] # Run on PRs to main or develop
+    branches: [main, develop] # Run on PRs to main or develop
     # Only run this pipeline if changes were made in the 'likelee-ui' folder
     paths:
-      - 'likelee-ui/**'
+      - "likelee-ui/**"
 
 jobs:
   check-frontend:
@@ -25,9 +24,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'likelee-ui/package-lock.json'
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "likelee-ui/package-lock.json"
 
       - name: Install dependencies
         run: npm install

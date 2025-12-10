@@ -549,17 +549,6 @@ export default function Layout({ children, currentPageName }) {
                 <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="p-2">
                     <Link
-                      to={createPageUrl("BrandCompany")}
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <div className="font-semibold text-gray-900">
-                        Brand / Company
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Direct brand or corporation
-                      </div>
-                    </Link>
-                    <Link
                       to={createPageUrl("MarketingAgency")}
                       className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                     >
@@ -608,9 +597,9 @@ export default function Layout({ children, currentPageName }) {
               </Link>
 
               <Link
-                to={createPageUrl("SalesInquiry")}
+                to={createPageUrl("Contact")}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                  location.pathname === createPageUrl("SalesInquiry")
+                  location.pathname === createPageUrl("Contact")
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 }`}
@@ -666,13 +655,6 @@ export default function Layout({ children, currentPageName }) {
                 </Link>
                 <div className="ml-4 mt-1 space-y-1">
                   <Link
-                    to={createPageUrl("BrandCompany")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                  >
-                    Brand / Company
-                  </Link>
-                  <Link
                     to={createPageUrl("MarketingAgency")}
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
@@ -709,10 +691,10 @@ export default function Layout({ children, currentPageName }) {
               </Link>
 
               <Link
-                to={createPageUrl("SalesInquiry")}
+                to={createPageUrl("Contact")}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("SalesInquiry")
+                  location.pathname === createPageUrl("Contact")
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
@@ -747,7 +729,7 @@ export default function Layout({ children, currentPageName }) {
                 <span className="text-xl font-bold text-gray-900">Likelee</span>
               </Link>
               <p className="text-gray-600 text-sm leading-relaxed max-w-md">
-                The Verified Talent Ecosystem for the AI Era.
+                The Verified Talent Ecosystem for AI-powered Media.
               </p>
             </div>
 
@@ -756,25 +738,30 @@ export default function Layout({ children, currentPageName }) {
                 Resources
               </h3>
               <div className="space-y-3">
-                {[
-                  { label: "Blog", href: "#" },
-                  {
-                    label: "AI Artist opportunities",
-                    href: createPageUrl("AITalentBoard"),
-                  },
-                  { label: "Impact", href: createPageUrl("Impact") },
-                  { label: "Support", href: createPageUrl("Support") },
-                  { label: "Contact Us", href: "mailto:help@likelee.ai" },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <Link
-                      to={item.href}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  </div>
-                ))}
+                <Link
+                  to="#"
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Blog
+                </Link>
+                <Link
+                  to={createPageUrl("Impact")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Impact
+                </Link>
+                <Link
+                  to={createPageUrl("Support")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Support
+                </Link>
+                <Link
+                  to={createPageUrl("SalesInquiry")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Contact Us
+                </Link>
               </div>
             </div>
 
@@ -825,9 +812,20 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500">
               © 2025 Likelee. All rights reserved.
+            </p>
+            <p className="text-sm text-gray-500">
+              Follow us on Instagram{" "}
+              <a
+                href="https://instagram.com/@likelee.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              >
+                @likelee.ai
+              </a>
             </p>
           </div>
         </div>
