@@ -30,6 +30,8 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Alert as UIAlert,
@@ -43,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -605,6 +608,9 @@ export default function ReserveProfile() {
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -761,7 +767,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Upload Failed",
-        description: `Failed to upload image: ${e?.message || e}`,
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -800,7 +806,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Verification Error",
-        description: `Failed to start verification: ${e?.message || e}`,
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -840,7 +846,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Error",
-        description: `Failed to fetch verification status: ${e?.message || e}`,
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -956,10 +962,10 @@ export default function ReserveProfile() {
     } catch (e: any) {
       setLivenessRunning(false);
       setShowLiveness(true);
-      setLivenessError(e?.message || String(e));
+      setLivenessError(getFriendlyErrorMessage(e));
       toast({
         title: "Error",
-        description: e?.message || String(e),
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     }
@@ -1678,16 +1684,29 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1697,19 +1716,34 @@ export default function ReserveProfile() {
                     >
                       Confirm Password
                     </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1770,7 +1804,7 @@ export default function ReserveProfile() {
                       await login(formData.email, formData.password);
                       navigate("/CreatorDashboard");
                     } catch (err: any) {
-                      const msg = err?.message || "Failed to sign in";
+                      const msg = getFriendlyErrorMessage(err);
                       toast({
                         title: "Sign-in failed",
                         description: msg,
@@ -1804,16 +1838,29 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <Input
-                      id="login_password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login_password"
+                        type={showLoginPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <Button
                     type="submit"
