@@ -3,6 +3,7 @@ import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 export default function Register() {
   const { register, initialized, authenticated } = useAuth();
@@ -69,7 +70,7 @@ export default function Register() {
                   navigate("/CreatorDashboard");
                 }
               } catch (err: any) {
-                setError(err?.message ?? "Failed to register");
+                setError(getFriendlyErrorMessage(err));
               } finally {
                 setLoading(false);
               }

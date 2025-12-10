@@ -4,6 +4,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 export default function Login() {
   const { login, initialized, authenticated } = useAuth();
@@ -57,7 +58,7 @@ export default function Login() {
                   navigate("/CreatorDashboard");
                 }
               } catch (err: any) {
-                const msg = err?.message ?? "Failed to sign in";
+                const msg = getFriendlyErrorMessage(err);
                 setError(msg);
                 toast({
                   title: "Sign-in failed",

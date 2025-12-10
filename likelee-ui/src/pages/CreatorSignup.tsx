@@ -25,6 +25,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 const contentTypes = [
   "AI-generated films",
@@ -111,8 +112,7 @@ export default function CreatorSignup() {
       console.error("Error creating initial profile:", error);
       toast({
         title: "Error",
-        description:
-          "Failed to create initial profile. Please check your inputs and try again.",
+        description: getFriendlyErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -157,7 +157,7 @@ export default function CreatorSignup() {
       console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: getFriendlyErrorMessage(error),
         variant: "destructive",
       });
     },

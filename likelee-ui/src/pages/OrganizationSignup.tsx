@@ -18,6 +18,7 @@ import { CheckCircle2, ArrowRight, ArrowLeft, Upload, Eye, EyeOff } from "lucide
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
   createOrganizationKycSession,
   getOrganizationKycStatus,
@@ -178,7 +179,7 @@ export default function OrganizationSignup() {
       console.error("Error creating initial profile:", error);
       toast({
         title: "Error",
-        description: "Failed to create profile. Please try again.",
+        description: getFriendlyErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -226,7 +227,7 @@ export default function OrganizationSignup() {
       // Optionally handle error, e.g., show a toast notification
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: getFriendlyErrorMessage(error),
         variant: "destructive",
       });
     },

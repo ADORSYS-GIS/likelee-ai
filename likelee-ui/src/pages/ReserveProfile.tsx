@@ -45,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -766,7 +767,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Upload Failed",
-        description: `Failed to upload image: ${e?.message || e}`,
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -805,7 +806,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Verification Error",
-        description: `Failed to start verification: ${e?.message || e}`,
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -845,7 +846,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Error",
-        description: `Failed to fetch verification status: ${e?.message || e}`,
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -966,10 +967,10 @@ export default function ReserveProfile() {
     } catch (e: any) {
       setLivenessRunning(false);
       setShowLiveness(true);
-      setLivenessError(e?.message || String(e));
+      setLivenessError(getFriendlyErrorMessage(e));
       toast({
         title: "Error",
-        description: e?.message || String(e),
+        description: getFriendlyErrorMessage(e),
         variant: "destructive",
       });
     }
@@ -1811,7 +1812,7 @@ export default function ReserveProfile() {
                       await login(formData.email, formData.password);
                       navigate("/CreatorDashboard");
                     } catch (err: any) {
-                      const msg = err?.message || "Failed to sign in";
+                      const msg = getFriendlyErrorMessage(err);
                       toast({
                         title: "Sign-in failed",
                         description: msg,
