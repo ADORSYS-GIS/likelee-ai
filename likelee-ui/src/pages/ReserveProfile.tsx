@@ -30,31 +30,18 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
-  Mail,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import {
   Alert as UIAlert,
   AlertDescription as UIAlertDescription,
 } from "@/components/ui/alert";
-import {
-  Dialog as UIDialog,
-  DialogContent as UIDialogContent,
-  DialogHeader as UIDialogHeader,
-  DialogTitle as UIDialogTitle,
-  DialogDescription as UIDialogDescription,
-  DialogFooter as UIDialogFooter,
-} from "@/components/ui/dialog";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
-import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -62,12 +49,6 @@ const Input: any = UIInput;
 const Label: any = UILabel;
 const Checkbox: any = UICheckbox;
 const Card: any = UICard;
-const Dialog: any = UIDialog;
-const DialogContent: any = UIDialogContent;
-const DialogHeader: any = UIDialogHeader;
-const DialogTitle: any = UIDialogTitle;
-const DialogDescription: any = UIDialogDescription;
-const DialogFooter: any = UIDialogFooter;
 const Badge: any = UIBadge;
 const Textarea: any = UITextarea;
 const RadioGroup: any = UIRadioGroup;
@@ -285,12 +266,7 @@ function ReferencePhotosStep(props: any) {
       setCameraOpen(true);
       setTimeout(attachStreamToVideo, 50);
     } catch (_e) {
-      toast({
-        title: "Camera Error",
-        description:
-          "Unable to access camera. Please allow camera permissions.",
-        variant: "destructive",
-      });
+      alert("Unable to access camera. Please allow camera permissions.");
     }
   };
 
@@ -324,19 +300,11 @@ function ReferencePhotosStep(props: any) {
 
   const doUpload = async () => {
     if (!consent) {
-      toast({
-        title: "Consent Required",
-        description: "Please give consent before uploading.",
-        variant: "destructive",
-      });
+      alert("Please give consent before uploading.");
       return;
     }
     if (!captures.front || !captures.left || !captures.right) {
-      toast({
-        title: "Missing Photos",
-        description: "Please capture all three views.",
-        variant: "destructive",
-      });
+      alert("Please capture all three views.");
       return;
     }
     try {
@@ -352,11 +320,7 @@ function ReferencePhotosStep(props: any) {
       onComplete && onComplete();
       closeCamera();
     } catch (e: any) {
-      toast({
-        title: "Upload Failed",
-        description: `Failed to upload reference photos: ${e?.message || e}`,
-        variant: "destructive",
-      });
+      alert(`Failed to upload reference photos: ${e?.message || e}`);
     } finally {
       setUploading(false);
     }
@@ -364,11 +328,7 @@ function ReferencePhotosStep(props: any) {
 
   const generateAvatar = async () => {
     if (!userId) {
-      toast({
-        title: "Error",
-        description: "Missing user id.",
-        variant: "destructive",
-      });
+      alert("Missing user id.");
       return;
     }
     // Ensure we have uploaded URLs
@@ -393,11 +353,7 @@ function ReferencePhotosStep(props: any) {
       const data = await res.json();
       if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url);
     } catch (e: any) {
-      toast({
-        title: "Avatar Generation Failed",
-        description: `Failed to generate avatar: ${e?.message || e}`,
-        variant: "destructive",
-      });
+      alert(`Failed to generate avatar: ${e?.message || e}`);
     } finally {
       setGenerating(false);
     }
@@ -614,20 +570,14 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
-  const { login, register, resendEmailConfirmation } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [resending, setResending] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -682,11 +632,7 @@ export default function ReserveProfile() {
     side: "front" | "left" | "right",
   ) => {
     if (!supabase) {
-      toast({
-        title: "Configuration Error",
-        description: "Image upload not configured. Missing Supabase keys.",
-        variant: "destructive",
-      });
+      alert("Image upload not configured. Missing Supabase keys.");
       return;
     }
     try {
@@ -713,11 +659,9 @@ export default function ReserveProfile() {
         if (resScan.ok) {
           const out = await resScan.json();
           if (out?.flagged) {
-            toast({
-              title: "Image Flagged",
-              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-              variant: "destructive",
-            });
+            alert(
+              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+            );
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -749,11 +693,9 @@ export default function ReserveProfile() {
         if (res.ok) {
           const out = await res.json();
           if (out?.flagged) {
-            toast({
-              title: "Image Flagged",
-              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-              variant: "destructive",
-            });
+            alert(
+              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+            );
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -782,11 +724,7 @@ export default function ReserveProfile() {
       } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
-      toast({
-        title: "Upload Failed",
-        description: getFriendlyErrorMessage(e),
-        variant: "destructive",
-      });
+      alert(`Failed to upload image: ${e?.message || e}`);
     } finally {
       setUploadingCameo(false);
     }
@@ -795,11 +733,7 @@ export default function ReserveProfile() {
   const startVerification = async () => {
     const targetId = user?.id || profileId;
     if (!targetId) {
-      toast({
-        title: "Profile Not Ready",
-        description: "Profile not ready yet. Please complete previous steps.",
-        variant: "destructive",
-      });
+      alert("Profile not ready yet. Please complete previous steps.");
       return;
     }
     try {
@@ -821,11 +755,7 @@ export default function ReserveProfile() {
       setLivenessStatus("pending");
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      toast({
-        title: "Verification Error",
-        description: getFriendlyErrorMessage(e),
-        variant: "destructive",
-      });
+      alert(`Failed to start verification: ${e?.message || e}`);
     } finally {
       setKycLoading(false);
     }
@@ -852,20 +782,14 @@ export default function ReserveProfile() {
           !cameoLeftUrl &&
           !cameoRightUrl
         ) {
-          toast({
-            title: "Verification Success",
-            description:
-              "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
-          });
+          alert(
+            "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+          );
         }
       }
       return row;
     } catch (e: any) {
-      toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(e),
-        variant: "destructive",
-      });
+      alert(`Failed to fetch verification status: ${e?.message || e}`);
     } finally {
       setKycLoading(false);
     }
@@ -889,11 +813,9 @@ export default function ReserveProfile() {
         await startVerification();
         return;
       }
-      toast({
-        title: "Verification Incomplete",
-        description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
-        variant: "destructive",
-      });
+      alert(
+        `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
+      );
     } finally {
       setKycLoading(false);
     }
@@ -903,20 +825,11 @@ export default function ReserveProfile() {
     try {
       // Prevent starting new sessions after approval (cost control)
       if (livenessStatus === "approved") {
-        toast({
-          title: "Liveness Approved",
-          description:
-            "Liveness is already approved. No further checks needed.",
-        });
+        alert("Liveness is already approved. No further checks needed.");
         return;
       }
       if (!COGNITO_IDENTITY_POOL_ID) {
-        toast({
-          title: "Configuration Error",
-          description:
-            "Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.",
-          variant: "destructive",
-        });
+        alert("Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.");
         return;
       }
       setLivenessRunning(true);
@@ -926,9 +839,10 @@ export default function ReserveProfile() {
       try {
         const session = await fetchAuthSession();
         const accessKeyId = (session as any)?.credentials?.accessKeyId;
-        if (accessKeyId) {
-          // credentials available
-        }
+        if (accessKeyId)
+          console.log("[liveness] Amplify session creds ready", {
+            accessKeyId,
+          });
       } catch (e) {
         console.warn("[liveness] fetchAuthSession failed (will continue):", e);
       }
@@ -953,7 +867,9 @@ export default function ReserveProfile() {
             secretAccessKey: creds.secretAccessKey,
             sessionToken: creds.sessionToken,
           };
-          // pre-resolved using Amplify
+          console.log("[liveness] pre-resolved Amplify creds", {
+            accessKeyId: resolvedCreds.accessKeyId,
+          });
         }
       } catch (e) {
         console.warn("[liveness] fetchAuthSession failed (pre-resolve):", e);
@@ -962,11 +878,13 @@ export default function ReserveProfile() {
         const { fromCognitoIdentityPool } =
           await import("@aws-sdk/credential-providers");
         const provider = fromCognitoIdentityPool({
-          clientConfig: { region: AWS_REGION },
+          clientConfig: { region: "us-east-1" },
           identityPoolId: COGNITO_IDENTITY_POOL_ID,
         });
         resolvedCreds = await provider();
-        // pre-resolved using identity pool fallback
+        console.log("[liveness] pre-resolved fallback creds", {
+          accessKeyId: resolvedCreds.accessKeyId,
+        });
       }
 
       setLivenessCreds(resolvedCreds);
@@ -979,12 +897,8 @@ export default function ReserveProfile() {
     } catch (e: any) {
       setLivenessRunning(false);
       setShowLiveness(true);
-      setLivenessError(getFriendlyErrorMessage(e));
-      toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(e),
-        variant: "destructive",
-      });
+      setLivenessError(e?.message || String(e));
+      alert(e?.message || String(e));
     }
   };
 
@@ -1013,7 +927,7 @@ export default function ReserveProfile() {
     }
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
-  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "us-east-1";
+  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "eu-central-1";
   const COGNITO_IDENTITY_POOL_ID =
     (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || "";
   const [firstContinueLoading, setFirstContinueLoading] = useState(false);
@@ -1031,6 +945,9 @@ export default function ReserveProfile() {
       const session = await fetchAuthSession();
       const creds: any = (session as any)?.credentials;
       if (creds?.accessKeyId && creds?.secretAccessKey) {
+        console.log("[liveness] using Amplify creds", {
+          accessKeyId: creds.accessKeyId,
+        });
         return {
           accessKeyId: creds.accessKeyId,
           secretAccessKey: creds.secretAccessKey,
@@ -1049,11 +966,13 @@ export default function ReserveProfile() {
     const { fromCognitoIdentityPool } =
       await import("@aws-sdk/credential-providers");
     const provider = fromCognitoIdentityPool({
-      clientConfig: { region: AWS_REGION },
+      clientConfig: { region: "us-east-1" },
       identityPoolId: COGNITO_IDENTITY_POOL_ID,
     });
     const c = await provider();
-    // resolved using identity pool
+    console.log("[liveness] using fallback identity-pool creds", {
+      accessKeyId: c.accessKeyId,
+    });
     return c;
   }, [COGNITO_IDENTITY_POOL_ID]);
 
@@ -1079,26 +998,6 @@ export default function ReserveProfile() {
     }
     return "";
   };
-
-  // Handle email verification redirect
-  useEffect(() => {
-    const verified = urlParams.get("verified");
-    if (verified === "true") {
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          setStep(2);
-          // Clean URL
-          window.history.replaceState({}, "", window.location.pathname);
-        }
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (initialMode) {
-      setAuthMode(initialMode);
-    }
-  }, [initialMode]);
 
   useEffect(() => {
     if (step !== 4) return;
@@ -1177,11 +1076,7 @@ export default function ReserveProfile() {
         (error as any)?.response?.data?.message ||
         (error as any)?.message ||
         "Unknown error occurred";
-      toast({
-        title: "Profile Creation Failed",
-        description: `Failed to create profile: ${errorMessage}. Please try again.`,
-        variant: "destructive",
-      });
+      alert(`Failed to create profile: ${errorMessage}. Please try again.`);
     },
   });
 
@@ -1251,45 +1146,25 @@ export default function ReserveProfile() {
         (error as any)?.response?.data?.message ||
         (error as any)?.message ||
         "Unknown error occurred";
-      toast({
-        title: "Profile Update Failed",
-        description: `Failed to update profile: ${errorMessage}. Please try again.`,
-        variant: "destructive",
-      });
+      alert(`Failed to update profile: ${errorMessage}. Please try again.`);
     },
   });
 
   const handleFirstContinue = () => {
     if (!formData.email) {
-      toast({
-        title: "Missing Field",
-        description: "Please enter your email address.",
-        variant: "destructive",
-      });
+      alert("Please enter your email address.");
       return;
     }
     if (!formData.password) {
-      toast({
-        title: "Missing Field",
-        description: "Please enter a password.",
-        variant: "destructive",
-      });
+      alert("Please enter a password.");
       return;
     }
     if (!formData.confirmPassword) {
-      toast({
-        title: "Missing Field",
-        description: "Please confirm your password.",
-        variant: "destructive",
-      });
+      alert("Please confirm your password.");
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      });
+      alert("Passwords do not match.");
       return;
     }
     if (
@@ -1297,19 +1172,11 @@ export default function ReserveProfile() {
       !formData.stage_name &&
       !formData.full_name
     ) {
-      toast({
-        title: "Missing Field",
-        description: "Please enter your full name or stage name.",
-        variant: "destructive",
-      });
+      alert("Please enter your full name or stage name.");
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
-      toast({
-        title: "Missing Field",
-        description: "Please enter your full name.",
-        variant: "destructive",
-      });
+      alert("Please enter your full name.");
       return;
     }
 
@@ -1319,30 +1186,26 @@ export default function ReserveProfile() {
     (async () => {
       try {
         const res = await fetch(
-          api(
-            `/api/email/available?email=${encodeURIComponent(formData.email)}`,
-          ),
+          api(`/api/email/available?email=${encodeURIComponent(formData.email)}`),
         );
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         if (!data.available) {
-          // Email already registered - send magic link
-          const { error } = await supabase.auth.signInWithOtp({
-            email: formData.email.trim().toLowerCase(),
-            options: { emailRedirectTo: `${window.location.origin}/Login` },
-          });
-          if (error) {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive",
+          const proceed = window.confirm(
+            "This email is already registered. Would you like us to send a magic link to sign in?",
+          );
+          if (proceed) {
+            const { error } = await supabase.auth.signInWithOtp({
+              email: formData.email.trim().toLowerCase(),
+              options: { emailRedirectTo: `${window.location.origin}/Login` },
             });
+            if (error) {
+              alert(error.message);
+            } else {
+              alert("Magic link sent. Check your email to complete sign-in.");
+            }
           } else {
-            toast({
-              title: "Email Already Registered",
-              description:
-                "This email is already registered. We've sent you a magic link to sign in. Check your email!",
-            });
+            alert("This email is already registered. Please log in instead.");
           }
           return;
         }
@@ -1357,17 +1220,15 @@ export default function ReserveProfile() {
           displayName,
         );
         if (!session) {
-          setShowVerificationModal(true);
+          alert(
+            "Registration successful! Please check your email to verify your account before continuing.",
+          );
           return;
         }
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
-        toast({
-          title: "Error",
-          description: `Failed to sign up: ${e?.message || e}`,
-          variant: "destructive",
-        });
+        alert(`Failed to sign up: ${e?.message || e}`);
       } finally {
         setFirstContinueLoading(false);
       }
@@ -1380,27 +1241,15 @@ export default function ReserveProfile() {
       // Common validations for step 2 per creator type
       if (creatorType === "influencer") {
         if (!formData.city?.trim()) {
-          toast({
-            title: "Validation Error",
-            description: "City is required.",
-            variant: "destructive",
-          });
+          alert("City is required.");
           return;
         }
         if (!formData.state?.trim()) {
-          toast({
-            title: "Validation Error",
-            description: "State is required.",
-            variant: "destructive",
-          });
+          alert("State is required.");
           return;
         }
         if (!formData.birthdate) {
-          toast({
-            title: "Validation Error",
-            description: "Birthdate is required.",
-            variant: "destructive",
-          });
+          alert("Birthdate is required.");
           return;
         }
         // 18+ check
@@ -1415,31 +1264,18 @@ export default function ReserveProfile() {
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
-          toast({
-            title: "Validation Error",
-            description: "You must be 18 or older.",
-            variant: "destructive",
-          });
+          alert("You must be 18 or older.");
           return;
         }
         if (!formData.gender?.trim()) {
-          toast({
-            title: "Validation Error",
-            description: "Please select how you identify.",
-            variant: "destructive",
-          });
+          alert("Please select how you identify.");
           return;
         }
       }
       // Pricing required in onboarding step (applies to all creator types)
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
-        toast({
-          title: "Validation Error",
-          description:
-            "Please set your base monthly license price (minimum $150).",
-          variant: "destructive",
-        });
+        alert("Please set your base monthly license price (minimum $150).");
         return;
       }
     }
@@ -1454,43 +1290,23 @@ export default function ReserveProfile() {
     // Step 3 validations for influencer
     if (creatorType === "influencer") {
       if (!formData.content_types || formData.content_types.length === 0) {
-        toast({
-          title: "Validation Error",
-          description: "Select at least one campaign type.",
-          variant: "destructive",
-        });
+        alert("Select at least one campaign type.");
         return;
       }
       if (!formData.industries || formData.industries.length === 0) {
-        toast({
-          title: "Validation Error",
-          description: "Select at least one industry.",
-          variant: "destructive",
-        });
+        alert("Select at least one industry.");
         return;
       }
       if (!formData.primary_platform?.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Primary platform is required.",
-          variant: "destructive",
-        });
+        alert("Primary platform is required.");
         return;
       }
       if (!formData.platform_handle?.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Handle is required.",
-          variant: "destructive",
-        });
+        alert("Handle is required.");
         return;
       }
       if (!formData.visibility) {
-        toast({
-          title: "Validation Error",
-          description: "Please select a profile visibility.",
-          variant: "destructive",
-        });
+        alert("Please select a profile visibility.");
         return;
       }
     }
@@ -1500,11 +1316,7 @@ export default function ReserveProfile() {
 
   const finalizeProfile = async () => {
     if (!user) {
-      toast({
-        title: "Error",
-        description: "Please log in.",
-        variant: "destructive",
-      });
+      alert("Please log in.");
       return;
     }
     try {
@@ -1581,11 +1393,7 @@ export default function ReserveProfile() {
       setProfileId(user.id);
       setSubmitted(true);
     } catch (e: any) {
-      toast({
-        title: "Error",
-        description: `Failed to save your profile: ${e?.message || e}`,
-        variant: "destructive",
-      });
+      alert(`Failed to save your profile: ${e?.message || e}`);
     }
   };
 
@@ -1729,29 +1537,16 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
                   </div>
 
                   <div>
@@ -1761,34 +1556,19 @@ export default function ReserveProfile() {
                     >
                       Confirm Password
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
                   </div>
 
                   <div>
@@ -1849,7 +1629,7 @@ export default function ReserveProfile() {
                       await login(formData.email, formData.password);
                       navigate("/CreatorDashboard");
                     } catch (err: any) {
-                      const msg = getFriendlyErrorMessage(err);
+                      const msg = err?.message || "Failed to sign in";
                       toast({
                         title: "Sign-in failed",
                         description: msg,
@@ -1883,34 +1663,20 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="login_password"
-                        type={showLoginPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder="••••••••"
-                      />
-                      <div className="text-right mt-1">
-                        <Link to="/forgot-password" className="text-sm text-cyan-600 hover:underline">
-                          Forgot Password?
-                        </Link>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showLoginPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-
+                    <Input
+                      id="login_password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
+                    <div className="text-right mt-1">
+                      <Link to="/forgot-password" className="text-sm text-cyan-600 hover:underline">
+                        Forgot Password?
+                      </Link>
                     </div>
                   </div>
                   <Button
@@ -1940,7 +1706,7 @@ export default function ReserveProfile() {
                       {livenessSessionId && livenessCreds && (
                         <FaceLivenessDetectorCoreAny
                           sessionId={livenessSessionId}
-                          region={AWS_REGION}
+                          region={"us-east-1"}
                           // Provide multiple shapes to satisfy various lib expectations
                           credentialProvider={async () => livenessCreds}
                           credentialsProvider={async () => livenessCreds}
@@ -1948,7 +1714,6 @@ export default function ReserveProfile() {
                           config={{
                             awsCredentials: livenessCreds,
                             credentialProvider: async () => livenessCreds,
-                            region: AWS_REGION,
                           }}
                           onAnalysisComplete={async () => {
                             try {
@@ -1976,12 +1741,9 @@ export default function ReserveProfile() {
                                 // Close modal and clear session/creds on either outcome to reset UI.
                                 // For rejection, user can re-open and retry cleanly.
                                 if (!data.passed) {
-                                  toast({
-                                    title: "Liveness Check Failed",
-                                    description:
-                                      "Please try again with good lighting and follow prompts.",
-                                    variant: "destructive",
-                                  });
+                                  alert(
+                                    "Liveness check failed. Please try again with good lighting and follow prompts.",
+                                  );
                                 }
                                 setTimeout(() => {
                                   setShowLiveness(false);
@@ -1989,11 +1751,9 @@ export default function ReserveProfile() {
                                   setLivenessCreds(null);
                                 }, 300);
                               } else {
-                                toast({
-                                  title: "Error",
-                                  description: `Failed to fetch liveness result: ${await r.text()}`,
-                                  variant: "destructive",
-                                });
+                                alert(
+                                  `Failed to fetch liveness result: ${await r.text()}`,
+                                );
                               }
                             } finally {
                               setLivenessRunning(false);
@@ -2003,11 +1763,7 @@ export default function ReserveProfile() {
                           onError={(e: any) => {
                             console.error("Liveness error", e);
                             setLivenessError(e?.message || String(e));
-                            toast({
-                              title: "Liveness Error",
-                              description: `Liveness error: ${e?.message || e}`,
-                              variant: "destructive",
-                            });
+                            alert(`Liveness error: ${e?.message || e}`);
                             setLivenessRunning(false);
                             // Keep modal open to present the error
                             // Do not clear session id; keep it for retry/diagnostics
@@ -2327,11 +2083,9 @@ export default function ReserveProfile() {
                               } else if (formData.work_types.length < 3) {
                                 toggleArrayItem("work_types", type);
                               } else {
-                                toast({
-                                  title: "Info",
-                                  description:
-                                    "Please select up to 3 options for now. You can add more later.",
-                                });
+                                alert(
+                                  "Please select up to 3 options for now. You can add more later.",
+                                );
                               }
                             }}
                             className="border-2 border-gray-400"
@@ -2975,12 +2729,9 @@ export default function ReserveProfile() {
                                   data.passed ? "approved" : "rejected",
                                 );
                                 if (!data.passed) {
-                                  toast({
-                                    title: "Liveness Check Failed",
-                                    description:
-                                      "Please try again with good lighting and follow prompts.",
-                                    variant: "destructive",
-                                  });
+                                  alert(
+                                    "Liveness check failed. Please try again with good lighting and follow prompts.",
+                                  );
                                 }
                                 // Always close and clear after a result to avoid lingering "Verifying" UI
                                 setTimeout(() => {
@@ -3113,76 +2864,7 @@ export default function ReserveProfile() {
             </div>
           )}
         </Card>
-      </div >
-      {/* Email Verification Modal */}
-
-      < Dialog
-        open={showVerificationModal}
-        onOpenChange={setShowVerificationModal}
-      >
-        <DialogContent className="sm:max-w-md border-t-4 border-t-[#32C8D1]">
-          <DialogHeader className="flex flex-col items-center text-center space-y-4 pt-4">
-            <div className="h-16 w-16 bg-[#32C8D1]/10 rounded-full flex items-center justify-center">
-              <Mail className="h-8 w-8 text-[#32C8D1]" />
-            </div>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Verify your email
-            </DialogTitle>
-            <DialogDescription className="text-gray-600 text-base max-w-[300px]">
-              We've sent a verification link to{" "}
-              <span className="font-semibold text-gray-900">
-                {formData.email}
-              </span>
-              . Please check your inbox to activate your account.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-col gap-2 mt-4 pb-2">
-            <Button
-              className="w-full bg-[#32C8D1] hover:bg-[#2ab0b8] text-white font-semibold h-12 rounded-lg"
-              onClick={async () => {
-                const { data } = await supabase.auth.refreshSession();
-                if (data.session) {
-                  setShowVerificationModal(false);
-                  setStep(2);
-                } else {
-                  alert("Email not verified yet. Please check your inbox.");
-                }
-              }}
-            >
-              I've verified my email
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full text-[#32C8D1] hover:text-[#2ab0b8] hover:bg-[#32C8D1]/10"
-              disabled={resending}
-              onClick={async () => {
-                if (resendEmailConfirmation) {
-                  try {
-                    setResending(true);
-                    await resendEmailConfirmation(formData.email);
-                    alert(
-                      "Verification email resent! Please check your inbox.",
-                    );
-                  } catch (e: any) {
-                    alert(`Failed to resend email: ${e.message}`);
-                  } finally {
-                    setResending(false);
-                  }
-                }
-              }}
-            >
-              {resending ? "Resending..." : "Resend verification email"}
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full text-gray-500 hover:text-gray-700"
-              onClick={() => setShowVerificationModal(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog >
-    </div >
+      </div>
+    </div>
   );
 }
