@@ -164,12 +164,7 @@ jobs:
               exit 1
             fi
 
-            if [ -d "./letsencrypt/live/${DOMAIN}" ]; then
-              echo "Certificates present:"
-              ls -la ./letsencrypt/live/${DOMAIN} || true
-            else
-              echo "No live certificate directory at ./letsencrypt/live/${DOMAIN}"
-            fi
+            # No local certificates expected in ALB/ACM mode
 
             # No certbot services in ALB/ACM mode
 
