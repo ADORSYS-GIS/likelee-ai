@@ -15,6 +15,7 @@ if (VITE_POOL) {
       Cognito: {
         identityPoolId: VITE_POOL,
         region: VITE_REGION,
+        allowGuestAccess: true,
       },
     },
   });
