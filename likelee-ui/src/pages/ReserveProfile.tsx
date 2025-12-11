@@ -453,10 +453,11 @@ function ReferencePhotosStep(props: any) {
             </div>
             <div className="flex gap-3">
               <Button
-                onClick={capture}
-                className="h-10 bg-black text-white border-2 border-black rounded-none"
+                type="submit"
+                disabled
+                className="w-full h-12 bg-black text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
               >
-                Capture
+                Log in
               </Button>
               <Button
                 onClick={() =>
@@ -1797,38 +1798,34 @@ export default function ReserveProfile() {
                       placeholder="Your full name"
                     />
                   </div>
-                  <Button
-                    onClick={handleFirstContinue}
-                    disabled={
-                      createInitialProfileMutation.isPending ||
-                      firstContinueLoading
+                  <div
+                    onClick={() =>
+                      toast({
+                        title: "Temporarily Disabled",
+                        description:
+                          "Sign-up is under maintenance. Please check back later.",
+                      })
                     }
-                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                   >
-                    {firstContinueLoading
-                      ? "Checking..."
-                      : createInitialProfileMutation.isPending
-                        ? "Saving..."
-                        : "Continue"}
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
+                    <Button
+                      disabled
+                      className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
+                    >
+                      Continue
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <form
                   className="space-y-4"
-                  onSubmit={async (e) => {
+                  onSubmit={(e) => {
                     e.preventDefault();
-                    try {
-                      await login(formData.email, formData.password);
-                      navigate("/CreatorDashboard");
-                    } catch (err: any) {
-                      const msg = err?.message || "Failed to sign in";
-                      toast({
-                        title: "Sign-in failed",
-                        description: msg,
-                        variant: "destructive",
-                      });
-                    }
+                    toast({
+                      title: "Temporarily Disabled",
+                      description:
+                        "Login is under maintenance. Please check back later.",
+                    });
                   }}
                 >
                   <div>
@@ -1888,12 +1885,23 @@ export default function ReserveProfile() {
                       </Link>
                     </div>
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full h-12 bg-black text-white border-2 border-black rounded-none"
+                  <div
+                    onClick={() =>
+                      toast({
+                        title: "Temporarily Disabled",
+                        description:
+                          "Login is under maintenance. Please check back later.",
+                      })
+                    }
                   >
-                    Log in
-                  </Button>
+                    <Button
+                      type="submit"
+                      disabled
+                      className="w-full h-12 bg-black text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
+                    >
+                      Log in
+                    </Button>
+                  </div>
                 </form>
               )}
 
