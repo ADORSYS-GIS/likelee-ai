@@ -3732,13 +3732,19 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
                 {approval.perpetual && (
-                  <Badge
-                    variant="destructive"
-                    className="bg-red-500 text-white"
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText("help@likelee.ai");
+                      toast({
+                        title: "Copied to Clipboard",
+                        description: "Support email address has been copied to your clipboard.",
+                      });
+                    }}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    Perpetual Request
-                  </Badge>
+                    <HelpCircle className="mr-3 h-5 w-5 text-gray-500" />
+                    Help / Support
+                  </button>
                 )}
               </div>
 
