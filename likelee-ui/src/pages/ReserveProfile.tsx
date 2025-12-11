@@ -604,6 +604,14 @@ export default function ReserveProfile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stepParam = params.get("step");
+    if (stepParam) {
+      setStep(parseInt(stepParam, 10));
+    }
+  }, []);
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);

@@ -44,7 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const fetchProfile = async (userId: string, userEmail?: string) => {
+  const fetchProfile = async (
+    userId: string,
+    userEmail?: string,
+    userFullName?: string,
+  ) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -64,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
-          .insert([{ id: userId, email: userEmail }])
+          .insert([{ id: userId, email: userEmail, full_name: userFullName }])
           .select()
           .single();
 
@@ -89,7 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         if (currentUser) {
-          fetchProfile(currentUser.id, currentUser.email);
+          fetchProfile(
+            currentUser.id,
+            currentUser.email,
+            currentUser.user_metadata?.full_name,
+          );
         } else {
           setProfile(null);
         }
@@ -101,7 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        fetchProfile(currentUser.id, currentUser.email);
+        fetchProfile(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.full_name,
+        );
       }
       setInitialized(true);
     });
@@ -140,10 +152,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password,
           options: {
             data: { full_name: displayName || null },
-            emailRedirectTo: `${window.location.origin}/ReserveProfile`,
+            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=2`,
           },
         });
         if (error) throw error;
+
+        if (data.user) {
+          await fetchProfile(data.user.id, data.user.email, displayName);
+        }
+
         return { user: data.user, session: data.session };
       },
       resendEmailConfirmation: async (email: string) => {
@@ -152,7 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: emailNormalized,
-          options: { emailRedirectTo: `${window.location.origin}/ReserveProfile` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=1`,
+          },
         });
         if (error) throw error;
       },
@@ -162,7 +181,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       refreshProfile: async () => {
         if (user) {
-          await fetchProfile(user.id, user.email);
+          await fetchProfile(
+            user.id,
+            user.email,
+            user.user_metadata?.full_name,
+          );
         }
       },
     }),
