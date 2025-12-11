@@ -30,6 +30,8 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Alert as UIAlert,
@@ -597,6 +599,9 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const { login, register } = useAuth();
   const navigate = useNavigate();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -1699,16 +1704,25 @@ return (
                   >
                     Password
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      required
+                      className="border-gray-300 rounded-none pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -1718,19 +1732,34 @@ return (
                   >
                     Confirm Password
                   </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      required
+                      className="border-gray-300 rounded-none pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={20} />
+                      ) : (
+                        <Eye size={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -1738,32 +1767,18 @@ return (
                     htmlFor="full_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {creatorType === "model_actor"
-                      ? "Full Name / Stage Name"
-                      : "Full Name"}
+                    Full Name
                   </Label>
                   <Input
                     id="full_name"
                     type="text"
-                    value={
-                      creatorType === "model_actor"
-                        ? formData.stage_name || formData.full_name
-                        : formData.full_name
+                    value={formData.full_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, full_name: e.target.value })
                     }
-                    onChange={(e: any) =>
-                      setFormData({
-                        ...formData,
-                        [creatorType === "model_actor"
-                          ? "stage_name"
-                          : "full_name"]: e.target.value,
-                      })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder={
-                      creatorType === "model_actor"
-                        ? "Your name or stage name"
-                        : "Your full name"
-                    }
+                    required
+                    className="border-gray-300 rounded-none"
+                    placeholder="Your full name"
                   />
                 </div>
                 <Button
@@ -1825,17 +1840,26 @@ return (
                   >
                     Password
                   </Label>
-                  <Input
-                    id="login_password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
-                  <div className="text-right mt-1">
+                  <div className="relative">
+                    <Input
+                      id="login_password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      required
+                      className="border-gray-300 rounded-none pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  <div className="text-right">
                     <Link
                       to="/forgot-password"
                       className="text-sm text-cyan-600 hover:underline"
