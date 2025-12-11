@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password,
           options: {
             data: { full_name: displayName || null },
-            emailRedirectTo: `${window.location.origin}/Login`,
+            emailRedirectTo: `${window.location.origin}/ReserveProfile`,
           },
         });
         if (error) throw error;
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: emailNormalized,
-          options: { emailRedirectTo: `${window.location.origin}/Login` },
+          options: { emailRedirectTo: `${window.location.origin}/ReserveProfile` },
         });
         if (error) throw error;
       },
