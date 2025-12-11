@@ -1529,16 +1529,7 @@ export default function ReserveProfile() {
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 py-12 px-6">
       <div className="max-w-3xl mx-auto">
         {/* Warning Message */}
-        {showWarning && step === 1 && (
-          <Alert className="mb-8 bg-cyan-50 border-2 border-[#32C8D1] rounded-none">
-            <AlertCircle className="h-5 w-5 text-[#32C8D1]" />
-            <AlertDescription className="text-cyan-900 font-medium">
-              We're launching in limited batches to make sure every Creator gets
-              visibility and campaign opportunities. Reserve your profile to
-              join the first creator cohort.
-            </AlertDescription>
-          </Alert>
-        )}
+
 
         {/* Progress Bar */}
         <div className="mb-8">
