@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password,
           options: {
             data: { full_name: displayName || null },
-            emailRedirectTo: `${window.location.origin}/Login`,
+            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=2`,
           },
         });
         if (error) throw error;
