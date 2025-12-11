@@ -169,7 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: emailNormalized,
-          options: { emailRedirectTo: `${window.location.origin}/ReserveProfile?step=1` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=1`,
+          },
         });
         if (error) throw error;
       },
