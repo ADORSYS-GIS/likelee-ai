@@ -458,7 +458,10 @@ function PagesContent() {
           }
         />
 
-        <Route path="/Login" element={<Navigate to="/ReserveProfile" replace />} />
+        <Route
+          path="/Login"
+          element={<Navigate to="/ReserveProfile" replace />}
+        />
         <Route path="/Register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />

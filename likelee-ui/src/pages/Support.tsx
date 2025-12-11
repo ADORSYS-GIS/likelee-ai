@@ -48,7 +48,8 @@ export default function Support() {
                 navigator.clipboard.writeText("help@likelee.ai");
                 toast({
                   title: "Copied to Clipboard",
-                  description: "Support email address has been copied to your clipboard.",
+                  description:
+                    "Support email address has been copied to your clipboard.",
                 });
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
@@ -156,7 +157,8 @@ export default function Support() {
                 navigator.clipboard.writeText("help@likelee.ai");
                 toast({
                   title: "Copied to Clipboard",
-                  description: "Support email address has been copied to your clipboard.",
+                  description:
+                    "Support email address has been copied to your clipboard.",
                 });
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"

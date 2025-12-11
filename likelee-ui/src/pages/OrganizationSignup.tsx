@@ -312,7 +312,9 @@ export default function OrganizationSignup() {
   };
 
   const toggleSelectAll = (field: string, allOptions: string[]) => {
-    const currentSelection = formData[field as keyof typeof formData] as string[];
+    const currentSelection = formData[
+      field as keyof typeof formData
+    ] as string[];
     const isAllSelected = allOptions.every((option) =>
       currentSelection.includes(option),
     );
@@ -1104,453 +1106,450 @@ export default function OrganizationSignup() {
                 </Button>
               </div>
             </div>
-          )
-          }
+          )}
 
           {/* Step 2: Marketing Agency */}
-          {
-            step === 2 && orgType === "marketing_agency" && (
-              <div className="space-y-6">
+          {step === 2 && orgType === "marketing_agency" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Agency Details
+                </h3>
+                <p className="text-gray-600">Tell us about your agency</p>
+              </div>
+
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    Agency Details
-                  </h3>
-                  <p className="text-gray-600">Tell us about your agency</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label
-                      htmlFor="client_count"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      Number of Client Brands Currently Managed
-                    </Label>
-                    <Input
-                      id="client_count"
-                      type="number"
-                      value={formData.client_count}
-                      onChange={(e) =>
-                        setFormData({ ...formData, client_count: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="e.g., 5"
-                    />
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="campaign_budget"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      Typical Campaign Budget Per Brand
-                    </Label>
-                    <Select
-                      value={formData.campaign_budget}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, campaign_budget: value })
-                      }
-                    >
-                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                        <SelectValue placeholder="Select budget range" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="under_5k">Under $5,000</SelectItem>
-                        <SelectItem value="5k_25k">$5,000 - $25,000</SelectItem>
-                        <SelectItem value="25k_100k">
-                          $25,000 - $100,000
-                        </SelectItem>
-                        <SelectItem value="100k_500k">
-                          $100,000 - $500,000
-                        </SelectItem>
-                        <SelectItem value="over_500k">Over $500,000</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      Primary Services Offered
-                    </Label>
-                    <div className="space-y-3">
-                      <div className="space-y-3">
-                        <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
-                          <Checkbox
-                            id="select_all_services"
-                            checked={services.every((service) =>
-                              formData.services_offered.includes(service),
-                            )}
-                            onCheckedChange={() =>
-                              toggleSelectAll("services_offered", services)
-                            }
-                            className="border-2 border-gray-900"
-                          />
-                          <label
-                            htmlFor="select_all_services"
-                            className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
-                          >
-                            Select All
-                          </label>
-                        </div>
-                        {services.map((service) => (
-                          <div
-                            key={service}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={service}
-                              checked={formData.services_offered.includes(service)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("services_offered", service)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={service}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {service}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                      Would you like Likelee to match you with creators or just
-                      provide licensing tools?
-                    </Label>
-                    <RadioGroup
-                      value={formData.provide_creators}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, provide_creators: value })
-                      }
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                          <RadioGroupItem
-                            value="match"
-                            id="match"
-                            className="border-2 border-gray-400"
-                          />
-                          <Label
-                            htmlFor="match"
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            Match me with creators
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                          <RadioGroupItem
-                            value="tools"
-                            id="tools"
-                            className="border-2 border-gray-400"
-                          />
-                          <Label
-                            htmlFor="tools"
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            Just provide licensing tools
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                      Do you handle contracts and royalties for clients or want
-                      Likelee to automate that?
-                    </Label>
-                    <RadioGroup
-                      value={formData.handle_contracts}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, handle_contracts: value })
-                      }
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                          <RadioGroupItem
-                            value="handle"
-                            id="handle"
-                            className="border-2 border-gray-400"
-                          />
-                          <Label
-                            htmlFor="handle"
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            We handle it
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
-                          <RadioGroupItem
-                            value="automate"
-                            id="automate"
-                            className="border-2 border-gray-400"
-                          />
-                          <Label
-                            htmlFor="automate"
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
-                          >
-                            Automate with Likelee
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <Button
-                    onClick={handleBack}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-black rounded-none"
+                  <Label
+                    htmlFor="client_count"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={updateProfileMutation.isPending} // Disable while submitting
-                    className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
-                  >
-                    {updateProfileMutation.isPending
-                      ? "Submitting..."
-                      : "Complete Sign Up"}{" "}
-                    {/* Dynamic text */}
-                    <CheckCircle2 className="w-5 h-5 ml-2" />
-                  </Button>
+                    Number of Client Brands Currently Managed
+                  </Label>
+                  <Input
+                    id="client_count"
+                    type="number"
+                    value={formData.client_count}
+                    onChange={(e) =>
+                      setFormData({ ...formData, client_count: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="e.g., 5"
+                  />
                 </div>
-              </div >
-            )
-          }
 
-          {/* Step 2: Talent Agency */}
-          {
-            step === 2 && orgType === "talent_agency" && (
-              <div className="space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    Agency Details
-                  </h3>
-                  <p className="text-gray-600">
-                    Tell us about your talent roster
-                  </p>
+                  <Label
+                    htmlFor="campaign_budget"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Typical Campaign Budget Per Brand
+                  </Label>
+                  <Select
+                    value={formData.campaign_budget}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, campaign_budget: value })
+                    }
+                  >
+                    <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                      <SelectValue placeholder="Select budget range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="under_5k">Under $5,000</SelectItem>
+                      <SelectItem value="5k_25k">$5,000 - $25,000</SelectItem>
+                      <SelectItem value="25k_100k">
+                        $25,000 - $100,000
+                      </SelectItem>
+                      <SelectItem value="100k_500k">
+                        $100,000 - $500,000
+                      </SelectItem>
+                      <SelectItem value="over_500k">Over $500,000</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label
-                      htmlFor="talent_count"
-                      className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                      Number of Models or Talent Represented
-                    </Label>
-                    <Input
-                      id="talent_count"
-                      type="number"
-                      value={formData.talent_count}
-                      onChange={(e) =>
-                        setFormData({ ...formData, talent_count: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="e.g., 25"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                      Do you currently license your models' likeness?
-                    </Label>
-                    <RadioGroup
-                      value={formData.licenses_likeness}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, licenses_likeness: value })
-                      }
-                    >
-                      <div className="space-y-2">
-                        {["Yes", "No"].map((option) => (
-                          <div
-                            key={option}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <RadioGroupItem
-                              value={option.toLowerCase()}
-                              id={`license_${option}`}
-                              className="border-2 border-gray-400"
-                            />
-                            <Label
-                              htmlFor={`license_${option}`}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {option}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      Are your talents open to AI recreation or only likeness
-                      protection?
-                    </Label>
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    Primary Services Offered
+                  </Label>
+                  <div className="space-y-3">
                     <div className="space-y-3">
-                      <div className="space-y-3">
-                        <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
-                          <Checkbox
-                            id="select_all_open_to_ai"
-                            checked={openToAiOptions.every((option) =>
-                              formData.open_to_ai.includes(option),
-                            )}
-                            onCheckedChange={() =>
-                              toggleSelectAll("open_to_ai", openToAiOptions)
-                            }
-                            className="border-2 border-gray-900"
-                          />
-                          <label
-                            htmlFor="select_all_open_to_ai"
-                            className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
-                          >
-                            Select All
-                          </label>
-                        </div>
-                        {openToAiOptions.map((option) => (
-                          <div
-                            key={option}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={option}
-                              checked={formData.open_to_ai.includes(option)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("open_to_ai", option)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={option}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {option}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      What types of campaigns or collaborations do you pursue
-                      most?
-                    </Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
-                          id="select_all_campaign_types"
-                          checked={campaignTypes.every((type) =>
-                            formData.campaign_types.includes(type),
+                          id="select_all_services"
+                          checked={services.every((service) =>
+                            formData.services_offered.includes(service),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("campaign_types", campaignTypes)
+                            toggleSelectAll("services_offered", services)
                           }
                           className="border-2 border-gray-900"
                         />
                         <label
-                          htmlFor="select_all_campaign_types"
+                          htmlFor="select_all_services"
                           className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
                           Select All
                         </label>
                       </div>
-                      {campaignTypes.map((type) => (
+                      {services.map((service) => (
                         <div
-                          key={type}
+                          key={service}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={type}
-                            checked={formData.campaign_types.includes(type)}
+                            id={service}
+                            checked={formData.services_offered.includes(
+                              service,
+                            )}
                             onCheckedChange={() =>
-                              toggleArrayItem("campaign_types", type)
+                              toggleArrayItem("services_offered", service)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={type}
+                            htmlFor={service}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {type}
+                            {service}
                           </label>
                         </div>
                       ))}
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                      Do you want to bulk-onboard your roster to Likelee?
-                    </Label>
-                    <RadioGroup
-                      value={formData.bulk_onboard}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, bulk_onboard: value })
-                      }
-                    >
-                      <div className="space-y-2">
-                        {["Yes", "No", "Maybe later"].map((option) => (
-                          <div
-                            key={option}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <RadioGroupItem
-                              value={option.toLowerCase()}
-                              id={`bulk_${option}`}
-                              className="border-2 border-gray-400"
-                            />
-                            <Label
-                              htmlFor={`bulk_${option}`}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {option}
-                            </Label>
-                          </div>
-                        ))}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Would you like Likelee to match you with creators or just
+                    provide licensing tools?
+                  </Label>
+                  <RadioGroup
+                    value={formData.provide_creators}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, provide_creators: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                        <RadioGroupItem
+                          value="match"
+                          id="match"
+                          className="border-2 border-gray-400"
+                        />
+                        <Label
+                          htmlFor="match"
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          Match me with creators
+                        </Label>
                       </div>
-                    </RadioGroup>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                        <RadioGroupItem
+                          value="tools"
+                          id="tools"
+                          className="border-2 border-gray-400"
+                        />
+                        <Label
+                          htmlFor="tools"
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          Just provide licensing tools
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Do you handle contracts and royalties for clients or want
+                    Likelee to automate that?
+                  </Label>
+                  <RadioGroup
+                    value={formData.handle_contracts}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, handle_contracts: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                        <RadioGroupItem
+                          value="handle"
+                          id="handle"
+                          className="border-2 border-gray-400"
+                        />
+                        <Label
+                          htmlFor="handle"
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          We handle it
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
+                        <RadioGroupItem
+                          value="automate"
+                          id="automate"
+                          className="border-2 border-gray-400"
+                        />
+                        <Label
+                          htmlFor="automate"
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          Automate with Likelee
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                >
+                  {updateProfileMutation.isPending
+                    ? "Submitting..."
+                    : "Complete Sign Up"}{" "}
+                  {/* Dynamic text */}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Talent Agency */}
+          {step === 2 && orgType === "talent_agency" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Agency Details
+                </h3>
+                <p className="text-gray-600">
+                  Tell us about your talent roster
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label
+                    htmlFor="talent_count"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Number of Models or Talent Represented
+                  </Label>
+                  <Input
+                    id="talent_count"
+                    type="number"
+                    value={formData.talent_count}
+                    onChange={(e) =>
+                      setFormData({ ...formData, talent_count: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="e.g., 25"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Do you currently license your models' likeness?
+                  </Label>
+                  <RadioGroup
+                    value={formData.licenses_likeness}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, licenses_likeness: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["Yes", "No"].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option.toLowerCase()}
+                            id={`license_${option}`}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={`license_${option}`}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    Are your talents open to AI recreation or only likeness
+                    protection?
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                        <Checkbox
+                          id="select_all_open_to_ai"
+                          checked={openToAiOptions.every((option) =>
+                            formData.open_to_ai.includes(option),
+                          )}
+                          onCheckedChange={() =>
+                            toggleSelectAll("open_to_ai", openToAiOptions)
+                          }
+                          className="border-2 border-gray-900"
+                        />
+                        <label
+                          htmlFor="select_all_open_to_ai"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
+                      </div>
+                      {openToAiOptions.map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={option}
+                            checked={formData.open_to_ai.includes(option)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("open_to_ai", option)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={option}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <Button
-                    onClick={handleBack}
-                    variant="outline"
-                    className="flex-1 h-12 border-2 border-black rounded-none"
-                  >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={updateProfileMutation.isPending} // Disable while submitting
-                    className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
-                  >
-                    {updateProfileMutation.isPending
-                      ? "Submitting..."
-                      : "Complete Sign Up"}{" "}
-                    {/* Dynamic text */}
-                    <CheckCircle2 className="w-5 h-5 ml-2" />
-                  </Button>
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    What types of campaigns or collaborations do you pursue
+                    most?
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <Checkbox
+                        id="select_all_campaign_types"
+                        checked={campaignTypes.every((type) =>
+                          formData.campaign_types.includes(type),
+                        )}
+                        onCheckedChange={() =>
+                          toggleSelectAll("campaign_types", campaignTypes)
+                        }
+                        className="border-2 border-gray-900"
+                      />
+                      <label
+                        htmlFor="select_all_campaign_types"
+                        className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
+                    {campaignTypes.map((type) => (
+                      <div
+                        key={type}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          id={type}
+                          checked={formData.campaign_types.includes(type)}
+                          onCheckedChange={() =>
+                            toggleArrayItem("campaign_types", type)
+                          }
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor={type}
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          {type}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div >
-            )
-          }
-        </Card >
-      </div >
-    </div >
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Do you want to bulk-onboard your roster to Likelee?
+                  </Label>
+                  <RadioGroup
+                    value={formData.bulk_onboard}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, bulk_onboard: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["Yes", "No", "Maybe later"].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option.toLowerCase()}
+                            id={`bulk_${option}`}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={`bulk_${option}`}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                >
+                  {updateProfileMutation.isPending
+                    ? "Submitting..."
+                    : "Complete Sign Up"}{" "}
+                  {/* Dynamic text */}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
   );
 }

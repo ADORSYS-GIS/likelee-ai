@@ -298,12 +298,7 @@ export default function CreatorSignup() {
       ...prev,
       [field]: isAllSelected
         ? prev[field].filter((item) => !optionsToSelect.includes(item))
-        : [
-          ...new Set([
-            ...prev[field],
-            ...optionsToSelect,
-          ]),
-        ],
+        : [...new Set([...prev[field], ...optionsToSelect])],
     }));
   };
 
