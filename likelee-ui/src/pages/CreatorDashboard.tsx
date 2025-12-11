@@ -76,6 +76,7 @@ import {
   Youtube,
   ArrowLeft,
 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 import {
   LineChart,
   Line,
@@ -1934,20 +1935,37 @@ export default function CreatorDashboard() {
   };
 
   const deleteRecording = async (id) => {
-    if (!confirm("Delete this recording?")) return;
-    const rec = voiceLibrary.find((r) => r.id === id);
-    setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
-    try {
-      // If it exists on server, delete there too
-      const sid = rec?.server_recording_id || rec?.id;
-      if (sid) {
-        await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
-          method: "DELETE",
-        });
-      }
-    } catch (_) {
-      // best-effort
-    }
+    toast({
+      title: "Confirm Deletion",
+      description: "Are you sure you want to delete this recording?",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          const rec = voiceLibrary.find((r) => r.id === id);
+          setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
+          try {
+            // If it exists on server, delete there too
+            const sid = rec?.server_recording_id || rec?.id;
+            if (sid) {
+              await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
+                method: "DELETE",
+              });
+            }
+            toast({
+              title: "Recording Deleted",
+              description: "The recording has been successfully deleted.",
+            });
+          } catch (error) {
+            console.error("Failed to delete recording:", error);
+            toast({
+              variant: "destructive",
+              title: "Deletion Failed",
+              description: "Could not delete the recording. Please try again.",
+            });
+          }
+        },
+      },
+    });
   };
 
   const createVoiceProfile = async (recording) => {
@@ -2005,8 +2023,11 @@ export default function CreatorDashboard() {
         ),
       );
 
-      alert("Voice profile created successfully with ElevenLabs!");
-    } catch (error) {
+      toast({
+        title: "Voice Profile Created",
+        description: "Voice profile created successfully with ElevenLabs!",
+      });
+    } catch (error: any) {
       console.error("Voice profile creation error:", error);
 
       let errorMessage = "Failed to create voice profile";
@@ -2019,9 +2040,11 @@ export default function CreatorDashboard() {
         errorMessage = error.message;
       }
 
-      alert(
-        `Error: ${errorMessage}\n\nPossible issues:\n• Recording quality too low\n• File format not supported by ElevenLabs\n• Recording too short (need 30+ seconds)\n• Try re-recording with better audio`,
-      );
+      toast({
+        variant: "destructive",
+        title: "Voice Profile Creation Failed",
+        description: `${errorMessage}\n\nPossible issues:\n• Recording quality too low\n• File format not supported by ElevenLabs\n• Recording too short (need 30+ seconds)\n• Try re-recording with better audio`,
+      });
     } finally {
       setGeneratingVoice(false);
     }
@@ -2057,29 +2080,37 @@ export default function CreatorDashboard() {
   const handleApprove = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    alert("Campaign approved! Contract signed! (Demo mode)");
+    toast({
+      title: "Campaign Approved",
+      description: "Campaign approved! Contract signed! (Demo mode)",
+    });
   };
 
   const handleDecline = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    alert("Campaign declined! (Demo mode)");
+    toast({
+      title: "Campaign Declined",
+      description: "Campaign declined! (Demo mode)",
+    });
   };
 
   const handlePauseLicense = (contract, immediate) => {
     const option = immediate ? "immediate" : "next_month";
     setPauseOption(option);
     setShowPauseModal(false);
-    alert(
-      `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode)\n\n${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
-    );
+    toast({
+      title: "License Paused",
+      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode)\n\n${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
+    });
   };
 
   const handleRevokeLicense = (contract) => {
     setShowRevokeModal(false);
-    alert(
-      `License revoked! (Demo mode)\n\n30-day notice period has begun.\nYou'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
-    );
+    toast({
+      title: "License Revoked",
+      description: `License revoked! (Demo mode)\n\n30-day notice period has begun.\nYou'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
+    });
   };
 
   const handlePauseCampaign = (campaignId) => {
@@ -2088,14 +2119,27 @@ export default function CreatorDashboard() {
         c.id === campaignId ? { ...c, status: "paused" } : c,
       ),
     );
-    alert("Campaign paused! (Demo mode)");
+    toast({
+      title: "Campaign Paused",
+      description: "Campaign paused! (Demo mode)",
+    });
   };
 
   const handleRevokeCampaign = (campaignId) => {
-    if (confirm("Are you sure you want to revoke this campaign license?")) {
-      setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
-      alert("Campaign revoked! (Demo mode)");
-    }
+    toast({
+      title: "Confirm Revocation",
+      description: "Are you sure you want to revoke this campaign license?",
+      action: {
+        label: "Revoke",
+        onClick: () => {
+          setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
+          toast({
+            title: "Campaign Revoked",
+            description: "Campaign revoked! (Demo mode)",
+          });
+        },
+      },
+    });
   };
 
   const handleToggleContentType = (type) => {
@@ -2177,15 +2221,25 @@ export default function CreatorDashboard() {
       }
 
       setEditingRules(false);
-      alert("Licensing preferences updated!");
+      toast({
+        title: "Preferences Updated",
+        description: "Licensing preferences updated!",
+      });
     } catch (error: any) {
       console.error("Failed to save rules:", error);
-      alert(`Failed to save preferences: ${error?.message || error}`);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to save preferences: ${error?.message || error}`,
+      });
     }
   };
 
   const handleSaveProfile = () => {
-    alert("Profile updated! (Demo mode)");
+    toast({
+      title: "Profile Updated",
+      description: "Profile updated! (Demo mode)",
+    });
   };
 
   const renderDashboard = () => {
@@ -2428,17 +2482,29 @@ export default function CreatorDashboard() {
     try {
       if (!previewImage || !selectedImageSection) return;
       if (!user) {
-        alert("Please log in to upload.");
+        toast({
+          variant: "destructive",
+          title: "Authentication Required",
+          description: "Please log in to upload.",
+        });
         return;
       }
       const file: File = previewImage.file;
       if (!file) {
-        alert("No file selected.");
+        toast({
+          variant: "destructive",
+          title: "No File",
+          description: "Please select a file to upload.",
+        });
         return;
       }
       // Server pre-scan is limited to 5MB
       if (file.size > 5_000_000) {
-        alert("Please upload an image ≤ 5MB.");
+        toast({
+          variant: "destructive",
+          title: "File Too Large",
+          description: "Please upload an image ≤ 5MB.",
+        });
         return;
       }
 
@@ -2462,11 +2528,17 @@ export default function CreatorDashboard() {
           const reasons: string[] = Array.isArray(err?.reasons)
             ? err.reasons
             : [];
-          alert(
-            `${msg}${reasons.length ? "\n\nDetails:\n- " + reasons.join("\n- ") : ""}`,
-          );
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: `${msg}${reasons.length ? "\n\nDetails:\n- " + reasons.join("\n- ") : ""}`,
+          });
         } catch {
-          alert(raw || "Upload failed");
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: raw || "Upload failed",
+          });
         }
         setUploadingToSection(false);
         return;
@@ -2481,21 +2553,39 @@ export default function CreatorDashboard() {
       setShowImageUploadModal(false);
       setSelectedImageSection(null);
       setPreviewImage(null);
-      alert("Reference image uploaded!");
+      toast({
+        title: "Upload Successful",
+        description: "Reference image uploaded!",
+      });
     } catch (e: any) {
-      alert(`Upload failed: ${e?.message || e}`);
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: `Upload failed: ${e?.message || e}`,
+      });
     } finally {
       setUploadingToSection(false);
     }
   };
 
   const deleteReferenceImage = (sectionId) => {
-    if (confirm("Delete this reference image?")) {
-      setReferenceImages({
-        ...referenceImages,
-        [sectionId]: null,
-      });
-    }
+    toast({
+      title: "Confirm Deletion",
+      description: "Are you sure you want to delete this reference image?",
+      action: {
+        label: "Delete",
+        onClick: () => {
+          setReferenceImages({
+            ...referenceImages,
+            [sectionId]: null,
+          });
+          toast({
+            title: "Image Deleted",
+            description: "The reference image has been successfully deleted.",
+          });
+        },
+      },
+    });
   };
 
   const getCompleteness = () => {
@@ -3866,9 +3956,10 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       // For examples, just show a message
                       if (campaign.isExample) {
-                        alert(
-                          "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                        );
+                        toast({
+                          title: "Example Campaign",
+                          description: "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                        });
                         return;
                       }
                       // For real campaigns, update the state
@@ -4599,10 +4690,17 @@ export default function CreatorDashboard() {
 
       setShowRatesModal(null);
       setEditingRules(false);
-      alert("Rates saved successfully!");
+      toast({
+        title: "Rates Saved",
+        description: "Rates saved successfully!",
+      });
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(`Failed to save rates: ${e?.message || e}`);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: `Failed to save rates: ${e?.message || e}`,
+      });
     } finally {
       setSavingRates(false);
     }
@@ -4823,9 +4921,10 @@ export default function CreatorDashboard() {
                   checked={creator.is_public_brands || false}
                   onCheckedChange={(checked) => {
                     setCreator({ ...creator, is_public_brands: checked });
-                    alert(
-                      `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
-                    );
+                    toast({
+                      title: "Visibility Updated",
+                      description: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
+                    });
                   }}
                 />
               </div>
@@ -5042,9 +5141,10 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       setCreator({ ...creator, accept_negotiations: checked });
                       if (!editingRules) {
-                        alert(
-                          `Negotiation ${checked ? "enabled" : "disabled"}! (Demo mode)`,
-                        );
+                        toast({
+                          title: "Negotiation Settings Updated",
+                          description: `Negotiation ${checked ? "enabled" : "disabled"}! (Demo mode)`,
+                        });
                       }
                     }}
                     disabled={!editingRules}
