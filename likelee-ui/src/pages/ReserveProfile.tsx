@@ -206,7 +206,10 @@ function getUserFriendlyError(error: any): string {
   if (errorStr.includes("weak") || errorStr.includes("password")) {
     return "Please choose a stronger password (at least 8 characters).";
   }
-  if (errorStr.includes("not authenticated") || errorStr.includes("unauthorized")) {
+  if (
+    errorStr.includes("not authenticated") ||
+    errorStr.includes("unauthorized")
+  ) {
     return "Please sign in to continue.";
   }
 
@@ -321,7 +324,8 @@ function ReferencePhotosStep(props: any) {
     } catch (_e) {
       toast({
         title: "Camera Access Required",
-        description: "Unable to access camera. Please allow camera permissions in your browser settings.",
+        description:
+          "Unable to access camera. Please allow camera permissions in your browser settings.",
         variant: "destructive",
       });
     }
@@ -539,52 +543,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Front</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.front || uploadedUrls.front ? (
-                    <img
-                      src={
-                        captures.front ? captures.front.url : uploadedUrls.front
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Left</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left ? (
-                    <img
-                      src={captures.left ? captures.left.url : uploadedUrls.left}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Right</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right ? (
-                    <img
-                      src={
-                        captures.right ? captures.right.url : uploadedUrls.right
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front || uploadedUrls.front ? (
+                  <img
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
               </div>
             </div>
-          )}
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left ? (
+                  <img
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right ? (
+                  <img
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -814,7 +818,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) { }
+      } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -832,7 +836,8 @@ export default function ReserveProfile() {
     if (!targetId) {
       toast({
         title: "Not Ready",
-        description: "Please complete the previous steps before starting verification.",
+        description:
+          "Please complete the previous steps before starting verification.",
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
@@ -889,7 +894,8 @@ export default function ReserveProfile() {
         ) {
           toast({
             title: "Identity Verified",
-            description: "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+            description:
+              "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
           });
         }
       }
@@ -939,7 +945,8 @@ export default function ReserveProfile() {
       if (livenessStatus === "approved") {
         toast({
           title: "Already Approved",
-          description: "Your liveness check is already approved. No further verification needed.",
+          description:
+            "Your liveness check is already approved. No further verification needed.",
           className: "bg-green-50 border-2 border-green-400",
         });
         return;
@@ -947,7 +954,8 @@ export default function ReserveProfile() {
       if (!COGNITO_IDENTITY_POOL_ID) {
         toast({
           title: "Configuration Error",
-          description: "Liveness verification is not configured. Please contact support.",
+          description:
+            "Liveness verification is not configured. Please contact support.",
           variant: "destructive",
         });
         return;
@@ -1310,7 +1318,8 @@ export default function ReserveProfile() {
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Passwords Don't Match",
-        description: "The passwords you entered do not match. Please try again.",
+        description:
+          "The passwords you entered do not match. Please try again.",
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
@@ -1351,7 +1360,8 @@ export default function ReserveProfile() {
         if (!data.available) {
           toast({
             title: "Email Already Registered",
-            description: "This email is already registered. Please log in instead or use a different email.",
+            description:
+              "This email is already registered. Please log in instead or use a different email.",
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
@@ -1369,7 +1379,8 @@ export default function ReserveProfile() {
         if (!session) {
           toast({
             title: "Registration Successful",
-            description: "Please check your email to verify your account before continuing.",
+            description:
+              "Please check your email to verify your account before continuing.",
           });
           return;
         }
@@ -1423,8 +1434,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-            (today.getMonth() === birth.getMonth() &&
-              today.getDate() < birth.getDate())
+          (today.getMonth() === birth.getMonth() &&
+            today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1449,7 +1460,8 @@ export default function ReserveProfile() {
       if (!isFinite(monthly) || monthly < 150) {
         toast({
           title: "Pricing Required",
-          description: "Please set your base monthly license price (minimum $150).",
+          description:
+            "Please set your base monthly license price (minimum $150).",
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
@@ -1627,9 +1639,7 @@ export default function ReserveProfile() {
           </p>
           <div className="flex items-center justify-center">
             <Link to="/CreatorDashboard">
-              <Button
-                className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white px-8 h-12"
-              >
+              <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white px-8 h-12">
                 Go to Dashboard
               </Button>
             </Link>
@@ -1944,7 +1954,8 @@ export default function ReserveProfile() {
                                 if (!data.passed) {
                                   toast({
                                     title: "Liveness Check Failed",
-                                    description: "Please try again with good lighting and follow the on-screen prompts.",
+                                    description:
+                                      "Please try again with good lighting and follow the on-screen prompts.",
                                     variant: "destructive",
                                   });
                                 }
@@ -1956,7 +1967,8 @@ export default function ReserveProfile() {
                               } else {
                                 toast({
                                   title: "Failed to Get Results",
-                                  description: "Unable to fetch liveness verification results. Please try again.",
+                                  description:
+                                    "Unable to fetch liveness verification results. Please try again.",
                                   variant: "destructive",
                                 });
                               }
@@ -2134,10 +2146,15 @@ export default function ReserveProfile() {
                   <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                     <Checkbox
                       id="select-all-ethnicity"
-                      checked={ethnicities.every(eth => formData.ethnicity.includes(eth))}
+                      checked={ethnicities.every((eth) =>
+                        formData.ethnicity.includes(eth),
+                      )}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setFormData({ ...formData, ethnicity: [...ethnicities] });
+                          setFormData({
+                            ...formData,
+                            ethnicity: [...ethnicities],
+                          });
                         } else {
                           setFormData({ ...formData, ethnicity: [] });
                         }
@@ -2300,10 +2317,15 @@ export default function ReserveProfile() {
                     <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                       <Checkbox
                         id="select-all-work-types"
-                        checked={modelWorkTypes.every(type => formData.work_types.includes(type))}
+                        checked={modelWorkTypes.every((type) =>
+                          formData.work_types.includes(type),
+                        )}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setFormData({ ...formData, work_types: [...modelWorkTypes] });
+                            setFormData({
+                              ...formData,
+                              work_types: [...modelWorkTypes],
+                            });
                           } else {
                             setFormData({ ...formData, work_types: [] });
                           }
@@ -2334,8 +2356,10 @@ export default function ReserveProfile() {
                               } else {
                                 toast({
                                   title: "Selection Limit",
-                                  description: "Please select up to 3 options for now. You can add more later.",
-                                  className: "bg-cyan-50 border-2 border-cyan-400",
+                                  description:
+                                    "Please select up to 3 options for now. You can add more later.",
+                                  className:
+                                    "bg-cyan-50 border-2 border-cyan-400",
                                 });
                               }
                             }}
@@ -2362,7 +2386,9 @@ export default function ReserveProfile() {
                     <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                       <Checkbox
                         id="select-all-vibes"
-                        checked={vibes.every(vibe => formData.vibes.includes(vibe))}
+                        checked={vibes.every((vibe) =>
+                          formData.vibes.includes(vibe),
+                        )}
                         onCheckedChange={(checked) => {
                           if (checked) {
                             setFormData({ ...formData, vibes: [...vibes] });
@@ -2500,10 +2526,15 @@ export default function ReserveProfile() {
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                         <Checkbox
                           id="select-all-content"
-                          checked={contentTypes.every(type => formData.content_types.includes(type))}
+                          checked={contentTypes.every((type) =>
+                            formData.content_types.includes(type),
+                          )}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setFormData({ ...formData, content_types: [...contentTypes] });
+                              setFormData({
+                                ...formData,
+                                content_types: [...contentTypes],
+                              });
                             } else {
                               setFormData({ ...formData, content_types: [] });
                             }
@@ -2568,10 +2599,15 @@ export default function ReserveProfile() {
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                         <Checkbox
                           id="select-all-industries"
-                          checked={industries.every(industry => formData.industries.includes(industry))}
+                          checked={industries.every((industry) =>
+                            formData.industries.includes(industry),
+                          )}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setFormData({ ...formData, industries: [...industries] });
+                              setFormData({
+                                ...formData,
+                                industries: [...industries],
+                              });
                             } else {
                               setFormData({ ...formData, industries: [] });
                             }
@@ -3042,8 +3078,10 @@ export default function ReserveProfile() {
                                 if (!data.passed) {
                                   toast({
                                     title: "Liveness Check Failed",
-                                    description: "Please try again with good lighting and follow prompts.",
-                                    className: "bg-red-50 border-2 border-red-400",
+                                    description:
+                                      "Please try again with good lighting and follow prompts.",
+                                    className:
+                                      "bg-red-50 border-2 border-red-400",
                                   });
                                 }
                                 // Always close and clear after a result to avoid lingering "Verifying" UI
