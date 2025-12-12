@@ -68,7 +68,7 @@ export default function CreatorSignup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
+    full_name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -95,7 +95,7 @@ export default function CreatorSignup() {
   const createInitialProfileMutation = useMutation({
     mutationFn: (data) => {
       return base44.entities.CreatorProfile.create({
-        name: data.name,
+        full_name: data.full_name,
         email: data.email,
         instagram_handle: data.instagram_handle || "",
         tiktok_handle: data.tiktok_handle || "",
@@ -166,7 +166,7 @@ export default function CreatorSignup() {
   const handleNext = () => {
     if (step === 1) {
       if (
-        !formData.name ||
+        !formData.full_name ||
         !formData.email ||
         !formData.password ||
         !formData.confirmPassword
@@ -393,16 +393,16 @@ export default function CreatorSignup() {
               <div className="space-y-4">
                 <div>
                   <Label
-                    htmlFor="name"
+                    htmlFor="full_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
                     Full Name *
                   </Label>
                   <Input
-                    id="name"
-                    value={formData.name}
+                    id="full_name"
+                    value={formData.full_name}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, full_name: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="John Doe"
