@@ -44,6 +44,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -545,52 +547,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -671,6 +673,7 @@ export default function ReserveProfile() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -822,7 +825,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1038,7 +1041,7 @@ export default function ReserveProfile() {
     }
   };
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = (step / totalSteps) * 100;
 
   // Verification state
@@ -1132,6 +1135,7 @@ export default function ReserveProfile() {
       if (creatorType === "model_actor") return "Preferences";
       if (creatorType === "athlete") return "Brand Setup";
     }
+    if (step === 5) return "Terms & Agreements";
     return "";
   };
 
@@ -1437,8 +1441,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1838,7 +1842,7 @@ export default function ReserveProfile() {
                       className="border-2 border-gray-300 rounded-none"
                       placeholder={
                         creatorType === "model_actor"
-                          ? "Your name or stage name"
+                          ? "Your name"
                           : "Your full name"
                       }
                     />
@@ -3247,7 +3251,7 @@ export default function ReserveProfile() {
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
                           setShowSkipModal(false);
-                          finalizeProfile();
+                          setStep(5);
                         }}
                       >
                         Skip for Now - I'm Sure
@@ -3258,8 +3262,78 @@ export default function ReserveProfile() {
               )}
             </div>
           )}
+
+          {/* Step 5: Terms & Agreements */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  Terms & Agreements
+                </h3>
+                <p className="text-gray-700">
+                  Please review and agree to our policies to complete your
+                  registration.
+                </p>
+              </div>
+
+              <div className="border-2 border-gray-200 bg-white">
+                <ScrollArea className="h-96 p-4">
+                  <PrivacyPolicyContent />
+                </ScrollArea>
+              </div>
+
+              <div className="p-4 border-2 border-gray-200 bg-gray-50">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) =>
+                      setAgreedToTerms(checked as boolean)
+                    }
+                    className="mt-1 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the{" "}
+                      <a
+                        href="https://likelee.ai/privacypolicy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#32C8D1] hover:underline font-bold"
+                      >
+                        Privacy Policy
+                      </a>
+                    </label>
+                    <p className="text-sm text-gray-500">
+                      You must agree to the privacy policy to create your account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setStep(4)}
+                  variant="outline"
+                  className="w-1/3 h-12 border-2 border-black rounded-none"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={finalizeProfile}
+                  disabled={!agreedToTerms}
+                  className="w-2/3 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Complete Registration
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
