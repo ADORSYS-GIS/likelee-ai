@@ -615,7 +615,6 @@ export default function ReserveProfile() {
     }
   }, []);
   const [submitted, setSubmitted] = useState(false);
-  const [hasActiveSession, setHasActiveSession] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -1359,8 +1358,6 @@ export default function ReserveProfile() {
           return;
         }
 
-        // Track that user has an active session from signup
-        setHasActiveSession(true);
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
@@ -1500,14 +1497,14 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
-    // Allow skipping to success page regardless of authentication state
-    // The success page will show the appropriate button based on user state
     if (!user) {
-      console.log("Skipping verification - showing success page");
-      setSubmitted(true);
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in.",
+      });
       return;
     }
-
     try {
       // Backfill missing cameo URLs from Storage if needed
       let front = cameoFrontUrl;
@@ -1524,23 +1521,39 @@ export default function ReserveProfile() {
             const pub = supabase.storage
               .from("profiles")
               .getPublicUrl(`${prefix}/${f.name}`).data.publicUrl;
-            if (name.includes("front")) front = pub;
-            if (name.includes("left")) left = pub;
-            if (name.includes("right")) right = pub;
+            if (!front && name.includes("front")) front = pub;
+            if (!left && name.includes("left")) left = pub;
+            if (!right && name.includes("right")) right = pub;
           });
         }
       }
 
-      const monthlyUsd = formData.base_monthly_price_usd
-        ? parseFloat(formData.base_monthly_price_usd)
-        : null;
-
-      const payload = {
+      const monthlyUsd = Number(formData.base_monthly_price_usd);
+      const payload: any = {
         id: user.id,
         email: formData.email,
-        full_name: formData.full_name,
-        stage_name: formData.stage_name || null,
+        full_name:
+          creatorType === "model_actor"
+            ? formData.stage_name || formData.full_name
+            : formData.full_name,
         creator_type: creatorType,
+        content_types: formData.content_types || [],
+        content_other: formData.content_other || null,
+        industries: formData.industries || [],
+        primary_platform: formData.primary_platform || null,
+        platform_handle: formData.platform_handle || null,
+        work_types: formData.work_types || [],
+        representation_status: formData.representation_status || "",
+        headshot_url: formData.headshot_url || "",
+        sport: formData.sport || null,
+        athlete_type: formData.athlete_type || null,
+        school_name: formData.school_name || null,
+        age: formData.age || null,
+        languages: formData.languages || null,
+        instagram_handle: formData.instagram_handle || null,
+        twitter_handle: formData.twitter_handle || null,
+        brand_categories: formData.brand_categories || [],
+        bio: formData.bio || null,
         city: formData.city || null,
         state: formData.state || null,
         birthdate: formData.birthdate || null,
@@ -1549,7 +1562,7 @@ export default function ReserveProfile() {
         vibes: formData.vibes || [],
         visibility: formData.visibility || "private",
         status: "waitlist",
-        base_monthly_price_usd: monthlyUsd,
+        // Pricing in cents (USD-only)
         base_monthly_price_cents: isFinite(monthlyUsd)
           ? Math.round(monthlyUsd * 100)
           : 15000,
@@ -1599,24 +1612,19 @@ export default function ReserveProfile() {
             complete verification and go live.
           </p>
           <div className="flex items-center justify-center gap-4">
-            {authenticated || user || hasActiveSession ? (
-              <Link to="/CreatorDashboard">
-                <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white px-8 h-12">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <div className="text-center">
-                <p className="text-gray-600 mb-4">
-                  Please check your email to verify your account, then log in to access your dashboard.
-                </p>
-                <Link to="/ReserveProfile">
-                  <Button className="rounded-none border-2 border-black bg-black text-white px-8 h-12">
-                    Log In
-                  </Button>
-                </Link>
-              </div>
-            )}
+            <Link to="/ReserveProfile">
+              <Button className="rounded-none border-2 border-black bg-black text-white px-6 h-11">
+                Sign in
+              </Button>
+            </Link>
+            <Link to="/CreatorDashboard">
+              <Button
+                variant="outline"
+                className="rounded-none border-2 border-black h-11 px-6"
+              >
+                Go to Dashboard
+              </Button>
+            </Link>
           </div>
         </Card>
       </div>
@@ -3056,13 +3064,8 @@ export default function ReserveProfile() {
                       <Button
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
-                          console.log("Skip for Now - I'm Sure clicked");
                           setShowSkipModal(false);
-                          // Use setTimeout to ensure modal closes before step change
-                          setTimeout(() => {
-                            console.log("Calling finalizeProfile from skip modal");
-                            finalizeProfile();
-                          }, 100);
+                          finalizeProfile();
                         }}
                       >
                         Skip for Now - I'm Sure
