@@ -633,6 +633,20 @@ const earningsByIndustry: any[] = [];
 
 const mockContracts: any[] = [];
 
+function parseErrorMessage(err: any): string {
+  let msg = err?.message || String(err);
+  try {
+    const jsonMatch = msg.match(/(\{.*\})/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed.message || parsed.error || msg;
+    }
+  } catch (e) {
+    // Parsing failed, return original
+  }
+  return msg;
+}
+
 export default function CreatorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1832,7 +1846,7 @@ export default function CreatorDashboard() {
         toast({
           variant: "destructive",
           title: "Upload Failed",
-          description: `Upload failed: ${err.message}`,
+          description: `Upload failed: ${parseErrorMessage(err)}`,
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
@@ -2549,7 +2563,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Upload Failed",
-        description: `Upload failed: ${e?.message || e}`,
+        description: `Upload failed: ${parseErrorMessage(e)}`,
       });
     } finally {
       setUploadingToSection(false);
