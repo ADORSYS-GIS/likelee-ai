@@ -3,6 +3,7 @@ pub mod config;
 pub mod creator_rates;
 pub mod dashboard;
 pub mod face_profiles;
+pub mod email;
 pub mod kyc;
 pub mod licenses;
 pub mod liveness;

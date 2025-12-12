@@ -16,19 +16,11 @@ export default function Support() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Create mailto link with form data
-    const mailtoLink = `mailto:help@likelee.ai?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(
-      `From: ${formData.email}\n\n${formData.message}`,
-    )}`;
-
-    // Open email client
+    const mailtoLink = `mailto:admin@likelee.ai?subject=${encodeURIComponent(
+      `Support: ${formData.subject}`,
+    )}&body=${encodeURIComponent(`From: ${formData.email}\n\n${formData.message}`)}`;
     window.location.href = mailtoLink;
-
-    // Show success message
     setSubmitted(true);
-
-    // Reset form after 3 seconds
     setTimeout(() => {
       setFormData({ email: "", subject: "", message: "" });
       setSubmitted(false);
