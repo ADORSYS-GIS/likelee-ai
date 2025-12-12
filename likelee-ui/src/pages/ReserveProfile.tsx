@@ -547,52 +547,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Front</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.front || uploadedUrls.front ? (
-                    <img
-                      src={
-                        captures.front ? captures.front.url : uploadedUrls.front
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Left</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left ? (
-                    <img
-                      src={captures.left ? captures.left.url : uploadedUrls.left}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Right</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right ? (
-                    <img
-                      src={
-                        captures.right ? captures.right.url : uploadedUrls.right
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front || uploadedUrls.front ? (
+                  <img
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
               </div>
             </div>
-          )}
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left ? (
+                  <img
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right ? (
+                  <img
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -825,7 +825,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) { }
+      } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1379,7 +1379,10 @@ export default function ReserveProfile() {
         setStep(2);
       } catch (e: any) {
         const msg = (e?.message || "").toLowerCase();
-        if (msg.includes("already registered") || msg.includes("already exists")) {
+        if (
+          msg.includes("already registered") ||
+          msg.includes("already exists")
+        ) {
           toast({
             title: "Email Already Registered",
             description:
@@ -1435,8 +1438,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-            (today.getMonth() === birth.getMonth() &&
-              today.getDate() < birth.getDate())
+          (today.getMonth() === birth.getMonth() &&
+            today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -3302,7 +3305,8 @@ export default function ReserveProfile() {
                       </a>
                     </label>
                     <p className="text-sm text-gray-500">
-                      You must agree to the privacy policy to create your account.
+                      You must agree to the privacy policy to create your
+                      account.
                     </p>
                   </div>
                 </div>
@@ -3327,7 +3331,7 @@ export default function ReserveProfile() {
             </div>
           )}
         </Card>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }
