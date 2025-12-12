@@ -1342,34 +1342,11 @@ export default function ReserveProfile() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         if (!data.available) {
-          const proceed = window.confirm(
-            "This email is already registered. Would you like us to send a magic link to sign in?",
-          );
-          if (proceed) {
-            const { error } = await supabase.auth.signInWithOtp({
-              email: formData.email.trim().toLowerCase(),
-              options: { emailRedirectTo: `${window.location.origin}/Login` },
-            });
-            if (error) {
-              toast({
-                title: "Sign-in Error",
-                description: getUserFriendlyError(error),
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Magic Link Sent",
-                description: "Check your email to complete sign-in.",
-                className: "bg-green-50 border-2 border-green-400",
-              });
-            }
-          } else {
-            toast({
-              title: "Email Already Registered",
-              description: "This email is already registered. Please log in instead.",
-              className: "bg-cyan-50 border-2 border-cyan-400",
-            });
-          }
+          toast({
+            title: "Email Already Registered",
+            description: "This email is already registered. Please log in instead or use a different email.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
           return;
         }
         // Create Supabase auth user so login works
@@ -2146,6 +2123,26 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
                     Race/Ethnicity (select all that apply)
                   </Label>
+                  <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                    <Checkbox
+                      id="select-all-ethnicity"
+                      checked={ethnicities.every(eth => formData.ethnicity.includes(eth))}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({ ...formData, ethnicity: [...ethnicities] });
+                        } else {
+                          setFormData({ ...formData, ethnicity: [] });
+                        }
+                      }}
+                      className="border-2 border-gray-400"
+                    />
+                    <label
+                      htmlFor="select-all-ethnicity"
+                      className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                    >
+                      Select All
+                    </label>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {ethnicities.map((ethnicity) => (
                       <div
@@ -2291,6 +2288,26 @@ export default function ReserveProfile() {
                       <span className="text-xs text-gray-500">
                         You can specify more later
                       </span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-work-types"
+                        checked={modelWorkTypes.every(type => formData.work_types.includes(type))}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ ...formData, work_types: [...modelWorkTypes] });
+                          } else {
+                            setFormData({ ...formData, work_types: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-work-types"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
                       {modelWorkTypes.map((type) => (
