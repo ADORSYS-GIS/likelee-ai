@@ -3516,9 +3516,9 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Rights Expiration Calendar */}
-        <div className="bg-blue-50 border border-blue-200">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <p className="text-blue-900">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-blue-900 text-sm">
             <strong>Your consent required for all uses.</strong>{" "}
             {activeCampaigns.length} active campaigns, all time-limited, all
             approved by you. You can pause/revoke anytime.
