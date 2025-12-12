@@ -1599,7 +1599,7 @@ export default function ReserveProfile() {
             complete verification and go live.
           </p>
           <div className="flex items-center justify-center gap-4">
-            {user || hasActiveSession ? (
+            {authenticated || user || hasActiveSession ? (
               <Link to="/CreatorDashboard">
                 <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white px-8 h-12">
                   Go to Dashboard
