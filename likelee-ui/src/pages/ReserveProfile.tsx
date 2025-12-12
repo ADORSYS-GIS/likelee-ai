@@ -1610,19 +1610,24 @@ export default function ReserveProfile() {
             complete verification and go live.
           </p>
           <div className="flex items-center justify-center gap-4">
-            <Link to="/ReserveProfile">
-              <Button className="rounded-none border-2 border-black bg-black text-white px-6 h-11">
-                Sign in
-              </Button>
-            </Link>
-            <Link to="/CreatorDashboard">
-              <Button
-                variant="outline"
-                className="rounded-none border-2 border-black h-11 px-6"
-              >
-                Go to Dashboard
-              </Button>
-            </Link>
+            {user ? (
+              <Link to="/CreatorDashboard">
+                <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white px-8 h-12">
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  Please check your email to verify your account, then log in to access your dashboard.
+                </p>
+                <Link to="/ReserveProfile">
+                  <Button className="rounded-none border-2 border-black bg-black text-white px-8 h-12">
+                    Log In
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </Card>
       </div>
