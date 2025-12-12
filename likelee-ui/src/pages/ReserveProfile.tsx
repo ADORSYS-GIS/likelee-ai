@@ -491,52 +491,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left || uploadedUrls.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right || uploadedUrls.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -767,7 +767,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1408,8 +1408,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1798,23 +1798,14 @@ export default function ReserveProfile() {
                       placeholder="Your full name"
                     />
                   </div>
-                  <div
-                    onClick={() =>
-                      toast({
-                        title: "Temporarily Disabled",
-                        description:
-                          "Sign-up is under maintenance. Please check back later.",
-                      })
-                    }
+                  <Button
+                    onClick={handleFirstContinue}
+                    disabled={firstContinueLoading}
+                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none hover:opacity-90 transition-opacity"
                   >
-                    <Button
-                      disabled
-                      className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
-                    >
-                      Continue
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </div>
+                    {firstContinueLoading ? "Processing..." : "Continue"}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
                 </div>
               ) : (
                 <form
@@ -1885,23 +1876,12 @@ export default function ReserveProfile() {
                       </Link>
                     </div>
                   </div>
-                  <div
-                    onClick={() =>
-                      toast({
-                        title: "Temporarily Disabled",
-                        description:
-                          "Login is under maintenance. Please check back later.",
-                      })
-                    }
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-black text-white border-2 border-black rounded-none hover:bg-gray-800 transition-colors"
                   >
-                    <Button
-                      type="submit"
-                      disabled
-                      className="w-full h-12 bg-black text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
-                    >
-                      Log in
-                    </Button>
-                  </div>
+                    Log in
+                  </Button>
                 </form>
               )}
 
