@@ -49,6 +49,7 @@ import {
   BarChart3,
   Menu,
   ChevronRight,
+  ChevronLeft,
   Clock,
   Shield,
   Building2,
@@ -650,8 +651,30 @@ export default function CreatorDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const small = window.innerWidth < 1024;
+      setIsSmallScreen(small);
+      if (!small) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Set initial state
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [creator, setCreator] = useState<any>({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(
+    null,
+  );
 
   const [heroMedia, setHeroMedia] = useState(null);
   const [photos, setPhotos] = useState([]);
@@ -1200,12 +1223,12 @@ export default function CreatorDashboard() {
                           : "border-green-200 bg-green-50"
                     }`}
                   >
-                    <div className="flex gap-4">
-                      <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
                         <img
                           src={item.thumbnail_url}
                           alt="Detected content"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <ExternalLink className="w-6 h-6 text-white" />
@@ -1222,7 +1245,7 @@ export default function CreatorDashboard() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-bold text-gray-900 text-lg">
@@ -1261,7 +1284,7 @@ export default function CreatorDashboard() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6 mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mb-4">
                           <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
                             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
                               Match Confidence
@@ -1276,12 +1299,12 @@ export default function CreatorDashboard() {
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                           {item.status === "needs_review" && (
                             <>
                               <Button
                                 size="sm"
-                                className="bg-red-600 hover:bg-red-700 text-white gap-2"
+                                className="bg-red-600 hover:bg-red-700 text-white gap-2 w-full sm:w-auto"
                               >
                                 <XCircle className="w-4 h-4" />
                                 Request Takedown
@@ -1289,7 +1312,7 @@ export default function CreatorDashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50"
+                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50 w-full sm:w-auto"
                               >
                                 Dismiss (It's Authorized)
                               </Button>
@@ -2712,39 +2735,41 @@ export default function CreatorDashboard() {
                         {section.description}
                       </p>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                         {hasImage ? (
                           <>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-2 border-gray-300"
+                              className="border-2 border-gray-300 flex-shrink-0"
                               onClick={() =>
                                 window.open(hasImage.url, "_blank")
                               }
                             >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
+                              <Eye className="w-4 h-4 mr-1" />
+                              <span className="text-xs sm:text-sm">View</span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-2 border-[#32C8D1] text-[#32C8D1]"
+                              className="border-2 border-[#32C8D1] text-[#32C8D1] flex-shrink-0"
                               onClick={() =>
                                 handleImageSectionUpload(section.id)
                               }
                             >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Replace
+                              <Upload className="w-4 h-4 mr-1" />
+                              <span className="text-xs sm:text-sm">
+                                Replace
+                              </span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-2 border-red-300 text-red-600"
+                              className="border-2 border-red-300 text-red-600 flex-shrink-0"
                               onClick={() => deleteReferenceImage(section.id)}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              <span className="text-xs sm:text-sm">Delete</span>
                             </Button>
                           </>
                         ) : (
@@ -2765,7 +2790,7 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Quality Standards */}
-          <div className="mt-6 bg-amber-50 border border-amber-200">
+          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <p className="text-amber-900">
               <strong>Quality Standards:</strong> High-resolution (minimum
@@ -2866,9 +2891,14 @@ export default function CreatorDashboard() {
                 }
               >
                 {creator?.kyc_status
-                  ? creator.kyc_status.charAt(0).toUpperCase() +
-                    creator.kyc_status.slice(1)
-                  : "Not started"}
+                  ? creator.kyc_status
+                      .replace(/_/g, " ")
+                      .split(" ")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                      )
+                      .join(" ")
+                  : "Not Started"}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -2882,12 +2912,12 @@ export default function CreatorDashboard() {
                 Confirmed
               </Badge>
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={startVerificationFromDashboard}
                 disabled={kycLoading}
                 variant="outline"
-                className="border-2 border-gray-300"
+                className="border-2 border-gray-300 w-full sm:w-auto"
               >
                 {kycLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2900,7 +2930,7 @@ export default function CreatorDashboard() {
                 onClick={refreshVerificationFromDashboard}
                 disabled={kycLoading}
                 variant="outline"
-                className="border-2 border-gray-300"
+                className="border-2 border-gray-300 w-full sm:w-auto"
               >
                 {kycLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -3161,8 +3191,8 @@ export default function CreatorDashboard() {
           </div>
         )}
 
-        {/* Campaigns Table */}
-        <Card className="p-6 bg-white border border-gray-200">
+        {/* Campaigns Table - Desktop Only */}
+        <Card className="p-6 bg-white border border-gray-200 hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -3290,6 +3320,159 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
+        {/* Mobile Campaign Cards */}
+        <div className="md:hidden space-y-4">
+          {campaignsToShow.map((campaign) => {
+            const isExpanded = expandedCampaignId === campaign.id;
+
+            return (
+              <Card
+                key={campaign.id}
+                className="bg-white border border-gray-200 overflow-hidden"
+              >
+                {/* Collapsible Header */}
+                <button
+                  onClick={() =>
+                    setExpandedCampaignId(isExpanded ? null : campaign.id)
+                  }
+                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {campaign.brand_logo && (
+                      <img
+                        src={campaign.brand_logo}
+                        alt={campaign.brand}
+                        className="w-12 h-12 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                      />
+                    )}
+                    {!campaign.brand_logo && (
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                        {campaign.brand.charAt(0)}
+                      </div>
+                    )}
+                    <div className="text-left flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 truncate">
+                        {campaign.brand}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {campaign.usage_type ||
+                          campaign.campaign?.split(",")[0] ||
+                          "Social Ads"}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                      isExpanded ? "rotate-90" : ""
+                    }`}
+                  />
+                </button>
+
+                {/* Expandable Details */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
+                    {/* Rate */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">Rate:</span>
+                      <span className="font-bold text-gray-900">
+                        ${campaign.rate.toLocaleString()}/mo
+                      </span>
+                    </div>
+
+                    {/* Active Until */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">
+                        Active Until:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-900">
+                          {new Date(
+                            campaign.active_until || campaign.end_date,
+                          ).toLocaleDateString()}
+                        </span>
+                        {campaign.auto_renewal && (
+                          <Badge className="bg-blue-100 text-blue-700 border border-blue-300 text-xs">
+                            Auto-Renew
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <Badge
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        {campaign.status === "active"
+                          ? "Active"
+                          : campaign.status === "expiring_soon"
+                            ? "Expiring Soon"
+                            : campaign.status}
+                      </Badge>
+                    </div>
+
+                    {/* This Month */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">This Month:</span>
+                      <span className="font-bold text-green-600">
+                        $
+                        {campaign.earnings_this_month ||
+                          campaign.rate.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Impressions (if available) */}
+                    {campaign.impressions_week && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm text-gray-600">
+                          Impressions/Week:
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {campaign.impressions_week.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePauseCampaign(campaign.id);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Pause className="w-4 h-4 mr-2" />
+                        Pause
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRevokeCampaign(campaign.id);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-red-600 hover:bg-red-50"
+                      >
+                        Revoke
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+
         {/* Campaign Details Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           {campaignsToShow.slice(0, 2).map((campaign) => (
@@ -3369,9 +3552,9 @@ export default function CreatorDashboard() {
         </div>
 
         {/* Rights Expiration Calendar */}
-        <div className="bg-blue-50 border border-blue-200">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <p className="text-blue-900">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-blue-900 text-sm">
             <strong>Your consent required for all uses.</strong>{" "}
             {activeCampaigns.length} active campaigns, all time-limited, all
             approved by you. You can pause/revoke anytime.
@@ -3391,19 +3574,22 @@ export default function CreatorDashboard() {
 
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4">
             <Button
               variant="outline"
               onClick={() => setShowApprovalContract(null)}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 w-fit"
             >
-              ← Back to Queue
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Queue
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {approval.brand} - Contract Review
               </h1>
-              <p className="text-gray-600">Review terms before approving</p>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Review terms before approving
+              </p>
             </div>
           </div>
 
@@ -3519,9 +3705,9 @@ export default function CreatorDashboard() {
           </Card>
 
           {approval.perpetual && (
-            <div className="bg-red-50 border-2 border-red-400">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-red-900">
+            <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-900 text-sm">
                 <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
                 use your likeness forever. You should negotiate for time-limited
                 terms (6 months, 1 year) instead.
@@ -3530,7 +3716,7 @@ export default function CreatorDashboard() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               onClick={() => handleDecline(approval.id)}
               variant="outline"
@@ -3599,7 +3785,7 @@ export default function CreatorDashboard() {
               key={approval.id}
               className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
             >
-              <div className="flex items-start justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6 gap-4">
                 <div className="flex items-center gap-4">
                   <img
                     src={approval.brand_logo}
@@ -3628,7 +3814,7 @@ export default function CreatorDashboard() {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
@@ -3687,9 +3873,9 @@ export default function CreatorDashboard() {
               </div>
 
               {approval.perpetual && (
-                <div className="mb-6 bg-red-50 border-2 border-red-300">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <p className="text-red-900">
+                <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-900 text-sm">
                     <strong>Warning:</strong> This is a perpetual-use request.
                     You would give up long-term control of your likeness for
                     this campaign. Consider negotiating for time-limited terms
@@ -3698,11 +3884,11 @@ export default function CreatorDashboard() {
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button
                   onClick={() => setShowApprovalContract(approval.id)}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600"
+                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600 w-full sm:w-auto"
                 >
                   <FileText className="w-5 h-5 mr-2" />
                   View Contract
@@ -3710,20 +3896,20 @@ export default function CreatorDashboard() {
                 <Button
                   onClick={() => handleDecline(approval.id)}
                   variant="outline"
-                  className="h-12 border-2 border-gray-300"
+                  className="h-12 border-2 border-gray-300 w-full sm:w-auto"
                 >
                   <XCircle className="w-5 h-5 mr-2" />
                   Decline
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1]"
+                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1] w-full sm:w-auto"
                 >
                   Counter Offer
                 </Button>
                 <Button
                   onClick={() => handleApprove(approval.id)}
-                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8"
+                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8 w-full sm:w-auto"
                 >
                   <CheckCircle2 className="w-5 h-5 mr-2" />
                   Accept & Sign
@@ -3898,22 +4084,25 @@ export default function CreatorDashboard() {
 
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4">
             <Button
               variant="outline"
               onClick={() => {
                 setShowContractDetails(false);
                 setSelectedContract(null);
               }}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 w-fit"
             >
-              ← Back to Contracts
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Contracts
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {contract.brand}
               </h1>
-              <p className="text-gray-600">{contract.project_name}</p>
+              <p className="text-gray-600 text-sm sm:text-base">
+                {contract.project_name}
+              </p>
             </div>
           </div>
 
@@ -5043,14 +5232,45 @@ export default function CreatorDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Overlay for mobile sidebar */}
+      {isSmallScreen && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
+          isSmallScreen
+            ? sidebarOpen
+              ? "w-64"
+              : "-translate-x-full w-64"
+            : sidebarOpen
+              ? "w-64"
+              : "w-20"
+        }`}
       >
+        {/* Mobile Sidebar Header */}
+        {isSmallScreen && (
+          <div className="flex items-center justify-center gap-3 p-4 border-b border-gray-200">
+            <img
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+              alt="Likelee Logo"
+              className="w-8 h-8"
+            />
+            <span className="font-bold text-xl">Likelee</span>
+          </div>
+        )}
+
         {/* Profile Section */}
         <div className="p-6 border-b border-gray-200 relative">
           {sidebarOpen ? (
-            <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => setShowProfileMenu((v) => !v)}
+            >
               {creator?.kyc_status === "approved" ? (
                 <Avatar className="w-12 h-12 border-2 border-green-500">
                   {creator?.profile_photo ? (
@@ -5131,15 +5351,6 @@ export default function CreatorDashboard() {
                   </Badge>
                 )}
               </div>
-              <button
-                className="ml-auto text-gray-600 hover:text-gray-900"
-                onClick={() => setShowProfileMenu((v) => !v)}
-                aria-label="Open profile menu"
-              >
-                <ChevronRight
-                  className={`w-5 h-5 transition-transform ${showProfileMenu ? "rotate-90" : ""}`}
-                />
-              </button>
             </div>
           ) : (
             <div className="mx-auto">
@@ -5316,19 +5527,113 @@ export default function CreatorDashboard() {
         </nav>
 
         {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
-        >
-          <Menu className="w-5 h-5 text-gray-600 mx-auto" />
-        </button>
+        {!isSmallScreen && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <Menu className="w-5 h-5 text-gray-600 mx-auto" />
+          </button>
+        )}
       </aside>
+
+      {/* Mobile Header */}
+      {isSmallScreen && (
+        <>
+          <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <h1 className="font-bold text-lg">
+              {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+            </h1>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+              aria-label="More options"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+              </svg>
+            </button>
+          </header>
+
+          {/* Mobile Menu Dropdown */}
+          {showMobileMenu && (
+            <>
+              {/* Backdrop to close menu when clicking outside */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowMobileMenu(false)}
+              />
+              <div className="fixed top-16 right-4 bg-white border-2 border-gray-200 shadow-xl rounded-lg z-[60] w-64">
+                <div className="p-2">
+                  <button
+                    onClick={() => {
+                      navigate("/BrandCompany");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <Building2 className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Brands
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/AgencySelection");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <Users className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Agencies
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/AboutUs");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <AlertCircle className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      About Us
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/Contact");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <MessageSquare className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Contact
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${isSmallScreen ? "mt-16" : sidebarOpen ? "lg:ml-64" : "lg:ml-20"} transition-all duration-300 overflow-y-auto`}
       >
-        <div className="p-8">
+        <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection === "dashboard" && renderDashboard()}
           {activeSection === "public-profile" && renderPublicProfilePreview()}
           {activeSection === "content" && renderContent()}
@@ -5341,6 +5646,116 @@ export default function CreatorDashboard() {
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
         </div>
+
+        {/* Mobile Footer */}
+        {isSmallScreen && (
+          <footer className="bg-white border-t border-gray-200 px-6 py-6">
+            <div className="space-y-6 text-center">
+              {/* Logo and Tagline - Centered */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <img
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+                    alt="Likelee Logo"
+                    className="w-10 h-10"
+                  />
+                  <span className="font-bold text-lg">Likelee</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  The Verified Talent Ecosystem for AI-powered Media.
+                </p>
+              </div>
+
+              {/* Resources - Centered */}
+              <div>
+                <h3 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
+                  RESOURCES
+                </h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate("#")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Blog
+                  </button>
+                  <button
+                    onClick={() => navigate("/Impact")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Impact
+                  </button>
+                  <button
+                    onClick={() => navigate("/Support")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Support
+                  </button>
+                  <button
+                    onClick={() => navigate("/SalesInquiry")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Contact Us
+                  </button>
+                </div>
+              </div>
+
+              {/* Legal & Compliance - Centered */}
+              <div>
+                <h3 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
+                  LEGAL & COMPLIANCE
+                </h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate("/SAGAFTRAAlignment")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    SAG-AFTRA Alignment
+                  </button>
+                  <button
+                    onClick={() => navigate("/PrivacyPolicy")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Privacy Policy
+                  </button>
+                  <button
+                    onClick={() => navigate("/CommercialRights")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Commercial Rights
+                  </button>
+                </div>
+              </div>
+
+              {/* Company - Centered */}
+              <div>
+                <h3 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
+                  COMPANY
+                </h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate("/AboutUs")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    About Us
+                  </button>
+                  <button
+                    onClick={() => navigate("/ReserveProfile")}
+                    className="block w-full text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    Creators
+                  </button>
+                </div>
+              </div>
+
+              {/* Copyright */}
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500">
+                  © {new Date().getFullYear()} Likelee. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </footer>
+        )}
       </main>
 
       {/* Pause License Modal */}
