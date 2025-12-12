@@ -454,8 +454,7 @@ function ReferencePhotosStep(props: any) {
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled
-                className="w-full h-12 bg-black text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
+                className="w-full h-12 bg-black text-white border-2 border-black rounded-none hover:bg-gray-800"
               >
                 Log in
               </Button>
@@ -1798,35 +1797,20 @@ export default function ReserveProfile() {
                       placeholder="Your full name"
                     />
                   </div>
-                  <div
-                    onClick={() =>
-                      toast({
-                        title: "Temporarily Disabled",
-                        description:
-                          "Sign-up is under maintenance. Please check back later.",
-                      })
-                    }
+                  <Button
+                    type="button"
+                    onClick={handleFirstContinue}
+                    disabled={firstContinueLoading}
+                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none hover:opacity-90"
                   >
-                    <Button
-                      disabled
-                      className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
-                    >
-                      Continue
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </div>
+                    {firstContinueLoading ? "Checking..." : "Continue"}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
                 </div>
               ) : (
                 <form
                   className="space-y-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    toast({
-                      title: "Temporarily Disabled",
-                      description:
-                        "Login is under maintenance. Please check back later.",
-                    });
-                  }}
+                  onSubmit={handleLogin}
                 >
                   <div>
                     <Label
@@ -1885,23 +1869,13 @@ export default function ReserveProfile() {
                       </Link>
                     </div>
                   </div>
-                  <div
-                    onClick={() =>
-                      toast({
-                        title: "Temporarily Disabled",
-                        description:
-                          "Login is under maintenance. Please check back later.",
-                      })
-                    }
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none hover:opacity-90"
                   >
-                    <Button
-                      type="submit"
-                      disabled
-                      className="w-full h-12 bg-black text-white border-2 border-black rounded-none opacity-50 cursor-not-allowed"
-                    >
-                      Log in
-                    </Button>
-                  </div>
+                    Log in
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
                 </form>
               )}
 
