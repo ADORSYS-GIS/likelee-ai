@@ -49,6 +49,7 @@ import {
   BarChart3,
   Menu,
   ChevronRight,
+  ChevronLeft,
   Clock,
   Shield,
   Building2,
@@ -650,6 +651,24 @@ export default function CreatorDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const small = window.innerWidth < 1024;
+      setIsSmallScreen(small);
+      if (!small) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Set initial state
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [creator, setCreator] = useState<any>({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -5043,14 +5062,40 @@ export default function CreatorDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Overlay for mobile sidebar */}
+      {isSmallScreen && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
+          isSmallScreen
+            ? sidebarOpen
+              ? "w-64"
+              : "-translate-x-full w-64"
+            : sidebarOpen
+              ? "w-64"
+              : "w-20"
+        }`}
       >
+        {/* Mobile Sidebar Header */}
+        {isSmallScreen && (
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <span className="font-bold text-xl">Likelee</span>
+            <button onClick={() => setSidebarOpen(false)} className="text-gray-600 hover:text-gray-900">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          </div>
+        )}
+
         {/* Profile Section */}
         <div className="p-6 border-b border-gray-200 relative">
           {sidebarOpen ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setShowProfileMenu((v) => !v)}>
               {creator?.kyc_status === "approved" ? (
                 <Avatar className="w-12 h-12 border-2 border-green-500">
                   {creator?.profile_photo ? (
@@ -5131,15 +5176,6 @@ export default function CreatorDashboard() {
                   </Badge>
                 )}
               </div>
-              <button
-                className="ml-auto text-gray-600 hover:text-gray-900"
-                onClick={() => setShowProfileMenu((v) => !v)}
-                aria-label="Open profile menu"
-              >
-                <ChevronRight
-                  className={`w-5 h-5 transition-transform ${showProfileMenu ? "rotate-90" : ""}`}
-                />
-              </button>
             </div>
           ) : (
             <div className="mx-auto">
@@ -5316,17 +5352,30 @@ export default function CreatorDashboard() {
         </nav>
 
         {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
-        >
-          <Menu className="w-5 h-5 text-gray-600 mx-auto" />
-        </button>
+        {!isSmallScreen && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-4 border-t border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <Menu className="w-5 h-5 text-gray-600 mx-auto" />
+          </button>
+        )}
       </aside>
+
+      {/* Mobile Header */}
+      {isSmallScreen && (
+        <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-900">
+            <Menu className="w-6 h-6" />
+          </button>
+          <h1 className="font-bold text-lg">{activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}</h1>
+          <div className="w-6"></div>
+        </header>
+      )}
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${isSmallScreen ? 'mt-16' : (sidebarOpen ? 'lg:ml-64' : 'lg:ml-20')} transition-all duration-300 overflow-y-auto`}
       >
         <div className="p-8">
           {activeSection === "dashboard" && renderDashboard()}
