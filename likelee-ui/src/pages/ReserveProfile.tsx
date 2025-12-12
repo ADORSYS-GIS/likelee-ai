@@ -1382,7 +1382,6 @@ export default function ReserveProfile() {
         );
         if (!session) {
           toast({
-            title: "Registration Successful",
             description:
               "Please check your email to verify your account before continuing.",
           });
@@ -1815,7 +1814,7 @@ export default function ReserveProfile() {
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
                       {creatorType === "model_actor"
-                        ? "Full Name / Stage Name"
+                        ? "Full Name"
                         : "Full Name"}
                     </Label>
                     <Input
