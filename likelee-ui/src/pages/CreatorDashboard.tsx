@@ -672,6 +672,7 @@ export default function CreatorDashboard() {
   const [creator, setCreator] = useState<any>({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
 
   const [heroMedia, setHeroMedia] = useState(null);
   const [photos, setPhotos] = useState([]);
@@ -1217,12 +1218,12 @@ export default function CreatorDashboard() {
                         : "border-green-200 bg-green-50"
                       }`}
                   >
-                    <div className="flex gap-4">
-                      <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
                         <img
                           src={item.thumbnail_url}
                           alt="Detected content"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <ExternalLink className="w-6 h-6 text-white" />
@@ -1239,7 +1240,7 @@ export default function CreatorDashboard() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-bold text-gray-900 text-lg">
@@ -1278,7 +1279,7 @@ export default function CreatorDashboard() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6 mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mb-4">
                           <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
                             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
                               Match Confidence
@@ -1293,12 +1294,12 @@ export default function CreatorDashboard() {
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                           {item.status === "needs_review" && (
                             <>
                               <Button
                                 size="sm"
-                                className="bg-red-600 hover:bg-red-700 text-white gap-2"
+                                className="bg-red-600 hover:bg-red-700 text-white gap-2 w-full sm:w-auto"
                               >
                                 <XCircle className="w-4 h-4" />
                                 Request Takedown
@@ -1306,7 +1307,7 @@ export default function CreatorDashboard() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50"
+                                className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50 w-full sm:w-auto"
                               >
                                 Dismiss (It's Authorized)
                               </Button>
@@ -3176,8 +3177,8 @@ export default function CreatorDashboard() {
           </div>
         )}
 
-        {/* Campaigns Table */}
-        <Card className="p-6 bg-white border border-gray-200">
+        {/* Campaigns Table - Desktop Only */}
+        <Card className="p-6 bg-white border border-gray-200 hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -3304,6 +3305,138 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
+        {/* Mobile Campaign Cards */}
+        <div className="md:hidden space-y-4">
+          {campaignsToShow.map((campaign) => {
+            const isExpanded = expandedCampaignId === campaign.id;
+
+            return (
+              <Card key={campaign.id} className="bg-white border border-gray-200 overflow-hidden">
+                {/* Collapsible Header */}
+                <button
+                  onClick={() => setExpandedCampaignId(isExpanded ? null : campaign.id)}
+                  className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {campaign.brand_logo && (
+                      <img
+                        src={campaign.brand_logo}
+                        alt={campaign.brand}
+                        className="w-12 h-12 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                      />
+                    )}
+                    {!campaign.brand_logo && (
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                        {campaign.brand.charAt(0)}
+                      </div>
+                    )}
+                    <div className="text-left flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 truncate">{campaign.brand}</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {campaign.usage_type || campaign.campaign?.split(",")[0] || "Social Ads"}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''
+                      }`}
+                  />
+                </button>
+
+                {/* Expandable Details */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
+                    {/* Rate */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">Rate:</span>
+                      <span className="font-bold text-gray-900">${campaign.rate.toLocaleString()}/mo</span>
+                    </div>
+
+                    {/* Active Until */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">Active Until:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-900">
+                          {new Date(campaign.active_until || campaign.end_date).toLocaleDateString()}
+                        </span>
+                        {campaign.auto_renewal && (
+                          <Badge className="bg-blue-100 text-blue-700 border border-blue-300 text-xs">
+                            Auto-Renew
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <Badge
+                        className={`${campaign.status === "active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
+                      >
+                        {campaign.status === "active"
+                          ? "Active"
+                          : campaign.status === "expiring_soon"
+                            ? "Expiring Soon"
+                            : campaign.status}
+                      </Badge>
+                    </div>
+
+                    {/* This Month */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-600">This Month:</span>
+                      <span className="font-bold text-green-600">
+                        ${campaign.earnings_this_month || campaign.rate.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Impressions (if available) */}
+                    {campaign.impressions_week && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm text-gray-600">Impressions/Week:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {campaign.impressions_week.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePauseCampaign(campaign.id);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Pause className="w-4 h-4 mr-2" />
+                        Pause
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRevokeCampaign(campaign.id);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-red-600 hover:bg-red-50"
+                      >
+                        Revoke
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+
         {/* Campaign Details Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           {campaignsToShow.slice(0, 2).map((campaign) => (
@@ -3391,7 +3524,7 @@ export default function CreatorDashboard() {
             approved by you. You can pause/revoke anytime.
           </p>
         </div>
-      </div>
+      </div >
     );
   };
 
