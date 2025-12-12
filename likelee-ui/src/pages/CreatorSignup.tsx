@@ -60,33 +60,55 @@ const aiTools = [
 
 export default function CreatorSignup() {
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
-  const [submitted, setSubmitted] = useState(false);
-  const [profileId, setProfileId] = useState(null);
-  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    instagram_handle: "",
-    tiktok_handle: "",
-    youtube_handle: "",
-    agency_name: "",
-    content_types: [],
-    content_other: "",
-    ai_tools: [],
-    ai_tools_other: "",
-    city: "",
-    state: "",
-    experience: "",
-    portfolio_url: "",
-    social_url: "",
-    profile_photo_url: "",
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("signup_formData");
+    return saved
+      ? JSON.parse(saved)
+      : {
+        full_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        instagram_handle: "",
+        tiktok_handle: "",
+        youtube_handle: "",
+        agency_name: "",
+        content_types: [],
+        content_other: "",
+        ai_tools: [],
+        ai_tools_other: "",
+        city: "",
+        state: "",
+        experience: "",
+        portfolio_url: "",
+        social_url: "",
+        profile_photo_url: "",
+      };
   });
+
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem("signup_step");
+    return saved ? parseInt(saved) : 1;
+  });
+
+  const [profileId, setProfileId] = useState(() => {
+    return localStorage.getItem("signup_profileId") || null;
+  });
+
+  // Persist state changes
+  React.useEffect(() => {
+    localStorage.setItem("signup_formData", JSON.stringify(formData));
+  }, [formData]);
+
+  React.useEffect(() => {
+    localStorage.setItem("signup_step", step.toString());
+  }, [step]);
+
+  React.useEffect(() => {
+    if (profileId) {
+      localStorage.setItem("signup_profileId", profileId);
+    }
+  }, [profileId]);
 
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
@@ -96,7 +118,9 @@ export default function CreatorSignup() {
     mutationFn: (data) => {
       return base44.entities.CreatorProfile.create({
         full_name: data.full_name,
+        name: data.full_name,
         email: data.email,
+        password: data.password,
         instagram_handle: data.instagram_handle || "",
         tiktok_handle: data.tiktok_handle || "",
         youtube_handle: data.youtube_handle || "",
@@ -137,6 +161,9 @@ export default function CreatorSignup() {
       }
 
       return base44.entities.CreatorProfile.update(profileId, {
+        full_name: dataToUpdate.full_name,
+        name: dataToUpdate.full_name,
+        email: formData.email,
         content_types: dataToUpdate.content_types || [],
         content_other: dataToUpdate.content_other || "",
         ai_tools: dataToUpdate.ai_tools || [],
