@@ -1497,10 +1497,10 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
-    // If user just signed up and isn't authenticated yet, just move to success page
+    // If user just signed up and isn't authenticated yet, show success page
     if (!user) {
-      console.log("No authenticated user - moving to success page for new signup");
-      setStep(4);
+      console.log("No authenticated user - showing success page for new signup");
+      setSubmitted(true);
       return;
     }
     try {
@@ -3062,8 +3062,13 @@ export default function ReserveProfile() {
                       <Button
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
+                          console.log("Skip for Now - I'm Sure clicked");
                           setShowSkipModal(false);
-                          finalizeProfile();
+                          // Use setTimeout to ensure modal closes before step change
+                          setTimeout(() => {
+                            console.log("Calling finalizeProfile from skip modal");
+                            finalizeProfile();
+                          }, 100);
                         }}
                       >
                         Skip for Now - I'm Sure
