@@ -79,9 +79,9 @@ export const reducer = (state, action) => {
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-                ...t,
-                open: false,
-              }
+              ...t,
+              open: false,
+            }
             : t,
         ),
       };
@@ -120,13 +120,7 @@ function toast({ ...props }) {
       toast: { ...props, id },
     });
 
-  let autoTimer: any = null;
-
   const dismiss = () => {
-    if (autoTimer) {
-      clearTimeout(autoTimer);
-      autoTimer = null;
-    }
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
   };
 
@@ -142,10 +136,7 @@ function toast({ ...props }) {
     },
   });
 
-  // Schedule automatic dismiss
-  autoTimer = setTimeout(() => {
-    dismiss();
-  }, AUTO_DISMISS_DELAY);
+  // Auto-dismiss removed - toasts now only dismiss via X button
 
   return {
     id,
