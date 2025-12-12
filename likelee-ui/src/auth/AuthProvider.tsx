@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (_event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        if (currentUser) {
+        if (currentUser && currentUser.email_confirmed_at) {
           fetchProfile(
             currentUser.id,
             currentUser.email,
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
+      if (currentUser && currentUser.email_confirmed_at) {
         fetchProfile(
           currentUser.id,
           currentUser.email,
@@ -157,9 +157,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         if (error) throw error;
 
-        if (data.user) {
-          await fetchProfile(data.user.id, data.user.email, displayName);
-        }
+        // Profile creation deferred until email verification and subsequent login/session refresh
+        // if (data.user) {
+        //   await fetchProfile(data.user.id, data.user.email, displayName);
+        // }
 
         return { user: data.user, session: data.session };
       },

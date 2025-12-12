@@ -1358,22 +1358,6 @@ export default function ReserveProfile() {
     setFirstContinueLoading(true);
     (async () => {
       try {
-        const res = await fetch(
-          api(
-            `/api/email/available?email=${encodeURIComponent(formData.email)}`,
-          ),
-        );
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        if (!data.available) {
-          toast({
-            title: "Email Already Registered",
-            description:
-              "This email is already registered. Please log in instead or use a different email.",
-            className: "bg-cyan-50 border-2 border-cyan-400",
-          });
-          return;
-        }
         // Create Supabase auth user so login works
         const displayName =
           creatorType === "model_actor"
@@ -1394,11 +1378,21 @@ export default function ReserveProfile() {
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
-        toast({
-          title: "Sign-up Failed",
-          description: getUserFriendlyError(e),
-          variant: "destructive",
-        });
+        const msg = (e?.message || "").toLowerCase();
+        if (msg.includes("already registered") || msg.includes("already exists")) {
+          toast({
+            title: "Email Already Registered",
+            description:
+              "This email is already registered. Please log in instead.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+        } else {
+          toast({
+            title: "Sign-up Failed",
+            description: getUserFriendlyError(e),
+            variant: "destructive",
+          });
+        }
       } finally {
         setFirstContinueLoading(false);
       }
