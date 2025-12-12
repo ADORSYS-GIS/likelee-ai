@@ -1528,6 +1528,10 @@ export default function ReserveProfile() {
         }
       }
 
+      const monthlyUsd = formData.base_monthly_price_usd
+        ? parseFloat(formData.base_monthly_price_usd)
+        : null;
+
       const payload = {
         id: user.id,
         email: formData.email,
@@ -1542,7 +1546,7 @@ export default function ReserveProfile() {
         vibes: formData.vibes || [],
         visibility: formData.visibility || "private",
         status: "waitlist",
-        // Pricing in cents (USD-only)
+        base_monthly_price_usd: monthlyUsd,
         base_monthly_price_cents: isFinite(monthlyUsd)
           ? Math.round(monthlyUsd * 100)
           : 15000,
