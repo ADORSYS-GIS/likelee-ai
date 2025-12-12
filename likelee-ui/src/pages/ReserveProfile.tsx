@@ -1498,15 +1498,9 @@ export default function ReserveProfile() {
   const finalizeProfile = async () => {
     if (!user) {
       toast({
-<<<<<<< Updated upstream
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in.",
-=======
         title: "Not Signed In",
         description: "Please sign in to continue.",
         variant: "destructive",
->>>>>>> Stashed changes
       });
       return;
     }
