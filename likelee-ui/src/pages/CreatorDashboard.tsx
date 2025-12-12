@@ -2781,7 +2781,7 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Quality Standards */}
-          <div className="mt-6 bg-amber-50 border border-amber-200">
+          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <p className="text-amber-900">
               <strong>Quality Standards:</strong> High-resolution (minimum
@@ -2882,9 +2882,12 @@ export default function CreatorDashboard() {
                 }
               >
                 {creator?.kyc_status
-                  ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
-                  : "Not started"}
+                  ? creator.kyc_status
+                    .replace(/_/g, ' ')
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')
+                  : "Not Started"}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -2898,12 +2901,12 @@ export default function CreatorDashboard() {
                 Confirmed
               </Badge>
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={startVerificationFromDashboard}
                 disabled={kycLoading}
                 variant="outline"
-                className="border-2 border-gray-300"
+                className="border-2 border-gray-300 w-full sm:w-auto"
               >
                 {kycLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2916,7 +2919,7 @@ export default function CreatorDashboard() {
                 onClick={refreshVerificationFromDashboard}
                 disabled={kycLoading}
                 variant="outline"
-                className="border-2 border-gray-300"
+                className="border-2 border-gray-300 w-full sm:w-auto"
               >
                 {kycLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -5450,9 +5453,9 @@ export default function CreatorDashboard() {
         {/* Mobile Footer */}
         {isSmallScreen && (
           <footer className="bg-white border-t border-gray-200 px-6 py-6">
-            <div className="space-y-6">
+            <div className="space-y-6 text-center">
               {/* Logo and Tagline - Centered */}
-              <div className="flex flex-col items-center text-center gap-3">
+              <div className="flex flex-col items-center gap-3">
                 <div className="flex items-center gap-2">
                   <img
                     src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
@@ -5466,55 +5469,55 @@ export default function CreatorDashboard() {
                 </p>
               </div>
 
-              {/* Resources - Left Aligned */}
+              {/* Resources - Centered */}
               <div>
                 <h3 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
                   RESOURCES
                 </h3>
                 <div className="space-y-2">
-                  <button onClick={() => navigate("#")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("#")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Blog
                   </button>
-                  <button onClick={() => navigate("/Impact")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/Impact")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Impact
                   </button>
-                  <button onClick={() => navigate("/Support")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/Support")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Support
                   </button>
-                  <button onClick={() => navigate("/SalesInquiry")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/SalesInquiry")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Contact Us
                   </button>
                 </div>
               </div>
 
-              {/* Legal & Compliance - Left Aligned */}
+              {/* Legal & Compliance - Centered */}
               <div>
                 <h3 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
                   LEGAL & COMPLIANCE
                 </h3>
                 <div className="space-y-2">
-                  <button onClick={() => navigate("/SAGAFTRAAlignment")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/SAGAFTRAAlignment")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     SAG-AFTRA Alignment
                   </button>
-                  <button onClick={() => navigate("/PrivacyPolicy")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/PrivacyPolicy")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Privacy Policy
                   </button>
-                  <button onClick={() => navigate("/CommercialRights")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/CommercialRights")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Commercial Rights
                   </button>
                 </div>
               </div>
 
-              {/* Company - Left Aligned */}
+              {/* Company - Centered */}
               <div>
                 <h3 className="font-bold text-sm text-gray-900 mb-3 uppercase tracking-wider">
                   COMPANY
                 </h3>
                 <div className="space-y-2">
-                  <button onClick={() => navigate("/AboutUs")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/AboutUs")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     About Us
                   </button>
-                  <button onClick={() => navigate("/ReserveProfile")} className="block w-full text-left text-sm text-gray-600 hover:text-gray-900">
+                  <button onClick={() => navigate("/ReserveProfile")} className="block w-full text-sm text-gray-600 hover:text-gray-900">
                     Creators
                   </button>
                 </div>
@@ -5522,7 +5525,7 @@ export default function CreatorDashboard() {
 
               {/* Copyright */}
               <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-gray-500">
                   © {new Date().getFullYear()} Likelee. All rights reserved.
                 </p>
               </div>
