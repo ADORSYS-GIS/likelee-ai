@@ -558,7 +558,7 @@ function ReferencePhotosStep(props: any) {
               <div>
                 <Label className="text-sm font-medium text-gray-900">Left</Label>
                 <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left || uploadedUrls.left ? (
+                  {captures.left ? (
                     <img
                       src={captures.left ? captures.left.url : uploadedUrls.left}
                       className="w-full h-full object-cover"
@@ -571,7 +571,7 @@ function ReferencePhotosStep(props: any) {
               <div>
                 <Label className="text-sm font-medium text-gray-900">Right</Label>
                 <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right || uploadedUrls.right ? (
+                  {captures.right ? (
                     <img
                       src={
                         captures.right ? captures.right.url : uploadedUrls.right
@@ -748,9 +748,11 @@ export default function ReserveProfile() {
         if (resScan.ok) {
           const out = await resScan.json();
           if (out?.flagged) {
-            alert(
-              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-            );
+            toast({
+              title: "Photo Flagged",
+              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+              variant: "destructive",
+            });
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -782,9 +784,11 @@ export default function ReserveProfile() {
         if (res.ok) {
           const out = await res.json();
           if (out?.flagged) {
-            alert(
-              `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-            );
+            toast({
+              title: "Photo Flagged",
+              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+              variant: "destructive",
+            });
             throw new Error("Image flagged by moderation");
           }
         } else {
@@ -883,9 +887,10 @@ export default function ReserveProfile() {
           !cameoLeftUrl &&
           !cameoRightUrl
         ) {
-          alert(
-            "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
-          );
+          toast({
+            title: "Identity Verified",
+            description: "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+          });
         }
       }
       return row;
@@ -918,9 +923,11 @@ export default function ReserveProfile() {
         await startVerification();
         return;
       }
-      alert(
-        `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
-      );
+      toast({
+        title: "Verification Pending",
+        description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
+        className: "bg-cyan-50 border-2 border-cyan-400",
+      });
     } finally {
       setKycLoading(false);
     }
@@ -1360,9 +1367,10 @@ export default function ReserveProfile() {
           displayName,
         );
         if (!session) {
-          alert(
-            "Registration successful! Please check your email to verify your account before continuing.",
-          );
+          toast({
+            title: "Registration Successful",
+            description: "Please check your email to verify your account before continuing.",
+          });
           return;
         }
         // Move to next step; profile will be saved at the end (step 5)
@@ -3032,9 +3040,11 @@ export default function ReserveProfile() {
                                   data.passed ? "approved" : "rejected",
                                 );
                                 if (!data.passed) {
-                                  alert(
-                                    "Liveness check failed. Please try again with good lighting and follow prompts.",
-                                  );
+                                  toast({
+                                    title: "Liveness Check Failed",
+                                    description: "Please try again with good lighting and follow prompts.",
+                                    className: "bg-red-50 border-2 border-red-400",
+                                  });
                                 }
                                 // Always close and clear after a result to avoid lingering "Verifying" UI
                                 setTimeout(() => {

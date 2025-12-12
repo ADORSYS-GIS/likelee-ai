@@ -136,7 +136,13 @@ function toast({ ...props }) {
     },
   });
 
-  // Auto-dismiss removed - toasts now only dismiss via X button
+  // Smart auto-dismiss: only auto-dismiss toasts WITHOUT action buttons
+  // Toasts with action buttons (like "OK") stay until user clicks them
+  if (!props.action) {
+    setTimeout(() => {
+      dismiss();
+    }, 5000); // 5 seconds
+  }
 
   return {
     id,
