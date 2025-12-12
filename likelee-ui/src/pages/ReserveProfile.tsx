@@ -2351,6 +2351,26 @@ export default function ReserveProfile() {
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
                       Vibe / Style Tags
                     </Label>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-vibes"
+                        checked={vibes.every(vibe => formData.vibes.includes(vibe))}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ ...formData, vibes: [...vibes] });
+                          } else {
+                            setFormData({ ...formData, vibes: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-vibes"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {vibes.map((vibe) => (
                         <div
