@@ -647,7 +647,9 @@ export default function ReserveProfile() {
   });
 
   useEffect(() => {
-    localStorage.setItem("reserve_formData", JSON.stringify(formData));
+    // Security: Do not persist passwords to localStorage
+    const { password, confirmPassword, ...safeData } = formData;
+    localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
 
   // Cameo reference image URLs
@@ -1423,6 +1425,10 @@ export default function ReserveProfile() {
       if (error) throw error;
       setProfileId(user.id);
       setSubmitted(true);
+      // Clear persisted state on success
+      localStorage.removeItem("reserve_formData");
+      localStorage.removeItem("reserve_step");
+      localStorage.removeItem("reserve_profileId");
     } catch (e: any) {
       alert(`Failed to save your profile: ${e?.message || e}`);
     }
