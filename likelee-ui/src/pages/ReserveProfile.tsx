@@ -615,6 +615,7 @@ export default function ReserveProfile() {
     }
   }, []);
   const [submitted, setSubmitted] = useState(false);
+  const [hasActiveSession, setHasActiveSession] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -1358,6 +1359,8 @@ export default function ReserveProfile() {
           return;
         }
 
+        // Track that user has an active session from signup
+        setHasActiveSession(true);
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
@@ -1596,7 +1599,7 @@ export default function ReserveProfile() {
             complete verification and go live.
           </p>
           <div className="flex items-center justify-center gap-4">
-            {user ? (
+            {user || hasActiveSession ? (
               <Link to="/CreatorDashboard">
                 <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white px-8 h-12">
                   Go to Dashboard
