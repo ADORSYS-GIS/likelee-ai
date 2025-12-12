@@ -1497,12 +1497,10 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
+    // If user just signed up and isn't authenticated yet, just move to success page
     if (!user) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in.",
-      });
+      console.log("No authenticated user - moving to success page for new signup");
+      setStep(4);
       return;
     }
     try {
