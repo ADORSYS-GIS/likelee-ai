@@ -1497,12 +1497,14 @@ export default function ReserveProfile() {
   };
 
   const finalizeProfile = async () => {
-    // If user just signed up and isn't authenticated yet, show success page
+    // Allow skipping to success page regardless of authentication state
+    // The success page will show the appropriate button based on user state
     if (!user) {
-      console.log("No authenticated user - showing success page for new signup");
+      console.log("Skipping verification - showing success page");
       setSubmitted(true);
       return;
     }
+
     try {
       // Backfill missing cameo URLs from Storage if needed
       let front = cameoFrontUrl;
@@ -1519,39 +1521,19 @@ export default function ReserveProfile() {
             const pub = supabase.storage
               .from("profiles")
               .getPublicUrl(`${prefix}/${f.name}`).data.publicUrl;
-            if (!front && name.includes("front")) front = pub;
-            if (!left && name.includes("left")) left = pub;
-            if (!right && name.includes("right")) right = pub;
+            if (name.includes("front")) front = pub;
+            if (name.includes("left")) left = pub;
+            if (name.includes("right")) right = pub;
           });
         }
       }
 
-      const monthlyUsd = Number(formData.base_monthly_price_usd);
-      const payload: any = {
+      const payload = {
         id: user.id,
         email: formData.email,
-        full_name:
-          creatorType === "model_actor"
-            ? formData.stage_name || formData.full_name
-            : formData.full_name,
+        full_name: formData.full_name,
+        stage_name: formData.stage_name || null,
         creator_type: creatorType,
-        content_types: formData.content_types || [],
-        content_other: formData.content_other || null,
-        industries: formData.industries || [],
-        primary_platform: formData.primary_platform || null,
-        platform_handle: formData.platform_handle || null,
-        work_types: formData.work_types || [],
-        representation_status: formData.representation_status || "",
-        headshot_url: formData.headshot_url || "",
-        sport: formData.sport || null,
-        athlete_type: formData.athlete_type || null,
-        school_name: formData.school_name || null,
-        age: formData.age || null,
-        languages: formData.languages || null,
-        instagram_handle: formData.instagram_handle || null,
-        twitter_handle: formData.twitter_handle || null,
-        brand_categories: formData.brand_categories || [],
-        bio: formData.bio || null,
         city: formData.city || null,
         state: formData.state || null,
         birthdate: formData.birthdate || null,
