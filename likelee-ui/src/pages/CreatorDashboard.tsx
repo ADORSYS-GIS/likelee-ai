@@ -3538,19 +3538,20 @@ export default function CreatorDashboard() {
 
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4">
             <Button
               variant="outline"
               onClick={() => setShowApprovalContract(null)}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 w-fit"
             >
-              ← Back to Queue
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Queue
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {approval.brand} - Contract Review
               </h1>
-              <p className="text-gray-600">Review terms before approving</p>
+              <p className="text-gray-600 text-sm sm:text-base">Review terms before approving</p>
             </div>
           </div>
 
@@ -3666,9 +3667,9 @@ export default function CreatorDashboard() {
           </Card>
 
           {approval.perpetual && (
-            <div className="bg-red-50 border-2 border-red-400">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-red-900">
+            <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-900 text-sm">
                 <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
                 use your likeness forever. You should negotiate for time-limited
                 terms (6 months, 1 year) instead.
@@ -3677,7 +3678,7 @@ export default function CreatorDashboard() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               onClick={() => handleDecline(approval.id)}
               variant="outline"
@@ -3746,7 +3747,7 @@ export default function CreatorDashboard() {
               key={approval.id}
               className={`p-6 bg-white border-2 ${approval.perpetual ? "border-red-400" : "border-blue-400"}`}
             >
-              <div className="flex items-start justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6 gap-4">
                 <div className="flex items-center gap-4">
                   <img
                     src={approval.brand_logo}
@@ -3775,7 +3776,7 @@ export default function CreatorDashboard() {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
@@ -3834,9 +3835,9 @@ export default function CreatorDashboard() {
               </div>
 
               {approval.perpetual && (
-                <div className="mb-6 bg-red-50 border-2 border-red-300">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <p className="text-red-900">
+                <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-900 text-sm">
                     <strong>Warning:</strong> This is a perpetual-use request.
                     You would give up long-term control of your likeness for
                     this campaign. Consider negotiating for time-limited terms
@@ -3845,11 +3846,11 @@ export default function CreatorDashboard() {
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button
                   onClick={() => setShowApprovalContract(approval.id)}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600"
+                  className="flex-1 h-12 border-2 border-blue-300 text-blue-600 w-full sm:w-auto"
                 >
                   <FileText className="w-5 h-5 mr-2" />
                   View Contract
@@ -3857,20 +3858,20 @@ export default function CreatorDashboard() {
                 <Button
                   onClick={() => handleDecline(approval.id)}
                   variant="outline"
-                  className="h-12 border-2 border-gray-300"
+                  className="h-12 border-2 border-gray-300 w-full sm:w-auto"
                 >
                   <XCircle className="w-5 h-5 mr-2" />
                   Decline
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1]"
+                  className="h-12 border-2 border-[#32C8D1] text-[#32C8D1] w-full sm:w-auto"
                 >
                   Counter Offer
                 </Button>
                 <Button
                   onClick={() => handleApprove(approval.id)}
-                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8"
+                  className="h-12 bg-green-600 hover:bg-green-700 text-white px-8 w-full sm:w-auto"
                 >
                   <CheckCircle2 className="w-5 h-5 mr-2" />
                   Accept & Sign
@@ -4045,22 +4046,23 @@ export default function CreatorDashboard() {
 
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4">
             <Button
               variant="outline"
               onClick={() => {
                 setShowContractDetails(false);
                 setSelectedContract(null);
               }}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 w-fit"
             >
-              ← Back to Contracts
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Contracts
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {contract.brand}
               </h1>
-              <p className="text-gray-600">{contract.project_name}</p>
+              <p className="text-gray-600 text-sm sm:text-base">{contract.project_name}</p>
             </div>
           </div>
 
