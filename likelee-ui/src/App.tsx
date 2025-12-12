@@ -6,7 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
-export default function App() {
+export default // Trigger CI
+function App() {
   return (
     <>
       <QueryClientProvider client={queryClient}>

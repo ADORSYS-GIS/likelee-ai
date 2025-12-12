@@ -28,7 +28,10 @@ if [[ -f "${CUR_TAG_FILE}" ]]; then
   cp "${CUR_TAG_FILE}" "${PREV_TAG_FILE}"
 fi
 
-echo "${IMAGE_TAG}" > "${CUR_TAG_FILE}.pending"
+# Write pending tag atomically to avoid partial writes
+tmp_pending="${CUR_TAG_FILE}.pending.$$"
+printf '%s' "${IMAGE_TAG}" > "${tmp_pending}"
+mv -f "${tmp_pending}" "${CUR_TAG_FILE}.pending"
 
 # Pull and deploy using prod override with prebuilt images
 export REGISTRY_IMAGE_SERVER
@@ -71,14 +74,17 @@ if [ "${COMPOSE_BIN[0]} ${COMPOSE_BIN[1]:-}" = "docker compose" ]; then
     -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" down --remove-orphans || true
 
   # Fallback hard remove if any old containers still exist with fixed names
-  docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+  docker rm -f likelee-server likelee-ui likelee-gateway likelee-server-1 likelee-ui-1 likelee-gateway-1 >/dev/null 2>&1 || true
+  # Remove any lingering containers for this project to avoid name conflicts
+  docker ps -aq --filter "name=^likelee-.*" | xargs -r docker rm -f >/dev/null 2>&1 || true
 
   "${COMPOSE_BIN[@]}" \
     --project-directory "${EC2_DIR}" \
     -p "${PROJECT_NAME}" \
     -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate || {
       echo "[update-images.sh] compose up failed; attempting to resolve name conflicts and retry once" >&2
-      docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+      docker rm -f likelee-server likelee-ui likelee-gateway likelee-server-1 likelee-ui-1 likelee-gateway-1 >/dev/null 2>&1 || true
+      docker ps -aq --filter "name=^likelee-.*" | xargs -r docker rm -f >/dev/null 2>&1 || true
       "${COMPOSE_BIN[@]}" \
         --project-directory "${EC2_DIR}" \
         -p "${PROJECT_NAME}" \
@@ -89,7 +95,8 @@ else
   pushd "${EC2_DIR}" >/dev/null
   "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" pull
   "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" down --remove-orphans || true
-  docker rm -f likelee-server likelee-ui likelee-gateway >/dev/null 2>&1 || true
+  docker rm -f likelee-server likelee-ui likelee-gateway likelee-server-1 likelee-ui-1 likelee-gateway-1 >/dev/null 2>&1 || true
+  docker ps -aq --filter "name=^likelee-.*" | xargs -r docker rm -f >/dev/null 2>&1 || true
   "${COMPOSE_BIN[@]}" -p "${PROJECT_NAME}" -f "${COMPOSE_BASE}" -f "${COMPOSE_PROD}" up -d --remove-orphans --force-recreate
   if [ $? -ne 0 ]; then
     echo "[update-images.sh] compose up failed; attempting to resolve name conflicts and retry once" >&2
@@ -99,7 +106,12 @@ else
   popd >/dev/null
 fi
 
-# Promote pending tag to current on success
-mv "${CUR_TAG_FILE}.pending" "${CUR_TAG_FILE}"
+# Promote pending tag to current on success. If pending is missing, write directly.
+if [[ -f "${CUR_TAG_FILE}.pending" ]]; then
+  mv -f "${CUR_TAG_FILE}.pending" "${CUR_TAG_FILE}"
+else
+  echo "WARN: ${CUR_TAG_FILE}.pending not found; writing current tag directly" >&2
+  printf '%s' "${IMAGE_TAG}" > "${CUR_TAG_FILE}"
+fi
 
 echo "Updated stack to tag: ${IMAGE_TAG}"

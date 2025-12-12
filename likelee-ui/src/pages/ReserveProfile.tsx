@@ -30,14 +30,11 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import {
   Alert as UIAlert,
   AlertDescription as UIAlertDescription,
 } from "@/components/ui/alert";
-import { ToastAction } from "@/components/ui/toast";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
@@ -195,6 +192,62 @@ const vibes = [
   "Casual",
 ];
 
+// Utility function to convert technical errors into user-friendly messages
+function getUserFriendlyError(error: any): string {
+  const errorStr = String(error?.message || error || "").toLowerCase();
+
+  // Email/Auth errors
+  if (errorStr.includes("duplicate") && errorStr.includes("email")) {
+    return "This email is already registered. Please use a different email or sign in instead.";
+  }
+  if (errorStr.includes("invalid") && errorStr.includes("email")) {
+    return "Please enter a valid email address.";
+  }
+  if (errorStr.includes("weak") || errorStr.includes("password")) {
+    return "Please choose a stronger password (at least 8 characters).";
+  }
+  if (
+    errorStr.includes("not authenticated") ||
+    errorStr.includes("unauthorized")
+  ) {
+    return "Please sign in to continue.";
+  }
+
+  // Upload/Storage errors
+  if (errorStr.includes("file size") || errorStr.includes("too large")) {
+    return "File is too large. Please use a smaller image (max 5MB).";
+  }
+  if (errorStr.includes("file type") || errorStr.includes("invalid format")) {
+    return "Invalid file type. Please upload a JPG, PNG, or WebP image.";
+  }
+
+  // Network errors
+  if (errorStr.includes("network") || errorStr.includes("fetch failed")) {
+    return "Network error. Please check your connection and try again.";
+  }
+  if (errorStr.includes("timeout")) {
+    return "Request timed out. Please try again.";
+  }
+
+  // Permission errors
+  if (errorStr.includes("permission") || errorStr.includes("denied")) {
+    return "Permission denied. Please check your settings and try again.";
+  }
+
+  // Generic fallback
+  if (errorStr.includes("failed")) {
+    return "Something went wrong. Please try again.";
+  }
+
+  // If we have a clean message without technical jargon, use it
+  const msg = error?.message || String(error);
+  if (msg.length < 100 && !msg.includes("{") && !msg.includes("[")) {
+    return msg;
+  }
+
+  return "An error occurred. Please try again or contact support if the problem persists.";
+}
+
 function ReferencePhotosStep(props: any) {
   const {
     kycStatus,
@@ -270,10 +323,10 @@ function ReferencePhotosStep(props: any) {
       setTimeout(attachStreamToVideo, 50);
     } catch (_e) {
       toast({
-        variant: "destructive",
-        title: "Camera Error",
+        title: "Camera Access Required",
         description:
-          "Unable to access camera. Please allow camera permissions.",
+          "Unable to access camera. Please allow camera permissions in your browser settings.",
+        variant: "destructive",
       });
     }
   };
@@ -309,17 +362,17 @@ function ReferencePhotosStep(props: any) {
   const doUpload = async () => {
     if (!consent) {
       toast({
-        variant: "destructive",
-        title: "Consent required",
-        description: "Please give consent before uploading.",
+        title: "Consent Required",
+        description: "Please give consent before uploading your photos.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!captures.front || !captures.left || !captures.right) {
       toast({
-        variant: "destructive",
-        title: "Photos required",
-        description: "Please capture all three views.",
+        title: "Missing Photos",
+        description: "Please capture all three views (front, left, and right).",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -337,9 +390,9 @@ function ReferencePhotosStep(props: any) {
       closeCamera();
     } catch (e: any) {
       toast({
+        title: "Upload Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Upload failed",
-        description: `Failed to upload reference photos: ${e?.message || e}`,
       });
     } finally {
       setUploading(false);
@@ -349,9 +402,9 @@ function ReferencePhotosStep(props: any) {
   const generateAvatar = async () => {
     if (!userId) {
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "Missing user id.",
+        description: "Please sign in to continue.",
+        variant: "destructive",
       });
       return;
     }
@@ -378,9 +431,9 @@ function ReferencePhotosStep(props: any) {
       if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url);
     } catch (e: any) {
       toast({
+        title: "Avatar Generation Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Generation failed",
-        description: `Failed to generate avatar: ${e?.message || e}`,
       });
     } finally {
       setGenerating(false);
@@ -453,10 +506,10 @@ function ReferencePhotosStep(props: any) {
             </div>
             <div className="flex gap-3">
               <Button
-                type="submit"
-                className="w-full h-12 bg-black text-white border-2 border-black rounded-none hover:bg-gray-800"
+                onClick={capture}
+                className="h-10 bg-black text-white border-2 border-black rounded-none"
               >
-                Log in
+                Capture
               </Button>
               <Button
                 onClick={() =>
@@ -490,52 +543,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Front</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.front || uploadedUrls.front ? (
-                    <img
-                      src={
-                        captures.front ? captures.front.url : uploadedUrls.front
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Left</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left || uploadedUrls.left ? (
-                    <img
-                      src={captures.left ? captures.left.url : uploadedUrls.left}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Right</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right || uploadedUrls.right ? (
-                    <img
-                      src={
-                        captures.right ? captures.right.url : uploadedUrls.right
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front || uploadedUrls.front ? (
+                  <img
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
               </div>
             </div>
-          )}
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left ? (
+                  <img
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right ? (
+                  <img
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -600,9 +653,6 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const { login, register } = useAuth();
   const navigate = useNavigate();
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [step, setStep] = useState(1);
 
@@ -672,9 +722,9 @@ export default function ReserveProfile() {
   ) => {
     if (!supabase) {
       toast({
-        variant: "destructive",
         title: "Configuration Error",
-        description: "Image upload not configured. Missing Supabase keys.",
+        description: "Image upload not configured. Please contact support.",
+        variant: "destructive",
       });
       return;
     }
@@ -688,7 +738,8 @@ export default function ReserveProfile() {
       {
         const apiBase =
           (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE;
+          (import.meta as any).env.VITE_API_BASE ||
+          "http://localhost:8787";
         const buf = await file.arrayBuffer();
         const resScan = await fetch(
           `${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user?.id || owner)}&image_role=${encodeURIComponent(side)}`,
@@ -702,9 +753,9 @@ export default function ReserveProfile() {
           const out = await resScan.json();
           if (out?.flagged) {
             toast({
-              variant: "destructive",
-              title: "Image Flagged",
+              title: "Photo Flagged",
               description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+              variant: "destructive",
             });
             throw new Error("Image flagged by moderation");
           }
@@ -723,7 +774,8 @@ export default function ReserveProfile() {
       try {
         const apiBase =
           (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE;
+          (import.meta as any).env.VITE_API_BASE ||
+          "http://localhost:8787";
         const res = await fetch(`${apiBase}/api/moderation/image`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -737,9 +789,9 @@ export default function ReserveProfile() {
           const out = await res.json();
           if (out?.flagged) {
             toast({
-              variant: "destructive",
-              title: "Image Flagged",
+              title: "Photo Flagged",
               description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
+              variant: "destructive",
             });
             throw new Error("Image flagged by moderation");
           }
@@ -766,13 +818,13 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) { }
+      } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
       toast({
+        title: "Upload Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Upload failed",
-        description: `Failed to upload image: ${e?.message || e}`,
       });
     } finally {
       setUploadingCameo(false);
@@ -783,9 +835,10 @@ export default function ReserveProfile() {
     const targetId = user?.id || profileId;
     if (!targetId) {
       toast({
-        variant: "destructive",
-        title: "Not ready",
-        description: "Profile not ready yet. Please complete previous steps.",
+        title: "Not Ready",
+        description:
+          "Please complete the previous steps before starting verification.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -809,9 +862,9 @@ export default function ReserveProfile() {
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
       toast({
+        title: "Verification Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Verification failed",
-        description: `Failed to start verification: ${e?.message || e}`,
       });
     } finally {
       setKycLoading(false);
@@ -842,16 +895,16 @@ export default function ReserveProfile() {
           toast({
             title: "Identity Verified",
             description:
-              "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+              "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
           });
         }
       }
       return row;
     } catch (e: any) {
       toast({
+        title: "Status Check Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Status check failed",
-        description: `Failed to fetch verification status: ${e?.message || e}`,
       });
     } finally {
       setKycLoading(false);
@@ -877,9 +930,9 @@ export default function ReserveProfile() {
         return;
       }
       toast({
-        variant: "destructive",
-        title: "Verification Incomplete",
+        title: "Verification Pending",
         description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
     } finally {
       setKycLoading(false);
@@ -891,18 +944,19 @@ export default function ReserveProfile() {
       // Prevent starting new sessions after approval (cost control)
       if (livenessStatus === "approved") {
         toast({
-          title: "Info",
+          title: "Already Approved",
           description:
-            "Liveness is already approved. No further checks needed.",
+            "Your liveness check is already approved. No further verification needed.",
+          className: "bg-green-50 border-2 border-green-400",
         });
         return;
       }
       if (!COGNITO_IDENTITY_POOL_ID) {
         toast({
-          variant: "destructive",
           title: "Configuration Error",
           description:
-            "Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.",
+            "Liveness verification is not configured. Please contact support.",
+          variant: "destructive",
         });
         return;
       }
@@ -973,9 +1027,9 @@ export default function ReserveProfile() {
       setShowLiveness(true);
       setLivenessError(e?.message || String(e));
       toast({
+        title: "Liveness Session Error",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Error",
-        description: `Failed to start liveness check: ${e?.message || e}`,
       });
     }
   };
@@ -1155,9 +1209,9 @@ export default function ReserveProfile() {
         (error as any)?.message ||
         "Unknown error occurred";
       toast({
+        title: "Profile Creation Failed",
+        description: getUserFriendlyError(error),
         variant: "destructive",
-        title: "Error",
-        description: `Failed to create profile: ${errorMessage}. Please try again.`,
       });
     },
   });
@@ -1229,9 +1283,9 @@ export default function ReserveProfile() {
         (error as any)?.message ||
         "Unknown error occurred";
       toast({
+        title: "Profile Update Failed",
+        description: getUserFriendlyError(error),
         variant: "destructive",
-        title: "Error",
-        description: `Failed to update profile: ${errorMessage}. Please try again.`,
       });
     },
   });
@@ -1239,33 +1293,34 @@ export default function ReserveProfile() {
   const handleFirstContinue = () => {
     if (!formData.email) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
+        title: "Email Required",
         description: "Please enter your email address.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!formData.password) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
+        title: "Password Required",
         description: "Please enter a password.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!formData.confirmPassword) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
+        title: "Confirm Password",
         description: "Please confirm your password.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Passwords do not match.",
+        title: "Passwords Don't Match",
+        description:
+          "The passwords you entered do not match. Please try again.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -1275,17 +1330,17 @@ export default function ReserveProfile() {
       !formData.full_name
     ) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
+        title: "Name Required",
         description: "Please enter your full name or stage name.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
+        title: "Name Required",
         description: "Please enter your full name.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -1304,40 +1359,13 @@ export default function ReserveProfile() {
         const data = await res.json();
         if (!data.available) {
           toast({
-            title: "Email Registered",
+            title: "Email Already Registered",
             description:
-              "This email is already registered. Would you like us to send a magic link to sign in?",
-            action: (
-              <ToastAction
-                altText="Send Magic Link"
-                onClick={async () => {
-                  const { error } = await supabase.auth.signInWithOtp({
-                    email: formData.email.trim().toLowerCase(),
-                    options: {
-                      emailRedirectTo: `${window.location.origin}/ReserveProfile`,
-                    },
-                  });
-                  if (error) {
-                    toast({
-                      variant: "destructive",
-                      title: "Error",
-                      description: error.message,
-                    });
-                  } else {
-                    toast({
-                      title: "Magic Link Sent",
-                      description: "Check your email to complete sign-in.",
-                    });
-                  }
-                }}
-              >
-                Send Magic Link
-              </ToastAction>
-            ),
+              "This email is already registered. Please log in instead or use a different email.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
-
         // Create Supabase auth user so login works
         const displayName =
           creatorType === "model_actor"
@@ -1356,14 +1384,13 @@ export default function ReserveProfile() {
           });
           return;
         }
-
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
         toast({
+          title: "Sign-up Failed",
+          description: getUserFriendlyError(e),
           variant: "destructive",
-          title: "Sign Up Failed",
-          description: e?.message || e,
         });
       } finally {
         setFirstContinueLoading(false);
@@ -1378,25 +1405,25 @@ export default function ReserveProfile() {
       if (creatorType === "influencer") {
         if (!formData.city?.trim()) {
           toast({
-            variant: "destructive",
-            title: "City is required",
+            title: "City Required",
             description: "Please enter your city.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
         if (!formData.state?.trim()) {
           toast({
-            variant: "destructive",
-            title: "State is required",
+            title: "State Required",
             description: "Please enter your state.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
         if (!formData.birthdate) {
           toast({
-            variant: "destructive",
-            title: "Birthdate is required",
+            title: "Birthdate Required",
             description: "Please enter your birthdate.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
@@ -1407,23 +1434,23 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-            (today.getMonth() === birth.getMonth() &&
-              today.getDate() < birth.getDate())
+          (today.getMonth() === birth.getMonth() &&
+            today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
           toast({
+            title: "Age Restriction",
+            description: "You must be 18 or older to register.",
             variant: "destructive",
-            title: "Age restriction",
-            description: "You must be 18 or older.",
           });
           return;
         }
         if (!formData.gender?.trim()) {
           toast({
-            variant: "destructive",
-            title: "Identity required",
+            title: "Gender Required",
             description: "Please select how you identify.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
@@ -1432,10 +1459,10 @@ export default function ReserveProfile() {
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
         toast({
-          variant: "destructive",
-          title: "Price required",
+          title: "Pricing Required",
           description:
             "Please set your base monthly license price (minimum $150).",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
@@ -1452,41 +1479,41 @@ export default function ReserveProfile() {
     if (creatorType === "influencer") {
       if (!formData.content_types || formData.content_types.length === 0) {
         toast({
-          variant: "destructive",
-          title: "Campaign type required",
-          description: "Select at least one campaign type.",
+          title: "Campaign Type Required",
+          description: "Please select at least one campaign type.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.industries || formData.industries.length === 0) {
         toast({
-          variant: "destructive",
-          title: "Industry required",
-          description: "Select at least one industry.",
+          title: "Industry Required",
+          description: "Please select at least one industry.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.primary_platform?.trim()) {
         toast({
-          variant: "destructive",
-          title: "Platform required",
-          description: "Primary platform is required.",
+          title: "Platform Required",
+          description: "Please select your primary platform.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.platform_handle?.trim()) {
         toast({
-          variant: "destructive",
-          title: "Handle required",
-          description: "Handle is required.",
+          title: "Handle Required",
+          description: "Please enter your platform handle.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.visibility) {
         toast({
-          variant: "destructive",
-          title: "Visibility required",
-          description: "Please select a profile visibility.",
+          title: "Visibility Required",
+          description: "Please select your profile visibility preference.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
@@ -1626,6 +1653,16 @@ export default function ReserveProfile() {
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-teal-50 to-blue-50 py-12 px-6">
       <div className="max-w-3xl mx-auto">
         {/* Warning Message */}
+        {showWarning && step === 1 && (
+          <Alert className="mb-8 bg-cyan-50 border-2 border-[#32C8D1] rounded-none">
+            <AlertCircle className="h-5 w-5 text-[#32C8D1]" />
+            <AlertDescription className="text-cyan-900 font-medium">
+              We're launching in limited batches to make sure every Creator gets
+              visibility and campaign opportunities. Reserve your profile to
+              join the first creator cohort.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Progress Bar */}
         <div className="mb-8">
@@ -1708,29 +1745,16 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        required
-                        className="border-gray-300 rounded-none pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
-                      >
-                        {showPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
                   </div>
 
                   <div>
@@ -1740,34 +1764,19 @@ export default function ReserveProfile() {
                     >
                       Confirm Password
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        required
-                        className="border-gray-300 rounded-none pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
                   </div>
 
                   <div>
@@ -1775,34 +1784,67 @@ export default function ReserveProfile() {
                       htmlFor="full_name"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Full Name
+                      {creatorType === "model_actor"
+                        ? "Full Name / Stage Name"
+                        : "Full Name"}
                     </Label>
                     <Input
                       id="full_name"
                       type="text"
-                      value={formData.full_name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, full_name: e.target.value })
+                      value={
+                        creatorType === "model_actor"
+                          ? formData.stage_name || formData.full_name
+                          : formData.full_name
                       }
-                      required
-                      className="border-gray-300 rounded-none"
-                      placeholder="Your full name"
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          [creatorType === "model_actor"
+                            ? "stage_name"
+                            : "full_name"]: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder={
+                        creatorType === "model_actor"
+                          ? "Your name or stage name"
+                          : "Your full name"
+                      }
                     />
                   </div>
                   <Button
-                    type="button"
                     onClick={handleFirstContinue}
-                    disabled={firstContinueLoading}
-                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none hover:opacity-90"
+                    disabled={
+                      createInitialProfileMutation.isPending ||
+                      firstContinueLoading
+                    }
+                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                   >
-                    {firstContinueLoading ? "Checking..." : "Continue"}
+                    {firstContinueLoading
+                      ? "Checking..."
+                      : createInitialProfileMutation.isPending
+                        ? "Saving..."
+                        : "Continue"}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
               ) : (
                 <form
                   className="space-y-4"
-                  onSubmit={handleLogin}
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await login(formData.email, formData.password);
+                      navigate("/CreatorDashboard");
+                    } catch (err: any) {
+                      const msg = err?.message || "Failed to sign in";
+                      toast({
+                        title: "Sign-in failed",
+                        description: msg,
+                        variant: "destructive",
+                      });
+                    }
+                  }}
                 >
                   <div>
                     <Label
@@ -1829,30 +1871,17 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="login_password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        required
-                        className="border-gray-300 rounded-none pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500"
-                      >
-                        {showPassword ? (
-                          <EyeOff size={20} />
-                        ) : (
-                          <Eye size={20} />
-                        )}
-                      </button>
-                    </div>
-                    <div className="text-right">
+                    <Input
+                      id="login_password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="border-2 border-gray-300 rounded-none"
+                      placeholder="••••••••"
+                    />
+                    <div className="text-right mt-1">
                       <Link
                         to="/forgot-password"
                         className="text-sm text-cyan-600 hover:underline"
@@ -1863,10 +1892,9 @@ export default function ReserveProfile() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none hover:opacity-90"
+                    className="w-full h-12 bg-black text-white border-2 border-black rounded-none"
                   >
                     Log in
-                    <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </form>
               )}
@@ -1925,10 +1953,10 @@ export default function ReserveProfile() {
                                 // For rejection, user can re-open and retry cleanly.
                                 if (!data.passed) {
                                   toast({
-                                    variant: "destructive",
                                     title: "Liveness Check Failed",
                                     description:
-                                      "Liveness check failed. Please try again with good lighting and follow prompts.",
+                                      "Please try again with good lighting and follow the on-screen prompts.",
+                                    variant: "destructive",
                                   });
                                 }
                                 setTimeout(() => {
@@ -1938,9 +1966,10 @@ export default function ReserveProfile() {
                                 }, 300);
                               } else {
                                 toast({
+                                  title: "Failed to Get Results",
+                                  description:
+                                    "Unable to fetch liveness verification results. Please try again.",
                                   variant: "destructive",
-                                  title: "Upload Failed",
-                                  description: `Failed to fetch liveness result: ${await r.text()}`,
                                 });
                               }
                             } finally {
@@ -1952,9 +1981,9 @@ export default function ReserveProfile() {
                             console.error("Liveness error", e);
                             setLivenessError(e?.message || String(e));
                             toast({
+                              title: "Liveness Check Error",
+                              description: getUserFriendlyError(e),
                               variant: "destructive",
-                              title: "Liveness Error",
-                              description: e?.message || e,
                             });
                             setLivenessRunning(false);
                             // Keep modal open to present the error
@@ -2114,6 +2143,31 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
                     Race/Ethnicity (select all that apply)
                   </Label>
+                  <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                    <Checkbox
+                      id="select-all-ethnicity"
+                      checked={ethnicities.every((eth) =>
+                        formData.ethnicity.includes(eth),
+                      )}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({
+                            ...formData,
+                            ethnicity: [...ethnicities],
+                          });
+                        } else {
+                          setFormData({ ...formData, ethnicity: [] });
+                        }
+                      }}
+                      className="border-2 border-gray-400"
+                    />
+                    <label
+                      htmlFor="select-all-ethnicity"
+                      className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                    >
+                      Select All
+                    </label>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {ethnicities.map((ethnicity) => (
                       <div
@@ -2260,6 +2314,31 @@ export default function ReserveProfile() {
                         You can specify more later
                       </span>
                     </div>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-work-types"
+                        checked={modelWorkTypes.every((type) =>
+                          formData.work_types.includes(type),
+                        )}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              work_types: [...modelWorkTypes],
+                            });
+                          } else {
+                            setFormData({ ...formData, work_types: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-work-types"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
                       {modelWorkTypes.map((type) => (
                         <div
@@ -2276,10 +2355,11 @@ export default function ReserveProfile() {
                                 toggleArrayItem("work_types", type);
                               } else {
                                 toast({
-                                  variant: "destructive",
                                   title: "Selection Limit",
                                   description:
                                     "Please select up to 3 options for now. You can add more later.",
+                                  className:
+                                    "bg-cyan-50 border-2 border-cyan-400",
                                 });
                               }
                             }}
@@ -2303,6 +2383,28 @@ export default function ReserveProfile() {
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
                       Vibe / Style Tags
                     </Label>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-vibes"
+                        checked={vibes.every((vibe) =>
+                          formData.vibes.includes(vibe),
+                        )}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ ...formData, vibes: [...vibes] });
+                          } else {
+                            setFormData({ ...formData, vibes: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-vibes"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {vibes.map((vibe) => (
                         <div
@@ -2421,6 +2523,31 @@ export default function ReserveProfile() {
                           Select up to 3 for now
                         </span>
                       </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-content"
+                          checked={contentTypes.every((type) =>
+                            formData.content_types.includes(type),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData({
+                                ...formData,
+                                content_types: [...contentTypes],
+                              });
+                            } else {
+                              setFormData({ ...formData, content_types: [] });
+                            }
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-content"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {contentTypes.map((type) => (
                           <div
@@ -2468,6 +2595,31 @@ export default function ReserveProfile() {
                         <span className="text-xs text-gray-500">
                           Select up to 3 for now
                         </span>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-industries"
+                          checked={industries.every((industry) =>
+                            formData.industries.includes(industry),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData({
+                                ...formData,
+                                industries: [...industries],
+                              });
+                            } else {
+                              setFormData({ ...formData, industries: [] });
+                            }
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-industries"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {industries.map((industry) => (
@@ -2907,7 +3059,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/api/liveness/result`),
+                                api(`/ api / liveness / result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -2925,10 +3077,11 @@ export default function ReserveProfile() {
                                 );
                                 if (!data.passed) {
                                   toast({
-                                    variant: "destructive",
                                     title: "Liveness Check Failed",
                                     description:
-                                      "Liveness check failed. Please try again with good lighting and follow prompts.",
+                                      "Please try again with good lighting and follow prompts.",
+                                    className:
+                                      "bg-red-50 border-2 border-red-400",
                                   });
                                 }
                                 // Always close and clear after a result to avoid lingering "Verifying" UI
@@ -2938,11 +3091,10 @@ export default function ReserveProfile() {
                                   setLivenessCreds(null);
                                 }, 300);
                               } else {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Upload Failed",
-                                  description: `Failed to fetch liveness result: ${await r.text()}`,
-                                });
+                                console.error(
+                                  "Failed to fetch liveness result",
+                                  await r.text(),
+                                );
                               }
                             } finally {
                               setLivenessRunning(false);
