@@ -103,7 +103,7 @@ export default function CreatorSignupOptions() {
                   >
                     <Icon className="w-10 h-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4 min-h-[4rem] flex items-center justify-center">
                     {creator.title}
                   </h3>
                 </div>
