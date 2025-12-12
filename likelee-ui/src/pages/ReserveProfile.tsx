@@ -1498,9 +1498,15 @@ export default function ReserveProfile() {
   const finalizeProfile = async () => {
     if (!user) {
       toast({
+<<<<<<< Updated upstream
         variant: "destructive",
         title: "Authentication Required",
         description: "Please log in.",
+=======
+        title: "Not Signed In",
+        description: "Please sign in to continue.",
+        variant: "destructive",
+>>>>>>> Stashed changes
       });
       return;
     }
@@ -1579,9 +1585,9 @@ export default function ReserveProfile() {
       setSubmitted(true);
     } catch (e: any) {
       toast({
+        title: "Profile Save Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
-        title: "Save Failed",
-        description: `Failed to save your profile: ${e?.message || e}`,
       });
     }
   };
@@ -1610,17 +1616,9 @@ export default function ReserveProfile() {
             balanced. Your profile is saved; we'll notify you when it's time to
             complete verification and go live.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Link to="/ReserveProfile">
-              <Button className="rounded-none border-2 border-black bg-black text-white px-6 h-11">
-                Sign in
-              </Button>
-            </Link>
+          <div className="flex items-center justify-center">
             <Link to="/CreatorDashboard">
-              <Button
-                variant="outline"
-                className="rounded-none border-2 border-black h-11 px-6"
-              >
+              <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white px-8 h-12">
                 Go to Dashboard
               </Button>
             </Link>
