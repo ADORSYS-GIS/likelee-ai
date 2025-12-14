@@ -1,7 +1,7 @@
 use axum::{extract::State, http::StatusCode, Json};
 use lettre::message::{header, SinglePart};
-use lettre::{Message, SmtpTransport, Transport};
 use lettre::transport::smtp::client::{Tls, TlsParameters};
+use lettre::{Message, SmtpTransport, Transport};
 use serde::Deserialize;
 use serde_json::json;
 
@@ -62,7 +62,8 @@ pub async fn send_email(
         .from(from_addr)
         .to(to_addr)
         .subject(payload.subject.clone())
-        .singlepart(SinglePart::plain(payload.body.clone())) {
+        .singlepart(SinglePart::plain(payload.body.clone()))
+    {
         Ok(m) => m,
         Err(_) => {
             return (
