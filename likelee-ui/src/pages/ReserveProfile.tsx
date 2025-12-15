@@ -30,6 +30,8 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Alert as UIAlert,
@@ -562,7 +564,7 @@ function ReferencePhotosStep(props: any) {
             <div>
               <Label className="text-sm font-medium text-gray-900">Left</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left ? (
+                {captures.left || uploadedUrls.left ? (
                   <img
                     src={captures.left ? captures.left.url : uploadedUrls.left}
                     className="w-full h-full object-cover"
@@ -575,7 +577,7 @@ function ReferencePhotosStep(props: any) {
             <div>
               <Label className="text-sm font-medium text-gray-900">Right</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right ? (
+                {captures.right || uploadedUrls.right ? (
                   <img
                     src={
                       captures.right ? captures.right.url : uploadedUrls.right
@@ -654,18 +656,23 @@ export default function ReserveProfile() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
-
-  useEffect(() => {
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem("reserve_step");
     const params = new URLSearchParams(window.location.search);
     const stepParam = params.get("step");
-    if (stepParam) {
-      setStep(parseInt(stepParam, 10));
-    }
-  }, []);
+    if (stepParam) return parseInt(stepParam, 10);
+    return saved ? parseInt(saved) : 1;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("reserve_step", step.toString());
+  }, [step]);
+
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
@@ -709,6 +716,12 @@ export default function ReserveProfile() {
     brand_categories: [],
     bio: "",
   });
+
+  useEffect(() => {
+    // Security: Do not persist passwords to localStorage
+    const { password, confirmPassword, ...safeData } = formData;
+    localStorage.setItem("reserve_formData", JSON.stringify(safeData));
+  }, [formData]);
 
   // Cameo reference image URLs
   const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null);
@@ -1378,7 +1391,6 @@ export default function ReserveProfile() {
         );
         if (!session) {
           toast({
-            title: "Registration Successful",
             description:
               "Please check your email to verify your account before continuing.",
           });
@@ -1604,6 +1616,10 @@ export default function ReserveProfile() {
       if (error) throw error;
       setProfileId(user.id);
       setSubmitted(true);
+      // Clear persisted state on success
+      localStorage.removeItem("reserve_formData");
+      localStorage.removeItem("reserve_step");
+      localStorage.removeItem("reserve_profileId");
     } catch (e: any) {
       toast({
         title: "Profile Save Failed",
@@ -1745,16 +1761,29 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1764,19 +1793,34 @@ export default function ReserveProfile() {
                     >
                       Confirm Password
                     </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1785,7 +1829,7 @@ export default function ReserveProfile() {
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
                       {creatorType === "model_actor"
-                        ? "Full Name / Stage Name"
+                        ? "Full Name"
                         : "Full Name"}
                     </Label>
                     <Input
@@ -1871,16 +1915,29 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <Input
-                      id="login_password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login_password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     <div className="text-right mt-1">
                       <Link
                         to="/forgot-password"

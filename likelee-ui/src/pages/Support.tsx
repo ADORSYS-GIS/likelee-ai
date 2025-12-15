@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Mail, CheckCircle2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Support() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function Support() {
       `Support: ${formData.subject}`,
     )}&body=${encodeURIComponent(`From: ${formData.email}\n\n${formData.message}`)}`;
     window.location.href = mailtoLink;
+
     setSubmitted(true);
     setTimeout(() => {
       setFormData({ email: "", subject: "", message: "" });
@@ -39,12 +41,19 @@ export default function Support() {
           </h1>
           <p className="text-xl text-gray-700 leading-relaxed max-w-2xl mx-auto mb-4">
             Need a hand? We've got you. The fastest way to reach us is{" "}
-            <a
-              href="mailto:help@likelee.ai"
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText("help@likelee.ai");
+                toast({
+                  title: "Copied to Clipboard",
+                  description:
+                    "Support email address has been copied to your clipboard.",
+                });
+              }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
             >
               help@likelee.ai
-            </a>
+            </button>
             .
           </p>
           <p className="text-lg text-gray-600">
@@ -64,8 +73,7 @@ export default function Support() {
                 Message Sent!
               </h3>
               <p className="text-gray-600">
-                Your email client should open with your message. We'll get back
-                to you soon.
+                Thank you for your message. We'll get back to you soon.
               </p>
             </div>
           ) : (
@@ -142,12 +150,19 @@ export default function Support() {
         <div className="mt-8 text-center">
           <p className="text-gray-600">
             Or email us directly at{" "}
-            <a
-              href="mailto:help@likelee.ai"
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText("help@likelee.ai");
+                toast({
+                  title: "Copied to Clipboard",
+                  description:
+                    "Support email address has been copied to your clipboard.",
+                });
+              }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
             >
               help@likelee.ai
-            </a>
+            </button>
           </p>
         </div>
       </div>
