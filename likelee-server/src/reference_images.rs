@@ -75,9 +75,9 @@ pub async fn upload_reference_image(
 
     // 1) Moderation pre-scan (best-effort: if Rekog configured)
     if let Some(client) = state.rekog.as_ref() {
-        if body.len() > 5_000_000 {
+        if body.len() > 10_000_000 {
             let out = ErrorOut {
-                message: "Please upload an image of 5 MB or less.".into(),
+                message: "Please upload an image of 10 MB or less.".into(),
                 reasons: None,
             };
             return Err((
