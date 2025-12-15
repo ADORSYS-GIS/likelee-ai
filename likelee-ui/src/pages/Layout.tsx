@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Menu, X, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Layout({ children, currentPageName }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -173,7 +176,7 @@ export default function Layout({ children, currentPageName }) {
                 fontWeight: "bold",
               }}
             >
-              JavaScript Required
+              {t('javascriptRequired')}
             </h1>
             <p
               style={{
@@ -182,8 +185,7 @@ export default function Layout({ children, currentPageName }) {
                 marginBottom: "20px",
               }}
             >
-              Likelee requires JavaScript to display content and provide full
-              functionality.
+              {t('javascriptRequiredMessage')}
             </p>
             <div
               style={{
@@ -204,7 +206,7 @@ export default function Layout({ children, currentPageName }) {
                   fontSize: "18px",
                 }}
               >
-                About Likelee:
+                {t('aboutLikelee')}
               </h2>
               <ul
                 style={{
@@ -215,32 +217,27 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <li>
-                  <strong>For Creators:</strong> License your digital likeness,
-                  set your rates, and earn royalties automatically
+                  <strong>{t('forCreators')}:</strong> {t('forCreatorsMessage')}
                 </li>
                 <li>
-                  <strong>For AI Artists:</strong> Build your portfolio and
-                  connect with studios for campaigns and projects
+                  <strong>{t('forAiArtists')}:</strong> {t('forAiArtistsMessage')}
                 </li>
                 <li>
-                  <strong>For Businesses:</strong> Access verified creator
-                  likenesses with transparent licensing and fast turnaround
+                  <strong>{t('forBusinesses')}:</strong> {t('forBusinessesMessage')}
                 </li>
                 <li>
-                  <strong>Protection & Rights:</strong> Every usage is tracked,
-                  consented, and compensated through smart contracts
+                  <strong>{t('protectionAndRights')}:</strong> {t('protectionAndRightsMessage')}
                 </li>
               </ul>
               <p style={{ marginTop: "20px", fontWeight: "bold" }}>
-                Please enable JavaScript in your browser to access the full
-                platform.
+                {t('enableJavascript')}
               </p>
               <p style={{ marginTop: "15px" }}>
                 <a
                   href="/static"
                   style={{ color: "#856404", textDecoration: "underline" }}
                 >
-                  View simplified version
+                  {t('viewSimplifiedVersion')}
                 </a>
               </p>
             </div>
@@ -291,7 +288,7 @@ export default function Layout({ children, currentPageName }) {
               fontWeight: "bold",
             }}
           >
-            JavaScript Required for Full Experience
+            {t('javascriptRequiredFullExperience')}
           </h1>
           <p
             style={{
@@ -301,7 +298,7 @@ export default function Layout({ children, currentPageName }) {
               fontWeight: "500",
             }}
           >
-            Likelee is an interactive platform that requires JavaScript.
+            {t('interactivePlatformMessage')}
           </p>
 
           <div
@@ -325,7 +322,7 @@ export default function Layout({ children, currentPageName }) {
                 color: "#111",
               }}
             >
-              Likelee Platform Features:
+              {t('platformFeatures')}
             </h2>
 
             <div style={{ marginBottom: "25px" }}>
@@ -337,7 +334,7 @@ export default function Layout({ children, currentPageName }) {
                   color: "#32C8D1",
                 }}
               >
-                👤 For Creators & Athletes
+                {t('forCreatorsAndAthletes')}
               </h3>
               <ul
                 style={{
@@ -346,10 +343,10 @@ export default function Layout({ children, currentPageName }) {
                   lineHeight: "1.8",
                 }}
               >
-                <li>License your digital likeness and earn passive income</li>
-                <li>Set your own rates and approval parameters</li>
-                <li>Track every usage with automated royalty payments</li>
-                <li>Full control over who uses your image and where</li>
+                <li>{t('forCreatorsAndAthletesMessage1')}</li>
+                <li>{t('forCreatorsAndAthletesMessage2')}</li>
+                <li>{t('forCreatorsAndAthletesMessage3')}</li>
+                <li>{t('forCreatorsAndAthletesMessage4')}</li>
               </ul>
             </div>
 
@@ -362,7 +359,7 @@ export default function Layout({ children, currentPageName }) {
                   color: "#F18B6A",
                 }}
               >
-                🎨 For AI Artists & Filmmakers
+                {t('forAiArtistsAndFilmmakers')}
               </h3>
               <ul
                 style={{
@@ -372,11 +369,11 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <li>
-                  Build professional portfolio showcasing AI creative work
+                  {t('forAiArtistsAndFilmmakersMessage1')}
                 </li>
-                <li>Connect directly with brands and studios</li>
-                <li>Access exclusive AI filmmaking opportunities</li>
-                <li>Browse curated job board for AI creative roles</li>
+                <li>{t('forAiArtistsAndFilmmakersMessage2')}</li>
+                <li>{t('forAiArtistsAndFilmmakersMessage3')}</li>
+                <li>{t('forAiArtistsAndFilmmakersMessage4')}</li>
               </ul>
             </div>
 
@@ -389,7 +386,7 @@ export default function Layout({ children, currentPageName }) {
                   color: "#F7B750",
                 }}
               >
-                🏢 For Businesses
+                {t('forBusinesses')}
               </h3>
               <ul
                 style={{
@@ -398,10 +395,10 @@ export default function Layout({ children, currentPageName }) {
                   lineHeight: "1.8",
                 }}
               >
-                <li>Launch campaigns with verified, consented creators</li>
-                <li>Get brand-safe content in under 48 hours</li>
-                <li>Smart contracts with watermarked assets</li>
-                <li>Transparent licensing and usage tracking</li>
+                <li>{t('forBusinessesMessage1')}</li>
+                <li>{t('forBusinessesMessage2')}</li>
+                <li>{t('forBusinessesMessage3')}</li>
+                <li>{t('forBusinessesMessage4')}</li>
               </ul>
             </div>
 
@@ -415,9 +412,7 @@ export default function Layout({ children, currentPageName }) {
               }}
             >
               <p style={{ margin: "0", fontWeight: "600", fontSize: "16px" }}>
-                🔒 <strong>Ethical AI Standards:</strong> SAG-AFTRA aligned,
-                GDPR/CCPA compliant, with automated consent tracking and fair
-                compensation for all creators.
+                {t('ethicalAiStandards')}
               </p>
             </div>
 
@@ -429,7 +424,7 @@ export default function Layout({ children, currentPageName }) {
                   fontWeight: "bold",
                 }}
               >
-                To access the full interactive platform:
+                {t('toAccessPlatform')}
               </p>
               <ol
                 style={{
@@ -439,10 +434,10 @@ export default function Layout({ children, currentPageName }) {
                   marginBottom: "20px",
                 }}
               >
-                <li>Enable JavaScript in your browser settings</li>
-                <li>Refresh this page</li>
+                <li>{t('enableJavascriptInBrowser')}</li>
+                <li>{t('refreshPage')}</li>
                 <li>
-                  Or view our{" "}
+                  {t('orViewOur')}{" "}
                   <a
                     href="/static"
                     style={{
@@ -451,7 +446,7 @@ export default function Layout({ children, currentPageName }) {
                       fontWeight: "600",
                     }}
                   >
-                    simplified text version
+                    {t('simplifiedTextVersion')}
                   </a>
                 </li>
               </ol>
@@ -470,7 +465,7 @@ export default function Layout({ children, currentPageName }) {
                     marginBottom: "10px",
                   }}
                 >
-                  Questions? Contact us:
+                  {t('questionsContactUs')}
                 </p>
                 <a
                   href="mailto:help@likelee.ai"
@@ -537,7 +532,7 @@ export default function Layout({ children, currentPageName }) {
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
-                  Brands
+                  {t('brands')}
                 </Link>
 
                 {/* For Business Dropdown */}
@@ -550,7 +545,7 @@ export default function Layout({ children, currentPageName }) {
                         : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                   >
-                    Agencies
+                    {t('agencies')}
                   </Link>
 
                   {/* Dropdown Menu */}
@@ -561,10 +556,10 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          Marketing Agency
+                          {t('marketingAgency')}
                         </div>
                         <div className="text-xs text-gray-500">
-                          Advertising & creative services
+                          {t('marketingAgencySub')}
                         </div>
                       </Link>
                       <Link
@@ -572,10 +567,10 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          Talent / Modeling Agency
+                          {t('talentAgency')}
                         </div>
                         <div className="text-xs text-gray-500">
-                          Talent representation
+                          {t('talentAgencySub')}
                         </div>
                       </Link>
                       <Link
@@ -583,10 +578,10 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          Sports Agency
+                          {t('sportsAgency')}
                         </div>
                         <div className="text-xs text-gray-500">
-                          NIL & athlete representation
+                          {t('sportsAgencySub')}
                         </div>
                       </Link>
                     </div>
@@ -601,7 +596,7 @@ export default function Layout({ children, currentPageName }) {
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
-                  About Us
+                  {t('aboutUs')}
                 </Link>
 
                 <Link
@@ -612,8 +607,9 @@ export default function Layout({ children, currentPageName }) {
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
-                  Contact
+                  {t('contact')}
                 </Link>
+                <LanguageSwitcher />
               </div>
             )}
 
@@ -646,7 +642,7 @@ export default function Layout({ children, currentPageName }) {
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                Brands
+                {t('brands')}
               </Link>
 
               {/* Mobile For Business with sub-items */}
@@ -660,7 +656,7 @@ export default function Layout({ children, currentPageName }) {
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  Agencies
+                  {t('agencies')}
                 </Link>
                 <div className="ml-4 mt-1 space-y-1">
                   <Link
@@ -668,21 +664,21 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Marketing Agency
+                    {t('marketingAgency')}
                   </Link>
                   <Link
                     to={createPageUrl("TalentAgency")}
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Talent / Modeling Agency
+                    {t('talentAgency')}
                   </Link>
                   <Link
                     to={createPageUrl("SportsAgency")}
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Sports Agency
+                    {t('sportsAgency')}
                   </Link>
                 </div>
               </div>
@@ -696,7 +692,7 @@ export default function Layout({ children, currentPageName }) {
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                About Us
+                {t('aboutUs')}
               </Link>
 
               <Link
@@ -708,7 +704,7 @@ export default function Layout({ children, currentPageName }) {
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                Contact
+                {t('contact')}
               </Link>
             </div>
           </div>
@@ -741,84 +737,84 @@ export default function Layout({ children, currentPageName }) {
                   </span>
                 </Link>
                 <p className="text-gray-600 text-sm leading-relaxed max-w-md">
-                  The Verified Talent Ecosystem for AI-powered Media.
+                  {t('footerSlogan')}
                 </p>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  Resources
+                  {t('resources')}
                 </h3>
                 <div className="space-y-3">
                   <Link
                     to="#"
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Blog
+                    {t('blog')}
                   </Link>
                   <Link
                     to={createPageUrl("Impact")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Impact
+                    {t('impact')}
                   </Link>
                   <Link
                     to={createPageUrl("Support")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Support
+                    {t('support')}
                   </Link>
                   <Link
                     to={createPageUrl("SalesInquiry")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Contact Us
+                    {t('contactUs')}
                   </Link>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  Legal & Compliance
+                  {t('legalAndCompliance')}
                 </h3>
                 <div className="space-y-3">
                   <Link
                     to={createPageUrl("SAGAFTRAAlignment")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    SAG-AFTRA Alignment
+                    {t('sagAftraAlignment')}
                   </Link>
                   <Link
                     to={createPageUrl("PrivacyPolicy")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Privacy Policy
+                    {t('privacyPolicy')}
                   </Link>
                   <Link
                     to={createPageUrl("CommercialRights")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Commercial Rights
+                    {t('commercialRights')}
                   </Link>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  Company
+                  {t('company')}
                 </h3>
                 <div className="space-y-3">
                   <Link
                     to={createPageUrl("AboutUs")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    About Us
+                    {t('aboutUs')}
                   </Link>
                   <Link
                     to={createPageUrl("Faces")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    Creators
+                    {t('creators')}
                   </Link>
                 </div>
               </div>
@@ -826,10 +822,10 @@ export default function Layout({ children, currentPageName }) {
 
             <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-sm text-gray-500">
-                © 2025 Likelee. All rights reserved.
+                {t('copyright')}
               </p>
               <p className="text-sm text-gray-500">
-                Follow us on Instagram{" "}
+                {t('followUs')}{" "}
                 <a
                   href="https://instagram.com/@likelee.ai"
                   target="_blank"
