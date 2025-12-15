@@ -57,12 +57,29 @@ pub struct ServerConfig {
     #[envconfig(from = "LIVENESS_ENABLED", default = "1")]
     pub liveness_enabled: String,
 
-
     #[envconfig(from = "AWS_REGION", default = "us-east-1")]
     pub aws_region: String,
 
     #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
     pub elevenlabs_api_key: String,
+
+    #[envconfig(from = "SMTP_HOST", default = "")]
+    pub smtp_host: String,
+
+    #[envconfig(from = "SMTP_PORT", default = "587")]
+    pub smtp_port: u16,
+
+    #[envconfig(from = "SMTP_USER", default = "")]
+    pub smtp_user: String,
+
+    #[envconfig(from = "SMTP_PASSWORD", default = "")]
+    pub smtp_password: String,
+
+    #[envconfig(from = "EMAIL_FROM", default = "noreply@likelee.ai")]
+    pub email_from: String,
+
+    #[envconfig(from = "EMAIL_CONTACT_TO", default = "")]
+    pub email_contact_to: String,
 }
 
 #[derive(Clone)]
@@ -76,4 +93,11 @@ pub struct AppState {
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
+
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_user: String,
+    pub smtp_password: String,
+    pub email_from: String,
+    pub email_contact_to: String,
 }
