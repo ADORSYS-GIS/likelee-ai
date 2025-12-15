@@ -108,6 +108,11 @@ pub fn build_router(state: AppState) -> Router {
             "/api/brand/voice-assets",
             get(crate::licenses::list_brand_voice_assets),
         )
+        // Integrations: Core
+        .route(
+            "/api/integrations/core/send-email",
+            post(crate::email::send_email),
+        )
         .route(
             "/api/liveness/create",
             post(crate::liveness::create_session),
