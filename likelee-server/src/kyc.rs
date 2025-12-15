@@ -278,7 +278,7 @@ pub async fn get_status(
                     debug!(body = %body, "Veriff decision body");
                     let v: serde_json::Value =
                         serde_json::from_str(&body).unwrap_or(serde_json::json!({}));
-                    
+
                     // Check 'decision' object first, then 'verification' object
                     let status = v
                         .get("decision")
@@ -322,7 +322,7 @@ pub async fn get_status(
                 } else {
                     let status = res.status();
                     warn!(status = %status, "Veriff decision request failed");
-                    
+
                     // If session is not found (404), it's a stale/invalid session.
                     // We should clear it or mark as failed to stop the loop.
                     if status == StatusCode::NOT_FOUND {
