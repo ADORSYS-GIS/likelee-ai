@@ -527,93 +527,95 @@ export default function Layout({ children, currentPageName }) {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-1">
-              <Link
-                to={createPageUrl("BrandCompany")}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                  location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                Brands
-              </Link>
-
-              {/* For Business Dropdown */}
-              <div className="relative group">
+            {!isDashboardPage && (
+              <div className="hidden md:flex items-center gap-1">
                 <Link
-                  to={createPageUrl("AgencySelection")}
+                  to={createPageUrl("BrandCompany")}
                   className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("AgencySelection")
+                    location.pathname === createPageUrl("BrandCompany")
                       ? "text-gray-900 bg-gray-100"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
-                  Agencies
+                  Brands
                 </Link>
 
-                {/* Dropdown Menu */}
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="p-2">
-                    <Link
-                      to={createPageUrl("MarketingAgency")}
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <div className="font-semibold text-gray-900">
-                        Marketing Agency
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Advertising & creative services
-                      </div>
-                    </Link>
-                    <Link
-                      to={createPageUrl("TalentAgency")}
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <div className="font-semibold text-gray-900">
-                        Talent / Modeling Agency
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Talent representation
-                      </div>
-                    </Link>
-                    <Link
-                      to={createPageUrl("SportsAgency")}
-                      className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      <div className="font-semibold text-gray-900">
-                        Sports Agency
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        NIL & athlete representation
-                      </div>
-                    </Link>
+                {/* For Business Dropdown */}
+                <div className="relative group">
+                  <Link
+                    to={createPageUrl("AgencySelection")}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                      location.pathname === createPageUrl("AgencySelection")
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    Agencies
+                  </Link>
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="p-2">
+                      <Link
+                        to={createPageUrl("MarketingAgency")}
+                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">
+                          Marketing Agency
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Advertising & creative services
+                        </div>
+                      </Link>
+                      <Link
+                        to={createPageUrl("TalentAgency")}
+                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">
+                          Talent / Modeling Agency
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Talent representation
+                        </div>
+                      </Link>
+                      <Link
+                        to={createPageUrl("SportsAgency")}
+                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <div className="font-semibold text-gray-900">
+                          Sports Agency
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          NIL & athlete representation
+                        </div>
+                      </Link>
+                    </div>
                   </div>
                 </div>
+
+                <Link
+                  to={createPageUrl("AboutUs")}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("AboutUs")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  About Us
+                </Link>
+
+                <Link
+                  to={createPageUrl("Contact")}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("Contact")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  Contact
+                </Link>
               </div>
-
-              <Link
-                to={createPageUrl("AboutUs")}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                  location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                About Us
-              </Link>
-
-              <Link
-                to={createPageUrl("Contact")}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                  location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                Contact
-              </Link>
-            </div>
+            )}
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
