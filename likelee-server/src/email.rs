@@ -1,5 +1,5 @@
 use axum::{extract::State, http::StatusCode, Json};
-use lettre::message::{header, SinglePart};
+use lettre::message::SinglePart;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
 use lettre::{Message, SmtpTransport, Transport};
 use serde::Deserialize;
