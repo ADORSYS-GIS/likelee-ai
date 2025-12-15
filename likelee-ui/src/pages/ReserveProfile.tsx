@@ -543,52 +543,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left || uploadedUrls.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right || uploadedUrls.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -684,47 +684,47 @@ export default function ReserveProfile() {
     return saved
       ? JSON.parse(saved)
       : {
-          creator_type: creatorType,
-          email: "",
-          password: "",
-          confirmPassword: "",
-          full_name: "",
-          stage_name: "",
+        creator_type: creatorType,
+        email: "",
+        password: "",
+        confirmPassword: "",
+        full_name: "",
+        stage_name: "",
 
-          // Common fields
-          city: "",
-          state: "",
-          birthdate: "",
-          gender: "",
-          ethnicity: [],
-          vibes: [],
-          visibility: "private",
-          // Pricing (USD-only)
-          base_monthly_price_usd: "",
+        // Common fields
+        city: "",
+        state: "",
+        birthdate: "",
+        gender: "",
+        ethnicity: [],
+        vibes: [],
+        visibility: "private",
+        // Pricing (USD-only)
+        base_monthly_price_usd: "",
 
-          // Influencer specific
-          content_types: [],
-          content_other: "",
-          industries: [],
-          primary_platform: "",
-          platform_handle: "",
+        // Influencer specific
+        content_types: [],
+        content_other: "",
+        industries: [],
+        primary_platform: "",
+        platform_handle: "",
 
-          // Model specific
-          work_types: [],
-          representation_status: "",
-          headshot_url: "",
+        // Model specific
+        work_types: [],
+        representation_status: "",
+        headshot_url: "",
 
-          // Athlete specific
-          sport: "",
-          athlete_type: "",
-          school_name: "",
-          age: "",
-          languages: "",
-          instagram_handle: "",
-          twitter_handle: "",
-          brand_categories: [],
-          bio: "",
-        };
+        // Athlete specific
+        sport: "",
+        athlete_type: "",
+        school_name: "",
+        age: "",
+        languages: "",
+        instagram_handle: "",
+        twitter_handle: "",
+        brand_categories: [],
+        bio: "",
+      };
   });
 
   useEffect(() => {
@@ -841,7 +841,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1221,8 +1221,8 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
-      setProfileId(user?.id || null);
+    onSuccess: (data) => {
+      setProfileId(data.id);
       setStep(2);
     },
     onError: (error) => {
@@ -1295,8 +1295,9 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Proceed to verification step
+      setProfileId(data.id);
       setStep(4);
     },
     onError: (error) => {
@@ -1457,8 +1458,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -3086,7 +3087,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/ api / liveness / result`),
+                                api(`/api/liveness/result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -3094,6 +3095,7 @@ export default function ReserveProfile() {
                                   },
                                   body: JSON.stringify({
                                     session_id: livenessSessionId,
+                                    user_id: user?.id || profileId,
                                   }),
                                 },
                               );

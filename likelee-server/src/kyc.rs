@@ -30,28 +30,39 @@ pub struct SessionResponse {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ProfileVerification {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kyc_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub liveness_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kyc_provider: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kyc_session_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub verified_at: Option<String>,
 }
 
-async fn update_profile(
+pub async fn update_profile(
     state: &AppState,
-    user_id: &str,
+    user_id: String,
     payload: &ProfileVerification,
 ) -> Result<(), String> {
     let body = serde_json::to_string(payload).map_err(|e| e.to_string())?;
-    match state
+    info!(user_id = %user_id, body = %body, "Updating profile verification status");
+    let res = state
         .pg
         .from("profiles")
-        .eq("id", user_id)
         .update(body)
+        .eq("id", &user_id)
         .execute()
-        .await
-    {
-        Ok(_) => {}
+        .await;
+
+    // Log the response to see if any rows were actually updated
+    match res {
+        Ok(res) => {
+            let status = res.status();
+            info!(user_id = %user_id, status = %status, "Profile update executed");
+        }
         Err(e) => {
             let msg = e.to_string();
             if msg.contains("42703") || msg.contains("column") && msg.contains("does not exist") {
@@ -181,7 +192,7 @@ pub async fn create_session(
 
     let payload = ProfileVerification {
         kyc_status: Some("pending".into()),
-        liveness_status: Some("pending".into()),
+        liveness_status: None,
         kyc_provider: Some("veriff".into()),
         kyc_session_id: if session_id.is_empty() {
             None
@@ -190,7 +201,7 @@ pub async fn create_session(
         },
         verified_at: None,
     };
-    update_profile(&state, profile_id, &payload)
+    update_profile(&state, profile_id.to_string(), &payload)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
@@ -253,8 +264,7 @@ pub async fn get_status(
         );
         info!(endpoint = %url, "GET Veriff decision");
         let client = reqwest::Client::new();
-        let empty: &[u8] = &[];
-        let sig = compute_hmac_hex(&state.veriff.shared_secret, empty);
+        let sig = compute_hmac_hex(&state.veriff.shared_secret, session_id.as_bytes());
         match client
             .get(&url)
             .header("x-auth-client", &state.veriff.api_key)
@@ -268,11 +278,14 @@ pub async fn get_status(
                     debug!(body = %body, "Veriff decision body");
                     let v: serde_json::Value =
                         serde_json::from_str(&body).unwrap_or(serde_json::json!({}));
+                    
+                    // Check 'decision' object first, then 'verification' object
                     let status = v
                         .get("decision")
                         .and_then(|d| d.get("status"))
+                        .or_else(|| v.get("verification").and_then(|d| d.get("status")))
                         .and_then(|s| s.as_str())
-                        .unwrap_or("pending")
+                        .unwrap_or("pending") // If null/missing, assume pending (or we could use "abandoned")
                         .to_lowercase();
                     let approved = status == "approved";
                     let mapped = if approved {
@@ -284,12 +297,12 @@ pub async fn get_status(
                     };
                     let payload = ProfileVerification {
                         kyc_status: Some(mapped.into()),
-                        liveness_status: Some(mapped.into()),
+                        liveness_status: None,
                         kyc_provider: Some("veriff".into()),
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
-                    let _ = update_profile(&state, profile_id, &payload).await;
+                    let _ = update_profile(&state, profile_id.to_string(), &payload).await;
                     let resp2 = state
                         .pg
                         .from("profiles")
@@ -307,11 +320,26 @@ pub async fn get_status(
                     rows = serde_json::from_str(&text2)
                         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
                 } else {
-                    debug!(status = %res.status(), "Veriff decision request failed");
+                    let status = res.status();
+                    warn!(status = %status, "Veriff decision request failed");
+                    
+                    // If session is not found (404), it's a stale/invalid session.
+                    // We should clear it or mark as failed to stop the loop.
+                    if status == StatusCode::NOT_FOUND {
+                        warn!("Veriff session not found. Marking as failed to stop polling.");
+                        let payload = ProfileVerification {
+                            kyc_status: Some("not_started".into()), // Reset so user can try again
+                            liveness_status: None,
+                            kyc_provider: None,
+                            kyc_session_id: Some("".into()), // Clear the session ID
+                            verified_at: None,
+                        };
+                        let _ = update_profile(&state, profile_id.to_string(), &payload).await;
+                    }
                 }
             }
             Err(e) => {
-                debug!(error = %e, "Veriff decision request error");
+                error!(error = %e, "Veriff decision request error");
             }
         }
     }
@@ -389,12 +417,12 @@ pub async fn veriff_webhook(
 
     let payload = ProfileVerification {
         kyc_status: Some(mapped_status.into()),
-        liveness_status: Some(mapped_status.into()),
+        liveness_status: None,
         kyc_provider: Some("veriff".into()),
         kyc_session_id: parsed.session.map(|s| s.id),
         verified_at: approved.then(|| Utc::now().to_rfc3339()),
     };
-    update_profile(&state, &user_id, &payload)
+    update_profile(&state, user_id, &payload)
         .await
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e))?;
     Ok(axum::http::StatusCode::OK)
