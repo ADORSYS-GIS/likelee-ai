@@ -913,7 +913,7 @@ export default function CreatorDashboard() {
           profile.industries,
         );
         setCreator({
-          name: profile.full_name || creator.name,
+          name: profile.full_name || "",
           email: profile.email || creator.email,
           profile_photo: profile.profile_photo_url || creator.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(", "),

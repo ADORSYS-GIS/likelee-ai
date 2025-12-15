@@ -566,7 +566,7 @@ function ReferencePhotosStep(props: any) {
             <div>
               <Label className="text-sm font-medium text-gray-900">Left</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left ? (
+                {captures.left || uploadedUrls.left ? (
                   <img
                     src={captures.left ? captures.left.url : uploadedUrls.left}
                     className="w-full h-full object-cover"
@@ -579,7 +579,7 @@ function ReferencePhotosStep(props: any) {
             <div>
               <Label className="text-sm font-medium text-gray-900">Right</Label>
               <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right ? (
+                {captures.right || uploadedUrls.right ? (
                   <img
                     src={
                       captures.right ? captures.right.url : uploadedUrls.right
@@ -658,15 +658,18 @@ export default function ReserveProfile() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
-
-  useEffect(() => {
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem("reserve_step");
     const params = new URLSearchParams(window.location.search);
     const stepParam = params.get("step");
-    if (stepParam) {
-      setStep(parseInt(stepParam, 10));
-    }
-  }, []);
+    if (stepParam) return parseInt(stepParam, 10);
+    return saved ? parseInt(saved) : 1;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("reserve_step", step.toString());
+  }, [step]);
+
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
@@ -716,6 +719,12 @@ export default function ReserveProfile() {
     brand_categories: [],
     bio: "",
   });
+
+  useEffect(() => {
+    // Security: Do not persist passwords to localStorage
+    const { password, confirmPassword, ...safeData } = formData;
+    localStorage.setItem("reserve_formData", JSON.stringify(safeData));
+  }, [formData]);
 
   // Cameo reference image URLs
   const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null);
@@ -1608,6 +1617,10 @@ export default function ReserveProfile() {
       if (error) throw error;
       setProfileId(user.id);
       setSubmitted(true);
+      // Clear persisted state on success
+      localStorage.removeItem("reserve_formData");
+      localStorage.removeItem("reserve_step");
+      localStorage.removeItem("reserve_profileId");
     } catch (e: any) {
       toast({
         title: "Profile Save Failed",
