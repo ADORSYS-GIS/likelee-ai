@@ -2502,7 +2502,7 @@ export default function CreatorDashboard() {
         });
         return;
       }
-      
+
       // Server pre-scan is limited to 10MB
       if (file.size > 10_000_000) {
         alert("Please upload an image ≤ 10MB.");
@@ -6313,8 +6313,6 @@ export default function CreatorDashboard() {
                           alt="Preview"
                           className="w-full max-h-[50vh] object-contain border-2 border-gray-200 rounded-lg mb-4"
                         />
-
-                        
                       </div>
                     )}
 
