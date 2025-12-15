@@ -49,7 +49,6 @@ import StudioImageToVideo from "./StudioImageToVideo";
 import TestFalAPI from "./TestFalAPI";
 
 import SalesInquiry from "./SalesInquiry";
-import Contact from "./Contact";
 
 import MarketingAgency from "./MarketingAgency";
 import AgencySelection from "./AgencySelection";
@@ -112,8 +111,6 @@ const __pagesQueryClient = new QueryClient();
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import Login from "./Login";
 import Register from "./Register";
-import ForgotPassword from "./ForgotPassword";
-import UpdatePassword from "./UpdatePassword";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 
@@ -167,8 +164,6 @@ const PAGES = {
   TestFalAPI: TestFalAPI,
 
   SalesInquiry: SalesInquiry,
-
-  Contact: Contact,
 
   MarketingAgency: MarketingAgency,
 
@@ -297,8 +292,6 @@ function PagesContent() {
         <Route path="/TestFalAPI" element={<TestFalAPI />} />
 
         <Route path="/SalesInquiry" element={<SalesInquiry />} />
-
-        <Route path="/Contact" element={<Contact />} />
 
         <Route path="/MarketingAgency" element={<MarketingAgency />} />
 
@@ -459,8 +452,6 @@ function PagesContent() {
 
         <Route path="/Login" element={<Login />} />
         <Route path="/Register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
         <Route
           path="/TwoFactorSetup"
           element={

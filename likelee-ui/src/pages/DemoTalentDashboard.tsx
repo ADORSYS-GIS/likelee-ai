@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -208,7 +208,6 @@ export default function DemoTalentDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showPackageModal, setShowPackageModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
-  const { toast } = useToast();
   const [packageTab, setPackageTab] = useState("overview");
   const [portfolio] = useState(mockPortfolio);
   const [projects] = useState(mockProjects);
@@ -222,15 +221,13 @@ export default function DemoTalentDashboard() {
   const isPro = false;
 
   const handleGeneratePackage = () => {
-    toast({
-      title: "Info",
-      description:
-        "Package generated! (Demo mode - download would start in production)",
-    });
+    alert(
+      "Package generated! (Demo mode - download would start in production)",
+    );
   };
 
   const handleSaveProfile = () => {
-    toast({ title: "Info", description: "Profile saved! (Demo mode)" });
+    alert("Profile saved! (Demo mode)");
     setShowEditProfileModal(false);
   };
 
@@ -238,9 +235,9 @@ export default function DemoTalentDashboard() {
     <div className="min-h-screen bg-gray-50 py-12 px-6">
       <div className="max-w-7xl mx-auto">
         {/* Demo Banner */}
-        <div className="mb-8 bg-blue-50 border-2 border-blue-500 rounded-none p-4 flex items-start">
-          <AlertCircle className="h-5 w-5 text-blue-600 mr-3" />
-          <div className="text-blue-900 font-medium">
+        <Alert className="mb-8 bg-blue-50 border-2 border-blue-500 rounded-none">
+          <AlertCircle className="h-5 w-5 text-blue-600" />
+          <AlertDescription className="text-blue-900 font-medium">
             <strong>Demo Mode:</strong> This is a preview of the AI Talent
             Dashboard with sample data. Sign up to create your real profile and
             start getting matched with opportunities!
@@ -251,8 +248,8 @@ export default function DemoTalentDashboard() {
             >
               Sign Up Now
             </Button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
 
         {/* Navigation Bar */}
         <div className="bg-white border-2 border-gray-200 mb-8 rounded-none">
@@ -801,12 +798,7 @@ export default function DemoTalentDashboard() {
 
                   <div className="mt-6 pt-6 border-t-2 border-gray-200 flex gap-3">
                     <Button
-                      onClick={() =>
-                        toast({
-                          title: "Info",
-                          description: "Settings saved! (Demo mode)",
-                        })
-                      }
+                      onClick={() => alert("Settings saved! (Demo mode)")}
                       className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-none"
                     >
                       Save Settings
@@ -1120,11 +1112,11 @@ export default function DemoTalentDashboard() {
             {!isPro && (
               <Alert className="bg-amber-50 border-2 border-amber-600 rounded-none">
                 <Lock className="h-5 w-5 text-amber-600" />
-                <div className="text-amber-900">
+                <AlertDescription className="text-amber-900">
                   <strong>Free tier limit:</strong> You can have 3 active
                   applications at a time. Upgrade to Pro for unlimited
                   applications.
-                </div>
+                </AlertDescription>
               </Alert>
             )}
           </div>

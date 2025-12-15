@@ -120,7 +120,13 @@ function toast({ ...props }) {
       toast: { ...props, id },
     });
 
+  let autoTimer: any = null;
+
   const dismiss = () => {
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
   };
 
@@ -136,13 +142,10 @@ function toast({ ...props }) {
     },
   });
 
-  // Smart auto-dismiss: only auto-dismiss toasts WITHOUT action buttons
-  // Toasts with action buttons (like "OK") stay until user clicks them
-  if (!props.action) {
-    setTimeout(() => {
-      dismiss();
-    }, 5000); // 5 seconds
-  }
+  // Schedule automatic dismiss
+  autoTimer = setTimeout(() => {
+    dismiss();
+  }, AUTO_DISMISS_DELAY);
 
   return {
     id,

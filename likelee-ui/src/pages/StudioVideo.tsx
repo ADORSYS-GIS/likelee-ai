@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useToast } from "@/components/ui/use-toast";
 
 const videoModels = [
   {
@@ -102,7 +101,6 @@ export default function StudioVideo() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
 
   const urlModel = searchParams.get("model");
 
@@ -185,11 +183,9 @@ export default function StudioVideo() {
       ) {
         setShowSubscriptionModal(true);
       } else {
-        toast({
-          title: "Error",
-          description: `Generation failed: ${error.message || "An unknown error occurred."}`,
-          variant: "destructive",
-        });
+        alert(
+          `Generation failed: ${error.message || "An unknown error occurred."}`,
+        );
       }
     },
   });
@@ -249,11 +245,7 @@ export default function StudioVideo() {
 
   const handleGenerate = () => {
     if (!prompt && !imageUrl) {
-      toast({
-        title: "Input Required",
-        description: "Please provide a prompt or a reference image.",
-        variant: "destructive",
-      });
+      alert("Please provide a prompt or a reference image.");
       return;
     }
 
@@ -280,11 +272,7 @@ export default function StudioVideo() {
       setImageUrl(data.file_url);
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload image. Please try again.",
-        variant: "destructive",
-      });
+      alert("Failed to upload image. Please try again.");
     }
   };
 

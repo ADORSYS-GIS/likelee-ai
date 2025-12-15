@@ -14,7 +14,6 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import {
   MapPin,
   DollarSign,
@@ -74,7 +73,6 @@ export default function AITalentBoard() {
   const [expandingJobId, setExpandingJobId] = useState(null);
   const [enhancedJobs, setEnhancedJobs] = useState(new Set());
   const jobDetailsRef = useRef(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     checkUser();
@@ -547,11 +545,7 @@ export default function AITalentBoard() {
       }
     } catch (err) {
       console.error("Error saving job:", err);
-      toast({
-        title: "Error",
-        description: "Failed to save job. Please try again.",
-        variant: "destructive",
-      });
+      alert("Failed to save job. Please try again.");
     }
   };
 

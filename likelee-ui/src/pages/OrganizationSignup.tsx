@@ -14,18 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  Upload,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
-import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
   createOrganizationKycSession,
   getOrganizationKycStatus,
@@ -78,14 +69,11 @@ const campaignTypes = [
 
 export default function OrganizationSignup() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
   const [submitted, setSubmitted] = useState(false); // New state for submission status
   const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     // Step 1 - Basic
     email: "",
@@ -184,11 +172,7 @@ export default function OrganizationSignup() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
-        variant: "destructive",
-      });
+      alert("Failed to create profile. Please try again."); // Modified alert message
     },
   });
 
@@ -232,11 +216,7 @@ export default function OrganizationSignup() {
     onError: (error) => {
       console.error("Error updating profile:", error);
       // Optionally handle error, e.g., show a toast notification
-      toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
-        variant: "destructive",
-      });
+      alert("Failed to update profile. Please try again.");
     },
   });
 
@@ -250,20 +230,11 @@ export default function OrganizationSignup() {
         !formData.organization_name ||
         !formData.contact_name
       ) {
-        toast({
-          title: "Missing Fields",
-          description:
-            "Please fill in all required fields for Company Information.",
-          variant: "destructive",
-        });
+        alert("Please fill in all required fields for Company Information.");
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: "Password Mismatch",
-          description: "Passwords do not match.",
-          variant: "destructive",
-        });
+        alert("Passwords do not match.");
         return;
       }
       // Create initial profile and move to step 2
@@ -321,12 +292,7 @@ export default function OrganizationSignup() {
     // Handlers for Step 3 (Verification)
     const startOrgKyc = async () => {
       if (!profileId) {
-        toast({
-          title: "Profile Not Found",
-          description:
-            "Organization profile not found yet. Complete Step 1 first.",
-          variant: "destructive",
-        });
+        alert("Organization profile not found yet. Complete Step 1 first.");
         return;
       }
       try {
@@ -338,20 +304,11 @@ export default function OrganizationSignup() {
         if (url) {
           window.location.href = url;
         } else {
-          toast({
-            title: "Error",
-            description:
-              "Unable to start organization KYC. Please try again later.",
-            variant: "destructive",
-          });
+          alert("Unable to start organization KYC. Please try again later.");
         }
       } catch (e) {
         console.error("Error starting organization KYC", e);
-        toast({
-          title: "Error",
-          description: "Failed to start organization KYC.",
-          variant: "destructive",
-        });
+        alert("Failed to start organization KYC.");
       }
     };
 
@@ -360,25 +317,17 @@ export default function OrganizationSignup() {
         const res = await createLivenessSession({ user_id: user?.id });
         const sid = (res as any)?.session_id || (res as any)?.data?.session_id;
         if (sid) {
-          toast({
-            title: "Liveness Session Created",
-            description: `Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`,
-          });
+          alert(
+            `Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`,
+          );
         } else {
-          toast({
-            title: "Error",
-            description:
-              "Could not create liveness session. Check server configuration.",
-            variant: "destructive",
-          });
+          alert(
+            "Could not create liveness session. Check server configuration.",
+          );
         }
       } catch (e) {
         console.error("Error creating liveness session", e);
-        toast({
-          title: "Error",
-          description: "Failed to create liveness session.",
-          variant: "destructive",
-        });
+        alert("Failed to create liveness session.");
       }
     };
 
@@ -494,29 +443,16 @@ export default function OrganizationSignup() {
                   >
                     Password *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 <div>
@@ -526,34 +462,19 @@ export default function OrganizationSignup() {
                   >
                     Confirm Password *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 <div>

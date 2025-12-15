@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +58,6 @@ const skinTones = [
 
 export default function AddTalent() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
@@ -172,7 +170,7 @@ export default function AddTalent() {
       instagram_connected: true,
       instagram_handle: "@talent_handle",
     });
-    toast({ title: "Info", description: "Instagram connected! (Demo mode)" });
+    alert("Instagram connected! (Demo mode)");
   };
 
   const toggleEthnicity = (ethnicity) => {
@@ -192,10 +190,7 @@ export default function AddTalent() {
 
   const handleSubmit = () => {
     console.log("Submitting talent data:", formData);
-    toast({
-      title: "Success",
-      description: "Talent added successfully! (Demo mode)",
-    });
+    alert("Talent added successfully! (Demo mode)");
     navigate(createPageUrl("AgencyDashboard"));
   };
 

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
 import {
   X,
   ArrowRight,
@@ -80,7 +79,6 @@ const mockCreators = [
 export default function CampaignBuilder({ onClose, onSubmit }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [generatingObjective, setGeneratingObjective] = useState(false);
-  const { toast } = useToast();
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [showCameoLibrary, setShowCameoLibrary] = useState(false); // New state for cameo library modal
   const [showVoiceToneModal, setShowVoiceToneModal] = useState(false); // New state for voice tone modal
@@ -147,16 +145,12 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
 
   const handleSaveDraft = () => {
     console.log("Saving draft:", formData);
-    toast({ title: "Success", description: "Campaign draft saved!" });
+    alert("Campaign draft saved!");
   };
 
   const handleGenerateObjective = async () => {
     if (!formData.uploaded_brief) {
-      toast({
-        title: "Upload Required",
-        description: "Please upload a brief first to generate objective",
-        variant: "destructive",
-      });
+      alert("Please upload a brief first to generate objective");
       return;
     }
 

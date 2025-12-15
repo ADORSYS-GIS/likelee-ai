@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Sparkles, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useToast } from "@/components/ui/use-toast";
 
 const creditTiers = [
   { credits: 2000, price: 59, label: "2,000" },
@@ -25,7 +24,6 @@ export default function StudioSubscribe() {
   const [checkingOut, setCheckingOut] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data: user } = useQuery({
     queryKey: ["user"],
@@ -58,11 +56,9 @@ export default function StudioSubscribe() {
     },
     onError: (error) => {
       console.error("Checkout failed:", error);
-      toast({
-        title: "Error",
-        description: `Checkout failed: ${error.message || "An unknown error occurred."}`,
-        variant: "destructive",
-      });
+      alert(
+        "Checkout failed: " + (error.message || "An unknown error occurred."),
+      );
       setCheckingOut(false);
     },
   });

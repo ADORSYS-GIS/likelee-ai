@@ -27,7 +27,6 @@ import {
   Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl } from "@/utils";
 
 const imageToVideoModels = [
@@ -104,7 +103,6 @@ export default function StudioImageToVideo() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data: user } = useQuery({
     queryKey: ["user"],
@@ -210,10 +208,7 @@ export default function StudioImageToVideo() {
 
   const handleGenerate = () => {
     if (!imageUrl) {
-      toast({
-        title: "Upload Required",
-        description: "Please upload an image first",
-      });
+      alert("Please upload an image first");
       return;
     }
 

@@ -73,11 +73,16 @@ export default function Landing() {
     <div className="relative">
       <section className="bg-[#32C8D1] text-white">
         <style>{`
-          @keyframes blink-change { 0%, 100% { opacity: 1; } 45%, 55% { opacity: 0; } }
+          @keyframes center-marquee { 0% { transform: translate(-50%,0) translateX(25%); } 100% { transform: translate(-50%,0) translateX(-25%); } }
+          @keyframes flicker { 0%,100% { opacity: 0.9; } 50% { opacity: 1; } }
         `}</style>
         <div className="max-w-7xl mx-auto px-6 py-8 text-center">
           <div className="mx-auto text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight">
             {typedHeadline}
+            <span
+              className="inline-block w-1 bg-white ml-1 align-middle animate-pulse"
+              style={{ height: "1em" }}
+            ></span>
           </div>
           <div
             className="relative mt-2 overflow-hidden"
@@ -85,8 +90,11 @@ export default function Landing() {
           >
             <div
               key={phraseIdx}
-              className="absolute inset-0 flex items-center justify-center whitespace-nowrap text-xs sm:text-sm md:text-base font-bold opacity-95"
-              style={{ animation: "blink-change 180ms linear 1" }}
+              className="absolute left-1/2 whitespace-nowrap text-xs sm:text-sm md:text-base font-bold opacity-95"
+              style={{
+                animation:
+                  "center-marquee 6s ease-in-out infinite alternate, flicker 1.2s ease-in-out infinite",
+              }}
             >
               {phrases[phraseIdx]}
             </div>
@@ -136,41 +144,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow 1: Hero Phone to Section 2 Phone */}
-      <div className="hidden lg:block relative h-32 z-10">
-        <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-40"
-          width="400"
-          height="500"
-          viewBox="0 0 400 500"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <marker
-              id="arrowhead-1"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
-            </marker>
-          </defs>
-          <path
-            d="M 280 50 Q 50 200, 200 480"
-            stroke="#000000"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-            markerEnd="url(#arrowhead-1)"
-          />
-        </svg>
-      </div>
-
       {/* SECTION 2: Phone left, copy right with two CTAs */}
-      <section className="py-20 bg-white relative">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-last lg:order-first flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -195,41 +170,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow 2: Section 2 Phone to Section 3 Phone */}
-      <div className="hidden lg:block relative h-32 z-10">
-        <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-40"
-          width="400"
-          height="500"
-          viewBox="0 0 400 500"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <marker
-              id="arrowhead-2"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
-            </marker>
-          </defs>
-          <path
-            d="M 120 50 Q 350 200, 200 480"
-            stroke="#000000"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-            markerEnd="url(#arrowhead-2)"
-          />
-        </svg>
-      </div>
-
       {/* SECTION 3: Copy left, phone right */}
-      <section className="py-20 bg-white relative">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -254,42 +196,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
-      {/* Arrow 3: Section 3 Phone to Section 4 Phone */}
-      <div className="hidden lg:block relative h-32 z-10">
-        <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-40"
-          width="400"
-          height="500"
-          viewBox="0 0 400 500"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <marker
-              id="arrowhead-3"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
-            </marker>
-          </defs>
-          <path
-            d="M 280 50 Q 50 200, 200 480"
-            stroke="#000000"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-            markerEnd="url(#arrowhead-3)"
-          />
-        </svg>
-      </div>
-
       {/* SECTION 4: Example - Scale Catalog without Scaling Costs */}
-      <section className="py-20 bg-white relative">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -314,41 +222,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow 4: Section 4 Phone to Section 5 Phone */}
-      <div className="hidden lg:block relative h-32 z-10">
-        <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-40"
-          width="400"
-          height="500"
-          viewBox="0 0 400 500"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <marker
-              id="arrowhead-4"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
-            </marker>
-          </defs>
-          <path
-            d="M 120 50 Q 350 200, 200 480"
-            stroke="#000000"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-            markerEnd="url(#arrowhead-4)"
-          />
-        </svg>
-      </div>
-
       {/* SECTION 5: Example - Premium Talent (phone right) */}
-      <section className="py-20 bg-white relative">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
@@ -374,41 +249,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Arrow 5: Section 5 Phone to Section 6 Phone */}
-      <div className="hidden lg:block relative h-32 z-10">
-        <svg
-          className="absolute left-1/2 -translate-x-1/2 -top-40"
-          width="400"
-          height="500"
-          viewBox="0 0 400 500"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <marker
-              id="arrowhead-5"
-              markerWidth="12"
-              markerHeight="12"
-              refX="10"
-              refY="6"
-              orient="auto"
-            >
-              <polygon points="0 0, 12 6, 0 12" fill="#000000" />
-            </marker>
-          </defs>
-          <path
-            d="M 280 50 Q 50 200, 200 480"
-            stroke="#000000"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-            markerEnd="url(#arrowhead-5)"
-          />
-        </svg>
-      </div>
-
       {/* SECTION 6: Example - Built for Brands of All Sizes (phone left) */}
-      <section className="py-20 bg-white relative">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-last lg:order-first flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">

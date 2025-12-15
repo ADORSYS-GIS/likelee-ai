@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,10 +21,7 @@ import {
   ArrowLeft,
   Upload,
   AlertCircle,
-  Eye,
-  EyeOff,
 } from "lucide-react";
-import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 const contentTypes = [
   "AI-generated films",
@@ -59,56 +55,31 @@ const aiTools = [
 ];
 
 export default function CreatorSignup() {
-  const { toast } = useToast();
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem("signup_formData");
-    return saved
-      ? JSON.parse(saved)
-      : {
-          full_name: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          instagram_handle: "",
-          tiktok_handle: "",
-          youtube_handle: "",
-          agency_name: "",
-          content_types: [],
-          content_other: "",
-          ai_tools: [],
-          ai_tools_other: "",
-          city: "",
-          state: "",
-          experience: "",
-          portfolio_url: "",
-          social_url: "",
-          profile_photo_url: "",
-        };
+  const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
+  const [profileId, setProfileId] = useState(null);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    instagram_handle: "",
+    tiktok_handle: "",
+    youtube_handle: "",
+    agency_name: "",
+    content_types: [],
+    content_other: "",
+    ai_tools: [],
+    ai_tools_other: "",
+    city: "",
+    state: "",
+    experience: "",
+    portfolio_url: "",
+    social_url: "",
+    profile_photo_url: "",
   });
-
-  const [step, setStep] = useState(() => {
-    const saved = localStorage.getItem("signup_step");
-    return saved ? parseInt(saved) : 1;
-  });
-
-  const [profileId, setProfileId] = useState(() => {
-    return localStorage.getItem("signup_profileId") || null;
-  });
-
-  // Persist state changes
-  React.useEffect(() => {
-    localStorage.setItem("signup_formData", JSON.stringify(formData));
-  }, [formData]);
-
-  React.useEffect(() => {
-    localStorage.setItem("signup_step", step.toString());
-  }, [step]);
-
-  React.useEffect(() => {
-    if (profileId) {
-      localStorage.setItem("signup_profileId", profileId);
-    }
-  }, [profileId]);
 
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
@@ -117,10 +88,8 @@ export default function CreatorSignup() {
   const createInitialProfileMutation = useMutation({
     mutationFn: (data) => {
       return base44.entities.CreatorProfile.create({
-        full_name: data.full_name,
-        name: data.full_name,
+        name: data.name,
         email: data.email,
-        password: data.password,
         instagram_handle: data.instagram_handle || "",
         tiktok_handle: data.tiktok_handle || "",
         youtube_handle: data.youtube_handle || "",
@@ -134,11 +103,9 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
-      toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
-        variant: "destructive",
-      });
+      alert(
+        "Failed to create initial profile. Please check your inputs and try again.",
+      );
     },
   });
 
@@ -161,9 +128,6 @@ export default function CreatorSignup() {
       }
 
       return base44.entities.CreatorProfile.update(profileId, {
-        full_name: dataToUpdate.full_name,
-        name: dataToUpdate.full_name,
-        email: formData.email,
         content_types: dataToUpdate.content_types || [],
         content_other: dataToUpdate.content_other || "",
         ai_tools: dataToUpdate.ai_tools || [],
@@ -182,35 +146,23 @@ export default function CreatorSignup() {
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
-        variant: "destructive",
-      });
+      alert("Failed to update profile. Please try again.");
     },
   });
 
   const handleNext = () => {
     if (step === 1) {
       if (
-        !formData.full_name ||
+        !formData.name ||
         !formData.email ||
         !formData.password ||
         !formData.confirmPassword
       ) {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields.",
-          variant: "destructive",
-        });
+        alert("Please fill in all required fields.");
         return;
       }
       if (formData.password !== formData.confirmPassword) {
-        toast({
-          title: "Validation Error",
-          description: "Passwords do not match.",
-          variant: "destructive",
-        });
+        alert("Passwords do not match.");
         return;
       }
       // Check that at least one social handle is provided
@@ -219,12 +171,9 @@ export default function CreatorSignup() {
         !formData.tiktok_handle &&
         !formData.youtube_handle
       ) {
-        toast({
-          title: "Validation Error",
-          description:
-            "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
-          variant: "destructive",
-        });
+        alert(
+          "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
+        );
         return;
       }
       createInitialProfileMutation.mutate(formData);
@@ -243,58 +192,33 @@ export default function CreatorSignup() {
 
   const handleSubmit = () => {
     if (!formData.content_types.length && !formData.content_other) {
-      toast({
-        title: "Validation Error",
-        description:
-          "Please select at least one content type or specify 'Other'.",
-        variant: "destructive",
-      });
+      alert("Please select at least one content type or specify 'Other'.");
       return;
     }
     if (
       formData.content_types.includes("Other") &&
       !formData.content_other.trim()
     ) {
-      toast({
-        title: "Validation Error",
-        description: "Please specify your 'Other' content type.",
-        variant: "destructive",
-      });
+      alert("Please specify your 'Other' content type.");
       return;
     }
     if (!formData.ai_tools.length && !formData.ai_tools_other) {
-      toast({
-        title: "Validation Error",
-        description: "Please select at least one AI tool or specify 'Other'.",
-        variant: "destructive",
-      });
+      alert("Please select at least one AI tool or specify 'Other'.");
       return;
     }
     if (
       formData.ai_tools.includes("Other") &&
       !formData.ai_tools_other.trim()
     ) {
-      toast({
-        title: "Validation Error",
-        description: "Please specify your 'Other' AI tool.",
-        variant: "destructive",
-      });
+      alert("Please specify your 'Other' AI tool.");
       return;
     }
     if (!formData.city || !formData.state) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in your city and state/country.",
-        variant: "destructive",
-      });
+      alert("Please fill in your city and state/country.");
       return;
     }
     if (!formData.experience) {
-      toast({
-        title: "Validation Error",
-        description: "Please select your years of AI creative experience.",
-        variant: "destructive",
-      });
+      alert("Please select your years of AI creative experience.");
       return;
     }
 
@@ -420,16 +344,16 @@ export default function CreatorSignup() {
               <div className="space-y-4">
                 <div>
                   <Label
-                    htmlFor="full_name"
+                    htmlFor="name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
                     Full Name *
                   </Label>
                   <Input
-                    id="full_name"
-                    value={formData.full_name}
+                    id="name"
+                    value={formData.name}
                     onChange={(e) =>
-                      setFormData({ ...formData, full_name: e.target.value })
+                      setFormData({ ...formData, name: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
                     placeholder="John Doe"
@@ -462,29 +386,16 @@ export default function CreatorSignup() {
                   >
                     Password *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 <div>
@@ -494,34 +405,19 @@ export default function CreatorSignup() {
                   >
                     Confirm Password *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 <div className="pt-4 border-t-2 border-gray-200">

@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/components/ui/use-toast";
 import {
   ArrowLeft,
   ArrowRight,
@@ -90,7 +89,6 @@ const licensingMetrics = [
 
 export default function PostJob() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [showCustomWorkType, setShowCustomWorkType] = useState(false);
   const [customWorkType, setCustomWorkType] = useState("");
@@ -156,7 +154,7 @@ export default function PostJob() {
 
   const handleSubmit = () => {
     console.log("Job posting:", formData);
-    toast({ title: "Success", description: "Job posted successfully!" });
+    alert("Job posted successfully!");
     navigate(createPageUrl("BrandCampaignDashboard"));
   };
 
@@ -1388,9 +1386,7 @@ export default function PostJob() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    toast({ title: "Success", description: "Saved as draft!" })
-                  }
+                  onClick={() => alert("Saved as draft!")}
                   className="flex-1 border-2 border-gray-300 rounded-none"
                 >
                   Save as Draft

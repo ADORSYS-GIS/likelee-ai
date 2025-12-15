@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import {
@@ -28,8 +29,9 @@ export default function SalesInquiry() {
   });
 
   const submitInquiry = useMutation({
-    mutationFn: (data: typeof formData) => {
-      return base44.post("/integrations/core/send-email", {
+    mutationFn: (data) => {
+      // You can create an entity for sales inquiries or send an email
+      return base44.integrations.Core.SendEmail({
         to: "operations@likelee.ai",
         subject: `Sales Inquiry from ${data.company_name}`,
         body: `
@@ -41,7 +43,7 @@ Email: ${data.email}
 Phone: ${data.phone}
 Company Size: ${data.company_size}
 Budget Range: ${data.budget_range}
-Primary Use Case: ${data.use_case}
+Use Case: ${data.use_case}
 
 Message:
 ${data.message}
@@ -89,45 +91,53 @@ ${data.message}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 py-16 px-6">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Talk to Sales
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-xl text-gray-600">
             Let's discuss how Likelee can help scale your creative production
           </p>
         </div>
 
-        <Card className="p-8 md:p-10 bg-white border-2 border-black shadow-xl rounded-none">
+        <Card className="p-8 bg-white border-2 border-black shadow-xl rounded-none">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Company Name <span className="text-red-500">*</span>
-                </label>
+                <Label
+                  htmlFor="company_name"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Company Name *
+                </Label>
                 <Input
+                  id="company_name"
                   required
                   value={formData.company_name}
                   onChange={(e) =>
                     setFormData({ ...formData, company_name: e.target.value })
                   }
-                  className="h-12 border-gray-300 rounded-md"
+                  className="border-2 border-gray-300 rounded-none"
                   placeholder="Your Company"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Your Name <span className="text-red-500">*</span>
-                </label>
+                <Label
+                  htmlFor="contact_name"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Your Name *
+                </Label>
                 <Input
+                  id="contact_name"
                   required
                   value={formData.contact_name}
                   onChange={(e) =>
                     setFormData({ ...formData, contact_name: e.target.value })
                   }
-                  className="h-12 border-gray-300 rounded-md"
+                  className="border-2 border-gray-300 rounded-none"
                   placeholder="John Doe"
                 />
               </div>
@@ -135,32 +145,40 @@ ${data.message}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Work Email <span className="text-red-500">*</span>
-                </label>
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Work Email *
+                </Label>
                 <Input
+                  id="email"
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="h-12 border-gray-300 rounded-md"
+                  className="border-2 border-gray-300 rounded-none"
                   placeholder="you@company.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <Label
+                  htmlFor="phone"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Phone Number
-                </label>
+                </Label>
                 <Input
+                  id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
-                  className="h-12 border-gray-300 rounded-md"
+                  className="border-2 border-gray-300 rounded-none"
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -168,17 +186,20 @@ ${data.message}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Company Size <span className="text-red-500">*</span>
-                </label>
+                <Label
+                  htmlFor="company_size"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Company Size *
+                </Label>
                 <Select
-                  required
                   value={formData.company_size}
                   onValueChange={(value) =>
                     setFormData({ ...formData, company_size: value })
                   }
+                  required
                 >
-                  <SelectTrigger className="h-12 border-gray-300 rounded-md">
+                  <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
                   <SelectContent>
@@ -192,67 +213,83 @@ ${data.message}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <Label
+                  htmlFor="budget_range"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
                   Monthly Budget Range
-                </label>
+                </Label>
                 <Select
                   value={formData.budget_range}
                   onValueChange={(value) =>
                     setFormData({ ...formData, budget_range: value })
                   }
                 >
-                  <SelectTrigger className="h-12 border-gray-300 rounded-md">
+                  <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="<5k">Less than $5K</SelectItem>
-                    <SelectItem value="5k-15k">$5K - $15K</SelectItem>
-                    <SelectItem value="15k-50k">$15K - $50K</SelectItem>
-                    <SelectItem value="50k-100k">$50K - $100K</SelectItem>
-                    <SelectItem value="100k+">$100K+</SelectItem>
+                    <SelectItem value="under_5k">Under $5,000</SelectItem>
+                    <SelectItem value="5k-25k">$5,000 - $25,000</SelectItem>
+                    <SelectItem value="25k-100k">$25,000 - $100,000</SelectItem>
+                    <SelectItem value="100k+">$100,000+</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Primary Use Case <span className="text-red-500">*</span>
-              </label>
+              <Label
+                htmlFor="use_case"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
+                Primary Use Case *
+              </Label>
               <Select
-                required
                 value={formData.use_case}
                 onValueChange={(value) =>
                   setFormData({ ...formData, use_case: value })
                 }
+                required
               >
-                <SelectTrigger className="h-12 border-gray-300 rounded-md">
+                <SelectTrigger className="border-2 border-gray-300 rounded-none">
                   <SelectValue placeholder="Select use case" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ecommerce">
-                    E-commerce Product Photos
+                  <SelectItem value="social_media">
+                    Social Media Campaigns
                   </SelectItem>
-                  <SelectItem value="advertising">
-                    Advertising Campaigns
+                  <SelectItem value="commercials">
+                    TV/Digital Commercials
                   </SelectItem>
-                  <SelectItem value="social">Social Media Content</SelectItem>
-                  <SelectItem value="video">Video Production</SelectItem>
+                  <SelectItem value="brand_content">
+                    Brand Content Creation
+                  </SelectItem>
+                  <SelectItem value="product_launches">
+                    Product Launches
+                  </SelectItem>
+                  <SelectItem value="influencer_marketing">
+                    Influencer Marketing
+                  </SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <Label
+                htmlFor="message"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
                 Tell us about your needs
-              </label>
+              </Label>
               <Textarea
+                id="message"
                 value={formData.message}
                 onChange={(e) =>
                   setFormData({ ...formData, message: e.target.value })
                 }
-                className="min-h-[120px] border-gray-300 rounded-md resize-none"
+                className="border-2 border-gray-300 rounded-none min-h-[120px]"
                 placeholder="What are you looking to achieve with AI-powered creator content?"
               />
             </div>
@@ -260,22 +297,24 @@ ${data.message}
             <Button
               type="submit"
               disabled={submitInquiry.isPending}
-              className="w-full h-12 text-lg font-medium bg-[#F7B750] hover:bg-[#FAD54C] text-gray-900 rounded-md transition-all"
+              className="w-full h-14 text-lg font-medium bg-gradient-to-r from-[#F7B750] to-[#FAD54C] hover:from-[#E6A640] hover:to-[#F7B750] text-white border-2 border-black shadow-lg transition-all hover:shadow-xl rounded-none"
             >
               {submitInquiry.isPending ? "Submitting..." : "Submit Inquiry"}
             </Button>
           </form>
         </Card>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Need immediate assistance? Email us at{" "}
-          <a
-            href="mailto:operations@likelee.ai"
-            className="text-[#F7B750] hover:text-[#FAD54C] font-medium"
-          >
-            operations@likelee.ai
-          </a>
-        </p>
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            Need immediate assistance? Email us at{" "}
+            <a
+              href="mailto:operations@likelee.ai"
+              className="text-[#F7B750] hover:text-[#E6A640] font-semibold underline"
+            >
+              operations@likelee.ai
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

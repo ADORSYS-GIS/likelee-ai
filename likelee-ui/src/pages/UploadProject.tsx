@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/components/ui/use-toast";
 import { Upload, X, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 
 const projectTypes = [
@@ -53,7 +52,6 @@ const skills = [
 export default function UploadProject() {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
-  const { toast } = useToast();
   const [project, setProject] = useState({
     title: "",
     description: "",
@@ -75,21 +73,14 @@ export default function UploadProject() {
 
   const handleSubmit = () => {
     if (!project.title || !project.description || !project.project_type) {
-      toast({
-        title: "Missing Fields",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      alert("Please fill in all required fields");
       return;
     }
 
     setUploading(true);
     setTimeout(() => {
       setUploading(false);
-      toast({
-        title: "Success",
-        description: "Project uploaded! (Demo mode - not persisted)",
-      });
+      alert("Project uploaded! (Demo mode - not persisted)");
       navigate(createPageUrl("DemoTalentDashboard"));
     }, 2000);
   };

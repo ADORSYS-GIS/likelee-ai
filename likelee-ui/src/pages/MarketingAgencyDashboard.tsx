@@ -40,7 +40,6 @@ import {
 } from "lucide-react";
 
 import CampaignBuilder from "../components/CampaignBuilder";
-import { useToast } from "@/components/ui/use-toast";
 
 const mockAgency = {
   name: "CreativeWorks Agency",
@@ -197,11 +196,10 @@ export default function MarketingAgencyDashboard() {
   const [showCampaignBuilder, setShowCampaignBuilder] = useState(false);
   const [showCreatorProfile, setShowCreatorProfile] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(null);
-  const { toast } = useToast();
 
   const handleCreateCampaign = (campaignData) => {
     console.log("New campaign created:", campaignData);
-    toast({ title: "Success", description: "Campaign created successfully!" });
+    alert("Campaign created successfully!");
   };
 
   const getFilteredCampaigns = () => {
