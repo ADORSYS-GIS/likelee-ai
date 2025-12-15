@@ -17,14 +17,12 @@ export default function Support() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const mailtoLink = `mailto:admin@likelee.ai?subject=${encodeURIComponent(
+      `Support: ${formData.subject}`,
+    )}&body=${encodeURIComponent(`From: ${formData.email}\n\n${formData.message}`)}`;
+    window.location.href = mailtoLink;
 
-    // This form doesn't actually send an email, it just simulates the UI.
-    // In a real app, you would handle the form submission here (e.g., API call).
-
-    // Show success message
     setSubmitted(true);
-
-    // Reset form after 3 seconds
     setTimeout(() => {
       setFormData({ email: "", subject: "", message: "" });
       setSubmitted(false);

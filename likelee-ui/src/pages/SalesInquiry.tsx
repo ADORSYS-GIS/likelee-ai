@@ -29,7 +29,7 @@ export default function SalesInquiry() {
 
   const submitInquiry = useMutation({
     mutationFn: (data: typeof formData) => {
-      return base44.post("/integrations/core/send-email", {
+      return base44.post("/api/integrations/core/send-email", {
         to: "operations@likelee.ai",
         subject: `Sales Inquiry from ${data.company_name}`,
         body: `
