@@ -2336,16 +2336,22 @@ export default function CreatorDashboard() {
         }
 
         setEditingRules(false);
-      toast({
-        title: "Licensing preferences updated!",
-      });
-    } catch (error: any) {
-      console.error("Failed to save rules:", error);
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: `Failed to save preferences: ${error?.message || error}`,
-      });
+        toast({
+          title: "Licensing preferences updated!",
+        });
+      } catch (error: any) {
+        console.error("Failed to save rules:", error);
+        toast({
+          variant: "destructive",
+          title: "Save Failed",
+          description: `Failed to save preferences: ${error?.message || error}`,
+        });
+      }
+    } catch (e) {
+      console.error("Unexpected error in handleSaveRules:", e);
+    } finally {
+      setSavingRules(false);
+    }
   };
 
   const handleSaveProfile = () => {
