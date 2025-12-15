@@ -12,6 +12,13 @@ export default function Layout({ children, currentPageName }) {
     currentPageName?.startsWith("Studio") ||
     location.pathname.includes("/studio");
 
+  // Check if we're on a Dashboard page
+  const isDashboardPage =
+    currentPageName?.includes("Dashboard") ||
+    location.pathname.includes("/CreatorDashboard") ||
+    location.pathname.includes("/BrandDashboard") ||
+    location.pathname.includes("/TalentDashboard");
+
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -524,11 +531,10 @@ export default function Layout({ children, currentPageName }) {
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("BrandCompany")
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
                       ? "text-gray-900 bg-gray-100"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Brands
                 </Link>
@@ -537,11 +543,10 @@ export default function Layout({ children, currentPageName }) {
                 <div className="relative group">
                   <Link
                     to={createPageUrl("AgencySelection")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                      location.pathname === createPageUrl("AgencySelection")
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
                         ? "text-gray-900 bg-gray-100"
                         : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     Agencies
                   </Link>
@@ -588,22 +593,20 @@ export default function Layout({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("AboutUs")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("AboutUs")
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
                       ? "text-gray-900 bg-gray-100"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   About Us
                 </Link>
 
                 <Link
                   to={createPageUrl("Contact")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("Contact")
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
                       ? "text-gray-900 bg-gray-100"
                       : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Contact
                 </Link>
@@ -633,11 +636,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("BrandCompany")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("BrandCompany")
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 Brands
               </Link>
@@ -647,11 +649,10 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AgencySelection")}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                    location.pathname === createPageUrl("AgencySelection")
+                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
                       ? "text-gray-900 bg-gray-100"
                       : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Agencies
                 </Link>
@@ -690,11 +691,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("AboutUs")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("AboutUs")
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 About Us
               </Link>
@@ -702,11 +702,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("SalesInquiry")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("SalesInquiry")
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("SalesInquiry")
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 Contact
               </Link>
