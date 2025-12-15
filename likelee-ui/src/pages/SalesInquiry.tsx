@@ -29,9 +29,8 @@ export default function SalesInquiry() {
   });
 
   const submitInquiry = useMutation({
-    mutationFn: (data) => {
-      // You can create an entity for sales inquiries or send an email
-      return base44.integrations.Core.SendEmail({
+    mutationFn: (data: typeof formData) => {
+      return base44.post("/api/integrations/core/send-email", {
         to: "operations@likelee.ai",
         subject: `Sales Inquiry from ${data.company_name}`,
         body: `

@@ -4,6 +4,7 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -631,6 +632,20 @@ const earningsByIndustry: any[] = [];
 
 const mockContracts: any[] = [];
 
+function parseErrorMessage(err: any): string {
+  let msg = err?.message || String(err);
+  try {
+    const jsonMatch = msg.match(/(\{.*\})/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed.message || parsed.error || msg;
+    }
+  } catch (e) {
+    // Parsing failed, return original
+  }
+  return msg;
+}
+
 export default function CreatorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -998,7 +1013,11 @@ export default function CreatorDashboard() {
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
-      alert("Please log in to start verification.");
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in to start verification.",
+      });
       return;
     }
     try {
@@ -1012,7 +1031,11 @@ export default function CreatorDashboard() {
       const data = await res.json();
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
-      alert(`Failed to start verification: ${e?.message || e}`);
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: `Failed to start verification: ${e?.message || e}`,
+      });
     } finally {
       setKycLoading(false);
     }
@@ -1090,7 +1113,9 @@ export default function CreatorDashboard() {
           name: file.name,
         });
         setUploading(false);
-        alert("Hero media uploaded! (Demo mode)");
+        toast({
+          title: "Hero media uploaded! (Demo mode)",
+        });
       }, 1000);
     }
   };
@@ -1779,7 +1804,9 @@ export default function CreatorDashboard() {
         }));
         setPhotos([...photos, ...newPhotos]);
         setUploading(false);
-        alert(`${files.length} photo(s) uploaded! `);
+        toast({
+          title: `${files.length} photo(s) uploaded!`,
+        });
       }, 1000);
     }
   };
@@ -1792,11 +1819,19 @@ export default function CreatorDashboard() {
     const file = e.target.files[0];
     if (file) {
       if (!user?.id) {
-        alert("You must be logged in to upload a photo.");
+        toast({
+          variant: "destructive",
+          title: "Authentication Required",
+          description: "You must be logged in to upload a photo.",
+        });
         return;
       }
       if (file.size > 5_000_000) {
-        alert("Please upload an image of 5 MB or less.");
+        toast({
+          variant: "destructive",
+          title: "File Too Large",
+          description: "Please upload an image of 5 MB or less.",
+        });
         return;
       }
       setUploadingPhoto(true);
@@ -1835,9 +1870,16 @@ export default function CreatorDashboard() {
           profile_photo: newPhotoUrl,
         }));
 
-        alert("Profile photo updated!");
+        await refreshProfile();
+        toast({
+          title: "Profile photo updated!",
+        });
       } catch (err: any) {
-        alert(`Upload failed: ${err.message}`);
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: `Upload failed: ${parseErrorMessage(err)}`,
+        });
         // Revert optimistic update on error by refreshing dashboard
         try {
           const profileRes = await fetch(
@@ -1927,7 +1969,11 @@ export default function CreatorDashboard() {
       }, 100);
     } catch (error) {
       console.error("Error starting recording:", error);
-      alert("Failed to access microphone. Please check permissions.");
+      toast({
+        variant: "destructive",
+        title: "Microphone Error",
+        description: "Failed to access microphone. Please check permissions.",
+      });
     }
   };
 
@@ -2026,7 +2072,10 @@ export default function CreatorDashboard() {
         ),
       );
 
-      alert("Voice profile created successfully with ElevenLabs!");
+      toast({
+        title: "Success",
+        description: "Voice profile created successfully with ElevenLabs!",
+      });
     } catch (error) {
       console.error("Voice profile creation error:", error);
 
@@ -2040,9 +2089,11 @@ export default function CreatorDashboard() {
         errorMessage = error.message;
       }
 
-      alert(
-        `Error: ${errorMessage}\n\nPossible issues:\n• Recording quality too low\n• File format not supported by ElevenLabs\n• Recording too short (need 30+ seconds)\n• Try re-recording with better audio`,
-      );
+      toast({
+        variant: "destructive",
+        title: "Voice Profile Error",
+        description: `Error: ${errorMessage}. Possible issues: Recording quality too low, format not supported, or too short.`,
+      });
     } finally {
       setGeneratingVoice(false);
     }
@@ -2079,29 +2130,35 @@ export default function CreatorDashboard() {
   const handleApprove = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    alert("Campaign approved! Contract signed! (Demo mode)");
+    toast({
+      title: "Campaign approved! Contract signed! (Demo mode)",
+    });
   };
 
   const handleDecline = (approvalId) => {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
-    alert("Campaign declined! (Demo mode)");
+    toast({
+      title: "Campaign declined! (Demo mode)",
+    });
   };
 
   const handlePauseLicense = (contract, immediate) => {
     const option = immediate ? "immediate" : "next_month";
     setPauseOption(option);
     setShowPauseModal(false);
-    alert(
-      `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! (Demo mode)\n\n${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
-    );
+    toast({
+      title: "License Paused (Demo)",
+      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
+    });
   };
 
   const handleRevokeLicense = (contract) => {
     setShowRevokeModal(false);
-    alert(
-      `License revoked! (Demo mode)\n\n30-day notice period has begun.\nYou'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
-    );
+    toast({
+      title: "License Revoked (Demo)",
+      description: `License revoked! 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
+    });
   };
 
   const handlePauseCampaign = (campaignId) => {
@@ -2110,13 +2167,17 @@ export default function CreatorDashboard() {
         c.id === campaignId ? { ...c, status: "paused" } : c,
       ),
     );
-    alert("Campaign paused! (Demo mode)");
+    toast({
+      title: "Campaign paused! (Demo mode)",
+    });
   };
 
   const handleRevokeCampaign = (campaignId) => {
     if (confirm("Are you sure you want to revoke this campaign license?")) {
       setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
-      alert("Campaign revoked! (Demo mode)");
+      toast({
+        title: "Campaign revoked! (Demo mode)",
+      });
     }
   };
 
@@ -2275,20 +2336,22 @@ export default function CreatorDashboard() {
         }
 
         setEditingRules(false);
-        alert("Licensing preferences updated!");
-      } catch (error: any) {
-        console.error("Failed to save rules:", error);
-        alert(`Failed to save preferences: ${error?.message || error}`);
-      }
-    } catch (e) {
-      console.error("Unexpected error in handleSaveRules:", e);
-    } finally {
-      setSavingRules(false);
-    }
+      toast({
+        title: "Licensing preferences updated!",
+      });
+    } catch (error: any) {
+      console.error("Failed to save rules:", error);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: `Failed to save preferences: ${error?.message || error}`,
+      });
   };
 
   const handleSaveProfile = () => {
-    alert("Profile updated! (Demo mode)");
+    toast({
+      title: "Profile updated! (Demo mode)",
+    });
   };
 
   const renderDashboard = () => {
@@ -2531,17 +2594,28 @@ export default function CreatorDashboard() {
     try {
       if (!previewImage || !selectedImageSection) return;
       if (!user) {
-        alert("Please log in to upload.");
+        toast({
+          variant: "destructive",
+          title: "Authentication Required",
+          description: "Please log in to upload.",
+        });
         return;
       }
       const file: File = previewImage.file;
       if (!file) {
-        alert("No file selected.");
+        toast({
+          variant: "destructive",
+          title: "No file selected",
+        });
         return;
       }
       // Server pre-scan is limited to 5MB
       if (file.size > 5_000_000) {
-        alert("Please upload an image ≤ 5MB.");
+        toast({
+          variant: "destructive",
+          title: "File Too Large",
+          description: "Please upload an image ≤ 5MB.",
+        });
         return;
       }
 
@@ -2570,11 +2644,17 @@ export default function CreatorDashboard() {
           const reasons: string[] = Array.isArray(err?.reasons)
             ? err.reasons
             : [];
-          alert(
-            `${msg}${reasons.length ? "\n\nDetails:\n- " + reasons.join("\n- ") : ""}`,
-          );
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: `${msg}${reasons.length ? "\nDetails: " + reasons.join(", ") : ""}`,
+          });
         } catch {
-          alert(raw || "Upload failed");
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: raw || "Upload failed",
+          });
         }
         setUploadingToSection(false);
         return;
@@ -2589,9 +2669,15 @@ export default function CreatorDashboard() {
       setShowImageUploadModal(false);
       setSelectedImageSection(null);
       setPreviewImage(null);
-      alert("Reference image uploaded!");
+      toast({
+        title: "Reference image uploaded!",
+      });
     } catch (e: any) {
-      alert(`Upload failed: ${e?.message || e}`);
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: `Upload failed: ${parseErrorMessage(e)}`,
+      });
     } finally {
       setUploadingToSection(false);
     }
@@ -3968,9 +4054,11 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       // For examples, just show a message
                       if (campaign.isExample) {
-                        alert(
-                          "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
-                        );
+                        toast({
+                          title: "Demo Mode",
+                          description:
+                            "This is an example campaign. In the real app, toggling this would update your portfolio visibility settings.",
+                        });
                         return;
                       }
                       // For real campaigns, update the state
@@ -4658,9 +4746,16 @@ export default function CreatorDashboard() {
 
       setShowRatesModal(null);
       setEditingRules(false);
+      toast({
+        title: "Rates saved successfully!",
+      });
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(`Failed to save: ${e?.message || e}`);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: `Failed to save rates: ${e?.message || e}`,
+      });
     } finally {
       setSavingRates(false);
     }
@@ -4883,9 +4978,9 @@ export default function CreatorDashboard() {
                   checked={creator.is_public_brands || false}
                   onCheckedChange={(checked) => {
                     setCreator({ ...creator, is_public_brands: checked });
-                    alert(
-                      `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
-                    );
+                    toast({
+                      title: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
+                    });
                   }}
                 />
               </div>

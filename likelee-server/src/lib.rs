@@ -2,6 +2,7 @@ pub mod avatar;
 pub mod config;
 pub mod creator_rates;
 pub mod dashboard;
+pub mod email;
 pub mod face_profiles;
 pub mod kyc;
 pub mod licenses;

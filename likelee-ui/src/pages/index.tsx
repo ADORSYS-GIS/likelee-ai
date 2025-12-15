@@ -105,6 +105,7 @@ import {
   Route,
   Routes,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const __pagesQueryClient = new QueryClient();
@@ -450,7 +451,10 @@ function PagesContent() {
           }
         />
 
-        <Route path="/Login" element={<Login />} />
+        <Route
+          path="/Login"
+          element={<Navigate to="/ReserveProfile" replace />}
+        />
         <Route path="/Register" element={<Register />} />
         <Route
           path="/TwoFactorSetup"
