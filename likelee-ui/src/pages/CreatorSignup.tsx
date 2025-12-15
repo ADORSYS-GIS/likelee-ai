@@ -310,6 +310,25 @@ export default function CreatorSignup() {
     }));
   };
 
+  const toggleSelectAll = (field, allOptions) => {
+    const currentSelection = formData[field];
+    // Filter out "Other" from allOptions for the check, or include it if desired.
+    // Usually "Select All" implies selecting all defined options.
+    // Let's assume we select all options present in the list.
+    const optionsToSelect = allOptions.filter((opt) => opt !== "Other");
+
+    const isAllSelected = optionsToSelect.every((option) =>
+      currentSelection.includes(option),
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      [field]: isAllSelected
+        ? prev[field].filter((item) => !optionsToSelect.includes(item))
+        : [...new Set([...prev[field], ...optionsToSelect])],
+    }));
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -652,6 +671,26 @@ export default function CreatorSignup() {
                     What kind of AI content do you create? *
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <Checkbox
+                        id="select_all_content"
+                        checked={contentTypes
+                          .filter((t) => t !== "Other")
+                          .every((type) =>
+                            formData.content_types.includes(type),
+                          )}
+                        onCheckedChange={() =>
+                          toggleSelectAll("content_types", contentTypes)
+                        }
+                        className="border-2 border-gray-900"
+                      />
+                      <label
+                        htmlFor="select_all_content"
+                        className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     {contentTypes.map((type) => (
                       <div
                         key={type}
@@ -694,6 +733,24 @@ export default function CreatorSignup() {
                     What AI tools do you primarily use? *
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                    <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <Checkbox
+                        id="select_all_ai_tools"
+                        checked={aiTools
+                          .filter((t) => t !== "Other")
+                          .every((tool) => formData.ai_tools.includes(tool))}
+                        onCheckedChange={() =>
+                          toggleSelectAll("ai_tools", aiTools)
+                        }
+                        className="border-2 border-gray-900"
+                      />
+                      <label
+                        htmlFor="select_all_ai_tools"
+                        className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     {aiTools.map((tool) => (
                       <div
                         key={tool}
