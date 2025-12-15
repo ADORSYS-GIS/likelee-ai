@@ -653,6 +653,8 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
