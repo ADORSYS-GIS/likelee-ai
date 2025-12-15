@@ -57,7 +57,6 @@ pub struct ServerConfig {
     #[envconfig(from = "LIVENESS_ENABLED", default = "1")]
     pub liveness_enabled: String,
 
-
     #[envconfig(from = "AWS_REGION", default = "us-east-1")]
     pub aws_region: String,
 
