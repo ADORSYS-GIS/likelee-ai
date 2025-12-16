@@ -675,8 +675,6 @@ export default function ReserveProfile() {
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [formData, setFormData] = useState({
