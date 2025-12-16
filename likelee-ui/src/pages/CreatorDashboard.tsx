@@ -972,7 +972,6 @@ export default function CreatorDashboard() {
     })();
   }, [initialized, authenticated, user?.id, API_BASE]);
 
-
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
