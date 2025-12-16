@@ -108,6 +108,11 @@ pub fn build_router(state: AppState) -> Router {
             "/api/brand/voice-assets",
             get(crate::licenses::list_brand_voice_assets),
         )
+        // Integrations: Core
+        .route(
+            "/api/integrations/core/send-email",
+            post(crate::email::send_email),
+        )
         .route(
             "/api/liveness/create",
             post(crate::liveness::create_session),
@@ -122,6 +127,6 @@ pub fn build_router(state: AppState) -> Router {
                 .post(crate::creator_rates::upsert_creator_rates),
         )
         .with_state(state)
-        .layer(DefaultBodyLimit::max(5_000_000)) // 5MB limit
+        .layer(DefaultBodyLimit::max(10_000_000)) // 10MB limit
         .layer(cors)
 }

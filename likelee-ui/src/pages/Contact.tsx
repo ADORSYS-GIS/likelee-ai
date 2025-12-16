@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
@@ -14,28 +12,13 @@ export default function Contact() {
     phone: "",
   });
 
-  const submitInquiry = useMutation({
-    mutationFn: (data: typeof formData) => {
-      return base44.post("/integrations/core/send-email", {
-        to: "operations@likelee.ai",
-        subject: `Contact Form Submission from ${data.contact_name}`,
-        body: `
-New Contact Form Submission:
-
-Name: ${data.contact_name}
-Email: ${data.email}
-Phone: ${data.phone}
-        `,
-      });
-    },
-    onSuccess: () => {
-      setSubmitted(true);
-    },
-  });
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    submitInquiry.mutate(formData);
+    const subject = `Contact Form Submission from ${formData.contact_name}`;
+    const body = `New Contact Form Submission:\n\nName: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}`;
+    const mailto = `mailto:admin@likelee.ai?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+    setSubmitted(true);
   };
 
   if (submitted) {
@@ -109,10 +92,9 @@ Phone: ${data.phone}
 
           <Button
             type="submit"
-            disabled={submitInquiry.isPending}
             className="w-full h-12 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
           >
-            {submitInquiry.isPending ? "Submitting..." : "Continue"}
+            Continue
           </Button>
         </form>
       </div>

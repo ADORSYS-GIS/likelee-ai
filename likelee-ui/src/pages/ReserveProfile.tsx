@@ -655,6 +655,8 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
@@ -1215,8 +1217,8 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
-      setProfileId(user?.id || null);
+    onSuccess: (data) => {
+      setProfileId(data.id);
       setStep(2);
     },
     onError: (error) => {
@@ -1289,8 +1291,9 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Proceed to verification step
+      setProfileId(data.id);
       setStep(4);
     },
     onError: (error) => {
@@ -3117,7 +3120,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/ api / liveness / result`),
+                                api(`/api/liveness/result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -3125,6 +3128,7 @@ export default function ReserveProfile() {
                                   },
                                   body: JSON.stringify({
                                     session_id: livenessSessionId,
+                                    user_id: user?.id || profileId,
                                   }),
                                 },
                               );
