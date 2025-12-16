@@ -885,14 +885,12 @@
       "prompt": "Haben Sie bereits ein Konto?",
       "link": "Anmelden"
     },
-    "perMonth": "/Monat",
     "form": {
       "labels": {
         "fullName": "Vollständiger Name",
         "city": "Stadt",
         "state": "Bundesland/Land",
         "email": "E-Mail-Adresse",
-        "password": "Passwort",
         "confirmPassword": "Passwort bestätigen"
       },
       "sport": "Sportart",
@@ -977,7 +975,8 @@
         "label": "Laden Sie mindestens 3 Fotos hoch",
         "description": "Diese werden verwendet, um Ihr KI-Modell zu trainieren. Stellen Sie sicher, dass sie von hoher Qualität sind und Ihr Gesicht deutlich zeigen.",
         "drop": "Dateien hier ablegen oder klicken zum Hochladen"
-      }
+      },
+      "perMonth": "/Monat"
     },
     "warning": "Dies ist ein Beta-Reservierungssystem. Ihr Profil wird gespeichert, aber Sie werden auf eine Warteliste für den vollen Zugriff gesetzt.",
     "title": "Reservieren Sie Ihr Profil (Beta)",

@@ -440,8 +440,7 @@
         "price": "150",
         "headshot": "URL de l'image",
         "specify": "Veuillez préciser...",
-        "age": "ex: 25",
-        "perMonth": "/mois"
+        "age": "ex: 25"
       },
       "age": "Âge",
       "dob": "Date de naissance",
@@ -471,7 +470,47 @@
       "contentInterest": "Dans quel type de contenu souhaitez-vous apparaître ?",
       "selectMax3": "Sélectionnez jusqu'à 3 pour l'instant",
       "brandinterest": "Avec quels types de marques ou d'industries voulez-vous travailler ?",
+      "raceEthnicity": "Race / Ethnicité (sélectionnez tout ce qui s'applique)",
+      "primaryPlatform": "Plateforme principale",
+      "handle": "Identifiant",
+      "perMonth": "/mois",
       "save": "Enregistrer et continuer vers la vérification"
+    },
+    "verification": {
+      "title": "Vérification d'identité",
+      "subtitle": "Vérifiez votre identité pour devenir visible auprès des marques et débloquer des opportunités",
+      "description": "Nous utilisons une vérification d'identité sécurisée pour garantir l'authenticité de tous les créateurs sur Likelee. Ce processus prend généralement 2 à 3 minutes.",
+      "status": {
+        "approved": "Approuvé",
+        "rejected": "Rejeté",
+        "verifying": "Vérification en cours",
+        "notStarted": "Non démarré"
+      },
+      "whyVerify": {
+        "title": "Pourquoi vérifier votre identité ?",
+        "reason1": "Soyez découvert par les marques à la recherche de créateurs vérifiés",
+        "reason2": "Renforcez la confiance et la crédibilité auprès des partenaires de licence",
+        "reason3": "Débloquez des opportunités de campagne de plus grande valeur"
+      },
+      "requirements": {
+        "title": "Ce dont vous aurez besoin :",
+        "item1": "Pièce d'identité délivrée par le gouvernement (permis de conduire, passeport ou carte d'identité)",
+        "item2": "Bonne éclairage et accès à la caméra/microphone",
+        "item3": "2 à 3 minutes dans un endroit calme"
+      },
+      "actions": {
+        "startingVerification": "Démarrage...",
+        "verifyIdentity": "Vérifier l'identité maintenant",
+        "preparing": "Préparation...",
+        "startLiveness": "Démarrer la vérification de vivacité",
+        "livenessApproved": "Vivacité approuvée"
+      },
+      "verificationFailedTitle": "Échec de la vérification",
+      "statusCheckFailedTitle": "Échec de la vérification du statut",
+      "identityVerified": "Identité vérifiée",
+      "identityVerifiedDescription": "Veuillez télécharger vos 3 photos de référence (Face, Gauche, Droite) pour terminer votre configuration.",
+      "verificationPending": "Vérification en attente",
+      "verificationPendingDescription": "La vérification n'est pas encore terminée. KYC : {{kyc}}, Vivacité : {{live}}."
     },
     "warning": {
       "limitedBatches": "Nous lançons par lots limités pour garantir à chaque créateur visibilité et opportunités de campagne. Réservez votre profil pour rejoindre la première cohorte de créateurs."

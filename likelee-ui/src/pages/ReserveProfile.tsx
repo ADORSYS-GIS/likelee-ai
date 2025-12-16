@@ -3161,7 +3161,10 @@ export default function ReserveProfile() {
                   <span>
                     KYC:{" "}
                     <strong className="capitalize">
-                      {kycStatus.replace("_", " ")}
+                      {kycStatus === "not_started" ? t("reserveProfile.verification.status.notStarted") :
+                        kycStatus === "approved" ? t("reserveProfile.verification.status.approved") :
+                          kycStatus === "rejected" ? t("reserveProfile.verification.status.rejected") :
+                            t("reserveProfile.verification.status.verifying")}
                     </strong>
                   </span>
                   <span className="flex items-center gap-1">

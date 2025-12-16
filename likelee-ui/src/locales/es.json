@@ -903,14 +903,12 @@
       "prompt": "¿Ya tienes una cuenta?",
       "link": "Iniciar Sesión"
     },
-    "perMonth": "/mes",
     "form": {
       "labels": {
         "fullName": "Nombre Completo",
         "city": "Ciudad",
         "state": "Estado/País",
         "email": "Dirección de Correo Electrónico",
-        "password": "Contraseña",
         "confirmPassword": "Confirmar Contraseña"
       },
       "placeholders": {
@@ -990,7 +988,8 @@
         "label": "Sube al menos 3 fotos",
         "description": "Estas se usarán para entrenar tu modelo de IA. Asegúrate de que sean de alta calidad y muestren tu rostro claramente.",
         "drop": "Suelta archivos aquí o haz clic para subir"
-      }
+      },
+      "perMonth": "/mes"
     },
     "warning": "Este es un sistema de reserva beta. Su perfil se guardará, pero se le colocará en una lista de espera para el acceso completo.",
     "title": "Reserva tu Perfil (Beta)",
