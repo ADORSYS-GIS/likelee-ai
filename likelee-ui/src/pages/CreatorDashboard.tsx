@@ -972,6 +972,20 @@ export default function CreatorDashboard() {
     })();
   }, [initialized, authenticated, user?.id, API_BASE]);
 
+  // Poll for verification status updates
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+
+    // Don't poll if verification is already complete
+    if (creator?.kyc_status === 'approved') return;
+
+    const interval = setInterval(() => {
+      refreshVerificationFromDashboard();
+    }, 7500); // Poll every 7.5 seconds
+
+    return () => clearInterval(interval);
+  }, [initialized, authenticated, user?.id, creator?.kyc_status]);
+
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
