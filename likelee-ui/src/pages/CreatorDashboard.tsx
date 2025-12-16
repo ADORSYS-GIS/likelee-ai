@@ -977,7 +977,7 @@ export default function CreatorDashboard() {
     if (!initialized || !authenticated || !user?.id) return;
 
     // Don't poll if verification is already complete
-    if (creator?.kyc_status === 'approved') return;
+    if (creator?.kyc_status === "approved") return;
 
     const interval = setInterval(() => {
       refreshVerificationFromDashboard();
