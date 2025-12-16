@@ -653,6 +653,8 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
@@ -671,50 +673,62 @@ export default function ReserveProfile() {
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    creator_type: creatorType,
-    email: "",
-    password: "",
-    confirmPassword: "",
-    full_name: "",
-    stage_name: "",
+  const [profileId, setProfileId] = useState<string | null>(() => {
+    return localStorage.getItem("reserve_profileId") || null;
+  });
 
-    // Common fields
-    city: "",
-    state: "",
-    birthdate: "",
-    gender: "",
-    ethnicity: [],
-    vibes: [],
-    visibility: "private",
-    // Pricing (USD-only)
-    base_monthly_price_usd: "",
+  useEffect(() => {
+    if (profileId) {
+      localStorage.setItem("reserve_profileId", profileId);
+    }
+  }, [profileId]);
 
-    // Influencer specific
-    content_types: [],
-    content_other: "",
-    industries: [],
-    primary_platform: "",
-    platform_handle: "",
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("reserve_formData");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          creator_type: creatorType,
+          email: "",
+          password: "",
+          confirmPassword: "",
+          full_name: "",
+          stage_name: "",
 
-    // Model specific
-    work_types: [],
-    representation_status: "",
-    headshot_url: "",
+          // Common fields
+          city: "",
+          state: "",
+          birthdate: "",
+          gender: "",
+          ethnicity: [],
+          vibes: [],
+          visibility: "private",
+          // Pricing (USD-only)
+          base_monthly_price_usd: "",
 
-    // Athlete specific
-    sport: "",
-    athlete_type: "",
-    school_name: "",
-    age: "",
-    languages: "",
-    instagram_handle: "",
-    twitter_handle: "",
-    brand_categories: [],
-    bio: "",
+          // Influencer specific
+          content_types: [],
+          content_other: "",
+          industries: [],
+          primary_platform: "",
+          platform_handle: "",
+
+          // Model specific
+          work_types: [],
+          representation_status: "",
+          headshot_url: "",
+
+          // Athlete specific
+          sport: "",
+          athlete_type: "",
+          school_name: "",
+          age: "",
+          languages: "",
+          instagram_handle: "",
+          twitter_handle: "",
+          brand_categories: [],
+          bio: "",
+        };
   });
 
   useEffect(() => {
@@ -1211,8 +1225,8 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
-      setProfileId(user?.id || null);
+    onSuccess: (data) => {
+      setProfileId(data.id);
       setStep(2);
     },
     onError: (error) => {
@@ -1285,8 +1299,9 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Proceed to verification step
+      setProfileId(data.id);
       setStep(4);
     },
     onError: (error) => {
@@ -3116,7 +3131,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/ api / liveness / result`),
+                                api(`/api/liveness/result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -3124,6 +3139,7 @@ export default function ReserveProfile() {
                                   },
                                   body: JSON.stringify({
                                     session_id: livenessSessionId,
+                                    user_id: user?.id || profileId,
                                   }),
                                 },
                               );
