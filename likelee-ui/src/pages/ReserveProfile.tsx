@@ -885,7 +885,10 @@ export default function ReserveProfile() {
       setKycProvider(data.provider || "veriff");
       setKycSessionUrl(data.session_url);
       setKycStatus("pending");
-      setLivenessStatus("pending");
+      // Only reset liveness status if it's not already approved
+      if (livenessStatus !== "approved") {
+        setLivenessStatus("pending");
+      }
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
       toast({
@@ -1167,11 +1170,8 @@ export default function ReserveProfile() {
     if (params.get("verified") === "1") {
       verifyAndContinue();
     }
-    // Poll every 5s while on step 4
-    const interval = setInterval(() => {
-      refreshVerificationStatus();
-    }, 5000);
-    return () => clearInterval(interval);
+    // Polling was removed from this page to prevent interference with the liveness check.
+    // It will be moved to the CreatorDashboard.
   }, [step]);
 
   // Initial profile creation (Step 1)
