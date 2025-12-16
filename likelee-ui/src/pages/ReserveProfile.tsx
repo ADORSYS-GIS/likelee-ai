@@ -32,6 +32,7 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Info,
 } from "lucide-react";
 import {
   Alert as UIAlert,
@@ -44,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -260,6 +262,7 @@ function ReferencePhotosStep(props: any) {
     userId,
     apiBase,
   } = props;
+  const { t } = useTranslation();
   const [cameraOpen, setCameraOpen] = React.useState(false);
   const [stream, setStream] = React.useState<any>(null);
   const [currentPose, setCurrentPose] = React.useState<
@@ -446,26 +449,23 @@ function ReferencePhotosStep(props: any) {
     <div className="space-y-6">
       <div>
         <h3 className="text-2xl font-bold text-gray-900 mb-2">
-          Reference Photos
+          {t("reserveProfile.photos.title")}
         </h3>
         <p className="text-gray-700">
-          Capture three photos of your face: front, left profile, and right
-          profile. This happens after verification.
+          {t("reserveProfile.photos.description")}
         </p>
       </div>
 
       {kycStatus !== "approved" && (
         <div className="p-4 border-2 border-yellow-300 bg-yellow-50 text-gray-800">
-          Verification is pending. You can capture and upload your reference
-          photos now, but your profile won't go live until verification is
-          approved.
+          {t("reserveProfile.photos.verificationPending")}
           <div className="mt-4">
             <Button
               onClick={onBack}
               variant="outline"
               className="h-10 px-6 border-2 border-black rounded-none"
             >
-              ← Back
+              ← {t("common.back")}
             </Button>
           </div>
         </div>
@@ -476,14 +476,14 @@ function ReferencePhotosStep(props: any) {
             onClick={openCamera}
             className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none"
           >
-            Open Camera
+            {t("reserveProfile.photos.openCamera")}
           </Button>
           <Button
             onClick={onBack}
             variant="outline"
             className="h-12 border-2 border-black rounded-none"
           >
-            Back
+            {t("common.back")}
           </Button>
         </div>
 
@@ -491,7 +491,7 @@ function ReferencePhotosStep(props: any) {
           <div className="border-2 border-black p-4 bg-gray-50">
             <div className="mb-3">
               <Label className="text-sm font-medium text-gray-900">
-                Live Camera Preview
+                {t("reserveProfile.photos.livePreview")}
               </Label>
               <div className="mt-2 h-64 bg-black flex items-center justify-center border-2 border-gray-200">
                 <video
@@ -503,7 +503,7 @@ function ReferencePhotosStep(props: any) {
                 />
               </div>
               <div className="text-sm text-gray-600 mt-2">
-                Current pose: {currentPose.toUpperCase()}
+                {t("reserveProfile.photos.currentPose")} {currentPose.toUpperCase()}
               </div>
             </div>
             <div className="flex gap-3">
@@ -511,7 +511,7 @@ function ReferencePhotosStep(props: any) {
                 onClick={capture}
                 className="h-10 bg-black text-white border-2 border-black rounded-none"
               >
-                Capture
+                {t("reserveProfile.photos.capture")}
               </Button>
               <Button
                 onClick={() =>
@@ -526,14 +526,14 @@ function ReferencePhotosStep(props: any) {
                 variant="outline"
                 className="h-10 border-2 border-black rounded-none"
               >
-                Next Pose
+                {t("reserveProfile.photos.nextPose")}
               </Button>
               <Button
                 onClick={closeCamera}
                 variant="outline"
                 className="h-10 border-2 border-black rounded-none"
               >
-                Close
+                {t("reserveProfile.actions.close")}
               </Button>
             </div>
           </div>
@@ -545,52 +545,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left || uploadedUrls.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right || uploadedUrls.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -653,8 +653,11 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [step, setStep] = useState(() => {
     const saved = localStorage.getItem("reserve_step");
@@ -671,50 +674,62 @@ export default function ReserveProfile() {
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    creator_type: creatorType,
-    email: "",
-    password: "",
-    confirmPassword: "",
-    full_name: "",
-    stage_name: "",
+  const [profileId, setProfileId] = useState<string | null>(() => {
+    return localStorage.getItem("reserve_profileId") || null;
+  });
 
-    // Common fields
-    city: "",
-    state: "",
-    birthdate: "",
-    gender: "",
-    ethnicity: [],
-    vibes: [],
-    visibility: "private",
-    // Pricing (USD-only)
-    base_monthly_price_usd: "",
+  useEffect(() => {
+    if (profileId) {
+      localStorage.setItem("reserve_profileId", profileId);
+    }
+  }, [profileId]);
 
-    // Influencer specific
-    content_types: [],
-    content_other: "",
-    industries: [],
-    primary_platform: "",
-    platform_handle: "",
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("reserve_formData");
+    return saved
+      ? JSON.parse(saved)
+      : {
+        creator_type: creatorType,
+        email: "",
+        password: "",
+        confirmPassword: "",
+        full_name: "",
+        stage_name: "",
 
-    // Model specific
-    work_types: [],
-    representation_status: "",
-    headshot_url: "",
+        // Common fields
+        city: "",
+        state: "",
+        birthdate: "",
+        gender: "",
+        ethnicity: [],
+        vibes: [],
+        visibility: "private",
+        // Pricing (USD-only)
+        base_monthly_price_usd: "",
 
-    // Athlete specific
-    sport: "",
-    athlete_type: "",
-    school_name: "",
-    age: "",
-    languages: "",
-    instagram_handle: "",
-    twitter_handle: "",
-    brand_categories: [],
-    bio: "",
+        // Influencer specific
+        content_types: [],
+        content_other: "",
+        industries: [],
+        primary_platform: "",
+        platform_handle: "",
+
+        // Model specific
+        work_types: [],
+        representation_status: "",
+        headshot_url: "",
+
+        // Athlete specific
+        sport: "",
+        athlete_type: "",
+        school_name: "",
+        age: "",
+        languages: "",
+        instagram_handle: "",
+        twitter_handle: "",
+        brand_categories: [],
+        bio: "",
+      };
   });
 
   useEffect(() => {
@@ -831,7 +846,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1130,16 +1145,16 @@ export default function ReserveProfile() {
   }, [livenessSessionId, showLiveness]);
 
   const getStepTitle = () => {
-    if (step === 1) return "Create Your Account";
+    if (step === 1) return t("reserveProfile.stepTitles.step1");
     if (step === 2) {
-      if (creatorType === "influencer") return "Profile Basics";
-      if (creatorType === "model_actor") return "Talent Details";
-      if (creatorType === "athlete") return "Athlete Info";
+      if (creatorType === "influencer") return t("reserveProfile.stepTitles.step2.influencer");
+      if (creatorType === "model_actor") return t("reserveProfile.stepTitles.step2.model_actor");
+      if (creatorType === "athlete") return t("reserveProfile.stepTitles.step2.athlete");
     }
     if (step === 3) {
-      if (creatorType === "influencer") return "Opportunities";
-      if (creatorType === "model_actor") return "Preferences";
-      if (creatorType === "athlete") return "Brand Setup";
+      if (creatorType === "influencer") return t("reserveProfile.stepTitles.step3.influencer");
+      if (creatorType === "model_actor") return t("reserveProfile.stepTitles.step3.model_actor");
+      if (creatorType === "athlete") return t("reserveProfile.stepTitles.step3.athlete");
     }
     return "";
   };
@@ -1211,8 +1226,8 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
-      setProfileId(user?.id || null);
+    onSuccess: (data) => {
+      setProfileId(data.id);
       setStep(2);
     },
     onError: (error) => {
@@ -1285,8 +1300,9 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Proceed to verification step
+      setProfileId(data.id);
       setStep(4);
     },
     onError: (error) => {
@@ -1446,8 +1462,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1646,17 +1662,15 @@ export default function ReserveProfile() {
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Profile reserved—welcome to the Likelee ecosystem
+            {t("reserveProfile.success.title")}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            We're onboarding talent in waves to keep demand and visibility
-            balanced. Your profile is saved; we'll notify you when it's time to
-            complete verification and go live.
+            {t("reserveProfile.success.description")}
           </p>
           <div className="flex items-center justify-center">
             <Link to="/CreatorDashboard">
               <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white px-8 h-12">
-                Go to Dashboard
+                {t("reserveProfile.success.dashboardButton")}
               </Button>
             </Link>
           </div>
@@ -1670,12 +1684,10 @@ export default function ReserveProfile() {
       <div className="max-w-3xl mx-auto">
         {/* Warning Message */}
         {showWarning && step === 1 && (
-          <Alert className="mb-8 bg-cyan-50 border-2 border-[#32C8D1] rounded-none">
-            <AlertCircle className="h-5 w-5 text-[#32C8D1]" />
-            <AlertDescription className="text-cyan-900 font-medium">
-              We're launching in limited batches to make sure every Creator gets
-              visibility and campaign opportunities. Reserve your profile to
-              join the first creator cohort.
+          <Alert className="bg-cyan-50 border-cyan-200 mb-8">
+            <Info className="h-5 w-5 text-cyan-700" />
+            <AlertDescription className="text-sm font-medium text-cyan-900">
+              {t("reserveProfile.warning.limitedBatches")}
             </AlertDescription>
           </Alert>
         )}
@@ -1684,10 +1696,10 @@ export default function ReserveProfile() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-900">
-              Reserve Your Profile
+              {t("reserveProfile.title")}
             </h2>
             <Badge className="bg-cyan-100 text-cyan-700 border-2 border-black rounded-none">
-              Step {step} of {totalSteps}
+              {t("reserveProfile.stepProgress", { step, total: totalSteps })}
             </Badge>
           </div>
           <div className="w-full h-3 bg-gray-200 border-2 border-black">
@@ -1707,11 +1719,7 @@ export default function ReserveProfile() {
                   {getStepTitle()}
                 </h3>
                 <p className="text-gray-600">
-                  {creatorType === "athlete" && "Create your NIL-ready account"}
-                  {creatorType === "model_actor" &&
-                    "Create your Likelee account"}
-                  {creatorType === "influencer" &&
-                    "Let's start with the basics"}
+                  {t(`reserveProfile.stepDescriptions.step1.${creatorType}`)}
                 </p>
               </div>
 
@@ -1722,14 +1730,14 @@ export default function ReserveProfile() {
                   className="rounded-none border-2 border-black"
                   onClick={() => setAuthMode("signup")}
                 >
-                  Sign up
+                  {t("reserveProfile.actions.signup")}
                 </Button>
                 <Button
                   variant={authMode === "login" ? "default" : "outline"}
                   className="rounded-none border-2 border-black"
                   onClick={() => setAuthMode("login")}
                 >
-                  Log in
+                  {t("reserveProfile.actions.login")}
                 </Button>
               </div>
 
@@ -1740,7 +1748,7 @@ export default function ReserveProfile() {
                       htmlFor="email"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Email Address
+                      {t("reserveProfile.form.labels.email")}
                     </Label>
                     <Input
                       id="email"
@@ -1750,7 +1758,7 @@ export default function ReserveProfile() {
                         setFormData({ ...formData, email: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="you@example.com"
+                      placeholder={t("reserveProfile.form.placeholders.email")}
                     />
                   </div>
 
@@ -1759,7 +1767,7 @@ export default function ReserveProfile() {
                       htmlFor="password"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Password
+                      {t("reserveProfile.form.labels.password")}
                     </Label>
                     <div className="relative">
                       <Input
@@ -1770,7 +1778,7 @@ export default function ReserveProfile() {
                           setFormData({ ...formData, password: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder="••••••••"
+                        placeholder={t("reserveProfile.form.placeholders.password")}
                       />
                       <button
                         type="button"
@@ -1791,7 +1799,7 @@ export default function ReserveProfile() {
                       htmlFor="confirmPassword"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Confirm Password
+                      {t("reserveProfile.form.labels.confirmPassword")}
                     </Label>
                     <div className="relative">
                       <Input
@@ -1805,7 +1813,7 @@ export default function ReserveProfile() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder="••••••••"
+                        placeholder={t("reserveProfile.form.placeholders.confirmPassword")}
                       />
                       <button
                         type="button"
@@ -1829,8 +1837,8 @@ export default function ReserveProfile() {
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
                       {creatorType === "model_actor"
-                        ? "Full Name"
-                        : "Full Name"}
+                        ? t("reserveProfile.form.labels.fullName")
+                        : t("reserveProfile.form.labels.fullName")}
                     </Label>
                     <Input
                       id="full_name"
@@ -1851,8 +1859,8 @@ export default function ReserveProfile() {
                       className="border-2 border-gray-300 rounded-none"
                       placeholder={
                         creatorType === "model_actor"
-                          ? "Your name or stage name"
-                          : "Your full name"
+                          ? t("reserveProfile.form.placeholders.stageName")
+                          : t("reserveProfile.form.placeholders.fullName")
                       }
                     />
                   </div>
@@ -1865,10 +1873,10 @@ export default function ReserveProfile() {
                     className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                   >
                     {firstContinueLoading
-                      ? "Checking..."
+                      ? t("reserveProfile.actions.checking", "Checking...")
                       : createInitialProfileMutation.isPending
-                        ? "Saving..."
-                        : "Continue"}
+                        ? t("common.saving", "Saving...")
+                        : t("reserveProfile.actions.continue", "Continue")}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
@@ -1883,7 +1891,7 @@ export default function ReserveProfile() {
                     } catch (err: any) {
                       const msg = err?.message || "Failed to sign in";
                       toast({
-                        title: "Sign-in failed",
+                        title: t("reserveProfile.form.validation.signInFailed"),
                         description: msg,
                         variant: "destructive",
                       });
@@ -1895,7 +1903,7 @@ export default function ReserveProfile() {
                       htmlFor="login_email"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Email Address
+                      {t("reserveProfile.form.labels.email")}
                     </Label>
                     <Input
                       id="login_email"
@@ -1905,7 +1913,7 @@ export default function ReserveProfile() {
                         setFormData({ ...formData, email: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="you@example.com"
+                      placeholder={t("reserveProfile.form.placeholders.email")}
                     />
                   </div>
                   <div>
@@ -1913,7 +1921,7 @@ export default function ReserveProfile() {
                       htmlFor="login_password"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Password
+                      {t("reserveProfile.form.labels.password")}
                     </Label>
                     <div className="relative">
                       <Input
@@ -1924,7 +1932,7 @@ export default function ReserveProfile() {
                           setFormData({ ...formData, password: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder="••••••••"
+                        placeholder={t("reserveProfile.form.placeholders.password")}
                       />
                       <button
                         type="button"
@@ -1943,7 +1951,7 @@ export default function ReserveProfile() {
                         to="/forgot-password"
                         className="text-sm text-cyan-600 hover:underline"
                       >
-                        Forgot Password?
+                        {t("reserveProfile.form.forgotPassword")}
                       </Link>
                     </div>
                   </div>
@@ -1951,7 +1959,7 @@ export default function ReserveProfile() {
                     type="submit"
                     className="w-full h-12 bg-black text-white border-2 border-black rounded-none"
                   >
-                    Log in
+                    {t("reserveProfile.actions.login")}
                   </Button>
                 </form>
               )}
@@ -2010,9 +2018,8 @@ export default function ReserveProfile() {
                                 // For rejection, user can re-open and retry cleanly.
                                 if (!data.passed) {
                                   toast({
-                                    title: "Liveness Check Failed",
-                                    description:
-                                      "Please try again with good lighting and follow the on-screen prompts.",
+                                    title: t("reserveProfile.verification.failedTitle"),
+                                    description: t("reserveProfile.verification.failedDescription"),
                                     variant: "destructive",
                                   });
                                 }
@@ -2023,9 +2030,9 @@ export default function ReserveProfile() {
                                 }, 300);
                               } else {
                                 toast({
-                                  title: "Failed to Get Results",
+                                  title: t("reserveProfile.verification.statusCheckFailedTitle"),
                                   description:
-                                    "Unable to fetch liveness verification results. Please try again.",
+                                    t("common.error"),
                                   variant: "destructive",
                                 });
                               }
@@ -2038,7 +2045,7 @@ export default function ReserveProfile() {
                             console.error("Liveness error", e);
                             setLivenessError(e?.message || String(e));
                             toast({
-                              title: "Liveness Check Error",
+                              title: t("reserveProfile.verification.failedTitle"),
                               description: getUserFriendlyError(e),
                               variant: "destructive",
                             });
@@ -2049,8 +2056,7 @@ export default function ReserveProfile() {
                         />
                       )}
                       <div className="mt-3 text-sm text-gray-600">
-                        Follow the on-screen prompts. This uses secure AWS
-                        Rekognition.
+                        {t("reserveProfile.verification.description")}
                       </div>
 
                       <div className="mt-3 flex justify-end gap-2">
@@ -2080,11 +2086,7 @@ export default function ReserveProfile() {
                   {getStepTitle()}
                 </h3>
                 <p className="text-gray-600">
-                  {creatorType === "influencer" &&
-                    "Tell us a little about yourself"}
-                  {creatorType === "model_actor" &&
-                    "Let's start your portfolio"}
-                  {creatorType === "athlete" && "Tell us about your sport"}
+                  {t(`reserveProfile.stepDescriptions.step2.${creatorType}`)}
                 </p>
               </div>
 
@@ -2095,7 +2097,7 @@ export default function ReserveProfile() {
                       htmlFor="city"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      City
+                      {t("reserveProfile.form.labels.city")}
                     </Label>
                     <Input
                       id="city"
@@ -2104,7 +2106,7 @@ export default function ReserveProfile() {
                         setFormData({ ...formData, city: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="Los Angeles"
+                      placeholder={t("reserveProfile.form.placeholders.city")}
                     />
                   </div>
                   <div>
@@ -2112,7 +2114,7 @@ export default function ReserveProfile() {
                       htmlFor="state"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      State
+                      {t("reserveProfile.form.labels.state")}
                     </Label>
                     <Input
                       id="state"
@@ -2121,7 +2123,7 @@ export default function ReserveProfile() {
                         setFormData({ ...formData, state: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="CA"
+                      placeholder={t("reserveProfile.form.placeholders.state")}
                     />
                   </div>
                 </div>
@@ -2131,7 +2133,7 @@ export default function ReserveProfile() {
                     htmlFor="birthdate"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {creatorType === "athlete" ? "Age" : "Birthdate"}
+                    {creatorType === "athlete" ? t("reserveProfile.form.age") : t("reserveProfile.form.birthdate")}
                   </Label>
                   {creatorType === "athlete" ? (
                     <Input
@@ -2142,7 +2144,7 @@ export default function ReserveProfile() {
                         setFormData({ ...formData, age: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="21"
+                      placeholder={t("reserveProfile.form.placeholders.age")}
                     />
                   ) : (
                     <Input
@@ -2158,8 +2160,8 @@ export default function ReserveProfile() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    How do you identify?
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    {t("reserveProfile.form.vibes")}
                   </Label>
                   <RadioGroup
                     value={formData.gender}
@@ -2188,7 +2190,10 @@ export default function ReserveProfile() {
                             htmlFor={option}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {option}
+                            {t(`reserveProfile.form.genderOptions.${option === "Prefer not to say" ? "preferNotToSay" :
+                              option === "Gender fluid" ? "genderFluid" :
+                                option.toLowerCase()
+                              }`, option)}
                           </Label>
                         </div>
                       ))}
@@ -2198,7 +2203,7 @@ export default function ReserveProfile() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    Race/Ethnicity (select all that apply)
+                    {t("reserveProfile.form.raceEthnicity")}
                   </Label>
                   <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                     <Checkbox
@@ -2222,7 +2227,7 @@ export default function ReserveProfile() {
                       htmlFor="select-all-ethnicity"
                       className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
                     >
-                      Select All
+                      {t("reserveProfile.form.selectAll", "Select All")}
                     </label>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2243,7 +2248,7 @@ export default function ReserveProfile() {
                           htmlFor={ethnicity}
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {ethnicity}
+                          {t(`common.raceEthnicity.options.${ethnicity}`, ethnicity)}
                         </label>
                       </div>
                     ))}
@@ -2258,7 +2263,7 @@ export default function ReserveProfile() {
                         htmlFor="sport"
                         className="text-sm font-medium text-gray-700 mb-2 block"
                       >
-                        Sport
+                        {t("reserveProfile.form.sport")}
                       </Label>
                       <Select
                         value={formData.sport}
@@ -2267,12 +2272,12 @@ export default function ReserveProfile() {
                         }
                       >
                         <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                          <SelectValue placeholder="Select your sport" />
+                          <SelectValue placeholder={t("reserveProfile.form.placeholders.sport")} />
                         </SelectTrigger>
                         <SelectContent>
                           {sportsOptions.map((sport) => (
                             <SelectItem key={sport} value={sport}>
-                              {sport}
+                              {t(`common.sports.${sport}`, sport)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -2281,7 +2286,7 @@ export default function ReserveProfile() {
 
                     <div>
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        Athlete Type
+                        {t("reserveProfile.form.athleteType")}
                       </Label>
                       <RadioGroup
                         value={formData.athlete_type}
@@ -2305,7 +2310,7 @@ export default function ReserveProfile() {
                                   htmlFor={option}
                                   className="text-sm text-gray-700 cursor-pointer flex-1"
                                 >
-                                  {option}
+                                  {t(`reserveProfile.form.athleteTypes.${option}`, option)}
                                 </Label>
                               </div>
                             ),
@@ -2320,7 +2325,7 @@ export default function ReserveProfile() {
                           htmlFor="school_name"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          School Name
+                          {t("reserveProfile.form.schoolName")}
                         </Label>
                         <Input
                           id="school_name"
@@ -2332,7 +2337,7 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder="University name"
+                          placeholder={t("reserveProfile.form.placeholders.schoolName")}
                         />
                       </div>
                     )}
@@ -2342,7 +2347,7 @@ export default function ReserveProfile() {
                         htmlFor="languages"
                         className="text-sm font-medium text-gray-700 mb-2 block"
                       >
-                        Languages
+                        {t("reserveProfile.form.languages")}
                       </Label>
                       <Input
                         id="languages"
@@ -2354,7 +2359,7 @@ export default function ReserveProfile() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder="e.g., English, Spanish"
+                        placeholder={t("reserveProfile.form.placeholders.languages")}
                       />
                     </div>
                   </>
@@ -2365,10 +2370,10 @@ export default function ReserveProfile() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <Label className="text-sm font-medium text-gray-900">
-                        Type of work (select up to 3)
+                        {t("reserveProfile.form.selectMax3")}
                       </Label>
                       <span className="text-xs text-gray-500">
-                        You can specify more later
+                        {t("reserveProfile.form.specifyMoreLater", "You can specify more later")}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
@@ -2393,7 +2398,7 @@ export default function ReserveProfile() {
                         htmlFor="select-all-work-types"
                         className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
                       >
-                        Select All
+                        {t("reserveProfile.form.selectAll", "Select All")}
                       </label>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
@@ -2412,9 +2417,8 @@ export default function ReserveProfile() {
                                 toggleArrayItem("work_types", type);
                               } else {
                                 toast({
-                                  title: "Selection Limit",
-                                  description:
-                                    "Please select up to 3 options for now. You can add more later.",
+                                  title: t("reserveProfile.form.validation.selectionLimit"),
+                                  description: t("reserveProfile.form.validation.selectionLimitDesc"),
                                   className:
                                     "bg-cyan-50 border-2 border-cyan-400",
                                 });
@@ -2426,7 +2430,7 @@ export default function ReserveProfile() {
                             htmlFor={type}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {type}
+                            {t(`common.workTypes.${type}`, type)}
                           </label>
                         </div>
                       ))}
@@ -2438,7 +2442,7 @@ export default function ReserveProfile() {
                 {creatorType === "influencer" && (
                   <div>
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      Vibe / Style Tags
+                      {t("reserveProfile.form.vibes")}
                     </Label>
                     <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
                       <Checkbox
@@ -2459,7 +2463,7 @@ export default function ReserveProfile() {
                         htmlFor="select-all-vibes"
                         className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
                       >
-                        Select All
+                        {t("reserveProfile.form.selectAll", "Select All")}
                       </label>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -2480,7 +2484,7 @@ export default function ReserveProfile() {
                             htmlFor={vibe}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {vibe}
+                            {t(`common.vibes.${vibe}`, vibe)}
                           </label>
                         </div>
                       ))}
@@ -2492,7 +2496,7 @@ export default function ReserveProfile() {
               {/* Pricing (USD-only) */}
               <div className="mt-6 border-2 border-gray-200 p-4 bg-gray-50">
                 <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  Licensing Pricing
+                  {t("reserveProfile.form.licensingPricing")}
                 </h4>
                 <div className="w-full flex justify-center">
                   <div className="w-full max-w-sm">
@@ -2500,7 +2504,7 @@ export default function ReserveProfile() {
                       htmlFor="base_monthly_price"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Base monthly license price (USD)
+                      {t("reserveProfile.form.basePrice")}
                     </Label>
                     <div className="flex items-center gap-2">
                       <span className="text-gray-700">$</span>
@@ -2518,12 +2522,12 @@ export default function ReserveProfile() {
                           });
                         }}
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder="150"
+                        placeholder={t("reserveProfile.form.placeholders.price")}
                       />
-                      <span className="text-sm text-gray-600">/month</span>
+                      <span className="text-sm text-gray-600">{t("reserveProfile.form.perMonth", "/month")}</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Minimum $150/month. Currency is locked to USD.
+                      {t("reserveProfile.form.basePriceHint")}
                     </p>
                   </div>
                 </div>
@@ -2536,13 +2540,13 @@ export default function ReserveProfile() {
                   className="flex-1 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button
                   onClick={handleNext}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {creatorType === "athlete" ? "Next: Brand Setup" : "Continue"}
+                  {creatorType === "athlete" ? t("reserveProfile.actions.nextBrandSetup", "Next: Brand Setup") : t("common.continue")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -2557,12 +2561,7 @@ export default function ReserveProfile() {
                   {getStepTitle()}
                 </h3>
                 <p className="text-gray-600">
-                  {creatorType === "influencer" &&
-                    "Help us match you with the right campaigns"}
-                  {creatorType === "model_actor" &&
-                    "Help us tailor your opportunities"}
-                  {creatorType === "athlete" &&
-                    "Get ready to attract sponsorship and brand deals"}
+                  {t(`reserveProfile.stepDescriptions.step3.${creatorType}`)}
                 </p>
               </div>
 
@@ -2573,11 +2572,10 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          What kind of content are you interested in being
-                          featured in?
+                          {t("reserveProfile.form.contentInterest")}
                         </Label>
                         <span className="text-xs text-gray-500">
-                          Select up to 3 for now
+                          {t("reserveProfile.form.selectMax3")}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
@@ -2602,7 +2600,7 @@ export default function ReserveProfile() {
                           htmlFor="select-all-content"
                           className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("reserveProfile.form.selectAll", "Select All")}
                         </label>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2623,7 +2621,7 @@ export default function ReserveProfile() {
                               htmlFor={type}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {type}
+                              {t(`common.contentTypes.options.${type}`, type)}
                             </label>
                           </div>
                         ))}
@@ -2637,8 +2635,8 @@ export default function ReserveProfile() {
                               content_other: e.target.value,
                             })
                           }
-                          className="mt-3 border-2 border-gray-300 rounded-none"
-                          placeholder="Please specify..."
+                          className="border-2 border-gray-300 rounded-none mt-2"
+                          placeholder={t("reserveProfile.form.placeholders.specify")}
                         />
                       )}
                     </div>
@@ -2646,11 +2644,10 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          What types of brands or industries do you want to work
-                          with?
+                          {t("reserveProfile.form.brandinterest", "What types of brands or industries do you want to work with?")}
                         </Label>
                         <span className="text-xs text-gray-500">
-                          Select up to 3 for now
+                          {t("reserveProfile.form.selectMax3")}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
@@ -2675,7 +2672,7 @@ export default function ReserveProfile() {
                           htmlFor="select-all-industries"
                           className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("reserveProfile.form.selectAll", "Select All")}
                         </label>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2696,7 +2693,7 @@ export default function ReserveProfile() {
                               htmlFor={industry}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {industry}
+                              {t(`common.industries.options.${industry}`, industry)}
                             </label>
                           </div>
                         ))}
@@ -2709,7 +2706,7 @@ export default function ReserveProfile() {
                           htmlFor="primary_platform"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          Primary Platform
+                          {t("reserveProfile.form.primaryPlatform")}
                         </Label>
                         <Select
                           value={formData.primary_platform}
@@ -2721,14 +2718,14 @@ export default function ReserveProfile() {
                           }
                         >
                           <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                            <SelectValue placeholder="Select platform" />
+                            <SelectValue placeholder={t("reserveProfile.form.placeholders.platform", "Select platform")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="instagram">Instagram</SelectItem>
                             <SelectItem value="tiktok">TikTok</SelectItem>
                             <SelectItem value="youtube">YouTube</SelectItem>
                             <SelectItem value="twitter">Twitter/X</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="other">{t("common.platforms.other", "Other")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -2737,7 +2734,7 @@ export default function ReserveProfile() {
                           htmlFor="platform_handle"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          Handle
+                          {t("reserveProfile.form.handle")}
                         </Label>
                         <Input
                           id="platform_handle"
@@ -2749,7 +2746,7 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder="@yourhandle"
+                          placeholder={t("reserveProfile.form.placeholders.handle")}
                         />
                       </div>
                     </div>
@@ -2761,7 +2758,7 @@ export default function ReserveProfile() {
                   <>
                     <div>
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        Representation Status
+                        {t("reserveProfile.form.representationStatus", "Representation Status")}
                       </Label>
                       <RadioGroup
                         value={formData.representation_status}
@@ -2787,7 +2784,7 @@ export default function ReserveProfile() {
                                 htmlFor={option}
                                 className="text-sm text-gray-700 cursor-pointer flex-1"
                               >
-                                {option}
+                                {t(`common.representationStatus.options.${option}`, option)}
                               </Label>
                             </div>
                           ))}
@@ -2797,7 +2794,7 @@ export default function ReserveProfile() {
 
                     <div>
                       <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                        Vibe / Style Tags
+                        {t("reserveProfile.form.vibes")}
                       </Label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {vibes.map((vibe) => (
@@ -2817,7 +2814,7 @@ export default function ReserveProfile() {
                               htmlFor={vibe}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {vibe}
+                              {t(`common.vibes.options.${vibe}`, vibe)}
                             </label>
                           </div>
                         ))}
@@ -2829,7 +2826,7 @@ export default function ReserveProfile() {
                         htmlFor="headshot_url"
                         className="text-sm font-medium text-gray-700 mb-2 block"
                       >
-                        Upload Headshot (optional)
+                        {t("reserveProfile.form.headshot")}
                       </Label>
                       <Input
                         id="headshot_url"
@@ -2842,10 +2839,10 @@ export default function ReserveProfile() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder="Image URL"
+                        placeholder={t("reserveProfile.form.placeholders.headshot")}
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        You can upload your headshot after creating your account
+                        {t("reserveProfile.form.headshotHint")}
                       </p>
                     </div>
                   </>
@@ -2860,7 +2857,7 @@ export default function ReserveProfile() {
                           htmlFor="instagram_handle"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          Instagram (optional)
+                          {t("reserveProfile.form.instagramOptional", "Instagram (optional)")}
                         </Label>
                         <Input
                           id="instagram_handle"
@@ -2872,7 +2869,7 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder="@yourhandle"
+                          placeholder={t("reserveProfile.form.placeholders.handle")}
                         />
                       </div>
                       <div>
@@ -2880,7 +2877,7 @@ export default function ReserveProfile() {
                           htmlFor="twitter_handle"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          Twitter/X (optional)
+                          {t("reserveProfile.form.twitterOptional", "Twitter/X (optional)")}
                         </Label>
                         <Input
                           id="twitter_handle"
@@ -2892,7 +2889,7 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder="@yourhandle"
+                          placeholder={t("reserveProfile.form.placeholders.handle")}
                         />
                       </div>
                     </div>
@@ -2900,10 +2897,10 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          Interests / Brand Categories
+                          {t("reserveProfile.form.brandCategories", "Interests / Brand Categories")}
                         </Label>
                         <span className="text-xs text-gray-500">
-                          Select up to 3 for now
+                          {t("reserveProfile.form.selectMax3")}
                         </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2926,7 +2923,7 @@ export default function ReserveProfile() {
                               htmlFor={category}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {category}
+                              {t(`common.brandCategories.options.${category}`, category)}
                             </label>
                           </div>
                         ))}
@@ -2938,7 +2935,7 @@ export default function ReserveProfile() {
                         htmlFor="bio"
                         className="text-sm font-medium text-gray-700 mb-2 block"
                       >
-                        Short Bio
+                        {t("reserveProfile.form.shortBio", "Short Bio")}
                       </Label>
                       <Textarea
                         id="bio"
@@ -2947,7 +2944,7 @@ export default function ReserveProfile() {
                           setFormData({ ...formData, bio: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none h-24"
-                        placeholder="Tell brands a bit about you..."
+                        placeholder={t("reserveProfile.form.placeholders.bio", "Tell brands a bit about you...")}
                       />
                     </div>
                   </>
@@ -2956,7 +2953,7 @@ export default function ReserveProfile() {
                 {/* Profile Visibility - Common for all */}
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Profile Visibility
+                    {t("reserveProfile.form.visibility")}
                   </Label>
                   <RadioGroup
                     value={formData.visibility}
@@ -2975,8 +2972,7 @@ export default function ReserveProfile() {
                           htmlFor="public"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          <span className="font-medium">Public</span> - Visible
-                          to everyone
+                          <span className="font-medium">{t("reserveProfile.form.visibilityOptions.public.label")}</span> - {t("reserveProfile.form.visibilityOptions.public.description")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -2989,8 +2985,7 @@ export default function ReserveProfile() {
                           htmlFor="private"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          <span className="font-medium">Private</span> - Only
-                          discoverable to brands and AI creators
+                          <span className="font-medium">{t("reserveProfile.form.visibilityOptions.private.label")}</span> - {t("reserveProfile.form.visibilityOptions.private.description")}
                         </Label>
                       </div>
                     </div>
@@ -3005,7 +3000,7 @@ export default function ReserveProfile() {
                   className="h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -3013,8 +3008,8 @@ export default function ReserveProfile() {
                   className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
                   {updateProfileMutation.isPending
-                    ? "Saving..."
-                    : "Save & Continue to Verification"}
+                    ? t("common.saving", "Saving...")
+                    : t("reserveProfile.actions.saveAndVerify")}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -3026,52 +3021,48 @@ export default function ReserveProfile() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                  Identity Verification
+                  {t("reserveProfile.verification.title")}
                 </h3>
                 <p className="text-gray-700">
-                  Verify your identity to become visible to brands and unlock
-                  opportunities
+                  {t("reserveProfile.verification.subtitle")}
                 </p>
               </div>
 
               {/* Why verify box */}
               <div className="p-5 border-2 border-[#32C8D1] bg-cyan-50">
                 <h4 className="font-bold text-gray-900 mb-3">
-                  Why verify your identity?
+                  {t("reserveProfile.verification.whyVerify.title")}
                 </h4>
                 <ul className="space-y-2 text-gray-800">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> Get
-                    discovered by brands looking for verified creators
+                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> {t("reserveProfile.verification.whyVerify.reason1")}
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    Build trust and credibility with licensing partners
+                    {t("reserveProfile.verification.whyVerify.reason2")}
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
-                    Unlock higher-value campaign opportunities
+                    {t("reserveProfile.verification.whyVerify.reason3")}
                   </li>
                 </ul>
               </div>
 
               <p className="text-gray-700">
-                We use secure identity verification to ensure all creators on
-                Likelee are authentic. This process typically takes 2–3 minutes.
+                {t("reserveProfile.verification.description")}
               </p>
 
               {/* Requirements box */}
               <div className="p-5 border-2 border-gray-300 bg-gray-50">
                 <h4 className="font-bold text-gray-900 mb-2">
-                  What you'll need:
+                  {t("reserveProfile.verification.requirements.title")}
                 </h4>
                 <ul className="list-disc list-inside text-gray-800 space-y-1">
                   <li>
-                    Government-issued ID (driver's license, passport, or state
-                    ID)
+                    {t("reserveProfile.verification.requirements.item1")}
                   </li>
-                  <li>Good lighting and camera/mic access</li>
-                  <li>2–3 minutes in a quiet space</li>
+                  <li>{t("reserveProfile.verification.requirements.item2")}</li>
+                  <li>{t("reserveProfile.verification.requirements.item3")}</li>
                 </ul>
               </div>
 
@@ -3081,7 +3072,7 @@ export default function ReserveProfile() {
                   disabled={kycLoading}
                   className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {kycLoading ? "Starting…" : "Verify Identity Now"}
+                  {kycLoading ? t("reserveProfile.actions.startingVerification", "Starting…") : t("reserveProfile.actions.verifyIdentity", "Verify Identity Now")}
                 </Button>
                 <Button
                   onClick={startLiveness}
@@ -3090,10 +3081,10 @@ export default function ReserveProfile() {
                   className="w-full h-12 border-2 border-black rounded-none"
                 >
                   {livenessStatus === "approved"
-                    ? "Liveness Approved"
+                    ? t("reserveProfile.actions.livenessApproved", "Liveness Approved")
                     : livenessRunning
-                      ? "Preparing…"
-                      : "Start Liveness Check"}
+                      ? t("reserveProfile.actions.preparing", "Preparing…")
+                      : t("reserveProfile.actions.startLiveness", "Start Liveness Check")}
                 </Button>
                 {LIVENESS_DEBUG && showLiveness && (
                   <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
@@ -3116,7 +3107,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/ api / liveness / result`),
+                                api(`/api/liveness/result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -3124,6 +3115,7 @@ export default function ReserveProfile() {
                                   },
                                   body: JSON.stringify({
                                     session_id: livenessSessionId,
+                                    user_id: user?.id || profileId,
                                   }),
                                 },
                               );
@@ -3175,7 +3167,7 @@ export default function ReserveProfile() {
                       <>
                         <CheckCircle2 className="w-4 h-4 text-green-600" />
                         <strong className="capitalize text-green-700">
-                          approved
+                          {t("reserveProfile.verification.status.approved")}
                         </strong>
                       </>
                     )}
@@ -3183,7 +3175,7 @@ export default function ReserveProfile() {
                       <>
                         <XCircle className="w-4 h-4 text-red-600" />
                         <strong className="capitalize text-red-700">
-                          rejected
+                          {t("reserveProfile.verification.status.rejected")}
                         </strong>
                       </>
                     )}
@@ -3191,13 +3183,13 @@ export default function ReserveProfile() {
                       <>
                         <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                         <strong className="capitalize text-blue-700">
-                          verifying
+                          {t("reserveProfile.verification.status.verifying")}
                         </strong>
                       </>
                     )}
                     {livenessStatus === "not_started" && (
                       <strong className="capitalize text-gray-700">
-                        not started
+                        {t("reserveProfile.verification.status.notStarted")}
                       </strong>
                     )}
                   </span>
@@ -3210,21 +3202,21 @@ export default function ReserveProfile() {
                       className="w-full h-12 border-2 border-black rounded-none"
                     >
                       <ArrowLeft className="w-5 h-5 mr-2" />
-                      Back
+                      {t("common.back")}
                     </Button>
                     <Button
                       onClick={() => setShowSkipModal(true)}
                       variant="outline"
                       className="w-full h-12 border-2 border-gray-300 rounded-none"
                     >
-                      Skip for Now
+                      {t("reserveProfile.actions.skip")}
                     </Button>
                     <Button
                       onClick={verifyAndContinue}
                       disabled={kycLoading}
                       className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                     >
-                      {kycLoading ? "Checking…" : "Verify & Continue"}
+                      {kycLoading ? t("common.checking", "Checking…") : t("reserveProfile.actions.verifyAndContinue", "Verify & Continue")}
                     </Button>
                   </div>
                 </div>
@@ -3239,22 +3231,29 @@ export default function ReserveProfile() {
                   />
                   <div className="relative z-10 w-full max-w-lg bg-white border-2 border-black p-6">
                     <h4 className="text-lg font-bold mb-2">
-                      Skip Identity Verification?
+                      {t("reserveProfile.skipModal.title")}
                     </h4>
                     <p className="text-sm text-gray-700 mb-4">
-                      If you skip now, your profile will be created, but brands
-                      won't see you until you complete verification.
+                      {t("reserveProfile.skipModal.description")}
                     </p>
                     <div className="p-3 border-2 border-amber-500 bg-amber-50 text-amber-900 mb-4 text-sm">
-                      You can complete verification anytime from your dashboard.
+                      {t("reserveProfile.skipModal.note")}
                     </div>
+                    {t("reserveProfile.alreadyHaveAccount")}{" "}
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto font-semibold text-black hover:underline"
+                      onClick={() => setIsLogin(true)}
+                    >
+                      {t("reserveProfile.actions.login")}
+                    </Button>
                     <div className="flex gap-3 justify-end">
                       <Button
                         variant="outline"
                         className="rounded-none border-2 border-black"
                         onClick={() => setShowSkipModal(false)}
                       >
-                        ← Go Back
+                        ← {t("common.goBack", "Go Back")}
                       </Button>
                       <Button
                         className="rounded-none border-2 border-black bg-black text-white"
@@ -3263,7 +3262,7 @@ export default function ReserveProfile() {
                           finalizeProfile();
                         }}
                       >
-                        Skip for Now - I'm Sure
+                        {t("reserveProfile.skipModal.confirmSkip")}
                       </Button>
                     </div>
                   </div>

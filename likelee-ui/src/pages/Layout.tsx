@@ -526,11 +526,10 @@ export default function Layout({ children, currentPageName }) {
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("BrandCompany")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   {t('brands')}
                 </Link>
@@ -539,11 +538,10 @@ export default function Layout({ children, currentPageName }) {
                 <div className="relative group">
                   <Link
                     to={createPageUrl("AgencySelection")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                      location.pathname === createPageUrl("AgencySelection")
-                        ? "text-gray-900 bg-gray-100"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
                   >
                     {t('agencies')}
                   </Link>
@@ -567,7 +565,7 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          {t('talentAgency')}
+                          {t('talentAgencyLabel')}
                         </div>
                         <div className="text-xs text-gray-500">
                           {t('talentAgencySub')}
@@ -590,34 +588,33 @@ export default function Layout({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("AboutUs")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("AboutUs")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   {t('aboutUs')}
                 </Link>
 
                 <Link
                   to={createPageUrl("Contact")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("Contact")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   {t('contact')}
                 </Link>
-                <LanguageSwitcher />
               </div>
             )}
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
+
+            {/* Language Switcher and Mobile Menu Button */}
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-600 hover:text-gray-900 p-2"
+                className="md:hidden text-gray-600 hover:text-gray-900 p-2"
               >
                 {mobileMenuOpen ? (
                   <X className="w-6 h-6" />
@@ -636,11 +633,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("BrandCompany")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 {t('brands')}
               </Link>
@@ -650,11 +646,10 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AgencySelection")}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                    location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                    }`}
                 >
                   {t('agencies')}
                 </Link>
@@ -671,7 +666,7 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    {t('talentAgency')}
+                    {t('talentAgencyLabel')}
                   </Link>
                   <Link
                     to={createPageUrl("SportsAgency")}
@@ -686,11 +681,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("AboutUs")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 {t('aboutUs')}
               </Link>
@@ -698,14 +692,16 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("Contact")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 {t('contact')}
               </Link>
+              <div className="px-4 py-3">
+                <LanguageSwitcher />
+              </div>
             </div>
           </div>
         )}

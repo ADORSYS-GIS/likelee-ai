@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, Users, Clock, TrendingUp } from "lucide-react";
@@ -6,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function MarketingAgency() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -13,19 +15,18 @@ export default function MarketingAgency() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      name: "Marketing Agency Solutions",
-      description:
-        "One platform for AI-powered creator campaigns. Verified creator licensing, production workflows, compliance, and brand exposure.",
+      name: t("marketingAgencySolutions"),
+      description: t("marketingAgencySolutionsDescription"),
       provider: {
         "@type": "Organization",
         name: "Likelee",
         url: "https://likelee.ai",
       },
-      serviceType: "Marketing Agency Creator Platform",
-      areaServed: "Worldwide",
+      serviceType: t("marketingAgencyCreatorPlatform"),
+      areaServed: t("worldwide"),
       audience: {
         "@type": "Audience",
-        audienceType: "Marketing Agencies, Creative Agencies",
+        audienceType: t("marketingCreativeAgencies"),
       },
     };
 
@@ -50,20 +51,20 @@ export default function MarketingAgency() {
       <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-8">
-            One Platform For AI-Powered Creator Campaigns
+            {t("onePlatformForAICampaigns")}
           </h1>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
-              Book Demo
+              {t("bookDemo")}
             </Button>
             <Button
               onClick={scrollToHowItWorks}
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
             >
-              See How It Works
+              {t("seeHowItWorks")}
             </Button>
           </div>
         </div>
@@ -73,15 +74,10 @@ export default function MarketingAgency() {
       <section className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            The Problem We Solve
+            {t("theProblemWeSolve")}
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            Your clients are moving to AI-powered creator content. Your team is
-            juggling multiple vendors and platforms to source, manage, and
-            deliver these campaigns. Likelee consolidates everything— verified
-            creator licensing, production workflows, compliance, and brand
-            exposure—into one streamlined platform so you deliver AI campaigns
-            faster without building infrastructure.
+            {t("theProblemWeSolveDescription")}
           </p>
         </div>
       </section>
@@ -91,7 +87,7 @@ export default function MarketingAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Three Things Likelee Does
+              {t("threeThingsLikeleeDoes")}
             </h2>
           </div>
 
@@ -99,38 +95,30 @@ export default function MarketingAgency() {
             {/* Verified Creator Licensing Marketplace */}
             <Card className="p-4 md:p-6 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Verified Creator Licensing Marketplace
+                {t("verifiedCreatorLicensingMarketplace")}
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Browse pre-verified creators already cleared for AI-powered
-                commercial campaigns. License their likeness for AI content
-                production. No hunting. No vetting. Everything's pre-cleared.
-                Your sourcing goes from weeks to minutes.
+                {t("verifiedCreatorLicensingMarketplaceDescription")}
               </p>
             </Card>
 
             {/* Streamlined AI Campaign Workflow */}
             <Card className="p-4 md:p-6 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Streamlined AI Campaign Workflow
+                {t("streamlinedAICampaignWorkflow")}
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Brief → License creators → Manage AI production → Approve
-                deliverables → Client handoff. Same workflow your team knows.
-                3-5 day turnaround. All creator licensing embedded in final
-                assets.
+                {t("streamlinedAICampaignWorkflowDescription")}
               </p>
             </Card>
 
             {/* Direct Brand Exposure */}
             <Card className="p-4 md:p-6 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Direct Brand Exposure
+                {t("directBrandExposure")}
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Brands discover your agency on Likelee when searching for AI
-                campaign partners. Inbound pipeline. New business finds you
-                because you're positioned as AI-campaign ready.
+                {t("directBrandExposureDescription")}
               </p>
             </Card>
           </div>
@@ -142,7 +130,7 @@ export default function MarketingAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              The Math
+              {t("theMath")}
             </h2>
           </div>
 
@@ -152,42 +140,42 @@ export default function MarketingAgency() {
                 <thead>
                   <tr className="border-b-2 border-black">
                     <th className="text-left py-4 px-4 font-bold text-gray-900">
-                      Challenge
+                      {t("challenge")}
                     </th>
                     <th className="text-left py-4 px-4 font-bold text-gray-900">
-                      Before
+                      {t("before")}
                     </th>
                     <th className="text-left py-4 px-4 font-bold text-[#32C8D1]">
-                      After
+                      {t("after")}
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 px-4 text-gray-700">
-                      Creator licensing + compliance time
+                      {t("licensingComplianceTime")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">8 hours</td>
+                    <td className="py-4 px-4 text-gray-700">{t("licensingComplianceTimeBefore")}</td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
-                      2 hours
+                      {t("licensingComplianceTimeAfter")}
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 px-4 text-gray-700">
-                      AI campaigns per team per month
+                      {t("campaignsPerTeamPerMonth")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">4</td>
+                    <td className="py-4 px-4 text-gray-700">{t("campaignsPerTeamPerMonthBefore")}</td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
-                      12
+                      {t("campaignsPerTeamPerMonthAfter")}
                     </td>
                   </tr>
                   <tr>
                     <td className="py-4 px-4 text-gray-700">
-                      Time to deliver AI campaign
+                      {t("timeToDeliverAICampaign")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">2-3 weeks</td>
+                    <td className="py-4 px-4 text-gray-700">{t("timeToDeliverAICampaignBefore")}</td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
-                      3-5 days
+                      {t("timeToDeliverAICampaignAfter")}
                     </td>
                   </tr>
                 </tbody>
@@ -196,9 +184,9 @@ export default function MarketingAgency() {
           </Card>
 
           <p className="text-center text-xl font-semibold text-gray-900 mt-8">
-            Same team.{" "}
+            {t("sameTeam")}{" "}
             <span className="text-[#32C8D1]">
-              3x more AI campaigns. Better margins.
+              {t("moreCampaignsBetterMargins")}
             </span>
           </p>
         </div>
@@ -209,7 +197,7 @@ export default function MarketingAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              How It Works
+              {t("howItWorksMarketing")}
             </h2>
           </div>
 
@@ -220,8 +208,7 @@ export default function MarketingAgency() {
                 <span className="text-2xl font-bold text-white">1</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Client briefs you on their AI campaign needs with brand assets
-                and timeline.
+                {t("howItWorksStep1")}
               </p>
             </Card>
 
@@ -231,10 +218,7 @@ export default function MarketingAgency() {
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                You license verified creators and manage production all in one
-                dashboard. Select creators, license their likenesses, manage AI
-                production workflows, approve deliverables, track all creator
-                licensing centrally.
+                {t("howItWorksStep2")}
               </p>
             </Card>
 
@@ -244,8 +228,7 @@ export default function MarketingAgency() {
                 <span className="text-2xl font-bold text-white">3</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Deliverables go to client with verified creator licensing fully
-                embedded and documented. Done.
+                {t("howItWorksStep3")}
               </p>
             </Card>
           </div>
@@ -257,7 +240,7 @@ export default function MarketingAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Marketing Agencies Win
+              {t("whyMarketingAgenciesWin")}
             </h2>
           </div>
 
@@ -268,13 +251,10 @@ export default function MarketingAgency() {
                 <Users className="w-12 h-12 text-[#32C8D1]" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Operational Simplicity for AI Campaigns
+                {t("operationalSimplicity")}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                One dashboard replaces five tools for managing creator-licensed
-                content. Your team doesn't learn new systems. No more
-                spreadsheets tracking who licensed what. No more vendor
-                coordination across compliance, licensing, and production.
+                {t("operationalSimplicityDescription")}
               </p>
             </Card>
 
@@ -284,13 +264,10 @@ export default function MarketingAgency() {
                 <Clock className="w-12 h-12 text-[#32C8D1]" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Faster AI Campaign Delivery
+                {t("fasterAICampaignDelivery")}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                2-3 weeks becomes 3-5 days because everything's in one place.
-                Creator licensing is pre-cleared. Compliance is built in. No
-                back-and-forth delays. Your clients see you as fast and capable
-                of executing AI campaigns reliably.
+                {t("fasterAICampaignDeliveryDescription")}
               </p>
             </Card>
 
@@ -300,13 +277,10 @@ export default function MarketingAgency() {
                 <TrendingUp className="w-12 h-12 text-[#32C8D1]" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                New Business From Brands Moving to AI
+                {t("newBusinessFromBrands")}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Brands actively search Likelee for agencies that can execute
-                verified creator AI campaigns. You get inbound leads just by
-                being on the platform. Less cold calling. More inbound from
-                brands shifting to AI- powered creator content.
+                {t("newBusinessFromBrandsDescription")}
               </p>
             </Card>
           </div>
@@ -317,27 +291,23 @@ export default function MarketingAgency() {
       <section className="px-6 py-20 bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Lead AI-Powered Creator Campaigns
+            {t("leadAICampaigns")}
           </h2>
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            Likelee gives you one platform for licensing verified creators,
-            managing AI production, compliance, and brand exposure. Your team
-            focuses on creative strategy. Your clients get faster AI-powered
-            campaigns. You operate with less overhead while positioning as an
-            AI-forward agency.
+            {t("leadAICampaignsDescription")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
-              Book a Demo
+              {t("bookADemo")}
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("Landing"))}
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
             >
-              See Platform Live
+              {t("seePlatformLive")}
             </Button>
           </div>
         </div>

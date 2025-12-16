@@ -94,6 +94,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
+import { useTranslation } from "react-i18next";
+
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -120,119 +122,105 @@ const INDUSTRIES = [
 ];
 
 // Voice recording scripts for different emotions
-const VOICE_SCRIPTS = {
-  happy:
-    "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+const getVoiceScripts = (t: any) => ({
+  happy: t("creatorDashboard.voiceScripts.happy"),
+  emotional: t("creatorDashboard.voiceScripts.emotional"),
+  excited: t("creatorDashboard.voiceScripts.excited"),
+  mellow: t("creatorDashboard.voiceScripts.mellow"),
+  relaxed: t("creatorDashboard.voiceScripts.relaxed"),
+  angry: t("creatorDashboard.voiceScripts.angry"),
+});
 
-  emotional:
-    "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-
-  excited:
-    "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-
-  mellow:
-    "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-
-  relaxed:
-    "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-
-  angry:
-    "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
-};
-
-const IMAGE_SECTIONS = [
+const getImageSections = (t: any) => [
   {
     id: "headshot_neutral",
-    title: "Headshots - Neutral Expression",
-    description:
-      "Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
-    bestFor: "Brands need a clean face reference",
+    title: t("imageSections.headshot_neutral.title"),
+    description: t("imageSections.headshot_neutral.description"),
+    bestFor: t("imageSections.headshot_neutral.bestFor"),
   },
   {
     id: "headshot_smiling",
-    title: "Headshots - Smiling",
-    description:
-      "Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
-    bestFor: "Brands want to show you happy/approachable",
+    title: t("imageSections.headshot_smiling.title"),
+    description: t("imageSections.headshot_smiling.description"),
+    bestFor: t("imageSections.headshot_smiling.bestFor"),
   },
   {
     id: "fullbody_casual",
-    title: "Full Body - Casual Outfit",
-    description: "Full body shot in casual everyday clothing. Natural pose.",
-    bestFor: "Everyday casual look",
+    title: t("imageSections.fullbody_casual.title"),
+    description: t("imageSections.fullbody_casual.description"),
+    bestFor: t("imageSections.fullbody_casual.bestFor"),
   },
   {
     id: "fullbody_formal",
-    title: "Full Body - Formal/Professional",
-    description: "Full body shot in professional or formal attire.",
-    bestFor: "Professional or business contexts",
+    title: t("imageSections.fullbody_formal.title"),
+    description: t("imageSections.fullbody_formal.description"),
+    bestFor: t("imageSections.fullbody_formal.bestFor"),
   },
   {
     id: "side_profile",
-    title: "Side Profile",
-    description: "Clean side view of your face and upper body.",
-    bestFor: "Brands need your side angle",
+    title: t("imageSections.side_profile.title"),
+    description: t("imageSections.side_profile.description"),
+    bestFor: t("imageSections.side_profile.bestFor"),
   },
   {
     id: "three_quarter",
-    title: "3/4 Angle",
-    description: "Face turned at a 45-degree angle, natural expression.",
-    bestFor: "Natural conversational angle",
+    title: t("imageSections.three_quarter.title"),
+    description: t("imageSections.three_quarter.description"),
+    bestFor: t("imageSections.three_quarter.bestFor"),
   },
   {
     id: "hair_down",
-    title: "Hair Down - Loose/Wavy",
-    description: "Hair worn down in your natural style.",
-    bestFor: "Casual, relaxed look",
+    title: t("imageSections.hair_down.title"),
+    description: t("imageSections.hair_down.description"),
+    bestFor: t("imageSections.hair_down.bestFor"),
   },
   {
     id: "hair_up",
-    title: "Hair Up - Ponytail/Bun",
-    description: "Hair pulled up/back, clean look.",
-    bestFor: "Professional or active look",
+    title: t("imageSections.hair_up.title"),
+    description: t("imageSections.hair_up.description"),
+    bestFor: t("imageSections.hair_up.bestFor"),
   },
   {
     id: "hair_styling",
-    title: "Hair Styling - Braids/Specific Style",
-    description: "If you have a signature hairstyle.",
-    bestFor: "If you have a signature style",
+    title: t("imageSections.hair_styling.title"),
+    description: t("imageSections.hair_styling.description"),
+    bestFor: t("imageSections.hair_styling.bestFor"),
   },
   {
     id: "upper_body",
-    title: "Upper Body Close-Up",
-    description: "Shoulders and up, detailed facial features visible.",
-    bestFor: "Close-up shots, detailed facial features",
+    title: t("imageSections.upper_body.title"),
+    description: t("imageSections.upper_body.description"),
+    bestFor: t("imageSections.upper_body.bestFor"),
   },
   {
     id: "outdoors",
-    title: "In Environment - Outdoors",
-    description: "You in an outdoor setting (park, street, nature).",
-    bestFor: "Contextual, lifestyle content",
+    title: t("imageSections.outdoors.title"),
+    description: t("imageSections.outdoors.description"),
+    bestFor: t("imageSections.outdoors.bestFor"),
   },
   {
     id: "indoors",
-    title: "In Environment - Indoors",
-    description: "You in an indoor setting (home, office, cafe).",
-    bestFor: "Indoor/office/home contexts",
+    title: t("imageSections.indoors.title"),
+    description: t("imageSections.indoors.description"),
+    bestFor: t("imageSections.indoors.bestFor"),
   },
   {
     id: "makeup_variation",
-    title: "Different Makeup Style",
-    description: "If you vary your makeup style, show different looks.",
-    bestFor: "If you vary makeup, brands should know",
+    title: t("imageSections.makeup_variation.title"),
+    description: t("imageSections.makeup_variation.description"),
+    bestFor: t("imageSections.makeup_variation.bestFor"),
   },
   {
     id: "seasonal",
-    title: "Seasonal/Outfit Variation",
-    description: "Different seasonal styles or outfit variations.",
-    bestFor: "Seasonal campaigns, different looks",
+    title: t("imageSections.seasonal.title"),
+    description: t("imageSections.seasonal.description"),
+    bestFor: t("imageSections.seasonal.bestFor"),
   },
   {
     id: "signature",
-    title: "Your Choice - Signature Moment",
-    description:
-      "A photo that really represents YOU and how people recognize you.",
-    bestFor: "A photo that really represents YOU",
+    title: t("imageSections.signature.title"),
+    description: t("imageSections.signature.description"),
+    bestFor: t("imageSections.signature.bestFor"),
   },
 ];
 
@@ -648,6 +636,7 @@ function parseErrorMessage(err: any): string {
 }
 
 export default function CreatorDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
@@ -667,6 +656,7 @@ export default function CreatorDashboard() {
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+  const IMAGE_SECTIONS = getImageSections(t);
 
   useEffect(() => {
     const handleResize = () => {
@@ -863,6 +853,7 @@ export default function CreatorDashboard() {
   // Voice recording states
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
+  const VOICE_SCRIPTS = getVoiceScripts(t);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
@@ -1028,59 +1019,41 @@ export default function CreatorDashboard() {
   };
 
   const navigationItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "content", label: "Content", icon: PlayCircle },
-    { id: "likeness", label: "My Likeness", icon: ImageIcon },
-    { id: "voice", label: "Voice & Recordings", icon: Mic },
+    { id: "dashboard", label: t("creatorDashboard.nav.dashboard"), icon: LayoutDashboard },
+    { id: "content", label: t("creatorDashboard.nav.content"), icon: PlayCircle },
+    { id: "likeness", label: t("creatorDashboard.nav.likeness"), icon: ImageIcon },
+    { id: "voice", label: t("creatorDashboard.nav.voice"), icon: Mic },
     {
       id: "campaigns",
-      label: "Active Campaigns",
+      label: t("creatorDashboard.nav.campaigns"),
       icon: Target,
       badge: activeCampaigns.length,
     },
     {
       id: "approvals",
-      label: "Approval Queue",
+      label: t("creatorDashboard.nav.approvals"),
       icon: CheckSquare,
       badge: pendingCount,
       urgent: pendingCount > 0,
     },
     {
       id: "archive",
-      label: "Campaign Archive",
+      label: t("creatorDashboard.nav.archive"),
       icon: Archive,
       badge: undefined,
     },
     {
       id: "contracts",
-      label: "Licenses & Contracts",
+      label: t("creatorDashboard.nav.contracts"),
       icon: FileText,
       badge:
         contracts.filter((c) => c.status === "expiring_soon").length > 0
           ? contracts.filter((c) => c.status === "expiring_soon").length
           : undefined,
     },
-    { id: "earnings", label: "Earnings", icon: DollarSign },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "earnings", label: t("creatorDashboard.nav.earnings"), icon: DollarSign },
+    { id: "settings", label: t("creatorDashboard.nav.settings"), icon: Settings },
   ];
-
-  const handleHeroUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setUploading(true);
-      setTimeout(() => {
-        setHeroMedia({
-          url: URL.createObjectURL(file),
-          type: file.type.includes("video") ? "video" : "image",
-          name: file.name,
-        });
-        setUploading(false);
-        toast({
-          title: "Hero media uploaded! (Demo mode)",
-        });
-      }, 1000);
-    }
-  };
 
   const [contentTab, setContentTab] = useState("brand_content");
 
@@ -1091,12 +1064,16 @@ export default function CreatorDashboard() {
     const detectionsToShow = showingExamples ? exampleDetections : [];
     const detectionsCount = detectionsToShow.length;
 
+    const heroMedia = creator.cameo_front_url
+      ? { type: "video", url: creator.cameo_front_url }
+      : null;
+
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Content</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{t("creatorDashboard.content.title")}</h2>
           <p className="text-gray-600 mt-1">
-            Track content created with your likeness
+            {t("creatorDashboard.content.subtitle")}
           </p>
         </div>
 
@@ -1104,10 +1081,7 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
             <p className="text-blue-900 text-sm">
-              Welcome to your Content page! This is an example of what brand
-              content and detections will look like. You don't have any content
-              yet — but when brands create content with your likeness, it will
-              appear here!
+              {t("creatorDashboard.content.welcome.message")}
             </p>
           </div>
         )}
@@ -1117,26 +1091,24 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
-                contentTab === "brand_content"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
-              Brand Content
+              {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
                 {itemsToShow.length}
               </Badge>
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
-                contentTab === "detections"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
-              Detections
+              {t("creatorDashboard.content.tabs.detections")}
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
                 {detectionsCount}
               </Badge>
@@ -1148,8 +1120,7 @@ export default function CreatorDashboard() {
           <>
             <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
               <Eye className="h-4 w-4" />
-              This feed shows all authorized content that brands have published
-              using your likeness.
+              {t("creatorDashboard.content.brandContent.info")}
             </div>
 
             {itemsToShow.length > 0 ? (
@@ -1198,14 +1169,14 @@ export default function CreatorDashboard() {
 
                       <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
                         <div>
-                          <p className="text-xs text-gray-500 mb-0.5">Views</p>
+                          <p className="text-xs text-gray-500 mb-0.5">{t("creatorDashboard.content.brandContent.views")}</p>
                           <p className="font-bold text-gray-900 text-sm">
                             {item.views}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-0.5">
-                            Engagement
+                            {t("creatorDashboard.content.brandContent.engagement")}
                           </p>
                           <p className="font-bold text-gray-900 text-sm">
                             {item.engagement}
@@ -1221,7 +1192,7 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">No brand content found.</p>
+                <p className="text-gray-500">{t("creatorDashboard.content.brandContent.noContent")}</p>
               </div>
             )}
           </>
@@ -1231,8 +1202,7 @@ export default function CreatorDashboard() {
           <>
             <div className="flex items-center gap-2 text-sm text-orange-800 bg-orange-50 p-3 rounded-lg border border-orange-100">
               <ShieldAlert className="h-4 w-4" />
-              Likeness Protection Active. We continuously scan the web for
-              unauthorized use of your likeness. Review detected content below.
+              {t("creatorDashboard.content.detections.info")}
             </div>
 
             {detectionsToShow.length > 0 ? (
@@ -1240,13 +1210,12 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${
-                      item.status === "needs_review"
-                        ? "border-red-200 bg-red-50"
-                        : item.status === "takedown_requested"
-                          ? "border-orange-200 bg-orange-50"
-                          : "border-green-200 bg-green-50"
-                    }`}
+                    className={`p-4 border ${item.status === "needs_review"
+                      ? "border-red-200 bg-red-50"
+                      : item.status === "takedown_requested"
+                        ? "border-orange-200 bg-orange-50"
+                        : "border-green-200 bg-green-50"
+                      }`}
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -1279,19 +1248,19 @@ export default function CreatorDashboard() {
                               {item.status === "needs_review" && (
                                 <Badge className="bg-red-500 text-white hover:bg-red-600 border-none">
                                   <AlertTriangle className="w-3 h-3 mr-1" />
-                                  Needs Review
+                                  {t("creatorDashboard.content.detections.needsReview")}
                                 </Badge>
                               )}
                               {item.status === "takedown_requested" && (
                                 <Badge className="bg-orange-400 text-white hover:bg-orange-500 border-none">
                                   <Clock className="w-3 h-3 mr-1" />
-                                  Takedown Requested
+                                  {t("creatorDashboard.content.detections.takedownRequested")}
                                 </Badge>
                               )}
                               {item.status === "resolved" && (
                                 <Badge className="bg-green-500 text-white hover:bg-green-600 border-none">
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  Resolved
+                                  {t("creatorDashboard.content.detections.resolved")}
                                 </Badge>
                               )}
                             </div>
@@ -1301,7 +1270,7 @@ export default function CreatorDashboard() {
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-gray-500 mb-1">
-                              Detected
+                              {t("creatorDashboard.content.detections.detected")}
                             </p>
                             <p className="font-medium text-gray-900">
                               {item.detected_at}
@@ -1312,14 +1281,14 @@ export default function CreatorDashboard() {
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mb-4">
                           <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
                             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
-                              Match Confidence
+                              {t("creatorDashboard.content.detections.matchConfidence")}
                             </p>
                             <p className="font-bold text-lg text-red-500">
                               {item.match_confidence}%
                             </p>
                           </div>
                           <button className="text-sm text-[#32C8D1] hover:underline flex items-center gap-1 font-medium">
-                            View Original Content{" "}
+                            {t("creatorDashboard.content.detections.viewOriginal")}{" "}
                             <ExternalLink className="w-3 h-3" />
                           </button>
                         </div>
@@ -1332,28 +1301,26 @@ export default function CreatorDashboard() {
                                 className="bg-red-600 hover:bg-red-700 text-white gap-2 w-full sm:w-auto"
                               >
                                 <XCircle className="w-4 h-4" />
-                                Request Takedown
+                                {t("creatorDashboard.content.detections.requestTakedown")}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50 w-full sm:w-auto"
                               >
-                                Dismiss (It's Authorized)
+                                {t("creatorDashboard.content.detections.dismiss")}
                               </Button>
                             </>
                           )}
                           {item.status === "takedown_requested" && (
                             <p className="text-sm text-orange-700 flex items-center gap-2">
-                              Takedown request sent. Platforms typically respond
-                              within 24-72 hours.
+                              {t("creatorDashboard.content.detections.takedownSent")}
                             </p>
                           )}
                           {item.status === "resolved" && (
                             <p className="text-sm text-green-700 flex items-center gap-2">
                               <Check className="w-4 h-4" />
-                              Content has been removed or verified as
-                              authorized.
+                              {t("creatorDashboard.content.detections.contentRemoved")}
                             </p>
                           )}
                         </div>
@@ -1364,14 +1331,14 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">No detections found.</p>
+                <p className="text-gray-500">{t("creatorDashboard.content.detections.noDetections")}</p>
               </div>
             )}
 
             {/* How Detection Works */}
             <div className="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
               <h3 className="font-bold text-gray-900 mb-4">
-                How Detection Works
+                {t("creatorDashboard.content.detections.howItWorks.title")}
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
@@ -1379,10 +1346,10 @@ export default function CreatorDashboard() {
                     <Eye className="w-6 h-6 text-[#32C8D1]" />
                   </div>
                   <p className="font-bold text-gray-900 text-sm mb-1">
-                    Continuous Scanning
+                    {t("creatorDashboard.content.detections.howItWorks.scanning.title")}
                   </p>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    We scan major platforms for facial matches
+                    {t("creatorDashboard.content.detections.howItWorks.scanning.desc")}
                   </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
@@ -1390,10 +1357,10 @@ export default function CreatorDashboard() {
                     <AlertCircle className="w-6 h-6 text-orange-500" />
                   </div>
                   <p className="font-bold text-gray-900 text-sm mb-1">
-                    AI Matching
+                    {t("creatorDashboard.content.detections.howItWorks.ai.title")}
                   </p>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    Advanced AI compares against your likeness
+                    {t("creatorDashboard.content.detections.howItWorks.ai.desc")}
                   </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
@@ -1401,10 +1368,10 @@ export default function CreatorDashboard() {
                     <Shield className="w-6 h-6 text-green-500" />
                   </div>
                   <p className="font-bold text-gray-900 text-sm mb-1">
-                    Takedown Support
+                    {t("creatorDashboard.content.detections.howItWorks.takedown.title")}
                   </p>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    We help file DMCA and platform reports
+                    {t("creatorDashboard.content.detections.howItWorks.takedown.desc")}
                   </p>
                 </div>
               </div>
@@ -1431,228 +1398,192 @@ export default function CreatorDashboard() {
     };
 
     return (
-      <div className="space-y-6 relative">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Public Profile Preview
-            </h2>
-            <p className="text-gray-600 mt-1">
-              This is how brands see your profile
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setShowCardModal(!showCardModal)}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              {showCardModal ? "Hide Card" : "View Card"}
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => {
-                setActiveSection("settings");
-                setSettingsTab("profile");
-              }}
-            >
-              <Edit className="h-4 w-4" />
-              Edit Profile
-            </Button>
-          </div>
-        </div>
-
+      <div>
         <Card className="overflow-hidden border-gray-200 bg-white">
           {/* Banner */}
           <div className="h-48 bg-[#32C8D1]"></div>
-
-          <div className="px-8 pb-8">
-            {/* Header Section with Avatar */}
-            <div className="relative flex justify-between items-start mb-6">
-              <div className="flex items-end -mt-16 mb-4">
-                <div className="relative">
-                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                    <AvatarImage
-                      src={
-                        profile?.profile_photo_url ||
-                        creator.profile_photo ||
-                        user?.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                      {data.first_name && data.first_name[0] !== "["
-                        ? data.first_name[0].toUpperCase()
-                        : user?.email?.[0].toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="ml-6 mb-2">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                      {data.first_name}
-                    </h1>
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      Verified creator
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-gray-600 text-sm">
-                    <span>{data.location}</span>
-                    <span className="flex items-center gap-1">
-                      <Badge
-                        variant="secondary"
-                        className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
-                      >
-                        {data.handles}
-                      </Badge>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {data.followers} followers
-                    </span>
-                  </div>
-                </div>
+          {/* Header Section with Avatar */}
+          <div className="relative flex justify-between items-start mb-6">
+            <div className="flex items-end -mt-16 mb-4">
+              <div className="relative">
+                <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                  <AvatarImage
+                    src={
+                      profile?.profile_photo_url ||
+                      creator.profile_photo ||
+                      user?.user_metadata?.avatar_url
+                    }
+                  />
+                  <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                    {data.first_name && data.first_name[0] !== "["
+                      ? data.first_name[0].toUpperCase()
+                      : user?.email?.[0].toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-            </div>
-
-            {/* Bio */}
-            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.active_campaigns}
-                </div>
-                <div className="text-sm text-gray-500">Active Campaigns</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.completed_projects}
-                </div>
-                <div className="text-sm text-gray-500">Completed Projects</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {data.voice_profiles}
-                </div>
-                <div className="text-sm text-gray-500">Voice Profiles</div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-6 mb-8">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">
-                  Open to Work With
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.open_to_work.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="default"
-                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">
-                  Industries
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.industries.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Licensing Rate */}
-            <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-gray-900 mb-1">Licensing Rate</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  Base rate for cameo usage
-                </p>
-                <div className="flex items-center gap-2 text-green-700 text-sm">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Open to negotiations
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-[#32C8D1]">
-                  ${data.base_rate}
-                </div>
-                <div className="text-sm text-gray-500">per week</div>
-              </div>
-            </div>
-
-            {/* Portfolio */}
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">Portfolio</h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {data.portfolio.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
+              <div className="ml-6 mb-2">
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {data.first_name}
+                  </h1>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
                   >
-                    <img
-                      src={item.logo}
-                      alt={item.brand}
-                      className="w-10 h-10 object-contain"
-                    />
-                    <div>
-                      <div className="font-bold text-gray-900 text-sm">
-                        {item.brand}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.campaign}
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="mt-1 text-[10px] h-5"
-                      >
-                        {item.duration}
-                      </Badge>
-                    </div>
-                  </div>
+                    <CheckCircle2 className="h-3 w-3" />
+                    {t("creatorDashboard.publicProfile.verifiedUser")}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 text-gray-600 text-sm">
+                  <span>{data.location}</span>
+                  <span className="flex items-center gap-1">
+                    <Badge
+                      variant="secondary"
+                      className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                    >
+                      {data.handles}
+                    </Badge>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {data.followers} {t("creatorDashboard.publicProfile.followers")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {data.active_campaigns}
+              </div>
+              <div className="text-sm text-gray-500">{t("creatorDashboard.publicProfile.activeCampaigns")}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {data.completed_projects}
+              </div>
+              <div className="text-sm text-gray-500">{t("creatorDashboard.publicProfile.completedProjects")}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-gray-900">
+                {data.voice_profiles}
+              </div>
+              <div className="text-sm text-gray-500">{t("creatorDashboard.publicProfile.voiceProfiles")}</div>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-6 mb-8">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">
+                {t("creatorDashboard.publicProfile.openToWork")}
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {data.open_to_work.map((tag: string) => (
+                  <Badge
+                    key={tag}
+                    variant="default"
+                    className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
+                  >
+                    {tag}
+                  </Badge>
                 ))}
               </div>
             </div>
-
-            {/* Social Links */}
-            <div className="flex gap-3 mt-8">
-              <Button variant="outline" className="gap-2">
-                <Instagram className="h-4 w-4" />
-                Instagram
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <Video className="h-4 w-4" />
-                TikTok
-              </Button>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-3">
+                {t("creatorDashboard.publicProfile.industries")}
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {data.industries.map((tag: string) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
+          </div>
+
+          {/* Licensing Rate */}
+          <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-gray-900 mb-1">{t("creatorDashboard.publicProfile.licensingRate")}</h3>
+              <p className="text-gray-600 text-sm mb-2">
+                {t("creatorDashboard.publicProfile.baseRateDescription")}
+              </p>
+              <div className="flex items-center gap-2 text-green-700 text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                {t("creatorDashboard.publicProfile.openToNegotiations")}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-[#32C8D1]">
+                ${data.base_rate}
+              </div>
+              <div className="text-sm text-gray-500">{t("creatorDashboard.publicProfile.perWeek")}</div>
+            </div>
+          </div>
+
+          {/* Portfolio */}
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">{t("creatorDashboard.publicProfile.portfolio")}</h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              {data.portfolio.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
+                >
+                  <img
+                    src={item.logo}
+                    alt={item.brand}
+                    className="w-10 h-10 object-contain"
+                  />
+                  <div>
+                    <div className="font-bold text-gray-900 text-sm">
+                      {item.brand}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {item.campaign}
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="mt-1 text-[10px] h-5"
+                    >
+                      {item.duration}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="flex gap-3 mt-8">
+            <Button variant="outline" className="gap-2">
+              <Instagram className="h-4 w-4" />
+              Instagram
+            </Button>
+            <Button variant="outline" className="gap-2">
+              <Video className="h-4 w-4" />
+              TikTok
+            </Button>
           </div>
         </Card>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start">
           <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
-            This is a preview of how your profile appears to brands. Make sure
-            your information is up-to-date to attract more opportunities.
+            {t("creatorDashboard.publicProfile.previewNote")}
           </p>
         </div>
 
@@ -1692,6 +1623,12 @@ export default function CreatorDashboard() {
                     variant="secondary"
                     className="bg-green-100 text-green-700 border-green-200 text-[10px]"
                   >
+                    {t("creatorDashboard.publicProfile.verifiedCreator")}
+                  </Badge>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
+                  >
                     Verified Creator
                   </Badge>
                 </div>
@@ -1719,25 +1656,25 @@ export default function CreatorDashboard() {
 
                 <div className="grid grid-cols-2 gap-y-4 gap-x-8 mb-6">
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Followers</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t("creatorDashboard.publicProfile.followers")}</p>
                     <p className="font-bold text-gray-900">{data.followers}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Engagement</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t("creatorDashboard.publicProfile.engagement")}</p>
                     <p className="font-bold text-gray-900">4.2%</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Turnaround</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t("creatorDashboard.publicProfile.turnaround")}</p>
                     <p className="font-bold text-gray-900">12h</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">From</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t("creatorDashboard.publicProfile.from")}</p>
                     <p className="font-bold text-gray-900">${data.base_rate}</p>
                   </div>
                 </div>
 
                 <Button className="w-full bg-black hover:bg-gray-800 text-white mb-3 rounded-full">
-                  Request Cameo
+                  {t("creatorDashboard.publicProfile.requestCameo")}
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1746,14 +1683,14 @@ export default function CreatorDashboard() {
                     className="rounded-full border-gray-200"
                   >
                     <Play className="h-4 w-4 mr-2" />
-                    Preview
+                    {t("creatorDashboard.publicProfile.preview")}
                   </Button>
                   <Button
                     variant="outline"
                     className="rounded-full border-gray-200"
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Profile
+                    {t("creatorDashboard.publicProfile.profile")}
                   </Button>
                 </div>
               </div>
@@ -1764,26 +1701,82 @@ export default function CreatorDashboard() {
     );
   };
 
-  const handlePhotosUpload = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      setUploading(true);
-      setTimeout(() => {
-        const newPhotos = files.map((file) => ({
-          url: URL.createObjectURL(file),
-          name: file.name,
-        }));
-        setPhotos([...photos, ...newPhotos]);
-        setUploading(false);
-        toast({
-          title: `${files.length} photo(s) uploaded!`,
-        });
-      }, 1000);
-    }
-  };
-
   const handleDeletePhoto = (index) => {
     setPhotos(photos.filter((_, i) => i !== index));
+  };
+
+  // ...
+  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!user?.id) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Required",
+          description: "You must be logged in to upload a cameo.",
+        });
+        return;
+      }
+
+      if (file.size > 50_000_000) {
+        toast({
+          variant: "destructive",
+          title: "File Too Large",
+          description: "Please upload a video less than 50MB.",
+        });
+        return;
+      }
+
+      if (!file.type.startsWith("video/")) {
+        toast({
+          variant: "destructive",
+          title: "Invalid File Type",
+          description: "Please upload a valid video file.",
+        });
+        return;
+      }
+
+      setUploadingPhoto(true);
+
+      try {
+        const owner = (user.id).replace(/[^a-zA-Z0-9_-]/g, "_");
+        const path = `cameo/${owner}/${Date.now()}_front_${file.name.replace(/[^a-zA-Z0-9_.-]/g, "_")}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("profiles")
+          .upload(path, file, { upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from("profiles").getPublicUrl(path);
+        const publicUrl = data.publicUrl;
+
+        const { error: dbError } = await supabase
+          .from("profiles")
+          .update({ cameo_front_url: publicUrl })
+          .eq("id", user.id);
+
+        if (dbError) throw dbError;
+
+        setCreator((prev: any) => ({
+          ...prev,
+          cameo_front_url: publicUrl,
+        }));
+
+        toast({
+          title: "Cameo Uploaded",
+          description: "Your cameo video has been successfully uploaded.",
+        });
+      } catch (err: any) {
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: `Upload failed: ${err.message || "Unknown error"}`,
+        });
+      } finally {
+        setUploadingPhoto(false);
+      }
+    }
   };
 
   const handlePhotoUpload = async (e) => {
@@ -2031,11 +2024,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-                ...rec,
-                voiceProfileCreated: true,
-                voice_id: cloned.voice_id,
-                server_recording_id: recordingId,
-              }
+              ...rec,
+              voiceProfileCreated: true,
+              voice_id: cloned.voice_id,
+              server_recording_id: recordingId,
+            }
             : rec,
         ),
       );
@@ -2079,13 +2072,12 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${
-                index === currentWord
-                  ? "text-[#32C8D1] font-bold scale-110"
-                  : index < currentWord
-                    ? "text-gray-400"
-                    : "text-gray-700"
-              }`}
+              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
+                ? "text-[#32C8D1] font-bold scale-110"
+                : index < currentWord
+                  ? "text-gray-400"
+                  : "text-gray-700"
+                }`}
             >
               {word}
             </span>
@@ -2259,7 +2251,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Total Monthly Revenue
+                {t("creatorDashboard.dashboard.totalMonthlyRevenue")}
               </p>
               <DollarSign className="w-5 h-5 text-[#32C8D1]" />
             </div>
@@ -2267,13 +2259,13 @@ export default function CreatorDashboard() {
               ${totalMonthlyRevenue.toLocaleString()}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Your revenue will appear here once your first license activates
+              {t("creatorDashboard.dashboard.revenueInfo")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Active Campaigns
+                {t("creatorDashboard.dashboard.activeCampaigns")}
               </p>
               <Target className="w-5 h-5 text-[#32C8D1]" />
             </div>
@@ -2281,26 +2273,25 @@ export default function CreatorDashboard() {
               {activeCampaigns.length}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Ready for your first deal? Complete your profile below to get
-              discovered
+              {t("creatorDashboard.dashboard.activeCampaignsInfo")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Pending Approvals
+                {t("creatorDashboard.dashboard.pendingApprovals")}
               </p>
               <AlertCircle className="w-5 h-5 text-gray-500" />
             </div>
             <p className="text-4xl font-bold text-gray-900">{pendingCount}</p>
             <p className="text-sm text-gray-600 mt-1">
-              Brands are waiting to see your complete profile
+              {t("creatorDashboard.dashboard.pendingApprovalsInfo")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Annual Run Rate
+                {t("creatorDashboard.dashboard.annualRunRate")}
               </p>
               <TrendingUp className="w-5 h-5 text-[#32C8D1]" />
             </div>
@@ -2308,12 +2299,12 @@ export default function CreatorDashboard() {
               ${annualRunRate.toLocaleString()}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Based on active licenses
+              {t("creatorDashboard.dashboard.annualRunRateInfo")}
             </p>
           </Card>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
+        <h3 className="text-lg font-bold text-gray-900">{t("creatorDashboard.dashboard.quickActions")}</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <Card
             className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
@@ -2324,15 +2315,14 @@ export default function CreatorDashboard() {
                 <ImageIcon className="w-6 h-6 text-[#32C8D1]" />
               </div>
               <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300">
-                Priority
+                {t("creatorDashboard.dashboard.priority")}
               </Badge>
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Complete Your Profile
+              {t("creatorDashboard.dashboard.completeProfile")}
             </h3>
             <p className="text-sm text-gray-600">
-              Add reference images and your cameo video to get discovered by
-              brands
+              {t("creatorDashboard.dashboard.completeProfileInfo")}
             </p>
           </Card>
           <Card
@@ -2348,23 +2338,21 @@ export default function CreatorDashboard() {
               </Badge>
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Upload Your First Voice Tone
+              {t("creatorDashboard.dashboard.uploadVoiceTone")}
             </h3>
             <p className="text-sm text-gray-600">
-              Strengthen your profile with voice recordings
+              {t("creatorDashboard.dashboard.uploadVoiceToneInfo")}
             </p>
           </Card>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+        <h3 className="text-lg font-bold text-gray-900">{t("creatorDashboard.dashboard.recentActivity")}</h3>
         {activeCampaigns.length === 0 ? (
           <div className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-blue-900">
-                <strong>Preview Examples:</strong> These are sample campaigns to
-                show you what opportunities look like. Complete your profile to
-                start receiving real brand deals!
+                <strong>{t("creatorDashboard.dashboard.previewExamples.title")}</strong> {t("creatorDashboard.dashboard.previewExamples.message")}
               </p>
             </div>
 
@@ -2382,7 +2370,7 @@ export default function CreatorDashboard() {
                     <p className="text-sm mb-2">{campaign.campaign}</p>
                     <div className="flex items-center justify-between text-sm">
                       <Badge className="bg-green-500 text-white border-none">
-                        Active
+                        {t("creatorDashboard.dashboard.active")}
                       </Badge>
                       <span className="font-bold">${campaign.rate}/mo</span>
                     </div>
@@ -2391,20 +2379,22 @@ export default function CreatorDashboard() {
               ))}
             </div>
           </div>
+
         ) : (
           <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
-            <p>Your campaign activity will show here once licenses activate</p>
+            <p>{t("creatorDashboard.dashboard.noCampaigns")}</p>
             <p className="text-sm text-gray-500 mt-1">
-              Complete your profile to start receiving brand opportunities
+              {t("creatorDashboard.dashboard.noCampaignsInfo")}
             </p>
           </Card>
-        )}
+        )
+        }
 
         <Card className="p-4 md:p-5 bg-white border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Profile Status</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t("creatorDashboard.dashboard.profileStatus")}</h3>
             <Badge className="bg-[#32C8D1] text-white">
-              Complete to Get Discovered During Pilot
+              {t("creatorDashboard.dashboard.completeToGetDiscovered")}
             </Badge>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
@@ -2412,7 +2402,7 @@ export default function CreatorDashboard() {
             <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-cyan-600" />
-                <span>Reference Images</span>
+                <span>{t("creatorDashboard.dashboard.referenceImages")}</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
                 {imagesFilled}/{imagesTotal}
@@ -2427,7 +2417,7 @@ export default function CreatorDashboard() {
             <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
                 <Mic className="w-4 h-4 text-purple-600" />
-                <span>Voice Recordings</span>
+                <span>{t("creatorDashboard.dashboard.voiceRecordings")}</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.length}/6
@@ -2443,11 +2433,11 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm text-gray-600 flex items-center gap-2">
                   <Video className="w-4 h-4 text-orange-600" />
-                  <span>Cameo Video</span>
+                  <span>{t("creatorDashboard.dashboard.cameoVideo")}</span>
                 </div>
                 {!cameoPresent && (
                   <span className="text-xs bg-red-100 text-red-700 border border-red-300 rounded px-2 py-0.5">
-                    Missing
+                    {t("creatorDashboard.dashboard.missing")}
                   </span>
                 )}
               </div>
@@ -2461,7 +2451,7 @@ export default function CreatorDashboard() {
             </div>
           </div>
         </Card>
-      </div>
+      </div >
     );
   };
 
@@ -2596,10 +2586,9 @@ export default function CreatorDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">My Likeness</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{t("creatorDashboard.myLikeness")}</h2>
             <p className="text-gray-600 mt-1">
-              Your complete likeness profile - used by brands to generate
-              content
+              {t("faces.meta.description")}
             </p>
           </div>
         </div>
@@ -2609,11 +2598,10 @@ export default function CreatorDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Profile Completeness: {completeness.percentage}%
+                {t("creatorDashboard.completeness.profileCompleteness", { percentage: completeness.percentage })}
               </h3>
               <p className="text-gray-700">
-                You're missing {IMAGE_SECTIONS.length - completeness.filled}{" "}
-                sections
+                {t("creatorDashboard.completeness.missingSections", { count: IMAGE_SECTIONS.length - completeness.filled })}
               </p>
             </div>
           </div>
@@ -2630,10 +2618,9 @@ export default function CreatorDashboard() {
         {/* MY CAMEO Section - NOW FIRST */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">MY CAMEO</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{t("creatorDashboard.dashboard.cameoVideo").toUpperCase()}</h3>
             <p className="text-gray-600">
-              The video representation of you - brands use this for AI cameos
-              and content generation
+              {t("creatorDashboard.dashboard.cameoVideoInfo", { defaultValue: "The video representation of you - brands use this for AI cameos and content generation" })}
             </p>
           </div>
 
@@ -2739,21 +2726,18 @@ export default function CreatorDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              REFERENCE IMAGE LIBRARY
+              {t("creatorDashboard.referenceImageLibrary.title")}
             </h3>
             <p className="text-gray-600 mb-4">
-              Brands use these to match your appearance across different
-              contexts
+              {t("creatorDashboard.referenceImageLibrary.subtitle")}
             </p>
             <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div>
                 <p className="font-bold text-gray-900 text-lg">
-                  Completeness: {completeness.filled}/{completeness.total}{" "}
-                  sections filled
+                  {t("creatorDashboard.referenceImageLibrary.completenessFilled", { filled: completeness.filled, total: completeness.total })}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {IMAGE_SECTIONS.length - completeness.filled} sections needed
-                  for "Complete Profile"
+                  {t("creatorDashboard.referenceImageLibrary.sectionsNeeded", { count: IMAGE_SECTIONS.length - completeness.filled })}
                 </p>
               </div>
               <div className="text-right">
@@ -2978,12 +2962,12 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status
-                      .replace(/_/g, " ")
-                      .split(" ")
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
-                      )
-                      .join(" ")
+                    .replace(/_/g, " ")
+                    .split(" ")
+                    .map(
+                      (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                    )
+                    .join(" ")
                   : "Not Started"}
               </Badge>
             </div>
@@ -3037,10 +3021,10 @@ export default function CreatorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Voice & Recordings
+            {t("creatorDashboard.voice.title")}
           </h2>
           <p className="text-gray-600 mt-1">
-            Build your voice library for different emotions and tones
+            {t("creatorDashboard.voice.subtitle")}
           </p>
         </div>
         <Badge
@@ -3055,23 +3039,23 @@ export default function CreatorDashboard() {
       {voiceLibrary.length > 0 && (
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Voice Profile Overview
+            {t("creatorDashboard.voice.overview.title")}
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">Total Recordings</p>
+              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.voice.overview.totalRecordings")}</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.length}
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">ElevenLabs Profiles</p>
+              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.voice.overview.elevenLabsProfiles")}</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">Total Usage</p>
+              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.voice.overview.totalUsage")}</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.reduce((sum, v) => sum + (v.usageCount || 0), 0)}
               </p>
@@ -3083,11 +3067,10 @@ export default function CreatorDashboard() {
       {/* Record New Voice Sample */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Record New Voice Sample
+          {t("creatorDashboard.voice.record.title")}
         </h3>
         <p className="text-gray-600 mb-6">
-          Record samples with different emotions to create a versatile voice
-          profile
+          {t("creatorDashboard.voice.record.subtitle")}
         </p>
 
         <div className="grid md:grid-cols-3 gap-4">
@@ -3098,18 +3081,16 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
-                  hasRecording
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-[#32C8D1]"
-                }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-200 hover:border-[#32C8D1]"
+                  }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                    }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                      }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3117,13 +3098,13 @@ export default function CreatorDashboard() {
                     <h4 className="font-bold text-gray-900 capitalize text-lg">
                       {emotion}
                     </h4>
-                    <p className="text-xs text-gray-500">~60 seconds</p>
+                    <p className="text-xs text-gray-500">{t("creatorDashboard.voice.record.duration")}</p>
                   </div>
                 </div>
                 {hasRecording && (
                   <Badge className="bg-green-500 text-white">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Recorded
+                    {t("creatorDashboard.voice.record.recorded")}
                   </Badge>
                 )}
               </Card>
@@ -3136,7 +3117,7 @@ export default function CreatorDashboard() {
       {voiceLibrary.length > 0 && (
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">
-            Voice Library
+            {t("creatorDashboard.voice.library.title")}
           </h3>
           <div className="space-y-4">
             {voiceLibrary.map((recording) => (
@@ -3147,9 +3128,8 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
-                        recording.accessible ? "bg-green-500" : "bg-gray-400"
-                      }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
+                        }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3159,15 +3139,14 @@ export default function CreatorDashboard() {
                       </h4>
                       <p className="text-sm text-gray-600">
                         {new Date(recording.date).toLocaleDateString()} •{" "}
-                        {recording.duration}s • Used {recording.usageCount || 0}{" "}
-                        times
+                        {recording.duration}s • {t("creatorDashboard.voice.library.used", { count: recording.usageCount || 0 })}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {recording.voiceProfileCreated && (
                       <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                        ElevenLabs Ready
+                        {t("creatorDashboard.voice.library.elevenLabsReady")}
                       </Badge>
                     )}
                     <Button
@@ -3186,7 +3165,7 @@ export default function CreatorDashboard() {
                       variant="outline"
                       size="sm"
                     >
-                      Re-record
+                      {t("creatorDashboard.voice.library.reRecord")}
                     </Button>
                     <Button
                       onClick={() => deleteRecording(recording.id)}
@@ -3208,12 +3187,12 @@ export default function CreatorDashboard() {
                     {generatingVoice ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Voice Profile...
+                        {t("creatorDashboard.voice.library.creatingProfile")}
                       </>
                     ) : (
                       <>
                         <PlayCircle className="w-4 h-4 mr-2" />
-                        Create Voice Profile with ElevenLabs
+                        {t("creatorDashboard.voice.library.createProfile")}
                       </>
                     )}
                   </Button>
@@ -3228,9 +3207,7 @@ export default function CreatorDashboard() {
       <div className="bg-purple-50 border border-purple-200">
         <Volume2 className="h-5 w-5 text-purple-600" />
         <p className="text-purple-900">
-          <strong>Voice Training Tips:</strong> Speak clearly, avoid background
-          noise, record in a quiet room, and maintain consistent volume
-          throughout the recording.
+          <strong>{t("creatorDashboard.voice.tips.title")}</strong> {t("creatorDashboard.voice.tips.message")}
         </p>
       </div>
     </div>
@@ -3247,20 +3224,19 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Active Campaigns
+              {t("creatorDashboard.campaigns.title")}
             </h2>
             <p className="text-gray-600 mt-1">
-              Track and manage your licensing agreements
+              {t("creatorDashboard.campaigns.subtitle")}
             </p>
           </div>
           <Badge
-            className={`${
-              activeCampaigns.length === 0
-                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                : "bg-green-100 text-green-700 border border-green-300"
-            } px-4 py-2 text-lg`}
+            className={`${activeCampaigns.length === 0
+              ? "bg-orange-100 text-orange-700 border border-orange-300"
+              : "bg-green-100 text-green-700 border border-green-300"
+              } px-4 py-2 text-lg`}
           >
-            {activeCampaigns.length} Active
+            {t("creatorDashboard.campaigns.activeCount", { count: activeCampaigns.length })}
           </Badge>
         </div>
 
@@ -3269,10 +3245,7 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Active Campaigns!</strong> This is an
-              example of what your campaigns will look like. You don't have any
-              active campaigns yet — but when brands start working with you,
-              they'll appear here!
+              <strong>{t("creatorDashboard.campaigns.welcome.title")}</strong> {t("creatorDashboard.campaigns.welcome.message")}
             </p>
           </div>
         )}
@@ -3284,25 +3257,25 @@ export default function CreatorDashboard() {
               <thead>
                 <tr className="border-b-2 border-gray-300">
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    Brand
+                    {t("creatorDashboard.campaigns.table.brand")}
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    Usage Type
+                    {t("creatorDashboard.campaigns.table.usageType")}
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    Rate
+                    {t("creatorDashboard.campaigns.table.rate")}
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    Active Until
+                    {t("creatorDashboard.campaigns.table.activeUntil")}
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    Status
+                    {t("creatorDashboard.campaigns.table.status")}
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    This Month
+                    {t("creatorDashboard.campaigns.table.thisMonth")}
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    Actions
+                    {t("creatorDashboard.campaigns.table.actions")}
                   </th>
                 </tr>
               </thead>
@@ -3360,13 +3333,12 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${
-                          campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
+                        className={`${campaign.status === "active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3448,9 +3420,8 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
-                      isExpanded ? "rotate-90" : ""
-                    }`}
+                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
+                      }`}
                   />
                 </button>
 
@@ -3459,7 +3430,7 @@ export default function CreatorDashboard() {
                   <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
                     {/* Rate */}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">Rate:</span>
+                      <span className="text-sm text-gray-600">{t("creatorDashboard.campaigns.rateLabel")}</span>
                       <span className="font-bold text-gray-900">
                         ${campaign.rate.toLocaleString()}/mo
                       </span>
@@ -3468,7 +3439,7 @@ export default function CreatorDashboard() {
                     {/* Active Until */}
                     <div className="flex justify-between items-center py-2">
                       <span className="text-sm text-gray-600">
-                        Active Until:
+                        {t("creatorDashboard.campaigns.activeUntilLabel")}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-900">
@@ -3486,15 +3457,14 @@ export default function CreatorDashboard() {
 
                     {/* Status */}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">Status:</span>
+                      <span className="text-sm text-gray-600">{t("creatorDashboard.campaigns.statusLabel")}</span>
                       <Badge
-                        className={`${
-                          campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
-                        }`}
+                        className={`${campaign.status === "active"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
+                          }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3506,7 +3476,7 @@ export default function CreatorDashboard() {
 
                     {/* This Month */}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">This Month:</span>
+                      <span className="text-sm text-gray-600">{t("creatorDashboard.campaigns.thisMonthLabel")}</span>
                       <span className="font-bold text-green-600">
                         $
                         {campaign.earnings_this_month ||
@@ -3518,7 +3488,7 @@ export default function CreatorDashboard() {
                     {campaign.impressions_week && (
                       <div className="flex justify-between items-center py-2">
                         <span className="text-sm text-gray-600">
-                          Impressions/Week:
+                          {t("creatorDashboard.campaigns.impressionsLabel")}
                         </span>
                         <span className="text-sm font-medium text-gray-900">
                           {campaign.impressions_week.toLocaleString()}
@@ -3538,7 +3508,7 @@ export default function CreatorDashboard() {
                         className="flex-1"
                       >
                         <Pause className="w-4 h-4 mr-2" />
-                        Pause
+                        {t("creatorDashboard.campaigns.pause")}
                       </Button>
                       <Button
                         onClick={(e) => {
@@ -3667,14 +3637,14 @@ export default function CreatorDashboard() {
               className="border-2 border-gray-300 w-fit"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Queue
+              {t("creatorDashboard.approvals.backToQueue")}
             </Button>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {approval.brand} - Contract Review
+                {t("creatorDashboard.approvals.contractReviewTitle", { brand: approval.brand })}
               </h1>
               <p className="text-gray-600 text-sm sm:text-base">
-                Review terms before approving
+                {t("creatorDashboard.approvals.contractReviewSubtitle")}
               </p>
             </div>
           </div>
@@ -3682,18 +3652,18 @@ export default function CreatorDashboard() {
           {/* What You're Earning */}
           <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              What You'll Earn
+              {t("creatorDashboard.approvals.whatYouWillEarn")}
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <p className="text-gray-700 mb-2">Your Monthly Payment:</p>
+                <p className="text-gray-700 mb-2">{t("creatorDashboard.approvals.yourMonthlyPayment")}</p>
                 <p className="text-5xl font-bold text-green-600">
                   ${approval.proposed_rate}
                 </p>
               </div>
               <div>
                 <p className="text-gray-700 mb-2">
-                  If you keep this for {approval.term_length}:
+                  {t("creatorDashboard.approvals.ifYouKeepThisFor", { term: approval.term_length })}
                 </p>
                 <p className="text-3xl font-bold text-gray-900">
                   $
@@ -3702,7 +3672,7 @@ export default function CreatorDashboard() {
                     : approval.proposed_rate * parseInt(approval.term_length)}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Total estimated earnings
+                  {t("creatorDashboard.approvals.totalEstimatedEarnings")}
                 </p>
               </div>
             </div>
@@ -3711,7 +3681,7 @@ export default function CreatorDashboard() {
           {/* Contract Terms */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Contract Terms
+              {t("creatorDashboard.approvals.contractTerms")}
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -3722,7 +3692,7 @@ export default function CreatorDashboard() {
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Territory:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.approvals.territory")}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.regions.map((region) => (
                       <Badge
@@ -3738,13 +3708,13 @@ export default function CreatorDashboard() {
               </div>
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Usage Type:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.approvals.usageType")}</p>
                   <p className="font-bold text-gray-900 text-lg">
                     {approval.usage_type}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Industries:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.approvals.industries")}</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.industries.map((industry) => (
                       <Badge
@@ -3764,27 +3734,27 @@ export default function CreatorDashboard() {
           {/* Your Rights */}
           <Card className="p-6 bg-blue-50 border-2 border-blue-300">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Your Rights & Protections
+              {t("creatorDashboard.approvals.yourRightsAndProtections")}
             </h3>
             <div className="space-y-3 text-gray-900">
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <p>
-                  You can pause this license anytime (temporarily stop usage)
+                  {t("creatorDashboard.approvals.canPause")}
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>You can revoke with 30 days notice (permanently end)</p>
+                <p>{t("creatorDashboard.approvals.canRevoke")}</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>License expires on a specific date (not forever)</p>
+                <p>{t("creatorDashboard.approvals.licenseExpires")}</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <p>
-                  Payment protected in escrow until brand approves deliverables
+                  {t("creatorDashboard.approvals.paymentProtected")}
                 </p>
               </div>
             </div>
@@ -3794,9 +3764,7 @@ export default function CreatorDashboard() {
             <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-red-900 text-sm">
-                <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
-                use your likeness forever. You should negotiate for time-limited
-                terms (6 months, 1 year) instead.
+                <strong>{t("creatorDashboard.approvals.perpetualUseWarning.title")}</strong> {t("creatorDashboard.approvals.perpetualUseWarning.message")}
               </p>
             </div>
           )}
@@ -3809,21 +3777,21 @@ export default function CreatorDashboard() {
               className="flex-1 h-14 border-2 border-gray-300"
             >
               <XCircle className="w-5 h-5 mr-2" />
-              Decline
+              {t("creatorDashboard.approvals.decline")}
             </Button>
             <Button
               variant="outline"
               className="flex-1 h-14 border-2 border-[#32C8D1] text-[#32C8D1]"
             >
               <MessageSquare className="w-5 h-5 mr-2" />
-              Counter Offer
+              {t("creatorDashboard.approvals.counterOffer")}
             </Button>
             <Button
               onClick={() => handleApprove(approval.id)}
               className="flex-1 h-14 bg-green-600 hover:bg-green-700 text-white"
             >
               <CheckCircle2 className="w-5 h-5 mr-2" />
-              Accept & Sign
+              {t("creatorDashboard.approvals.acceptAndSign")}
             </Button>
           </div>
         </div>
@@ -3839,16 +3807,16 @@ export default function CreatorDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{t("creatorDashboard.approvals.title")}</h2>
             <p className="text-gray-600 mt-1">
-              Review and approve licensing requests
+              {t("creatorDashboard.approvals.subtitle")}
             </p>
           </div>
           <Badge
             variant="secondary"
             className={`${pendingCount > 0 ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-gray-100 text-gray-700 border border-gray-300"} px-4 py-2 text-lg`}
           >
-            {pendingCount} Pending
+            {t("creatorDashboard.approvals.pendingCount", { count: pendingCount })}
           </Badge>
         </div>
 
@@ -3857,10 +3825,7 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Approval Queue!</strong> This is an
-              example of what brand requests will look like. You don't have any
-              pending approvals yet — but when brands want to work with you,
-              their requests will appear here!
+              <strong>{t("creatorDashboard.approvals.welcome.title")}</strong> {t("creatorDashboard.approvals.welcome.message")}
             </p>
           </div>
         )}
@@ -3884,8 +3849,7 @@ export default function CreatorDashboard() {
                     </h3>
                     <p className="text-gray-600">{approval.usage_type}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Requested{" "}
-                      {new Date(approval.requested_date).toLocaleDateString()}
+                      {t("creatorDashboard.approvals.requestedOn", { date: new Date(approval.requested_date).toLocaleDateString() })}
                     </p>
                   </div>
                 </div>
@@ -3895,7 +3859,7 @@ export default function CreatorDashboard() {
                     className="bg-red-500 text-white"
                   >
                     <AlertCircle className="w-4 h-4 mr-1" />
-                    Perpetual Request
+                    {t("creatorDashboard.approvals.perpetualRequest")}
                   </Badge>
                 )}
               </div>
@@ -3904,21 +3868,21 @@ export default function CreatorDashboard() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
-                      Proposed Rate:
+                      {t("creatorDashboard.approvals.proposedRate")}
                     </span>
                     <span className="font-bold text-gray-900 text-lg">
                       ${approval.proposed_rate}/month
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">Term Length:</span>
+                    <span className="text-sm text-gray-600">{t("creatorDashboard.approvals.termLength")}</span>
                     <span className="font-bold text-gray-900">
                       {approval.term_length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
-                      Estimated Monthly:
+                      {t("creatorDashboard.approvals.estimatedMonthly")}
                     </span>
                     <span className="font-bold text-green-600 text-lg">
                       ${approval.proposed_rate}
@@ -3928,7 +3892,7 @@ export default function CreatorDashboard() {
 
                 <div className="space-y-3">
                   <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">Regions:</p>
+                    <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.approvals.regions")}</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.regions.map((region) => (
                         <Badge
@@ -3942,7 +3906,7 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">Industries:</p>
+                    <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.approvals.industries")}</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.industries.map((industry) => (
                         <Badge
@@ -3962,10 +3926,7 @@ export default function CreatorDashboard() {
                 <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <p className="text-red-900 text-sm">
-                    <strong>Warning:</strong> This is a perpetual-use request.
-                    You would give up long-term control of your likeness for
-                    this campaign. Consider negotiating for time-limited terms
-                    instead.
+                    <strong>{t("creatorDashboard.approvals.warning.title")}</strong> {t("creatorDashboard.approvals.warning.message")}
                   </p>
                 </div>
               )}
@@ -3977,7 +3938,7 @@ export default function CreatorDashboard() {
                   className="flex-1 h-12 border-2 border-blue-300 text-blue-600 w-full sm:w-auto"
                 >
                   <FileText className="w-5 h-5 mr-2" />
-                  View Contract
+                  {t("creatorDashboard.approvals.viewContract")}
                 </Button>
                 <Button
                   onClick={() => handleDecline(approval.id)}
@@ -4022,14 +3983,14 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Campaign Archive
+              {t("creatorDashboard.archive.title")}
             </h2>
             <p className="text-gray-600 mt-1">
-              View your completed campaigns and manage portfolio visibility
+              {t("creatorDashboard.archive.subtitle")}
             </p>
           </div>
           <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg">
-            {archivedCampaigns.length} Completed
+            {t("creatorDashboard.archive.completedCount", { count: archivedCampaigns.length })}
           </Badge>
         </div>
 
@@ -4038,10 +3999,7 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Campaign Archive!</strong> This is an
-              example of what your completed campaigns will look like. You don't
-              have any archived campaigns yet — but when you do, they'll appear
-              here just like this!
+              <strong>{t("creatorDashboard.archive.welcome.title")}</strong> {t("creatorDashboard.archive.welcome.message")}
             </p>
           </div>
         )}
@@ -4065,34 +4023,34 @@ export default function CreatorDashboard() {
                     </h3>
                     <p className="text-gray-600">{campaign.campaign_type}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Completed {campaign.completed_date}
+                      {t("creatorDashboard.archive.completedOn", { date: campaign.completed_date })}
                     </p>
                   </div>
                 </div>
                 <Badge className="bg-green-100 text-green-700 border border-green-300">
-                  Completed
+                  {t("creatorDashboard.archive.status.completed")}
                 </Badge>
               </div>
 
               <div className="grid md:grid-cols-4 gap-4 mb-6">
                 <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Duration:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.archive.duration")}</p>
                   <p className="font-bold text-gray-900">{campaign.duration}</p>
                 </div>
                 <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.archive.monthlyRate")}</p>
                   <p className="font-bold text-gray-900">
                     ${campaign.monthly_rate}
                   </p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.archive.totalEarned")}</p>
                   <p className="font-bold text-green-600 text-lg">
                     ${campaign.total_earned.toLocaleString()}
                   </p>
                 </div>
                 <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Regions:</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.archive.regions")}</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {campaign.regions.map((region) => (
                       <Badge
@@ -4130,12 +4088,12 @@ export default function CreatorDashboard() {
                   />
                   <div>
                     <p className="font-semibold text-gray-900">
-                      Show on Portfolio
+                      {t("creatorDashboard.archive.showOnPortfolio")}
                     </p>
                     <p className="text-sm text-gray-600">
                       {campaign.show_on_portfolio
-                        ? "Visible to brands viewing your profile"
-                        : "Hidden from public portfolio"}
+                        ? t("creatorDashboard.archive.visibleOnPortfolio")
+                        : t("creatorDashboard.archive.hiddenFromPortfolio")}
                     </p>
                   </div>
                 </div>
@@ -4145,7 +4103,7 @@ export default function CreatorDashboard() {
                   disabled={campaign.isExample}
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  View Details
+                  {t("creatorDashboard.archive.viewDetails")}
                 </Button>
               </div>
             </Card>
@@ -4182,7 +4140,7 @@ export default function CreatorDashboard() {
               className="border-2 border-gray-300 w-fit"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Contracts
+              {t("creatorDashboard.contracts.backToContracts")}
             </Button>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -4197,28 +4155,28 @@ export default function CreatorDashboard() {
           {/* What You're Earning */}
           <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              What You're Earning
+              {t("creatorDashboard.contracts.whatYoureEarning")}
             </h3>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <p className="text-gray-700 mb-2">Monthly Payment:</p>
+                <p className="text-gray-700 mb-2">{t("creatorDashboard.contracts.monthlyPayment")}</p>
                 <p className="text-4xl font-bold text-green-600">
                   ${contract.creator_earnings}
                 </p>
               </div>
               <div>
-                <p className="text-gray-700 mb-2">Total Earned So Far:</p>
+                <p className="text-gray-700 mb-2">{t("creatorDashboard.contracts.totalEarnedSoFar")}</p>
                 <p className="text-3xl font-bold text-gray-900">
                   ${contract.earnings_to_date.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-gray-700 mb-2">Payment Status:</p>
+                <p className="text-gray-700 mb-2">{t("creatorDashboard.contracts.paymentStatus")}</p>
                 <Badge className="bg-green-500 text-white text-lg">
-                  ✓ Paid
+                  {t("creatorDashboard.contracts.paid")}
                 </Badge>
                 <p className="text-sm text-gray-600 mt-2">
-                  ${contract.amount_paid} received
+                  {t("creatorDashboard.contracts.amountReceived", { amount: contract.amount_paid })}
                 </p>
               </div>
             </div>
@@ -4227,22 +4185,22 @@ export default function CreatorDashboard() {
           {/* Timeline */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Your Timeline
+              {t("creatorDashboard.contracts.yourTimeline")}
             </h3>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">Started</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.contracts.started")}</p>
                   <p className="font-bold text-gray-900">
                     {new Date(contract.effective_date).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">Today</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.contracts.today")}</p>
                   <div className="w-4 h-4 bg-[#32C8D1] rounded-full mx-auto"></div>
                 </div>
                 <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">Expires</p>
+                  <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.contracts.expires")}</p>
                   <p className="font-bold text-gray-900">
                     {new Date(contract.expiration_date).toLocaleDateString()}
                   </p>
@@ -4255,15 +4213,14 @@ export default function CreatorDashboard() {
                 ></div>
               </div>
               <p className="text-center text-sm text-gray-600 mt-3">
-                {contract.days_remaining} days remaining
+                {t("creatorDashboard.contracts.daysRemaining", { count: contract.days_remaining })}
               </p>
             </div>
             {contract.auto_renew && (
               <div className="mt-4 bg-blue-50 border border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <p className="text-blue-900 text-sm">
-                  <strong>Auto-Renewal Enabled:</strong> After expiration, you
-                  can decide whether to renew on new terms.
+                  <strong>{t("creatorDashboard.contracts.autoRenewal.title")}</strong> {t("creatorDashboard.contracts.autoRenewal.message")}
                 </p>
               </div>
             )}
@@ -4272,38 +4229,38 @@ export default function CreatorDashboard() {
           {/* How Your Likeness Is Being Used */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              How Your Likeness Is Being Used
+              {t("creatorDashboard.contracts.howLikenessIsUsed")}
             </h3>
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  What They're Using:
+                  {t("creatorDashboard.contracts.whatTheyreUsing")}
                 </p>
                 <p className="text-gray-900">{contract.deliverables}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  Where They Can Use It:
+                  {t("creatorDashboard.contracts.whereTheyCanUseIt")}
                 </p>
                 <p className="text-gray-900 mb-2">
-                  <strong>Territory:</strong> {contract.territory}
+                  <strong>{t("creatorDashboard.contracts.territory")}</strong> {contract.territory}
                 </p>
                 <p className="text-gray-900">
-                  <strong>Channels:</strong> {contract.channels.join(", ")}
+                  <strong>{t("creatorDashboard.contracts.channels")}</strong> {contract.channels.join(", ")}
                 </p>
               </div>
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-sm font-semibold text-red-700 mb-2">
-                  What They CAN'T Do:
+                  {t("creatorDashboard.contracts.whatTheyCantDo")}
                 </p>
                 <p className="text-red-900">{contract.prohibited_uses}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  Revisions:
+                  {t("creatorDashboard.contracts.revisions")}
                 </p>
                 <p className="text-gray-900">
-                  {contract.revisions} rounds included
+                  {t("creatorDashboard.contracts.roundsIncluded", { count: contract.revisions })}
                 </p>
               </div>
             </div>
@@ -4312,7 +4269,7 @@ export default function CreatorDashboard() {
           {/* Actions */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              Manage This License
+              {t("creatorDashboard.contracts.manageLicense")}
             </h3>
             <div className="grid md:grid-cols-2 gap-4">
               <Button
@@ -4323,7 +4280,7 @@ export default function CreatorDashboard() {
                 className="h-12 border-2 border-amber-300 text-amber-700 hover:bg-amber-50"
               >
                 <Pause className="w-5 h-5 mr-2" />
-                Pause License
+                {t("creatorDashboard.contracts.pauseLicense")}
               </Button>
               <Button
                 onClick={() => {
@@ -4333,21 +4290,21 @@ export default function CreatorDashboard() {
                 className="h-12 border-2 border-red-300 text-red-600 hover:bg-red-50"
               >
                 <XCircle className="w-5 h-5 mr-2" />
-                Revoke (30-day notice)
+                {t("creatorDashboard.contracts.revokeLicense")}
               </Button>
               <Button
                 variant="outline"
                 className="h-12 border-2 border-blue-300 text-blue-600 hover:bg-blue-50"
               >
                 <MessageSquare className="w-5 h-5 mr-2" />
-                Message Brand
+                {t("creatorDashboard.contracts.messageBrand")}
               </Button>
               <Button
                 variant="outline"
                 className="h-12 border-2 border-gray-300"
               >
                 <FileText className="w-5 h-5 mr-2" />
-                View Full Legal Contract
+                {t("creatorDashboard.contracts.viewFullLegalContract")}
               </Button>
             </div>
           </Card>
@@ -4373,10 +4330,10 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Licenses & Contracts
+              {t("creatorDashboard.contracts.title")}
             </h2>
             <p className="text-gray-600 mt-1">
-              Track all your licensing deals and earnings
+              {t("creatorDashboard.contracts.subtitle")}
             </p>
           </div>
         </div>
@@ -4386,10 +4343,7 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Licenses & Contracts!</strong> This is an
-              example of what your active licensing deals will look like. You
-              don't have any contracts yet — but when brands approve your work,
-              they'll appear here just like this!
+              <strong>{t("creatorDashboard.contracts.welcome.title")}</strong> {t("creatorDashboard.contracts.welcome.message")}
             </p>
           </div>
         )}
@@ -4398,23 +4352,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
-            Active ({activeContracts.length})
+            {t("creatorDashboard.contracts.activeTab", { count: activeContracts.length })}
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
-            Expired ({expiredContracts.length})
+            {t("creatorDashboard.contracts.expiredTab", { count: expiredContracts.length })}
           </button>
         </div>
 
@@ -4424,11 +4376,10 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${
-                  contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
-                }`}
+                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
+                  ? "border-orange-300"
+                  : "border-gray-200"
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4451,16 +4402,14 @@ export default function CreatorDashboard() {
                         : "bg-orange-100 text-orange-700 border border-orange-300"
                     }
                   >
-                    {contract.status === "active"
-                      ? "✓ Active & Earning"
-                      : "⏳ Expiring Soon"}
+                    {t(`creatorDashboard.contracts.status.${contract.status}`)}
                   </Badge>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4 mb-4">
                   <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                     <p className="text-sm text-gray-600 mb-1">
-                      Your Monthly Fee:
+                      {t("creatorDashboard.contracts.yourMonthlyFee")}
                     </p>
                     <p className="text-2xl font-bold text-green-600">
                       ${contract.creator_earnings}
@@ -4468,7 +4417,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-1">
-                      Earned to Date:
+                      {t("creatorDashboard.contracts.earnedToDate")}
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
                       ${contract.earnings_to_date.toLocaleString()}
@@ -4476,7 +4425,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-1">
-                      Days Remaining:
+                      {t("creatorDashboard.contracts.daysRemainingLabel")}
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
                       {contract.days_remaining}
@@ -4489,9 +4438,9 @@ export default function CreatorDashboard() {
                     <Clock className="h-5 w-5 text-orange-600 shrink-0" />
                     <p className="text-orange-900 text-sm">
                       <span className="font-bold">
-                        Expiring in {contract.days_remaining} days!
+                        {t("creatorDashboard.contracts.expiringIn", { count: contract.days_remaining })}
                       </span>{" "}
-                      Would you like to renew this license?
+                      {t("creatorDashboard.contracts.renewLicensePrompt")}
                     </p>
                   </div>
                 )}
@@ -4505,12 +4454,12 @@ export default function CreatorDashboard() {
                     className="flex-1 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    View Details
+                    {t("creatorDashboard.contracts.viewDetails")}
                   </Button>
                   {contract.status === "expiring_soon" && (
                     <Button className="bg-green-600 hover:bg-green-700 text-white">
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Renew
+                      {t("creatorDashboard.contracts.renew")}
                     </Button>
                   )}
                 </div>
@@ -4524,10 +4473,10 @@ export default function CreatorDashboard() {
           <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No Expired Contracts
+              {t("creatorDashboard.contracts.noExpiredContracts")}
             </h3>
             <p className="text-gray-600">
-              Completed contracts will appear here
+              {t("creatorDashboard.contracts.completedContractsWillAppearHere")}
             </p>
           </Card>
         )}
@@ -4602,7 +4551,7 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Earnings Dashboard
+              {t("creatorDashboard.earnings.title")}
             </h2>
             <p className="text-gray-600 mt-1">
               Track your revenue and payments
@@ -4677,7 +4626,7 @@ export default function CreatorDashboard() {
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Earnings by Industry
+              {t("creatorDashboard.earnings.byIndustry")}
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -4721,7 +4670,7 @@ export default function CreatorDashboard() {
         {/* Earnings by Campaign */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Earnings by Campaign
+            {t("creatorDashboard.earnings.byCampaign")}
           </h3>
           {activeCampaigns.length === 0 ? (
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
@@ -4874,9 +4823,9 @@ export default function CreatorDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Settings</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{t("creatorDashboard.settings")}</h2>
           <p className="text-gray-600 mt-1">
-            Manage your profile and preferences
+            {t("creatorDashboard.settingsSubtitle", { defaultValue: "Manage your profile and preferences" })}
           </p>
         </div>
       </div>
@@ -4885,23 +4834,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "profile"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
-          Profile Settings
+          {t("creatorDashboard.profileSettings")}
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-            settingsTab === "rules"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
         >
-          My Rules
+          {t("creatorDashboard.myRules")}
         </button>
       </div>
 
@@ -5176,11 +5123,10 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {type}
                     </Badge>
@@ -5222,11 +5168,10 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${
-                        creator.industries?.includes(industry)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                      } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        } ${!editingRules && "cursor-default"}`}
                     >
                       {industry}
                     </Badge>
@@ -5336,15 +5281,14 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
-          isSmallScreen
-            ? sidebarOpen
-              ? "w-64"
-              : "-translate-x-full w-64"
-            : sidebarOpen
-              ? "w-64"
-              : "w-20"
-        }`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${isSmallScreen
+          ? sidebarOpen
+            ? "w-64"
+            : "-translate-x-full w-64"
+          : sidebarOpen
+            ? "w-64"
+            : "w-20"
+          }`}
       >
         {/* Mobile Sidebar Header */}
         {isSmallScreen && (
@@ -5569,7 +5513,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) {}
+                    } catch (_) { }
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -5593,11 +5537,10 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
+                    ? "bg-[#32C8D1] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -6480,8 +6423,8 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                        existing.price_per_week_cents / 100
-                                      ).toString()
+                                      existing.price_per_week_cents / 100
+                                    ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -6540,8 +6483,8 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                        existing.price_per_week_cents / 100
-                                      ).toString()
+                                      existing.price_per_week_cents / 100
+                                    ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -6582,21 +6525,21 @@ export default function CreatorDashboard() {
                 (showRatesModal === "industry" &&
                   creator.industries?.filter((i) => INDUSTRIES.includes(i))
                     .length > 0)) && (
-                <Button
-                  type="submit"
-                  disabled={savingRates}
-                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                >
-                  {savingRates ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Rates"
-                  )}
-                </Button>
-              )}
+                  <Button
+                    type="submit"
+                    disabled={savingRates}
+                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                  >
+                    {savingRates ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Rates"
+                    )}
+                  </Button>
+                )}
             </DialogFooter>
           </form>
         </DialogContent>

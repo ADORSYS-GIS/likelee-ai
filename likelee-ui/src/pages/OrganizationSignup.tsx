@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 // Temporary comment to trigger TypeScript re-evaluation
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,68 +35,67 @@ import {
   createLivenessSession,
 } from "@/api/functions";
 
+const getProductionTypes = (t: any) => [
+  t("organizationSignup.options.productionTypes.film"),
+  t("organizationSignup.options.productionTypes.tv"),
+  t("organizationSignup.options.productionTypes.commercial"),
+  t("organizationSignup.options.productionTypes.musicVideo"),
+  t("organizationSignup.options.productionTypes.animation"),
+  t("organizationSignup.options.productionTypes.mixedAiLive"),
+];
+
+const getServices = (t: any) => [
+  t("organizationSignup.options.services.socialMediaManagement"),
+  t("organizationSignup.options.services.influencerCampaigns"),
+  t("organizationSignup.options.services.videoAds"),
+  t("organizationSignup.options.services.ugcProduction"),
+  t("organizationSignup.options.services.contentCreation"),
+  t("organizationSignup.options.services.brandStrategy"),
+];
+
+const getCampaignTypes = (t: any) => [
+  t("organizationSignup.options.campaignTypes.fashion"),
+  t("organizationSignup.options.campaignTypes.music"),
+  t("organizationSignup.options.campaignTypes.fitness"),
+  t("organizationSignup.options.campaignTypes.lifestyle"),
+  t("organizationSignup.options.campaignTypes.beauty"),
+  t("organizationSignup.options.campaignTypes.sports"),
+  t("organizationSignup.options.campaignTypes.entertainment"),
+];
+
+const getPrimaryGoals = (t: any) => [
+  t("organizationSignup.options.primaryGoals.runAdCampaigns"),
+  t("organizationSignup.options.primaryGoals.findBrandAmbassadors"),
+  t("organizationSignup.options.primaryGoals.licenseAiReadyFaces"),
+];
+
+const getRolesNeeded = (t: any) => [
+  t("organizationSignup.options.rolesNeeded.talentFacesVoices"),
+  t("organizationSignup.options.rolesNeeded.postproductionAiGeneration"),
+  t("organizationSignup.options.rolesNeeded.creativeCollaboration"),
+];
+
+const getOpenToAiOptions = (t: any) => [
+  t("organizationSignup.options.openToAiOptions.aiRecreation"),
+  t("organizationSignup.options.openToAiOptions.likenessProtectionOnly"),
+  t("organizationSignup.options.openToAiOptions.variesByTalent"),
+];
+
 const industries = [
   "Fashion",
-  "Tech",
   "Beauty",
-  "Fitness",
-  "Consumer Goods",
-  "Food & Beverage",
-  "Entertainment",
-  "Healthcare",
-  "Finance",
+  "Technology",
   "Automotive",
+  "Food & Beverage",
+  "Travel",
+  "Entertainment",
+  "Health & Wellness",
+  "Finance",
   "Other",
 ];
 
-const productionTypes = [
-  "Film",
-  "TV",
-  "Commercial",
-  "Music Video",
-  "Animation",
-  "Mixed AI/Live",
-];
-
-const services = [
-  "Social media management",
-  "Influencer campaigns",
-  "Video ads",
-  "UGC production",
-  "Content creation",
-  "Brand strategy",
-];
-
-const campaignTypes = [
-  "Fashion",
-  "Music",
-  "Fitness",
-  "Lifestyle",
-  "Beauty",
-  "Sports",
-  "Sports",
-  "Entertainment",
-];
-
-const primaryGoals = [
-  "Run ad campaigns",
-  "Find brand ambassadors",
-  "License AI-ready faces",
-];
-
-const rolesNeeded = [
-  "Talent (faces/voices)",
-  "Postproduction / AI generation",
-  "Creative collaboration",
-];
-
-const openToAiOptions = [
-  "AI recreation",
-  "Likeness protection only",
-  "Varies by talent",
-];
-
 export default function OrganizationSignup() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
@@ -270,17 +270,16 @@ export default function OrganizationSignup() {
         !formData.contact_name
       ) {
         toast({
-          title: "Missing Fields",
-          description:
-            "Please fill in all required fields for Company Information.",
+          title: t("organizationSignup.missingFieldsTitle"),
+          description: t("organizationSignup.missingFieldsDescription"),
           variant: "destructive",
         });
         return;
       }
       if (formData.password !== formData.confirmPassword) {
         toast({
-          title: "Password Mismatch",
-          description: "Passwords do not match.",
+          title: t("organizationSignup.passwordMismatchTitle"),
+          description: t("organizationSignup.passwordMismatchDescription"),
           variant: "destructive",
         });
         return;
@@ -327,10 +326,10 @@ export default function OrganizationSignup() {
 
   const getOrgTypeTitle = () => {
     const titles = {
-      brand_company: "Brand / Company",
-      production_studio: "Production House / Studio",
-      marketing_agency: "Marketing Agency",
-      talent_agency: "Talent / Modeling Agency",
+      brand_company: t("organizationSignup.orgType.brandCompany"),
+      production_studio: t("organizationSignup.orgType.productionStudio"),
+      marketing_agency: t("organizationSignup.orgType.marketingAgency"),
+      talent_agency: t("organizationSignup.orgType.talentAgency"),
     };
     return titles[orgType] || "Organization";
   };
@@ -355,9 +354,8 @@ export default function OrganizationSignup() {
     const startOrgKyc = async () => {
       if (!profileId) {
         toast({
-          title: "Profile Not Found",
-          description:
-            "Organization profile not found yet. Complete Step 1 first.",
+          title: t("organizationSignup.profileNotFoundTitle"),
+          description: t("organizationSignup.profileNotFoundDescription"),
           variant: "destructive",
         });
         return;
@@ -373,8 +371,7 @@ export default function OrganizationSignup() {
         } else {
           toast({
             title: "Error",
-            description:
-              "Unable to start organization KYC. Please try again later.",
+            description: t("organizationSignup.kycError"),
             variant: "destructive",
           });
         }
@@ -382,7 +379,7 @@ export default function OrganizationSignup() {
         console.error("Error starting organization KYC", e);
         toast({
           title: "Error",
-          description: "Failed to start organization KYC.",
+          description: t("organizationSignup.kycFail"),
           variant: "destructive",
         });
       }
@@ -427,30 +424,30 @@ export default function OrganizationSignup() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             {kycStatus === "approved"
-              ? "KYC Verified! Partner Onboarding Complete."
-              : "Thanks—partner onboarding is in progress"}
+              ? t("organizationSignup.kycVerifiedTitle")
+              : t("organizationSignup.onboardingInProgressTitle")}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
             {kycStatus === "approved"
-              ? "Your organization's identity has been successfully verified. You can now proceed to manage your agency."
-              : "We're staging brand access to ensure healthy supply/demand for campaigns. You're on our priority list; we'll reach out to set up your brief, budget, and timeline."}
+              ? t("organizationSignup.kycVerifiedDescription")
+              : t("organizationSignup.onboardingInProgressDescription")}
           </p>
           {kycStatus !== "approved" && (
             <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-6 border-2 border-black rounded-none mb-8">
               <h3 className="text-xl font-bold text-gray-900 mb-3">
-                What's next:
+                {t("organizationSignup.whatsNext")}
               </h3>
               <p className="text-gray-700 leading-relaxed">
                 {kycSessionUrl
-                  ? "You will be redirected to complete KYC verification. If not, click the button below."
-                  : "Expect a calendar link and a lightweight intake form from our team."}
+                  ? t("organizationSignup.kycRedirect")
+                  : t("organizationSignup.calendarLink")}
               </p>
               {kycSessionUrl && (
                 <Button
                   onClick={() => (window.location.href = kycSessionUrl)}
                   className={`mt-4 w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
-                  Complete KYC Verification
+                  {t("organizationSignup.completeKycButton")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               )}
@@ -471,14 +468,14 @@ export default function OrganizationSignup() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                Sign Up as {getOrgTypeTitle()}
+                {t("organizationSignup.signUpAs")} {getOrgTypeTitle()}
               </h2>
             </div>
             <Badge
               variant="default"
               className={`${colors.badge} border-2 border-black rounded-none`}
             >
-              Step {step} of {totalSteps}
+              {t("organizationSignup.step")} {step} {t("organizationSignup.of")} {totalSteps}
             </Badge>
           </div>
           <div className="w-full h-3 bg-gray-200 border-2 border-black">
@@ -495,9 +492,9 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Company Information
+                  {t("organizationSignup.companyInfo")}
                 </h3>
-                <p className="text-gray-600">Let's start with the basics</p>
+                <p className="text-gray-600">{t("organizationSignup.startWithBasics")}</p>
               </div>
 
               <div className="space-y-4">
@@ -506,7 +503,7 @@ export default function OrganizationSignup() {
                     htmlFor="email"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Company Email *
+                    {t("organizationSignup.companyEmail")}
                   </Label>
                   <Input
                     id="email"
@@ -525,7 +522,7 @@ export default function OrganizationSignup() {
                     htmlFor="password"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Password *
+                    {t("common.passwordRequired")}
                   </Label>
                   <div className="relative">
                     <Input
@@ -557,7 +554,7 @@ export default function OrganizationSignup() {
                     htmlFor="confirmPassword"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Confirm Password *
+                    {t("common.confirmPasswordRequired")}
                   </Label>
                   <div className="relative">
                     <Input
@@ -594,7 +591,7 @@ export default function OrganizationSignup() {
                     htmlFor="organization_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Organization Name *
+                    {t("organizationSignup.organizationName")}
                   </Label>
                   <Input
                     id="organization_name"
@@ -606,7 +603,7 @@ export default function OrganizationSignup() {
                       })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="Your Company Name"
+                    placeholder={t("common.companyNamePlaceholder")}
                   />
                 </div>
 
@@ -616,7 +613,7 @@ export default function OrganizationSignup() {
                       htmlFor="contact_name"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Contact Name *
+                      {t("organizationSignup.contactName")}
                     </Label>
                     <Input
                       id="contact_name"
@@ -628,7 +625,7 @@ export default function OrganizationSignup() {
                         })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="John Doe"
+                      placeholder={t("common.johnDoe")}
                     />
                   </div>
 
@@ -637,7 +634,7 @@ export default function OrganizationSignup() {
                       htmlFor="contact_title"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      Title
+                      {t("organizationSignup.contactTitle")}
                     </Label>
                     <Input
                       id="contact_title"
@@ -649,7 +646,7 @@ export default function OrganizationSignup() {
                         })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder="CEO, Marketing Director, etc."
+                      placeholder={t("organizationSignup.contactTitlePlaceholder")}
                     />
                   </div>
                 </div>
@@ -659,7 +656,7 @@ export default function OrganizationSignup() {
                     htmlFor="website"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Website or Portfolio Link
+                    {t("organizationSignup.website")}
                   </Label>
                   <Input
                     id="website"
@@ -668,7 +665,7 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, website: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="https://yourcompany.com"
+                    placeholder={t("common.websitePlaceholder")}
                   />
                 </div>
 
@@ -677,7 +674,7 @@ export default function OrganizationSignup() {
                     htmlFor="phone_number"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Phone Number (Optional)
+                    {t("organizationSignup.phoneNumber")}
                   </Label>
                   <Input
                     id="phone_number"
@@ -686,7 +683,7 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, phone_number: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder={t("common.phonePlaceholder")}
                   />
                 </div>
               </div>
@@ -697,8 +694,8 @@ export default function OrganizationSignup() {
                 className={`w-full h-12 ${colors.button} text-white border-2 border-black rounded-none`}
               >
                 {createInitialProfileMutation.isPending
-                  ? "Saving..."
-                  : "Continue"}
+                  ? t("common.saving")
+                  : t("common.continue")}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
@@ -709,9 +706,9 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Brand Details
+                  {t("organizationSignup.brandDetails.title")}
                 </h3>
-                <p className="text-gray-600">Tell us more about your brand</p>
+                <p className="text-gray-600">{t("organizationSignup.brandDetails.subtitle")}</p>
               </div>
 
               <div className="space-y-4">
@@ -720,7 +717,7 @@ export default function OrganizationSignup() {
                     htmlFor="industry"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Industry *
+                    {t("organizationSignup.brandDetails.industry")}
                   </Label>
                   <Select
                     value={formData.industry}
@@ -729,7 +726,7 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder="Select industry" />
+                      <SelectValue placeholder={t("organizationSignup.brandDetails.selectIndustry")} />
                     </SelectTrigger>
                     <SelectContent>
                       {industries.map((industry) => (
@@ -746,18 +743,18 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    Primary goal on Likelee
+                    {t("organizationSignup.brandDetails.primaryGoal")}
                   </Label>
                   <div className="space-y-3">
                     <div className="space-y-3">
                       <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
                           id="select_all_goals"
-                          checked={primaryGoals.every((goal) =>
+                          checked={getPrimaryGoals(t).every((goal) =>
                             formData.primary_goal.includes(goal),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("primary_goal", primaryGoals)
+                            toggleSelectAll("primary_goal", getPrimaryGoals(t))
                           }
                           className="border-2 border-gray-900"
                         />
@@ -765,10 +762,10 @@ export default function OrganizationSignup() {
                           htmlFor="select_all_goals"
                           className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("organizationSignup.selectAll")}
                         </label>
                       </div>
-                      {primaryGoals.map((goal) => (
+                      {getPrimaryGoals(t).map((goal) => (
                         <div
                           key={goal}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -798,7 +795,7 @@ export default function OrganizationSignup() {
                     htmlFor="geographic_target"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Geographic Target Audience
+                    {t("organizationSignup.brandDetails.geographicTarget")}
                   </Label>
                   <Input
                     id="geographic_target"
@@ -810,14 +807,13 @@ export default function OrganizationSignup() {
                       })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="e.g., North America, Global, etc."
+                    placeholder={t("organizationSignup.brandDetails.geographicTargetPlaceholder")}
                   />
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Do you need Likelee to provide creators or will you upload
-                    your own assets?
+                    {t("organizationSignup.brandDetails.provideCreatorsQuestion")}
                   </Label>
                   <RadioGroup
                     value={formData.provide_creators}
@@ -836,7 +832,7 @@ export default function OrganizationSignup() {
                           htmlFor="provide"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Provide creators
+                          {t("organizationSignup.brandDetails.provideCreators")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -849,7 +845,7 @@ export default function OrganizationSignup() {
                           htmlFor="upload"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Upload own assets
+                          {t("organizationSignup.brandDetails.uploadOwnAssets")}
                         </Label>
                       </div>
                     </div>
@@ -861,20 +857,18 @@ export default function OrganizationSignup() {
                 <Button
                   onClick={handleBack}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-black rounded-none"
+                  className="w-1/2 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={updateProfileMutation.isPending}
-                  className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                  className={`w-1/2 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
-                  {updateProfileMutation.isPending
-                    ? "Saving..."
-                    : "Continue to Verification"}
-                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                  {updateProfileMutation.isPending ? t("common.submitting") : t("common.submit")}
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
             </div>
@@ -907,10 +901,10 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder="Select production type" />
+                      <SelectValue placeholder={t("organizationSignup.productionStudio.selectProductionType")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {productionTypes.map((type) => (
+                      {getProductionTypes(t).map((type) => (
                         <SelectItem key={type} value={type.toLowerCase()}>
                           {type}
                         </SelectItem>
@@ -933,16 +927,14 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder="Select budget range" />
+                      <SelectValue placeholder={t("organizationSignup.productionStudio.selectBudgetRange")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="under_10k">Under $10,000</SelectItem>
-                      <SelectItem value="10k_50k">$10,000 - $50,000</SelectItem>
-                      <SelectItem value="50k_250k">
-                        $50,000 - $250,000
-                      </SelectItem>
-                      <SelectItem value="250k_1m">$250,000 - $1M</SelectItem>
-                      <SelectItem value="over_1m">Over $1M</SelectItem>
+                      <SelectItem value="under_10k">{t("organizationSignup.productionStudio.budgetRangeUnder10k")}</SelectItem>
+                      <SelectItem value="10k_50k">{t("organizationSignup.productionStudio.budgetRange10k50k")}</SelectItem>
+                      <SelectItem value="50k_250k">{t("organizationSignup.productionStudio.budgetRange50k250k")}</SelectItem>
+                      <SelectItem value="250k_1m">{t("organizationSignup.productionStudio.budgetRange250k1m")}</SelectItem>
+                      <SelectItem value="over_1m">{t("organizationSignup.productionStudio.budgetRangeOver1m")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1043,11 +1035,11 @@ export default function OrganizationSignup() {
                       <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
                           id="select_all_roles"
-                          checked={rolesNeeded.every((role) =>
+                          checked={getRolesNeeded(t).every((role) =>
                             formData.roles_needed.includes(role),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("roles_needed", rolesNeeded)
+                            toggleSelectAll("roles_needed", getRolesNeeded(t))
                           }
                           className="border-2 border-gray-900"
                         />
@@ -1058,7 +1050,7 @@ export default function OrganizationSignup() {
                           Select All
                         </label>
                       </div>
-                      {rolesNeeded.map((role) => (
+                      {getRolesNeeded(t).map((role) => (
                         <div
                           key={role}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -1177,11 +1169,11 @@ export default function OrganizationSignup() {
                       <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
                           id="select_all_services"
-                          checked={services.every((service) =>
+                          checked={getServices(t).every((service) =>
                             formData.services_offered.includes(service),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("services_offered", services)
+                            toggleSelectAll("services_offered", getServices(t))
                           }
                           className="border-2 border-gray-900"
                         />
@@ -1192,7 +1184,7 @@ export default function OrganizationSignup() {
                           Select All
                         </label>
                       </div>
-                      {services.map((service) => (
+                      {getServices(t).map((service) => (
                         <div
                           key={service}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -1403,11 +1395,11 @@ export default function OrganizationSignup() {
                       <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
                           id="select_all_open_to_ai"
-                          checked={openToAiOptions.every((option) =>
+                          checked={getOpenToAiOptions(t).every((option) =>
                             formData.open_to_ai.includes(option),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("open_to_ai", openToAiOptions)
+                            toggleSelectAll("open_to_ai", getOpenToAiOptions(t))
                           }
                           className="border-2 border-gray-900"
                         />
@@ -1418,7 +1410,7 @@ export default function OrganizationSignup() {
                           Select All
                         </label>
                       </div>
-                      {openToAiOptions.map((option) => (
+                      {getOpenToAiOptions(t).map((option) => (
                         <div
                           key={option}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -1452,11 +1444,11 @@ export default function OrganizationSignup() {
                     <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                       <Checkbox
                         id="select_all_campaign_types"
-                        checked={campaignTypes.every((type) =>
+                        checked={getCampaignTypes(t).every((type) =>
                           formData.campaign_types.includes(type),
                         )}
                         onCheckedChange={() =>
-                          toggleSelectAll("campaign_types", campaignTypes)
+                          toggleSelectAll("campaign_types", getCampaignTypes(t))
                         }
                         className="border-2 border-gray-900"
                       />
@@ -1467,7 +1459,7 @@ export default function OrganizationSignup() {
                         Select All
                       </label>
                     </div>
-                    {campaignTypes.map((type) => (
+                    {getCampaignTypes(t).map((type) => (
                       <div
                         key={type}
                         className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -1549,7 +1541,7 @@ export default function OrganizationSignup() {
             </div>
           )}
         </Card>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
