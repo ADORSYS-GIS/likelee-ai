@@ -6,7 +6,6 @@ use tracing::{error, info};
 #[derive(Deserialize)]
 pub struct LivenessResultRequest {
     pub session_id: String,
-    pub user_id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -67,21 +66,6 @@ pub async fn liveness_result(
     let score = res.confidence();
     let passed =
         status.eq_ignore_ascii_case("Succeeded") && score.map(|v| v >= min_score).unwrap_or(false);
-
-    if passed {
-        if let Some(user_id) = &req.user_id {
-            let payload = serde_json::json!({
-                "liveness_status": "approved",
-            });
-            let _ = state
-                .pg
-                .from("profiles")
-                .eq("id", user_id)
-                .update(payload.to_string())
-                .execute()
-                .await;
-        }
-    }
 
     Ok(Json(LivenessResultResponse {
         status,
