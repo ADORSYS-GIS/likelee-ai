@@ -127,6 +127,6 @@ pub fn build_router(state: AppState) -> Router {
                 .post(crate::creator_rates::upsert_creator_rates),
         )
         .with_state(state)
-        .layer(DefaultBodyLimit::max(5_000_000)) // 5MB limit
+        .layer(DefaultBodyLimit::max(10_000_000)) // 10MB limit
         .layer(cors)
 }

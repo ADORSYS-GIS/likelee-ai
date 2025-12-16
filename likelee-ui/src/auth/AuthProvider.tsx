@@ -29,6 +29,52 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const fetchProfile = async (
+    userId: string,
+    userEmail?: string,
+    userFullName?: string,
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      } else if (userEmail) {
+        // Profile missing, create it
+        console.log("Profile missing, creating new profile for:", userId);
+        const { data: newProfile, error: insertError } = await supabase
+          .from("profiles")
+          .insert([
+            {
+              id: userId,
+              email: userEmail,
+              full_name: userFullName,
+            },
+          ])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error("Error creating profile:", insertError);
+        } else if (newProfile) {
+          setProfile(newProfile);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching/creating profile:", err);
+    }
+  };
 
   useEffect(() => {
     if (!supabase) {

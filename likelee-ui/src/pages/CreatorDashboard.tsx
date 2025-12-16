@@ -1826,12 +1826,9 @@ export default function CreatorDashboard() {
         });
         return;
       }
-      if (file.size > 5_000_000) {
-        toast({
-          variant: "destructive",
-          title: "File Too Large",
-          description: "Please upload an image of 5 MB or less.",
-        });
+
+      if (file.size > 10_000_000) {
+        alert("Please upload an image of 10 MB or less.");
         return;
       }
       setUploadingPhoto(true);
@@ -2615,13 +2612,11 @@ export default function CreatorDashboard() {
         });
         return;
       }
-      // Server pre-scan is limited to 5MB
-      if (file.size > 5_000_000) {
-        toast({
-          variant: "destructive",
-          title: "File Too Large",
-          description: "Please upload an image ≤ 5MB.",
-        });
+
+      // Server pre-scan is limited to 10MB
+      if (file.size > 10_000_000) {
+        alert("Please upload an image ≤ 10MB.");
+
         return;
       }
 
@@ -4832,7 +4827,7 @@ export default function CreatorDashboard() {
                 <p className="text-sm text-gray-600 mb-2">
                   Upload a professional headshot
                 </p>
-                <p className="text-xs text-gray-500">JPG or PNG, max 5MB</p>
+                <p className="text-xs text-gray-500">JPG or PNG, max 10MB</p>
               </div>
             </div>
           </Card>
@@ -6056,33 +6051,6 @@ export default function CreatorDashboard() {
                           alt="Preview"
                           className="w-full max-h-[50vh] object-contain border-2 border-gray-200 rounded-lg mb-4"
                         />
-
-                        <Card className="p-4 bg-green-50 border border-green-200">
-                          <h5 className="font-bold text-gray-900 mb-2">
-                            Auto-Check:
-                          </h5>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              <p className="text-gray-900">
-                                Resolution: {previewImage.resolution}{" "}
-                                (Excellent)
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              <p className="text-gray-900">
-                                Faces Detected: 1 (You alone)
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              <p className="text-gray-900">
-                                Lighting Quality: Good
-                              </p>
-                            </div>
-                          </div>
-                        </Card>
                       </div>
                     )}
 
