@@ -286,6 +286,7 @@
       "cameraRequiredDescription": "Impossible d'accéder à la caméra. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.",
       "consentRequiredTitle": "Consentement requis",
       "consentRequiredDescription": "Veuillez donner votre consentement avant de télécharger vos photos.",
+      "subtitle": "Vérifiez votre identité pour devenir visible aux marques et débloquer des opportunités",
       "missingPhotosTitle": "Photos manquantes",
       "missingPhotosDescription": "Veuillez capturer les trois vues (face, profil gauche et profil droit).",
       "uploadFailedTitle": "Échec du téléchargement",
@@ -297,6 +298,9 @@
       "pending": "En attente",
       "livePreview": "Aperçu de la caméra en direct",
       "currentPose": "Pose actuelle :",
+      "status": {
+        "notStarted": "Non démarré"
+      },
       "capture": "Capturer",
       "nextPose": "Pose suivante",
       "front": "Face",
@@ -323,7 +327,12 @@
       "skip": "Passer pour l'instant",
       "verifyAndContinue": "Vérifier et continuer",
       "close": "Fermer",
-      "login": "Connectez-vous"
+      "login": "S'identifier",
+      "signup": "S'inscrire",
+      "continue": "Continuer",
+      "saveAndVerify": "Enregistrer et vérifier",
+      "startingVerification": "Démarrage…",
+      "verifyIdentity": "Vérifier l'identité maintenant"
     },
     "alreadyHaveAccount": "Vous avez déjà un compte ?",
     "title": "Réservez votre profil",
@@ -338,7 +347,8 @@
       "step1": {
         "creator": "Créez votre compte pour commencer.",
         "model_actor": "Créez votre compte pour commencer.",
-        "athlete": "Créez votre compte pour commencer."
+        "athlete": "Créez votre compte pour commencer.",
+        "influencer": "Créez votre compte pour commencer."
       },
       "step2": {
         "influencer": "Dites-nous-en un peu plus sur vous",
@@ -374,7 +384,9 @@
         "email": "Adresse e-mail",
         "password": "Mot de passe",
         "confirmPassword": "Confirmez le mot de passe",
-        "fullName": "Nom complet"
+        "fullName": "Nom complet",
+        "city": "Ville",
+        "state": "État/Pays"
       },
       "placeholders": {
         "email": "ex: jean@exemple.com",
@@ -384,6 +396,8 @@
         "languages": "par ex. anglais, espagnol",
         "confirmPassword": "********",
         "fullName": "ex: Jean Dupont",
+        "city": "ex: Paris",
+        "state": "ex: France",
         "age": "ex: 25"
       },
       "sport": "Le sport",
@@ -445,6 +459,7 @@
         "selectionLimitDesc": "Veuillez sélectionner jusqu'à 3 options pour l'instant. Vous pourrez en ajouter d'autres plus tard."
       },
       "forgotPassword": "Mot de passe oublié ?",
+      "selectAll": "Tout sélectionner",
       "vibes": "Tags d'Ambiance / Style",
       "headshot": "Télécharger une photo (facultatif)",
       "headshotHint": "Vous pouvez télécharger votre photo après avoir créé votre compte",

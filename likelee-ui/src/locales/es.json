@@ -424,18 +424,6 @@
         "description": "Una foto que realmente TE representa y cómo te reconocen las personas.",
         "bestFor": "Una foto que realmente TE representa"
       }
-    },
-    "nav": {
-      "dashboard": "Tablero",
-      "content": "Contenido",
-      "likeness": "Mi Imagen",
-      "voice": "Voz y Grabaciones",
-      "campaigns": "Campañas Activas",
-      "approvals": "Cola de Aprobación",
-      "archive": "Archivos de Campañas",
-      "contracts": "Licencias y Contratos",
-      "earnings": "Ganancias",
-      "settings": "Configuración"
     }
   },
   "creators": "Creadores",
@@ -852,7 +840,12 @@
       "skip": "Omitir por ahora",
       "verifyAndContinue": "Verificar y Continuar",
       "close": "Cerrar",
-      "login": "Iniciar sesión"
+      "login": "Iniciar Sesión",
+      "signup": "Registrarse",
+      "continue": "Continuar",
+      "saveAndVerify": "Guardar y Verificar",
+      "startingVerification": "Iniciando...",
+      "verifyIdentity": "Verificar Identidad Ahora"
     },
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
     "verification": {
@@ -914,6 +907,8 @@
     "form": {
       "labels": {
         "fullName": "Nombre Completo",
+        "city": "Ciudad",
+        "state": "Estado/País",
         "email": "Dirección de Correo Electrónico",
         "password": "Contraseña",
         "confirmPassword": "Confirmar Contraseña"
@@ -922,16 +917,20 @@
         "fullName": "Juan Pérez",
         "email": "usted@ejemplo.com",
         "password": "••••••••",
-        "password": "••••••••",
         "confirmPassword": "••••••••",
         "schoolName": "Nombre de la universidad",
         "sport": "Selecciona tu deporte",
         "languages": "p. ej., inglés, español",
-        "confirmPassword": "••••••••",
         "handle": "@tuusuario",
         "price": "150",
         "headshot": "URL de la imagen",
-        "specify": "Por favor especifique..."
+        "specify": "Por favor especifique...",
+        "stageName": "Tu nombre",
+        "bio": "Cuéntale a las marcas un poco sobre ti...",
+        "platform": "Seleccionar plataforma",
+        "city": "ej: Madrid",
+        "state": "ej: España",
+        "age": "ej: 25"
       },
       "sport": "Deporte",
       "athleteType": "Tipo de atleta",
@@ -958,21 +957,6 @@
           "description": "Solo visible para marcas y creadores de IA"
         }
       },
-      "placeholders": {
-        "fullName": "Juan Pérez",
-        "stageName": "Tu nombre",
-        "bio": "Cuéntale a las marcas un poco sobre ti...",
-        "platform": "Seleccionar plataforma",
-        "city": "Los Ángeles",
-        "state": "CA",
-        "age": "21",
-        "email": "usted@ejemplo.com",
-        "password": "••••••••",
-        "confirmPassword": "••••••••",
-        "schoolName": "Nombre de la universidad",
-        "sport": "Selecciona tu deporte",
-        "languages": "p. ej., inglés, español"
-      },
       "vibes": "Etiquetas de Estilo / Vibe",
       "dob": "Fecha de Nacimiento",
       "genderQuestion": "¿Cómo te identificas?",
@@ -983,7 +967,6 @@
         "genderFluid": "Género fluido",
         "preferNotToSay": "Prefiero no decirlo"
       },
-      "vibes": "Etiquetas de Estilo",
       "headshot": "Subir Foto de Rostro (opcional)",
       "headshotHint": "Puedes subir tu foto después de crear tu cuenta",
       "birthdate": "Fecha de nacimiento",
@@ -1043,9 +1026,9 @@
     },
     "stepDescriptions": {
       "step1": {
-        "athlete": "Crea tu cuenta lista para NIL",
+        "athlete": "Crea tu cuenta para comenzar.",
         "model_actor": "Crea tu cuenta de Likelee",
-        "influencer": "Comencemos con lo básico"
+        "influencer": "Crea tu cuenta para comenzar."
       },
       "step2": {
         "athlete": "Cuéntanos sobre tu deporte",
@@ -1055,11 +1038,6 @@
       "step3": {
         "influencer": "Define tus términos de colaboración"
       }
-    },
-    "actions": {
-      "next": "Siguiente",
-      "back": "Atrás",
-      "submit": "Enviar Perfil"
     },
     "skipModal": {
       "title": "¿Omitir Verificación?",
@@ -1568,7 +1546,9 @@
       "selectionLimitDesc": "Por favor, selecciona hasta 3 opciones por ahora. Puedes añadir más tarde."
     },
     "forgotPassword": "¿Olvidaste tu contraseña?",
-    "vibes": {
+    "selectAll": "Seleccionar Todo",
+    "vibes": "Etiquetas de Estilo / Ambiente",
+    "vibesOptions": {
       "Streetwear": "Ropa urbana",
       "Glam": "Glamour",
       "Natural": "Natural",

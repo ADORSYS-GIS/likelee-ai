@@ -959,7 +959,10 @@ export default function ReserveProfile() {
       }
       toast({
         title: "Verification Pending",
-        description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
+        description: t("reserveProfile.verification.verificationPendingDescription", {
+          kyc: kyc?.replace("_", " ") || t("reserveProfile.status.notStarted"),
+          live: live?.replace("_", " ") || t("reserveProfile.status.notStarted"),
+        }),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
     } finally {

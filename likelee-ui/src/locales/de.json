@@ -426,18 +426,6 @@
         "description": "Ein Foto, das WIRKLICH SIE repräsentiert und wie die Leute Sie erkennen.",
         "bestFor": "Ein Foto, das WIRKLICH SIE repräsentiert"
       }
-    },
-    "nav": {
-      "dashboard": "Dashboard",
-      "content": "Inhalt",
-      "likeness": "Mein Abbild",
-      "voice": "Stimme & Aufnahmen",
-      "campaigns": "Aktive Kampagnen",
-      "approvals": "Genehmigungswarteschlange",
-      "archive": "Kampagnenarchiv",
-      "contracts": "Lizenzen & Verträge",
-      "earnings": "Einnahmen",
-      "settings": "Einstellungen"
     }
   },
   "creators": "Schöpfer",
@@ -901,19 +889,11 @@
     "form": {
       "labels": {
         "fullName": "Vollständiger Name",
+        "city": "Stadt",
+        "state": "Bundesland/Land",
         "email": "E-Mail-Adresse",
         "password": "Passwort",
         "confirmPassword": "Passwort bestätigen"
-      },
-      "placeholders": {
-        "fullName": "Max Mustermann",
-        "email": "sie@beispiel.com",
-        "password": "••••••••",
-        "password": "••••••••",
-        "confirmPassword": "••••••••",
-        "schoolName": "Name der Universität",
-        "sport": "Wählen Sie Ihre Sportart",
-        "languages": "z. B. Englisch, Spanisch"
       },
       "sport": "Sportart",
       "athleteType": "Athletentyp",
@@ -948,12 +928,16 @@
         "city": "Berlin",
         "state": "BE",
         "age": "21",
-        "email": "sie@beispiel.com",
-        "password": "••••••••",
-        "confirmPassword": "••••••••",
+        "email": "z.B. max@beispiel.de",
+        "password": "********",
         "schoolName": "Name der Universität",
-        "sport": "Wählen Sie Ihre Sportart",
-        "languages": "z. B. Englisch, Spanisch",
+        "sport": "Wählen Sie Ihren Sport",
+        "languages": "z.B. Deutsch, Englisch",
+        "confirmPassword": "********",
+        "fullName": "z.B. Max Mustermann",
+        "city": "z.B. Berlin",
+        "state": "z.B. Deutschland",
+        "age": "z.B. 25",
         "handle": "@deinhandle",
         "price": "150",
         "headshot": "Bild-URL",
@@ -1043,11 +1027,6 @@
         "influencer": "Legen Sie Ihre Kooperationsbedingungen fest"
       }
     },
-    "actions": {
-      "next": "Nächste",
-      "back": "Zurück",
-      "submit": "Profil einreichen"
-    },
     "skipModal": {
       "title": "Verifizierung überspringen?",
       "description": "Ihr Profil wird gespeichert, aber Sie sind für Marken nicht sichtbar, bis Sie Ihre Identität verifiziert haben.",
@@ -1061,7 +1040,12 @@
       "skip": "Vorerst überspringen",
       "verifyAndContinue": "Verifizieren & Weiter",
       "close": "Schließen",
-      "login": "Anmelden"
+      "login": "Anmelden",
+      "signup": "Registrieren",
+      "continue": "Weiter",
+      "saveAndVerify": "Speichern & Verifizieren",
+      "startingVerification": "Starten...",
+      "verifyIdentity": "Identität jetzt überprüfen"
     },
     "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
     "warning": {
