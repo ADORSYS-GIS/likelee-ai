@@ -88,7 +88,7 @@ export default function CreatorSignupOptions() {
             return (
               <Card
                 key={creator.type}
-                className="p-8 bg-white border-2 border-black rounded-none hover:shadow-2xl transition-all cursor-pointer group"
+                className="p-8 bg-white border-2 border-black rounded-none hover:shadow-2xl transition-all cursor-pointer group flex flex-col h-full"
                 onClick={() => handleSelect(creator.type)}
               >
                 <div className="flex flex-col items-center text-center mb-6">
@@ -97,7 +97,7 @@ export default function CreatorSignupOptions() {
                   >
                     <Icon className="w-10 h-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4 min-h-[4rem] flex items-center justify-center">
                     {creator.title}
                   </h3>
                 </div>
