@@ -2511,24 +2511,11 @@ export default function CreatorDashboard() {
       });
       if (!res.ok) {
         const raw = await res.text();
-        try {
-          const err = JSON.parse(raw);
-          const msg: string = err?.message || "Upload failed";
-          const reasons: string[] = Array.isArray(err?.reasons)
-            ? err.reasons
-            : [];
-          toast({
-            variant: "destructive",
-            title: "Upload Failed",
-            description: `${msg}${reasons.length ? "\nDetails: " + reasons.join(", ") : ""}`,
-          });
-        } catch {
-          toast({
-            variant: "destructive",
-            title: "Upload Failed",
-            description: raw || "Upload failed",
-          });
-        }
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: getUserFriendlyError(raw),
+        });
         setUploadingToSection(false);
         return;
       }
