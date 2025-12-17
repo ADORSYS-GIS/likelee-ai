@@ -518,7 +518,6 @@
       "useCase_video": "Video & Entertainment",
       "useCase_other": "Other"
     },
-    "checking": "Checking...",
     "submitting": "Submitting...",
     "submit": "Submit Inquiry",
     "assistance": "For immediate assistance, email us at"
@@ -762,35 +761,31 @@
       "Casual": "Casual"
     },
     "contentTypes": {
-      "options": {
-        "Social media ads": "Social media ads",
-        "Web & banner campaigns": "Web & banner campaigns",
-        "TV / streaming commercials": "TV / streaming commercials",
-        "Film & scripted streaming": "Film & scripted streaming",
-        "Print & outdoor ads": "Print & outdoor ads",
-        "Music videos": "Music videos",
-        "Video-game / VR characters": "Video-game / VR characters",
-        "Stock photo / video libraries": "Stock photo / video libraries",
-        "Other": "Other"
-      }
+      "Social media ads": "Social media ads",
+      "Web & banner campaigns": "Web & banner campaigns",
+      "TV / streaming commercials": "TV / streaming commercials",
+      "Film & scripted streaming": "Film & scripted streaming",
+      "Print & outdoor ads": "Print & outdoor ads",
+      "Music videos": "Music videos",
+      "Video-game / VR characters": "Video-game / VR characters",
+      "Stock photo / video libraries": "Stock photo / video libraries",
+      "Other": "Other"
     },
     "industries": {
-      "options": {
-        "Fashion / Beauty": "Fashion / Beauty",
-        "Tech / Electronics": "Tech / Electronics",
-        "Sports / Fitness": "Sports / Fitness",
-        "Food / Beverage": "Food / Beverage",
-        "Film / Gaming / Music": "Film / Gaming / Music",
-        "Automotive": "Automotive",
-        "Finance / Fintech": "Finance / Fintech",
-        "Health / Wellness": "Health / Wellness",
-        "Luxury & Lifestyle": "Luxury & Lifestyle",
-        "Travel / Hospitality": "Travel / Hospitality",
-        "Education": "Education",
-        "Real Estate": "Real Estate",
-        "Entertainment": "Entertainment",
-        "Open to any industry": "Open to any industry"
-      }
+      "Fashion / Beauty": "Fashion / Beauty",
+      "Tech / Electronics": "Tech / Electronics",
+      "Sports / Fitness": "Sports / Fitness",
+      "Food / Beverage": "Food / Beverage",
+      "Film / Gaming / Music": "Film / Gaming / Music",
+      "Automotive": "Automotive",
+      "Finance / Fintech": "Finance / Fintech",
+      "Health / Wellness": "Health / Wellness",
+      "Luxury & Lifestyle": "Luxury & Lifestyle",
+      "Travel / Hospitality": "Travel / Hospitality",
+      "Education": "Education",
+      "Real Estate": "Real Estate",
+      "Entertainment": "Entertainment",
+      "Open to any industry": "Open to any industry"
     },
     "sports": {
       "Football": "Football",
@@ -1468,7 +1463,6 @@
         "genderFluid": "Gender fluid",
         "preferNotToSay": "Prefer not to say"
       },
-      "vibes": "Vibe / Style Tags",
       "validation": {
         "signInFailed": "Sign-in failed",
         "selectionLimit": "Selection Limit",

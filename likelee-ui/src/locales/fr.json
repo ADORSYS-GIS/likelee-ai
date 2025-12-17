@@ -502,7 +502,6 @@
         "startingVerification": "Démarrage...",
         "verifyIdentity": "Vérifier l'identité maintenant",
         "preparing": "Préparation...",
-        "checking": "Vérification...",
         "startLiveness": "Démarrer la vérification de vivacité",
         "livenessApproved": "Vivacité approuvée"
       },
@@ -530,7 +529,6 @@
   "common": {
     "back": "Retour",
     "continue": "Continuer",
-    "checking": "Vérification...",
     "loading": "Chargement...",
     "platforms": {
       "instagram": "Instagram",
@@ -572,35 +570,31 @@
       "Casual": "Décontracté"
     },
     "contentTypes": {
-      "options": {
-        "Social media ads": "Publicités réseaux sociaux",
-        "Web & banner campaigns": "Campagnes Web & bannières",
-        "TV / streaming commercials": "Publicités TV / streaming",
-        "Film & scripted streaming": "Films & streaming scénarisé",
-        "Print & outdoor ads": "Publicités imprimées & extérieures",
-        "Music videos": "Clips musicaux",
-        "Video-game / VR characters": "Personnages jeux vidéo / VR",
-        "Stock photo / video libraries": "Banques d'images / vidéos",
-        "Other": "Autre"
-      }
+      "Social media ads": "Publicités réseaux sociaux",
+      "Web & banner campaigns": "Campagnes Web & bannières",
+      "TV / streaming commercials": "Publicités TV / streaming",
+      "Film & scripted streaming": "Films & streaming scénarisé",
+      "Print & outdoor ads": "Publicités imprimées & extérieures",
+      "Music videos": "Clips musicaux",
+      "Video-game / VR characters": "Personnages jeux vidéo / VR",
+      "Stock photo / video libraries": "Banques d'images / vidéos",
+      "Other": "Autre"
     },
     "industries": {
-      "options": {
-        "Fashion / Beauty": "Mode / Beauté",
-        "Tech / Electronics": "Tech / Électronique",
-        "Sports / Fitness": "Sports / Fitness",
-        "Food / Beverage": "Alimentation / Boissons",
-        "Film / Gaming / Music": "Cinéma / Jeux / Musique",
-        "Automotive": "Automobile",
-        "Finance / Fintech": "Finance / Fintech",
-        "Health / Wellness": "Santé / Bien-être",
-        "Luxury & Lifestyle": "Luxe & Art de vivre",
-        "Travel / Hospitality": "Voyage / Hôtellerie",
-        "Education": "Éducation",
-        "Real Estate": "Immobilier",
-        "Entertainment": "Divertissement",
-        "Open to any industry": "Ouvert à toute industrie"
-      }
+      "Fashion / Beauty": "Mode / Beauté",
+      "Tech / Electronics": "Tech / Électronique",
+      "Sports / Fitness": "Sports / Fitness",
+      "Food / Beverage": "Alimentation / Boissons",
+      "Film / Gaming / Music": "Cinéma / Jeux / Musique",
+      "Automotive": "Automobile",
+      "Finance / Fintech": "Finance / Fintech",
+      "Health / Wellness": "Santé / Bien-être",
+      "Luxury & Lifestyle": "Luxe & Art de vivre",
+      "Travel / Hospitality": "Voyage / Hôtellerie",
+      "Education": "Éducation",
+      "Real Estate": "Immobilier",
+      "Entertainment": "Divertissement",
+      "Open to any industry": "Ouvert à toute industrie"
     },
     "sports": {
       "Football": "Football américain",

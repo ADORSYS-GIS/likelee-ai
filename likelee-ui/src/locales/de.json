@@ -498,7 +498,6 @@
     "socialProfilePlaceholder": "https://instagram.com/ihrprofil",
     "saving": "Speichern...",
     "continue": "Weiter",
-    "checking": "Überprüfung...",
     "back": "Zurück",
     "submitting": "Wird gesendet...",
     "submit": "Senden"
@@ -863,7 +862,6 @@
         "startingVerification": "Starte...",
         "verifyIdentity": "Identität jetzt überprüfen",
         "preparing": "Vorbereitung...",
-        "checking": "Überprüfung...",
         "startLiveness": "Liveness-Prüfung starten",
         "livenessApproved": "Liveness genehmigt"
       }
@@ -1354,6 +1352,19 @@
     "calendarLink": "Sie erhalten einen Kalenderlink, um einen Anruf mit unserem Team zu vereinbaren.",
     "completeKycButton": "KYC abschließen"
   },
+  "creatorSignupOptions.main.title": "Welche Art von Schöpfer sind Sie?",
+  "creatorSignupOptions.main.subtitle": "Wählen Sie die Option, die Sie am besten beschreibt, um mit der richtigen Profileinrichtung zu beginnen.",
+  "creatorSignupOptions.influencer.title": "Influencer / UGC-Ersteller",
+  "creatorSignupOptions.influencer.description": "Sie erstellen Inhalte, haben ein Publikum oder arbeiten mit Marken zusammen.",
+  "creatorSignupOptions.model_actor.title": "Unabhängiges Model oder Schauspieler",
+  "creatorSignupOptions.model_actor.description": "Sie machen Castings, Kampagnen oder Studioaufnahmen – und möchten verifizierten Bildschutz + Lizenzmöglichkeiten.",
+  "creatorSignupOptions.athlete.title": "Athlet (NIL & Pro)",
+  "creatorSignupOptions.athlete.description": "Sie sind ein College- oder Profisportler, der seine eigenen Namens-, Bild- und Ähnlichkeitsgeschäfte verwaltet.",
+  "creatorSignupOptions.selectButton": "Auswählen",
+  "creatorSignupOptions.authModal.title": "Loslegen",
+  "creatorSignupOptions.authModal.selected": "Ausgewählt:",
+  "creatorSignupOptions.authModal.signUpAs": "Anmelden als",
+  "creatorSignupOptions.authModal.alreadyHaveAccount": "Ich habe bereits ein Konto",
   "faces.hero.flipper.0.line1": "Dein Abbild",
   "faces.hero.flipper.0.line2": "Unbegrenzte Einnahmen",
   "faces.hero.flipper.1.line1": "Deine Zustimmung",
@@ -1547,35 +1558,31 @@
       "Casual": "Lässig"
     },
     "contentTypes": {
-      "options": {
-        "Social media ads": "Social-Media-Anzeigen",
-        "Web & banner campaigns": "Web- & Bannerkampagnen",
-        "TV / streaming commercials": "TV / Streaming-Werbespots",
-        "Film & scripted streaming": "Film & gescriptetes Streaming",
-        "Print & outdoor ads": "Print- & Außenwerbung",
-        "Music videos": "Musikvideos",
-        "Video-game / VR characters": "Videospiel- / VR-Charaktere",
-        "Stock photo / video libraries": "Stockfoto- / Videobibliotheken",
-        "Other": "Sonstiges"
-      }
+      "Social media ads": "Social-Media-Anzeigen",
+      "Web & banner campaigns": "Web- & Banner-Kampagnen",
+      "TV / streaming commercials": "TV- / Streaming-Werbespots",
+      "Film & scripted streaming": "Film & geskriptetes Streaming",
+      "Print & outdoor ads": "Print- & Außenwerbung",
+      "Music videos": "Musikvideos",
+      "Video-game / VR characters": "Videospiel- / VR-Charaktere",
+      "Stock photo / video libraries": "Stockfoto- / Videobibliotheken",
+      "Other": "Andere"
     },
     "industries": {
-      "options": {
-        "Fashion / Beauty": "Mode / Schönheit",
-        "Tech / Electronics": "Technik / Elektronik",
-        "Sports / Fitness": "Sport / Fitness",
-        "Food / Beverage": "Lebensmittel / Getränke",
-        "Film / Gaming / Music": "Film / Spiel / Musik",
-        "Automotive": "Automobil",
-        "Finance / Fintech": "Finanzen / Fintech",
-        "Health / Wellness": "Gesundheit / Wellness",
-        "Luxury & Lifestyle": "Luxus & Lifestyle",
-        "Travel / Hospitality": "Reisen / Gastgewerbe",
-        "Education": "Bildung",
-        "Real Estate": "Immobilien",
-        "Entertainment": "Unterhaltung",
-        "Open to any industry": "Offen für jede Branche"
-      }
+      "Fashion / Beauty": "Mode / Schönheit",
+      "Tech / Electronics": "Technologie / Elektronik",
+      "Sports / Fitness": "Sport / Fitness",
+      "Food / Beverage": "Lebensmittel / Getränke",
+      "Film / Gaming / Music": "Film / Gaming / Musik",
+      "Automotive": "Automobil",
+      "Finance / Fintech": "Finanzen / Fintech",
+      "Health / Wellness": "Gesundheit / Wellness",
+      "Luxury & Lifestyle": "Luxus & Lifestyle",
+      "Travel / Hospitality": "Reisen / Gastgewerbe",
+      "Education": "Bildung",
+      "Real Estate": "Immobilien",
+      "Entertainment": "Unterhaltung",
+      "Open to any industry": "Offen für jede Branche"
     },
     "sports": {
       "Football": "American Football",
