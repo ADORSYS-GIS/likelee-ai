@@ -141,7 +141,8 @@
         "view": "Ver",
         "replace": "Reemplazar",
         "delete": "Eliminar",
-        "upload": "Subir"
+        "upload": "Subir",
+        "uploadImage": "Subir imagen"
       },
       "imageStatus": {
         "uploaded": "SUBIDO",
@@ -162,6 +163,9 @@
       "likenessRights": "Derechos de imagen",
       "confirmed": "Confirmado",
       "notStarted": "No iniciado",
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
       "viewVerification": "Ver detalles de verificación",
       "updateRights": "Actualizar acuerdo de derechos",
       "completeVerification": "Completar verificación",

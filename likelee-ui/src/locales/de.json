@@ -143,7 +143,8 @@
         "view": "Ansehen",
         "replace": "Ersetzen",
         "delete": "Löschen",
-        "upload": "Hochladen"
+        "upload": "Hochladen",
+        "uploadImage": "Bild hochladen"
       },
       "imageStatus": {
         "uploaded": "HOCHGELADEN",
@@ -164,6 +165,9 @@
       "likenessRights": "Abbildrechte",
       "confirmed": "Bestätigt",
       "notStarted": "Nicht begonnen",
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt",
       "viewVerification": "Verifizierungsdetails anzeigen",
       "updateRights": "Rechtsvereinbarung aktualisieren",
       "completeVerification": "Verifizierung abschließen",

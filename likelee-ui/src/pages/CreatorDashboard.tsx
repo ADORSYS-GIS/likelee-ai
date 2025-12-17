@@ -2957,7 +2957,7 @@ export default function CreatorDashboard() {
                             className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                           >
                             <Upload className="w-4 h-4 mr-2" />
-                            Upload Image
+                            {t("creatorDashboard.myLikenessSection.imageActions.uploadImage")}
                           </Button>
                         )}
                       </div>
@@ -3069,13 +3069,7 @@ export default function CreatorDashboard() {
                 }
               >
                 {creator?.kyc_status
-                  ? creator.kyc_status
-                    .replace(/_/g, " ")
-                    .split(" ")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1),
-                    )
-                    .join(" ")
+                  ? t(`creatorDashboard.verificationStatus.${creator.kyc_status}`)
                   : t("creatorDashboard.verificationStatus.notStarted")}
               </Badge>
             </div>

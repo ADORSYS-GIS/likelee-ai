@@ -1455,7 +1455,8 @@
         "view": "View",
         "replace": "Replace",
         "delete": "Delete",
-        "upload": "Upload"
+        "upload": "Upload",
+        "uploadImage": "Upload Image"
       },
       "imageStatus": {
         "uploaded": "UPLOADED",
@@ -1476,6 +1477,9 @@
       "likenessRights": "Likeness Rights",
       "confirmed": "Confirmed",
       "notStarted": "Not Started",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
       "viewVerification": "View Verification Details",
       "updateRights": "Update Rights Agreement",
       "completeVerification": "Complete Verification",

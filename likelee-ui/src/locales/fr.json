@@ -84,7 +84,8 @@
         "view": "Voir",
         "replace": "Remplacer",
         "delete": "Supprimer",
-        "upload": "Télécharger"
+        "upload": "Télécharger",
+        "uploadImage": "Télécharger l'image"
       },
       "imageStatus": {
         "uploaded": "TÉLÉCHARGÉ",
@@ -105,6 +106,9 @@
       "likenessRights": "Droits d'image",
       "confirmed": "Confirmé",
       "notStarted": "Non commencé",
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
       "viewVerification": "Voir les détails de vérification",
       "updateRights": "Mettre à jour l'accord de droits",
       "completeVerification": "Compléter la vérification",
