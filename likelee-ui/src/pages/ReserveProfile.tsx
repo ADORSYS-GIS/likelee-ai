@@ -46,6 +46,9 @@ import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
+import { getUserFriendlyError } from "@/utils";
+import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -679,6 +682,9 @@ export default function ReserveProfile() {
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(() => {
     return localStorage.getItem("reserve_profileId") || null;
   });
@@ -735,7 +741,6 @@ export default function ReserveProfile() {
         brand_categories: [],
         bio: "",
       };
-  });
 
   useEffect(() => {
     // Security: Do not persist passwords to localStorage
@@ -891,7 +896,10 @@ export default function ReserveProfile() {
       setKycProvider(data.provider || "veriff");
       setKycSessionUrl(data.session_url);
       setKycStatus("pending");
-      setLivenessStatus("pending");
+      // Only reset liveness status if it's not already approved
+      if (livenessStatus !== "approved") {
+        setLivenessStatus("pending");
+      }
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
       toast({
@@ -1072,7 +1080,7 @@ export default function ReserveProfile() {
     }
   };
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = (step / totalSteps) * 100;
 
   // Verification state
@@ -1172,6 +1180,7 @@ export default function ReserveProfile() {
       if (creatorType === "athlete")
         return t("reserveProfile.stepTitles.step3.athlete");
     }
+    if (step === 5) return "Terms & Agreements";
     return "";
   };
 
@@ -1184,11 +1193,8 @@ export default function ReserveProfile() {
     if (params.get("verified") === "1") {
       verifyAndContinue();
     }
-    // Poll every 5s while on step 4
-    const interval = setInterval(() => {
-      refreshVerificationStatus();
-    }, 5000);
-    return () => clearInterval(interval);
+    // Polling was removed from this page to prevent interference with the liveness check.
+    // It will be moved to the CreatorDashboard.
   }, [step]);
 
   // Initial profile creation (Step 1)
@@ -1433,6 +1439,24 @@ export default function ReserveProfile() {
           description: getUserFriendlyError(e, t),
           variant: "destructive",
         });
+        const msg = (e?.message || "").toLowerCase();
+        if (
+          msg.includes("already registered") ||
+          msg.includes("already exists")
+        ) {
+          toast({
+            title: "Email Already Registered",
+            description:
+              "This email is already registered. Please log in instead.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+        } else {
+          toast({
+            title: "Sign-up Failed",
+            description: getUserFriendlyError(e),
+            variant: "destructive",
+          });
+        }
       } finally {
         setFirstContinueLoading(false);
       }
@@ -3402,7 +3426,7 @@ export default function ReserveProfile() {
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
                           setShowSkipModal(false);
-                          finalizeProfile();
+                          setStep(5);
                         }}
                       >
                         {t("reserveProfile.skipModal.confirmSkip")}
@@ -3411,6 +3435,77 @@ export default function ReserveProfile() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Step 5: Terms & Agreements */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  Terms & Agreements
+                </h3>
+                <p className="text-gray-700">
+                  Please review and agree to our policies to complete your
+                  registration.
+                </p>
+              </div>
+
+              <div className="border-2 border-gray-200 bg-white">
+                <ScrollArea className="h-96 p-4">
+                  <PrivacyPolicyContent />
+                </ScrollArea>
+              </div>
+
+              <div className="p-4 border-2 border-gray-200 bg-gray-50">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) =>
+                      setAgreedToTerms(checked as boolean)
+                    }
+                    className="mt-1 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the{" "}
+                      <a
+                        href="https://likelee.ai/privacypolicy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#32C8D1] hover:underline font-bold"
+                      >
+                        Privacy Policy
+                      </a>
+                    </label>
+                    <p className="text-sm text-gray-500">
+                      You must agree to the privacy policy to create your
+                      account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setStep(4)}
+                  variant="outline"
+                  className="w-1/3 h-12 border-2 border-black rounded-none"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={finalizeProfile}
+                  disabled={!agreedToTerms}
+                  className="w-2/3 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Complete Registration
+                </Button>
+              </div>
             </div>
           )}
         </Card>

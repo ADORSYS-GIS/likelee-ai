@@ -28,6 +28,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 
 const videoModels = [
   {
@@ -187,7 +188,7 @@ export default function StudioVideo() {
       } else {
         toast({
           title: "Error",
-          description: `Generation failed: ${error.message || "An unknown error occurred."}`,
+          description: getUserFriendlyError(error),
           variant: "destructive",
         });
       }
@@ -282,7 +283,7 @@ export default function StudioVideo() {
       console.error("Error uploading file:", error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload image. Please try again.",
+        description: getUserFriendlyError(error),
         variant: "destructive",
       });
     }
