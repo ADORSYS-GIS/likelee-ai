@@ -948,6 +948,7 @@
       "bioPlaceholder": "Cuéntale a las marcas un poco sobre ti...",
       "handle": "Usuario",
       "primaryPlatform": "Plataforma principal",
+      "gender": "¿Cómo te identificas?",
       "raceEthnicity": "Raza/Etnia (seleccione todas las que correspondan)",
       "save": "Guardar y Continuar a Verificación",
       "photos": {

@@ -2191,7 +2191,7 @@ export default function ReserveProfile() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    {t("reserveProfile.form.vibes")}
+                    {t("reserveProfile.form.gender")}
                   </Label>
                   <RadioGroup
                     value={formData.gender}
@@ -2686,7 +2686,7 @@ export default function ReserveProfile() {
                               htmlFor={type}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {t(`common.contentTypes.options.${type}`, type)}
+                              {t(`common.contentTypes.${type}`, type)}
                             </label>
                           </div>
                         ))}
@@ -2763,10 +2763,7 @@ export default function ReserveProfile() {
                               htmlFor={industry}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {t(
-                                `common.industries.options.${industry}`,
-                                industry,
-                              )}
+                              {t(`common.industries.${industry}`, industry)}
                             </label>
                           </div>
                         ))}

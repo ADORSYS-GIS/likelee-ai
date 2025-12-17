@@ -1530,6 +1530,7 @@
       "visibility": "Profile Visibility",
       "handle": "Handle",
       "primaryPlatform": "Primary Platform",
+      "gender": "How do you identify?",
       "raceEthnicity": "Race/Ethnicity (select all that apply)",
       "vibes": "Vibe / Style Tags",
       "save": "Save & Continue to Verification",
