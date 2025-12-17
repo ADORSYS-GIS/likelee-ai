@@ -688,6 +688,24 @@
         "description": "Una foto que realmente TE representa y cómo te reconocen las personas.",
         "bestFor": "Una foto que realmente TE representa"
       }
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/sem",
+        "cancel": "Cancelar",
+        "save": "Guardar Tarifas",
+        "saving": "Guardando...",
+        "contentTitle": "Personalizar tarifas de tipo de contenido",
+        "industryTitle": "Personalizar tarifas de industria",
+        "contentDesc": "Establezca tarifas semanales específicas para diferentes tipos de contenido. Si se deja en blanco, se aplicará su tarifa base ({rate}).",
+        "industryDesc": "Establezca tarifas semanales específicas para diferentes industrias. Si se deja en blanco, se aplicará su tarifa base ({rate}).",
+        "noContentTitle": "No se seleccionaron tipos de contenido.",
+        "noContentMsg": "Por favor regrese a \"Mis Reglas\" y seleccione primero los tipos de contenido a los que está abierto.",
+        "noIndustryTitle": "No se seleccionaron industrias.",
+        "noIndustryMsg": "Por favor regrese a \"Mis Reglas\" y seleccione primero las industrias con las que trabaja.",
+        "contentHeader": "Tipos de Contenido",
+        "industryHeader": "Industrias"
+      }
     }
   },
   "creators": "Creadores",
@@ -1809,7 +1827,16 @@
       "Explicit/Adult Content": "Contenido explícito/adulto",
       "Pharmaceutical Claims": "Afirmaciones farmacéuticas",
       "Financial/Investment Advice": "Asesoramiento financiero/inversión",
-      "Other": "Otros"
+      "Other": "Otros",
+      "socialMediaAds": "Anuncios en redes sociales",
+      "webBanner": "Campañas web y banners",
+      "tvStreaming": "Comerciales de TV / streaming",
+      "filmScripted": "Películas y series guionizadas",
+      "printOutdoor": "Anuncios impresos y exteriores",
+      "musicVideos": "Videos musicales",
+      "videoGameVR": "Personajes de videojuegos / RV",
+      "stockLibraries": "Bibliotecas de fotos / videos de stock",
+      "educationalNonprofit": "Spots educativos / sin fines de lucro"
     },
     "industries": {
       "Fashion / Beauty": "Moda / Belleza",
@@ -1827,8 +1854,16 @@
       "Entertainment": "Entretenimiento",
       "Open to any industry": "Abierto a cualquier industria",
       "sportsFitness": "Deportes / Fitness",
-      "foodBeverage": "Alimentos y Bebidas",
-      "tech": "Tecnología"
+      "foodBeverage": "Alimentos / Bebidas",
+      "tech": "Tecnología",
+      "fashionBeauty": "Moda / Belleza",
+      "techElectronics": "Tecnología / Electrónica",
+      "filmGamingMusic": "Cine / Juegos / Música",
+      "automotive": "Automotriz",
+      "financeFintech": "Finanzas / Fintech",
+      "healthWellness": "Salud / Bienestar",
+      "luxuryLifestyle": "Lujo y Estilo de vida",
+      "travelHospitality": "Viajes / Hospitalidad"
     },
     "sports": {
       "Football": "Fútbol Americano",

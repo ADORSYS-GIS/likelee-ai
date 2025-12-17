@@ -690,6 +690,24 @@
         "description": "Ein Foto, das WIRKLICH SIE repräsentiert und wie die Leute Sie erkennen.",
         "bestFor": "Ein Foto, das WIRKLICH SIE repräsentiert"
       }
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/Wo",
+        "cancel": "Abbrechen",
+        "save": "Tarife speichern",
+        "saving": "Speichert...",
+        "contentTitle": "Inhaltstyp-Tarife anpassen",
+        "industryTitle": "Branchentarife anpassen",
+        "contentDesc": "Legen Sie spezifische Wochentarife für verschiedene Inhaltstypen fest. Wenn leer, gilt Ihr Basistarif ({rate}).",
+        "industryDesc": "Legen Sie spezifische Wochentarife für verschiedene Branchen fest. Wenn leer, gilt Ihr Basistarif ({rate}).",
+        "noContentTitle": "Keine Inhaltstypen ausgewählt.",
+        "noContentMsg": "Bitte gehen Sie zu \"Meine Regeln\" zurück und wählen Sie zuerst die Inhaltstypen aus, für die Sie offen sind.",
+        "noIndustryTitle": "Keine Branchen ausgewählt.",
+        "noIndustryMsg": "Bitte gehen Sie zu \"Meine Regeln\" zurück und wählen Sie zuerst die Branchen aus, mit denen Sie arbeiten.",
+        "contentHeader": "Inhaltstypen",
+        "industryHeader": "Branchen"
+      }
     }
   },
   "creators": "Schöpfer",
@@ -1805,7 +1823,16 @@
       "Explicit/Adult Content": "Explizite/Erwachseneninhalte",
       "Pharmaceutical Claims": "Pharmazeutische Behauptungen",
       "Financial/Investment Advice": "Finanz-/Anlageberatung",
-      "Other": "Andere"
+      "Other": "Andere",
+      "socialMediaAds": "Social-Media-Anzeigen",
+      "webBanner": "Web- & Banner-Kampagnen",
+      "tvStreaming": "TV- / Streaming-Werbespots",
+      "filmScripted": "Film & geskriptetes Streaming",
+      "printOutdoor": "Print- & Außenwerbung",
+      "musicVideos": "Musikvideos",
+      "videoGameVR": "Videospiel- / VR-Charaktere",
+      "stockLibraries": "Stockfoto- / Videobibliotheken",
+      "educationalNonprofit": "Bildungs- / Non-Profit-Spots"
     },
     "industries": {
       "Fashion / Beauty": "Mode / Schönheit",
@@ -1823,8 +1850,16 @@
       "Entertainment": "Unterhaltung",
       "Open to any industry": "Offen für jede Branche",
       "sportsFitness": "Sport / Fitness",
-      "foodBeverage": "Lebensmittel & Getränke",
-      "tech": "Technologie"
+      "foodBeverage": "Lebensmittel / Getränke",
+      "tech": "Technologie",
+      "fashionBeauty": "Mode / Schönheit",
+      "techElectronics": "Technologie / Elektronik",
+      "filmGamingMusic": "Film / Gaming / Musik",
+      "automotive": "Automobil",
+      "financeFintech": "Finanzen / Fintech",
+      "healthWellness": "Gesundheit / Wellness",
+      "luxuryLifestyle": "Luxus & Lifestyle",
+      "travelHospitality": "Reisen / Gastgewerbe"
     },
     "sports": {
       "Football": "American Football",

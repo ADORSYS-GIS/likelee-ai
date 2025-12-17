@@ -780,7 +780,16 @@
       "Explicit/Adult Content": "Explicit/Adult Content",
       "Pharmaceutical Claims": "Pharmaceutical Claims",
       "Financial/Investment Advice": "Financial/Investment Advice",
-      "Other": "Other"
+      "Other": "Other",
+      "socialMediaAds": "Social-media ads",
+      "webBanner": "Web & banner campaigns",
+      "tvStreaming": "TV / streaming commercials",
+      "filmScripted": "Film & scripted streaming",
+      "printOutdoor": "Print & outdoor ads",
+      "musicVideos": "Music videos",
+      "videoGameVR": "Video-game / VR characters",
+      "stockLibraries": "Stock photo / video libraries",
+      "educationalNonprofit": "Educational / nonprofit spots"
     },
     "industries": {
       "Fashion / Beauty": "Fashion / Beauty",
@@ -798,8 +807,16 @@
       "Entertainment": "Entertainment",
       "Open to any industry": "Open to any industry",
       "sportsFitness": "Sports / Fitness",
-      "foodBeverage": "Food & Beverage",
-      "tech": "Tech"
+      "foodBeverage": "Food / Beverage",
+      "tech": "Tech",
+      "fashionBeauty": "Fashion / Beauty",
+      "techElectronics": "Tech / Electronics",
+      "filmGamingMusic": "Film / Gaming / Music",
+      "automotive": "Automotive",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Health / Wellness",
+      "luxuryLifestyle": "Luxury & Lifestyle",
+      "travelHospitality": "Travel / Hospitality"
     },
     "sports": {
       "Football": "Football",
@@ -2016,6 +2033,24 @@
       "bestFor": "Best For:",
       "view": "View",
       "replace": "Replace"
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/wk",
+        "cancel": "Cancel",
+        "save": "Save Rates",
+        "saving": "Saving...",
+        "contentTitle": "Customize Content Type Rates",
+        "industryTitle": "Customize Industry Rates",
+        "contentDesc": "Set specific weekly rates for different content types. If left blank, your base rate ({rate}) will apply.",
+        "industryDesc": "Set specific weekly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "noContentTitle": "No content types selected.",
+        "noContentMsg": "Please go back to \"My Rules\" and select the content types you re open to first.",
+        "noIndustryTitle": "No industries selected.",
+        "noIndustryMsg": "Please go back to \"My Rules\" and select the industries you work with first.",
+        "contentHeader": "Content Types",
+        "industryHeader": "Industries"
+      }
     }
   },
   "imageSections": {

@@ -6608,8 +6608,8 @@ export default function CreatorDashboard() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {showRatesModal === "content"
-                ? "Customize Content Type Rates"
-                : "Customize Industry Rates"}
+                ? t("creatorDashboard.rules.modals.contentTitle")
+                : t("creatorDashboard.rules.modals.industryTitle")}
             </DialogTitle>
           </DialogHeader>
 
@@ -6620,10 +6620,9 @@ export default function CreatorDashboard() {
             <Alert className="bg-blue-50 border border-blue-200 mb-6">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                Set specific weekly rates for different{" "}
-                {showRatesModal === "content" ? "content types" : "industries"}.
-                If left blank, your base rate (${creator.price_per_week}/week)
-                will apply.
+                {showRatesModal === "content"
+                  ? t("creatorDashboard.rules.modals.contentDesc", { rate: `$${creator.price_per_week}/week` })
+                  : t("creatorDashboard.rules.modals.industryDesc", { rate: `$${creator.price_per_week}/week` })}
               </AlertDescription>
             </Alert>
 
@@ -6637,7 +6636,7 @@ export default function CreatorDashboard() {
                 <div className="mb-8">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Video className="w-5 h-5 text-[#32C8D1]" />
-                    Content Types
+                    {t("creatorDashboard.rules.modals.contentHeader")}
                   </h4>
                   <div className="grid gap-4">
                     {creator.content_types
@@ -6648,13 +6647,27 @@ export default function CreatorDashboard() {
                             r.rate_type === "content_type" &&
                             r.rate_name === type,
                         );
+                        // Simple mapping for translation key
+                        const keyMap: Record<string, string> = {
+                          "Social-media ads": "socialMediaAds",
+                          "Web & banner campaigns": "webBanner",
+                          "TV / streaming commercials": "tvStreaming",
+                          "Film & scripted streaming": "filmScripted",
+                          "Print & outdoor ads": "printOutdoor",
+                          "Music videos": "musicVideos",
+                          "Video-game / VR characters": "videoGameVR",
+                          "Stock photo / video libraries": "stockLibraries",
+                          "Educational / nonprofit spots": "educationalNonprofit"
+                        };
+                        const info = keyMap[type] ? t(`common.contentTypes.${keyMap[type]}`) : type;
+
                         return (
                           <div
                             key={type}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                           >
                             <Label className="font-medium text-gray-700">
-                              {type}
+                              {info}
                             </Label>
                             <div className="flex items-center gap-2 w-48">
                               <span className="text-gray-500">$</span>
@@ -6673,7 +6686,7 @@ export default function CreatorDashboard() {
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">/wk</span>
+                              <span className="text-gray-500 text-sm">{t("creatorDashboard.rules.modals.perWeek")}</span>
                             </div>
                           </div>
                         );
@@ -6684,9 +6697,7 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>No content types selected.</strong> Please go back
-                    to "My Rules" and select the content types you're open to
-                    first.
+                    <strong>{t("creatorDashboard.rules.modals.noContentTitle")}</strong> {t("creatorDashboard.rules.modals.noContentMsg")}
                   </AlertDescription>
                 </Alert>
               ))}
@@ -6698,7 +6709,7 @@ export default function CreatorDashboard() {
                 <div className="mb-6">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Briefcase className="w-5 h-5 text-purple-500" />
-                    Industries
+                    {t("creatorDashboard.rules.modals.industryHeader")}
                   </h4>
                   <div className="grid gap-4">
                     {creator.industries
@@ -6708,13 +6719,28 @@ export default function CreatorDashboard() {
                           (r) =>
                             r.rate_type === "industry" && r.rate_name === ind,
                         );
+                        // Simple mapping for translation key
+                        const keyMap: Record<string, string> = {
+                          "Fashion / Beauty": "fashionBeauty",
+                          "Tech / Electronics": "techElectronics",
+                          "Sports / Fitness": "sportsFitness",
+                          "Food / Beverage": "foodBeverage",
+                          "Film / Gaming / Music": "filmGamingMusic",
+                          "Automotive": "automotive",
+                          "Finance / Fintech": "financeFintech",
+                          "Health / Wellness": "healthWellness",
+                          "Luxury & Lifestyle": "luxuryLifestyle",
+                          "Travel / Hospitality": "travelHospitality"
+                        };
+                        const info = keyMap[ind] ? t(`common.industries.${keyMap[ind]}`) : ind;
+
                         return (
                           <div
                             key={ind}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                           >
                             <Label className="font-medium text-gray-700">
-                              {ind}
+                              {info}
                             </Label>
                             <div className="flex items-center gap-2 w-48">
                               <span className="text-gray-500">$</span>
@@ -6733,7 +6759,7 @@ export default function CreatorDashboard() {
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">/wk</span>
+                              <span className="text-gray-500 text-sm">{t("creatorDashboard.rules.modals.perWeek")}</span>
                             </div>
                           </div>
                         );
@@ -6744,8 +6770,7 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>No industries selected.</strong> Please go back to
-                    "My Rules" and select the industries you work with first.
+                    <strong>{t("creatorDashboard.rules.modals.noIndustryTitle")}</strong> {t("creatorDashboard.rules.modals.noIndustryMsg")}
                   </AlertDescription>
                 </Alert>
               ))}
@@ -6757,7 +6782,7 @@ export default function CreatorDashboard() {
                 onClick={() => setShowRatesModal(null)}
                 className="border-2 border-gray-300"
               >
-                Cancel
+                {t("creatorDashboard.rules.modals.cancel")}
               </Button>
               {/* Only show Save Rates button if there are items to customize */}
               {((showRatesModal === "content" &&
@@ -6774,10 +6799,10 @@ export default function CreatorDashboard() {
                     {savingRates ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
+                        {t("creatorDashboard.rules.modals.saving")}
                       </>
                     ) : (
-                      "Save Rates"
+                      t("creatorDashboard.rules.modals.save")
                     )}
                   </Button>
                 )}

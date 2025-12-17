@@ -542,6 +542,24 @@
         "thisMonth": "Ce mois",
         "actions": "Actions"
       }
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/sem",
+        "cancel": "Annuler",
+        "save": "Enregistrer les tarifs",
+        "saving": "Enregistrement...",
+        "contentTitle": "Personnaliser les tarifs des types de contenu",
+        "industryTitle": "Personnaliser les tarifs de l industrie",
+        "contentDesc": "Définissez des tarifs hebdomadaires spécifiques pour différents types de contenu. Si laissé vide, votre tarif de base ({rate}) s appliquera.",
+        "industryDesc": "Définissez des tarifs hebdomadaires spécifiques pour différentes industries. Si laissé vide, votre tarif de base ({rate}) s appliquera.",
+        "noContentTitle": "Aucun type de contenu sélectionné.",
+        "noContentMsg": "Veuillez retourner à \"Mes règles\" et sélectionner d abord les types de contenu auxquels vous êtes ouvert.",
+        "noIndustryTitle": "Aucune industrie sélectionnée.",
+        "noIndustryMsg": "Veuillez retourner à \"Mes règles\" et sélectionner d abord les industries avec lesquelles vous travaillez.",
+        "contentHeader": "Types de contenu",
+        "industryHeader": "Industries"
+      }
     }
   },
   "reserveProfile": {
@@ -1099,7 +1117,16 @@
       "Explicit/Adult Content": "Contenu explicite/adulte",
       "Pharmaceutical Claims": "Allégations pharmaceutiques",
       "Financial/Investment Advice": "Conseils financiers/investissement",
-      "Other": "Autre"
+      "Other": "Autre",
+      "socialMediaAds": "Publicités réseaux sociaux",
+      "webBanner": "Campagnes Web et bannières",
+      "tvStreaming": "Publicités TV / streaming",
+      "filmScripted": "Films et séries scriptées",
+      "printOutdoor": "Publicités imprimées et extérieures",
+      "musicVideos": "Clips musicaux",
+      "videoGameVR": "Personnages de jeux vidéo / VR",
+      "stockLibraries": "Banques d'images / vidéos",
+      "educationalNonprofit": "Spots éducatifs / à but non lucratif"
     },
     "industries": {
       "Fashion / Beauty": "Mode / Beauté",
@@ -1117,8 +1144,16 @@
       "Entertainment": "Divertissement",
       "Open to any industry": "Ouvert à toute industrie",
       "sportsFitness": "Sport / Fitness",
-      "foodBeverage": "Alimentation et Boissons",
-      "tech": "Tech"
+      "foodBeverage": "Alimentation / Boissons",
+      "tech": "Tech",
+      "fashionBeauty": "Mode / Beauté",
+      "techElectronics": "Tech / Électronique",
+      "filmGamingMusic": "Cinéma / Jeux / Musique",
+      "automotive": "Automobile",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Santé / Bien-être",
+      "luxuryLifestyle": "Luxe & Art de vivre",
+      "travelHospitality": "Voyage / Hôtellerie"
     },
     "sports": {
       "Football": "Football américain",
