@@ -175,6 +175,18 @@
       "revokeLicense": "Révoquer la Licence",
       "messageBrand": "Envoyer un Message à la Marque",
       "viewFullLegalContract": "Voir le Contrat Légal Complet"
+    },
+    "nav": {
+      "dashboard": "Tableau de Bord",
+      "content": "Contenu",
+      "likeness": "Mon Apparence",
+      "voice": "Voix et Enregistrements",
+      "campaigns": "Campagnes Actives",
+      "approvals": "File d'attente d'approbation",
+      "archive": "Archives des Campagnes",
+      "contracts": "Licences et Contrats",
+      "earnings": "Gains",
+      "settings": "Paramètres"
     }
   },
   "reserveProfile": {
@@ -527,7 +539,199 @@
       "sessionError": "Erreur de session de vivacité"
     }
   },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Quel type de créateur êtes-vous ?",
+      "subtitle": "Choisissez l'option qui vous décrit le mieux pour commencer avec la bonne configuration de profil."
+    },
+    "influencer": {
+      "title": "Influenceur / Créateur de contenu UGC",
+      "description": "Vous créez du contenu, avez une audience ou collaborez avec des marques."
+    },
+    "model_actor": {
+      "title": "Mannequin ou Acteur Indépendant",
+      "description": "Vous passez des castings, faites des campagnes ou des shootings studio — et voulez protéger votre image + des opportunités de licence."
+    },
+    "athlete": {
+      "title": "Athlète (NIL & Pro)",
+      "description": "Vous êtes un athlète universitaire ou professionnel gérant vos propres droits de nom, image et ressemblance."
+    },
+    "selectButton": "Sélectionner",
+    "authModal": {
+      "title": "Commencer",
+      "selected": "Sélectionné :",
+      "signUpAs": "S'inscrire en tant que",
+      "alreadyHaveAccount": "J'ai déjà un compte"
+    }
+  },
+  "faces": {
+    "hero": {
+      "flipper": [
+        {
+          "line1": "Votre Apparence",
+          "line2": "Gains Illimités"
+        },
+        {
+          "line1": "Votre Consentement",
+          "line2": "Contrôle Total"
+        },
+        {
+          "line1": "Vos Conditions",
+          "line2": "Revenu Récurrent"
+        }
+      ],
+      "alert": "Gagnez des royalties récurrentes grâce à votre apparence. Pas de paiements uniques. Rejoignez la première cohorte de créateurs, d'athlètes et de talents vérifiés qui licencient leur image selon leurs conditions.",
+      "subtitle": "Licenciez votre apparence aux marques, studios et agences. Fixez vos tarifs. Gardez un contrôle total. Gagnez chaque mois qu'elle est utilisée.",
+      "signUpButton": "S'inscrire",
+      "forYouButton": "Pour Vous"
+    },
+    "meta": {
+      "title": "Créateurs - Monétisez Votre Apparence",
+      "description": "Athlètes, influenceurs, acteurs et mannequins - gagnez des revenus récurrents grâce à votre jumeau numérique. Fixez vos propres tarifs, approuvez l'utilisation et suivez les royalties.",
+      "serviceType": "Gestion de l'Apparence Numérique",
+      "audienceType": "Créateurs, Athlètes, Influenceurs, Mannequins, Acteurs"
+    },
+    "whyChoose": {
+      "title": "Pourquoi les Créateurs, Athlètes et Talents Choisissent Likelee",
+      "subtitle1": "Le moyen le plus rapide d'offrir des caméos IA sûrs pour les marques et de gagner des royalties à chaque utilisation.",
+      "subtitle2": "Chaque créateur sur Likelee licencie son apparence sous des droits clairs et limités dans le temps et conserve la capacité de modifier, mettre en pause ou retirer les permissions à tout moment.",
+      "cards": [
+        {
+          "title": "Revenus Récurrents, Pas de Gigs Uniques",
+          "description": "Fixez vos tarifs. Gagnez un acompte mensuel pour chaque campagne active utilisant votre apparence. Un shooting à 500 $ était tout ce qu'il y avait. Maintenant, cela paie mois après mois."
+        },
+        {
+          "title": "Contrôle Total",
+          "description": "Vous approuvez chaque utilisation. Mettez en pause les campagnes à tout moment. Révocquez les droits en un clic. Votre apparence, vos règles."
+        },
+        {
+          "title": "Transparence Totale",
+          "description": "Voyez exactement qui utilise votre image, pour combien de temps, dans quelles régions et combien vous avez gagné. Chaque campagne suivie, chaque paiement vérifié."
+        },
+        {
+          "title": "Tableau de Bord des Droits d'Utilisation",
+          "description": "Voyez qui utilise votre apparence, quand les droits expirent et combien vous avez gagné. Révocquez ou renouvelez en un clic."
+        }
+      ]
+    },
+    "featuredCreator": {
+      "title": "Créateur en Vedette",
+      "royaltiesEarned": "Royalties Gagnées",
+      "royaltiesDescription": "De la licence à 5 marques",
+      "usageRequests": "Demandes d'Utilisation",
+      "controlSettings": "Paramètres de Contrôle",
+      "allowCommercialUse": "Autoriser l'Usage Commercial",
+      "allowFilmUse": "Autoriser l'Usage Film",
+      "viewUsageReportButton": "Voir le Rapport d'Utilisation",
+      "updateSettingsButton": "Mettre à Jour les Paramètres"
+    },
+    "howItWorks": {
+      "title": "Commencez à Gagner en 3 Étapes Simples",
+      "subtitle": "Du téléchargement aux gains - c'est aussi simple que ça.",
+      "steps": [
+        {
+          "title": "Téléchargez Vos Photos",
+          "description": "Créez votre identité numérique vérifiée avec des photos de haute qualité."
+        },
+        {
+          "title": "Définissez Vos Paramètres",
+          "description": "Définissez les droits d'utilisation, les prix et les exigences d'approbation."
+        },
+        {
+          "title": "Commencez à Gagner",
+          "description": "Approuvez les demandes. Gagnez des acomptes mensuels. Évoluez avec plusieurs campagnes simultanées."
+        }
+      ]
+    },
+    "digitalTalentOwner": {
+      "title": "De Créateur → Propriétaire de Talent Numérique",
+      "subtitle": "Vous avez déjà construit votre image — maintenant faites-la travailler pour vous.",
+      "mainContent": "Licencier votre apparence n'est pas se vendre ; c'est passer à l'échelle supérieure. Pendant que vous filmez votre prochain projet, votre jumeau numérique peut en gagner dix autres.",
+      "footer": "Vous n'êtes pas un travailleur à la tâche. Vous êtes un propriétaire.",
+      "comparison": {
+        "title": "Modèle Traditionnel vs Modèle d'Apparence Likelee",
+        "traditionalPath": "Voie Traditionnelle",
+        "traditionalPathDescription1": "Vous jouez ou filmez manuellement",
+        "likeleeModel": "Modèle Likelee",
+        "likeleeModelDescription1": "Vous passez à l'échelle automatiquement",
+        "traditionalPathDescription2": "Vous êtes payé une fois par projet",
+        "likeleeModelDescription2": "Vous gagnez des acomptes mensuels tant que les marques utilisent votre apparence",
+        "traditionalPathDescription3": "Vous perdez souvent la propriété intellectuelle",
+        "likeleeModelDescription3": "Vous conservez la propriété intellectuelle",
+        "traditionalPathDescription4": "Vous ne pouvez pas réutiliser ou réadapter",
+        "likeleeModelDescription4": "Vous approuvez chaque réutilisation"
+      }
+    },
+    "realFutures": {
+      "title": "Vrais Visages. Vrais Futurs.",
+      "line1": "Les marques et les studios génèrent déjà des campagnes IA — la plupart utilisent des visages non licenciés ou synthétiques.",
+      "line2": "Likelee est l'endroit où le vrai talent alimente le monde de l'IA.",
+      "line3": "Chaque créateur, modèle et interprète est vérifié, suivi et payé avec des acomptes mensuels.",
+      "line4": "Vous n'êtes pas remplacé par l'IA — vous devenez son flux de revenus mensuel."
+    },
+    "valueFloor": {
+      "title": "Plancher de Valeur du Créateur",
+      "line1": "Aucune licence d'apparence sur Likelee ne paie en dessous du minimum communautaire.",
+      "line2": "Vous pouvez également fixer votre propre plancher afin que les marques et les studios ne puissent pas vous sous-payer.",
+      "line3": "La transparence renforce la confiance. Nous publions les gains moyens des créateurs et les données de référence afin que vous connaissiez toujours votre véritable valeur marchande."
+    },
+    "faq": {
+      "subtitle": "Tout ce que vous devez savoir pour être un Créateur sur Likelee",
+      "questions": [
+        {
+          "title": "Qu'est-ce qu'un \"Créateur\" ?",
+          "description": "Un Créateur est tout individu vérifié qui licencie son apparence (visage, voix ou jumeau numérique) pour des campagnes ou des productions assistées par IA. Vous conservez la propriété de votre image ; Likelee facilite simplement l'utilisation sous licence selon les conditions que vous choisissez."
+        },
+        {
+          "title": "Comment me faire vérifier ?",
+          "description": "Une fois votre compte accordé dans l'écosystème, vous recevrez un e-mail de bienvenue et un lien de vérification. Vous soumettrez une pièce d'identité et une courte vidéo selfie afin que notre système puisse confirmer votre authenticité et produire votre caméo."
+        },
+        {
+          "title": "Mon apparence peut-elle être utilisée sans mon consentement ?",
+          "description": "Jamais. Chaque demande d'utilisation nécessite votre approbation explicite. Aucune marque, studio ou partenaire IA ne peut utiliser votre apparence à moins que vous n'ayez donné la permission pour ce contexte spécifique."
+        },
+        {
+          "title": "Puis-je retirer mon apparence de la plateforme ?",
+          "description": "Oui. Vous pouvez désactiver ou supprimer votre profil à tout moment. Les licences actives existantes expireront automatiquement à la fin de leur durée contractuelle, et aucune nouvelle utilisation ne pourra avoir lieu."
+        },
+        {
+          "title": "Et si une marque demande des droits \"à perpétuité\" ?",
+          "description": "Likelee n'autorise pas les clauses d'utilisation perpétuelle par défaut. Si vous choisissez d'en accepter une, un avertissement clair vous sera présenté sur ce que cela signifie, et vous pourrez négocier une rémunération plus élevée ou refuser."
+        },
+        {
+          "title": "Mon apparence peut-elle être utilisée pour entraîner des modèles IA ?",
+          "description": "Uniquement si vous activez explicitement l'option \"droits d'entraînement IA\". Celle-ci est désactivée par défaut. Vous verrez toujours une divulgation lorsqu'une campagne implique une utilisation générative ou synthétique."
+        },
+        {
+          "title": "Quelles protections existent si mon apparence est mal utilisée ?",
+          "description": "Likelee suit chaque actif approuvé et conserve une preuve numérique. En cas de mauvaise utilisation, notre équipe d'application des droits vous aide avec les retraits et la documentation pour les poursuites judiciaires."
+        },
+        {
+          "title": "Suis-je toujours propriétaire de mon apparence numérique ?",
+          "description": "Oui. Vous conservez la pleine propriété. Vous licenciez l'utilisation, vous ne transférez pas la propriété. Toutes les répliques numériques restent liées à votre identité vérifiée."
+        },
+        {
+          "title": "Puis-je négocier les tarifs pour différents types d'utilisation ?",
+          "description": "Absolument. Vous pouvez fixer des prix distincts pour le contenu UGC enregistré par des humains, les caméos IA et les jumeaux numériques IA complets. Notre système applique automatiquement le tarif choisi en fonction du type de campagne et de la durée."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Prêt à devenir propriétaire de talent numérique ?",
+      "subtitle": "Rejoignez les créateurs, modèles et interprètes qui construisent un revenu durable grâce à la licence mensuelle de leur apparence.",
+      "howToGetStarted": "Comment commencer :",
+      "steps": [
+        "→ Téléchargez votre caméo — Enregistrez une courte vidéo de vous-même (référence IA)",
+        "→ Téléchargez des images de référence — 15 photos sous différents angles/styles",
+        "→ Fixez votre tarif plancher — Vous décidez de votre prix minimum (350 $+/mois)",
+        "→ Les marques vous trouvent — Elles demandent des licences, vous approuvez ou refusez",
+        "→ Commencez à gagner — Paiements mensuels tant que les licences sont actives"
+      ],
+      "reserveProfileButton": "Réservez Votre Profil"
+    }
+  },
   "common": {
+    "forgotPassword": "Mot de passe oublié ?",
     "back": "Retour",
     "continue": "Continuer",
     "loading": "Chargement...",

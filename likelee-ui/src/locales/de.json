@@ -331,7 +331,7 @@
       "profile": "Profil"
     },
     "nav": {
-      "dashboard": "Dashboard",
+      "dashboard": "Übersicht",
       "content": "Inhalt",
       "likeness": "Mein Abbild",
       "voice": "Stimme & Aufnahmen",
@@ -1319,19 +1319,6 @@
     "calendarLink": "Sie erhalten einen Kalenderlink, um einen Anruf mit unserem Team zu vereinbaren.",
     "completeKycButton": "KYC abschließen"
   },
-  "creatorSignupOptions.main.title": "Welche Art von Schöpfer sind Sie?",
-  "creatorSignupOptions.main.subtitle": "Wählen Sie die Option, die Sie am besten beschreibt, um mit der richtigen Profileinrichtung zu beginnen.",
-  "creatorSignupOptions.influencer.title": "Influencer / UGC-Ersteller",
-  "creatorSignupOptions.influencer.description": "Sie erstellen Inhalte, haben ein Publikum oder arbeiten mit Marken zusammen.",
-  "creatorSignupOptions.model_actor.title": "Unabhängiges Model oder Schauspieler",
-  "creatorSignupOptions.model_actor.description": "Sie machen Castings, Kampagnen oder Studioaufnahmen – und möchten verifizierten Bildschutz + Lizenzmöglichkeiten.",
-  "creatorSignupOptions.athlete.title": "Athlet (NIL & Pro)",
-  "creatorSignupOptions.athlete.description": "Sie sind ein College- oder Profisportler, der seine eigenen Namens-, Bild- und Ähnlichkeitsgeschäfte verwaltet.",
-  "creatorSignupOptions.selectButton": "Auswählen",
-  "creatorSignupOptions.authModal.title": "Loslegen",
-  "creatorSignupOptions.authModal.selected": "Ausgewählt:",
-  "creatorSignupOptions.authModal.signUpAs": "Anmelden als",
-  "creatorSignupOptions.authModal.alreadyHaveAccount": "Ich habe bereits ein Konto",
   "faces.hero.flipper.0.line1": "Dein Abbild",
   "faces.hero.flipper.0.line2": "Unbegrenzte Einnahmen",
   "faces.hero.flipper.1.line1": "Deine Zustimmung",
@@ -1477,6 +1464,7 @@
   "faces.cta.reserveProfileButton": "Profil reservieren",
   "common": {
     "password": "Passwort",
+    "forgotPassword": "Passwort vergessen?",
     "passwordRequired": "Passwort *",
     "confirmPassword": "Passwort bestätigen",
     "confirmPasswordRequired": "Passwort bestätigen *",
