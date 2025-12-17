@@ -6446,7 +6446,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Upload Reference Image
+              {t("creatorDashboard.uploadModal.modalTitle")}
             </DialogTitle>
           </DialogHeader>
 
@@ -6462,10 +6462,10 @@ export default function CreatorDashboard() {
                   <>
                     <div>
                       <p className="text-gray-700 mb-2">
-                        <strong>Section:</strong> {section.title}
+                        <strong>{t("creatorDashboard.uploadModal.sectionLabel")}</strong> {section.title}
                       </p>
                       <p className="text-gray-600">
-                        <strong>Best For:</strong> {section.bestFor}
+                        <strong>{t("creatorDashboard.uploadModal.bestForLabel")}</strong> {section.bestFor}
                       </p>
                     </div>
 

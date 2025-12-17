@@ -761,7 +761,10 @@
       "preview": "Vorschau:",
       "cancel": "Abbrechen",
       "upload": "Hochladen",
-      "uploading": "Hochladen..."
+      "uploading": "Hochladen...",
+      "modalTitle": "Referenzbild hochladen",
+      "sectionLabel": "Bereich:",
+      "bestForLabel": "Geeignet für:"
     }
   },
   "creators": "Schöpfer",

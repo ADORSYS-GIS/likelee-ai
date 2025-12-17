@@ -613,7 +613,10 @@
       "preview": "Aperçu :",
       "cancel": "Annuler",
       "upload": "Télécharger",
-      "uploading": "Téléchargement..."
+      "uploading": "Téléchargement...",
+      "modalTitle": "Télécharger une image de référence",
+      "sectionLabel": "Section :",
+      "bestForLabel": "Idéal pour :"
     }
   },
   "reserveProfile": {

@@ -759,7 +759,10 @@
       "preview": "Vista previa:",
       "cancel": "Cancelar",
       "upload": "Subir",
-      "uploading": "Subiendo..."
+      "uploading": "Subiendo...",
+      "modalTitle": "Subir imagen de referencia",
+      "sectionLabel": "Sección:",
+      "bestForLabel": "Ideal para:"
     }
   },
   "creators": "Creadores",

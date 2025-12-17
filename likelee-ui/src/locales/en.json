@@ -2177,7 +2177,10 @@
       "preview": "Preview:",
       "cancel": "Cancel",
       "upload": "Upload",
-      "uploading": "Uploading..."
+      "uploading": "Uploading...",
+      "modalTitle": "Upload Reference Image",
+      "sectionLabel": "Section:",
+      "bestForLabel": "Best For:"
     }
   },
   "imageSections": {
