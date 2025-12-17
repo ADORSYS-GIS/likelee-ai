@@ -5,12 +5,14 @@ import { Label as UILabel } from "@/components/ui/label";
 import { Input as UIInput } from "@/components/ui/input";
 import { Button as UIButton } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 const Label: any = UILabel;
 const Input: any = UIInput;
 const Button: any = UIButton;
 
 export default function LicensingSettings() {
+  const { t } = useTranslation();
   const { user, initialized, authenticated } = useAuth();
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -47,7 +49,10 @@ export default function LicensingSettings() {
     if (!user) return;
     const monthly = Number(monthlyUsd);
     if (!Number.isFinite(monthly) || monthly < 150) {
-      toast({ title: "Invalid Price", description: "Minimum $150/month" });
+      toast({
+        title: t("licensingSettingsPage.invalidPriceTitle"),
+        description: t("licensingSettingsPage.invalidPriceDesc"),
+      });
       return;
     }
     try {
@@ -62,7 +67,10 @@ export default function LicensingSettings() {
         .from("profiles")
         .upsert(payload, { onConflict: "id" });
       if (error) throw error;
-      toast({ title: "Success", description: "Pricing updated" });
+      toast({
+        title: t("licensingSettingsPage.successTitle"),
+        description: t("licensingSettingsPage.successDesc"),
+      });
     } catch (e: any) {
       toast({
         title: "Error",
@@ -85,9 +93,11 @@ export default function LicensingSettings() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Licensing Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("licensingSettingsPage.title")}
+        </h1>
         <p className="text-sm text-gray-600">
-          Pricing is public and USD-only. Set your monthly base price.
+          {t("licensingSettingsPage.subtitle")}
         </p>
       </div>
 
@@ -101,7 +111,7 @@ export default function LicensingSettings() {
             htmlFor="monthly"
             className="text-sm font-medium text-gray-700 mb-2 block"
           >
-            Base monthly license price (USD)
+            {t("licensingSettingsPage.basePriceLabel")}
           </Label>
           <div className="flex items-center gap-2">
             <span className="text-gray-700">$</span>
@@ -118,9 +128,13 @@ export default function LicensingSettings() {
               className="border-2 border-gray-300 rounded-none"
               placeholder="150"
             />
-            <span className="text-sm text-gray-600">/month</span>
+            <span className="text-sm text-gray-600">
+              {t("licensingSettingsPage.perMonth")}
+            </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Minimum $150/month.</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {t("licensingSettingsPage.minimumHint")}
+          </p>
         </div>
       </div>
 
@@ -130,9 +144,12 @@ export default function LicensingSettings() {
           disabled={saving || loading}
           className="h-12 bg-black text-white border-2 border-black rounded-none"
         >
-          {saving ? "Saving…" : "Save Pricing"}
+          {saving
+            ? t("licensingSettingsPage.savingButton")
+            : t("licensingSettingsPage.saveButton")}
         </Button>
       </div>
     </div>
   );
 }
+

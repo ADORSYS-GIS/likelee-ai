@@ -3,8 +3,10 @@ import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const { supabase } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = React.useState("");
@@ -15,10 +17,11 @@ export default function ForgotPassword() {
   return (
     <Layout currentPageName="Forgot Password">
       <div className="max-w-md mx-auto px-6 py-16">
-        <h1 className="text-2xl font-bold mb-4">Reset your password</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          {t("forgotPasswordPage.title")}
+        </h1>
         <p className="text-gray-600 mb-6">
-          Enter your email address and we will send you a link to reset your
-          password.
+          {t("forgotPasswordPage.instructions")}
         </p>
         <form
           className="space-y-4"
@@ -40,20 +43,17 @@ export default function ForgotPassword() {
                 if (error.message.includes("user not found")) {
                   // To avoid leaking user existence, show a generic success message
                   // This is a security best practice
-                  setMessage(
-                    "If an account exists for this email, a password reset link has been sent.",
-                  );
+                  setMessage(t("forgotPasswordPage.successMessage"));
                 } else {
                   // For other errors, throw them to be caught by the catch block
                   throw error;
                 }
               } else {
-                setMessage(
-                  "If an account exists for this email, a password reset link has been sent.",
-                );
+                setMessage(t("forgotPasswordPage.successMessage"));
               }
             } catch (err: any) {
-              const msg = err?.message ?? "Failed to send reset link";
+              const msg =
+                err?.message ?? t("forgotPasswordPage.errorMessage");
               setError(msg);
               toast({
                 title: "Error",
@@ -66,7 +66,9 @@ export default function ForgotPassword() {
           }}
         >
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">
+              {t("forgotPasswordPage.emailLabel")}
+            </label>
             <input
               type="email"
               value={email}
@@ -83,14 +85,16 @@ export default function ForgotPassword() {
               disabled={loading}
               className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
             >
-              {loading ? "Sending…" : "Send Reset Link"}
+              {loading
+                ? t("forgotPasswordPage.submitButton.sending")
+                : t("forgotPasswordPage.submitButton.default")}
             </button>
             <button
               type="button"
               onClick={() => navigate(-1)}
               className="text-sm text-cyan-600 hover:underline"
             >
-              Back to Sign In
+              {t("forgotPasswordPage.backToSignIn")}
             </button>
           </div>
         </form>
@@ -98,3 +102,4 @@ export default function ForgotPassword() {
     </Layout>
   );
 }
+

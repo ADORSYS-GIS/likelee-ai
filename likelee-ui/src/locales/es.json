@@ -16,6 +16,25 @@
   "impact": "Impacto",
   "support": "Soporte",
   "contactUs": "Contáctenos",
+  "questionsContactUs": "¿Preguntas? Contáctenos:",
+  "landingHeadline": "¿Buscas algo real en la era de la IA?",
+  "readyToUse": "Listo para usar",
+  "verifiedProtection": "Protección verificada",
+  "licensedFaces": "Rostros licenciados",
+  "heroTitle": "Construye asociaciones reales con atletas que pagan todo el año",
+  "heroSubtitle": "Un retenedor, presencia constante. Los atletas ganan, tú ganas.",
+  "forBrands": "Para Marcas",
+  "forAgencies": "Para Agencias",
+  "transformTalentTitle": "Transforma cómo trabajas con talento",
+  "transformTalentSubtitle": "De meses de investigación a minutos de navegación.",
+  "userTrustTitle": "No pierdas la confianza del usuario usando avatares falsos",
+  "userTrustSubtitle": "Los creadores reales traen creencia genuina, y tus audiencias lo sienten al instante.",
+  "scaleCatalogTitle": "Escala tu catálogo sin escalar costos",
+  "scaleCatalogSubtitle": "Mismo influencer. Variaciones infinitas de productos. Lanza en horas.",
+  "premiumTalentTitle": "Talento premium con cero dolores de cabeza de producción",
+  "premiumTalentSubtitle": "Sáltate el día de rodaje y accede a modelos verificados de las mejores agencias. Todo con resultados premium.",
+  "allSizesTitle": "Construido para marcas de todos los tamaños",
+  "allSizesSubtitle": "Desde startups de comercio electrónico hasta empresas: crea campañas de alto nivel con talento verificado para todos los presupuestos.",
   "legalAndCompliance": "Legal y Cumplimiento",
   "sagAftraAlignment": "Alineación SAG-AFTRA",
   "privacyPolicy": "Política de privacidad",
@@ -35,6 +54,53 @@
     "settingsContent": {
       "myRules": "Mis Reglas",
       "profileSettings": "Configuración del Perfil"
+    },
+    "settingsView": {
+      "title": "Configuración",
+      "subtitle": "Gestiona tu perfil y preferencias",
+      "tabs": {
+        "profile": "Configuración del Perfil",
+        "rules": "Mis Reglas"
+      },
+      "profile": {
+        "photoTitle": "Foto de Perfil",
+        "uploadText": "Subir una foto profesional",
+        "uploadHint": "JPG o PNG, máx 10MB",
+        "basicInfo": "Información Básica",
+        "name": "Nombre",
+        "email": "Correo electrónico",
+        "location": "Ubicación",
+        "bio": "Biografía",
+        "saveProfile": "Guardar Perfil",
+        "socialMedia": "Redes Sociales",
+        "instagram": "Usuario de Instagram",
+        "tiktok": "Usuario de TikTok",
+        "portfolio": "Enlace al Portafolio",
+        "saveSocial": "Guardar Enlaces Sociales",
+        "visibility": "Configuración de Visibilidad",
+        "visibleToBrands": "Visible para Marcas",
+        "visibleToBrandsDesc": "Permitir que las marcas te descubran y contacten",
+        "enableLicensing": "Habilitar Licencias",
+        "enableLicensingDesc": "Aceptar solicitudes de licencia de marcas",
+        "emailNotifications": "Notificaciones por Correo",
+        "emailNotificationsDesc": "Recibir actualizaciones sobre campañas y aprobaciones"
+      },
+      "rules": {
+        "title": "Mis Reglas",
+        "subtitle": "Establece tus preferencias de licencia y tarifas",
+        "edit": "Editar",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "contentOpenTo": "Contenido al que estoy abierto",
+        "industries": "Industrias con las que trabajo",
+        "customRatesAlert": "¿Quieres tarifas diferentes para cada tipo de contenido? Haz clic abajo para personalizar.",
+        "editInitialRate": "Editar Tarifa Inicial de Licencia",
+        "initialRate": "Tarifa Inicial de Licencia",
+        "baseRateDesc": "Tarifa base por semana para uso de cameos",
+        "perWeek": "/ semana",
+        "acceptNegotiations": "Aceptar Negociaciones",
+        "acceptNegotiationsDesc": "Permitir que las marcas propongan contraofertas a tu tarifa base"
+      }
     },
     "completeness": {
       "profileCompleteness": "Completitud del perfil: {{percentage}}%",
@@ -1611,5 +1677,30 @@
       "Education / Training": "Educación / Entrenamiento",
       "Open to any brand": "Abierto a cualquier marca"
     }
+  },
+  "forgotPasswordPage": {
+    "title": "Restablece tu contraseña",
+    "instructions": "Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+    "emailLabel": "Correo electrónico",
+    "submitButton": {
+      "sending": "Enviando...",
+      "default": "Enviar enlace de restablecimiento"
+    },
+    "backToSignIn": "Volver a Iniciar Sesión",
+    "successMessage": "Si existe una cuenta para este correo electrónico, se ha enviado un enlace de restablecimiento de contraseña.",
+    "errorMessage": "Error al enviar el enlace de restablecimiento"
+  },
+  "licensingSettingsPage": {
+    "title": "Configuración de Licencias",
+    "subtitle": "El precio es público y solo en USD. Establece tu precio base mensual.",
+    "basePriceLabel": "Precio base mensual de la licencia (USD)",
+    "perMonth": "/mes",
+    "minimumHint": "Mínimo $150/mes.",
+    "saveButton": "Guardar Precios",
+    "savingButton": "Guardando...",
+    "invalidPriceTitle": "Precio Inválido",
+    "invalidPriceDesc": "Mínimo $150/mes",
+    "successTitle": "Éxito",
+    "successDesc": "Precios actualizados"
   }
 }

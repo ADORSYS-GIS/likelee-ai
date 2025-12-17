@@ -1736,6 +1736,53 @@
       "profileCompleteness": "Profile Completeness: {{percentage}}%",
       "missingSections": "You're missing {{count}} sections"
     },
+    "settingsView": {
+      "title": "Settings",
+      "subtitle": "Manage your profile and preferences",
+      "tabs": {
+        "profile": "Profile Settings",
+        "rules": "My Rules"
+      },
+      "profile": {
+        "photoTitle": "Profile Photo",
+        "uploadText": "Upload a professional headshot",
+        "uploadHint": "JPG or PNG, max 10MB",
+        "basicInfo": "Basic Information",
+        "name": "Name",
+        "email": "Email",
+        "location": "Location",
+        "bio": "Bio",
+        "saveProfile": "Save Profile",
+        "socialMedia": "Social Media",
+        "instagram": "Instagram Handle",
+        "tiktok": "TikTok Handle",
+        "portfolio": "Portfolio Link",
+        "saveSocial": "Save Social Links",
+        "visibility": "Visibility Settings",
+        "visibleToBrands": "Visible to Brands",
+        "visibleToBrandsDesc": "Allow brands to discover and contact you",
+        "enableLicensing": "Enable Licensing",
+        "enableLicensingDesc": "Accept licensing requests from brands",
+        "emailNotifications": "Email Notifications",
+        "emailNotificationsDesc": "Receive updates about campaigns and approvals"
+      },
+      "rules": {
+        "title": "My Rules",
+        "subtitle": "Set your licensing preferences and rates",
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "save": "Save",
+        "contentOpenTo": "Content I'm Open To",
+        "industries": "Industries I Work With",
+        "customRatesAlert": "Want different rates for each content type? Click below to customize.",
+        "editInitialRate": "Edit Initial Licensing Rate",
+        "initialRate": "Initial Licensing Rate",
+        "baseRateDesc": "Base rate per week for cameo usage",
+        "perWeek": "/ week",
+        "acceptNegotiations": "Accept Negotiations",
+        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate"
+      }
+    },
     "referenceImageLibrary": {
       "title": "REFERENCE IMAGE LIBRARY",
       "subtitle": "Brands use these to match your appearance across different contexts",
@@ -2283,5 +2330,30 @@
     "mellow": "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
     "relaxed": "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
     "angry": "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+  },
+  "forgotPasswordPage": {
+    "title": "Reset your password",
+    "instructions": "Enter your email address and we will send you a link to reset your password.",
+    "emailLabel": "Email",
+    "submitButton": {
+      "sending": "Sending...",
+      "default": "Send Reset Link"
+    },
+    "backToSignIn": "Back to Sign In",
+    "successMessage": "If an account exists for this email, a password reset link has been sent.",
+    "errorMessage": "Failed to send reset link"
+  },
+  "licensingSettingsPage": {
+    "title": "Licensing Settings",
+    "subtitle": "Pricing is public and USD-only. Set your monthly base price.",
+    "basePriceLabel": "Base monthly license price (USD)",
+    "perMonth": "/month",
+    "minimumHint": "Minimum $150/month.",
+    "saveButton": "Save Pricing",
+    "savingButton": "Saving...",
+    "invalidPriceTitle": "Invalid Price",
+    "invalidPriceDesc": "Minimum $150/month",
+    "successTitle": "Success",
+    "successDesc": "Pricing updated"
   }
 }

@@ -15,7 +15,25 @@
   "blog": "Blog",
   "impact": "Impact",
   "support": "Support",
-  "contactUs": "Contactez-nous",
+  "questionsContactUs": "Des questions ? Contactez-nous :",
+  "landingHeadline": "Vous cherchez quelque chose de réel à l'ère de l'IA ?",
+  "readyToUse": "Prêt à l'emploi",
+  "verifiedProtection": "Protection vérifiée",
+  "licensedFaces": "Visages sous licence",
+  "heroTitle": "Construisez de vrais partenariats avec des athlètes qui rapportent toute l'année",
+  "heroSubtitle": "Un acompte, une présence constante. Les athlètes gagnent, vous gagnez.",
+  "forBrands": "Pour les marques",
+  "forAgencies": "Pour les agences",
+  "transformTalentTitle": "Transformez votre façon de travailler avec les talents",
+  "transformTalentSubtitle": "De mois de vérification à quelques minutes de navigation.",
+  "userTrustTitle": "Ne perdez pas la confiance des utilisateurs avec de faux avatars",
+  "userTrustSubtitle": "Les vrais créateurs apportent une croyance authentique, et votre public le ressent instantanément.",
+  "scaleCatalogTitle": "Faites évoluer votre catalogue sans augmenter les coûts",
+  "scaleCatalogSubtitle": "Même influenceur. Variations de produits infinies. Lancez en quelques heures.",
+  "premiumTalentTitle": "Talents premium sans maux de tête de production",
+  "premiumTalentSubtitle": "Évitez le jour du tournage et accédez à des mannequins vérifiés des meilleures agences. Le tout avec des résultats premium.",
+  "allSizesTitle": "Conçu pour les marques de toutes tailles",
+  "allSizesSubtitle": "Des startups e-commerce aux entreprises—construisez des campagnes de haute qualité avec des talents vérifiés pour tous les budgets.",
   "legalAndCompliance": "Juridique et conformité",
   "sagAftraAlignment": "Alignement SAG-AFTRA",
   "privacyPolicy": "Politique de confidentialité",
@@ -39,8 +57,6 @@
       "myRules": "Mes Règles",
       "profileSettings": "Paramètres du Profil"
     },
-    "profileSettings": "Paramètres du Profil",
-    "myRules": "Mes Règles",
     "completeness": {
       "profileCompleteness": "Complétude du profil: {{percentage}}%",
       "missingSections": "Il vous manque {{count}} sections"
@@ -187,6 +203,53 @@
       "contracts": "Licences et Contrats",
       "earnings": "Gains",
       "settings": "Paramètres"
+    },
+    "settingsView": {
+      "title": "Paramètres",
+      "subtitle": "Gérez votre profil et vos préférences",
+      "tabs": {
+        "profile": "Paramètres du Profil",
+        "rules": "Mes Règles"
+      },
+      "profile": {
+        "photoTitle": "Photo de Profil",
+        "uploadText": "Télécharger une photo professionnelle",
+        "uploadHint": "JPG ou PNG, max 10 Mo",
+        "basicInfo": "Informations de Base",
+        "name": "Nom",
+        "email": "E-mail",
+        "location": "Emplacement",
+        "bio": "Bio",
+        "saveProfile": "Enregistrer le Profil",
+        "socialMedia": "Réseaux Sociaux",
+        "instagram": "Identifiant Instagram",
+        "tiktok": "Identifiant TikTok",
+        "portfolio": "Lien Portfolio",
+        "saveSocial": "Enregistrer les Liens Sociaux",
+        "visibility": "Paramètres de Visibilité",
+        "visibleToBrands": "Visible par les Marques",
+        "visibleToBrandsDesc": "Permettre aux marques de vous découvrir et de vous contacter",
+        "enableLicensing": "Activer les Licences",
+        "enableLicensingDesc": "Accepter les demandes de licence des marques",
+        "emailNotifications": "Notifications par E-mail",
+        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations"
+      },
+      "rules": {
+        "title": "Mes Règles",
+        "subtitle": "Définissez vos préférences de licence et vos tarifs",
+        "edit": "Modifier",
+        "cancel": "Annuler",
+        "save": "Enregistrer",
+        "contentOpenTo": "Contenu auquel je suis ouvert(e)",
+        "industries": "Industries avec lesquelles je travaille",
+        "customRatesAlert": "Vous souhaitez des tarifs différents pour chaque type de contenu ? Cliquez ci-dessous pour personnaliser.",
+        "editInitialRate": "Modifier le tarif de licence initial",
+        "initialRate": "Tarif de Licence Initial",
+        "baseRateDesc": "Tarif de base par semaine pour l'utilisation de caméos",
+        "perWeek": "/ semaine",
+        "acceptNegotiations": "Accepter les Négociations",
+        "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base"
+      }
     }
   },
   "reserveProfile": {
@@ -855,5 +918,30 @@
       "Education / Training": "Éducation / Formation",
       "Open to any brand": "Ouvert à toute marque"
     }
+  },
+  "forgotPasswordPage": {
+    "title": "Réinitialisez votre mot de passe",
+    "instructions": "Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "emailLabel": "E-mail",
+    "submitButton": {
+      "sending": "Envoi...",
+      "default": "Envoyer le lien de réinitialisation"
+    },
+    "backToSignIn": "Retour à la connexion",
+    "successMessage": "Si un compte existe pour cet e-mail, un lien de réinitialisation du mot de passe a été envoyé.",
+    "errorMessage": "Échec de l'envoi du lien de réinitialisation"
+  },
+  "licensingSettingsPage": {
+    "title": "Paramètres de Licence",
+    "subtitle": "La tarification est publique et en USD uniquement. Définissez votre prix de base mensuel.",
+    "basePriceLabel": "Prix de base mensuel de la licence (USD)",
+    "perMonth": "/mois",
+    "minimumHint": "Minimum 150$/mois.",
+    "saveButton": "Enregistrer la Tarification",
+    "savingButton": "Enregistrement...",
+    "invalidPriceTitle": "Prix Invalide",
+    "invalidPriceDesc": "Minimum 150$/mois",
+    "successTitle": "Succès",
+    "successDesc": "Tarification mise à jour"
   }
 }
