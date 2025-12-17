@@ -346,7 +346,27 @@
       "thisMonthLabel": "Diesen Monat:",
       "impressionsLabel": "Impressionen/Woche:",
       "pause": "Pausieren",
-      "viewDetails": "Details anzeigen"
+      "viewDetails": "Details anzeigen",
+      "status": {
+        "active": "Aktiv",
+        "expiringSoon": "Läuft bald ab"
+      },
+      "actions": {
+        "viewDetails": "Details anzeigen",
+        "revoke": "Widerrufen",
+        "pause": "Pausieren"
+      },
+      "labels": {
+        "autoRenew": "Automatische Verlängerung",
+        "monthlyRate": "Monatlicher Tarif:",
+        "activeUntil": "Aktiv bis:",
+        "regions": "Regionen:",
+        "weeklyImpressions": "Wöchentliche Impressionen:"
+      },
+      "consent": {
+        "title": "Ihre Zustimmung für alle Nutzungen erforderlich.",
+        "message": "{{count}} aktive Kampagnen, alle zeitlich begrenzt, alle von Ihnen genehmigt. Sie können jederzeit pausieren/widerrufen."
+      }
     },
     "voice": {
       "title": "Stimme & Aufnahmen",
@@ -374,6 +394,16 @@
       "tips": {
         "title": "Tipps zum Stimmtraining:",
         "message": "Sprechen Sie deutlich, vermeiden Sie Hintergrundgeräusche, nehmen Sie in einem ruhigen Raum auf und halten Sie eine konstante Lautstärke während der gesamten Aufnahme bei."
+      },
+      "voiceBadge": "Stimme",
+      "voiceBadgePlural": "Stimmen",
+      "emotionNames": {
+        "happy": "Glücklich",
+        "emotional": "Emotional",
+        "excited": "Aufgeregt",
+        "mellow": "Sanft",
+        "relaxed": "Entspannt",
+        "angry": "Wütend"
       }
     },
     "dashboard": {

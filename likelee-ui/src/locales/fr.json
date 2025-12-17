@@ -388,6 +388,66 @@
         "acceptNegotiations": "Accepter les Négociations",
         "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base"
       }
+    },
+    "voice": {
+      "title": "Voix & Enregistrements",
+      "subtitle": "Créez votre bibliothèque vocale pour différentes émotions et tonalités",
+      "voiceBadge": "Voix",
+      "voiceBadgePlural": "Voix",
+      "emotionNames": {
+        "happy": "Joyeux",
+        "emotional": "Émotionnel",
+        "excited": "Excité",
+        "mellow": "Doux",
+        "relaxed": "Détendu",
+        "angry": "En colère"
+      },
+      "overview": {
+        "title": "Aperçu du profil vocal",
+        "totalRecordings": "Total d'enregistrements",
+        "elevenLabsProfiles": "Profils ElevenLabs",
+        "totalUsage": "Utilisation totale"
+      },
+      "record": {
+        "title": "Enregistrer un nouvel échantillon vocal",
+        "subtitle": "Enregistrez des échantillons avec différentes émotions pour créer un profil vocal polyvalent",
+        "duration": "~60 secondes",
+        "recorded": "Enregistré"
+      },
+      "library": {
+        "title": "Bibliothèque vocale",
+        "used": "Utilisé {{count}} fois",
+        "elevenLabsReady": "Prêt pour ElevenLabs",
+        "reRecord": "Réenregistrer",
+        "creatingProfile": "Création du profil vocal...",
+        "createProfile": "Créer un profil vocal avec ElevenLabs"
+      },
+      "tips": {
+        "title": "Conseils d'entraînement vocal :",
+        "message": "Parlez clairement, évitez le bruit de fond, enregistrez dans une pièce calme et maintenez un volume constant tout au long de l'enregistrement."
+      }
+    },
+    "campaigns": {
+      "status": {
+        "active": "Actif",
+        "expiringSoon": "Expire bientôt"
+      },
+      "actions": {
+        "viewDetails": "Voir les détails",
+        "revoke": "Révoquer",
+        "pause": "Pause"
+      },
+      "labels": {
+        "autoRenew": "Renouvellement automatique",
+        "monthlyRate": "Tarif mensuel :",
+        "activeUntil": "Actif jusqu'au :",
+        "regions": "Régions :",
+        "weeklyImpressions": "Impressions hebdomadaires :"
+      },
+      "consent": {
+        "title": "Votre consentement requis pour toutes les utilisations.",
+        "message": "{{count}} campagnes actives, toutes limitées dans le temps, toutes approuvées par vous. Vous pouvez mettre en pause/révoquer à tout moment."
+      }
     }
   },
   "reserveProfile": {

@@ -372,6 +372,16 @@
       "tips": {
         "title": "Consejos para el Entrenamiento de Voz:",
         "message": "Habla con claridad, evita el ruido de fondo, graba en una habitación silenciosa y mantén un volumen constante durante toda la grabación."
+      },
+      "voiceBadge": "Voz",
+      "voiceBadgePlural": "Voces",
+      "emotionNames": {
+        "happy": "Feliz",
+        "emotional": "Emocional",
+        "excited": "Emocionado",
+        "mellow": "Suave",
+        "relaxed": "Relajado",
+        "angry": "Enojado"
       }
     },
     "dashboard": {

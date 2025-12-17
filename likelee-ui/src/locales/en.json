@@ -1658,7 +1658,27 @@
       "thisMonthLabel": "This Month:",
       "impressionsLabel": "Impressions/Week:",
       "pause": "Pause",
-      "viewDetails": "View Details"
+      "viewDetails": "View Details",
+      "status": {
+        "active": "Active",
+        "expiringSoon": "Expiring Soon"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "revoke": "Revoke",
+        "pause": "Pause"
+      },
+      "labels": {
+        "autoRenew": "Auto-Renew",
+        "monthlyRate": "Monthly Rate:",
+        "activeUntil": "Active Until:",
+        "regions": "Regions:",
+        "weeklyImpressions": "Weekly Impressions:"
+      },
+      "consent": {
+        "title": "Your consent required for all uses.",
+        "message": "{{count}} active campaigns, all time-limited, all approved by you. You can pause/revoke anytime."
+      }
     },
     "earnings": {
       "title": "Earnings Dashboard",
@@ -1668,6 +1688,16 @@
     "voice": {
       "title": "Voice & Recordings",
       "subtitle": "Build your voice library for different emotions and tones",
+      "voiceBadge": "Voice",
+      "voiceBadgePlural": "Voices",
+      "emotionNames": {
+        "happy": "Happy",
+        "emotional": "Emotional",
+        "excited": "Excited",
+        "mellow": "Mellow",
+        "relaxed": "Relaxed",
+        "angry": "Angry"
+      },
       "overview": {
         "title": "Voice Profile Overview",
         "totalRecordings": "Total Recordings",

@@ -3133,7 +3133,7 @@ export default function CreatorDashboard() {
           variant="outline"
           className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
         >
-          {voiceLibrary.length} Voice{voiceLibrary.length !== 1 ? "s" : ""}
+          {voiceLibrary.length} {t(voiceLibrary.length !== 1 ? "creatorDashboard.voice.voiceBadgePlural" : "creatorDashboard.voice.voiceBadge")}
         </Badge>
       </div>
 
@@ -3204,7 +3204,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div>
                     <h4 className="font-bold text-gray-900 capitalize text-lg">
-                      {emotion}
+                      {t(`creatorDashboard.voice.emotionNames.${emotion}`)}
                     </h4>
                     <p className="text-xs text-gray-500">
                       {t("creatorDashboard.voice.record.duration")}
@@ -3444,7 +3444,7 @@ export default function CreatorDashboard() {
                           className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs"
                           variant="outline"
                         >
-                          Auto-Renew
+                          {t("creatorDashboard.campaigns.labels.autoRenew")}
                         </Badge>
                       )}
                     </td>
@@ -3458,9 +3458,9 @@ export default function CreatorDashboard() {
                           }`}
                       >
                         {campaign.status === "active"
-                          ? "Active"
+                          ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
-                            ? "Expiring Soon"
+                            ? t("creatorDashboard.campaigns.status.expiringSoon")
                             : campaign.status}
                       </Badge>
                     </td>
@@ -3484,7 +3484,7 @@ export default function CreatorDashboard() {
                           size="sm"
                           className="text-red-600 hover:bg-red-50"
                         >
-                          Revoke
+                          {t("creatorDashboard.campaigns.actions.revoke")}
                         </Button>
                       </div>
                     </td>
@@ -3568,7 +3568,7 @@ export default function CreatorDashboard() {
                         </span>
                         {campaign.auto_renewal && (
                           <Badge className="bg-blue-100 text-blue-700 border border-blue-300 text-xs">
-                            Auto-Renew
+                            {t("creatorDashboard.campaigns.labels.autoRenew")}
                           </Badge>
                         )}
                       </div>
@@ -3588,9 +3588,9 @@ export default function CreatorDashboard() {
                           }`}
                       >
                         {campaign.status === "active"
-                          ? "Active"
+                          ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
-                            ? "Expiring Soon"
+                            ? t("creatorDashboard.campaigns.status.expiringSoon")
                             : campaign.status}
                       </Badge>
                     </div>
@@ -3682,31 +3682,31 @@ export default function CreatorDashboard() {
                       : "bg-orange-100 text-orange-700 border border-orange-300"
                   }
                 >
-                  {campaign.status === "active" ? "Active" : "Expiring Soon"}
+                  {campaign.status === "active" ? t("creatorDashboard.campaigns.status.active") : t("creatorDashboard.campaigns.status.expiringSoon")}
                 </Badge>
               </div>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Monthly Rate:</span>
+                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.monthlyRate")}</span>
                   <span className="font-bold text-gray-900">
                     ${campaign.rate.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Active Until:</span>
+                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.activeUntil")}</span>
                   <span className="font-medium text-gray-900">
                     {new Date(campaign.active_until).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Regions:</span>
+                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.regions")}</span>
                   <span className="font-medium text-gray-900">
                     {campaign.regions.join(", ")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Weekly Impressions:</span>
+                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.weeklyImpressions")}</span>
                   <span className="font-medium text-gray-900">
                     {campaign.impressions_week.toLocaleString()}
                   </span>
@@ -3716,14 +3716,14 @@ export default function CreatorDashboard() {
               <div className="flex gap-2 mt-6">
                 <Button variant="outline" className="flex-1">
                   <Eye className="w-4 h-4 mr-2" />
-                  View Details
+                  {t("creatorDashboard.campaigns.actions.viewDetails")}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1 text-red-600 hover:bg-red-50"
                   onClick={() => handleRevokeCampaign(campaign.id)}
                 >
-                  Revoke
+                  {t("creatorDashboard.campaigns.actions.revoke")}
                 </Button>
               </div>
             </Card>
@@ -3734,9 +3734,8 @@ export default function CreatorDashboard() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
           <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
-            <strong>Your consent required for all uses.</strong>{" "}
-            {activeCampaigns.length} active campaigns, all time-limited, all
-            approved by you. You can pause/revoke anytime.
+            <strong>{t("creatorDashboard.campaigns.consent.title")}</strong>{" "}
+            {t("creatorDashboard.campaigns.consent.message", { count: activeCampaigns.length })}
           </p>
         </div>
       </div>
