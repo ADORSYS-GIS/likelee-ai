@@ -57,6 +57,9 @@ pub struct ServerConfig {
     #[envconfig(from = "LIVENESS_ENABLED", default = "1")]
     pub liveness_enabled: String,
 
+    #[envconfig(from = "LIVENESS_MIN_SCORE", default = "0.90")]
+    pub liveness_min_score: String,
+
 
     #[envconfig(from = "AWS_REGION", default = "us-east-1")]
     pub aws_region: String,
@@ -76,4 +79,6 @@ pub struct AppState {
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
+    pub liveness_enabled: String,
+    pub liveness_min_score: String,
 }

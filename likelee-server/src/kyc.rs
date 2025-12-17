@@ -30,10 +30,15 @@ pub struct SessionResponse {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ProfileVerification {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kyc_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub liveness_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kyc_provider: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kyc_session_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub verified_at: Option<String>,
 }
 
@@ -181,7 +186,7 @@ pub async fn create_session(
 
     let payload = ProfileVerification {
         kyc_status: Some("pending".into()),
-        liveness_status: Some("pending".into()),
+        liveness_status: None,
         kyc_provider: Some("veriff".into()),
         kyc_session_id: if session_id.is_empty() {
             None
@@ -284,7 +289,7 @@ pub async fn get_status(
                     };
                     let payload = ProfileVerification {
                         kyc_status: Some(mapped.into()),
-                        liveness_status: Some(mapped.into()),
+                        liveness_status: None,
                         kyc_provider: Some("veriff".into()),
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
