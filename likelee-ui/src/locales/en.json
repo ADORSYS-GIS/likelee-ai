@@ -1301,7 +1301,8 @@
           "liveness": "Start Liveness Check",
           "livenessApproved": "Liveness Approved"
         }
-      }
+      },
+      "selectAll": "Select All"
     },
     "warning": {
       "limitedBatches": "We're launching in limited batches to ensure every creator gets visibility and campaign opportunities. Reserve your profile now to join the first cohort of creators defining the future."
@@ -2162,6 +2163,21 @@
       "saveFailedTitle": "Save Failed",
       "saveFailedDesc": "Failed to save preferences: {{error}}",
       "profileUpdatedDemo": "Profile updated. (Demo mode)"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Requirements Checklist:",
+      "resolution": "At least 1080x1080 resolution",
+      "faceVisible": "Face/body clearly visible",
+      "goodLighting": "Good lighting (natural or studio)",
+      "recentPhoto": "Recent photo (from last 3 months)",
+      "noFilters": "No heavy filters",
+      "professionalQuality": "Professional quality preferred (not selfie-style)",
+      "dragOrClick": "Drag photos here or click to browse",
+      "fileInfo": "File Size: Max 10MB | Formats: JPG, PNG, WebP",
+      "preview": "Preview:",
+      "cancel": "Cancel",
+      "upload": "Upload",
+      "uploading": "Uploading..."
     }
   },
   "imageSections": {

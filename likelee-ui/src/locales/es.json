@@ -745,6 +745,21 @@
       "saveFailedTitle": "Error al guardar",
       "saveFailedDesc": "Error al guardar las preferencias: {{error}}",
       "profileUpdatedDemo": "Perfil actualizado. (Modo de demostración)"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Lista de verificación de requisitos:",
+      "resolution": "Resolución mínima de 1080x1080",
+      "faceVisible": "Rostro/cuerpo claramente visible",
+      "goodLighting": "Buena iluminación (natural o de estudio)",
+      "recentPhoto": "Foto reciente (de los últimos 3 meses)",
+      "noFilters": "Sin filtros pesados",
+      "professionalQuality": "Calidad profesional preferida (no estilo selfie)",
+      "dragOrClick": "Arrastra fotos aquí o haz clic para explorar",
+      "fileInfo": "Tamaño de archivo: Máx 10MB | Formatos: JPG, PNG, WebP",
+      "preview": "Vista previa:",
+      "cancel": "Cancelar",
+      "upload": "Subir",
+      "uploading": "Subiendo..."
     }
   },
   "creators": "Creadores",
@@ -1271,7 +1286,8 @@
           "liveness": "Iniciar Verificación de Vida",
           "livenessApproved": "Verificación de Vida Aprobada"
         }
-      }
+      },
+      "selectAll": "Seleccionar Todo"
     },
     "warning": {
       "limitedBatches": "Estamos lanzando en lotes limitados para asegurar que cada Creador obtenga visibilidad y oportunidades de campaña. Reserva tu perfil para unirte a la primera cohorte de creadores."

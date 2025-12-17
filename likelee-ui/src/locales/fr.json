@@ -599,6 +599,21 @@
       "saveFailedTitle": "Échec de l enregistrement",
       "saveFailedDesc": "Échec de l enregistrement des préférences : {{error}}",
       "profileUpdatedDemo": "Profil mis à jour. (Mode démo)"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Liste de contrôle des exigences :",
+      "resolution": "Résolution d'au moins 1080x1080",
+      "faceVisible": "Visage/corps clairement visible",
+      "goodLighting": "Bon éclairage (naturel ou studio)",
+      "recentPhoto": "Photo récente (des 3 derniers mois)",
+      "noFilters": "Pas de filtres lourds",
+      "professionalQuality": "Qualité professionnelle préférée (pas de style selfie)",
+      "dragOrClick": "Glissez les photos ici ou cliquez pour parcourir",
+      "fileInfo": "Taille du fichier : Max 10 Mo | Formats : JPG, PNG, WebP",
+      "preview": "Aperçu :",
+      "cancel": "Annuler",
+      "upload": "Télécharger",
+      "uploading": "Téléchargement..."
     }
   },
   "reserveProfile": {

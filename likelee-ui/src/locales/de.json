@@ -747,6 +747,21 @@
       "saveFailedTitle": "Speichern fehlgeschlagen",
       "saveFailedDesc": "Einstellungen konnten nicht gespeichert werden: {{error}}",
       "profileUpdatedDemo": "Profil aktualisiert. (Demo-Modus)"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Anforderungscheckliste:",
+      "resolution": "Mindestens 1080x1080 Auflösung",
+      "faceVisible": "Gesicht/Körper deutlich sichtbar",
+      "goodLighting": "Gute Beleuchtung (natürlich oder Studio)",
+      "recentPhoto": "Aktuelles Foto (aus den letzten 3 Monaten)",
+      "noFilters": "Keine starken Filter",
+      "professionalQuality": "Professionelle Qualität bevorzugt (kein Selfie-Stil)",
+      "dragOrClick": "Fotos hierher ziehen oder klicken zum Durchsuchen",
+      "fileInfo": "Dateigröße: Max 10MB | Formate: JPG, PNG, WebP",
+      "preview": "Vorschau:",
+      "cancel": "Abbrechen",
+      "upload": "Hochladen",
+      "uploading": "Hochladen..."
     }
   },
   "creators": "Schöpfer",
@@ -1241,7 +1256,8 @@
       "gender": "Wie identifizieren Sie sich?",
       "raceEthnicity": "Rasse/Ethnizität (alles Zutreffende auswählen)",
       "vibes": "Vibe- / Stil-Tags",
-      "save": "Speichern & Weiter zur Überprüfung"
+      "save": "Speichern & Weiter zur Überprüfung",
+      "selectAll": "Alle auswählen"
     },
     "liveness": {
       "alreadyApproved": "Bereits genehmigt",

@@ -6471,33 +6471,33 @@ export default function CreatorDashboard() {
 
                     <Card className="p-4 bg-gray-50 border border-gray-200">
                       <h4 className="font-bold text-gray-900 mb-3">
-                        Requirements Checklist:
+                        {t("creatorDashboard.uploadModal.requirementsTitle")}
                       </h4>
                       <div className="space-y-2 text-sm text-gray-700">
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>At least 1080x1080 resolution</p>
+                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>Face/body clearly visible</p>
+                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>Good lighting (natural or studio)</p>
+                          <p>{t("creatorDashboard.uploadModal.goodLighting")}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>Recent photo (from last 3 months)</p>
+                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>No heavy filters</p>
+                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
                           <p>
-                            Professional quality preferred (not selfie-style)
+                            {t("creatorDashboard.uploadModal.professionalQuality")}
                           </p>
                         </div>
                       </div>
@@ -6517,10 +6517,10 @@ export default function CreatorDashboard() {
                       >
                         <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                         <p className="text-gray-700 font-medium mb-2">
-                          Drag photos here or click to browse
+                          {t("creatorDashboard.uploadModal.dragOrClick")}
                         </p>
                         <p className="text-sm text-gray-500">
-                          File Size: Max 10MB | Formats: JPG, PNG, WebP
+                          {t("creatorDashboard.uploadModal.fileInfo")}
                         </p>
                       </label>
                     </div>
@@ -6528,7 +6528,7 @@ export default function CreatorDashboard() {
                     {previewImage && (
                       <div>
                         <h4 className="font-bold text-gray-900 mb-3">
-                          Preview:
+                          {t("creatorDashboard.uploadModal.preview")}
                         </h4>
                         <img
                           src={previewImage.url}
@@ -6548,7 +6548,7 @@ export default function CreatorDashboard() {
                         }}
                         className="flex-1 border-2 border-gray-300"
                       >
-                        Cancel
+                        {t("creatorDashboard.uploadModal.cancel")}
                       </Button>
                       <Button
                         onClick={confirmImageUpload}
@@ -6558,12 +6558,12 @@ export default function CreatorDashboard() {
                         {uploadingToSection ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Uploading...
+                            {t("creatorDashboard.uploadModal.uploading")}
                           </>
                         ) : (
                           <>
                             <Upload className="w-4 h-4 mr-2" />
-                            Upload
+                            {t("creatorDashboard.uploadModal.upload")}
                           </>
                         )}
                       </Button>
