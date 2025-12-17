@@ -655,8 +655,6 @@ export default function ReserveProfile() {
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
@@ -677,6 +675,8 @@ export default function ReserveProfile() {
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -874,7 +874,10 @@ export default function ReserveProfile() {
       setKycProvider(data.provider || "veriff");
       setKycSessionUrl(data.session_url);
       setKycStatus("pending");
-      setLivenessStatus("pending");
+      // Only reset liveness status if it's not already approved
+      if (livenessStatus !== "approved") {
+        setLivenessStatus("pending");
+      }
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
       toast({
@@ -1157,11 +1160,8 @@ export default function ReserveProfile() {
     if (params.get("verified") === "1") {
       verifyAndContinue();
     }
-    // Poll every 5s while on step 4
-    const interval = setInterval(() => {
-      refreshVerificationStatus();
-    }, 5000);
-    return () => clearInterval(interval);
+    // Polling was removed from this page to prevent interference with the liveness check.
+    // It will be moved to the CreatorDashboard.
   }, [step]);
 
   // Initial profile creation (Step 1)
@@ -1215,8 +1215,8 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: (data) => {
-      setProfileId(data.id);
+    onSuccess: () => {
+      setProfileId(user?.id || null);
       setStep(2);
     },
     onError: (error) => {
@@ -1289,9 +1289,8 @@ export default function ReserveProfile() {
         throw error;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Proceed to verification step
-      setProfileId(data.id);
       setStep(4);
     },
     onError: (error) => {
@@ -3118,7 +3117,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/api/liveness/result`),
+                                api(`/ api / liveness / result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -3126,7 +3125,6 @@ export default function ReserveProfile() {
                                   },
                                   body: JSON.stringify({
                                     session_id: livenessSessionId,
-                                    user_id: user?.id || profileId,
                                   }),
                                 },
                               );

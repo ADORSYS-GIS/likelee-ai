@@ -68,13 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
-          .insert([
-            {
-              id: userId,
-              email: userEmail,
-              full_name: userFullName,
-            },
-          ])
+          .insert([{ id: userId, email: userEmail, full_name: userFullName }])
           .select()
           .single();
 
