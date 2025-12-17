@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Sparkles, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 
 const creditTiers = [
   { credits: 2000, price: 59, label: "2,000" },
@@ -56,9 +58,11 @@ export default function StudioSubscribe() {
     },
     onError: (error) => {
       console.error("Checkout failed:", error);
-      alert(
-        "Checkout failed: " + (error.message || "An unknown error occurred."),
-      );
+      toast({
+        title: "Error",
+        description: getUserFriendlyError(error),
+        variant: "destructive",
+      });
       setCheckingOut(false);
     },
   });

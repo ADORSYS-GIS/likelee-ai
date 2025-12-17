@@ -44,6 +44,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 

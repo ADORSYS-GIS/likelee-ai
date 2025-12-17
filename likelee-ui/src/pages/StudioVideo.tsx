@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 
 const videoModels = [
   {
@@ -183,9 +185,11 @@ export default function StudioVideo() {
       ) {
         setShowSubscriptionModal(true);
       } else {
-        alert(
-          `Generation failed: ${error.message || "An unknown error occurred."}`,
-        );
+        toast({
+          title: "Error",
+          description: getUserFriendlyError(error),
+          variant: "destructive",
+        });
       }
     },
   });
@@ -272,7 +276,11 @@ export default function StudioVideo() {
       setImageUrl(data.file_url);
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Failed to upload image. Please try again.");
+      toast({
+        title: "Upload Failed",
+        description: getUserFriendlyError(error),
+        variant: "destructive",
+      });
     }
   };
 
