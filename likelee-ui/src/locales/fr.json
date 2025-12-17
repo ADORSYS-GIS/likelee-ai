@@ -106,7 +106,9 @@
       "confirmed": "Confirmé",
       "notStarted": "Non commencé",
       "viewVerification": "Voir les détails de vérification",
-      "updateRights": "Mettre à jour l'accord de droits"
+      "updateRights": "Mettre à jour l'accord de droits",
+      "completeVerification": "Compléter la vérification",
+      "refreshStatus": "Actualiser le statut"
     },
     "cameoVideo": {
       "title": "VIDÉO CAMÉO",
@@ -387,37 +389,32 @@
   "reserveProfile": {
     "verification": {
       "title": "Vérification d'identité",
-      "description": "Vérifiez votre identité pour devenir visible aux marques et débloquer des opportunités",
-      "whyVerify": {
-        "title": "Pourquoi vérifier votre identité ?",
-        "reason1": "Faites-vous découvrir par les marques cherchant des créateurs vérifiés",
-        "reason2": "Construisez la confiance et la crédibilité avec les partenaires de licence",
-        "reason3": "Débloquez des opportunités de campagne de plus grande valeur"
-      },
-      "processDesc": "Nous utilisons une vérification d'identité sécurisée pour garantir que tous les créateurs sur Likelee sont authentiques. Ce processus prend généralement 2 à 3 minutes.",
-      "requirements": {
-        "title": "Ce dont vous aurez besoin :",
-        "item1": "Une pièce d'identité émise par le gouvernement (permis de conduire, passeport ou carte d'identité)",
-        "item2": "Un bon éclairage et un accès caméra/micro",
-        "item3": "2 à 3 minutes dans un endroit calme"
-      },
+      "subtitle": "Vérifiez votre identité pour devenir visible auprès des marques et débloquer des opportunités",
+      "description": "Nous utilisons une vérification d'identité sécurisée pour garantir l'authenticité de tous les créateurs sur Likelee. Ce processus prend généralement 2 à 3 minutes.",
       "status": {
         "approved": "Approuvé",
         "rejected": "Rejeté",
         "verifying": "Vérification en cours",
         "notStarted": "Non démarré"
       },
+      "whyVerify": {
+        "title": "Pourquoi vérifier votre identité ?",
+        "reason1": "Soyez découvert par les marques à la recherche de créateurs vérifiés",
+        "reason2": "Renforcez la confiance et la crédibilité auprès des partenaires de licence",
+        "reason3": "Débloquez des opportunités de campagne de plus grande valeur"
+      },
+      "requirements": {
+        "title": "Ce dont vous aurez besoin :",
+        "item1": "Pièce d'identité délivrée par le gouvernement (permis de conduire, passeport ou carte d'identité)",
+        "item2": "Bonne éclairage et accès à la caméra/microphone",
+        "item3": "2 à 3 minutes dans un endroit calme"
+      },
       "actions": {
-        "start": "Vérifier l'identité maintenant",
-        "liveness": "Démarrer la vérification de vivacité",
-        "livenessApproved": "Vivacité approuvée",
-        "startingVerification": "Démarrage…",
+        "startingVerification": "Démarrage...",
         "verifyIdentity": "Vérifier l'identité maintenant",
-        "preparing": "Préparation…",
+        "preparing": "Préparation...",
         "startLiveness": "Démarrer la vérification de vivacité",
-        "skip": "Passer",
-        "verifyAndContinue": "Vérifier et continuer",
-        "checking": "Vérification..."
+        "livenessApproved": "Vivacité approuvée"
       },
       "verificationFailedTitle": "Échec de la vérification",
       "statusCheckFailedTitle": "Échec de la vérification du statut",
@@ -596,15 +593,20 @@
         "state": "État/Pays"
       },
       "placeholders": {
+        "fullName": "ex: Jean Dupont",
+        "stageName": "Votre nom",
+        "bio": "Parlez un peu de vous aux marques...",
+        "platform": "Sélectionner la plateforme",
         "email": "ex: jean@exemple.com",
         "password": "********",
         "schoolName": "Nom de l'université",
         "sport": "Sélectionnez votre sport",
         "languages": "par ex. anglais, espagnol",
         "confirmPassword": "********",
-        "fullName": "ex: Jean Dupont",
-        "city": "ex: Paris",
-        "state": "ex: France",
+        "handle": "@votreidentifiant",
+        "price": "150",
+        "headshot": "URL de l'image",
+        "specify": "Veuillez préciser...",
         "age": "ex: 25"
       },
       "sport": "Le sport",
@@ -631,23 +633,6 @@
           "label": "Privé",
           "description": "Découvrable uniquement par les marques et les créateurs IA"
         }
-      },
-      "placeholders": {
-        "fullName": "ex: Jean Dupont",
-        "stageName": "Votre nom",
-        "bio": "Parlez un peu de vous aux marques...",
-        "platform": "Sélectionner la plateforme",
-        "email": "ex: jean@exemple.com",
-        "password": "********",
-        "schoolName": "Nom de l'université",
-        "sport": "Sélectionnez votre sport",
-        "languages": "par ex. anglais, espagnol",
-        "confirmPassword": "********",
-        "handle": "@votreidentifiant",
-        "price": "150",
-        "headshot": "URL de l'image",
-        "specify": "Veuillez préciser...",
-        "age": "ex: 25"
       },
       "age": "Âge",
       "dob": "Date de naissance",
@@ -683,42 +668,6 @@
       "handle": "Identifiant",
       "perMonth": "/mois",
       "save": "Enregistrer et continuer vers la vérification"
-    },
-    "verification": {
-      "title": "Vérification d'identité",
-      "subtitle": "Vérifiez votre identité pour devenir visible auprès des marques et débloquer des opportunités",
-      "description": "Nous utilisons une vérification d'identité sécurisée pour garantir l'authenticité de tous les créateurs sur Likelee. Ce processus prend généralement 2 à 3 minutes.",
-      "status": {
-        "approved": "Approuvé",
-        "rejected": "Rejeté",
-        "verifying": "Vérification en cours",
-        "notStarted": "Non démarré"
-      },
-      "whyVerify": {
-        "title": "Pourquoi vérifier votre identité ?",
-        "reason1": "Soyez découvert par les marques à la recherche de créateurs vérifiés",
-        "reason2": "Renforcez la confiance et la crédibilité auprès des partenaires de licence",
-        "reason3": "Débloquez des opportunités de campagne de plus grande valeur"
-      },
-      "requirements": {
-        "title": "Ce dont vous aurez besoin :",
-        "item1": "Pièce d'identité délivrée par le gouvernement (permis de conduire, passeport ou carte d'identité)",
-        "item2": "Bonne éclairage et accès à la caméra/microphone",
-        "item3": "2 à 3 minutes dans un endroit calme"
-      },
-      "actions": {
-        "startingVerification": "Démarrage...",
-        "verifyIdentity": "Vérifier l'identité maintenant",
-        "preparing": "Préparation...",
-        "startLiveness": "Démarrer la vérification de vivacité",
-        "livenessApproved": "Vivacité approuvée"
-      },
-      "verificationFailedTitle": "Échec de la vérification",
-      "statusCheckFailedTitle": "Échec de la vérification du statut",
-      "identityVerified": "Identité vérifiée",
-      "identityVerifiedDescription": "Veuillez télécharger vos 3 photos de référence (Face, Gauche, Droite) pour terminer votre configuration.",
-      "verificationPending": "Vérification en attente",
-      "verificationPendingDescription": "La vérification n'est pas encore terminée. KYC : {{kyc}}, Vivacité : {{live}}."
     },
     "warning": {
       "limitedBatches": "Nous lançons par lots limités pour garantir à chaque créateur visibilité et opportunités de campagne. Réservez votre profil pour rejoindre la première cohorte de créateurs."
@@ -980,6 +929,18 @@
       "Video-game / VR characters": "Personnages jeux vidéo / VR",
       "Stock photo / video libraries": "Banques d'images / vidéos",
       "Educational / nonprofit spots": "Spots éducatifs / à but non lucratif",
+      "Fashion & Beauty": "Mode & Beauté",
+      "Product Reviews": "Critiques de produits",
+      "Testimonials": "Témoignages",
+      "Social Media Content": "Contenu réseaux sociaux",
+      "Educational Content": "Contenu éducatif",
+      "Fitness/Wellness": "Fitness/Bien-être",
+      "Lifestyle Content": "Contenu lifestyle",
+      "Political Content": "Contenu politique",
+      "Controversial Topics": "Sujets controversés",
+      "Explicit/Adult Content": "Contenu explicite/adulte",
+      "Pharmaceutical Claims": "Allégations pharmaceutiques",
+      "Financial/Investment Advice": "Conseils financiers/investissement",
       "Other": "Autre"
     },
     "industries": {
@@ -1076,5 +1037,82 @@
     "invalidPriceDesc": "Minimum 150$/mois",
     "successTitle": "Succès",
     "successDesc": "Tarification mise à jour"
+  },
+  "imageSections": {
+    "headshot_neutral": {
+      "title": "Photos de tête - Expression neutre",
+      "description": "Visage de face, expression neutre (ni souriant ni renfrogné). Bon éclairage sur le visage. Vêtements professionnels ou fond uni. 1080x1080 minimum.",
+      "bestFor": "Les marques ont besoin d'une référence de visage propre"
+    },
+    "headshot_smiling": {
+      "title": "Photos de tête - Souriant",
+      "description": "Visage de face, sourire naturel (authentique, pas forcé). Bon éclairage. Cadre professionnel. 1080x1080 minimum.",
+      "bestFor": "Les marques veulent vous montrer heureux/accessible"
+    },
+    "fullbody_casual": {
+      "title": "Corps entier - Tenue décontractée",
+      "description": "Photo en pied en vêtements décontractés du quotidien. Pose naturelle.",
+      "bestFor": "Look décontracté quotidien"
+    },
+    "fullbody_formal": {
+      "title": "Corps entier - Formel/Professionnel",
+      "description": "Photo en pied en tenue professionnelle ou formelle.",
+      "bestFor": "Contextes professionnels ou d'affaires"
+    },
+    "side_profile": {
+      "title": "Profil latéral",
+      "description": "Vue latérale nette de votre visage et du haut du corps.",
+      "bestFor": "Les marques ont besoin de votre angle latéral"
+    },
+    "three_quarter": {
+      "title": "Angle 3/4",
+      "description": "Visage tourné à un angle de 45 degrés, expression naturelle.",
+      "bestFor": "Angle conversationnel naturel"
+    },
+    "hair_down": {
+      "title": "Cheveux détachés - Lâches/Ondulés",
+      "description": "Cheveux portés détachés dans votre style naturel.",
+      "bestFor": "Look décontracté et détendu"
+    },
+    "hair_up": {
+      "title": "Cheveux attachés - Queue de cheval/Chignon",
+      "description": "Cheveux tirés en arrière/attachés, look soigné.",
+      "bestFor": "Look professionnel ou actif"
+    },
+    "hair_styling": {
+      "title": "Coiffure - Tresses/Style spécifique",
+      "description": "Si vous avez une coiffure signature.",
+      "bestFor": "Si vous avez un style signature"
+    },
+    "upper_body": {
+      "title": "Gros plan du haut du corps",
+      "description": "Épaules et au-dessus, traits du visage détaillés visibles.",
+      "bestFor": "Plans rapprochés, traits du visage détaillés"
+    },
+    "outdoors": {
+      "title": "En environnement - Extérieur",
+      "description": "Vous dans un cadre extérieur (parc, rue, nature).",
+      "bestFor": "Contenu contextuel, lifestyle"
+    },
+    "indoors": {
+      "title": "En environnement - Intérieur",
+      "description": "Vous dans un cadre intérieur (maison, bureau, café).",
+      "bestFor": "Contextes intérieurs/bureau/maison"
+    },
+    "makeup_variation": {
+      "title": "Style de maquillage différent",
+      "description": "Si vous variez votre style de maquillage, montrez différents looks.",
+      "bestFor": "Si vous variez le maquillage, les marques devraient le savoir"
+    },
+    "seasonal": {
+      "title": "Variation saisonnière/Tenue",
+      "description": "Différents styles saisonniers ou variations de tenues.",
+      "bestFor": "Campagnes saisonnières, différents looks"
+    },
+    "signature": {
+      "title": "Votre choix - Moment signature",
+      "description": "Une photo qui vous représente vraiment et comment les gens vous reconnaissent.",
+      "bestFor": "Une photo qui vous représente vraiment"
+    }
   }
 }

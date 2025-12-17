@@ -165,7 +165,9 @@
       "confirmed": "Bestätigt",
       "notStarted": "Nicht begonnen",
       "viewVerification": "Verifizierungsdetails anzeigen",
-      "updateRights": "Rechtsvereinbarung aktualisieren"
+      "updateRights": "Rechtsvereinbarung aktualisieren",
+      "completeVerification": "Verifizierung abschließen",
+      "refreshStatus": "Status aktualisieren"
     },
     "cameoVideo": {
       "title": "CAMEO-VIDEO",
@@ -1679,6 +1681,18 @@
       "Video-game / VR characters": "Videospiel- / VR-Charaktere",
       "Stock photo / video libraries": "Stockfoto- / Videobibliotheken",
       "Educational / nonprofit spots": "Bildungs- / gemeinnützige Spots",
+      "Fashion & Beauty": "Mode & Schönheit",
+      "Product Reviews": "Produktbewertungen",
+      "Testimonials": "Erfahrungsberichte",
+      "Social Media Content": "Social-Media-Inhalte",
+      "Educational Content": "Bildungsinhalte",
+      "Fitness/Wellness": "Fitness/Wellness",
+      "Lifestyle Content": "Lifestyle-Inhalte",
+      "Political Content": "Politische Inhalte",
+      "Controversial Topics": "Kontroverse Themen",
+      "Explicit/Adult Content": "Explizite/Erwachseneninhalte",
+      "Pharmaceutical Claims": "Pharmazeutische Behauptungen",
+      "Financial/Investment Advice": "Finanz-/Anlageberatung",
       "Other": "Andere"
     },
     "industries": {
@@ -1775,5 +1789,82 @@
     "invalidPriceDesc": "Minimum $150/Monat",
     "successTitle": "Erfolg",
     "successDesc": "Preisgestaltung aktualisiert"
+  },
+  "imageSections": {
+    "headshot_neutral": {
+      "title": "Kopfaufnahmen - Neutraler Ausdruck",
+      "description": "Gesicht frontal, neutraler Ausdruck (nicht lächelnd oder stirnrunzelnd). Gute Beleuchtung im Gesicht. Professionelle Kleidung oder schlichter Hintergrund. Mindestens 1080x1080.",
+      "bestFor": "Marken benötigen eine saubere Gesichtsreferenz"
+    },
+    "headshot_smiling": {
+      "title": "Kopfaufnahmen - Lächelnd",
+      "description": "Gesicht frontal, natürliches Lächeln (echt, nicht gezwungen). Gute Beleuchtung. Professionelle Umgebung. Mindestens 1080x1080.",
+      "bestFor": "Marken möchten Sie glücklich/zugänglich zeigen"
+    },
+    "fullbody_casual": {
+      "title": "Ganzkörper - Lässiges Outfit",
+      "description": "Ganzkörperaufnahme in lässiger Alltagskleidung. Natürliche Pose.",
+      "bestFor": "Alltäglicher lässiger Look"
+    },
+    "fullbody_formal": {
+      "title": "Ganzkörper - Formell/Professionell",
+      "description": "Ganzkörperaufnahme in professioneller oder formeller Kleidung.",
+      "bestFor": "Professionelle oder geschäftliche Kontexte"
+    },
+    "side_profile": {
+      "title": "Seitenprofil",
+      "description": "Klare Seitenansicht Ihres Gesichts und Oberkörpers.",
+      "bestFor": "Marken benötigen Ihren Seitenwinkel"
+    },
+    "three_quarter": {
+      "title": "3/4-Winkel",
+      "description": "Gesicht in einem 45-Grad-Winkel gedreht, natürlicher Ausdruck.",
+      "bestFor": "Natürlicher Gesprächswinkel"
+    },
+    "hair_down": {
+      "title": "Haare offen - Locker/Wellig",
+      "description": "Haare offen in Ihrem natürlichen Stil getragen.",
+      "bestFor": "Lässiger, entspannter Look"
+    },
+    "hair_up": {
+      "title": "Haare hochgesteckt - Pferdeschwanz/Dutt",
+      "description": "Haare hochgesteckt/zurückgebunden, gepflegter Look.",
+      "bestFor": "Professioneller oder aktiver Look"
+    },
+    "hair_styling": {
+      "title": "Frisur - Zöpfe/Spezifischer Stil",
+      "description": "Wenn Sie eine charakteristische Frisur haben.",
+      "bestFor": "Wenn Sie einen charakteristischen Stil haben"
+    },
+    "upper_body": {
+      "title": "Nahaufnahme Oberkörper",
+      "description": "Schultern und höher, detaillierte Gesichtszüge sichtbar.",
+      "bestFor": "Nahaufnahmen, detaillierte Gesichtszüge"
+    },
+    "outdoors": {
+      "title": "In Umgebung - Draußen",
+      "description": "Sie in einer Außenumgebung (Park, Straße, Natur).",
+      "bestFor": "Kontextbezogener, Lifestyle-Inhalt"
+    },
+    "indoors": {
+      "title": "In Umgebung - Drinnen",
+      "description": "Sie in einer Innenumgebung (Zuhause, Büro, Café).",
+      "bestFor": "Innen-/Büro-/Heimkontexte"
+    },
+    "makeup_variation": {
+      "title": "Anderer Make-up-Stil",
+      "description": "Wenn Sie Ihren Make-up-Stil variieren, zeigen Sie verschiedene Looks.",
+      "bestFor": "Wenn Sie Make-up variieren, sollten Marken es wissen"
+    },
+    "seasonal": {
+      "title": "Saisonale/Outfit-Variation",
+      "description": "Verschiedene saisonale Stile oder Outfit-Variationen.",
+      "bestFor": "Saisonale Kampagnen, verschiedene Looks"
+    },
+    "signature": {
+      "title": "Ihre Wahl - Charakteristischer Moment",
+      "description": "Ein Foto, das Sie wirklich repräsentiert und wie Menschen Sie erkennen.",
+      "bestFor": "Ein Foto, das Sie wirklich repräsentiert"
+    }
   }
 }

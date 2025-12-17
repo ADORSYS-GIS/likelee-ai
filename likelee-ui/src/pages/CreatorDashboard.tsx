@@ -3102,7 +3102,7 @@ export default function CreatorDashboard() {
                 ) : (
                   <Shield className="w-4 h-4 mr-2" />
                 )}
-                Complete Verification
+                {t("creatorDashboard.verificationStatus.completeVerification")}
               </Button>
               <Button
                 onClick={refreshVerificationFromDashboard}
@@ -3115,7 +3115,7 @@ export default function CreatorDashboard() {
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-2" />
                 )}
-                Refresh Status
+                {t("creatorDashboard.verificationStatus.refreshStatus")}
               </Button>
             </div>
           </div>

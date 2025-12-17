@@ -17,24 +17,24 @@
   "support": "Soporte",
   "contactUs": "Contáctenos",
   "questionsContactUs": "¿Preguntas? Contáctenos:",
-  "landingHeadline": "¿Buscas algo real en la era de la IA?",
+  "landingHeadline": "¿Buscando algo real en la era de la IA?",
   "readyToUse": "Listo para usar",
   "verifiedProtection": "Protección verificada",
-  "licensedFaces": "Rostros licenciados",
-  "heroTitle": "Construye asociaciones reales con atletas que pagan todo el año",
-  "heroSubtitle": "Un retenedor, presencia constante. Los atletas ganan, tú ganas.",
-  "forBrands": "Para Marcas",
-  "forAgencies": "Para Agencias",
-  "transformTalentTitle": "Transforma cómo trabajas con talento",
+  "licensedFaces": "Caras con licencia",
+  "heroTitle": "Cree asociaciones de atletas reales que paguen durante todo el año",
+  "heroSubtitle": "Un anticipo, presencia constante. Los atletas ganan, tú ganas.",
+  "forBrands": "Para marcas",
+  "forAgencies": "Para agencias",
+  "transformTalentTitle": "Transforme la forma en que trabaja con el talento",
   "transformTalentSubtitle": "De meses de investigación a minutos de navegación.",
-  "userTrustTitle": "No pierdas la confianza del usuario usando avatares falsos",
-  "userTrustSubtitle": "Los creadores reales traen creencia genuina, y tus audiencias lo sienten al instante.",
-  "scaleCatalogTitle": "Escala tu catálogo sin escalar costos",
-  "scaleCatalogSubtitle": "Mismo influencer. Variaciones infinitas de productos. Lanza en horas.",
-  "premiumTalentTitle": "Talento premium con cero dolores de cabeza de producción",
-  "premiumTalentSubtitle": "Sáltate el día de rodaje y accede a modelos verificados de las mejores agencias. Todo con resultados premium.",
-  "allSizesTitle": "Construido para marcas de todos los tamaños",
-  "allSizesSubtitle": "Desde startups de comercio electrónico hasta empresas: crea campañas de alto nivel con talento verificado para todos los presupuestos.",
+  "userTrustTitle": "No pierda la confianza del usuario usando avatares falsos",
+  "userTrustSubtitle": "Los creadores reales brindan una creencia genuina, y sus audiencias lo sienten al instante.",
+  "scaleCatalogTitle": "Amplíe su catálogo sin aumentar los costos",
+  "scaleCatalogSubtitle": "Mismo influencer. Infinitas variaciones de productos. Lanzamiento en horas.",
+  "premiumTalentTitle": "Talento premium sin dolores de cabeza de producción",
+  "premiumTalentSubtitle": "Omita el día de la sesión y acceda a modelos verificados de las mejores agencias. Todo con resultados premium.",
+  "allSizesTitle": "Creado para marcas de todos los tamaños",
+  "allSizesSubtitle": "Desde nuevas empresas de comercio electrónico hasta empresas, cree campañas de alto contacto con talento verificado para cada presupuesto.",
   "legalAndCompliance": "Legal y Cumplimiento",
   "sagAftraAlignment": "Alineación SAG-AFTRA",
   "privacyPolicy": "Política de privacidad",
@@ -163,7 +163,9 @@
       "confirmed": "Confirmado",
       "notStarted": "No iniciado",
       "viewVerification": "Ver detalles de verificación",
-      "updateRights": "Actualizar acuerdo de derechos"
+      "updateRights": "Actualizar acuerdo de derechos",
+      "completeVerification": "Completar verificación",
+      "refreshStatus": "Actualizar estado"
     },
     "cameoVideo": {
       "title": "VIDEO CAMEO",
@@ -615,25 +617,6 @@
   "refreshPage": "Actualiza esta página",
   "orViewOur": "O mira nuestra",
   "simplifiedTextVersion": "versión de texto simplificada",
-  "questionsContactUs": "¿Preguntas? Contáctenos:",
-  "landingHeadline": "¿Buscando algo real en la era de la IA?",
-  "readyToUse": "Listo para usar",
-  "verifiedProtection": "Protección verificada",
-  "licensedFaces": "Caras con licencia",
-  "heroTitle": "Cree asociaciones de atletas reales que paguen durante todo el año",
-  "heroSubtitle": "Un anticipo, presencia constante. Los atletas ganan, tú ganas.",
-  "forBrands": "Para marcas",
-  "forAgencies": "Para agencias",
-  "transformTalentTitle": "Transforme la forma en que trabaja con el talento",
-  "transformTalentSubtitle": "De meses de investigación a minutos de navegación.",
-  "userTrustTitle": "No pierda la confianza del usuario usando avatares falsos",
-  "userTrustSubtitle": "Los creadores reales brindan una creencia genuina, y sus audiencias lo sienten al instante.",
-  "scaleCatalogTitle": "Amplíe su catálogo sin aumentar los costos",
-  "scaleCatalogSubtitle": "Mismo influencer. Infinitas variaciones de productos. Lanzamiento en horas.",
-  "premiumTalentTitle": "Talento premium sin dolores de cabeza de producción",
-  "premiumTalentSubtitle": "Omita el día de la sesión y acceda a modelos verificados de las mejores agencias. Todo con resultados premium.",
-  "allSizesTitle": "Creado para marcas de todos los tamaños",
-  "allSizesSubtitle": "Desde nuevas empresas de comercio electrónico hasta empresas, cree campañas de alto contacto con talento verificado para cada presupuesto.",
   "mission": "Misión",
   "missionSubtitle": "En la era de la IA, la identidad humana debe ser un activo, no una responsabilidad.",
   "missionMessage": "Likelee construye la infraestructura para que los creadores, atletas y talentos posean, controlen y se beneficien de su imagen digital. Estamos creando una nueva economía donde el consentimiento es ley, cada uso se rastrea y los creadores ganan para siempre, no solo una vez.",
@@ -931,10 +914,13 @@
       "pending": "Pendiente"
     },
     "skipModal": {
-      "title": "¿Omitir Verificación de Identidad?",
-      "description": "Si omites ahora, tu perfil será creado, pero las marcas no te verán hasta que completes la verificación.",
-      "note": "Puedes completar la verificación en cualquier momento desde tu panel.",
-      "confirmSkip": "Omitir por ahora - Estoy seguro"
+      "title": "¿Omitir Verificación?",
+      "description": "Tu perfil se guardará, pero no serás visible para las marcas hasta que verifiques tu identidad.",
+      "note": "Nota: Puedes volver a tu panel en cualquier momento para completar la verificación.",
+      "actions": {
+        "back": "Volver",
+        "confirm": "Omitir y Finalizar"
+      }
     },
     "actions": {
       "next": "Siguiente",
@@ -991,136 +977,6 @@
       "alreadyApproved": "Ya Aprobado",
       "alreadyApprovedDescription": "Su verificación de vida ya está aprobada. No se necesita más verificación.",
       "sessionError": "Error en la Sesión de Liveness"
-    },
-    "createAccount": {
-      "title": "Crear Tu Cuenta",
-      "subtitle": "Comencemos con lo básico.",
-      "button": "Crear Cuenta",
-      "prompt": "¿No tienes una cuenta?",
-      "link": "Regístrate"
-    },
-    "signIn": {
-      "title": "Iniciar Sesión",
-      "subtitle": "Inicia sesión en tu cuenta de Likelee.",
-      "button": "Iniciar Sesión",
-      "prompt": "¿Ya tienes una cuenta?",
-      "link": "Iniciar Sesión"
-    },
-    "form": {
-      "labels": {
-        "fullName": "Nombre Completo",
-        "city": "Ciudad",
-        "state": "Estado/País",
-        "email": "Dirección de Correo Electrónico",
-        "confirmPassword": "Confirmar Contraseña"
-      },
-      "placeholders": {
-        "fullName": "Juan Pérez",
-        "email": "usted@ejemplo.com",
-        "password": "••••••••",
-        "confirmPassword": "••••••••",
-        "schoolName": "Nombre de la universidad",
-        "sport": "Selecciona tu deporte",
-        "languages": "p. ej., inglés, español",
-        "handle": "@tuusuario",
-        "price": "150",
-        "headshot": "URL de la imagen",
-        "specify": "Por favor especifique...",
-        "stageName": "Tu nombre",
-        "bio": "Cuéntale a las marcas un poco sobre ti...",
-        "platform": "Seleccionar plataforma",
-        "city": "ej: Madrid",
-        "state": "ej: España",
-        "age": "ej: 25"
-      },
-      "sport": "Deporte",
-      "athleteType": "Tipo de atleta",
-      "athleteTypes": {
-        "University": "Universidad",
-        "Professional": "Profesional",
-        "Independent": "Independiente"
-      },
-      "schoolName": "Nombre de la escuela",
-      "languages": "Idiomas",
-      "representationStatus": "Estado de Representación",
-      "instagramOptional": "Instagram (opcional)",
-      "twitterOptional": "Twitter/X (opcional)",
-      "brandCategories": "Intereses / Categorías de Marcas",
-      "shortBio": "Biografía Corta",
-      "visibility": "Visibilidad del Perfil",
-      "visibilityOptions": {
-        "public": {
-          "label": "Público",
-          "description": "Visible para todos"
-        },
-        "private": {
-          "label": "Privado",
-          "description": "Solo visible para marcas y creadores de IA"
-        }
-      },
-      "vibes": "Etiquetas de Estilo / Vibe",
-      "dob": "Fecha de Nacimiento",
-      "genderQuestion": "¿Cómo te identificas?",
-      "genderOptions": {
-        "female": "Mujer",
-        "male": "Hombre",
-        "nonbinary": "No binario",
-        "genderFluid": "Género fluido",
-        "preferNotToSay": "Prefiero no decirlo"
-      },
-      "headshot": "Subir Foto de Rostro (opcional)",
-      "headshotHint": "Puedes subir tu foto después de crear tu cuenta",
-      "birthdate": "Fecha de nacimiento",
-      "licensingPricing": "Precios de Licencia",
-      "basePrice": "Precio base mensual de licencia (USD)",
-      "basePriceHint": "Mínimo $150/mes. La moneda está fijada en USD.",
-      "campaignMatch": "Ayúdanos a encontrarte las campañas adecuadas",
-      "contentInterest": "¿En qué tipo de contenido te interesa aparecer?",
-      "selectMax3": "Seleccione hasta 3 por ahora",
-      "brandinterest": "¿Con qué tipos de marcas o industrias quieres trabajar?",
-      "instagram": "Instagram (opcional)",
-      "twitter": "Twitter/X (opcional)",
-      "interests": "Intereses / Categorías de Marca",
-      "bio": "Biografía Corta",
-      "bioPlaceholder": "Cuéntale a las marcas un poco sobre ti...",
-      "handle": "Usuario",
-      "primaryPlatform": "Plataforma principal",
-      "gender": "¿Cómo te identificas?",
-      "raceEthnicity": "Raza/Etnia (seleccione todas las que correspondan)",
-      "save": "Guardar y Continuar a Verificación",
-      "photos": {
-        "label": "Sube al menos 3 fotos",
-        "description": "Estas se usarán para entrenar tu modelo de IA. Asegúrate de que sean de alta calidad y muestren tu rostro claramente.",
-        "drop": "Suelta archivos aquí o haz clic para subir"
-      },
-      "perMonth": "/mes"
-    },
-    "warning": "Este es un sistema de reserva beta. Su perfil se guardará, pero se le colocará en una lista de espera para el acceso completo.",
-    "title": "Reserva tu Perfil (Beta)",
-    "steps": {
-      "accountSetup": "Configuración de Cuenta",
-      "personalDetails": "Detalles Personales",
-      "verification": "Verificación",
-      "photos": "Fotos",
-      "finalize": "Finalizar"
-    },
-    "stepTitles": {
-      "step1": "Crea Tu Cuenta",
-      "step2": {
-        "influencer": "Conceptos Básicos",
-        "model_actor": "Detalles del Talento",
-        "athlete": "Info del Atleta"
-      },
-      "step3": {
-        "influencer": "Oportunidades",
-        "model_actor": "Preferencias",
-        "athlete": "Configuración de Marca"
-      }
-    },
-    "stepProgress": "Paso {{step}} de {{total}}",
-    "authMode": {
-      "signup": "Registrarse",
-      "login": "Iniciar Sesión"
     },
     "createAccount": {
       "title": "Crea Tu Cuenta",
@@ -1244,6 +1100,31 @@
         }
       }
     },
+    "warning": {
+      "limitedBatches": "Estamos lanzando en lotes limitados para asegurar que cada Creador obtenga visibilidad y oportunidades de campaña. Reserva tu perfil para unirte a la primera cohorte de creadores."
+    },
+    "title": "Reserva tu Perfil (Beta)",
+    "steps": {
+      "accountSetup": "Configuración de Cuenta",
+      "personalDetails": "Detalles Personales",
+      "verification": "Verificación",
+      "photos": "Fotos",
+      "finalize": "Finalizar"
+    },
+    "stepTitles": {
+      "step1": "Crea Tu Cuenta",
+      "step2": {
+        "influencer": "Conceptos Básicos",
+        "model_actor": "Detalles del Talento",
+        "athlete": "Info del Atleta"
+      },
+      "step3": {
+        "influencer": "Oportunidades",
+        "model_actor": "Preferencias",
+        "athlete": "Configuración de Marca"
+      }
+    },
+    "stepProgress": "Paso {{step}} de {{total}}",
     "authMode": {
       "signup": "Registrarse",
       "login": "Iniciar Sesión"
@@ -1267,18 +1148,6 @@
       "step3": {
         "influencer": "Define tus términos de colaboración"
       }
-    },
-    "skipModal": {
-      "title": "¿Omitir Verificación?",
-      "description": "Tu perfil se guardará, pero no serás visible para las marcas hasta que verifiques tu identidad.",
-      "note": "Nota: Puedes volver a tu panel en cualquier momento para completar la verificación.",
-      "actions": {
-        "back": "Volver",
-        "confirm": "Omitir y Finalizar"
-      }
-    },
-    "warning": {
-      "limitedBatches": "Estamos lanzando en lotes limitados para asegurar que cada Creador obtenga visibilidad y oportunidades de campaña. Reserva tu perfil para unirte a la primera cohorte de creadores."
     }
   },
   "forYou": {
@@ -1793,7 +1662,6 @@
       "selectionLimit": "Límite de selección",
       "selectionLimitDesc": "Por favor, selecciona hasta 3 opciones por ahora. Puedes añadir más tarde."
     },
-    "forgotPassword": "¿Olvidaste tu contraseña?",
     "selectAll": "Seleccionar Todo",
     "vibes": {
       "Streetwear": "Ropa urbana",
@@ -1817,6 +1685,18 @@
       "Video-game / VR characters": "Personajes de videojuegos / VR",
       "Stock photo / video libraries": "Bibliotecas de fotos / videos de stock",
       "Educational / nonprofit spots": "Anuncios educativos / sin fines de lucro",
+      "Fashion & Beauty": "Moda y Belleza",
+      "Product Reviews": "Reseñas de productos",
+      "Testimonials": "Testimonios",
+      "Social Media Content": "Contenido de redes sociales",
+      "Educational Content": "Contenido educativo",
+      "Fitness/Wellness": "Fitness/Bienestar",
+      "Lifestyle Content": "Contenido de estilo de vida",
+      "Political Content": "Contenido político",
+      "Controversial Topics": "Temas controvertidos",
+      "Explicit/Adult Content": "Contenido explícito/adulto",
+      "Pharmaceutical Claims": "Afirmaciones farmacéuticas",
+      "Financial/Investment Advice": "Asesoramiento financiero/inversión",
       "Other": "Otros"
     },
     "industries": {
@@ -1913,5 +1793,82 @@
     "invalidPriceDesc": "Mínimo $150/mes",
     "successTitle": "Éxito",
     "successDesc": "Precios actualizados"
+  },
+  "imageSections": {
+    "headshot_neutral": {
+      "title": "Fotos de cabeza - Expresión neutra",
+      "description": "Rostro de frente, expresión neutra (sin sonreír ni fruncir el ceño). Buena iluminación en el rostro. Ropa profesional o fondo liso. 1080x1080 mínimo.",
+      "bestFor": "Las marcas necesitan una referencia de rostro limpia"
+    },
+    "headshot_smiling": {
+      "title": "Fotos de cabeza - Sonriendo",
+      "description": "Rostro de frente, sonrisa natural (genuina, no forzada). Buena iluminación. Entorno profesional. 1080x1080 mínimo.",
+      "bestFor": "Las marcas quieren mostrarte feliz/accesible"
+    },
+    "fullbody_casual": {
+      "title": "Cuerpo completo - Atuendo casual",
+      "description": "Foto de cuerpo completo con ropa casual cotidiana. Pose natural.",
+      "bestFor": "Look casual cotidiano"
+    },
+    "fullbody_formal": {
+      "title": "Cuerpo completo - Formal/Profesional",
+      "description": "Foto de cuerpo completo con atuendo profesional o formal.",
+      "bestFor": "Contextos profesionales o de negocios"
+    },
+    "side_profile": {
+      "title": "Perfil lateral",
+      "description": "Vista lateral clara de tu rostro y parte superior del cuerpo.",
+      "bestFor": "Las marcas necesitan tu ángulo lateral"
+    },
+    "three_quarter": {
+      "title": "Ángulo 3/4",
+      "description": "Rostro girado en un ángulo de 45 grados, expresión natural.",
+      "bestFor": "Ángulo conversacional natural"
+    },
+    "hair_down": {
+      "title": "Cabello suelto - Suelto/Ondulado",
+      "description": "Cabello suelto en tu estilo natural.",
+      "bestFor": "Look casual y relajado"
+    },
+    "hair_up": {
+      "title": "Cabello recogido - Cola de caballo/Moño",
+      "description": "Cabello recogido/hacia atrás, look limpio.",
+      "bestFor": "Look profesional o activo"
+    },
+    "hair_styling": {
+      "title": "Peinado - Trenzas/Estilo específico",
+      "description": "Si tienes un peinado característico.",
+      "bestFor": "Si tienes un estilo característico"
+    },
+    "upper_body": {
+      "title": "Primer plano de la parte superior del cuerpo",
+      "description": "Hombros hacia arriba, rasgos faciales detallados visibles.",
+      "bestFor": "Primeros planos, rasgos faciales detallados"
+    },
+    "outdoors": {
+      "title": "En entorno - Exterior",
+      "description": "Tú en un entorno exterior (parque, calle, naturaleza).",
+      "bestFor": "Contenido contextual, estilo de vida"
+    },
+    "indoors": {
+      "title": "En entorno - Interior",
+      "description": "Tú en un entorno interior (casa, oficina, café).",
+      "bestFor": "Contextos de interior/oficina/hogar"
+    },
+    "makeup_variation": {
+      "title": "Estilo de maquillaje diferente",
+      "description": "Si varías tu estilo de maquillaje, muestra diferentes looks.",
+      "bestFor": "Si varías el maquillaje, las marcas deberían saberlo"
+    },
+    "seasonal": {
+      "title": "Variación estacional/Atuendo",
+      "description": "Diferentes estilos estacionales o variaciones de atuendo.",
+      "bestFor": "Campañas estacionales, diferentes looks"
+    },
+    "signature": {
+      "title": "Tu elección - Momento característico",
+      "description": "Una foto que realmente te representa y cómo la gente te reconoce.",
+      "bestFor": "Una foto que realmente te representa"
+    }
   }
 }
