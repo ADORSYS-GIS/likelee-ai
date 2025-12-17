@@ -97,6 +97,59 @@
       "cameoVideo": "Vidéo Caméo",
       "missing": "MANQUANT"
     },
+    "content": {
+      "title": "Contenu",
+      "subtitle": "Suivez le contenu créé avec votre image",
+      "welcome": {
+        "title": "Bienvenue sur votre page de Contenu !",
+        "message": "Voici un exemple de ce à quoi ressembleront le contenu de marque et les détections. Vous n'avez pas encore de contenu, mais lorsque les marques créeront du contenu avec votre image, il apparaîtra ici !"
+      },
+      "examples": {
+        "instagramReel": "Reel Instagram",
+        "webBanner": "Bannière Web",
+        "tvCommercial": "Publicité TV"
+      },
+      "tabs": {
+        "brandContent": "Contenu de Marque",
+        "detections": "Détections"
+      },
+      "brandContent": {
+        "info": "Ce flux montre tout le contenu autorisé que les marques ont publié en utilisant votre image.",
+        "views": "Vues",
+        "engagement": "Engagement",
+        "published": "Publié le {{date}}",
+        "noContent": "Aucun contenu de marque trouvé."
+      },
+      "detections": {
+        "info": "Protection de l'Image active. Nous scannons continuellement le web pour détecter toute utilisation non autorisée de votre image. Examinez le contenu détecté ci-dessous.",
+        "needsReview": "À Examiner",
+        "takedownRequested": "Retrait Demandé",
+        "resolved": "Résolu",
+        "detected": "Détecté",
+        "matchConfidence": "Confiance de Correspondance",
+        "viewOriginal": "Voir le Contenu Original",
+        "requestTakedown": "Demander le Retrait",
+        "dismiss": "Ignorer (C'est autorisé)",
+        "takedownSent": "Demande de retrait envoyée. Les plateformes répondent généralement sous 24 à 72 heures.",
+        "contentRemoved": "Le contenu a été supprimé ou vérifié comme autorisé.",
+        "noDetections": "Aucune détection trouvée.",
+        "howItWorks": {
+          "title": "Comment fonctionne la détection",
+          "scanning": {
+            "title": "Scanner Continu",
+            "desc": "Nous scannons les principales plateformes pour des correspondances faciales"
+          },
+          "ai": {
+            "title": "Correspondance IA",
+            "desc": "Une IA avancée compare avec votre image"
+          },
+          "takedown": {
+            "title": "Support de Retrait",
+            "desc": "Nous aidons à déposer des rapports DMCA et de plateforme"
+          }
+        }
+      }
+    },
     "approvals": {
       "title": "Approbations en Attente",
       "subtitle": "Examiner et approuver les demandes de campagne des marques",

@@ -2025,6 +2025,11 @@
         "title": "Welcome to your Content page!",
         "message": "Here's an example of what branded content and detections will look like. You don't have any content yet, but as brands create content with your likeness, it will appear here!"
       },
+      "examples": {
+        "instagramReel": "Instagram Reel",
+        "webBanner": "Web Banner",
+        "tvCommercial": "TV Commercial"
+      },
       "tabs": {
         "brandContent": "Brand Content",
         "detections": "Detections"

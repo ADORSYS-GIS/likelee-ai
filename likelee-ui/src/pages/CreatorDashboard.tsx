@@ -487,7 +487,7 @@ const exampleContentItems = [
     brand: "Nike Sportswear",
     brand_logo:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    title: "Instagram Reel",
+    titleKey: "instagramReel",
     thumbnail_url:
       "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
     platform: "Instagram",
@@ -502,7 +502,7 @@ const exampleContentItems = [
     brand: "Glossier Beauty",
     brand_logo:
       "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    title: "Web Banner",
+    titleKey: "webBanner",
     thumbnail_url:
       "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
     platform: "Website",
@@ -517,7 +517,7 @@ const exampleContentItems = [
     brand: "Tesla Motors",
     brand_logo:
       "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    title: "TV Commercial",
+    titleKey: "tvCommercial",
     thumbnail_url:
       "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
     platform: "YouTube",
@@ -636,7 +636,7 @@ function parseErrorMessage(err: any): string {
 }
 
 export default function CreatorDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
@@ -1179,7 +1179,13 @@ export default function CreatorDashboard() {
                           <h3 className="font-bold text-gray-900 text-base">
                             {item.brand}
                           </h3>
-                          <p className="text-sm text-gray-500">{item.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {(item as any).titleKey
+                              ? t(
+                                `creatorDashboard.content.examples.${(item as any).titleKey}`,
+                              )
+                              : item.title}
+                          </p>
                         </div>
                         <Badge
                           variant="secondary"
@@ -1210,7 +1216,14 @@ export default function CreatorDashboard() {
                         </div>
                       </div>
                       <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-                        Published {item.published_at}
+                        {t(
+                          "creatorDashboard.content.brandContent.published",
+                          {
+                            date: new Date(item.published_at).toLocaleDateString(
+                              i18n.language,
+                            ),
+                          },
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -1309,7 +1322,9 @@ export default function CreatorDashboard() {
                               )}
                             </p>
                             <p className="font-medium text-gray-900">
-                              {item.detected_at}
+                              {new Date(item.detected_at).toLocaleDateString(
+                                i18n.language,
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1560,7 +1575,7 @@ export default function CreatorDashboard() {
                     variant="default"
                     className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
                   >
-                    {tag}
+                    {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
                   </Badge>
                 ))}
               </div>
@@ -1576,7 +1591,7 @@ export default function CreatorDashboard() {
                     variant="secondary"
                     className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
                   >
-                    {tag}
+                    {t(`common.industries.${tag}`, { defaultValue: tag })}
                   </Badge>
                 ))}
               </div>

@@ -338,6 +338,11 @@
         "title": "¡Bienvenido a tu página de Contenido!",
         "message": "Aquí tienes un ejemplo de cómo se verán el contenido de marca y las detecciones. Aún no tienes contenido, pero a medida que las marcas creen contenido con tu imagen, ¡aparecerá aquí!"
       },
+      "examples": {
+        "instagramReel": "Reel de Instagram",
+        "webBanner": "Banner Web",
+        "tvCommercial": "Comercial de TV"
+      },
       "tabs": {
         "brandContent": "Contenido de Marca",
         "detections": "Detecciones"

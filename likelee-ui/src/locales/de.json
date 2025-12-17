@@ -340,6 +340,11 @@
         "title": "Willkommen auf Ihrer Inhaltsseite!",
         "message": "Hier ist ein Beispiel dafür, wie Marken-Inhalte und Erkennungen aussehen werden. Sie haben noch keine Inhalte, aber wenn Marken Inhalte mit Ihrem Abbild erstellen, werden sie hier angezeigt!"
       },
+      "examples": {
+        "instagramReel": "Instagram Reel",
+        "webBanner": "Web-Banner",
+        "tvCommercial": "TV-Werbespot"
+      },
       "tabs": {
         "brandContent": "Marken-Inhalt",
         "detections": "Erkennungen"
