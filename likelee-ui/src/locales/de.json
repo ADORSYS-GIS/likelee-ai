@@ -315,7 +315,28 @@
         "title": "Warnung:",
         "message": "Dies ist eine Anfrage zur unbefristeten Nutzung. Sie würden die langfristige Kontrolle über Ihr Abbild für diese Kampagne aufgeben. Erwägen Sie stattdessen, über zeitlich begrenzte Bedingungen zu verhandeln."
       },
-      "viewContract": "Vertrag anzeigen"
+      "viewContract": "Vertrag anzeigen",
+      "labels": {
+        "industries": "Branchen:",
+        "regions": "Regionen:",
+        "estimatedMonthly": "Geschätzt monatlich:",
+        "termLength": "Laufzeit:",
+        "proposedRate": "Vorgeschlagener Tarif:",
+        "requestedOn": "Angefordert am {{date}}",
+        "pricePerMonth": "{{price}} $ / Monat",
+        "months": "{{count}} Monate"
+      },
+      "actions": {
+        "viewContract": "Vertrag anzeigen",
+        "decline": "Ablehnen",
+        "counterOffer": "Gegenangebot",
+        "acceptAndSign": "Akzeptieren & Unterschreiben",
+        "backToQueue": "Zurück zur Warteschlange"
+      },
+      "contractReview": {
+        "title": "Vertrag von {{brand}} überprüfen",
+        "subtitle": "Bitte lesen Sie alle Bedingungen unten sorgfältig durch, bevor Sie akzeptieren."
+      }
     },
     "campaigns": {
       "title": "Aktive Kampagnen",
@@ -1744,7 +1765,10 @@
       "Education": "Bildung",
       "Real Estate": "Immobilien",
       "Entertainment": "Unterhaltung",
-      "Open to any industry": "Offen für jede Branche"
+      "Open to any industry": "Offen für jede Branche",
+      "sportsFitness": "Sport / Fitness",
+      "foodBeverage": "Lebensmittel & Getränke",
+      "tech": "Technologie"
     },
     "sports": {
       "Football": "American Football",
@@ -1798,6 +1822,19 @@
       "Finance / Fintech": "Finanzen / Fintech",
       "Education / Training": "Bildung / Training",
       "Open to any brand": "Offen für jede Marke"
+    },
+    "regions": {
+      "northAmerica": "Nordamerika",
+      "europe": "Europa",
+      "asia": "Asien",
+      "global": "Global"
+    },
+    "usageTypes": {
+      "socialMedia": "Soziale Medien",
+      "socialMediaCampaign": "Social-Media-Kampagne",
+      "productLaunch": "Produkteinführung",
+      "tvDigital": "TV & Digital",
+      "summerCampaign": "Sommerkampagne"
     }
   },
   "forgotPasswordPage": {

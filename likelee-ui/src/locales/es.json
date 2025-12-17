@@ -313,7 +313,28 @@
         "title": "Advertencia:",
         "message": "Esta es una solicitud de uso perpetuo. Renunciarías al control a largo plazo de tu imagen para esta campaña. Considera negociar términos de tiempo limitado en su lugar."
       },
-      "viewContract": "Ver Contrato"
+      "viewContract": "Ver Contrato",
+      "labels": {
+        "industries": "Industrias:",
+        "regions": "Regiones:",
+        "estimatedMonthly": "Mensual estimado:",
+        "termLength": "Duración:",
+        "proposedRate": "Tarifa propuesta:",
+        "requestedOn": "Solicitado el {{date}}",
+        "pricePerMonth": "${{price}} / mes",
+        "months": "{{count}} meses"
+      },
+      "actions": {
+        "viewContract": "Ver Contrato",
+        "decline": "Rechazar",
+        "counterOffer": "Contraoferta",
+        "acceptAndSign": "Aceptar y Firmar",
+        "backToQueue": "Volver a la cola"
+      },
+      "contractReview": {
+        "title": "Revisar Contrato de {{brand}}",
+        "subtitle": "Revise cuidadosamente todos los términos a continuación antes de aceptar."
+      }
     },
     "campaigns": {
       "title": "Campañas Activas",
@@ -1748,7 +1769,10 @@
       "Education": "Educación",
       "Real Estate": "Bienes Raíces",
       "Entertainment": "Entretenimiento",
-      "Open to any industry": "Abierto a cualquier industria"
+      "Open to any industry": "Abierto a cualquier industria",
+      "sportsFitness": "Deportes / Fitness",
+      "foodBeverage": "Alimentos y Bebidas",
+      "tech": "Tecnología"
     },
     "sports": {
       "Football": "Fútbol Americano",
@@ -1802,6 +1826,19 @@
       "Finance / Fintech": "Finanzas / Fintech",
       "Education / Training": "Educación / Entrenamiento",
       "Open to any brand": "Abierto a cualquier marca"
+    },
+    "regions": {
+      "northAmerica": "América del Norte",
+      "europe": "Europa",
+      "asia": "Asia",
+      "global": "Global"
+    },
+    "usageTypes": {
+      "socialMedia": "Redes Sociales",
+      "socialMediaCampaign": "Campaña en redes sociales",
+      "productLaunch": "Lanzamiento de producto",
+      "tvDigital": "TV y Digital",
+      "summerCampaign": "Campaña de verano"
     }
   },
   "forgotPasswordPage": {

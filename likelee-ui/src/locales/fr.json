@@ -242,7 +242,28 @@
         "title": "Avertissement :",
         "message": "Cette demande inclut des droits 'À Perpétuité'. Cela signifie que la marque possède les droits pour toujours."
       },
-      "viewContract": "Voir le Contrat"
+      "viewContract": "Voir le Contrat",
+      "labels": {
+        "industries": "Industries :",
+        "regions": "Régions :",
+        "estimatedMonthly": "Mensuel estimé :",
+        "termLength": "Durée :",
+        "proposedRate": "Tarif proposé :",
+        "requestedOn": "Demandé le {{date}}",
+        "pricePerMonth": "{{price}} $ / mois",
+        "months": "{{count}} mois"
+      },
+      "actions": {
+        "viewContract": "Voir le contrat",
+        "decline": "Refuser",
+        "counterOffer": "Contre-offre",
+        "acceptAndSign": "Accepter & Signer",
+        "backToQueue": "Retour à la file"
+      },
+      "contractReview": {
+        "title": "Révision du contrat de {{brand}}",
+        "subtitle": "Veuillez lire attentivement tous les termes ci-dessous avant d'accepter."
+      }
     },
     "archive": {
       "title": "Archives des Campagnes",
@@ -1038,7 +1059,10 @@
       "Education": "Éducation",
       "Real Estate": "Immobilier",
       "Entertainment": "Divertissement",
-      "Open to any industry": "Ouvert à toute industrie"
+      "Open to any industry": "Ouvert à toute industrie",
+      "sportsFitness": "Sport / Fitness",
+      "foodBeverage": "Alimentation et Boissons",
+      "tech": "Tech"
     },
     "sports": {
       "Football": "Football américain",
@@ -1092,6 +1116,19 @@
       "Finance / Fintech": "Finance / Fintech",
       "Education / Training": "Éducation / Formation",
       "Open to any brand": "Ouvert à toute marque"
+    },
+    "regions": {
+      "northAmerica": "Amérique du Nord",
+      "europe": "Europe",
+      "asia": "Asie",
+      "global": "Mondial"
+    },
+    "usageTypes": {
+      "socialMedia": "Réseaux sociaux",
+      "socialMediaCampaign": "Campagne réseaux sociaux",
+      "productLaunch": "Lancement de produit",
+      "tvDigital": "TV & Numérique",
+      "summerCampaign": "Campagne d'été"
     }
   },
   "forgotPasswordPage": {

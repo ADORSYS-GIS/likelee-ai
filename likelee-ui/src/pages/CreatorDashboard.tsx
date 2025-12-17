@@ -228,199 +228,7 @@ const getImageSections = (t: any) => [
 // Example campaigns moved inside CreatorDashboard component to support translations
 
 // Example approval for blank users (shown when no real approvals exist)
-const exampleApprovals = [
-  {
-    id: "example-adidas-approval",
-    brand: "Adidas Running",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
-    campaign_type: "Social Media Campaign",
-    requested_date: "2025-02-06",
-    proposed_rate: 600,
-    term_length: "6 months",
-    estimated_monthly: 540, // after 10% Likelee fee
-    regions: ["North America", "Asia"],
-    industries: ["Sports / Fitness"],
-    usage_type: "Social Media",
-    duration: "6 months",
-    territory: "North America, Asia",
-    perpetual: false,
-    isExample: true,
-  },
-  {
-    id: "example-samsung-approval",
-    brand: "Samsung Electronic",
-    brand_logo:
-      "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
-    campaign_type: "Product Launch",
-    requested_date: "2025-02-10",
-    proposed_rate: 800,
-    term_length: "3 months",
-    estimated_monthly: 720,
-    regions: ["Global"],
-    industries: ["Tech"],
-    usage_type: "TV & Digital",
-    duration: "3 months",
-    territory: "Global",
-    perpetual: false,
-    isExample: true,
-  },
-  {
-    id: "example-pepsi-approval",
-    brand: "Pepsi",
-    brand_logo:
-      "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
-    campaign_type: "Summer Campaign",
-    requested_date: "2025-02-12",
-    proposed_rate: 700,
-    term_length: "4 months",
-    estimated_monthly: 630,
-    regions: ["North America", "Europe"],
-    industries: ["Food & Beverage"],
-    usage_type: "Social Media",
-    duration: "4 months",
-    territory: "North America, Europe",
-    perpetual: false,
-    isExample: true,
-  },
-];
-
-// Example archived campaign for blank users (shown when no real archived campaigns exist)
-const exampleArchivedCampaigns = [
-  {
-    id: "example-spotify-archive",
-    brand: "Spotify Premium",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
-    campaign: "Audio Campaign",
-    campaign_type: "Audio Campaign",
-    completed_date: "2/1/2026",
-    duration: "2 months",
-    monthly_rate: 600,
-    total_earned: 1200,
-    regions: ["Global"],
-    show_on_portfolio: false,
-    isExample: true,
-  },
-  {
-    id: "example-lululemon-archive",
-    brand: "Lululemon",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
-    campaign: "Yoga Collection",
-    campaign_type: "Social Media Campaign",
-    completed_date: "1/15/2026",
-    duration: "3 months",
-    monthly_rate: 750,
-    total_earned: 2250,
-    regions: ["North America"],
-    show_on_portfolio: true,
-    isExample: true,
-  },
-  {
-    id: "example-shopify-archive",
-    brand: "Shopify",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
-    campaign: "Entrepreneur Stories",
-    campaign_type: "Digital Ad",
-    completed_date: "12/20/2025",
-    duration: "1 month",
-    monthly_rate: 900,
-    total_earned: 900,
-    regions: ["Global"],
-    show_on_portfolio: true,
-    isExample: true,
-  },
-];
-
-// Example contract for blank users (shown when no real contracts exist)
-const exampleContracts = [
-  {
-    id: "example-nike-contract",
-    brand: "Nike Sportswear",
-    brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    project_name: "Spring Running Campaign",
-    creator_earnings: 500,
-    earnings_to_date: 3000,
-    amount_paid: 3000,
-    payment_status: "Paid",
-    start_date: "2026-01-01",
-    end_date: "2026-06-30",
-    effective_date: "2026-01-01",
-    expiration_date: "2026-06-30",
-    status: "active",
-    days_until_expiration: 132,
-    days_remaining: 132,
-    usage_description: "Instagram Reels (15-30s each) Hero Image",
-    deliverables: "Instagram Reels (15-30s each) Hero Image",
-    territory: "North America, Europe",
-    channels: ["Social Media", "Website"],
-    restrictions: "Competitor brands, political content",
-    prohibited_uses: "Competitor brands, political content",
-    auto_renew: false,
-    can_pause: true,
-    can_revoke: true,
-    isExample: true,
-  },
-  {
-    id: "example-glossier-contract",
-    brand: "Glossier Beauty",
-    brand_logo:
-      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    project_name: "Spring Beauty Collection",
-    creator_earnings: 750,
-    earnings_to_date: 4500,
-    amount_paid: 4500,
-    payment_status: "Paid",
-    start_date: "2026-01-01",
-    end_date: "2026-04-15",
-    effective_date: "2026-01-01",
-    expiration_date: "2026-04-15",
-    status: "active",
-    days_until_expiration: 75,
-    days_remaining: 75,
-    usage_description: "Social Media, Website",
-    deliverables: "TikTok Videos, Instagram Posts",
-    territory: "North America",
-    channels: ["Social Media", "Website"],
-    restrictions: "Competitor brands",
-    prohibited_uses: "Competitor brands",
-    auto_renew: false,
-    can_pause: true,
-    can_revoke: true,
-    isExample: true,
-  },
-  {
-    id: "example-tesla-contract",
-    brand: "Tesla Motors",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    project_name: "Model Y Launch",
-    creator_earnings: 1200,
-    earnings_to_date: 7200,
-    amount_paid: 7200,
-    payment_status: "Paid",
-    start_date: "2026-01-01",
-    end_date: "2026-03-15",
-    effective_date: "2026-01-01",
-    expiration_date: "2026-03-15",
-    status: "expiring_soon",
-    days_until_expiration: 45,
-    days_remaining: 45,
-    usage_description: "TV Commercial, Digital Ads",
-    deliverables: "TV Commercial, Digital Ads",
-    territory: "Global",
-    channels: ["TV", "Digital"],
-    restrictions: "Competitor automotive brands",
-    prohibited_uses: "Competitor automotive brands",
-    auto_renew: false,
-    can_pause: true,
-    can_revoke: true,
-    isExample: true,
-  },
-];
+// Example data (approvals, archived campaigns, contracts) moved inside component to support translations
 
 // Example content items for blank users
 const exampleContentItems = [
@@ -650,6 +458,222 @@ export default function CreatorDashboard() {
       isExample: true,
     },
   ],
+    [t],
+  );
+
+  const exampleApprovals = useMemo(
+    () => [
+      {
+        id: "example-adidas-approval",
+        brand: "Adidas Running",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
+        campaign_type: t("common.usageTypes.socialMediaCampaign"),
+        requested_date: "2025-02-06",
+        proposed_rate: 600,
+        term_length: t("creatorDashboard.approvals.labels.months", {
+          count: 6,
+        }),
+        estimated_monthly: 540, // after 10% Likelee fee
+        regions: [t("common.regions.northAmerica"), t("common.regions.asia")],
+        industries: [t("common.industries.sportsFitness")],
+        usage_type: t("common.usageTypes.socialMedia"),
+        duration: t("creatorDashboard.approvals.labels.months", { count: 6 }),
+        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.asia")}`,
+        perpetual: false,
+        isExample: true,
+      },
+      {
+        id: "example-samsung-approval",
+        brand: "Samsung Electronic",
+        brand_logo:
+          "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
+        campaign_type: t("common.usageTypes.productLaunch"),
+        requested_date: "2025-02-10",
+        proposed_rate: 800,
+        term_length: t("creatorDashboard.approvals.labels.months", {
+          count: 3,
+        }),
+        estimated_monthly: 720,
+        regions: [t("common.regions.global")],
+        industries: [t("common.industries.tech")],
+        usage_type: t("common.usageTypes.tvDigital"),
+        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
+        territory: t("common.regions.global"),
+        perpetual: false,
+        isExample: true,
+      },
+      {
+        id: "example-pepsi-approval",
+        brand: "Pepsi",
+        brand_logo:
+          "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
+        campaign_type: t("common.usageTypes.summerCampaign"),
+        requested_date: "2025-02-12",
+        proposed_rate: 700,
+        term_length: t("creatorDashboard.approvals.labels.months", {
+          count: 4,
+        }),
+        estimated_monthly: 630,
+        regions: [
+          t("common.regions.northAmerica"),
+          t("common.regions.europe"),
+        ],
+        industries: [t("common.industries.foodBeverage")],
+        usage_type: t("common.usageTypes.socialMedia"),
+        duration: t("creatorDashboard.approvals.labels.months", { count: 4 }),
+        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
+        perpetual: false,
+        isExample: true,
+      },
+    ],
+    [t],
+  );
+
+  const exampleArchivedCampaigns = useMemo(
+    () => [
+      {
+        id: "example-spotify-archive",
+        brand: "Spotify Premium",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
+        campaign: "Audio Campaign",
+        campaign_type: "Audio Campaign",
+        completed_date: "2/1/2026",
+        duration: t("creatorDashboard.approvals.labels.months", { count: 2 }),
+        monthly_rate: 600,
+        total_earned: 1200,
+        regions: [t("common.regions.global")],
+        show_on_portfolio: false,
+        isExample: true,
+      },
+      {
+        id: "example-lululemon-archive",
+        brand: "Lululemon",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
+        campaign: "Yoga Collection",
+        campaign_type: t("common.usageTypes.socialMediaCampaign"),
+        completed_date: "1/15/2026",
+        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
+        monthly_rate: 750,
+        total_earned: 2250,
+        regions: [t("common.regions.northAmerica")],
+        show_on_portfolio: true,
+        isExample: true,
+      },
+      {
+        id: "example-shopify-archive",
+        brand: "Shopify",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
+        campaign: "Entrepreneur Stories",
+        campaign_type: "Digital Ad",
+        completed_date: "12/20/2025",
+        duration: t("creatorDashboard.approvals.labels.months", { count: 1 }),
+        monthly_rate: 900,
+        total_earned: 900,
+        regions: [t("common.regions.global")],
+        show_on_portfolio: true,
+        isExample: true,
+      },
+    ],
+    [t],
+  );
+
+  const exampleContracts = useMemo(
+    () => [
+      {
+        id: "example-nike-contract",
+        brand: "Nike Sportswear",
+        brand_logo:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+        project_name: "Spring Running Campaign",
+        creator_earnings: 500,
+        earnings_to_date: 3000,
+        amount_paid: 3000,
+        payment_status: "Paid",
+        start_date: "2026-01-01",
+        end_date: "2026-06-30",
+        effective_date: "2026-01-01",
+        expiration_date: "2026-06-30",
+        status: "active",
+        days_until_expiration: 132,
+        days_remaining: 132,
+        usage_description: "Instagram Reels, Hero Image",
+        deliverables: "Instagram Reels, Hero Image",
+        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
+        channels: [
+          t("common.usageTypes.socialMedia"),
+          "Website",
+        ],
+        restrictions: "Competitor brands, political content",
+        prohibited_uses: "Competitor brands, political content",
+        auto_renew: false,
+        can_pause: true,
+        can_revoke: true,
+        isExample: true,
+      },
+      {
+        id: "example-glossier-contract",
+        brand: "Glossier Beauty",
+        brand_logo:
+          "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
+        project_name: "Spring Beauty Collection",
+        creator_earnings: 750,
+        earnings_to_date: 4500,
+        amount_paid: 4500,
+        payment_status: "Paid",
+        start_date: "2026-01-01",
+        end_date: "2026-04-15",
+        effective_date: "2026-01-01",
+        expiration_date: "2026-04-15",
+        status: "active",
+        days_until_expiration: 75,
+        days_remaining: 75,
+        usage_description: t("common.usageTypes.socialMedia"),
+        deliverables: "TikTok Videos, Instagram Posts",
+        territory: t("common.regions.northAmerica"),
+        channels: [
+          t("common.usageTypes.socialMedia"),
+          "Website",
+        ],
+        restrictions: "Competitor brands",
+        prohibited_uses: "Competitor brands",
+        auto_renew: false,
+        can_pause: true,
+        can_revoke: true,
+        isExample: true,
+      },
+      {
+        id: "example-tesla-contract",
+        brand: "Tesla Motors",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
+        project_name: "Model Y Launch",
+        creator_earnings: 1200,
+        earnings_to_date: 7200,
+        amount_paid: 7200,
+        payment_status: "Paid",
+        start_date: "2026-01-01",
+        end_date: "2026-03-15",
+        effective_date: "2026-01-01",
+        expiration_date: "2026-03-15",
+        status: "expiring_soon",
+        days_until_expiration: 45,
+        days_remaining: 45,
+        usage_description: "TV Commercial, Digital Ads",
+        deliverables: "TV Commercial, Digital Ads",
+        territory: t("common.regions.global"),
+        channels: [t("common.usageTypes.tvDigital")],
+        restrictions: "Competitor automotive brands",
+        prohibited_uses: "Competitor automotive brands",
+        auto_renew: false,
+        can_pause: true,
+        can_revoke: true,
+        isExample: true,
+      },
+    ],
     [t],
   );
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
@@ -4026,7 +4050,9 @@ export default function CreatorDashboard() {
                       {t("creatorDashboard.approvals.proposedRate")}
                     </span>
                     <span className="font-bold text-gray-900 text-lg">
-                      ${approval.proposed_rate}/month
+                      {t("creatorDashboard.approvals.labels.pricePerMonth", {
+                        price: approval.proposed_rate,
+                      })}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
@@ -4102,7 +4128,7 @@ export default function CreatorDashboard() {
                   className="flex-1 h-12 border-2 border-blue-300 text-blue-600 w-full sm:w-auto"
                 >
                   <FileText className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.viewContract")}
+                  {t("creatorDashboard.approvals.actions.viewContract")}
                 </Button>
                 <Button
                   onClick={() => handleDecline(approval.id)}
@@ -4110,20 +4136,21 @@ export default function CreatorDashboard() {
                   className="h-12 border-2 border-gray-300 w-full sm:w-auto"
                 >
                   <XCircle className="w-5 h-5 mr-2" />
-                  Decline
+                  {t("creatorDashboard.approvals.actions.decline")}
                 </Button>
                 <Button
                   variant="outline"
                   className="h-12 border-2 border-[#32C8D1] text-[#32C8D1] w-full sm:w-auto"
                 >
-                  Counter Offer
+                  <MessageSquare className="w-5 h-5 mr-2" />
+                  {t("creatorDashboard.approvals.actions.counterOffer")}
                 </Button>
                 <Button
                   onClick={() => handleApprove(approval.id)}
                   className="h-12 bg-green-600 hover:bg-green-700 text-white px-8 w-full sm:w-auto"
                 >
                   <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Accept & Sign
+                  {t("creatorDashboard.approvals.actions.acceptAndSign")}
                 </Button>
               </div>
             </Card>

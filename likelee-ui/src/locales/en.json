@@ -796,7 +796,10 @@
       "Education": "Education",
       "Real Estate": "Real Estate",
       "Entertainment": "Entertainment",
-      "Open to any industry": "Open to any industry"
+      "Open to any industry": "Open to any industry",
+      "sportsFitness": "Sports / Fitness",
+      "foodBeverage": "Food & Beverage",
+      "tech": "Tech"
     },
     "sports": {
       "Football": "Football",
@@ -857,6 +860,19 @@
       "youtube": "YouTube",
       "twitter": "Twitter/X",
       "other": "Other"
+    },
+    "regions": {
+      "northAmerica": "North America",
+      "europe": "Europe",
+      "asia": "Asia",
+      "global": "Global"
+    },
+    "usageTypes": {
+      "socialMedia": "Social Media",
+      "socialMediaCampaign": "Social Media Campaign",
+      "productLaunch": "Product Launch",
+      "tvDigital": "TV & Digital",
+      "summerCampaign": "Summer Campaign"
     }
   },
   "faces.realFutures.title": "Real Faces. Real Futures.",
@@ -1627,7 +1643,28 @@
         "title": "Warning:",
         "message": "This is a perpetual-use request. You would give up long-term control of your likeness for this campaign. Consider negotiating for time-limited terms instead."
       },
-      "viewContract": "View Contract"
+      "viewContract": "View Contract",
+      "labels": {
+        "industries": "Industries:",
+        "regions": "Regions:",
+        "estimatedMonthly": "Estimated Monthly:",
+        "termLength": "Term Length:",
+        "proposedRate": "Proposed Rate:",
+        "requestedOn": "Requested {{date}}",
+        "pricePerMonth": "${{price}}/month",
+        "months": "{{count}} months"
+      },
+      "actions": {
+        "viewContract": "View Contract",
+        "decline": "Decline",
+        "counterOffer": "Counter Offer",
+        "acceptAndSign": "Accept & Sign",
+        "backToQueue": "Back to Queue"
+      },
+      "contractReview": {
+        "title": "Review Contract from {{brand}}",
+        "subtitle": "Carefully review all terms below before accepting."
+      }
     },
     "campaigns": {
       "title": "Active Campaigns",
