@@ -2,6 +2,10 @@
 name: CI - Frontend (likelee-ui)
 
 on:
+  push:
+    branches: ["**"] # Run on pushes to any branch
+    paths:
+      - "likelee-ui/**"
   pull_request:
     branches: [main, develop] # Run on PRs to main or develop
     # Only run this pipeline if changes were made in the 'likelee-ui' folder
