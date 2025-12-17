@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { getUserFriendlyError } from "@/utils";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -632,20 +634,6 @@ const revenueData = [
 const earningsByIndustry: any[] = [];
 
 const mockContracts: any[] = [];
-
-function parseErrorMessage(err: any): string {
-  let msg = err?.message || String(err);
-  try {
-    const jsonMatch = msg.match(/(\{.*\})/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return parsed.message || parsed.error || msg;
-    }
-  } catch (e) {
-    // Parsing failed, return original
-  }
-  return msg;
-}
 
 export default function CreatorDashboard() {
   const navigate = useNavigate();
@@ -1798,8 +1786,12 @@ export default function CreatorDashboard() {
         return;
       }
 
-      if (file.size > 10_000_000) {
-        alert("Please upload an image of 10 MB or less.");
+      if (file.size > 20_000_000) {
+        toast({
+          variant: "destructive",
+          title: "File Too Large",
+          description: "Please upload an image of 20 MB or less.",
+        });
         return;
       }
       setUploadingPhoto(true);
@@ -1846,7 +1838,7 @@ export default function CreatorDashboard() {
         toast({
           variant: "destructive",
           title: "Upload Failed",
-          description: `Upload failed: ${parseErrorMessage(err)}`,
+          description: getUserFriendlyError(err),
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
@@ -1969,20 +1961,36 @@ export default function CreatorDashboard() {
   };
 
   const deleteRecording = async (id) => {
-    if (!confirm("Delete this recording?")) return;
     const rec = voiceLibrary.find((r) => r.id === id);
-    setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
-    try {
-      // If it exists on server, delete there too
-      const sid = rec?.server_recording_id || rec?.id;
-      if (sid) {
-        await fetch(api(`/api/voice/recordings/${encodeURIComponent(sid)}`), {
-          method: "DELETE",
-        });
-      }
-    } catch (_) {
-      // best-effort
-    }
+
+    toast({
+      title: "Delete Recording?",
+      description: "This action cannot be undone.",
+      variant: "destructive",
+      action: (
+        <ToastAction
+          altText="Delete"
+          onClick={async () => {
+            setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
+            try {
+              const sid = rec?.server_recording_id || rec?.id;
+              if (sid) {
+                await fetch(
+                  api(`/api/voice/recordings/${encodeURIComponent(sid)}`),
+                  {
+                    method: "DELETE",
+                  },
+                );
+              }
+            } catch (_) {
+              // best-effort
+            }
+          }}
+        >
+          Delete
+        </ToastAction>
+      ),
+    });
   };
 
   const createVoiceProfile = async (recording) => {
@@ -2060,7 +2068,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Voice Profile Error",
-        description: `Error: ${errorMessage}. Possible issues: Recording quality too low, format not supported, or too short.`,
+        description: getUserFriendlyError(error),
       });
     } finally {
       setGeneratingVoice(false);
@@ -2141,12 +2149,26 @@ export default function CreatorDashboard() {
   };
 
   const handleRevokeCampaign = (campaignId) => {
-    if (confirm("Are you sure you want to revoke this campaign license?")) {
-      setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
-      toast({
-        title: "Campaign revoked! (Demo mode)",
-      });
-    }
+    toast({
+      title: "Revoke Campaign License?",
+      description: "Are you sure you want to revoke this campaign?",
+      variant: "destructive",
+      action: (
+        <ToastAction
+          altText="Revoke"
+          onClick={() => {
+            setActiveCampaigns(
+              activeCampaigns.filter((c) => c.id !== campaignId),
+            );
+            toast({
+              title: "Campaign revoked! (Demo mode)",
+            });
+          }}
+        >
+          Revoke
+        </ToastAction>
+      ),
+    });
   };
 
   const handleToggleContentType = (type) => {
@@ -2236,7 +2258,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Save Failed",
-        description: `Failed to save preferences: ${error?.message || error}`,
+        description: getUserFriendlyError(error),
       });
     }
   };
@@ -2503,10 +2525,13 @@ export default function CreatorDashboard() {
         return;
       }
 
-      // Server pre-scan is limited to 10MB
-      if (file.size > 10_000_000) {
-        alert("Please upload an image ≤ 10MB.");
-
+      // Server pre-scan is limited to 20MB
+      if (file.size > 20_000_000) {
+        toast({
+          variant: "destructive",
+          title: "File Too Large",
+          description: "Please upload an image ≤ 20MB.",
+        });
         return;
       }
 
@@ -2524,24 +2549,11 @@ export default function CreatorDashboard() {
       });
       if (!res.ok) {
         const raw = await res.text();
-        try {
-          const err = JSON.parse(raw);
-          const msg: string = err?.message || "Upload failed";
-          const reasons: string[] = Array.isArray(err?.reasons)
-            ? err.reasons
-            : [];
-          toast({
-            variant: "destructive",
-            title: "Upload Failed",
-            description: `${msg}${reasons.length ? "\nDetails: " + reasons.join(", ") : ""}`,
-          });
-        } catch {
-          toast({
-            variant: "destructive",
-            title: "Upload Failed",
-            description: raw || "Upload failed",
-          });
-        }
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: getUserFriendlyError(raw),
+        });
         setUploadingToSection(false);
         return;
       }
@@ -2562,7 +2574,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Upload Failed",
-        description: `Upload failed: ${parseErrorMessage(e)}`,
+        description: getUserFriendlyError(e),
       });
     } finally {
       setUploadingToSection(false);
@@ -2570,12 +2582,24 @@ export default function CreatorDashboard() {
   };
 
   const deleteReferenceImage = (sectionId) => {
-    if (confirm("Delete this reference image?")) {
-      setReferenceImages({
-        ...referenceImages,
-        [sectionId]: null,
-      });
-    }
+    toast({
+      title: "Delete Reference Image?",
+      description: "This action cannot be undone.",
+      variant: "destructive",
+      action: (
+        <ToastAction
+          altText="Delete"
+          onClick={() => {
+            setReferenceImages({
+              ...referenceImages,
+              [sectionId]: null,
+            });
+          }}
+        >
+          Delete
+        </ToastAction>
+      ),
+    });
   };
 
   const getCompleteness = () => {
@@ -4935,7 +4959,7 @@ export default function CreatorDashboard() {
                 <p className="text-sm text-gray-600 mb-2">
                   Upload a professional headshot
                 </p>
-                <p className="text-xs text-gray-500">JPG or PNG, max 10MB</p>
+                <p className="text-xs text-gray-500">JPG or PNG, max 20MB</p>
               </div>
             </div>
           </Card>
@@ -6298,7 +6322,7 @@ export default function CreatorDashboard() {
                           Drag photos here or click to browse
                         </p>
                         <p className="text-sm text-gray-500">
-                          File Size: Max 10MB | Formats: JPG, PNG, WebP
+                          File Size: Max 20MB | Formats: JPG, PNG, WebP
                         </p>
                       </label>
                     </div>
