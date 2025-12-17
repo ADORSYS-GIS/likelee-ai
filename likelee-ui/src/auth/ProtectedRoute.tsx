@@ -12,6 +12,6 @@ export default function ProtectedRoute({
 
   if (!initialized) return null;
   if (!authenticated)
-    return <Navigate to="/Login" replace state={{ from: location }} />;
+    return <Navigate to="/ReserveProfile" replace state={{ from: location }} />;
   return <>{children}</>;
 }

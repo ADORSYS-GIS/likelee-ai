@@ -149,13 +149,13 @@ pub async fn upload_profile_photo(
         return Err((StatusCode::BAD_REQUEST, "user_id is required".to_string()));
     }
 
-    // Validate file size: max 5MB
-    const MAX_FILE_SIZE: usize = 5_000_000; // 5MB
+    // Validate file size: max 10MB
+    const MAX_FILE_SIZE: usize = 10_000_000; // 10MB
     if body.len() > MAX_FILE_SIZE {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,
             format!(
-                "File size ({} bytes) exceeds maximum allowed size of {} bytes (5MB)",
+                "File size ({} bytes) exceeds maximum allowed size of {} bytes (10MB)",
                 body.len(),
                 MAX_FILE_SIZE
             ),

@@ -30,6 +30,8 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Alert as UIAlert,
@@ -38,11 +40,12 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -193,6 +196,62 @@ const vibes = [
   "Casual",
 ];
 
+// Utility function to convert technical errors into user-friendly messages
+function getUserFriendlyError(error: any): string {
+  const errorStr = String(error?.message || error || "").toLowerCase();
+
+  // Email/Auth errors
+  if (errorStr.includes("duplicate") && errorStr.includes("email")) {
+    return "This email is already registered. Please use a different email or sign in instead.";
+  }
+  if (errorStr.includes("invalid") && errorStr.includes("email")) {
+    return "Please enter a valid email address.";
+  }
+  if (errorStr.includes("weak") || errorStr.includes("password")) {
+    return "Please choose a stronger password (at least 8 characters).";
+  }
+  if (
+    errorStr.includes("not authenticated") ||
+    errorStr.includes("unauthorized")
+  ) {
+    return "Please sign in to continue.";
+  }
+
+  // Upload/Storage errors
+  if (errorStr.includes("file size") || errorStr.includes("too large")) {
+    return "File is too large. Please use a smaller image (max 5MB).";
+  }
+  if (errorStr.includes("file type") || errorStr.includes("invalid format")) {
+    return "Invalid file type. Please upload a JPG, PNG, or WebP image.";
+  }
+
+  // Network errors
+  if (errorStr.includes("network") || errorStr.includes("fetch failed")) {
+    return "Network error. Please check your connection and try again.";
+  }
+  if (errorStr.includes("timeout")) {
+    return "Request timed out. Please try again.";
+  }
+
+  // Permission errors
+  if (errorStr.includes("permission") || errorStr.includes("denied")) {
+    return "Permission denied. Please check your settings and try again.";
+  }
+
+  // Generic fallback
+  if (errorStr.includes("failed")) {
+    return "Something went wrong. Please try again.";
+  }
+
+  // If we have a clean message without technical jargon, use it
+  const msg = error?.message || String(error);
+  if (msg.length < 100 && !msg.includes("{") && !msg.includes("[")) {
+    return msg;
+  }
+
+  return "An error occurred. Please try again or contact support if the problem persists.";
+}
+
 function ReferencePhotosStep(props: any) {
   const {
     kycStatus,
@@ -268,9 +327,9 @@ function ReferencePhotosStep(props: any) {
       setTimeout(attachStreamToVideo, 50);
     } catch (_e) {
       toast({
-        title: "Camera Error",
+        title: "Camera Access Required",
         description:
-          "Unable to access camera. Please allow camera permissions.",
+          "Unable to access camera. Please allow camera permissions in your browser settings.",
         variant: "destructive",
       });
     }
@@ -308,16 +367,16 @@ function ReferencePhotosStep(props: any) {
     if (!consent) {
       toast({
         title: "Consent Required",
-        description: "Please give consent before uploading.",
-        variant: "destructive",
+        description: "Please give consent before uploading your photos.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!captures.front || !captures.left || !captures.right) {
       toast({
         title: "Missing Photos",
-        description: "Please capture all three views.",
-        variant: "destructive",
+        description: "Please capture all three views (front, left, and right).",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -336,7 +395,7 @@ function ReferencePhotosStep(props: any) {
     } catch (e: any) {
       toast({
         title: "Upload Failed",
-        description: `Failed to upload reference photos: ${e?.message || e}`,
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     } finally {
@@ -348,7 +407,7 @@ function ReferencePhotosStep(props: any) {
     if (!userId) {
       toast({
         title: "Error",
-        description: "Missing user id.",
+        description: "Please sign in to continue.",
         variant: "destructive",
       });
       return;
@@ -377,7 +436,7 @@ function ReferencePhotosStep(props: any) {
     } catch (e: any) {
       toast({
         title: "Avatar Generation Failed",
-        description: `Failed to generate avatar: ${e?.message || e}`,
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     } finally {
@@ -598,13 +657,26 @@ export default function ReserveProfile() {
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const { login, register } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem("reserve_step");
+    const params = new URLSearchParams(window.location.search);
+    const stepParam = params.get("step");
+    if (stepParam) return parseInt(stepParam, 10);
+    return saved ? parseInt(saved) : 1;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("reserve_step", step.toString());
+  }, [step]);
+
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(true);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -648,6 +720,12 @@ export default function ReserveProfile() {
     bio: "",
   });
 
+  useEffect(() => {
+    // Security: Do not persist passwords to localStorage
+    const { password, confirmPassword, ...safeData } = formData;
+    localStorage.setItem("reserve_formData", JSON.stringify(safeData));
+  }, [formData]);
+
   // Cameo reference image URLs
   const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null);
   const [cameoLeftUrl, setCameoLeftUrl] = useState<string | null>(null);
@@ -661,7 +739,7 @@ export default function ReserveProfile() {
     if (!supabase) {
       toast({
         title: "Configuration Error",
-        description: "Image upload not configured. Missing Supabase keys.",
+        description: "Image upload not configured. Please contact support.",
         variant: "destructive",
       });
       return;
@@ -691,7 +769,7 @@ export default function ReserveProfile() {
           const out = await resScan.json();
           if (out?.flagged) {
             toast({
-              title: "Image Flagged",
+              title: "Photo Flagged",
               description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
               variant: "destructive",
             });
@@ -727,7 +805,7 @@ export default function ReserveProfile() {
           const out = await res.json();
           if (out?.flagged) {
             toast({
-              title: "Image Flagged",
+              title: "Photo Flagged",
               description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
               variant: "destructive",
             });
@@ -761,7 +839,7 @@ export default function ReserveProfile() {
     } catch (e: any) {
       toast({
         title: "Upload Failed",
-        description: `Failed to upload image: ${e?.message || e}`,
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     } finally {
@@ -773,9 +851,10 @@ export default function ReserveProfile() {
     const targetId = user?.id || profileId;
     if (!targetId) {
       toast({
-        title: "Profile Not Ready",
-        description: "Profile not ready yet. Please complete previous steps.",
-        variant: "destructive",
+        title: "Not Ready",
+        description:
+          "Please complete the previous steps before starting verification.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -795,12 +874,15 @@ export default function ReserveProfile() {
       setKycProvider(data.provider || "veriff");
       setKycSessionUrl(data.session_url);
       setKycStatus("pending");
-      setLivenessStatus("pending");
+      // Only reset liveness status if it's not already approved
+      if (livenessStatus !== "approved") {
+        setLivenessStatus("pending");
+      }
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
       toast({
-        title: "Verification Error",
-        description: `Failed to start verification: ${e?.message || e}`,
+        title: "Verification Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     } finally {
@@ -830,17 +912,17 @@ export default function ReserveProfile() {
           !cameoRightUrl
         ) {
           toast({
-            title: "Verification Success",
+            title: "Identity Verified",
             description:
-              "Identity verified! Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+              "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
           });
         }
       }
       return row;
     } catch (e: any) {
       toast({
-        title: "Error",
-        description: `Failed to fetch verification status: ${e?.message || e}`,
+        title: "Status Check Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     } finally {
@@ -867,9 +949,9 @@ export default function ReserveProfile() {
         return;
       }
       toast({
-        title: "Verification Incomplete",
+        title: "Verification Pending",
         description: `Verification not complete yet. KYC: ${kyc || "not_started"}, Liveness: ${live || "not_started"}.`,
-        variant: "destructive",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
     } finally {
       setKycLoading(false);
@@ -881,9 +963,10 @@ export default function ReserveProfile() {
       // Prevent starting new sessions after approval (cost control)
       if (livenessStatus === "approved") {
         toast({
-          title: "Liveness Approved",
+          title: "Already Approved",
           description:
-            "Liveness is already approved. No further checks needed.",
+            "Your liveness check is already approved. No further verification needed.",
+          className: "bg-green-50 border-2 border-green-400",
         });
         return;
       }
@@ -891,7 +974,7 @@ export default function ReserveProfile() {
         toast({
           title: "Configuration Error",
           description:
-            "Missing VITE_COGNITO_IDENTITY_POOL_ID in UI environment.",
+            "Liveness verification is not configured. Please contact support.",
           variant: "destructive",
         });
         return;
@@ -903,9 +986,10 @@ export default function ReserveProfile() {
       try {
         const session = await fetchAuthSession();
         const accessKeyId = (session as any)?.credentials?.accessKeyId;
-        if (accessKeyId) {
-          // credentials available
-        }
+        if (accessKeyId)
+          console.log("[liveness] Amplify session creds ready", {
+            accessKeyId,
+          });
       } catch (e) {
         console.warn("[liveness] fetchAuthSession failed (will continue):", e);
       }
@@ -930,7 +1014,9 @@ export default function ReserveProfile() {
             secretAccessKey: creds.secretAccessKey,
             sessionToken: creds.sessionToken,
           };
-          // pre-resolved using Amplify
+          console.log("[liveness] pre-resolved Amplify creds", {
+            accessKeyId: resolvedCreds.accessKeyId,
+          });
         }
       } catch (e) {
         console.warn("[liveness] fetchAuthSession failed (pre-resolve):", e);
@@ -939,11 +1025,13 @@ export default function ReserveProfile() {
         const { fromCognitoIdentityPool } =
           await import("@aws-sdk/credential-providers");
         const provider = fromCognitoIdentityPool({
-          clientConfig: { region: AWS_REGION },
+          clientConfig: { region: "us-east-1" },
           identityPoolId: COGNITO_IDENTITY_POOL_ID,
         });
         resolvedCreds = await provider();
-        // pre-resolved using identity pool fallback
+        console.log("[liveness] pre-resolved fallback creds", {
+          accessKeyId: resolvedCreds.accessKeyId,
+        });
       }
 
       setLivenessCreds(resolvedCreds);
@@ -958,14 +1046,14 @@ export default function ReserveProfile() {
       setShowLiveness(true);
       setLivenessError(e?.message || String(e));
       toast({
-        title: "Error",
-        description: e?.message || String(e),
+        title: "Liveness Session Error",
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     }
   };
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = (step / totalSteps) * 100;
 
   // Verification state
@@ -990,7 +1078,7 @@ export default function ReserveProfile() {
     }
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
-  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "us-east-1";
+  const AWS_REGION = (import.meta as any).env.VITE_AWS_REGION || "eu-central-1";
   const COGNITO_IDENTITY_POOL_ID =
     (import.meta as any).env.VITE_COGNITO_IDENTITY_POOL_ID || "";
   const [firstContinueLoading, setFirstContinueLoading] = useState(false);
@@ -1008,6 +1096,9 @@ export default function ReserveProfile() {
       const session = await fetchAuthSession();
       const creds: any = (session as any)?.credentials;
       if (creds?.accessKeyId && creds?.secretAccessKey) {
+        console.log("[liveness] using Amplify creds", {
+          accessKeyId: creds.accessKeyId,
+        });
         return {
           accessKeyId: creds.accessKeyId,
           secretAccessKey: creds.secretAccessKey,
@@ -1026,11 +1117,13 @@ export default function ReserveProfile() {
     const { fromCognitoIdentityPool } =
       await import("@aws-sdk/credential-providers");
     const provider = fromCognitoIdentityPool({
-      clientConfig: { region: AWS_REGION },
+      clientConfig: { region: "us-east-1" },
       identityPoolId: COGNITO_IDENTITY_POOL_ID,
     });
     const c = await provider();
-    // resolved using identity pool
+    console.log("[liveness] using fallback identity-pool creds", {
+      accessKeyId: c.accessKeyId,
+    });
     return c;
   }, [COGNITO_IDENTITY_POOL_ID]);
 
@@ -1054,6 +1147,7 @@ export default function ReserveProfile() {
       if (creatorType === "model_actor") return "Preferences";
       if (creatorType === "athlete") return "Brand Setup";
     }
+    if (step === 5) return "Terms & Agreements";
     return "";
   };
 
@@ -1066,11 +1160,8 @@ export default function ReserveProfile() {
     if (params.get("verified") === "1") {
       verifyAndContinue();
     }
-    // Poll every 5s while on step 4
-    const interval = setInterval(() => {
-      refreshVerificationStatus();
-    }, 5000);
-    return () => clearInterval(interval);
+    // Polling was removed from this page to prevent interference with the liveness check.
+    // It will be moved to the CreatorDashboard.
   }, [step]);
 
   // Initial profile creation (Step 1)
@@ -1136,7 +1227,7 @@ export default function ReserveProfile() {
         "Unknown error occurred";
       toast({
         title: "Profile Creation Failed",
-        description: `Failed to create profile: ${errorMessage}. Please try again.`,
+        description: getUserFriendlyError(error),
         variant: "destructive",
       });
     },
@@ -1210,7 +1301,7 @@ export default function ReserveProfile() {
         "Unknown error occurred";
       toast({
         title: "Profile Update Failed",
-        description: `Failed to update profile: ${errorMessage}. Please try again.`,
+        description: getUserFriendlyError(error),
         variant: "destructive",
       });
     },
@@ -1219,33 +1310,34 @@ export default function ReserveProfile() {
   const handleFirstContinue = () => {
     if (!formData.email) {
       toast({
-        title: "Missing Field",
+        title: "Email Required",
         description: "Please enter your email address.",
-        variant: "destructive",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!formData.password) {
       toast({
-        title: "Missing Field",
+        title: "Password Required",
         description: "Please enter a password.",
-        variant: "destructive",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!formData.confirmPassword) {
       toast({
-        title: "Missing Field",
+        title: "Confirm Password",
         description: "Please confirm your password.",
-        variant: "destructive",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match.",
-        variant: "destructive",
+        title: "Passwords Don't Match",
+        description:
+          "The passwords you entered do not match. Please try again.",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -1255,17 +1347,17 @@ export default function ReserveProfile() {
       !formData.full_name
     ) {
       toast({
-        title: "Missing Field",
+        title: "Name Required",
         description: "Please enter your full name or stage name.",
-        variant: "destructive",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
       toast({
-        title: "Missing Field",
+        title: "Name Required",
         description: "Please enter your full name.",
-        variant: "destructive",
+        className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
@@ -1275,48 +1367,44 @@ export default function ReserveProfile() {
     setFirstContinueLoading(true);
     (async () => {
       try {
-        const res = await fetch(
-          api(
-            `/api/email/available?email=${encodeURIComponent(formData.email)}`,
-          ),
-        );
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        if (!data.available) {
-          // Email already registered - send magic link
-          const { error } = await supabase.auth.signInWithOtp({
-            email: formData.email.trim().toLowerCase(),
-            options: { emailRedirectTo: `${window.location.origin}/Login` },
-          });
-          if (error) {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Email Already Registered",
-              description:
-                "This email is already registered. We've sent you a magic link to sign in. Check your email!",
-            });
-          }
-          return;
-        }
         // Create Supabase auth user so login works
         const displayName =
           creatorType === "model_actor"
             ? formData.stage_name || formData.full_name
             : formData.full_name;
-        await register(formData.email, formData.password, displayName);
+        const { session } = await register(
+          formData.email,
+          formData.password,
+          displayName,
+        );
+        if (!session) {
+          toast({
+            description:
+              "Please check your email to verify your account before continuing.",
+          });
+          return;
+        }
         // Move to next step; profile will be saved at the end (step 5)
         setStep(2);
       } catch (e: any) {
-        toast({
-          title: "Error",
-          description: `Failed to sign up: ${e?.message || e}`,
-          variant: "destructive",
-        });
+        const msg = (e?.message || "").toLowerCase();
+        if (
+          msg.includes("already registered") ||
+          msg.includes("already exists")
+        ) {
+          toast({
+            title: "Email Already Registered",
+            description:
+              "This email is already registered. Please log in instead.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+        } else {
+          toast({
+            title: "Sign-up Failed",
+            description: getUserFriendlyError(e),
+            variant: "destructive",
+          });
+        }
       } finally {
         setFirstContinueLoading(false);
       }
@@ -1330,25 +1418,25 @@ export default function ReserveProfile() {
       if (creatorType === "influencer") {
         if (!formData.city?.trim()) {
           toast({
-            title: "Validation Error",
-            description: "City is required.",
-            variant: "destructive",
+            title: "City Required",
+            description: "Please enter your city.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
         if (!formData.state?.trim()) {
           toast({
-            title: "Validation Error",
-            description: "State is required.",
-            variant: "destructive",
+            title: "State Required",
+            description: "Please enter your state.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
         if (!formData.birthdate) {
           toast({
-            title: "Validation Error",
-            description: "Birthdate is required.",
-            variant: "destructive",
+            title: "Birthdate Required",
+            description: "Please enter your birthdate.",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
@@ -1365,17 +1453,17 @@ export default function ReserveProfile() {
             : 0);
         if (isFinite(age) && age < 18) {
           toast({
-            title: "Validation Error",
-            description: "You must be 18 or older.",
+            title: "Age Restriction",
+            description: "You must be 18 or older to register.",
             variant: "destructive",
           });
           return;
         }
         if (!formData.gender?.trim()) {
           toast({
-            title: "Validation Error",
+            title: "Gender Required",
             description: "Please select how you identify.",
-            variant: "destructive",
+            className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
@@ -1384,10 +1472,10 @@ export default function ReserveProfile() {
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
         toast({
-          title: "Validation Error",
+          title: "Pricing Required",
           description:
             "Please set your base monthly license price (minimum $150).",
-          variant: "destructive",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
@@ -1404,41 +1492,41 @@ export default function ReserveProfile() {
     if (creatorType === "influencer") {
       if (!formData.content_types || formData.content_types.length === 0) {
         toast({
-          title: "Validation Error",
-          description: "Select at least one campaign type.",
-          variant: "destructive",
+          title: "Campaign Type Required",
+          description: "Please select at least one campaign type.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.industries || formData.industries.length === 0) {
         toast({
-          title: "Validation Error",
-          description: "Select at least one industry.",
-          variant: "destructive",
+          title: "Industry Required",
+          description: "Please select at least one industry.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.primary_platform?.trim()) {
         toast({
-          title: "Validation Error",
-          description: "Primary platform is required.",
-          variant: "destructive",
+          title: "Platform Required",
+          description: "Please select your primary platform.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.platform_handle?.trim()) {
         toast({
-          title: "Validation Error",
-          description: "Handle is required.",
-          variant: "destructive",
+          title: "Handle Required",
+          description: "Please enter your platform handle.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.visibility) {
         toast({
-          title: "Validation Error",
-          description: "Please select a profile visibility.",
-          variant: "destructive",
+          title: "Visibility Required",
+          description: "Please select your profile visibility preference.",
+          className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
@@ -1450,8 +1538,8 @@ export default function ReserveProfile() {
   const finalizeProfile = async () => {
     if (!user) {
       toast({
-        title: "Error",
-        description: "Please log in.",
+        title: "Not Signed In",
+        description: "Please sign in to continue.",
         variant: "destructive",
       });
       return;
@@ -1529,10 +1617,14 @@ export default function ReserveProfile() {
       if (error) throw error;
       setProfileId(user.id);
       setSubmitted(true);
+      // Clear persisted state on success
+      localStorage.removeItem("reserve_formData");
+      localStorage.removeItem("reserve_step");
+      localStorage.removeItem("reserve_profileId");
     } catch (e: any) {
       toast({
-        title: "Error",
-        description: `Failed to save your profile: ${e?.message || e}`,
+        title: "Profile Save Failed",
+        description: getUserFriendlyError(e),
         variant: "destructive",
       });
     }
@@ -1562,17 +1654,9 @@ export default function ReserveProfile() {
             balanced. Your profile is saved; we'll notify you when it's time to
             complete verification and go live.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Link to="/Login">
-              <Button className="rounded-none border-2 border-black bg-black text-white px-6 h-11">
-                Sign in
-              </Button>
-            </Link>
+          <div className="flex items-center justify-center">
             <Link to="/CreatorDashboard">
-              <Button
-                variant="outline"
-                className="rounded-none border-2 border-black h-11 px-6"
-              >
+              <Button className="rounded-none border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white px-8 h-12">
                 Go to Dashboard
               </Button>
             </Link>
@@ -1678,16 +1762,29 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1697,19 +1794,34 @@ export default function ReserveProfile() {
                     >
                       Confirm Password
                     </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1718,7 +1830,7 @@ export default function ReserveProfile() {
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
                       {creatorType === "model_actor"
-                        ? "Full Name / Stage Name"
+                        ? "Full Name"
                         : "Full Name"}
                     </Label>
                     <Input
@@ -1740,7 +1852,7 @@ export default function ReserveProfile() {
                       className="border-2 border-gray-300 rounded-none"
                       placeholder={
                         creatorType === "model_actor"
-                          ? "Your name or stage name"
+                          ? "Your name"
                           : "Your full name"
                       }
                     />
@@ -1804,16 +1916,37 @@ export default function ReserveProfile() {
                     >
                       Password
                     </Label>
-                    <Input
-                      id="login_password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="border-2 border-gray-300 rounded-none"
-                      placeholder="••••••••"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login_password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="border-2 border-gray-300 rounded-none pr-10"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-right mt-1">
+                      <Link
+                        to="/forgot-password"
+                        className="text-sm text-cyan-600 hover:underline"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
                   </div>
                   <Button
                     type="submit"
@@ -1842,7 +1975,7 @@ export default function ReserveProfile() {
                       {livenessSessionId && livenessCreds && (
                         <FaceLivenessDetectorCoreAny
                           sessionId={livenessSessionId}
-                          region={AWS_REGION}
+                          region={"us-east-1"}
                           // Provide multiple shapes to satisfy various lib expectations
                           credentialProvider={async () => livenessCreds}
                           credentialsProvider={async () => livenessCreds}
@@ -1850,7 +1983,6 @@ export default function ReserveProfile() {
                           config={{
                             awsCredentials: livenessCreds,
                             credentialProvider: async () => livenessCreds,
-                            region: AWS_REGION,
                           }}
                           onAnalysisComplete={async () => {
                             try {
@@ -1881,7 +2013,7 @@ export default function ReserveProfile() {
                                   toast({
                                     title: "Liveness Check Failed",
                                     description:
-                                      "Please try again with good lighting and follow prompts.",
+                                      "Please try again with good lighting and follow the on-screen prompts.",
                                     variant: "destructive",
                                   });
                                 }
@@ -1892,8 +2024,9 @@ export default function ReserveProfile() {
                                 }, 300);
                               } else {
                                 toast({
-                                  title: "Error",
-                                  description: `Failed to fetch liveness result: ${await r.text()}`,
+                                  title: "Failed to Get Results",
+                                  description:
+                                    "Unable to fetch liveness verification results. Please try again.",
                                   variant: "destructive",
                                 });
                               }
@@ -1906,8 +2039,8 @@ export default function ReserveProfile() {
                             console.error("Liveness error", e);
                             setLivenessError(e?.message || String(e));
                             toast({
-                              title: "Liveness Error",
-                              description: `Liveness error: ${e?.message || e}`,
+                              title: "Liveness Check Error",
+                              description: getUserFriendlyError(e),
                               variant: "destructive",
                             });
                             setLivenessRunning(false);
@@ -2068,6 +2201,31 @@ export default function ReserveProfile() {
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
                     Race/Ethnicity (select all that apply)
                   </Label>
+                  <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                    <Checkbox
+                      id="select-all-ethnicity"
+                      checked={ethnicities.every((eth) =>
+                        formData.ethnicity.includes(eth),
+                      )}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({
+                            ...formData,
+                            ethnicity: [...ethnicities],
+                          });
+                        } else {
+                          setFormData({ ...formData, ethnicity: [] });
+                        }
+                      }}
+                      className="border-2 border-gray-400"
+                    />
+                    <label
+                      htmlFor="select-all-ethnicity"
+                      className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                    >
+                      Select All
+                    </label>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {ethnicities.map((ethnicity) => (
                       <div
@@ -2214,6 +2372,31 @@ export default function ReserveProfile() {
                         You can specify more later
                       </span>
                     </div>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-work-types"
+                        checked={modelWorkTypes.every((type) =>
+                          formData.work_types.includes(type),
+                        )}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({
+                              ...formData,
+                              work_types: [...modelWorkTypes],
+                            });
+                          } else {
+                            setFormData({ ...formData, work_types: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-work-types"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border-2 border-gray-200 rounded-none">
                       {modelWorkTypes.map((type) => (
                         <div
@@ -2230,9 +2413,11 @@ export default function ReserveProfile() {
                                 toggleArrayItem("work_types", type);
                               } else {
                                 toast({
-                                  title: "Info",
+                                  title: "Selection Limit",
                                   description:
                                     "Please select up to 3 options for now. You can add more later.",
+                                  className:
+                                    "bg-cyan-50 border-2 border-cyan-400",
                                 });
                               }
                             }}
@@ -2256,6 +2441,28 @@ export default function ReserveProfile() {
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
                       Vibe / Style Tags
                     </Label>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-vibes"
+                        checked={vibes.every((vibe) =>
+                          formData.vibes.includes(vibe),
+                        )}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ ...formData, vibes: [...vibes] });
+                          } else {
+                            setFormData({ ...formData, vibes: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-vibes"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {vibes.map((vibe) => (
                         <div
@@ -2374,6 +2581,31 @@ export default function ReserveProfile() {
                           Select up to 3 for now
                         </span>
                       </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-content"
+                          checked={contentTypes.every((type) =>
+                            formData.content_types.includes(type),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData({
+                                ...formData,
+                                content_types: [...contentTypes],
+                              });
+                            } else {
+                              setFormData({ ...formData, content_types: [] });
+                            }
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-content"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {contentTypes.map((type) => (
                           <div
@@ -2421,6 +2653,31 @@ export default function ReserveProfile() {
                         <span className="text-xs text-gray-500">
                           Select up to 3 for now
                         </span>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-industries"
+                          checked={industries.every((industry) =>
+                            formData.industries.includes(industry),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData({
+                                ...formData,
+                                industries: [...industries],
+                              });
+                            } else {
+                              setFormData({ ...formData, industries: [] });
+                            }
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-industries"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {industries.map((industry) => (
@@ -2860,7 +3117,7 @@ export default function ReserveProfile() {
                           onAnalysisComplete={async () => {
                             try {
                               const r = await fetch(
-                                api(`/api/liveness/result`),
+                                api(`/ api / liveness / result`),
                                 {
                                   method: "POST",
                                   headers: {
@@ -2881,7 +3138,8 @@ export default function ReserveProfile() {
                                     title: "Liveness Check Failed",
                                     description:
                                       "Please try again with good lighting and follow prompts.",
-                                    variant: "destructive",
+                                    className:
+                                      "bg-red-50 border-2 border-red-400",
                                   });
                                 }
                                 // Always close and clear after a result to avoid lingering "Verifying" UI
@@ -3003,7 +3261,7 @@ export default function ReserveProfile() {
                         className="rounded-none border-2 border-black bg-black text-white"
                         onClick={() => {
                           setShowSkipModal(false);
-                          finalizeProfile();
+                          setStep(5);
                         }}
                       >
                         Skip for Now - I'm Sure
@@ -3012,6 +3270,77 @@ export default function ReserveProfile() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Step 5: Terms & Agreements */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  Terms & Agreements
+                </h3>
+                <p className="text-gray-700">
+                  Please review and agree to our policies to complete your
+                  registration.
+                </p>
+              </div>
+
+              <div className="border-2 border-gray-200 bg-white">
+                <ScrollArea className="h-96 p-4">
+                  <PrivacyPolicyContent />
+                </ScrollArea>
+              </div>
+
+              <div className="p-4 border-2 border-gray-200 bg-gray-50">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) =>
+                      setAgreedToTerms(checked as boolean)
+                    }
+                    className="mt-1 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the{" "}
+                      <a
+                        href="https://likelee.ai/privacypolicy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#32C8D1] hover:underline font-bold"
+                      >
+                        Privacy Policy
+                      </a>
+                    </label>
+                    <p className="text-sm text-gray-500">
+                      You must agree to the privacy policy to create your
+                      account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setStep(4)}
+                  variant="outline"
+                  className="w-1/3 h-12 border-2 border-black rounded-none"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={finalizeProfile}
+                  disabled={!agreedToTerms}
+                  className="w-2/3 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Complete Registration
+                </Button>
+              </div>
             </div>
           )}
         </Card>

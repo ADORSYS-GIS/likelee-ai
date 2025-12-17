@@ -14,10 +14,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CheckCircle2, ArrowRight, ArrowLeft, Upload } from "lucide-react";
+import {
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Upload,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
+import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
   createOrganizationKycSession,
   getOrganizationKycStatus,
@@ -65,7 +73,26 @@ const campaignTypes = [
   "Lifestyle",
   "Beauty",
   "Sports",
+  "Sports",
   "Entertainment",
+];
+
+const primaryGoals = [
+  "Run ad campaigns",
+  "Find brand ambassadors",
+  "License AI-ready faces",
+];
+
+const rolesNeeded = [
+  "Talent (faces/voices)",
+  "Postproduction / AI generation",
+  "Creative collaboration",
+];
+
+const openToAiOptions = [
+  "AI recreation",
+  "Likeness protection only",
+  "Varies by talent",
 ];
 
 export default function OrganizationSignup() {
@@ -76,6 +103,8 @@ export default function OrganizationSignup() {
   const [submitted, setSubmitted] = useState(false); // New state for submission status
   const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     // Step 1 - Basic
     email: "",
@@ -107,7 +136,7 @@ export default function OrganizationSignup() {
     bulk_onboard: "",
   });
 
-  const totalSteps = 3;
+  const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
   useEffect(() => {
@@ -176,7 +205,7 @@ export default function OrganizationSignup() {
       console.error("Error creating initial profile:", error);
       toast({
         title: "Error",
-        description: "Failed to create profile. Please try again.",
+        description: getFriendlyErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -216,15 +245,15 @@ export default function OrganizationSignup() {
       );
     },
     onSuccess: () => {
-      // Move to Step 3 for verification
-      setStep(3);
+      // Move to Success Page
+      setSubmitted(true);
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
       // Optionally handle error, e.g., show a toast notification
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: getFriendlyErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -282,6 +311,20 @@ export default function OrganizationSignup() {
     }));
   };
 
+  const toggleSelectAll = (field: string, allOptions: string[]) => {
+    const currentSelection = formData[
+      field as keyof typeof formData
+    ] as string[];
+    const isAllSelected = allOptions.every((option) =>
+      currentSelection.includes(option),
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      [field]: isAllSelected ? [] : [...allOptions],
+    }));
+  };
+
   const getOrgTypeTitle = () => {
     const titles = {
       brand_company: "Brand / Company",
@@ -300,11 +343,11 @@ export default function OrganizationSignup() {
   } = useQuery({
     queryKey: ["organizationKycStatus", profileId],
     queryFn: () => getOrganizationKycStatus(profileId!),
-    enabled: !!profileId && step === 3,
+    enabled: !!profileId && submitted,
   });
 
-  // Render success message if form was submitted successfully and KYC is approved
-  if (submitted && kycStatusData?.kyc_status === "approved") {
+  // Render success message if form was submitted successfully
+  if (submitted) {
     const kycStatus = kycStatusData?.kyc_status;
     const kycSessionId = kycStatusData?.kyc_session_id;
 
@@ -484,16 +527,29 @@ export default function OrganizationSignup() {
                   >
                     Password *
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="border-2 border-gray-300 rounded-none pr-10"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -503,19 +559,34 @@ export default function OrganizationSignup() {
                   >
                     Confirm Password *
                   </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    className="border-2 border-gray-300 rounded-none"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300 rounded-none pr-10"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -678,31 +749,47 @@ export default function OrganizationSignup() {
                     Primary goal on Likelee
                   </Label>
                   <div className="space-y-3">
-                    {[
-                      "Run ad campaigns",
-                      "Find brand ambassadors",
-                      "License AI-ready faces",
-                    ].map((goal) => (
-                      <div
-                        key={goal}
-                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                      >
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
-                          id={goal}
-                          checked={formData.primary_goal.includes(goal)}
+                          id="select_all_goals"
+                          checked={primaryGoals.every((goal) =>
+                            formData.primary_goal.includes(goal),
+                          )}
                           onCheckedChange={() =>
-                            toggleArrayItem("primary_goal", goal)
+                            toggleSelectAll("primary_goal", primaryGoals)
                           }
-                          className="border-2 border-gray-400"
+                          className="border-2 border-gray-900"
                         />
                         <label
-                          htmlFor={goal}
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                          htmlFor="select_all_goals"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          {goal}
+                          Select All
                         </label>
                       </div>
-                    ))}
+                      {primaryGoals.map((goal) => (
+                        <div
+                          key={goal}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={goal}
+                            checked={formData.primary_goal.includes(goal)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("primary_goal", goal)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={goal}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {goal}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -952,31 +1039,47 @@ export default function OrganizationSignup() {
                     What roles are you looking to fill through Likelee?
                   </Label>
                   <div className="space-y-3">
-                    {[
-                      "Talent (faces/voices)",
-                      "Postproduction / AI generation",
-                      "Creative collaboration",
-                    ].map((role) => (
-                      <div
-                        key={role}
-                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                      >
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
-                          id={role}
-                          checked={formData.roles_needed.includes(role)}
+                          id="select_all_roles"
+                          checked={rolesNeeded.every((role) =>
+                            formData.roles_needed.includes(role),
+                          )}
                           onCheckedChange={() =>
-                            toggleArrayItem("roles_needed", role)
+                            toggleSelectAll("roles_needed", rolesNeeded)
                           }
-                          className="border-2 border-gray-400"
+                          className="border-2 border-gray-900"
                         />
                         <label
-                          htmlFor={role}
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                          htmlFor="select_all_roles"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          {role}
+                          Select All
                         </label>
                       </div>
-                    ))}
+                      {rolesNeeded.map((role) => (
+                        <div
+                          key={role}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={role}
+                            checked={formData.roles_needed.includes(role)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("roles_needed", role)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={role}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {role}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1070,27 +1173,49 @@ export default function OrganizationSignup() {
                     Primary Services Offered
                   </Label>
                   <div className="space-y-3">
-                    {services.map((service) => (
-                      <div
-                        key={service}
-                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                      >
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
-                          id={service}
-                          checked={formData.services_offered.includes(service)}
+                          id="select_all_services"
+                          checked={services.every((service) =>
+                            formData.services_offered.includes(service),
+                          )}
                           onCheckedChange={() =>
-                            toggleArrayItem("services_offered", service)
+                            toggleSelectAll("services_offered", services)
                           }
-                          className="border-2 border-gray-400"
+                          className="border-2 border-gray-900"
                         />
                         <label
-                          htmlFor={service}
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                          htmlFor="select_all_services"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          {service}
+                          Select All
                         </label>
                       </div>
-                    ))}
+                      {services.map((service) => (
+                        <div
+                          key={service}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={service}
+                            checked={formData.services_offered.includes(
+                              service,
+                            )}
+                            onCheckedChange={() =>
+                              toggleArrayItem("services_offered", service)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={service}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {service}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -1274,31 +1399,47 @@ export default function OrganizationSignup() {
                     protection?
                   </Label>
                   <div className="space-y-3">
-                    {[
-                      "AI recreation",
-                      "Likeness protection only",
-                      "Varies by talent",
-                    ].map((option) => (
-                      <div
-                        key={option}
-                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                      >
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                         <Checkbox
-                          id={option}
-                          checked={formData.open_to_ai.includes(option)}
+                          id="select_all_open_to_ai"
+                          checked={openToAiOptions.every((option) =>
+                            formData.open_to_ai.includes(option),
+                          )}
                           onCheckedChange={() =>
-                            toggleArrayItem("open_to_ai", option)
+                            toggleSelectAll("open_to_ai", openToAiOptions)
                           }
-                          className="border-2 border-gray-400"
+                          className="border-2 border-gray-900"
                         />
                         <label
-                          htmlFor={option}
-                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                          htmlFor="select_all_open_to_ai"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          {option}
+                          Select All
                         </label>
                       </div>
-                    ))}
+                      {openToAiOptions.map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={option}
+                            checked={formData.open_to_ai.includes(option)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("open_to_ai", option)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={option}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -1308,6 +1449,24 @@ export default function OrganizationSignup() {
                     most?
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <Checkbox
+                        id="select_all_campaign_types"
+                        checked={campaignTypes.every((type) =>
+                          formData.campaign_types.includes(type),
+                        )}
+                        onCheckedChange={() =>
+                          toggleSelectAll("campaign_types", campaignTypes)
+                        }
+                        className="border-2 border-gray-900"
+                      />
+                      <label
+                        htmlFor="select_all_campaign_types"
+                        className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
                     {campaignTypes.map((type) => (
                       <div
                         key={type}

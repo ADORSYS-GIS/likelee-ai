@@ -91,6 +91,12 @@ async fn main() {
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
         liveness_enabled: cfg.liveness_enabled.clone(),
         liveness_min_score: cfg.liveness_min_score.clone(),
+        smtp_host: cfg.smtp_host.clone(),
+        smtp_port: cfg.smtp_port,
+        smtp_user: cfg.smtp_user.clone(),
+        smtp_password: cfg.smtp_password.clone(),
+        email_from: cfg.email_from.clone(),
+        email_contact_to: cfg.email_contact_to.clone(),
     };
 
     let app = likelee_server::router::build_router(state);
