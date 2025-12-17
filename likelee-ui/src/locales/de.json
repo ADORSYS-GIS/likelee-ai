@@ -2026,7 +2026,18 @@
       "summerCampaign": "Sommerkampagne"
     },
     "error": "Fehler",
-    "success": "Erfolg"
+    "success": "Erfolg",
+    "errors": {
+      "uploadFailed": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "uploadFailedSupport": "Upload fehlgeschlagen. Bitte kontaktieren Sie den Support, wenn dies weiterhin besteht.",
+      "saveFailed": "Änderungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+      "saveFailedSupport": "Speichern fehlgeschlagen. Bitte kontaktieren Sie den Support, wenn dies weiterhin besteht.",
+      "storageError": "Speicherfehler. Bitte versuchen Sie es später erneut.",
+      "databaseError": "Anfrage konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
+      "genericError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.",
+      "bucketNotFound": "Upload-Service nicht verfügbar. Bitte versuchen Sie es später erneut.",
+      "constraintViolation": "Ungültige Daten. Bitte überprüfen Sie Ihre Eingabe und versuchen Sie es erneut."
+    }
   },
   "forgotPasswordPage": {
     "title": "Setzen Sie Ihr Passwort zurück",

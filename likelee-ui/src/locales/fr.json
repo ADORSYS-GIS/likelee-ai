@@ -1320,7 +1320,18 @@
       "summerCampaign": "Campagne d'été"
     },
     "error": "Erreur",
-    "success": "Succès"
+    "success": "Succès",
+    "errors": {
+      "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+      "uploadFailedSupport": "Échec du téléchargement. Veuillez contacter le support si cela persiste.",
+      "saveFailed": "Impossible d'enregistrer les modifications. Veuillez réessayer.",
+      "saveFailedSupport": "Impossible d'enregistrer. Veuillez contacter le support si cela persiste.",
+      "storageError": "Erreur de stockage. Veuillez réessayer plus tard.",
+      "databaseError": "Impossible de traiter la demande. Veuillez réessayer.",
+      "genericError": "Une erreur s'est produite. Veuillez réessayer ou contacter le support.",
+      "bucketNotFound": "Service de téléchargement indisponible. Veuillez réessayer plus tard.",
+      "constraintViolation": "Données invalides. Veuillez vérifier votre saisie et réessayer."
+    }
   },
   "forgotPasswordPage": {
     "title": "Réinitialisez votre mot de passe",

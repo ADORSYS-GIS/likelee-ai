@@ -371,18 +371,52 @@ const earningsByIndustry: any[] = [];
 
 const mockContracts: any[] = [];
 
-function parseErrorMessage(err: any): string {
+function parseErrorMessage(err: any, t: any): string {
   let msg = err?.message || String(err);
+
+  // Check for specific error patterns and return user-friendly translation keys
+  const lowerMsg = msg.toLowerCase();
+
+  // Storage/bucket errors
+  if (lowerMsg.includes('bucket not found') || lowerMsg.includes('bucket') || lowerMsg.includes('storage')) {
+    return t("common.errors.bucketNotFound");
+  }
+
+  // Database constraint errors
+  if (lowerMsg.includes('constraint') || lowerMsg.includes('violates') || lowerMsg.includes('duplicate')) {
+    return t("common.errors.constraintViolation");
+  }
+
+  // Generic database errors
+  if (lowerMsg.includes('database') || lowerMsg.includes('postgres') || lowerMsg.includes('sql')) {
+    return t("common.errors.databaseError");
+  }
+
+  // Upload/storage errors
+  if (lowerMsg.includes('upload') || lowerMsg.includes('file')) {
+    return t("common.errors.uploadFailed");
+  }
+
+  // Save errors
+  if (lowerMsg.includes('save') || lowerMsg.includes('update') || lowerMsg.includes('insert')) {
+    return t("common.errors.saveFailed");
+  }
+
+  // Try to parse JSON error messages
   try {
     const jsonMatch = msg.match(/(\{.*\})/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      return parsed.message || parsed.error || msg;
+      const errorMsg = parsed.message || parsed.error || msg;
+      // Recursively check the parsed message
+      return parseErrorMessage({ message: errorMsg }, t);
     }
   } catch (e) {
-    // Parsing failed, return original
+    // Parsing failed, continue
   }
-  return msg;
+
+  // Default to generic error
+  return t("common.errors.genericError");
 }
 
 export default function CreatorDashboard() {
@@ -1898,10 +1932,11 @@ export default function CreatorDashboard() {
           description: t("creatorDashboard.toasts.cameoUploadedDesc"),
         });
       } catch (err: any) {
+        console.error("Cameo upload error:", err);
         toast({
           variant: "destructive",
-          title: t("creatorDashboard.toasts.uploadFailedTitle"),
-          description: t("creatorDashboard.toasts.uploadFailedDesc", { error: err.message || "Unknown error" }),
+          title: t("common.error"),
+          description: parseErrorMessage(err, t),
         });
       } finally {
         setUploadingPhoto(false);
@@ -1966,10 +2001,11 @@ export default function CreatorDashboard() {
           title: t("creatorDashboard.toasts.profilePhotoUpdated"),
         });
       } catch (err: any) {
+        console.error("Profile photo upload error:", err);
         toast({
           variant: "destructive",
-          title: t("creatorDashboard.toasts.uploadFailedTitle"),
-          description: t("creatorDashboard.toasts.uploadFailedDesc", { error: parseErrorMessage(err) }),
+          title: t("common.error"),
+          description: parseErrorMessage(err, t),
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
@@ -2359,8 +2395,8 @@ export default function CreatorDashboard() {
       console.error("Failed to save rules:", error);
       toast({
         variant: "destructive",
-        title: t("creatorDashboard.toasts.saveFailedTitle"),
-        description: t("creatorDashboard.toasts.saveFailedDesc", { error: error?.message || error }),
+        title: t("common.error"),
+        description: parseErrorMessage(error, t),
       });
     }
   };

@@ -892,7 +892,18 @@
       "summerCampaign": "Summer Campaign"
     },
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "errors": {
+      "uploadFailed": "Upload failed. Please try again.",
+      "uploadFailedSupport": "Upload failed. Please contact support if this persists.",
+      "saveFailed": "Unable to save changes. Please try again.",
+      "saveFailedSupport": "Unable to save. Please contact support if this persists.",
+      "storageError": "Storage error. Please try again later.",
+      "databaseError": "Unable to process request. Please try again.",
+      "genericError": "Something went wrong. Please try again or contact support.",
+      "bucketNotFound": "Upload service unavailable. Please try again later.",
+      "constraintViolation": "Invalid data. Please check your input and try again."
+    }
   },
   "faces.realFutures.title": "Real Faces. Real Futures.",
   "faces.realFutures.line1": "Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.",

@@ -2030,7 +2030,18 @@
       "summerCampaign": "Campaña de verano"
     },
     "error": "Error",
-    "success": "Éxito"
+    "success": "Éxito",
+    "errors": {
+      "uploadFailed": "Error al subir. Por favor, inténtelo de nuevo.",
+      "uploadFailedSupport": "Error al subir. Contacte al soporte si esto persiste.",
+      "saveFailed": "No se pudieron guardar los cambios. Por favor, inténtelo de nuevo.",
+      "saveFailedSupport": "No se pudo guardar. Contacte al soporte si esto persiste.",
+      "storageError": "Error de almacenamiento. Por favor, inténtelo más tarde.",
+      "databaseError": "No se pudo procesar la solicitud. Por favor, inténtelo de nuevo.",
+      "genericError": "Algo salió mal. Por favor, inténtelo de nuevo o contacte al soporte.",
+      "bucketNotFound": "Servicio de carga no disponible. Por favor, inténtelo más tarde.",
+      "constraintViolation": "Datos inválidos. Por favor, verifique su entrada e inténtelo de nuevo."
+    }
   },
   "forgotPasswordPage": {
     "title": "Restablece tu contraseña",
