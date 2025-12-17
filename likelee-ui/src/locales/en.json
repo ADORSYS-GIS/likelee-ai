@@ -1721,7 +1721,63 @@
     "earnings": {
       "title": "Earnings Dashboard",
       "byIndustry": "Earnings by Industry",
-      "byCampaign": "Earnings by Campaign"
+      "byCampaign": "Earnings by Campaign",
+      "bankConnection": {
+        "title": "Connect Your Bank Account",
+        "subtitle": "Link your bank account to receive your earnings directly.",
+        "securityTitle": "Bank-level Security",
+        "securityMessage": "Your information is encrypted and protected",
+        "privateTitle": "Private & Secure",
+        "privateMessage": "We never store your banking credentials",
+        "button": "Connect Bank Account",
+        "comingSoon": "Bank connection coming soon. We're integrating secure payment processing.",
+        "back": "Back"
+      },
+      "subtitle": "Track your revenue and payments",
+      "readyTitle": "Your earnings dashboard is ready",
+      "readyMessage": "Once your licenses activate, you'll see real-time earnings here. Currently, you have no active contracts.",
+      "actions": {
+        "cashOut": "Cash Out",
+        "downloadTax": "Download Tax Summary (1099)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total Earned YTD",
+        "willUpdate": "Will update once your first license activates",
+        "thisMonthRecurring": "This Month's Recurring",
+        "waitingForCampaigns": "Waiting for active campaigns",
+        "projectedNextMonth": "Projected Next Month",
+        "willCalculate": "Will calculate based on active licenses",
+        "nextPayment": "Next Payment",
+        "toBeDetermined": "To be determined",
+        "noActiveContracts": "No active contracts yet"
+      },
+      "charts": {
+        "revenueTrend": "Revenue Trend (Last 6 Months)",
+        "revenuePlaceholder": "Your revenue trend will appear here",
+        "activePlaceholder": "Once you have active campaigns",
+        "industryBreakdown": "Earnings by Industry",
+        "industryPlaceholder": "Your industry breakdown will appear here"
+      },
+      "comparison": {
+        "title": "This is what your earnings could look like",
+        "subtitle": "See how Likelee's recurring model compares to traditional one-time payments",
+        "traditionalModel": "Traditional Model:",
+        "traditionalDesc": "One-time payment per campaign",
+        "likeleeModel": "Likelee Model:",
+        "likeleeAmount": "$2,500+/month",
+        "likeleeDesc": "Per active license • Recurring revenue"
+      },
+      "campaigns": {
+        "title": "Earnings by Campaign",
+        "placeholderTitle": "Your campaigns will appear here",
+        "placeholderMessage": "Once you have active licenses generating revenue",
+        "thisMonth": "this month"
+      },
+      "history": {
+        "title": "Payment History",
+        "placeholderTitle": "Your payment history will appear here",
+        "placeholderMessage": "Once you receive your first payout"
+      }
     },
     "voice": {
       "title": "Voice & Recordings",

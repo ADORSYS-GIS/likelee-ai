@@ -48,7 +48,63 @@
     "earnings": {
       "title": "Panel de Ganancias",
       "byIndustry": "Ganancias por Industria",
-      "byCampaign": "Ganancias por Campaña"
+      "byCampaign": "Ganancias por Campaña",
+      "bankConnection": {
+        "title": "Conecte su cuenta bancaria",
+        "subtitle": "Vincule su cuenta bancaria para recibir sus ganancias directamente.",
+        "securityTitle": "Seguridad bancaria",
+        "securityMessage": "Su información está encriptada y protegida",
+        "privateTitle": "Privado y seguro",
+        "privateMessage": "Nunca almacenamos sus credenciales bancarias",
+        "button": "Conectar cuenta bancaria",
+        "comingSoon": "Conexión bancaria próximamente. Estamos integrando procesamiento de pagos seguro.",
+        "back": "Volver"
+      },
+      "subtitle": "Rastrea tus ingresos y pagos",
+      "readyTitle": "Su panel de ganancias está listo",
+      "readyMessage": "Una vez que se activen sus licencias, verá las ganancias en tiempo real aquí. Actualmente, no tiene contratos activos.",
+      "actions": {
+        "cashOut": "Retirar Fondos",
+        "downloadTax": "Descargar resumen de impuestos (1099)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total ganado (YTD)",
+        "willUpdate": "Se actualizará una vez que se active su primera licencia",
+        "thisMonthRecurring": "Recurrente este mes",
+        "waitingForCampaigns": "Esperando campañas activas",
+        "projectedNextMonth": "Proyectado próximo mes",
+        "willCalculate": "Se calculará según las licencias activas",
+        "nextPayment": "Próximo pago",
+        "toBeDetermined": "A determinar",
+        "noActiveContracts": "Sin contratos activos"
+      },
+      "charts": {
+        "revenueTrend": "Tendencia de ingresos (últimos 6 meses)",
+        "revenuePlaceholder": "Su tendencia de ingresos aparecerá aquí",
+        "activePlaceholder": "Una vez que tenga campañas activas",
+        "industryBreakdown": "Ganancias por industria",
+        "industryPlaceholder": "Su desglose por industria aparecerá aquí"
+      },
+      "comparison": {
+        "title": "Así es como podrían verse sus ganancias",
+        "subtitle": "Vea cómo el modelo recurrente de Likelee se compara con los pagos únicos tradicionales",
+        "traditionalModel": "Modelo tradicional:",
+        "traditionalDesc": "Pago único por campaña",
+        "likeleeModel": "Modelo Likelee:",
+        "likeleeAmount": "$2,500+ / mes",
+        "likeleeDesc": "Por licencia activa • Ingresos recurrentes"
+      },
+      "campaigns": {
+        "title": "Ganancias por campaña",
+        "placeholderTitle": "Sus campañas aparecerán aquí",
+        "placeholderMessage": "Una vez que tenga licencias activas generando ingresos",
+        "thisMonth": "este mes"
+      },
+      "history": {
+        "title": "Historial de pagos",
+        "placeholderTitle": "Su historial de pagos aparecerá aquí",
+        "placeholderMessage": "Una vez que reciba su primer pago"
+      }
     },
     "settings": "Configuración",
     "settingsContent": {

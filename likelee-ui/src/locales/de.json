@@ -48,7 +48,63 @@
     "earnings": {
       "title": "Einnahmen-Dashboard",
       "byIndustry": "Einnahmen nach Branche",
-      "byCampaign": "Einnahmen nach Kampagne"
+      "byCampaign": "Einnahmen nach Kampagne",
+      "bankConnection": {
+        "title": "Verbinden Sie Ihr Bankkonto",
+        "subtitle": "Verknüpfen Sie Ihr Bankkonto, um Ihre Einnahmen direkt zu erhalten.",
+        "securityTitle": "Sicherheit auf Bankenniveau",
+        "securityMessage": "Ihre Informationen sind verschlüsselt und geschützt",
+        "privateTitle": "Privat & Sicher",
+        "privateMessage": "Wir speichern niemals Ihre Bankzugangsdaten",
+        "button": "Bankkonto verbinden",
+        "comingSoon": "Bankverbindung kommt bald. Wir integrieren eine sichere Zahlungsabwicklung.",
+        "back": "Zurück"
+      },
+      "subtitle": "Verfolgen Sie Ihre Einnahmen und Zahlungen",
+      "readyTitle": "Ihr Einnahmen-Dashboard ist bereit",
+      "readyMessage": "Sobald Ihre Lizenzen aktiviert sind, sehen Sie hier Echtzeit-Einnahmen. Derzeit haben Sie keine aktiven Verträge.",
+      "actions": {
+        "cashOut": "Auszahlen",
+        "downloadTax": "Steuerübersicht herunterladen (1099)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Gesamtverdienst (YTD)",
+        "willUpdate": "Wird aktualisiert, sobald Ihre erste Lizenz aktiviert wird",
+        "thisMonthRecurring": "Wiederkehrend diesen Monat",
+        "waitingForCampaigns": "Warten auf aktive Kampagnen",
+        "projectedNextMonth": "Prognose nächster Monat",
+        "willCalculate": "Wird basierend auf aktiven Lizenzen berechnet",
+        "nextPayment": "Nächste Zahlung",
+        "toBeDetermined": "Noch festzulegen",
+        "noActiveContracts": "Noch keine aktiven Verträge"
+      },
+      "charts": {
+        "revenueTrend": "Einnahmentrend (Letzte 6 Monate)",
+        "revenuePlaceholder": "Ihr Einnahmentrend wird hier erscheinen",
+        "activePlaceholder": "Sobald Sie aktive Kampagnen haben",
+        "industryBreakdown": "Einnahmen nach Branche",
+        "industryPlaceholder": "Ihre Branchenaufschlüsselung wird hier erscheinen"
+      },
+      "comparison": {
+        "title": "So könnten Ihre Einnahmen aussehen",
+        "subtitle": "Sehen Sie, wie das Modell von Likelee im Vergleich zu Einmalzahlungen abschneidet",
+        "traditionalModel": "Traditionelles Modell:",
+        "traditionalDesc": "Einmalzahlung pro Kampagne",
+        "likeleeModel": "Likelee-Modell:",
+        "likeleeAmount": "2.500 $ + / Monat",
+        "likeleeDesc": "Pro aktiver Lizenz • Wiederkehrende Einnahmen"
+      },
+      "campaigns": {
+        "title": "Einnahmen nach Kampagne",
+        "placeholderTitle": "Ihre Kampagnen werden hier erscheinen",
+        "placeholderMessage": "Sobald Sie aktive Lizenzen haben, die Einnahmen generieren",
+        "thisMonth": "diesen Monat"
+      },
+      "history": {
+        "title": "Zahlungshistorie",
+        "placeholderTitle": "Ihre Zahlungshistorie wird hier erscheinen",
+        "placeholderMessage": "Sobald Sie Ihre erste Auszahlung erhalten"
+      }
     },
     "settings": "Einstellungen",
     "settingsContent": {

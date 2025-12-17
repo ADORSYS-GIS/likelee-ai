@@ -4726,17 +4726,17 @@ export default function CreatorDashboard() {
         className="mb-8 flex items-center gap-2"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back
+        {t("creatorDashboard.earnings.bankConnection.back")}
       </Button>
       <Card className="p-10 text-center bg-white border border-gray-200 shadow-sm">
         <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <FileText className="w-8 h-8 text-green-600" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Connect Your Bank Account
+          {t("creatorDashboard.earnings.bankConnection.title")}
         </h2>
         <p className="text-gray-600 mb-8">
-          Link your bank account to receive your earnings directly.
+          {t("creatorDashboard.earnings.bankConnection.subtitle")}
         </p>
 
         <div className="space-y-4 text-left mb-8">
@@ -4744,19 +4744,19 @@ export default function CreatorDashboard() {
             <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-gray-900">
-                Bank-level Security
+                {t("creatorDashboard.earnings.bankConnection.securityTitle")}
               </h3>
               <p className="text-sm text-gray-600">
-                Your information is encrypted and protected
+                {t("creatorDashboard.earnings.bankConnection.securityMessage")}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
             <Lock className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-gray-900">Private & Secure</h3>
+              <h3 className="font-semibold text-gray-900">{t("creatorDashboard.earnings.bankConnection.privateTitle")}</h3>
               <p className="text-sm text-gray-600">
-                We never store your banking credentials
+                {t("creatorDashboard.earnings.bankConnection.privateMessage")}
               </p>
             </div>
           </div>
@@ -4766,11 +4766,10 @@ export default function CreatorDashboard() {
           size="lg"
           className="w-full h-12 bg-green-500 hover:bg-green-600 text-white text-base"
         >
-          Connect Bank Account
+          {t("creatorDashboard.earnings.bankConnection.button")}
         </Button>
         <p className="text-xs text-gray-500 mt-4">
-          Bank connection coming soon. We're integrating secure payment
-          processing.
+          {t("creatorDashboard.earnings.bankConnection.comingSoon")}
         </p>
       </Card>
     </div>
@@ -4788,7 +4787,7 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.earnings.title")}
             </h2>
             <p className="text-gray-600 mt-1">
-              Track your revenue and payments
+              {t("creatorDashboard.earnings.subtitle")}
             </p>
           </div>
           <Button
@@ -4796,7 +4795,7 @@ export default function CreatorDashboard() {
             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
           >
             <DollarSign className="w-4 h-4" />
-            Cash Out
+            {t("creatorDashboard.earnings.actions.cashOut")}
           </Button>
         </div>
 
@@ -4805,41 +4804,40 @@ export default function CreatorDashboard() {
           <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <p>
             <span className="font-semibold">
-              Your earnings dashboard is ready!
+              {t("creatorDashboard.earnings.readyTitle")}
             </span>{" "}
-            Once your licenses activate, you'll see real-time earnings here.
-            Currently, you have no active contracts.
+            {t("creatorDashboard.earnings.readyMessage")}
           </p>
         </div>
 
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
+            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.totalEarnedYTD")}</p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              Will update once your first license activates
+              {t("creatorDashboard.earnings.metrics.willUpdate")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
+            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.thisMonthRecurring")}</p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              Waiting for active campaigns
+              {t("creatorDashboard.earnings.metrics.waitingForCampaigns")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
+            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.projectedNextMonth")}</p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              Will calculate based on active licenses
+              {t("creatorDashboard.earnings.metrics.willCalculate")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Next Payment</p>
-            <p className="text-2xl font-bold text-gray-900">To be determined</p>
+            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.nextPayment")}</p>
+            <p className="text-2xl font-bold text-gray-900">{t("creatorDashboard.earnings.metrics.toBeDetermined")}</p>
             <p className="text-sm text-gray-600 mt-1">
-              No active contracts yet
+              {t("creatorDashboard.earnings.metrics.noActiveContracts")}
             </p>
           </Card>
         </div>
@@ -4848,25 +4846,25 @@ export default function CreatorDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Revenue Trend (Last 6 Months)
+              {t("creatorDashboard.earnings.charts.revenueTrend")}
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <div>Your revenue trend will appear here</div>
+              <div>{t("creatorDashboard.earnings.charts.revenuePlaceholder")}</div>
               <div className="text-sm text-gray-500 mt-1">
-                Once you have active campaigns
+                {t("creatorDashboard.earnings.charts.activePlaceholder")}
               </div>
             </div>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.earnings.byIndustry")}
+              {t("creatorDashboard.earnings.charts.industryBreakdown")}
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <div>Your industry breakdown will appear here</div>
+              <div>{t("creatorDashboard.earnings.charts.industryPlaceholder")}</div>
               <div className="text-sm text-gray-500 mt-1">
-                Once you have active campaigns
+                {t("creatorDashboard.earnings.charts.activePlaceholder")}
               </div>
             </div>
           </Card>
@@ -4876,26 +4874,25 @@ export default function CreatorDashboard() {
         <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              This is what your earnings could look like
+              {t("creatorDashboard.earnings.comparison.title")}
             </h3>
             <p className="text-sm text-gray-600">
-              See how Likelee's recurring model compares to traditional one-time
-              payments
+              {t("creatorDashboard.earnings.comparison.subtitle")}
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="p-5 bg-white rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
+              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.earnings.comparison.traditionalModel")}</p>
               <p className="text-3xl font-bold text-gray-900">$500</p>
               <p className="text-sm text-gray-600">
-                One-time payment per campaign
+                {t("creatorDashboard.earnings.comparison.traditionalDesc")}
               </p>
             </div>
             <div className="p-5 bg-white rounded-lg border border-cyan-300">
-              <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
-              <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
+              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.earnings.comparison.likeleeModel")}</p>
+              <p className="text-3xl font-bold text-[#32C8D1]">{t("creatorDashboard.earnings.comparison.likeleeAmount")}</p>
               <p className="text-sm text-gray-600">
-                Per active license • Recurring revenue
+                {t("creatorDashboard.earnings.comparison.likeleeDesc")}
               </p>
             </div>
           </div>
@@ -4904,16 +4901,16 @@ export default function CreatorDashboard() {
         {/* Earnings by Campaign */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.earnings.byCampaign")}
+            {t("creatorDashboard.earnings.campaigns.title")}
           </h3>
           {activeCampaigns.length === 0 ? (
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
               <div className="font-semibold text-gray-900">
-                Your campaigns will appear here
+                {t("creatorDashboard.earnings.campaigns.placeholderTitle")}
               </div>
               <div className="text-sm text-gray-500 mt-1">
-                Once you have active licenses generating revenue
+                {t("creatorDashboard.earnings.campaigns.placeholderMessage")}
               </div>
             </div>
           ) : (
@@ -4930,7 +4927,7 @@ export default function CreatorDashboard() {
                     <div className="font-bold text-gray-900">
                       ${(c.earnings_this_month || 0).toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">this month</div>
+                    <div className="text-xs text-gray-500">{t("creatorDashboard.earnings.campaigns.thisMonth")}</div>
                   </div>
                 </div>
               ))}
@@ -4941,15 +4938,15 @@ export default function CreatorDashboard() {
         {/* Payment History */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Payment History
+            {t("creatorDashboard.earnings.history.title")}
           </h3>
           <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
             <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <div className="font-semibold text-gray-900">
-              Your payment history will appear here
+              {t("creatorDashboard.earnings.history.placeholderTitle")}
             </div>
             <div className="text-sm text-gray-500 mt-1">
-              Once you receive your first payout
+              {t("creatorDashboard.earnings.history.placeholderMessage")}
             </div>
           </div>
         </Card>
@@ -4958,7 +4955,7 @@ export default function CreatorDashboard() {
           disabled
           className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
         >
-          Download Tax Summary (1099)
+          {t("creatorDashboard.earnings.actions.downloadTax")}
         </Button>
       </div>
     );
