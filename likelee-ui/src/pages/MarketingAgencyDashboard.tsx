@@ -203,7 +203,10 @@ export default function MarketingAgencyDashboard() {
 
   const handleCreateCampaign = (campaignData) => {
     console.log("New campaign created:", campaignData);
-    toast({ title: t("common.success"), description: t("marketingDashboard.toasts.campaignCreated") });
+    toast({
+      title: t("common.success"),
+      description: t("marketingDashboard.toasts.campaignCreated"),
+    });
   };
 
   const getFilteredCampaigns = () => {

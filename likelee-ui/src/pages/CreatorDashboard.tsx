@@ -380,27 +380,43 @@ function parseErrorMessage(err: any, t: any): string {
   const lowerMsg = msg.toLowerCase();
 
   // Storage/bucket errors
-  if (lowerMsg.includes('bucket not found') || lowerMsg.includes('bucket') || lowerMsg.includes('storage')) {
+  if (
+    lowerMsg.includes("bucket not found") ||
+    lowerMsg.includes("bucket") ||
+    lowerMsg.includes("storage")
+  ) {
     return t("common.errors.bucketNotFound");
   }
 
   // Database constraint errors
-  if (lowerMsg.includes('constraint') || lowerMsg.includes('violates') || lowerMsg.includes('duplicate')) {
+  if (
+    lowerMsg.includes("constraint") ||
+    lowerMsg.includes("violates") ||
+    lowerMsg.includes("duplicate")
+  ) {
     return t("common.errors.constraintViolation");
   }
 
   // Generic database errors
-  if (lowerMsg.includes('database') || lowerMsg.includes('postgres') || lowerMsg.includes('sql')) {
+  if (
+    lowerMsg.includes("database") ||
+    lowerMsg.includes("postgres") ||
+    lowerMsg.includes("sql")
+  ) {
     return t("common.errors.databaseError");
   }
 
   // Upload/storage errors
-  if (lowerMsg.includes('upload') || lowerMsg.includes('file')) {
+  if (lowerMsg.includes("upload") || lowerMsg.includes("file")) {
     return t("common.errors.uploadFailed");
   }
 
   // Save errors
-  if (lowerMsg.includes('save') || lowerMsg.includes('update') || lowerMsg.includes('insert')) {
+  if (
+    lowerMsg.includes("save") ||
+    lowerMsg.includes("update") ||
+    lowerMsg.includes("insert")
+  ) {
     return t("common.errors.saveFailed");
   }
 
@@ -426,74 +442,75 @@ export default function CreatorDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const exampleCampaigns = useMemo(() => [
-    {
-      id: "example-nike",
-      brand: "Nike",
-      brand_logo:
-        "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-      brand_image_url:
-        "https://static.nike.com/a/images/f_auto/dpr_3.0,cs_srgb/w_411,c_limit/5e039575-5856-42f8-9323-579736c2c31e/nike-just-do-it.jpg",
-      campaign: "Summer Running Collection",
-      usage_type: "Social Ads",
-      rate: 2500,
-      status: "active",
-      start_date: "2024-01-15",
-      end_date: "2024-07-15",
-      active_until: "2024-07-15",
-      regions: ["North America", "Europe"],
-      impressions_week: t(
-        "creatorDashboard.campaigns.labels.impressionsPerWeek",
-        { count: 125000 },
-      ),
-      auto_renewal: true,
-      isExample: true,
-    },
-    {
-      id: "example-skincare",
-      brand: "Avo Beauty",
-      brand_logo:
-        "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
-      brand_image_url:
-        "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
-      campaign: "Natural Glow Collection",
-      usage_type: "Social Ads",
-      rate: 15000,
-      status: "expiring_soon",
-      start_date: "2024-02-01",
-      end_date: "2024-08-01",
-      active_until: "2024-08-01",
-      regions: ["Global"],
-      impressions_week: t(
-        "creatorDashboard.campaigns.labels.impressionsPerWeek",
-        { count: 89000 },
-      ),
-      auto_renewal: false,
-      isExample: true,
-    },
-    {
-      id: "example-pepsi",
-      brand: "Pepsi",
-      brand_logo:
-        "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
-      brand_image_url:
-        "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
-      campaign: "Thirsty for More, Best energy drink",
-      usage_type: "Energy Drink",
-      rate: 50000,
-      status: "active",
-      start_date: "2024-03-01",
-      end_date: "2024-06-30",
-      active_until: "2024-06-30",
-      regions: ["North America"],
-      impressions_week: t(
-        "creatorDashboard.campaigns.labels.impressionsPerWeek",
-        { count: 250000 },
-      ),
-      auto_renewal: false,
-      isExample: true,
-    },
-  ],
+  const exampleCampaigns = useMemo(
+    () => [
+      {
+        id: "example-nike",
+        brand: "Nike",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
+        brand_image_url:
+          "https://static.nike.com/a/images/f_auto/dpr_3.0,cs_srgb/w_411,c_limit/5e039575-5856-42f8-9323-579736c2c31e/nike-just-do-it.jpg",
+        campaign: "Summer Running Collection",
+        usage_type: "Social Ads",
+        rate: 2500,
+        status: "active",
+        start_date: "2024-01-15",
+        end_date: "2024-07-15",
+        active_until: "2024-07-15",
+        regions: ["North America", "Europe"],
+        impressions_week: t(
+          "creatorDashboard.campaigns.labels.impressionsPerWeek",
+          { count: 125000 },
+        ),
+        auto_renewal: true,
+        isExample: true,
+      },
+      {
+        id: "example-skincare",
+        brand: "Avo Beauty",
+        brand_logo:
+          "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
+        brand_image_url:
+          "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
+        campaign: "Natural Glow Collection",
+        usage_type: "Social Ads",
+        rate: 15000,
+        status: "expiring_soon",
+        start_date: "2024-02-01",
+        end_date: "2024-08-01",
+        active_until: "2024-08-01",
+        regions: ["Global"],
+        impressions_week: t(
+          "creatorDashboard.campaigns.labels.impressionsPerWeek",
+          { count: 89000 },
+        ),
+        auto_renewal: false,
+        isExample: true,
+      },
+      {
+        id: "example-pepsi",
+        brand: "Pepsi",
+        brand_logo:
+          "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
+        brand_image_url:
+          "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+        campaign: "Thirsty for More, Best energy drink",
+        usage_type: "Energy Drink",
+        rate: 50000,
+        status: "active",
+        start_date: "2024-03-01",
+        end_date: "2024-06-30",
+        active_until: "2024-06-30",
+        regions: ["North America"],
+        impressions_week: t(
+          "creatorDashboard.campaigns.labels.impressionsPerWeek",
+          { count: 250000 },
+        ),
+        auto_renewal: false,
+        isExample: true,
+      },
+    ],
     [t],
   );
 
@@ -551,10 +568,7 @@ export default function CreatorDashboard() {
           count: 4,
         }),
         estimated_monthly: 630,
-        regions: [
-          t("common.regions.northAmerica"),
-          t("common.regions.europe"),
-        ],
+        regions: [t("common.regions.northAmerica"), t("common.regions.europe")],
         industries: [t("common.industries.foodBeverage")],
         usage_type: t("common.usageTypes.socialMedia"),
         duration: t("creatorDashboard.approvals.labels.months", { count: 4 }),
@@ -639,10 +653,7 @@ export default function CreatorDashboard() {
         usage_description: "Instagram Reels, Hero Image",
         deliverables: "Instagram Reels, Hero Image",
         territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
-        channels: [
-          t("common.usageTypes.socialMedia"),
-          "Website",
-        ],
+        channels: [t("common.usageTypes.socialMedia"), "Website"],
         restrictions: "Competitor brands, political content",
         prohibited_uses: "Competitor brands, political content",
         auto_renew: false,
@@ -670,10 +681,7 @@ export default function CreatorDashboard() {
         usage_description: t("common.usageTypes.socialMedia"),
         deliverables: "TikTok Videos, Instagram Posts",
         territory: t("common.regions.northAmerica"),
-        channels: [
-          t("common.usageTypes.socialMedia"),
-          "Website",
-        ],
+        channels: [t("common.usageTypes.socialMedia"), "Website"],
         restrictions: "Competitor brands",
         prohibited_uses: "Competitor brands",
         auto_renew: false,
@@ -1186,10 +1194,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1198,10 +1207,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {t("creatorDashboard.content.tabs.detections")}
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1255,8 +1265,8 @@ export default function CreatorDashboard() {
                           <p className="text-sm text-gray-500">
                             {(item as any).titleKey
                               ? t(
-                                `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                              )
+                                  `creatorDashboard.content.examples.${(item as any).titleKey}`,
+                                )
                               : item.title}
                           </p>
                         </div>
@@ -1289,14 +1299,11 @@ export default function CreatorDashboard() {
                         </div>
                       </div>
                       <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-                        {t(
-                          "creatorDashboard.content.brandContent.published",
-                          {
-                            date: new Date(item.published_at).toLocaleDateString(
-                              i18n.language,
-                            ),
-                          },
-                        )}
+                        {t("creatorDashboard.content.brandContent.published", {
+                          date: new Date(item.published_at).toLocaleDateString(
+                            i18n.language,
+                          ),
+                        })}
                       </div>
                     </div>
                   </Card>
@@ -1324,12 +1331,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -2212,11 +2220,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -2241,7 +2249,9 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: t("creatorDashboard.toasts.voiceErrorTitle"),
-        description: t("creatorDashboard.toasts.voiceErrorDesc", { error: errorMessage }),
+        description: t("creatorDashboard.toasts.voiceErrorDesc", {
+          error: errorMessage,
+        }),
       });
     } finally {
       setGeneratingVoice(false);
@@ -2260,12 +2270,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2297,9 +2308,10 @@ export default function CreatorDashboard() {
     setShowPauseModal(false);
     toast({
       title: t("creatorDashboard.toasts.licensePausedTitle"),
-      description: option === "immediate"
-        ? t("creatorDashboard.toasts.licensePausedImmediate")
-        : t("creatorDashboard.toasts.licensePausedNextMonth"),
+      description:
+        option === "immediate"
+          ? t("creatorDashboard.toasts.licensePausedImmediate")
+          : t("creatorDashboard.toasts.licensePausedNextMonth"),
     });
   };
 
@@ -2307,7 +2319,9 @@ export default function CreatorDashboard() {
     setShowRevokeModal(false);
     toast({
       title: t("creatorDashboard.toasts.licenseRevokedTitle"),
-      description: t("creatorDashboard.toasts.licenseRevokedDesc", { amount: contract.creator_earnings }),
+      description: t("creatorDashboard.toasts.licenseRevokedDesc", {
+        amount: contract.creator_earnings,
+      }),
     });
   };
 
@@ -2812,7 +2826,9 @@ export default function CreatorDashboard() {
           <div className="bg-white border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>{t("creatorDashboard.myLikenessSection.banner.strong")}</strong>{" "}
+              <strong>
+                {t("creatorDashboard.myLikenessSection.banner.strong")}
+              </strong>{" "}
               {t("creatorDashboard.myLikenessSection.banner.text")}
             </p>
           </div>
@@ -2834,19 +2850,27 @@ export default function CreatorDashboard() {
               <Card className="p-4 bg-green-50 border border-green-200">
                 <div className="grid md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.uploaded")}</p>
+                    <p className="text-gray-600 mb-1">
+                      {t("creatorDashboard.cameoVideo.uploaded")}
+                    </p>
                     <p className="font-bold text-gray-900">Nov 12, 2024</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.duration")}</p>
+                    <p className="text-gray-600 mb-1">
+                      {t("creatorDashboard.cameoVideo.duration")}
+                    </p>
                     <p className="font-bold text-gray-900">45 seconds</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.quality")}</p>
+                    <p className="text-gray-600 mb-1">
+                      {t("creatorDashboard.cameoVideo.quality")}
+                    </p>
                     <p className="font-bold text-gray-900">4K</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.status")}</p>
+                    <p className="text-gray-600 mb-1">
+                      {t("creatorDashboard.cameoVideo.status")}
+                    </p>
                     <Badge className="bg-green-500 text-white">
                       {t("creatorDashboard.cameoVideo.verified")}
                     </Badge>
@@ -2873,7 +2897,9 @@ export default function CreatorDashboard() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-900 text-sm">
-                  <strong>{t("creatorDashboard.cameoVideo.aboutCameo.title")}</strong>{" "}
+                  <strong>
+                    {t("creatorDashboard.cameoVideo.aboutCameo.title")}
+                  </strong>{" "}
                   {t("creatorDashboard.cameoVideo.aboutCameo.text")}
                 </p>
               </div>
@@ -2917,7 +2943,9 @@ export default function CreatorDashboard() {
               <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-amber-900 text-sm">
-                  <strong>{t("creatorDashboard.cameoVideo.warning.title")}</strong>{" "}
+                  <strong>
+                    {t("creatorDashboard.cameoVideo.warning.title")}
+                  </strong>{" "}
                   {t("creatorDashboard.cameoVideo.warning.text")}
                 </p>
               </div>
@@ -2959,7 +2987,9 @@ export default function CreatorDashboard() {
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>{t("creatorDashboard.myLikenessSection.howThisWorks.title")}</strong>{" "}
+              <strong>
+                {t("creatorDashboard.myLikenessSection.howThisWorks.title")}
+              </strong>{" "}
               {t("creatorDashboard.myLikenessSection.howThisWorks.text")}
             </p>
           </div>
@@ -2985,7 +3015,12 @@ export default function CreatorDashboard() {
                             {section.title}
                           </h4>
                           <p className="text-sm text-gray-600 mb-2">
-                            <strong>{t("creatorDashboard.myLikenessSection.imageStatus.bestFor")}</strong> {section.bestFor}
+                            <strong>
+                              {t(
+                                "creatorDashboard.myLikenessSection.imageStatus.bestFor",
+                              )}
+                            </strong>{" "}
+                            {section.bestFor}
                           </p>
                           <Badge
                             variant="outline"
@@ -2995,7 +3030,13 @@ export default function CreatorDashboard() {
                                 : "bg-gray-300 text-gray-700"
                             }
                           >
-                            {hasImage ? t("creatorDashboard.myLikenessSection.imageStatus.uploaded") : t("creatorDashboard.myLikenessSection.imageStatus.missing")}
+                            {hasImage
+                              ? t(
+                                  "creatorDashboard.myLikenessSection.imageStatus.uploaded",
+                                )
+                              : t(
+                                  "creatorDashboard.myLikenessSection.imageStatus.missing",
+                                )}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -3023,7 +3064,11 @@ export default function CreatorDashboard() {
                               }
                             >
                               <Eye className="w-4 h-4 mr-1" />
-                              <span className="text-xs sm:text-sm">{t("creatorDashboard.myLikenessSection.imageActions.view")}</span>
+                              <span className="text-xs sm:text-sm">
+                                {t(
+                                  "creatorDashboard.myLikenessSection.imageActions.view",
+                                )}
+                              </span>
                             </Button>
                             <Button
                               variant="outline"
@@ -3035,7 +3080,9 @@ export default function CreatorDashboard() {
                             >
                               <Upload className="w-4 h-4 mr-1" />
                               <span className="text-xs sm:text-sm">
-                                {t("creatorDashboard.myLikenessSection.imageActions.replace")}
+                                {t(
+                                  "creatorDashboard.myLikenessSection.imageActions.replace",
+                                )}
                               </span>
                             </Button>
                             <Button
@@ -3046,7 +3093,9 @@ export default function CreatorDashboard() {
                             >
                               <Trash2 className="w-4 h-4 mr-1" />
                               <span className="text-xs sm:text-sm">
-                                {t("creatorDashboard.myLikenessSection.imageActions.delete")}
+                                {t(
+                                  "creatorDashboard.myLikenessSection.imageActions.delete",
+                                )}
                               </span>
                             </Button>
                           </>
@@ -3056,7 +3105,9 @@ export default function CreatorDashboard() {
                             className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                           >
                             <Upload className="w-4 h-4 mr-2" />
-                            {t("creatorDashboard.myLikenessSection.imageActions.uploadImage")}
+                            {t(
+                              "creatorDashboard.myLikenessSection.imageActions.uploadImage",
+                            )}
                           </Button>
                         )}
                       </div>
@@ -3071,7 +3122,9 @@ export default function CreatorDashboard() {
           <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <p className="text-gray-700 text-sm">
-              <strong>{t("creatorDashboard.myLikenessSection.qualityStandards.title")}</strong>{" "}
+              <strong>
+                {t("creatorDashboard.myLikenessSection.qualityStandards.title")}
+              </strong>{" "}
               {t("creatorDashboard.myLikenessSection.qualityStandards.text")}
             </p>
           </div>
@@ -3152,7 +3205,9 @@ export default function CreatorDashboard() {
                   <AlertCircle className="w-5 h-5 text-gray-500" />
                 )}
                 <span className="font-medium text-gray-900">
-                  {t("creatorDashboard.verificationStatus.identityVerification")}
+                  {t(
+                    "creatorDashboard.verificationStatus.identityVerification",
+                  )}
                 </span>
               </div>
               <Badge
@@ -3168,7 +3223,9 @@ export default function CreatorDashboard() {
                 }
               >
                 {creator?.kyc_status
-                  ? t(`creatorDashboard.verificationStatus.${creator.kyc_status}`)
+                  ? t(
+                      `creatorDashboard.verificationStatus.${creator.kyc_status}`,
+                    )
                   : t("creatorDashboard.verificationStatus.notStarted")}
               </Badge>
             </div>
@@ -3232,7 +3289,12 @@ export default function CreatorDashboard() {
           variant="outline"
           className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
         >
-          {voiceLibrary.length} {t(voiceLibrary.length !== 1 ? "creatorDashboard.voice.voiceBadgePlural" : "creatorDashboard.voice.voiceBadge")}
+          {voiceLibrary.length}{" "}
+          {t(
+            voiceLibrary.length !== 1
+              ? "creatorDashboard.voice.voiceBadgePlural"
+              : "creatorDashboard.voice.voiceBadge",
+          )}
         </Badge>
       </div>
 
@@ -3288,16 +3350,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3337,8 +3401,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3444,10 +3509,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {t("creatorDashboard.campaigns.activeCount", {
               count: activeCampaigns.length,
@@ -3549,17 +3615,20 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
-                            ? t("creatorDashboard.campaigns.status.expiringSoon")
+                            ? t(
+                                "creatorDashboard.campaigns.status.expiringSoon",
+                              )
                             : campaign.status}
                       </Badge>
                     </td>
@@ -3636,8 +3705,9 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
-                      }`}
+                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                      isExpanded ? "rotate-90" : ""
+                    }`}
                   />
                 </button>
 
@@ -3679,17 +3749,20 @@ export default function CreatorDashboard() {
                         {t("creatorDashboard.campaigns.statusLabel")}
                       </span>
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
-                            ? t("creatorDashboard.campaigns.status.expiringSoon")
+                            ? t(
+                                "creatorDashboard.campaigns.status.expiringSoon",
+                              )
                             : campaign.status}
                       </Badge>
                     </div>
@@ -3781,31 +3854,41 @@ export default function CreatorDashboard() {
                       : "bg-orange-100 text-orange-700 border border-orange-300"
                   }
                 >
-                  {campaign.status === "active" ? t("creatorDashboard.campaigns.status.active") : t("creatorDashboard.campaigns.status.expiringSoon")}
+                  {campaign.status === "active"
+                    ? t("creatorDashboard.campaigns.status.active")
+                    : t("creatorDashboard.campaigns.status.expiringSoon")}
                 </Badge>
               </div>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.monthlyRate")}</span>
+                  <span className="text-gray-600">
+                    {t("creatorDashboard.campaigns.labels.monthlyRate")}
+                  </span>
                   <span className="font-bold text-gray-900">
                     ${campaign.rate.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.activeUntil")}</span>
+                  <span className="text-gray-600">
+                    {t("creatorDashboard.campaigns.labels.activeUntil")}
+                  </span>
                   <span className="font-medium text-gray-900">
                     {new Date(campaign.active_until).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.regions")}</span>
+                  <span className="text-gray-600">
+                    {t("creatorDashboard.campaigns.labels.regions")}
+                  </span>
                   <span className="font-medium text-gray-900">
                     {campaign.regions.join(", ")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t("creatorDashboard.campaigns.labels.weeklyImpressions")}</span>
+                  <span className="text-gray-600">
+                    {t("creatorDashboard.campaigns.labels.weeklyImpressions")}
+                  </span>
                   <span className="font-medium text-gray-900">
                     {campaign.impressions_week.toLocaleString()}
                   </span>
@@ -3834,7 +3917,9 @@ export default function CreatorDashboard() {
           <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
             <strong>{t("creatorDashboard.campaigns.consent.title")}</strong>{" "}
-            {t("creatorDashboard.campaigns.consent.message", { count: activeCampaigns.length })}
+            {t("creatorDashboard.campaigns.consent.message", {
+              count: activeCampaigns.length,
+            })}
           </p>
         </div>
       </div>
@@ -4642,10 +4727,11 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {t("creatorDashboard.contracts.activeTab", {
               count: activeContracts.length,
@@ -4653,10 +4739,11 @@ export default function CreatorDashboard() {
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {t("creatorDashboard.contracts.expiredTab", {
               count: expiredContracts.length,
@@ -4670,10 +4757,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4816,7 +4904,9 @@ export default function CreatorDashboard() {
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
             <Lock className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-gray-900">{t("creatorDashboard.earnings.bankConnection.privateTitle")}</h3>
+              <h3 className="font-semibold text-gray-900">
+                {t("creatorDashboard.earnings.bankConnection.privateTitle")}
+              </h3>
               <p className="text-sm text-gray-600">
                 {t("creatorDashboard.earnings.bankConnection.privateMessage")}
               </p>
@@ -4875,29 +4965,39 @@ export default function CreatorDashboard() {
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.totalEarnedYTD")}</p>
+            <p className="text-sm text-gray-600 mb-2">
+              {t("creatorDashboard.earnings.metrics.totalEarnedYTD")}
+            </p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
               {t("creatorDashboard.earnings.metrics.willUpdate")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.thisMonthRecurring")}</p>
+            <p className="text-sm text-gray-600 mb-2">
+              {t("creatorDashboard.earnings.metrics.thisMonthRecurring")}
+            </p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
               {t("creatorDashboard.earnings.metrics.waitingForCampaigns")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.projectedNextMonth")}</p>
+            <p className="text-sm text-gray-600 mb-2">
+              {t("creatorDashboard.earnings.metrics.projectedNextMonth")}
+            </p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
               {t("creatorDashboard.earnings.metrics.willCalculate")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">{t("creatorDashboard.earnings.metrics.nextPayment")}</p>
-            <p className="text-2xl font-bold text-gray-900">{t("creatorDashboard.earnings.metrics.toBeDetermined")}</p>
+            <p className="text-sm text-gray-600 mb-2">
+              {t("creatorDashboard.earnings.metrics.nextPayment")}
+            </p>
+            <p className="text-2xl font-bold text-gray-900">
+              {t("creatorDashboard.earnings.metrics.toBeDetermined")}
+            </p>
             <p className="text-sm text-gray-600 mt-1">
               {t("creatorDashboard.earnings.metrics.noActiveContracts")}
             </p>
@@ -4912,7 +5012,9 @@ export default function CreatorDashboard() {
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <div>{t("creatorDashboard.earnings.charts.revenuePlaceholder")}</div>
+              <div>
+                {t("creatorDashboard.earnings.charts.revenuePlaceholder")}
+              </div>
               <div className="text-sm text-gray-500 mt-1">
                 {t("creatorDashboard.earnings.charts.activePlaceholder")}
               </div>
@@ -4924,7 +5026,9 @@ export default function CreatorDashboard() {
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <div>{t("creatorDashboard.earnings.charts.industryPlaceholder")}</div>
+              <div>
+                {t("creatorDashboard.earnings.charts.industryPlaceholder")}
+              </div>
               <div className="text-sm text-gray-500 mt-1">
                 {t("creatorDashboard.earnings.charts.activePlaceholder")}
               </div>
@@ -4944,15 +5048,21 @@ export default function CreatorDashboard() {
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="p-5 bg-white rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.earnings.comparison.traditionalModel")}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("creatorDashboard.earnings.comparison.traditionalModel")}
+              </p>
               <p className="text-3xl font-bold text-gray-900">$500</p>
               <p className="text-sm text-gray-600">
                 {t("creatorDashboard.earnings.comparison.traditionalDesc")}
               </p>
             </div>
             <div className="p-5 bg-white rounded-lg border border-cyan-300">
-              <p className="text-sm text-gray-600 mb-1">{t("creatorDashboard.earnings.comparison.likeleeModel")}</p>
-              <p className="text-3xl font-bold text-[#32C8D1]">{t("creatorDashboard.earnings.comparison.likeleeAmount")}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("creatorDashboard.earnings.comparison.likeleeModel")}
+              </p>
+              <p className="text-3xl font-bold text-[#32C8D1]">
+                {t("creatorDashboard.earnings.comparison.likeleeAmount")}
+              </p>
               <p className="text-sm text-gray-600">
                 {t("creatorDashboard.earnings.comparison.likeleeDesc")}
               </p>
@@ -4989,7 +5099,9 @@ export default function CreatorDashboard() {
                     <div className="font-bold text-gray-900">
                       ${(c.earnings_this_month || 0).toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">{t("creatorDashboard.earnings.campaigns.thisMonth")}</div>
+                    <div className="text-xs text-gray-500">
+                      {t("creatorDashboard.earnings.campaigns.thisMonth")}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -5129,19 +5241,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.profile")}
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.rules")}
         </button>
@@ -5177,7 +5291,9 @@ export default function CreatorDashboard() {
                 <p className="text-sm text-gray-600 mb-2">
                   {t("creatorDashboard.settingsView.profile.uploadText")}
                 </p>
-                <p className="text-xs text-gray-500">{t("creatorDashboard.settingsView.profile.uploadHint")}</p>
+                <p className="text-xs text-gray-500">
+                  {t("creatorDashboard.settingsView.profile.uploadHint")}
+                </p>
               </div>
             </div>
           </Card>
@@ -5332,7 +5448,9 @@ export default function CreatorDashboard() {
                     {t("creatorDashboard.settingsView.profile.visibleToBrands")}
                   </Label>
                   <p className="text-sm text-gray-600">
-                    {t("creatorDashboard.settingsView.profile.visibleToBrandsDesc")}
+                    {t(
+                      "creatorDashboard.settingsView.profile.visibleToBrandsDesc",
+                    )}
                   </p>
                 </div>
                 <Switch
@@ -5352,7 +5470,9 @@ export default function CreatorDashboard() {
                     {t("creatorDashboard.settingsView.profile.enableLicensing")}
                   </Label>
                   <p className="text-sm text-gray-600">
-                    {t("creatorDashboard.settingsView.profile.enableLicensingDesc")}
+                    {t(
+                      "creatorDashboard.settingsView.profile.enableLicensingDesc",
+                    )}
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -5361,10 +5481,14 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between py-4">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.emailNotifications")}
+                    {t(
+                      "creatorDashboard.settingsView.profile.emailNotifications",
+                    )}
                   </Label>
                   <p className="text-sm text-gray-600">
-                    {t("creatorDashboard.settingsView.profile.emailNotificationsDesc")}
+                    {t(
+                      "creatorDashboard.settingsView.profile.emailNotificationsDesc",
+                    )}
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -5428,10 +5552,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleContentType(type)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.content_types?.includes(type)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {t(`common.contentTypes.${type}`, type)}
                     </Badge>
@@ -5444,7 +5569,9 @@ export default function CreatorDashboard() {
                       <Alert className="bg-blue-50 border border-blue-200 mb-3">
                         <AlertCircle className="h-5 w-5 text-blue-600" />
                         <AlertDescription className="text-blue-900 text-sm">
-                          {t("creatorDashboard.settingsView.rules.customRatesAlert")}
+                          {t(
+                            "creatorDashboard.settingsView.rules.customRatesAlert",
+                          )}
                         </AlertDescription>
                       </Alert>
                       <Button
@@ -5454,7 +5581,9 @@ export default function CreatorDashboard() {
                         className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                       >
                         <Edit className="w-4 h-4 mr-2" />
-                        {t("creatorDashboard.settingsView.rules.editInitialRate")}
+                        {t(
+                          "creatorDashboard.settingsView.rules.editInitialRate",
+                        )}
                       </Button>
                     </>
                   )}
@@ -5472,10 +5601,11 @@ export default function CreatorDashboard() {
                       onClick={() =>
                         editingRules && handleToggleIndustry(industry)
                       }
-                      className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
-                        } ${!editingRules && "cursor-default"}`}
+                      className={`cursor-pointer transition-all px-4 py-2 ${
+                        creator.industries?.includes(industry)
+                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                      } ${!editingRules && "cursor-default"}`}
                     >
                       {t(`common.industries.${industry}`, industry)}
                     </Badge>
@@ -5488,7 +5618,9 @@ export default function CreatorDashboard() {
                       <Alert className="bg-blue-50 border border-blue-200 mb-3">
                         <AlertCircle className="h-5 w-5 text-blue-600" />
                         <AlertDescription className="text-blue-900 text-sm">
-                          {t("creatorDashboard.settingsView.rules.customRatesAlert")}
+                          {t(
+                            "creatorDashboard.settingsView.rules.customRatesAlert",
+                          )}
                         </AlertDescription>
                       </Alert>
                       <Button
@@ -5498,7 +5630,9 @@ export default function CreatorDashboard() {
                         className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                       >
                         <Edit className="w-4 h-4 mr-2" />
-                        {t("creatorDashboard.settingsView.rules.editInitialRate")}
+                        {t(
+                          "creatorDashboard.settingsView.rules.editInitialRate",
+                        )}
                       </Button>
                     </>
                   )}
@@ -5545,10 +5679,14 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-base font-semibold text-gray-900 block mb-1">
-                      {t("creatorDashboard.settingsView.rules.acceptNegotiations")}
+                      {t(
+                        "creatorDashboard.settingsView.rules.acceptNegotiations",
+                      )}
                     </Label>
                     <p className="text-sm text-gray-600">
-                      {t("creatorDashboard.settingsView.rules.acceptNegotiationsDesc")}
+                      {t(
+                        "creatorDashboard.settingsView.rules.acceptNegotiationsDesc",
+                      )}
                     </p>
                   </div>
                   <Switch
@@ -5584,14 +5722,15 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${isSmallScreen
-          ? sidebarOpen
-            ? "w-64"
-            : "-translate-x-full w-64"
-          : sidebarOpen
-            ? "w-64"
-            : "w-20"
-          }`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
+          isSmallScreen
+            ? sidebarOpen
+              ? "w-64"
+              : "-translate-x-full w-64"
+            : sidebarOpen
+              ? "w-64"
+              : "w-20"
+        }`}
       >
         {/* Mobile Sidebar Header */}
         {isSmallScreen && (
@@ -5816,13 +5955,15 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">{t("creatorDashboard.nav.profile.logout")}</span>
+                  <span className="text-sm font-medium">
+                    {t("creatorDashboard.nav.profile.logout")}
+                  </span>
                 </button>
               </div>
             </div>
@@ -5840,10 +5981,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -6486,10 +6628,16 @@ export default function CreatorDashboard() {
                   <>
                     <div>
                       <p className="text-gray-700 mb-2">
-                        <strong>{t("creatorDashboard.uploadModal.sectionLabel")}</strong> {section.title}
+                        <strong>
+                          {t("creatorDashboard.uploadModal.sectionLabel")}
+                        </strong>{" "}
+                        {section.title}
                       </p>
                       <p className="text-gray-600">
-                        <strong>{t("creatorDashboard.uploadModal.bestForLabel")}</strong> {section.bestFor}
+                        <strong>
+                          {t("creatorDashboard.uploadModal.bestForLabel")}
+                        </strong>{" "}
+                        {section.bestFor}
                       </p>
                     </div>
 
@@ -6508,7 +6656,9 @@ export default function CreatorDashboard() {
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.goodLighting")}</p>
+                          <p>
+                            {t("creatorDashboard.uploadModal.goodLighting")}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
@@ -6521,7 +6671,9 @@ export default function CreatorDashboard() {
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
                           <p>
-                            {t("creatorDashboard.uploadModal.professionalQuality")}
+                            {t(
+                              "creatorDashboard.uploadModal.professionalQuality",
+                            )}
                           </p>
                         </div>
                       </div>
@@ -6683,8 +6835,12 @@ export default function CreatorDashboard() {
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <AlertDescription className="text-blue-900">
                 {showRatesModal === "content"
-                  ? t("creatorDashboard.rules.modals.contentDesc", { rate: `$${creator.price_per_week}/week` })
-                  : t("creatorDashboard.rules.modals.industryDesc", { rate: `$${creator.price_per_week}/week` })}
+                  ? t("creatorDashboard.rules.modals.contentDesc", {
+                      rate: `$${creator.price_per_week}/week`,
+                    })
+                  : t("creatorDashboard.rules.modals.industryDesc", {
+                      rate: `$${creator.price_per_week}/week`,
+                    })}
               </AlertDescription>
             </Alert>
 
@@ -6719,9 +6875,12 @@ export default function CreatorDashboard() {
                           "Music videos": "musicVideos",
                           "Video-game / VR characters": "videoGameVR",
                           "Stock photo / video libraries": "stockLibraries",
-                          "Educational / nonprofit spots": "educationalNonprofit"
+                          "Educational / nonprofit spots":
+                            "educationalNonprofit",
                         };
-                        const info = keyMap[type] ? t(`common.contentTypes.${keyMap[type]}`) : type;
+                        const info = keyMap[type]
+                          ? t(`common.contentTypes.${keyMap[type]}`)
+                          : type;
 
                         return (
                           <div
@@ -6739,8 +6898,8 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      existing.price_per_week_cents / 100
-                                    ).toString()
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -6748,7 +6907,9 @@ export default function CreatorDashboard() {
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">{t("creatorDashboard.rules.modals.perWeek")}</span>
+                              <span className="text-gray-500 text-sm">
+                                {t("creatorDashboard.rules.modals.perWeek")}
+                              </span>
                             </div>
                           </div>
                         );
@@ -6759,7 +6920,10 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>{t("creatorDashboard.rules.modals.noContentTitle")}</strong> {t("creatorDashboard.rules.modals.noContentMsg")}
+                    <strong>
+                      {t("creatorDashboard.rules.modals.noContentTitle")}
+                    </strong>{" "}
+                    {t("creatorDashboard.rules.modals.noContentMsg")}
                   </AlertDescription>
                 </Alert>
               ))}
@@ -6788,13 +6952,15 @@ export default function CreatorDashboard() {
                           "Sports / Fitness": "sportsFitness",
                           "Food / Beverage": "foodBeverage",
                           "Film / Gaming / Music": "filmGamingMusic",
-                          "Automotive": "automotive",
+                          Automotive: "automotive",
                           "Finance / Fintech": "financeFintech",
                           "Health / Wellness": "healthWellness",
                           "Luxury & Lifestyle": "luxuryLifestyle",
-                          "Travel / Hospitality": "travelHospitality"
+                          "Travel / Hospitality": "travelHospitality",
                         };
-                        const info = keyMap[ind] ? t(`common.industries.${keyMap[ind]}`) : ind;
+                        const info = keyMap[ind]
+                          ? t(`common.industries.${keyMap[ind]}`)
+                          : ind;
 
                         return (
                           <div
@@ -6812,8 +6978,8 @@ export default function CreatorDashboard() {
                                 defaultValue={
                                   existing
                                     ? (
-                                      existing.price_per_week_cents / 100
-                                    ).toString()
+                                        existing.price_per_week_cents / 100
+                                      ).toString()
                                     : ""
                                 }
                                 placeholder={creator.price_per_week?.toString()}
@@ -6821,7 +6987,9 @@ export default function CreatorDashboard() {
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">{t("creatorDashboard.rules.modals.perWeek")}</span>
+                              <span className="text-gray-500 text-sm">
+                                {t("creatorDashboard.rules.modals.perWeek")}
+                              </span>
                             </div>
                           </div>
                         );
@@ -6832,7 +7000,10 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>{t("creatorDashboard.rules.modals.noIndustryTitle")}</strong> {t("creatorDashboard.rules.modals.noIndustryMsg")}
+                    <strong>
+                      {t("creatorDashboard.rules.modals.noIndustryTitle")}
+                    </strong>{" "}
+                    {t("creatorDashboard.rules.modals.noIndustryMsg")}
                   </AlertDescription>
                 </Alert>
               ))}
@@ -6853,21 +7024,21 @@ export default function CreatorDashboard() {
                 (showRatesModal === "industry" &&
                   creator.industries?.filter((i) => INDUSTRIES.includes(i))
                     .length > 0)) && (
-                  <Button
-                    type="submit"
-                    disabled={savingRates}
-                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  >
-                    {savingRates ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {t("creatorDashboard.rules.modals.saving")}
-                      </>
-                    ) : (
-                      t("creatorDashboard.rules.modals.save")
-                    )}
-                  </Button>
-                )}
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                >
+                  {savingRates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {t("creatorDashboard.rules.modals.saving")}
+                    </>
+                  ) : (
+                    t("creatorDashboard.rules.modals.save")
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>

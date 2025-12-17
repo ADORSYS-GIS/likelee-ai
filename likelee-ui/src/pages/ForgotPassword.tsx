@@ -52,8 +52,7 @@ export default function ForgotPassword() {
                 setMessage(t("forgotPasswordPage.successMessage"));
               }
             } catch (err: any) {
-              const msg =
-                err?.message ?? t("forgotPasswordPage.errorMessage");
+              const msg = err?.message ?? t("forgotPasswordPage.errorMessage");
               setError(msg);
               toast({
                 title: t("common.error"),
@@ -102,4 +101,3 @@ export default function ForgotPassword() {
     </Layout>
   );
 }
-

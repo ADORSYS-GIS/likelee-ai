@@ -212,10 +212,11 @@ export default function UploadProject() {
                   <div
                     key={tool}
                     onClick={() => toggleArrayItem("tools_used", tool)}
-                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${project.tools_used.includes(tool)
+                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${
+                      project.tools_used.includes(tool)
                         ? "border-[#F18B6A] bg-[#F18B6A]/10"
                         : "border-gray-300 hover:border-gray-400"
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-900">
@@ -240,10 +241,11 @@ export default function UploadProject() {
                   <div
                     key={skill}
                     onClick={() => toggleArrayItem("skills_showcased", skill)}
-                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${project.skills_showcased.includes(skill)
+                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${
+                      project.skills_showcased.includes(skill)
                         ? "border-[#32C8D1] bg-[#32C8D1]/10"
                         : "border-gray-300 hover:border-gray-400"
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-900">
