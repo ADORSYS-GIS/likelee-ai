@@ -29,9 +29,18 @@ export default function Creators() {
   const [isFlipping, setIsFlipping] = useState(false);
 
   const messages = [
-    { line1: t("faces.hero.flipper.0.line1"), line2: t("faces.hero.flipper.0.line2") },
-    { line1: t("faces.hero.flipper.1.line1"), line2: t("faces.hero.flipper.1.line2") },
-    { line1: t("faces.hero.flipper.2.line1"), line2: t("faces.hero.flipper.2.line2") },
+    {
+      line1: t("faces.hero.flipper.0.line1"),
+      line2: t("faces.hero.flipper.0.line2"),
+    },
+    {
+      line1: t("faces.hero.flipper.1.line1"),
+      line2: t("faces.hero.flipper.1.line2"),
+    },
+    {
+      line1: t("faces.hero.flipper.2.line1"),
+      line2: t("faces.hero.flipper.2.line2"),
+    },
   ];
 
   useEffect(() => {
@@ -413,29 +422,20 @@ export default function Creators() {
                   <h4 className="font-bold text-gray-900 mb-2">
                     {t("faces.digitalTalentOwner.comparison.traditionalPath")}
                   </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.traditionalPathDescription1")}</p>
-                </Card>
-                <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.likeleeModel")}
-                  </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.likeleeModelDescription1")}</p>
-                </Card>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.traditionalPath")}
-                  </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.traditionalPathDescription2")}</p>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.traditionalPathDescription1",
+                    )}
+                  </p>
                 </Card>
                 <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
                     {t("faces.digitalTalentOwner.comparison.likeleeModel")}
                   </h4>
                   <p className="text-gray-700">
-                    {t("faces.digitalTalentOwner.comparison.likeleeModelDescription2")}
+                    {t(
+                      "faces.digitalTalentOwner.comparison.likeleeModelDescription1",
+                    )}
                   </p>
                 </Card>
               </div>
@@ -445,13 +445,21 @@ export default function Creators() {
                   <h4 className="font-bold text-gray-900 mb-2">
                     {t("faces.digitalTalentOwner.comparison.traditionalPath")}
                   </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.traditionalPathDescription3")}</p>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.traditionalPathDescription2",
+                    )}
+                  </p>
                 </Card>
                 <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
                     {t("faces.digitalTalentOwner.comparison.likeleeModel")}
                   </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.likeleeModelDescription3")}</p>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.likeleeModelDescription2",
+                    )}
+                  </p>
                 </Card>
               </div>
 
@@ -460,13 +468,44 @@ export default function Creators() {
                   <h4 className="font-bold text-gray-900 mb-2">
                     {t("faces.digitalTalentOwner.comparison.traditionalPath")}
                   </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.traditionalPathDescription4")}</p>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.traditionalPathDescription3",
+                    )}
+                  </p>
                 </Card>
                 <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
                     {t("faces.digitalTalentOwner.comparison.likeleeModel")}
                   </h4>
-                  <p className="text-gray-700">{t("faces.digitalTalentOwner.comparison.likeleeModelDescription4")}</p>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.likeleeModelDescription3",
+                    )}
+                  </p>
+                </Card>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    {t("faces.digitalTalentOwner.comparison.traditionalPath")}
+                  </h4>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.traditionalPathDescription4",
+                    )}
+                  </p>
+                </Card>
+                <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    {t("faces.digitalTalentOwner.comparison.likeleeModel")}
+                  </h4>
+                  <p className="text-gray-700">
+                    {t(
+                      "faces.digitalTalentOwner.comparison.likeleeModelDescription4",
+                    )}
+                  </p>
                 </Card>
               </div>
             </div>
@@ -490,15 +529,11 @@ export default function Creators() {
           </div>
 
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed mb-12">
-            <p>
-              {t("faces.realFutures.line1")}
-            </p>
+            <p>{t("faces.realFutures.line1")}</p>
             <p className="font-bold text-gray-900 text-xl">
               {t("faces.realFutures.line2")}
             </p>
-            <p>
-              {t("faces.realFutures.line3")}
-            </p>
+            <p>{t("faces.realFutures.line3")}</p>
             <p className="font-bold text-gray-900 text-xl">
               {t("faces.realFutures.line4")}
             </p>
@@ -516,12 +551,8 @@ export default function Creators() {
           </div>
 
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed mb-12">
-            <p>
-              {t("faces.valueFloor.line1")}
-            </p>
-            <p>
-              {t("faces.valueFloor.line2")}
-            </p>
+            <p>{t("faces.valueFloor.line1")}</p>
+            <p>{t("faces.valueFloor.line2")}</p>
             <p className="font-bold text-gray-900">
               {t("faces.valueFloor.line3")}
             </p>
@@ -577,15 +608,9 @@ export default function Creators() {
                 </p>
               </div>
               <div className="space-y-3 text-gray-700">
-                <p>
-                  {t("faces.realEarnings.cards.0.line1")}
-                </p>
-                <p>
-                  {t("faces.realEarnings.cards.0.line2")}
-                </p>
-                <p>
-                  {t("faces.realEarnings.cards.0.line3")}
-                </p>
+                <p>{t("faces.realEarnings.cards.0.line1")}</p>
+                <p>{t("faces.realEarnings.cards.0.line2")}</p>
+                <p>{t("faces.realEarnings.cards.0.line3")}</p>
                 <p className="pt-4 border-t-2 border-gray-200 font-bold text-gray-900">
                   {t("faces.realEarnings.cards.0.total")}
                 </p>
@@ -621,15 +646,9 @@ export default function Creators() {
                 </p>
               </div>
               <div className="space-y-3 text-gray-700">
-                <p>
-                  {t("faces.realEarnings.cards.2.line1")}
-                </p>
-                <p>
-                  {t("faces.realEarnings.cards.2.line2")}
-                </p>
-                <p>
-                  {t("faces.realEarnings.cards.2.line3")}
-                </p>
+                <p>{t("faces.realEarnings.cards.2.line1")}</p>
+                <p>{t("faces.realEarnings.cards.2.line2")}</p>
+                <p>{t("faces.realEarnings.cards.2.line3")}</p>
                 <p className="pt-4 border-t-2 border-gray-200 font-bold text-gray-900">
                   {t("faces.realEarnings.cards.2.total")}
                 </p>
@@ -652,31 +671,46 @@ export default function Creators() {
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
-                <span className="font-bold text-gray-900">{t("faces.retainerModel.steps.0.title")}</span> → {t("faces.retainerModel.steps.0.description")}
+                <span className="font-bold text-gray-900">
+                  {t("faces.retainerModel.steps.0.title")}
+                </span>{" "}
+                → {t("faces.retainerModel.steps.0.description")}
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
-                <span className="font-bold text-gray-900">{t("faces.retainerModel.steps.1.title")}</span> → {t("faces.retainerModel.steps.1.description")}
+                <span className="font-bold text-gray-900">
+                  {t("faces.retainerModel.steps.1.title")}
+                </span>{" "}
+                → {t("faces.retainerModel.steps.1.description")}
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
-                <span className="font-bold text-gray-900">{t("faces.retainerModel.steps.2.title")}</span> → {t("faces.retainerModel.steps.2.description")}
+                <span className="font-bold text-gray-900">
+                  {t("faces.retainerModel.steps.2.title")}
+                </span>{" "}
+                → {t("faces.retainerModel.steps.2.description")}
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
-                <span className="font-bold text-gray-900">{t("faces.retainerModel.steps.3.title")}</span> → {t("faces.retainerModel.steps.3.description")}
+                <span className="font-bold text-gray-900">
+                  {t("faces.retainerModel.steps.3.title")}
+                </span>{" "}
+                → {t("faces.retainerModel.steps.3.description")}
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
-                <span className="font-bold text-gray-900">{t("faces.retainerModel.steps.4.title")}</span> → {t("faces.retainerModel.steps.4.description")}
+                <span className="font-bold text-gray-900">
+                  {t("faces.retainerModel.steps.4.title")}
+                </span>{" "}
+                → {t("faces.retainerModel.steps.4.description")}
               </p>
             </div>
           </div>
@@ -767,12 +801,8 @@ export default function Creators() {
           </div>
 
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
-            <p>
-              {t("faces.likenessStaysYours.line1")}
-            </p>
-            <p>
-              {t("faces.likenessStaysYours.line2")}
-            </p>
+            <p>{t("faces.likenessStaysYours.line1")}</p>
+            <p>{t("faces.likenessStaysYours.line2")}</p>
             <p className="font-semibold text-gray-900">
               {t("faces.likenessStaysYours.line3")}
             </p>
@@ -787,9 +817,7 @@ export default function Creators() {
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               {t("faces.faq.title")}
             </h2>
-            <p className="text-xl text-gray-600">
-              {t("faces.faq.subtitle")}
-            </p>
+            <p className="text-xl text-gray-600">{t("faces.faq.subtitle")}</p>
           </div>
 
           <Accordion type="single" collapsible className="space-y-4">
@@ -910,30 +938,18 @@ export default function Creators() {
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             {t("faces.cta.title")}
           </h2>
-          <p className="text-xl text-white mb-8">
-            {t("faces.cta.subtitle")}
-          </p>
+          <p className="text-xl text-white mb-8">{t("faces.cta.subtitle")}</p>
 
           <div className="bg-white/10 backdrop-blur-sm border-2 border-white p-8 rounded-none mb-10">
             <h3 className="text-2xl font-bold text-white mb-6">
               {t("faces.cta.howToGetStarted")}
             </h3>
             <div className="space-y-3 text-lg text-white text-left max-w-2xl mx-auto">
-              <p>
-                {t("faces.cta.steps.0")}
-              </p>
-              <p>
-                {t("faces.cta.steps.1")}
-              </p>
-              <p>
-                {t("faces.cta.steps.2")}
-              </p>
-              <p>
-                {t("faces.cta.steps.3")}
-              </p>
-              <p>
-                {t("faces.cta.steps.4")}
-              </p>
+              <p>{t("faces.cta.steps.0")}</p>
+              <p>{t("faces.cta.steps.1")}</p>
+              <p>{t("faces.cta.steps.2")}</p>
+              <p>{t("faces.cta.steps.3")}</p>
+              <p>{t("faces.cta.steps.4")}</p>
             </div>
           </div>
 

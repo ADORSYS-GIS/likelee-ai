@@ -72,25 +72,25 @@ export default function CreatorSignup() {
     return saved
       ? JSON.parse(saved)
       : {
-        full_name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        instagram_handle: "",
-        tiktok_handle: "",
-        youtube_handle: "",
-        agency_name: "",
-        content_types: [],
-        content_other: "",
-        ai_tools: [],
-        ai_tools_other: "",
-        city: "",
-        state: "",
-        experience: "",
-        portfolio_url: "",
-        social_url: "",
-        profile_photo_url: "",
-      };
+          full_name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          instagram_handle: "",
+          tiktok_handle: "",
+          youtube_handle: "",
+          agency_name: "",
+          content_types: [],
+          content_other: "",
+          ai_tools: [],
+          ai_tools_other: "",
+          city: "",
+          state: "",
+          experience: "",
+          portfolio_url: "",
+          social_url: "",
+          profile_photo_url: "",
+        };
   });
 
   const [step, setStep] = useState(() => {
@@ -743,7 +743,9 @@ export default function CreatorSignup() {
                     <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                       <Checkbox
                         id="select_all_ai_tools"
-                        checked={getAiTools(t).every((tool) => formData.ai_tools.includes(tool))}
+                        checked={getAiTools(t).every((tool) =>
+                          formData.ai_tools.includes(tool),
+                        )}
                         onCheckedChange={() =>
                           toggleSelectAll("ai_tools", getAiTools(t))
                         }

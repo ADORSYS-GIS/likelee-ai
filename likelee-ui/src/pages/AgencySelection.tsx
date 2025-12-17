@@ -12,20 +12,20 @@ export default function AgencySelection() {
 
   const items = [
     {
-      title: t('talentModelingAgency'),
-      desc: t('talentModelingAgencyMessage'),
+      title: t("talentModelingAgency"),
+      desc: t("talentModelingAgencyMessage"),
       icon: Users,
       to: createPageUrl("TalentAgency"),
     },
     {
-      title: t('sportsAgency'),
-      desc: t('sportsAgencyMessage'),
+      title: t("sportsAgency"),
+      desc: t("sportsAgencyMessage"),
       icon: Trophy,
       to: createPageUrl("SportsAgency"),
     },
     {
-      title: t('marketingAgency'),
-      desc: t('marketingAgencyMessage'),
+      title: t("marketingAgency"),
+      desc: t("marketingAgencyMessage"),
       icon: Megaphone,
       to: createPageUrl("MarketingAgency"),
     },
@@ -36,10 +36,10 @@ export default function AgencySelection() {
       <section className="px-6 pt-20 pb-10">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-            {t('whatTypeOfAgencyAreYou')}
+            {t("whatTypeOfAgencyAreYou")}
           </h1>
           <p className="text-gray-600 text-base md:text-lg">
-            {t('whatTypeOfAgencyAreYouMessage')}
+            {t("whatTypeOfAgencyAreYouMessage")}
           </p>
         </div>
       </section>
@@ -61,7 +61,7 @@ export default function AgencySelection() {
                   variant="outline"
                   className="mt-2 border-2 border-black rounded-none"
                 >
-                  {t('learnMore')}
+                  {t("learnMore")}
                 </Button>
               </div>
             </Card>

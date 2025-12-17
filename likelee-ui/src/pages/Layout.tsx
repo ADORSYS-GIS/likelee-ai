@@ -176,7 +176,7 @@ export default function Layout({ children, currentPageName }) {
                 fontWeight: "bold",
               }}
             >
-              {t('javascriptRequired')}
+              {t("javascriptRequired")}
             </h1>
             <p
               style={{
@@ -185,7 +185,7 @@ export default function Layout({ children, currentPageName }) {
                 marginBottom: "20px",
               }}
             >
-              {t('javascriptRequiredMessage')}
+              {t("javascriptRequiredMessage")}
             </p>
             <div
               style={{
@@ -206,7 +206,7 @@ export default function Layout({ children, currentPageName }) {
                   fontSize: "18px",
                 }}
               >
-                {t('aboutLikelee')}
+                {t("aboutLikelee")}
               </h2>
               <ul
                 style={{
@@ -217,27 +217,30 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <li>
-                  <strong>{t('forCreators')}:</strong> {t('forCreatorsMessage')}
+                  <strong>{t("forCreators")}:</strong> {t("forCreatorsMessage")}
                 </li>
                 <li>
-                  <strong>{t('forAiArtists')}:</strong> {t('forAiArtistsMessage')}
+                  <strong>{t("forAiArtists")}:</strong>{" "}
+                  {t("forAiArtistsMessage")}
                 </li>
                 <li>
-                  <strong>{t('forBusinesses')}:</strong> {t('forBusinessesMessage')}
+                  <strong>{t("forBusinesses")}:</strong>{" "}
+                  {t("forBusinessesMessage")}
                 </li>
                 <li>
-                  <strong>{t('protectionAndRights')}:</strong> {t('protectionAndRightsMessage')}
+                  <strong>{t("protectionAndRights")}:</strong>{" "}
+                  {t("protectionAndRightsMessage")}
                 </li>
               </ul>
               <p style={{ marginTop: "20px", fontWeight: "bold" }}>
-                {t('enableJavascript')}
+                {t("enableJavascript")}
               </p>
               <p style={{ marginTop: "15px" }}>
                 <a
                   href="/static"
                   style={{ color: "#856404", textDecoration: "underline" }}
                 >
-                  {t('viewSimplifiedVersion')}
+                  {t("viewSimplifiedVersion")}
                 </a>
               </p>
             </div>
@@ -288,7 +291,7 @@ export default function Layout({ children, currentPageName }) {
               fontWeight: "bold",
             }}
           >
-            {t('javascriptRequiredFullExperience')}
+            {t("javascriptRequiredFullExperience")}
           </h1>
           <p
             style={{
@@ -298,7 +301,7 @@ export default function Layout({ children, currentPageName }) {
               fontWeight: "500",
             }}
           >
-            {t('interactivePlatformMessage')}
+            {t("interactivePlatformMessage")}
           </p>
 
           <div
@@ -322,7 +325,7 @@ export default function Layout({ children, currentPageName }) {
                 color: "#111",
               }}
             >
-              {t('platformFeatures')}
+              {t("platformFeatures")}
             </h2>
 
             <div style={{ marginBottom: "25px" }}>
@@ -334,7 +337,7 @@ export default function Layout({ children, currentPageName }) {
                   color: "#32C8D1",
                 }}
               >
-                {t('forCreatorsAndAthletes')}
+                {t("forCreatorsAndAthletes")}
               </h3>
               <ul
                 style={{
@@ -343,10 +346,10 @@ export default function Layout({ children, currentPageName }) {
                   lineHeight: "1.8",
                 }}
               >
-                <li>{t('forCreatorsAndAthletesMessage1')}</li>
-                <li>{t('forCreatorsAndAthletesMessage2')}</li>
-                <li>{t('forCreatorsAndAthletesMessage3')}</li>
-                <li>{t('forCreatorsAndAthletesMessage4')}</li>
+                <li>{t("forCreatorsAndAthletesMessage1")}</li>
+                <li>{t("forCreatorsAndAthletesMessage2")}</li>
+                <li>{t("forCreatorsAndAthletesMessage3")}</li>
+                <li>{t("forCreatorsAndAthletesMessage4")}</li>
               </ul>
             </div>
 
@@ -359,7 +362,7 @@ export default function Layout({ children, currentPageName }) {
                   color: "#F18B6A",
                 }}
               >
-                {t('forAiArtistsAndFilmmakers')}
+                {t("forAiArtistsAndFilmmakers")}
               </h3>
               <ul
                 style={{
@@ -368,12 +371,10 @@ export default function Layout({ children, currentPageName }) {
                   lineHeight: "1.8",
                 }}
               >
-                <li>
-                  {t('forAiArtistsAndFilmmakersMessage1')}
-                </li>
-                <li>{t('forAiArtistsAndFilmmakersMessage2')}</li>
-                <li>{t('forAiArtistsAndFilmmakersMessage3')}</li>
-                <li>{t('forAiArtistsAndFilmmakersMessage4')}</li>
+                <li>{t("forAiArtistsAndFilmmakersMessage1")}</li>
+                <li>{t("forAiArtistsAndFilmmakersMessage2")}</li>
+                <li>{t("forAiArtistsAndFilmmakersMessage3")}</li>
+                <li>{t("forAiArtistsAndFilmmakersMessage4")}</li>
               </ul>
             </div>
 
@@ -386,7 +387,7 @@ export default function Layout({ children, currentPageName }) {
                   color: "#F7B750",
                 }}
               >
-                {t('forBusinesses')}
+                {t("forBusinesses")}
               </h3>
               <ul
                 style={{
@@ -395,10 +396,10 @@ export default function Layout({ children, currentPageName }) {
                   lineHeight: "1.8",
                 }}
               >
-                <li>{t('forBusinessesMessage1')}</li>
-                <li>{t('forBusinessesMessage2')}</li>
-                <li>{t('forBusinessesMessage3')}</li>
-                <li>{t('forBusinessesMessage4')}</li>
+                <li>{t("forBusinessesMessage1")}</li>
+                <li>{t("forBusinessesMessage2")}</li>
+                <li>{t("forBusinessesMessage3")}</li>
+                <li>{t("forBusinessesMessage4")}</li>
               </ul>
             </div>
 
@@ -412,7 +413,7 @@ export default function Layout({ children, currentPageName }) {
               }}
             >
               <p style={{ margin: "0", fontWeight: "600", fontSize: "16px" }}>
-                {t('ethicalAiStandards')}
+                {t("ethicalAiStandards")}
               </p>
             </div>
 
@@ -424,7 +425,7 @@ export default function Layout({ children, currentPageName }) {
                   fontWeight: "bold",
                 }}
               >
-                {t('toAccessPlatform')}
+                {t("toAccessPlatform")}
               </p>
               <ol
                 style={{
@@ -434,10 +435,10 @@ export default function Layout({ children, currentPageName }) {
                   marginBottom: "20px",
                 }}
               >
-                <li>{t('enableJavascriptInBrowser')}</li>
-                <li>{t('refreshPage')}</li>
+                <li>{t("enableJavascriptInBrowser")}</li>
+                <li>{t("refreshPage")}</li>
                 <li>
-                  {t('orViewOur')}{" "}
+                  {t("orViewOur")}{" "}
                   <a
                     href="/static"
                     style={{
@@ -446,7 +447,7 @@ export default function Layout({ children, currentPageName }) {
                       fontWeight: "600",
                     }}
                   >
-                    {t('simplifiedTextVersion')}
+                    {t("simplifiedTextVersion")}
                   </a>
                 </li>
               </ol>
@@ -465,7 +466,7 @@ export default function Layout({ children, currentPageName }) {
                     marginBottom: "10px",
                   }}
                 >
-                  {t('questionsContactUs')}
+                  {t("questionsContactUs")}
                 </p>
                 <a
                   href="mailto:help@likelee.ai"
@@ -526,24 +527,26 @@ export default function Layout({ children, currentPageName }) {
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("BrandCompany")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
-                  {t('brands')}
+                  {t("brands")}
                 </Link>
 
                 {/* For Business Dropdown */}
                 <div className="relative group">
                   <Link
                     to={createPageUrl("AgencySelection")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                      location.pathname === createPageUrl("AgencySelection")
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                   >
-                    {t('agencies')}
+                    {t("agencies")}
                   </Link>
 
                   {/* Dropdown Menu */}
@@ -554,10 +557,10 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          {t('marketingAgency')}
+                          {t("marketingAgency")}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {t('marketingAgencySub')}
+                          {t("marketingAgencySub")}
                         </div>
                       </Link>
                       <Link
@@ -565,10 +568,10 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          {t('talentAgencyLabel')}
+                          {t("talentAgencyLabel")}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {t('talentAgencySub')}
+                          {t("talentAgencySub")}
                         </div>
                       </Link>
                       <Link
@@ -576,10 +579,10 @@ export default function Layout({ children, currentPageName }) {
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <div className="font-semibold text-gray-900">
-                          {t('sportsAgency')}
+                          {t("sportsAgency")}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {t('sportsAgencySub')}
+                          {t("sportsAgencySub")}
                         </div>
                       </Link>
                     </div>
@@ -588,26 +591,27 @@ export default function Layout({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("AboutUs")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("AboutUs")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
-                  {t('aboutUs')}
+                  {t("aboutUs")}
                 </Link>
 
                 <Link
                   to={createPageUrl("Contact")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("Contact")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
-                  {t('contact')}
+                  {t("contact")}
                 </Link>
               </div>
             )}
-
 
             {/* Language Switcher and Mobile Menu Button */}
             <div className="flex items-center gap-2">
@@ -633,12 +637,13 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("BrandCompany")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("BrandCompany")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
-                {t('brands')}
+                {t("brands")}
               </Link>
 
               {/* Mobile For Business with sub-items */}
@@ -646,12 +651,13 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AgencySelection")}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                    location.pathname === createPageUrl("AgencySelection")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
-                  {t('agencies')}
+                  {t("agencies")}
                 </Link>
                 <div className="ml-4 mt-1 space-y-1">
                   <Link
@@ -659,21 +665,21 @@ export default function Layout({ children, currentPageName }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    {t('marketingAgency')}
+                    {t("marketingAgency")}
                   </Link>
                   <Link
                     to={createPageUrl("TalentAgency")}
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    {t('talentAgencyLabel')}
+                    {t("talentAgencyLabel")}
                   </Link>
                   <Link
                     to={createPageUrl("SportsAgency")}
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    {t('sportsAgency')}
+                    {t("sportsAgency")}
                   </Link>
                 </div>
               </div>
@@ -681,23 +687,25 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("AboutUs")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("AboutUs")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
-                {t('aboutUs')}
+                {t("aboutUs")}
               </Link>
 
               <Link
                 to={createPageUrl("Contact")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("Contact")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
-                {t('contact')}
+                {t("contact")}
               </Link>
               <div className="px-4 py-3">
                 <LanguageSwitcher />
@@ -733,95 +741,93 @@ export default function Layout({ children, currentPageName }) {
                   </span>
                 </Link>
                 <p className="text-gray-600 text-sm leading-relaxed max-w-md">
-                  {t('footerSlogan')}
+                  {t("footerSlogan")}
                 </p>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  {t('resources')}
+                  {t("resources")}
                 </h3>
                 <div className="space-y-3">
                   <Link
                     to="#"
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('blog')}
+                    {t("blog")}
                   </Link>
                   <Link
                     to={createPageUrl("Impact")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('impact')}
+                    {t("impact")}
                   </Link>
                   <Link
                     to={createPageUrl("Support")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('support')}
+                    {t("support")}
                   </Link>
                   <Link
                     to={createPageUrl("SalesInquiry")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('contactUs')}
+                    {t("contactUs")}
                   </Link>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  {t('legalAndCompliance')}
+                  {t("legalAndCompliance")}
                 </h3>
                 <div className="space-y-3">
                   <Link
                     to={createPageUrl("SAGAFTRAAlignment")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('sagAftraAlignment')}
+                    {t("sagAftraAlignment")}
                   </Link>
                   <Link
                     to={createPageUrl("PrivacyPolicy")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('privacyPolicy')}
+                    {t("privacyPolicy")}
                   </Link>
                   <Link
                     to={createPageUrl("CommercialRights")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('commercialRights')}
+                    {t("commercialRights")}
                   </Link>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  {t('company')}
+                  {t("company")}
                 </h3>
                 <div className="space-y-3">
                   <Link
                     to={createPageUrl("AboutUs")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('aboutUs')}
+                    {t("aboutUs")}
                   </Link>
                   <Link
                     to={createPageUrl("Faces")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t('creators')}
+                    {t("creators")}
                   </Link>
                 </div>
               </div>
             </div>
 
             <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-500">{t("copyright")}</p>
               <p className="text-sm text-gray-500">
-                {t('copyright')}
-              </p>
-              <p className="text-sm text-gray-500">
-                {t('followUs')}{" "}
+                {t("followUs")}{" "}
                 <a
                   href="https://instagram.com/@likelee.ai"
                   target="_blank"

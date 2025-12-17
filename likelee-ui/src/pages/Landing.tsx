@@ -15,7 +15,7 @@ export default function Landing() {
       .replace(/^-/, "")}`;
   };
 
-  const headline = t('landingHeadline');
+  const headline = t("landingHeadline");
   const [typedHeadline, setTypedHeadline] = useState("");
   const [typedIndex, setTypedIndex] = useState(0);
 
@@ -28,7 +28,11 @@ export default function Landing() {
     return () => clearTimeout(id);
   }, [typedIndex, headline]);
 
-  const phrases = [t('readyToUse'), t('verifiedProtection'), t('licensedFaces')];
+  const phrases = [
+    t("readyToUse"),
+    t("verifiedProtection"),
+    t("licensedFaces"),
+  ];
   const [phraseIdx, setPhraseIdx] = useState(0);
   useEffect(() => {
     const id = setInterval(() => {
@@ -101,24 +105,22 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-              {t('heroTitle')}
+              {t("heroTitle")}
             </h1>
-            <p className="mt-6 text-gray-600 text-lg">
-              {t('heroSubtitle')}
-            </p>
+            <p className="mt-6 text-gray-600 text-lg">{t("heroSubtitle")}</p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button
                 onClick={() => navigate("/BrandCompany")}
                 className="h-12 px-8 bg-gradient-to-r from-[#F7B750] to-[#FAD54C] text-white border-2 border-black rounded-none"
               >
-                {t('forBrands')}
+                {t("forBrands")}
               </Button>
               <Button
                 onClick={() => navigate("/AgencySelection")}
                 variant="outline"
                 className="h-12 px-8 border-2 border-black rounded-none"
               >
-                {t('forAgencies')}
+                {t("forAgencies")}
               </Button>
             </div>
           </div>
@@ -188,11 +190,9 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t('transformTalentTitle')}
+              {t("transformTalentTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              {t('transformTalentSubtitle')}
-            </p>
+            <p className="mt-4 text-gray-600">{t("transformTalentSubtitle")}</p>
           </div>
         </div>
       </section>
@@ -235,11 +235,9 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t('userTrustTitle')}
+              {t("userTrustTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              {t('userTrustSubtitle')}
-            </p>
+            <p className="mt-4 text-gray-600">{t("userTrustSubtitle")}</p>
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -306,11 +304,9 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t('scaleCatalogTitle')}
+              {t("scaleCatalogTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              {t('scaleCatalogSubtitle')}
-            </p>
+            <p className="mt-4 text-gray-600">{t("scaleCatalogSubtitle")}</p>
           </div>
         </div>
       </section>
@@ -353,11 +349,9 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t('premiumTalentTitle')}
+              {t("premiumTalentTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              {t('premiumTalentSubtitle')}
-            </p>
+            <p className="mt-4 text-gray-600">{t("premiumTalentSubtitle")}</p>
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -424,11 +418,9 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t('allSizesTitle')}
+              {t("allSizesTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              {t('allSizesSubtitle')}
-            </p>
+            <p className="mt-4 text-gray-600">{t("allSizesSubtitle")}</p>
           </div>
         </div>
       </section>

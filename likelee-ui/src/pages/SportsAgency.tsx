@@ -133,8 +133,7 @@ export default function SportsAgency() {
                 {t("recurringMonthlyNILDescription1")}
               </p>
               <p className="text-base text-gray-700 leading-relaxed">
-                {t("recurringMonthlyNILDescription2")}
-                .
+                {t("recurringMonthlyNILDescription2")}.
               </p>
             </Card>
           </div>
@@ -171,16 +170,20 @@ export default function SportsAgency() {
                     <td className="py-4 px-4 text-gray-700">
                       {t("sportsDrinkEndorsement")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">{t("sportsDrinkEndorsementBefore")}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("sportsDrinkEndorsementBefore")}
+                    </td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
                       {t("sportsDrinkEndorsementAfter")}
                     </td>
                   </tr>
-                   <tr className="border-b border-gray-200">
+                  <tr className="border-b border-gray-200">
                     <td className="py-4 px-4 text-gray-700">
                       {t("recurringBrandPartnership")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">{t("recurringBrandPartnershipBefore")}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("recurringBrandPartnershipBefore")}
+                    </td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
                       {t("recurringBrandPartnershipAfter")}
                     </td>
@@ -189,7 +192,9 @@ export default function SportsAgency() {
                     <td className="py-4 px-4 text-gray-700">
                       {t("apparelBrandNILLicensing")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">{t("apparelBrandNILLicensingBefore")}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("apparelBrandNILLicensingBefore")}
+                    </td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
                       {t("apparelBrandNILLicensingAfter")}
                     </td>
@@ -200,7 +205,8 @@ export default function SportsAgency() {
           </Card>
 
           <p className="text-center text-xl font-semibold text-gray-900 mt-8">
-            {t("sameAthleteMultipleStreams")} <span className="text-[#32C8D1]">{t("moreEarningPotential")}</span>
+            {t("sameAthleteMultipleStreams")}{" "}
+            <span className="text-[#32C8D1]">{t("moreEarningPotential")}</span>
           </p>
         </div>
       </section>

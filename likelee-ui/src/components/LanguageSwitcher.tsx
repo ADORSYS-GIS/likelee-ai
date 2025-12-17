@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,8 +26,12 @@ const LanguageSwitcher: React.FC = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 text-black hover:text-gray-700 hover:bg-transparent px-2">
-          {languages[i18n.language.split('-')[0] as keyof typeof languages] || "Language"}
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 text-black hover:text-gray-700 hover:bg-transparent px-2"
+        >
+          {languages[i18n.language.split("-")[0] as keyof typeof languages] ||
+            "Language"}
           <ChevronDown className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>

@@ -46,99 +46,99 @@ export default function AboutUs() {
   const principles = [
     {
       number: "1",
-      title: t('consentIsEverything'),
-      description: t('consentIsEverythingMessage'),
+      title: t("consentIsEverything"),
+      description: t("consentIsEverythingMessage"),
     },
     {
       number: "2",
-      title: t('compensationIsAutomatic'),
-      description: t('compensationIsAutomaticMessage'),
+      title: t("compensationIsAutomatic"),
+      description: t("compensationIsAutomaticMessage"),
     },
     {
       number: "3",
-      title: t('transparencyOverSecrecy'),
-      description: t('transparencyOverSecrecyMessage'),
+      title: t("transparencyOverSecrecy"),
+      description: t("transparencyOverSecrecyMessage"),
     },
     {
       number: "4",
-      title: t('humanFirstTechnologySecond'),
-      description: t('humanFirstTechnologySecondMessage'),
+      title: t("humanFirstTechnologySecond"),
+      description: t("humanFirstTechnologySecondMessage"),
     },
   ];
 
   const approachSteps = [
     {
       step: "Step 1",
-      title: t('identityVerification'),
-      description: t('identityVerificationMessage'),
+      title: t("identityVerification"),
+      description: t("identityVerificationMessage"),
     },
     {
       step: "Step 2",
-      title: t('avatarCreation'),
-      description: t('avatarCreationMessage'),
+      title: t("avatarCreation"),
+      description: t("avatarCreationMessage"),
     },
     {
       step: "Step 3",
-      title: t('youSetTheRules'),
-      description: t('youSetTheRulesMessage'),
+      title: t("youSetTheRules"),
+      description: t("youSetTheRulesMessage"),
     },
     {
       step: "Step 4",
-      title: t('brandsRequestYouApprove'),
-      description: t('brandsRequestYouApproveMessage'),
+      title: t("brandsRequestYouApprove"),
+      description: t("brandsRequestYouApproveMessage"),
     },
     {
       step: "Step 5",
-      title: t('youEarnAutomatically'),
-      description: t('youEarnAutomaticallyMessage'),
+      title: t("youEarnAutomatically"),
+      description: t("youEarnAutomaticallyMessage"),
     },
     {
       step: "Step 6",
-      title: t('youStayInControl'),
-      description: t('youStayInControlMessage'),
+      title: t("youStayInControl"),
+      description: t("youStayInControlMessage"),
     },
   ];
 
   const users = [
     {
-      profile: t('creatorsAndAthletesProfile'),
-      description: t('creatorsAndAthletesProfileMessage'),
+      profile: t("creatorsAndAthletesProfile"),
+      description: t("creatorsAndAthletesProfileMessage"),
     },
     {
-      profile: t('talentAgenciesAndUnionsProfile'),
-      description: t('talentAgenciesAndUnionsProfileMessage'),
+      profile: t("talentAgenciesAndUnionsProfile"),
+      description: t("talentAgenciesAndUnionsProfileMessage"),
     },
     {
-      profile: t('studiosAndBrandsProfile'),
-      description: t('studiosAndBrandsProfileMessage'),
+      profile: t("studiosAndBrandsProfile"),
+      description: t("studiosAndBrandsProfileMessage"),
     },
   ];
 
   const operations = [
     {
       icon: Shield,
-      title: t('verificationFirst'),
-      description: t('verificationFirstMessage'),
+      title: t("verificationFirst"),
+      description: t("verificationFirstMessage"),
     },
     {
       icon: FileCheck,
-      title: t('contractsYouActuallyUnderstand'),
-      description: t('contractsYouActuallyUnderstandMessage'),
+      title: t("contractsYouActuallyUnderstand"),
+      description: t("contractsYouActuallyUnderstandMessage"),
     },
     {
       icon: Eye,
-      title: t('sharedLedgerFullTransparency'),
-      description: t('sharedLedgerFullTransparencyMessage'),
+      title: t("sharedLedgerFullTransparency"),
+      description: t("sharedLedgerFullTransparencyMessage"),
     },
     {
       icon: Lock,
-      title: t('securityByDesign'),
-      description: t('securityByDesignMessage'),
+      title: t("securityByDesign"),
+      description: t("securityByDesignMessage"),
     },
     {
       icon: Users,
-      title: t('builtWithUsersNotForUsers'),
-      description: t('builtWithUsersNotForUsersMessage'),
+      title: t("builtWithUsersNotForUsers"),
+      description: t("builtWithUsersNotForUsersMessage"),
     },
   ];
 
@@ -147,14 +147,14 @@ export default function AboutUs() {
       {/* Mission Section */}
       <section className="px-6 pt-12 pb-12">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">{t('mission')}</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            {t("mission")}
+          </h2>
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
             <p className="text-xl font-semibold text-gray-900">
-              {t('missionSubtitle')}
+              {t("missionSubtitle")}
             </p>
-            <p>
-              {t('missionMessage')}
-            </p>
+            <p>{t("missionMessage")}</p>
           </div>
         </div>
       </section>
@@ -163,7 +163,7 @@ export default function AboutUs() {
       <section className="px-6 py-12 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-8">
-            {t('guidingPrinciples')}
+            {t("guidingPrinciples")}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -197,20 +197,14 @@ export default function AboutUs() {
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            {t('theProblemIsReal')}
+            {t("theProblemIsReal")}
           </h2>
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
-            <p>
-              {t('theProblemIsRealMessage1')}
-            </p>
-            <p>
-              {t('theProblemIsRealMessage2')}
-            </p>
-            <p>
-              {t('theProblemIsRealMessage3')}
-            </p>
+            <p>{t("theProblemIsRealMessage1")}</p>
+            <p>{t("theProblemIsRealMessage2")}</p>
+            <p>{t("theProblemIsRealMessage3")}</p>
             <p className="text-xl font-bold text-gray-900">
-              {t('likeleeSolvesAllThree')}
+              {t("likeleeSolvesAllThree")}
             </p>
           </div>
         </div>
@@ -220,20 +214,14 @@ export default function AboutUs() {
       <section className="px-6 py-12 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            {t('whyLikeleeWhyNow')}
+            {t("whyLikeleeWhyNow")}
           </h2>
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
-            <p>
-              {t('whyLikeleeWhyNowMessage1')}
-            </p>
-            <p>
-              {t('whyLikeleeWhyNowMessage2')}
-            </p>
-            <p>
-              {t('whyLikeleeWhyNowMessage3')}
-            </p>
+            <p>{t("whyLikeleeWhyNowMessage1")}</p>
+            <p>{t("whyLikeleeWhyNowMessage2")}</p>
+            <p>{t("whyLikeleeWhyNowMessage3")}</p>
             <p className="text-xl font-bold text-gray-900">
-              {t('whyLikeleeWhyNowMessage4')}
+              {t("whyLikeleeWhyNowMessage4")}
             </p>
           </div>
         </div>
@@ -243,7 +231,7 @@ export default function AboutUs() {
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-8">
-            {t('howItWorks')}
+            {t("howItWorks")}
           </h2>
 
           <div className="space-y-6">
@@ -275,7 +263,7 @@ export default function AboutUs() {
       <section className="px-6 py-12 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-8">
-            {t('whoUsesLikelee')}
+            {t("whoUsesLikelee")}
           </h2>
 
           <div className="space-y-6">
@@ -297,7 +285,7 @@ export default function AboutUs() {
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-8">
-            {t('howWeOperate')}
+            {t("howWeOperate")}
           </h2>
 
           <div className="space-y-6">

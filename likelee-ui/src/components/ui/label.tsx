@@ -9,7 +9,9 @@ const labelVariants = cva(
 );
 
 // Helper to get VariantProps
-type LabelVariants = import("class-variance-authority").VariantProps<typeof labelVariants>;
+type LabelVariants = import("class-variance-authority").VariantProps<
+  typeof labelVariants
+>;
 
 const Label = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,

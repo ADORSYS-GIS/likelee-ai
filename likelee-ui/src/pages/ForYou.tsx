@@ -257,15 +257,9 @@ export default function ForYou() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
               {t("forYou.ready.title")}
             </h2>
-            <p className="text-xl text-gray-700 mb-4">
-              {t("forYou.ready.p1")}
-            </p>
-            <p className="text-xl text-gray-700 mb-8">
-              {t("forYou.ready.p2")}
-            </p>
-            <p className="text-lg text-gray-600 mb-8">
-              {t("forYou.ready.p3")}
-            </p>
+            <p className="text-xl text-gray-700 mb-4">{t("forYou.ready.p1")}</p>
+            <p className="text-xl text-gray-700 mb-8">{t("forYou.ready.p2")}</p>
+            <p className="text-lg text-gray-600 mb-8">{t("forYou.ready.p3")}</p>
           </div>
         </div>
       </section>

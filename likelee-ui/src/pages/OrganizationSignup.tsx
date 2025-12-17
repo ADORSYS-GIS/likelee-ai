@@ -475,7 +475,8 @@ export default function OrganizationSignup() {
               variant="default"
               className={`${colors.badge} border-2 border-black rounded-none`}
             >
-              {t("organizationSignup.step")} {step} {t("organizationSignup.of")} {totalSteps}
+              {t("organizationSignup.step")} {step} {t("organizationSignup.of")}{" "}
+              {totalSteps}
             </Badge>
           </div>
           <div className="w-full h-3 bg-gray-200 border-2 border-black">
@@ -494,7 +495,9 @@ export default function OrganizationSignup() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   {t("organizationSignup.companyInfo")}
                 </h3>
-                <p className="text-gray-600">{t("organizationSignup.startWithBasics")}</p>
+                <p className="text-gray-600">
+                  {t("organizationSignup.startWithBasics")}
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -646,7 +649,9 @@ export default function OrganizationSignup() {
                         })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder={t("organizationSignup.contactTitlePlaceholder")}
+                      placeholder={t(
+                        "organizationSignup.contactTitlePlaceholder",
+                      )}
                     />
                   </div>
                 </div>
@@ -708,7 +713,9 @@ export default function OrganizationSignup() {
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   {t("organizationSignup.brandDetails.title")}
                 </h3>
-                <p className="text-gray-600">{t("organizationSignup.brandDetails.subtitle")}</p>
+                <p className="text-gray-600">
+                  {t("organizationSignup.brandDetails.subtitle")}
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -726,7 +733,11 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder={t("organizationSignup.brandDetails.selectIndustry")} />
+                      <SelectValue
+                        placeholder={t(
+                          "organizationSignup.brandDetails.selectIndustry",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {industries.map((industry) => (
@@ -807,13 +818,17 @@ export default function OrganizationSignup() {
                       })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("organizationSignup.brandDetails.geographicTargetPlaceholder")}
+                    placeholder={t(
+                      "organizationSignup.brandDetails.geographicTargetPlaceholder",
+                    )}
                   />
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("organizationSignup.brandDetails.provideCreatorsQuestion")}
+                    {t(
+                      "organizationSignup.brandDetails.provideCreatorsQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.provide_creators}
@@ -867,7 +882,9 @@ export default function OrganizationSignup() {
                   disabled={updateProfileMutation.isPending}
                   className={`w-1/2 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
-                  {updateProfileMutation.isPending ? t("common.submitting") : t("common.submit")}
+                  {updateProfileMutation.isPending
+                    ? t("common.submitting")
+                    : t("common.submit")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -901,7 +918,11 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder={t("organizationSignup.productionStudio.selectProductionType")} />
+                      <SelectValue
+                        placeholder={t(
+                          "organizationSignup.productionStudio.selectProductionType",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {getProductionTypes(t).map((type) => (
@@ -927,14 +948,38 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder={t("organizationSignup.productionStudio.selectBudgetRange")} />
+                      <SelectValue
+                        placeholder={t(
+                          "organizationSignup.productionStudio.selectBudgetRange",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="under_10k">{t("organizationSignup.productionStudio.budgetRangeUnder10k")}</SelectItem>
-                      <SelectItem value="10k_50k">{t("organizationSignup.productionStudio.budgetRange10k50k")}</SelectItem>
-                      <SelectItem value="50k_250k">{t("organizationSignup.productionStudio.budgetRange50k250k")}</SelectItem>
-                      <SelectItem value="250k_1m">{t("organizationSignup.productionStudio.budgetRange250k1m")}</SelectItem>
-                      <SelectItem value="over_1m">{t("organizationSignup.productionStudio.budgetRangeOver1m")}</SelectItem>
+                      <SelectItem value="under_10k">
+                        {t(
+                          "organizationSignup.productionStudio.budgetRangeUnder10k",
+                        )}
+                      </SelectItem>
+                      <SelectItem value="10k_50k">
+                        {t(
+                          "organizationSignup.productionStudio.budgetRange10k50k",
+                        )}
+                      </SelectItem>
+                      <SelectItem value="50k_250k">
+                        {t(
+                          "organizationSignup.productionStudio.budgetRange50k250k",
+                        )}
+                      </SelectItem>
+                      <SelectItem value="250k_1m">
+                        {t(
+                          "organizationSignup.productionStudio.budgetRange250k1m",
+                        )}
+                      </SelectItem>
+                      <SelectItem value="over_1m">
+                        {t(
+                          "organizationSignup.productionStudio.budgetRangeOver1m",
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1541,7 +1586,7 @@ export default function OrganizationSignup() {
             </div>
           )}
         </Card>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }

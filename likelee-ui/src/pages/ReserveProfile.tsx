@@ -503,7 +503,8 @@ function ReferencePhotosStep(props: any) {
                 />
               </div>
               <div className="text-sm text-gray-600 mt-2">
-                {t("reserveProfile.photos.currentPose")} {currentPose.toUpperCase()}
+                {t("reserveProfile.photos.currentPose")}{" "}
+                {currentPose.toUpperCase()}
               </div>
             </div>
             <div className="flex gap-3">
@@ -545,52 +546,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Front</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.front || uploadedUrls.front ? (
-                    <img
-                      src={
-                        captures.front ? captures.front.url : uploadedUrls.front
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Left</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left || uploadedUrls.left ? (
-                    <img
-                      src={captures.left ? captures.left.url : uploadedUrls.left}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Right</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right || uploadedUrls.right ? (
-                    <img
-                      src={
-                        captures.right ? captures.right.url : uploadedUrls.right
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front || uploadedUrls.front ? (
+                  <img
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
               </div>
             </div>
-          )}
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left || uploadedUrls.left ? (
+                  <img
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right || uploadedUrls.right ? (
+                  <img
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -689,47 +690,47 @@ export default function ReserveProfile() {
     return saved
       ? JSON.parse(saved)
       : {
-        creator_type: creatorType,
-        email: "",
-        password: "",
-        confirmPassword: "",
-        full_name: "",
-        stage_name: "",
+          creator_type: creatorType,
+          email: "",
+          password: "",
+          confirmPassword: "",
+          full_name: "",
+          stage_name: "",
 
-        // Common fields
-        city: "",
-        state: "",
-        birthdate: "",
-        gender: "",
-        ethnicity: [],
-        vibes: [],
-        visibility: "private",
-        // Pricing (USD-only)
-        base_monthly_price_usd: "",
+          // Common fields
+          city: "",
+          state: "",
+          birthdate: "",
+          gender: "",
+          ethnicity: [],
+          vibes: [],
+          visibility: "private",
+          // Pricing (USD-only)
+          base_monthly_price_usd: "",
 
-        // Influencer specific
-        content_types: [],
-        content_other: "",
-        industries: [],
-        primary_platform: "",
-        platform_handle: "",
+          // Influencer specific
+          content_types: [],
+          content_other: "",
+          industries: [],
+          primary_platform: "",
+          platform_handle: "",
 
-        // Model specific
-        work_types: [],
-        representation_status: "",
-        headshot_url: "",
+          // Model specific
+          work_types: [],
+          representation_status: "",
+          headshot_url: "",
 
-        // Athlete specific
-        sport: "",
-        athlete_type: "",
-        school_name: "",
-        age: "",
-        languages: "",
-        instagram_handle: "",
-        twitter_handle: "",
-        brand_categories: [],
-        bio: "",
-      };
+          // Athlete specific
+          sport: "",
+          athlete_type: "",
+          school_name: "",
+          age: "",
+          languages: "",
+          instagram_handle: "",
+          twitter_handle: "",
+          brand_categories: [],
+          bio: "",
+        };
   });
 
   useEffect(() => {
@@ -846,7 +847,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) { }
+      } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -959,10 +960,15 @@ export default function ReserveProfile() {
       }
       toast({
         title: "Verification Pending",
-        description: t("reserveProfile.verification.verificationPendingDescription", {
-          kyc: kyc?.replace("_", " ") || t("reserveProfile.status.notStarted"),
-          live: live?.replace("_", " ") || t("reserveProfile.status.notStarted"),
-        }),
+        description: t(
+          "reserveProfile.verification.verificationPendingDescription",
+          {
+            kyc:
+              kyc?.replace("_", " ") || t("reserveProfile.status.notStarted"),
+            live:
+              live?.replace("_", " ") || t("reserveProfile.status.notStarted"),
+          },
+        ),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
     } finally {
@@ -1150,14 +1156,20 @@ export default function ReserveProfile() {
   const getStepTitle = () => {
     if (step === 1) return t("reserveProfile.stepTitles.step1");
     if (step === 2) {
-      if (creatorType === "influencer") return t("reserveProfile.stepTitles.step2.influencer");
-      if (creatorType === "model_actor") return t("reserveProfile.stepTitles.step2.model_actor");
-      if (creatorType === "athlete") return t("reserveProfile.stepTitles.step2.athlete");
+      if (creatorType === "influencer")
+        return t("reserveProfile.stepTitles.step2.influencer");
+      if (creatorType === "model_actor")
+        return t("reserveProfile.stepTitles.step2.model_actor");
+      if (creatorType === "athlete")
+        return t("reserveProfile.stepTitles.step2.athlete");
     }
     if (step === 3) {
-      if (creatorType === "influencer") return t("reserveProfile.stepTitles.step3.influencer");
-      if (creatorType === "model_actor") return t("reserveProfile.stepTitles.step3.model_actor");
-      if (creatorType === "athlete") return t("reserveProfile.stepTitles.step3.athlete");
+      if (creatorType === "influencer")
+        return t("reserveProfile.stepTitles.step3.influencer");
+      if (creatorType === "model_actor")
+        return t("reserveProfile.stepTitles.step3.model_actor");
+      if (creatorType === "athlete")
+        return t("reserveProfile.stepTitles.step3.athlete");
     }
     return "";
   };
@@ -1465,8 +1477,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-            (today.getMonth() === birth.getMonth() &&
-              today.getDate() < birth.getDate())
+          (today.getMonth() === birth.getMonth() &&
+            today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1781,7 +1793,9 @@ export default function ReserveProfile() {
                           setFormData({ ...formData, password: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder={t("reserveProfile.form.placeholders.password")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.password",
+                        )}
                       />
                       <button
                         type="button"
@@ -1816,7 +1830,9 @@ export default function ReserveProfile() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder={t("reserveProfile.form.placeholders.confirmPassword")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.confirmPassword",
+                        )}
                       />
                       <button
                         type="button"
@@ -1935,7 +1951,9 @@ export default function ReserveProfile() {
                           setFormData({ ...formData, password: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none pr-10"
-                        placeholder={t("reserveProfile.form.placeholders.password")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.password",
+                        )}
                       />
                       <button
                         type="button"
@@ -2021,8 +2039,12 @@ export default function ReserveProfile() {
                                 // For rejection, user can re-open and retry cleanly.
                                 if (!data.passed) {
                                   toast({
-                                    title: t("reserveProfile.verification.failedTitle"),
-                                    description: t("reserveProfile.verification.failedDescription"),
+                                    title: t(
+                                      "reserveProfile.verification.failedTitle",
+                                    ),
+                                    description: t(
+                                      "reserveProfile.verification.failedDescription",
+                                    ),
                                     variant: "destructive",
                                   });
                                 }
@@ -2033,9 +2055,10 @@ export default function ReserveProfile() {
                                 }, 300);
                               } else {
                                 toast({
-                                  title: t("reserveProfile.verification.statusCheckFailedTitle"),
-                                  description:
-                                    t("common.error"),
+                                  title: t(
+                                    "reserveProfile.verification.statusCheckFailedTitle",
+                                  ),
+                                  description: t("common.error"),
                                   variant: "destructive",
                                 });
                               }
@@ -2048,7 +2071,9 @@ export default function ReserveProfile() {
                             console.error("Liveness error", e);
                             setLivenessError(e?.message || String(e));
                             toast({
-                              title: t("reserveProfile.verification.failedTitle"),
+                              title: t(
+                                "reserveProfile.verification.failedTitle",
+                              ),
                               description: getUserFriendlyError(e),
                               variant: "destructive",
                             });
@@ -2136,7 +2161,9 @@ export default function ReserveProfile() {
                     htmlFor="birthdate"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {creatorType === "athlete" ? t("reserveProfile.form.age") : t("reserveProfile.form.birthdate")}
+                    {creatorType === "athlete"
+                      ? t("reserveProfile.form.age")
+                      : t("reserveProfile.form.birthdate")}
                   </Label>
                   {creatorType === "athlete" ? (
                     <Input
@@ -2193,10 +2220,16 @@ export default function ReserveProfile() {
                             htmlFor={option}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {t(`reserveProfile.form.genderOptions.${option === "Prefer not to say" ? "preferNotToSay" :
-                              option === "Gender fluid" ? "genderFluid" :
-                                option.toLowerCase()
-                              }`, option)}
+                            {t(
+                              `reserveProfile.form.genderOptions.${
+                                option === "Prefer not to say"
+                                  ? "preferNotToSay"
+                                  : option === "Gender fluid"
+                                    ? "genderFluid"
+                                    : option.toLowerCase()
+                              }`,
+                              option,
+                            )}
                           </Label>
                         </div>
                       ))}
@@ -2251,7 +2284,10 @@ export default function ReserveProfile() {
                           htmlFor={ethnicity}
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {t(`common.raceEthnicity.options.${ethnicity}`, ethnicity)}
+                          {t(
+                            `common.raceEthnicity.options.${ethnicity}`,
+                            ethnicity,
+                          )}
                         </label>
                       </div>
                     ))}
@@ -2275,7 +2311,11 @@ export default function ReserveProfile() {
                         }
                       >
                         <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                          <SelectValue placeholder={t("reserveProfile.form.placeholders.sport")} />
+                          <SelectValue
+                            placeholder={t(
+                              "reserveProfile.form.placeholders.sport",
+                            )}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {sportsOptions.map((sport) => (
@@ -2313,7 +2353,10 @@ export default function ReserveProfile() {
                                   htmlFor={option}
                                   className="text-sm text-gray-700 cursor-pointer flex-1"
                                 >
-                                  {t(`reserveProfile.form.athleteTypes.${option}`, option)}
+                                  {t(
+                                    `reserveProfile.form.athleteTypes.${option}`,
+                                    option,
+                                  )}
                                 </Label>
                               </div>
                             ),
@@ -2340,7 +2383,9 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder={t("reserveProfile.form.placeholders.schoolName")}
+                          placeholder={t(
+                            "reserveProfile.form.placeholders.schoolName",
+                          )}
                         />
                       </div>
                     )}
@@ -2362,7 +2407,9 @@ export default function ReserveProfile() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("reserveProfile.form.placeholders.languages")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.languages",
+                        )}
                       />
                     </div>
                   </>
@@ -2376,7 +2423,10 @@ export default function ReserveProfile() {
                         {t("reserveProfile.form.selectMax3")}
                       </Label>
                       <span className="text-xs text-gray-500">
-                        {t("reserveProfile.form.specifyMoreLater", "You can specify more later")}
+                        {t(
+                          "reserveProfile.form.specifyMoreLater",
+                          "You can specify more later",
+                        )}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
@@ -2420,8 +2470,12 @@ export default function ReserveProfile() {
                                 toggleArrayItem("work_types", type);
                               } else {
                                 toast({
-                                  title: t("reserveProfile.form.validation.selectionLimit"),
-                                  description: t("reserveProfile.form.validation.selectionLimitDesc"),
+                                  title: t(
+                                    "reserveProfile.form.validation.selectionLimit",
+                                  ),
+                                  description: t(
+                                    "reserveProfile.form.validation.selectionLimitDesc",
+                                  ),
                                   className:
                                     "bg-cyan-50 border-2 border-cyan-400",
                                 });
@@ -2525,9 +2579,13 @@ export default function ReserveProfile() {
                           });
                         }}
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("reserveProfile.form.placeholders.price")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.price",
+                        )}
                       />
-                      <span className="text-sm text-gray-600">{t("reserveProfile.form.perMonth", "/month")}</span>
+                      <span className="text-sm text-gray-600">
+                        {t("reserveProfile.form.perMonth", "/month")}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {t("reserveProfile.form.basePriceHint")}
@@ -2549,7 +2607,12 @@ export default function ReserveProfile() {
                   onClick={handleNext}
                   className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {creatorType === "athlete" ? t("reserveProfile.actions.nextBrandSetup", "Next: Brand Setup") : t("common.continue")}
+                  {creatorType === "athlete"
+                    ? t(
+                        "reserveProfile.actions.nextBrandSetup",
+                        "Next: Brand Setup",
+                      )
+                    : t("common.continue")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
@@ -2639,7 +2702,9 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none mt-2"
-                          placeholder={t("reserveProfile.form.placeholders.specify")}
+                          placeholder={t(
+                            "reserveProfile.form.placeholders.specify",
+                          )}
                         />
                       )}
                     </div>
@@ -2647,7 +2712,10 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          {t("reserveProfile.form.brandinterest", "What types of brands or industries do you want to work with?")}
+                          {t(
+                            "reserveProfile.form.brandinterest",
+                            "What types of brands or industries do you want to work with?",
+                          )}
                         </Label>
                         <span className="text-xs text-gray-500">
                           {t("reserveProfile.form.selectMax3")}
@@ -2696,7 +2764,10 @@ export default function ReserveProfile() {
                               htmlFor={industry}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {t(`common.industries.options.${industry}`, industry)}
+                              {t(
+                                `common.industries.options.${industry}`,
+                                industry,
+                              )}
                             </label>
                           </div>
                         ))}
@@ -2721,14 +2792,21 @@ export default function ReserveProfile() {
                           }
                         >
                           <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                            <SelectValue placeholder={t("reserveProfile.form.placeholders.platform", "Select platform")} />
+                            <SelectValue
+                              placeholder={t(
+                                "reserveProfile.form.placeholders.platform",
+                                "Select platform",
+                              )}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="instagram">Instagram</SelectItem>
                             <SelectItem value="tiktok">TikTok</SelectItem>
                             <SelectItem value="youtube">YouTube</SelectItem>
                             <SelectItem value="twitter">Twitter/X</SelectItem>
-                            <SelectItem value="other">{t("common.platforms.other", "Other")}</SelectItem>
+                            <SelectItem value="other">
+                              {t("common.platforms.other", "Other")}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -2749,7 +2827,9 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder={t("reserveProfile.form.placeholders.handle")}
+                          placeholder={t(
+                            "reserveProfile.form.placeholders.handle",
+                          )}
                         />
                       </div>
                     </div>
@@ -2761,7 +2841,10 @@ export default function ReserveProfile() {
                   <>
                     <div>
                       <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        {t("reserveProfile.form.representationStatus", "Representation Status")}
+                        {t(
+                          "reserveProfile.form.representationStatus",
+                          "Representation Status",
+                        )}
                       </Label>
                       <RadioGroup
                         value={formData.representation_status}
@@ -2787,7 +2870,10 @@ export default function ReserveProfile() {
                                 htmlFor={option}
                                 className="text-sm text-gray-700 cursor-pointer flex-1"
                               >
-                                {t(`common.representationStatus.options.${option}`, option)}
+                                {t(
+                                  `common.representationStatus.options.${option}`,
+                                  option,
+                                )}
                               </Label>
                             </div>
                           ))}
@@ -2842,7 +2928,9 @@ export default function ReserveProfile() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("reserveProfile.form.placeholders.headshot")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.headshot",
+                        )}
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         {t("reserveProfile.form.headshotHint")}
@@ -2860,7 +2948,10 @@ export default function ReserveProfile() {
                           htmlFor="instagram_handle"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          {t("reserveProfile.form.instagramOptional", "Instagram (optional)")}
+                          {t(
+                            "reserveProfile.form.instagramOptional",
+                            "Instagram (optional)",
+                          )}
                         </Label>
                         <Input
                           id="instagram_handle"
@@ -2872,7 +2963,9 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder={t("reserveProfile.form.placeholders.handle")}
+                          placeholder={t(
+                            "reserveProfile.form.placeholders.handle",
+                          )}
                         />
                       </div>
                       <div>
@@ -2880,7 +2973,10 @@ export default function ReserveProfile() {
                           htmlFor="twitter_handle"
                           className="text-sm font-medium text-gray-700 mb-2 block"
                         >
-                          {t("reserveProfile.form.twitterOptional", "Twitter/X (optional)")}
+                          {t(
+                            "reserveProfile.form.twitterOptional",
+                            "Twitter/X (optional)",
+                          )}
                         </Label>
                         <Input
                           id="twitter_handle"
@@ -2892,7 +2988,9 @@ export default function ReserveProfile() {
                             })
                           }
                           className="border-2 border-gray-300 rounded-none"
-                          placeholder={t("reserveProfile.form.placeholders.handle")}
+                          placeholder={t(
+                            "reserveProfile.form.placeholders.handle",
+                          )}
                         />
                       </div>
                     </div>
@@ -2900,7 +2998,10 @@ export default function ReserveProfile() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-gray-900">
-                          {t("reserveProfile.form.brandCategories", "Interests / Brand Categories")}
+                          {t(
+                            "reserveProfile.form.brandCategories",
+                            "Interests / Brand Categories",
+                          )}
                         </Label>
                         <span className="text-xs text-gray-500">
                           {t("reserveProfile.form.selectMax3")}
@@ -2926,7 +3027,10 @@ export default function ReserveProfile() {
                               htmlFor={category}
                               className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              {t(`common.brandCategories.options.${category}`, category)}
+                              {t(
+                                `common.brandCategories.options.${category}`,
+                                category,
+                              )}
                             </label>
                           </div>
                         ))}
@@ -2947,7 +3051,10 @@ export default function ReserveProfile() {
                           setFormData({ ...formData, bio: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none h-24"
-                        placeholder={t("reserveProfile.form.placeholders.bio", "Tell brands a bit about you...")}
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.bio",
+                          "Tell brands a bit about you...",
+                        )}
                       />
                     </div>
                   </>
@@ -2975,7 +3082,15 @@ export default function ReserveProfile() {
                           htmlFor="public"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          <span className="font-medium">{t("reserveProfile.form.visibilityOptions.public.label")}</span> - {t("reserveProfile.form.visibilityOptions.public.description")}
+                          <span className="font-medium">
+                            {t(
+                              "reserveProfile.form.visibilityOptions.public.label",
+                            )}
+                          </span>{" "}
+                          -{" "}
+                          {t(
+                            "reserveProfile.form.visibilityOptions.public.description",
+                          )}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -2988,7 +3103,15 @@ export default function ReserveProfile() {
                           htmlFor="private"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          <span className="font-medium">{t("reserveProfile.form.visibilityOptions.private.label")}</span> - {t("reserveProfile.form.visibilityOptions.private.description")}
+                          <span className="font-medium">
+                            {t(
+                              "reserveProfile.form.visibilityOptions.private.label",
+                            )}
+                          </span>{" "}
+                          -{" "}
+                          {t(
+                            "reserveProfile.form.visibilityOptions.private.description",
+                          )}
                         </Label>
                       </div>
                     </div>
@@ -3038,7 +3161,8 @@ export default function ReserveProfile() {
                 </h4>
                 <ul className="space-y-2 text-gray-800">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" /> {t("reserveProfile.verification.whyVerify.reason1")}
+                    <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
+                    {t("reserveProfile.verification.whyVerify.reason1")}
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#32C8D1] mt-1" />{" "}
@@ -3061,9 +3185,7 @@ export default function ReserveProfile() {
                   {t("reserveProfile.verification.requirements.title")}
                 </h4>
                 <ul className="list-disc list-inside text-gray-800 space-y-1">
-                  <li>
-                    {t("reserveProfile.verification.requirements.item1")}
-                  </li>
+                  <li>{t("reserveProfile.verification.requirements.item1")}</li>
                   <li>{t("reserveProfile.verification.requirements.item2")}</li>
                   <li>{t("reserveProfile.verification.requirements.item3")}</li>
                 </ul>
@@ -3075,7 +3197,15 @@ export default function ReserveProfile() {
                   disabled={kycLoading}
                   className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                 >
-                  {kycLoading ? t("reserveProfile.actions.startingVerification", "Starting…") : t("reserveProfile.actions.verifyIdentity", "Verify Identity Now")}
+                  {kycLoading
+                    ? t(
+                        "reserveProfile.actions.startingVerification",
+                        "Starting…",
+                      )
+                    : t(
+                        "reserveProfile.actions.verifyIdentity",
+                        "Verify Identity Now",
+                      )}
                 </Button>
                 <Button
                   onClick={startLiveness}
@@ -3084,10 +3214,16 @@ export default function ReserveProfile() {
                   className="w-full h-12 border-2 border-black rounded-none"
                 >
                   {livenessStatus === "approved"
-                    ? t("reserveProfile.actions.livenessApproved", "Liveness Approved")
+                    ? t(
+                        "reserveProfile.actions.livenessApproved",
+                        "Liveness Approved",
+                      )
                     : livenessRunning
                       ? t("reserveProfile.actions.preparing", "Preparing…")
-                      : t("reserveProfile.actions.startLiveness", "Start Liveness Check")}
+                      : t(
+                          "reserveProfile.actions.startLiveness",
+                          "Start Liveness Check",
+                        )}
                 </Button>
                 {LIVENESS_DEBUG && showLiveness && (
                   <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
@@ -3161,10 +3297,13 @@ export default function ReserveProfile() {
                   <span>
                     KYC:{" "}
                     <strong className="capitalize">
-                      {kycStatus === "not_started" ? t("reserveProfile.verification.status.notStarted") :
-                        kycStatus === "approved" ? t("reserveProfile.verification.status.approved") :
-                          kycStatus === "rejected" ? t("reserveProfile.verification.status.rejected") :
-                            t("reserveProfile.verification.status.verifying")}
+                      {kycStatus === "not_started"
+                        ? t("reserveProfile.verification.status.notStarted")
+                        : kycStatus === "approved"
+                          ? t("reserveProfile.verification.status.approved")
+                          : kycStatus === "rejected"
+                            ? t("reserveProfile.verification.status.rejected")
+                            : t("reserveProfile.verification.status.verifying")}
                     </strong>
                   </span>
                   <span className="flex items-center gap-1">
@@ -3222,7 +3361,12 @@ export default function ReserveProfile() {
                       disabled={kycLoading}
                       className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                     >
-                      {kycLoading ? t("common.checking", "Checking…") : t("reserveProfile.actions.verifyAndContinue", "Verify & Continue")}
+                      {kycLoading
+                        ? t("common.checking", "Checking…")
+                        : t(
+                            "reserveProfile.actions.verifyAndContinue",
+                            "Verify & Continue",
+                          )}
                     </Button>
                   </div>
                 </div>

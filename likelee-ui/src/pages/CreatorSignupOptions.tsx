@@ -120,9 +120,12 @@ export default function CreatorSignupOptions() {
               onClick={() => setShowAuth(false)}
             />
             <div className="relative z-10 w-full max-w-md bg-white border-2 border-black p-6">
-              <h2 className="text-xl font-bold mb-2">{t("creatorSignupOptions.authModal.title")}</h2>
+              <h2 className="text-xl font-bold mb-2">
+                {t("creatorSignupOptions.authModal.title")}
+              </h2>
               <p className="text-sm text-gray-600 mb-6">
-                {t("creatorSignupOptions.authModal.selected")} {selectedType.replace("_", " ")}
+                {t("creatorSignupOptions.authModal.selected")}{" "}
+                {selectedType.replace("_", " ")}
               </p>
               <div className="space-y-3">
                 <Link
@@ -131,7 +134,8 @@ export default function CreatorSignupOptions() {
                   onClick={() => setShowAuth(false)}
                 >
                   <Button className="w-full bg-black text-white rounded-none">
-                    {t("creatorSignupOptions.authModal.signUpAs")} {selectedType.replace("_", " ")}
+                    {t("creatorSignupOptions.authModal.signUpAs")}{" "}
+                    {selectedType.replace("_", " ")}
                   </Button>
                 </Link>
                 <Link

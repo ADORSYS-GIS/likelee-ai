@@ -31,10 +31,10 @@ export default function Contact() {
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            {t('thankYou')}
+            {t("thankYou")}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            {t('thankYouMessage')}
+            {t("thankYouMessage")}
           </p>
         </Card>
       </div>
@@ -46,10 +46,10 @@ export default function Contact() {
       <div className="max-w-2xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {t('seeLikeleeInAction')}
+            {t("seeLikeleeInAction")}
           </h1>
           <p className="text-lg text-gray-600">
-            {t('seeLikeleeInActionMessage')}
+            {t("seeLikeleeInActionMessage")}
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export default function Contact() {
                 setFormData({ ...formData, email: e.target.value })
               }
               className="h-12 border-gray-300 rounded-md"
-              placeholder={t('businessEmail')}
+              placeholder={t("businessEmail")}
             />
           </div>
           <div>
@@ -76,7 +76,7 @@ export default function Contact() {
                 setFormData({ ...formData, contact_name: e.target.value })
               }
               className="h-12 border-gray-300 rounded-md"
-              placeholder={t('fullName')}
+              placeholder={t("fullName")}
             />
           </div>
           <div>
@@ -88,7 +88,7 @@ export default function Contact() {
                 setFormData({ ...formData, phone: e.target.value })
               }
               className="h-12 border-gray-300 rounded-md"
-              placeholder={t('phone')}
+              placeholder={t("phone")}
             />
           </div>
 
@@ -96,7 +96,7 @@ export default function Contact() {
             type="submit"
             className="w-full h-12 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
           >
-            {t('continue')}
+            {t("continue")}
           </Button>
         </form>
       </div>

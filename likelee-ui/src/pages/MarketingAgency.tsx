@@ -155,7 +155,9 @@ export default function MarketingAgency() {
                     <td className="py-4 px-4 text-gray-700">
                       {t("licensingComplianceTime")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">{t("licensingComplianceTimeBefore")}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("licensingComplianceTimeBefore")}
+                    </td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
                       {t("licensingComplianceTimeAfter")}
                     </td>
@@ -164,7 +166,9 @@ export default function MarketingAgency() {
                     <td className="py-4 px-4 text-gray-700">
                       {t("campaignsPerTeamPerMonth")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">{t("campaignsPerTeamPerMonthBefore")}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("campaignsPerTeamPerMonthBefore")}
+                    </td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
                       {t("campaignsPerTeamPerMonthAfter")}
                     </td>
@@ -173,7 +177,9 @@ export default function MarketingAgency() {
                     <td className="py-4 px-4 text-gray-700">
                       {t("timeToDeliverAICampaign")}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">{t("timeToDeliverAICampaignBefore")}</td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("timeToDeliverAICampaignBefore")}
+                    </td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
                       {t("timeToDeliverAICampaignAfter")}
                     </td>
