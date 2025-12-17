@@ -44,6 +44,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { toast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
@@ -193,62 +194,6 @@ const vibes = [
   "Commercial",
   "Casual",
 ];
-
-// Utility function to convert technical errors into user-friendly messages
-function getUserFriendlyError(error: any): string {
-  const errorStr = String(error?.message || error || "").toLowerCase();
-
-  // Email/Auth errors
-  if (errorStr.includes("duplicate") && errorStr.includes("email")) {
-    return "This email is already registered. Please use a different email or sign in instead.";
-  }
-  if (errorStr.includes("invalid") && errorStr.includes("email")) {
-    return "Please enter a valid email address.";
-  }
-  if (errorStr.includes("weak") || errorStr.includes("password")) {
-    return "Please choose a stronger password (at least 8 characters).";
-  }
-  if (
-    errorStr.includes("not authenticated") ||
-    errorStr.includes("unauthorized")
-  ) {
-    return "Please sign in to continue.";
-  }
-
-  // Upload/Storage errors
-  if (errorStr.includes("file size") || errorStr.includes("too large")) {
-    return "File is too large. Please use a smaller image (max 5MB).";
-  }
-  if (errorStr.includes("file type") || errorStr.includes("invalid format")) {
-    return "Invalid file type. Please upload a JPG, PNG, or WebP image.";
-  }
-
-  // Network errors
-  if (errorStr.includes("network") || errorStr.includes("fetch failed")) {
-    return "Network error. Please check your connection and try again.";
-  }
-  if (errorStr.includes("timeout")) {
-    return "Request timed out. Please try again.";
-  }
-
-  // Permission errors
-  if (errorStr.includes("permission") || errorStr.includes("denied")) {
-    return "Permission denied. Please check your settings and try again.";
-  }
-
-  // Generic fallback
-  if (errorStr.includes("failed")) {
-    return "Something went wrong. Please try again.";
-  }
-
-  // If we have a clean message without technical jargon, use it
-  const msg = error?.message || String(error);
-  if (msg.length < 100 && !msg.includes("{") && !msg.includes("[")) {
-    return msg;
-  }
-
-  return "An error occurred. Please try again or contact support if the problem persists.";
-}
 
 function ReferencePhotosStep(props: any) {
   const {

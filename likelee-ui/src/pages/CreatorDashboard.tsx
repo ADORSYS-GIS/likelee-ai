@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -632,20 +633,6 @@ const revenueData = [
 const earningsByIndustry: any[] = [];
 
 const mockContracts: any[] = [];
-
-function parseErrorMessage(err: any): string {
-  let msg = err?.message || String(err);
-  try {
-    const jsonMatch = msg.match(/(\{.*\})/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return parsed.message || parsed.error || msg;
-    }
-  } catch (e) {
-    // Parsing failed, return original
-  }
-  return msg;
-}
 
 export default function CreatorDashboard() {
   const navigate = useNavigate();
@@ -1846,7 +1833,7 @@ export default function CreatorDashboard() {
         toast({
           variant: "destructive",
           title: "Upload Failed",
-          description: `Upload failed: ${parseErrorMessage(err)}`,
+          description: getUserFriendlyError(err),
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
@@ -2060,7 +2047,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Voice Profile Error",
-        description: `Error: ${errorMessage}. Possible issues: Recording quality too low, format not supported, or too short.`,
+        description: getUserFriendlyError(error),
       });
     } finally {
       setGeneratingVoice(false);
@@ -2236,7 +2223,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Save Failed",
-        description: `Failed to save preferences: ${error?.message || error}`,
+        description: getUserFriendlyError(error),
       });
     }
   };
@@ -2562,7 +2549,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Upload Failed",
-        description: `Upload failed: ${parseErrorMessage(e)}`,
+        description: getUserFriendlyError(e),
       });
     } finally {
       setUploadingToSection(false);
