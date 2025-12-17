@@ -546,52 +546,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left || uploadedUrls.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right || uploadedUrls.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -616,7 +616,7 @@ function ReferencePhotosStep(props: any) {
             }
             className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none"
           >
-            {uploading ? "Uploading…" : "Save & Finish"}
+            {uploading ? t("common.checking") : "Save & Finish"}
           </Button>
           <Button
             onClick={generateAvatar}
@@ -690,47 +690,47 @@ export default function ReserveProfile() {
     return saved
       ? JSON.parse(saved)
       : {
-          creator_type: creatorType,
-          email: "",
-          password: "",
-          confirmPassword: "",
-          full_name: "",
-          stage_name: "",
+        creator_type: creatorType,
+        email: "",
+        password: "",
+        confirmPassword: "",
+        full_name: "",
+        stage_name: "",
 
-          // Common fields
-          city: "",
-          state: "",
-          birthdate: "",
-          gender: "",
-          ethnicity: [],
-          vibes: [],
-          visibility: "private",
-          // Pricing (USD-only)
-          base_monthly_price_usd: "",
+        // Common fields
+        city: "",
+        state: "",
+        birthdate: "",
+        gender: "",
+        ethnicity: [],
+        vibes: [],
+        visibility: "private",
+        // Pricing (USD-only)
+        base_monthly_price_usd: "",
 
-          // Influencer specific
-          content_types: [],
-          content_other: "",
-          industries: [],
-          primary_platform: "",
-          platform_handle: "",
+        // Influencer specific
+        content_types: [],
+        content_other: "",
+        industries: [],
+        primary_platform: "",
+        platform_handle: "",
 
-          // Model specific
-          work_types: [],
-          representation_status: "",
-          headshot_url: "",
+        // Model specific
+        work_types: [],
+        representation_status: "",
+        headshot_url: "",
 
-          // Athlete specific
-          sport: "",
-          athlete_type: "",
-          school_name: "",
-          age: "",
-          languages: "",
-          instagram_handle: "",
-          twitter_handle: "",
-          brand_categories: [],
-          bio: "",
-        };
+        // Athlete specific
+        sport: "",
+        athlete_type: "",
+        school_name: "",
+        age: "",
+        languages: "",
+        instagram_handle: "",
+        twitter_handle: "",
+        brand_categories: [],
+        bio: "",
+      };
   });
 
   useEffect(() => {
@@ -847,7 +847,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1477,8 +1477,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1892,10 +1892,10 @@ export default function ReserveProfile() {
                     className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
                   >
                     {firstContinueLoading
-                      ? t("reserveProfile.actions.checking", "Checking...")
+                      ? t("common.checking", "Checking...")
                       : createInitialProfileMutation.isPending
                         ? t("common.saving", "Saving...")
-                        : t("reserveProfile.actions.continue", "Continue")}
+                        : t("common.continue", "Continue")}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
@@ -2221,12 +2221,11 @@ export default function ReserveProfile() {
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
                             {t(
-                              `reserveProfile.form.genderOptions.${
-                                option === "Prefer not to say"
-                                  ? "preferNotToSay"
-                                  : option === "Gender fluid"
-                                    ? "genderFluid"
-                                    : option.toLowerCase()
+                              `reserveProfile.form.genderOptions.${option === "Prefer not to say"
+                                ? "preferNotToSay"
+                                : option === "Gender fluid"
+                                  ? "genderFluid"
+                                  : option.toLowerCase()
                               }`,
                               option,
                             )}
@@ -2609,9 +2608,9 @@ export default function ReserveProfile() {
                 >
                   {creatorType === "athlete"
                     ? t(
-                        "reserveProfile.actions.nextBrandSetup",
-                        "Next: Brand Setup",
-                      )
+                      "reserveProfile.actions.nextBrandSetup",
+                      "Next: Brand Setup",
+                    )
                     : t("common.continue")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -3199,13 +3198,13 @@ export default function ReserveProfile() {
                 >
                   {kycLoading
                     ? t(
-                        "reserveProfile.actions.startingVerification",
-                        "Starting…",
-                      )
+                      "reserveProfile.actions.startingVerification",
+                      "Starting…",
+                    )
                     : t(
-                        "reserveProfile.actions.verifyIdentity",
-                        "Verify Identity Now",
-                      )}
+                      "reserveProfile.actions.verifyIdentity",
+                      "Verify Identity Now",
+                    )}
                 </Button>
                 <Button
                   onClick={startLiveness}
@@ -3215,15 +3214,15 @@ export default function ReserveProfile() {
                 >
                   {livenessStatus === "approved"
                     ? t(
-                        "reserveProfile.actions.livenessApproved",
-                        "Liveness Approved",
-                      )
+                      "reserveProfile.actions.livenessApproved",
+                      "Liveness Approved",
+                    )
                     : livenessRunning
                       ? t("reserveProfile.actions.preparing", "Preparing…")
                       : t(
-                          "reserveProfile.actions.startLiveness",
-                          "Start Liveness Check",
-                        )}
+                        "reserveProfile.actions.startLiveness",
+                        "Start Liveness Check",
+                      )}
                 </Button>
                 {LIVENESS_DEBUG && showLiveness && (
                   <div className="p-3 border-2 border-purple-400 bg-purple-50 text-xs text-gray-800 space-y-2">
@@ -3364,9 +3363,9 @@ export default function ReserveProfile() {
                       {kycLoading
                         ? t("common.checking", "Checking…")
                         : t(
-                            "reserveProfile.actions.verifyAndContinue",
-                            "Verify & Continue",
-                          )}
+                          "reserveProfile.actions.verifyAndContinue",
+                          "Verify & Continue",
+                        )}
                     </Button>
                   </div>
                 </div>

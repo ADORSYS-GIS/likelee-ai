@@ -1534,6 +1534,7 @@
       "handle": "Handle",
       "primaryPlatform": "Primary Platform",
       "raceEthnicity": "Race/Ethnicity (select all that apply)",
+      "vibes": "Vibe / Style Tags",
       "save": "Save & Continue to Verification",
       "verification": {
         "title": "Identity Verification",
