@@ -124,6 +124,73 @@
       "completenessFilled": "Completitud: {{filled}}/{{total}} secciones llenas",
       "sectionsNeeded": "{{count}} secciones necesarias para \"Perfil Completo\""
     },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Los perfiles completos ganan un 15% más.",
+        "text": "Las marcas pagan tarifas premium por creadores con bibliotecas de referencia completas."
+      },
+      "howThisWorks": {
+        "title": "Cómo funciona:",
+        "text": "Sube fotos en 15 categorías diferentes. Las marcas las usan para generar imágenes tuyas que se ven consistentes y fotorrealistas. Más variedad = mejor calidad de contenido = tarifas más altas."
+      },
+      "qualityStandards": {
+        "title": "Estándares de calidad:",
+        "text": "Alta resolución (mínimo 1080x1080), iluminación clara, rostro/cuerpo claramente visible, sin filtros pesados, calidad profesional preferida."
+      },
+      "imageActions": {
+        "view": "Ver",
+        "replace": "Reemplazar",
+        "delete": "Eliminar",
+        "upload": "Subir"
+      },
+      "imageStatus": {
+        "uploaded": "SUBIDO",
+        "missing": "FALTA",
+        "bestFor": "Mejor para:"
+      }
+    },
+    "usageGuidelines": {
+      "title": "DIRECTRICES DE USO",
+      "subtitle": "Dile a las marcas con qué te sientes cómodo",
+      "comfortableWith": "Cómodo con:",
+      "notComfortableWith": "No cómodo con:",
+      "editPreferences": "Editar preferencias"
+    },
+    "verificationStatus": {
+      "title": "Verificación y estado",
+      "identityVerification": "Verificación de identidad",
+      "likenessRights": "Derechos de imagen",
+      "confirmed": "Confirmado",
+      "notStarted": "No iniciado",
+      "viewVerification": "Ver detalles de verificación",
+      "updateRights": "Actualizar acuerdo de derechos"
+    },
+    "cameoVideo": {
+      "title": "VIDEO CAMEO",
+      "description": "La representación en video de ti - las marcas lo usan para cameos de IA y generación de contenido",
+      "uploaded": "Subido:",
+      "duration": "Duración:",
+      "quality": "Calidad:",
+      "status": "Estado:",
+      "verified": "✓ Verificado y aprobado",
+      "aboutCameo": {
+        "title": "Acerca de tu cameo:",
+        "text": "Las marcas lo usan para generar cameos de IA de ti hablando, referenciar tu voz/expresiones y crear contenido fotorrealista que te presenta."
+      },
+      "actions": {
+        "watchFull": "Ver cameo completo",
+        "reupload": "Re-subir nuevo cameo",
+        "download": "Descargar"
+      },
+      "comingSoon": {
+        "title": "Próximamente",
+        "text": "La carga de video cameo estará disponible pronto"
+      },
+      "warning": {
+        "title": "Tu cameo es necesario para comenzar a ganar.",
+        "text": "Las marcas necesitan esta referencia de video para crear contenido que te presente."
+      }
+    },
     "contracts": {
       "title": "Licencias y Contratos",
       "subtitle": "Gestiona tus acuerdos activos y uso de derechos",

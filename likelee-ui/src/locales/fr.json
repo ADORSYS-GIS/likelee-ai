@@ -67,6 +67,73 @@
       "completenessFilled": "Complétude: {{filled}}/{{total}} sections remplies",
       "sectionsNeeded": "{{count}} sections nécessaires pour \"Profil Complet\""
     },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Les profils complets gagnent 15 % de plus.",
+        "text": "Les marques paient des tarifs premium pour les créateurs avec des bibliothèques de référence complètes."
+      },
+      "howThisWorks": {
+        "title": "Comment cela fonctionne :",
+        "text": "Téléchargez des photos dans 15 catégories différentes. Les marques les utilisent pour générer des images de vous cohérentes et photoréalistes. Plus de variété = meilleure qualité de contenu = tarifs plus élevés."
+      },
+      "qualityStandards": {
+        "title": "Normes de qualité :",
+        "text": "Haute résolution (minimum 1080x1080), éclairage clair, visage/corps clairement visible, pas de filtres lourds, qualité professionnelle préférée."
+      },
+      "imageActions": {
+        "view": "Voir",
+        "replace": "Remplacer",
+        "delete": "Supprimer",
+        "upload": "Télécharger"
+      },
+      "imageStatus": {
+        "uploaded": "TÉLÉCHARGÉ",
+        "missing": "MANQUANT",
+        "bestFor": "Idéal pour :"
+      }
+    },
+    "usageGuidelines": {
+      "title": "DIRECTIVES D'UTILISATION",
+      "subtitle": "Dites aux marques ce avec quoi vous êtes à l'aise",
+      "comfortableWith": "À l'aise avec :",
+      "notComfortableWith": "Pas à l'aise avec :",
+      "editPreferences": "Modifier les préférences"
+    },
+    "verificationStatus": {
+      "title": "Vérification et statut",
+      "identityVerification": "Vérification d'identité",
+      "likenessRights": "Droits d'image",
+      "confirmed": "Confirmé",
+      "notStarted": "Non commencé",
+      "viewVerification": "Voir les détails de vérification",
+      "updateRights": "Mettre à jour l'accord de droits"
+    },
+    "cameoVideo": {
+      "title": "VIDÉO CAMÉO",
+      "description": "La représentation vidéo de vous - les marques l'utilisent pour les caméos IA et la génération de contenu",
+      "uploaded": "Téléchargé :",
+      "duration": "Durée :",
+      "quality": "Qualité :",
+      "status": "Statut :",
+      "verified": "✓ Vérifié et approuvé",
+      "aboutCameo": {
+        "title": "À propos de votre caméo :",
+        "text": "Les marques l'utilisent pour générer des caméos IA de vous en train de parler, référencer votre voix/expressions et créer du contenu photoréaliste vous mettant en vedette."
+      },
+      "actions": {
+        "watchFull": "Regarder le caméo complet",
+        "reupload": "Re-télécharger un nouveau caméo",
+        "download": "Télécharger"
+      },
+      "comingSoon": {
+        "title": "Bientôt disponible",
+        "text": "Le téléchargement de vidéo caméo sera bientôt disponible"
+      },
+      "warning": {
+        "title": "Votre caméo est requis pour commencer à gagner.",
+        "text": "Les marques ont besoin de cette référence vidéo pour créer du contenu vous mettant en vedette."
+      }
+    },
     "dashboard": {
       "totalMonthlyRevenue": "Revenu Mensuel Total",
       "revenueInfo": "Revenu mensuel récurrent actuel",

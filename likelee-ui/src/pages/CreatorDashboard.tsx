@@ -2713,8 +2713,8 @@ export default function CreatorDashboard() {
           <div className="bg-white border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Complete profiles earn 15% more.</strong> Brands pay
-              premium rates for creators with full reference libraries.
+              <strong>{t("creatorDashboard.myLikenessSection.banner.strong")}</strong>{" "}
+              {t("creatorDashboard.myLikenessSection.banner.text")}
             </p>
           </div>
         </Card>
@@ -2726,10 +2726,7 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.dashboard.cameoVideo").toUpperCase()}
             </h3>
             <p className="text-gray-600">
-              {t("creatorDashboard.dashboard.cameoVideoInfo", {
-                defaultValue:
-                  "The video representation of you - brands use this for AI cameos and content generation",
-              })}
+              {t("creatorDashboard.cameoVideo.description")}
             </p>
           </div>
 
@@ -2738,21 +2735,21 @@ export default function CreatorDashboard() {
               <Card className="p-4 bg-green-50 border border-green-200">
                 <div className="grid md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-600 mb-1">Uploaded:</p>
+                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.uploaded")}</p>
                     <p className="font-bold text-gray-900">Nov 12, 2024</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">Duration:</p>
+                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.duration")}</p>
                     <p className="font-bold text-gray-900">45 seconds</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">Quality:</p>
+                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.quality")}</p>
                     <p className="font-bold text-gray-900">4K</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">Status:</p>
+                    <p className="text-gray-600 mb-1">{t("creatorDashboard.cameoVideo.status")}</p>
                     <Badge className="bg-green-500 text-white">
-                      ✓ Verified & Approved
+                      {t("creatorDashboard.cameoVideo.verified")}
                     </Badge>
                   </div>
                 </div>
@@ -2777,9 +2774,8 @@ export default function CreatorDashboard() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-900 text-sm">
-                  <strong>About Your Cameo:</strong> Brands use this to generate
-                  AI cameos of you speaking, reference your voice/expressions,
-                  and create photorealistic content featuring you.
+                  <strong>{t("creatorDashboard.cameoVideo.aboutCameo.title")}</strong>{" "}
+                  {t("creatorDashboard.cameoVideo.aboutCameo.text")}
                 </p>
               </div>
 
@@ -2789,7 +2785,7 @@ export default function CreatorDashboard() {
                   className="flex-1 border-2 border-gray-300"
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  Watch Full Cameo
+                  {t("creatorDashboard.cameoVideo.actions.watchFull")}
                 </Button>
                 <Button
                   onClick={() => setShowReuploadCameoModal(true)}
@@ -2797,11 +2793,11 @@ export default function CreatorDashboard() {
                   className="flex-1 border-2 border-[#32C8D1] text-[#32C8D1]"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Re-upload New Cameo
+                  {t("creatorDashboard.cameoVideo.actions.reupload")}
                 </Button>
                 <Button variant="outline" className="border-2 border-gray-300">
                   <Download className="w-4 h-4 mr-2" />
-                  Download
+                  {t("creatorDashboard.cameoVideo.actions.download")}
                 </Button>
               </div>
             </div>
@@ -2811,10 +2807,10 @@ export default function CreatorDashboard() {
               <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
                 <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-lg font-medium text-gray-900 mb-2">
-                  Coming Soon
+                  {t("creatorDashboard.cameoVideo.comingSoon.title")}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Cameo video upload will be available soon
+                  {t("creatorDashboard.cameoVideo.comingSoon.text")}
                 </p>
               </div>
 
@@ -2822,9 +2818,8 @@ export default function CreatorDashboard() {
               <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-amber-900 text-sm">
-                  <strong>Your cameo is required to start earning.</strong>{" "}
-                  Brands need this video reference to create content featuring
-                  you.
+                  <strong>{t("creatorDashboard.cameoVideo.warning.title")}</strong>{" "}
+                  {t("creatorDashboard.cameoVideo.warning.text")}
                 </p>
               </div>
             </div>
@@ -2865,10 +2860,8 @@ export default function CreatorDashboard() {
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>How This Works:</strong> Upload photos in 15 different
-              categories. Brands use these to generate images of you that look
-              consistent and photorealistic. More variety = better quality
-              content = higher rates.
+              <strong>{t("creatorDashboard.myLikenessSection.howThisWorks.title")}</strong>{" "}
+              {t("creatorDashboard.myLikenessSection.howThisWorks.text")}
             </p>
           </div>
 
@@ -2893,7 +2886,7 @@ export default function CreatorDashboard() {
                             {section.title}
                           </h4>
                           <p className="text-sm text-gray-600 mb-2">
-                            <strong>Best For:</strong> {section.bestFor}
+                            <strong>{t("creatorDashboard.myLikenessSection.imageStatus.bestFor")}</strong> {section.bestFor}
                           </p>
                           <Badge
                             variant="outline"
@@ -2903,7 +2896,7 @@ export default function CreatorDashboard() {
                                 : "bg-gray-300 text-gray-700"
                             }
                           >
-                            {hasImage ? "UPLOADED" : "MISSING"}
+                            {hasImage ? t("creatorDashboard.myLikenessSection.imageStatus.uploaded") : t("creatorDashboard.myLikenessSection.imageStatus.missing")}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -2931,7 +2924,7 @@ export default function CreatorDashboard() {
                               }
                             >
                               <Eye className="w-4 h-4 mr-1" />
-                              <span className="text-xs sm:text-sm">View</span>
+                              <span className="text-xs sm:text-sm">{t("creatorDashboard.myLikenessSection.imageActions.view")}</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -2943,7 +2936,7 @@ export default function CreatorDashboard() {
                             >
                               <Upload className="w-4 h-4 mr-1" />
                               <span className="text-xs sm:text-sm">
-                                Replace
+                                {t("creatorDashboard.myLikenessSection.imageActions.replace")}
                               </span>
                             </Button>
                             <Button
@@ -2953,7 +2946,9 @@ export default function CreatorDashboard() {
                               onClick={() => deleteReferenceImage(section.id)}
                             >
                               <Trash2 className="w-4 h-4 mr-1" />
-                              <span className="text-xs sm:text-sm">Delete</span>
+                              <span className="text-xs sm:text-sm">
+                                {t("creatorDashboard.myLikenessSection.imageActions.delete")}
+                              </span>
                             </Button>
                           </>
                         ) : (
@@ -2976,10 +2971,9 @@ export default function CreatorDashboard() {
           {/* Quality Standards */}
           <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600" />
-            <p className="text-amber-900">
-              <strong>Quality Standards:</strong> High-resolution (minimum
-              1080x1080), clear lighting, face/body clearly visible, no heavy
-              filters, professional quality preferred.
+            <p className="text-gray-700 text-sm">
+              <strong>{t("creatorDashboard.myLikenessSection.qualityStandards.title")}</strong>{" "}
+              {t("creatorDashboard.myLikenessSection.qualityStandards.text")}
             </p>
           </div>
         </Card>
@@ -2987,16 +2981,16 @@ export default function CreatorDashboard() {
         {/* Content Guidelines */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            USAGE GUIDELINES
+            {t("creatorDashboard.usageGuidelines.title")}
           </h3>
           <p className="text-gray-600 mb-6">
-            Tell brands what you're comfortable with
+            {t("creatorDashboard.usageGuidelines.subtitle")}
           </p>
 
           <div className="space-y-6">
             <div>
               <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                Comfortable With:
+                {t("creatorDashboard.usageGuidelines.comfortableWith")}
               </Label>
               <div className="flex flex-wrap gap-2">
                 {contentPreferences.comfortable.map((item) => (
@@ -3005,7 +2999,7 @@ export default function CreatorDashboard() {
                     variant="outline"
                     className="bg-green-100 text-green-700 border border-green-300 px-3 py-2"
                   >
-                    {item}
+                    {t(`common.contentTypes.${item}`, { defaultValue: item })}
                   </Badge>
                 ))}
               </div>
@@ -3013,7 +3007,7 @@ export default function CreatorDashboard() {
 
             <div>
               <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                Not Comfortable With:
+                {t("creatorDashboard.usageGuidelines.notComfortableWith")}
               </Label>
               <div className="flex flex-wrap gap-2">
                 {contentPreferences.not_comfortable.map((item) => (
@@ -3022,7 +3016,7 @@ export default function CreatorDashboard() {
                     variant="outline"
                     className="bg-red-100 text-red-700 border border-red-300 px-3 py-2"
                   >
-                    ✗ {item}
+                    ✗ {t(`common.contentTypes.${item}`, { defaultValue: item })}
                   </Badge>
                 ))}
               </div>
@@ -3033,7 +3027,7 @@ export default function CreatorDashboard() {
               className="w-full border-2 border-gray-300"
             >
               <Settings className="w-4 h-4 mr-2" />
-              Edit Preferences
+              {t("creatorDashboard.usageGuidelines.editPreferences")}
             </Button>
           </div>
         </Card>
@@ -3041,7 +3035,7 @@ export default function CreatorDashboard() {
         {/* Verification Status */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Verification & Status
+            {t("creatorDashboard.verificationStatus.title")}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -3059,7 +3053,7 @@ export default function CreatorDashboard() {
                   <AlertCircle className="w-5 h-5 text-gray-500" />
                 )}
                 <span className="font-medium text-gray-900">
-                  Identity Verification
+                  {t("creatorDashboard.verificationStatus.identityVerification")}
                 </span>
               </div>
               <Badge
@@ -3082,18 +3076,18 @@ export default function CreatorDashboard() {
                       (word) => word.charAt(0).toUpperCase() + word.slice(1),
                     )
                     .join(" ")
-                  : "Not Started"}
+                  : t("creatorDashboard.verificationStatus.notStarted")}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-[#32C8D1]" />
                 <span className="font-medium text-gray-900">
-                  Likeness Rights
+                  {t("creatorDashboard.verificationStatus.likenessRights")}
                 </span>
               </div>
               <Badge variant="outline" className="bg-green-100 text-green-700">
-                Confirmed
+                {t("creatorDashboard.verificationStatus.confirmed")}
               </Badge>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 pt-2">

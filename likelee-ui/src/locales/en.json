@@ -1802,6 +1802,73 @@
       "completenessFilled": "Completeness: {{filled}}/{{total}} sections filled",
       "sectionsNeeded": "{{count}} sections needed for \"Complete Profile\""
     },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Complete profiles earn 15% more.",
+        "text": "Brands pay premium rates for creators with full reference libraries."
+      },
+      "howThisWorks": {
+        "title": "How This Works:",
+        "text": "Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+      },
+      "qualityStandards": {
+        "title": "Quality Standards:",
+        "text": "High-resolution (minimum 1080x1080), clear lighting, face/body clearly visible, no heavy filters, professional quality preferred."
+      },
+      "imageActions": {
+        "view": "View",
+        "replace": "Replace",
+        "delete": "Delete",
+        "upload": "Upload"
+      },
+      "imageStatus": {
+        "uploaded": "UPLOADED",
+        "missing": "MISSING",
+        "bestFor": "Best For:"
+      }
+    },
+    "usageGuidelines": {
+      "title": "USAGE GUIDELINES",
+      "subtitle": "Tell brands what you're comfortable with",
+      "comfortableWith": "Comfortable With:",
+      "notComfortableWith": "Not Comfortable With:",
+      "editPreferences": "Edit Preferences"
+    },
+    "verificationStatus": {
+      "title": "Verification & Status",
+      "identityVerification": "Identity Verification",
+      "likenessRights": "Likeness Rights",
+      "confirmed": "Confirmed",
+      "notStarted": "Not Started",
+      "viewVerification": "View Verification Details",
+      "updateRights": "Update Rights Agreement"
+    },
+    "cameoVideo": {
+      "title": "CAMEO VIDEO",
+      "description": "The video representation of you - brands use this for AI cameos and content generation",
+      "uploaded": "Uploaded:",
+      "duration": "Duration:",
+      "quality": "Quality:",
+      "status": "Status:",
+      "verified": "✓ Verified & Approved",
+      "aboutCameo": {
+        "title": "About Your Cameo:",
+        "text": "Brands use this to generate AI cameos of you speaking, reference your voice/expressions, and create photorealistic content featuring you."
+      },
+      "actions": {
+        "watchFull": "Watch Full Cameo",
+        "reupload": "Re-upload New Cameo",
+        "download": "Download"
+      },
+      "comingSoon": {
+        "title": "Coming Soon",
+        "text": "Cameo video upload will be available soon"
+      },
+      "warning": {
+        "title": "Your cameo is required to start earning.",
+        "text": "Brands need this video reference to create content featuring you."
+      }
+    },
     "contracts": {
       "title": "Licenses & Contracts",
       "subtitle": "Manage your active agreements and rights usage",

@@ -126,6 +126,73 @@
       "completenessFilled": "Vollständigkeit: {{filled}}/{{total}} Abschnitte ausgefüllt",
       "sectionsNeeded": "{{count}} Abschnitte benötigt für \"Vollständiges Profil\""
     },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Vollständige Profile verdienen 15 % mehr.",
+        "text": "Marken zahlen Premium-Tarife für Ersteller mit vollständigen Referenzbibliotheken."
+      },
+      "howThisWorks": {
+        "title": "So funktioniert es:",
+        "text": "Laden Sie Fotos in 15 verschiedenen Kategorien hoch. Marken verwenden diese, um Bilder von Ihnen zu generieren, die konsistent und fotorealistisch aussehen. Mehr Vielfalt = bessere Inhaltsqualität = höhere Tarife."
+      },
+      "qualityStandards": {
+        "title": "Qualitätsstandards:",
+        "text": "Hochauflösend (mindestens 1080x1080), klare Beleuchtung, Gesicht/Körper deutlich sichtbar, keine starken Filter, professionelle Qualität bevorzugt."
+      },
+      "imageActions": {
+        "view": "Ansehen",
+        "replace": "Ersetzen",
+        "delete": "Löschen",
+        "upload": "Hochladen"
+      },
+      "imageStatus": {
+        "uploaded": "HOCHGELADEN",
+        "missing": "FEHLT",
+        "bestFor": "Am besten für:"
+      }
+    },
+    "usageGuidelines": {
+      "title": "NUTZUNGSRICHTLINIEN",
+      "subtitle": "Teilen Sie Marken mit, womit Sie sich wohl fühlen",
+      "comfortableWith": "Wohl fühlen mit:",
+      "notComfortableWith": "Nicht wohl fühlen mit:",
+      "editPreferences": "Einstellungen bearbeiten"
+    },
+    "verificationStatus": {
+      "title": "Verifizierung & Status",
+      "identityVerification": "Identitätsverifizierung",
+      "likenessRights": "Abbildrechte",
+      "confirmed": "Bestätigt",
+      "notStarted": "Nicht begonnen",
+      "viewVerification": "Verifizierungsdetails anzeigen",
+      "updateRights": "Rechtsvereinbarung aktualisieren"
+    },
+    "cameoVideo": {
+      "title": "CAMEO-VIDEO",
+      "description": "Die Videodarstellung von Ihnen - Marken verwenden dies für KI-Cameos und Inhaltsgenerierung",
+      "uploaded": "Hochgeladen:",
+      "duration": "Dauer:",
+      "quality": "Qualität:",
+      "status": "Status:",
+      "verified": "✓ Verifiziert & Genehmigt",
+      "aboutCameo": {
+        "title": "Über Ihr Cameo:",
+        "text": "Marken verwenden dies, um KI-Cameos von Ihnen beim Sprechen zu generieren, Ihre Stimme/Ausdrücke zu referenzieren und fotorealistische Inhalte mit Ihnen zu erstellen."
+      },
+      "actions": {
+        "watchFull": "Vollständiges Cameo ansehen",
+        "reupload": "Neues Cameo erneut hochladen",
+        "download": "Herunterladen"
+      },
+      "comingSoon": {
+        "title": "Demnächst verfügbar",
+        "text": "Cameo-Video-Upload wird bald verfügbar sein"
+      },
+      "warning": {
+        "title": "Ihr Cameo ist erforderlich, um zu verdienen.",
+        "text": "Marken benötigen diese Videoreferenz, um Inhalte mit Ihnen zu erstellen."
+      }
+    },
     "contracts": {
       "title": "Lizenzen & Verträge",
       "subtitle": "Verwalten Sie Ihre aktiven Verträge und Rechte",
