@@ -77,7 +77,7 @@ export function getUserFriendlyError(error: any): string {
     errorLower.includes("too large") ||
     errorLower.includes("exceeds")
   ) {
-    return "File is too large. Please use a smaller image (max 10MB).";
+    return "File is too large. Please use a smaller image (max 20MB).";
   }
   if (
     errorLower.includes("file type") ||

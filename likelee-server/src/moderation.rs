@@ -66,10 +66,10 @@ pub async fn moderate_image_bytes(
         .to_string();
     info!(bytes_len = body.len(), content_type = %ct, user_id = ?q.user_id, role = ?q.image_role, "moderation-bytes: start");
 
-    if body.len() > 10_000_000 {
+    if body.len() > 20_000_000 {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,
-            "image too large; please upload <= 10MB".into(),
+            "image too large; please upload <= 20MB".into(),
         ));
     }
     let image = rekognition::types::Image::builder()
@@ -149,10 +149,10 @@ pub async fn moderate_image(
         )
     })?;
 
-    if bytes.len() > 10_000_000 {
+    if bytes.len() > 20_000_000 {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,
-            "image too large; please upload <= 10MB".into(),
+            "image too large; please upload <= 20MB".into(),
         ));
     }
     let image = rekognition::types::Image::builder()
