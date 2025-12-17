@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -52,6 +53,7 @@ const skills = [
 
 export default function UploadProject() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const [project, setProject] = useState({
@@ -76,8 +78,8 @@ export default function UploadProject() {
   const handleSubmit = () => {
     if (!project.title || !project.description || !project.project_type) {
       toast({
-        title: "Missing Fields",
-        description: "Please fill in all required fields",
+        title: t("uploadProject.toasts.missingFields"),
+        description: t("uploadProject.toasts.missingFieldsDesc"),
         variant: "destructive",
       });
       return;
@@ -87,8 +89,8 @@ export default function UploadProject() {
     setTimeout(() => {
       setUploading(false);
       toast({
-        title: "Success",
-        description: "Project uploaded! (Demo mode - not persisted)",
+        title: t("common.success"),
+        description: t("uploadProject.toasts.projectUploaded"),
       });
       navigate(createPageUrl("DemoTalentDashboard"));
     }, 2000);
@@ -210,11 +212,10 @@ export default function UploadProject() {
                   <div
                     key={tool}
                     onClick={() => toggleArrayItem("tools_used", tool)}
-                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${
-                      project.tools_used.includes(tool)
+                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${project.tools_used.includes(tool)
                         ? "border-[#F18B6A] bg-[#F18B6A]/10"
                         : "border-gray-300 hover:border-gray-400"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-900">
@@ -239,11 +240,10 @@ export default function UploadProject() {
                   <div
                     key={skill}
                     onClick={() => toggleArrayItem("skills_showcased", skill)}
-                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${
-                      project.skills_showcased.includes(skill)
+                    className={`p-3 border-2 rounded-none cursor-pointer transition-all ${project.skills_showcased.includes(skill)
                         ? "border-[#32C8D1] bg-[#32C8D1]/10"
                         : "border-gray-300 hover:border-gray-400"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-900">

@@ -602,7 +602,13 @@
       "archive": "Archivos de Campañas",
       "contracts": "Licencias y Contratos",
       "earnings": "Ganancias",
-      "settings": "Configuración"
+      "settings": "Configuración",
+      "profile": {
+        "edit": "Editar Perfil",
+        "viewPublic": "Ver Perfil Público",
+        "help": "Ayuda / Soporte",
+        "logout": "Cerrar sesión"
+      }
     },
     "voiceScripts": {
       "happy": "¡Estoy absolutamente encantado de estar aquí hoy! La vida está llena de sorpresas maravillosas y oportunidades emocionantes. Cada mañana trae un nuevo comienzo y nuevas posibilidades. Me encanta conectar con la gente y compartir energía positiva. El mundo es un lugar increíble cuando lo miras con optimismo. ¡Celebremos las pequeñas victorias y valoremos cada momento de alegría. La felicidad es contagiosa, así que contagiémosla!",
@@ -706,6 +712,39 @@
         "contentHeader": "Tipos de Contenido",
         "industryHeader": "Industrias"
       }
+    },
+    "toasts": {
+      "authRequiredTitle": "Autenticación requerida",
+      "authRequiredCameoDesc": "Debes iniciar sesión para subir un cameo.",
+      "authRequiredPhotoDesc": "Debes iniciar sesión para subir una foto.",
+      "fileTooLargeTitle": "Archivo demasiado grande",
+      "fileTooLargeDescVideo": "Sube un video de menos de 50 MB.",
+      "invalidFileTypeTitle": "Tipo de archivo inválido",
+      "invalidFileTypeDescVideo": "Sube un archivo de video válido.",
+      "cameoUploadedTitle": "Cameo subido",
+      "cameoUploadedDesc": "Tu video cameo se ha subido correctamente.",
+      "uploadFailedTitle": "Error de carga",
+      "uploadFailedDesc": "Error de carga: {{error}}",
+      "profilePhotoUpdated": "Foto de perfil actualizada",
+      "micErrorTitle": "Error de micrófono",
+      "micErrorDesc": "Error al acceder al micrófono. Verifique los permisos.",
+      "voiceSuccessTitle": "Éxito",
+      "voiceSuccessDesc": "Perfil de voz creado con éxito con ElevenLabs",
+      "voiceErrorTitle": "Error de perfil de voz",
+      "voiceErrorDesc": "Error: {{error}}. Posibles problemas: calidad de grabación demasiado baja, formato no compatible o demasiado corto.",
+      "campaignApproved": "Campaña aprobada. Contrato firmado. (Modo de demostración)",
+      "campaignDeclined": "Campaña rechazada. (Modo de demostración)",
+      "licensePausedTitle": "Licencia pausada (Demo)",
+      "licensePausedImmediate": "Licencia pausada inmediatamente. Perderás el pago de este mes.",
+      "licensePausedNextMonth": "Licencia programada para pausarse el próximo mes. Recibirás el pago completo de este mes, la pausa comienza el próximo mes.",
+      "licenseRevokedTitle": "Licencia revocada (Demo)",
+      "licenseRevokedDesc": "Licencia revocada. Ha comenzado el período de aviso de 30 días. Recibirá el pago final de ${{amount}} en la fecha de vencimiento del aviso.",
+      "campaignPaused": "Campaña en pausa. (Modo de demostración)",
+      "campaignRevoked": "Campaña revocada. (Modo de demostración)",
+      "preferencesUpdated": "Preferencias de licencia actualizadas",
+      "saveFailedTitle": "Error al guardar",
+      "saveFailedDesc": "Error al guardar las preferencias: {{error}}",
+      "profileUpdatedDemo": "Perfil actualizado. (Modo de demostración)"
     }
   },
   "creators": "Creadores",
@@ -954,14 +993,14 @@
   "reserveProfile": {
     "errors": {
       "emailRegistered": "Este correo electrónico ya está registrado. Por favor, use un correo electrónico diferente o inicie sesión.",
-      "invalidEmail": "Por favor, ingrese una dirección de correo electrónico válida.",
-      "weakPassword": "Por favor, elija una contraseña más segura (al menos 8 caracteres).",
+      "invalidEmail": "Ingrese una dirección de correo válida.",
+      "weakPassword": "Elija una contraseña más segura (al menos 8 caracteres).",
       "signInRequired": "Por favor, inicie sesión para continuar.",
-      "fileTooLarge": "El archivo es demasiado grande. Por favor, use una imagen más pequeña (máximo 5MB).",
-      "invalidFileType": "Tipo de archivo no válido. Por favor, suba una imagen JPG, PNG o WebP.",
-      "networkError": "Error de red. Por favor, verifique su conexión e inténtelo de nuevo.",
-      "timeout": "La solicitud ha caducado. Por favor, inténtelo de nuevo.",
-      "permissionDenied": "Permiso denegado. Por favor, verifique su configuración e inténtelo de nuevo.",
+      "fileTooLarge": "El archivo es demasiado grande. Use una imagen más pequeña (máx. 5 MB).",
+      "invalidFileType": "Tipo de archivo no válido. Suba una imagen JPG, PNG o WebP.",
+      "networkError": "Error de red. Verifique su conexión e inténtelo de nuevo.",
+      "timeout": "Tiempo de espera agotado. Inténtelo de nuevo.",
+      "permissionDenied": "Permiso denegado. Verifique su configuración e inténtelo de nuevo.",
       "genericFallback": "Algo salió mal. Por favor, inténtelo de nuevo.",
       "unknownError": "Ocurrió un error. Por favor, inténtelo de nuevo o contacte al soporte si el problema persiste.",
       "imageFlagged": "Imagen marcada por moderación",
@@ -1012,7 +1051,11 @@
       "profileSaveFailed": "Error al Guardar el Perfil",
       "selectionLimit": "Límite de Selección Alcanzado",
       "selectionLimitDescription": "Puede seleccionar un máximo de 3 tipos de trabajo.",
-      "livenessVerificationNotConfigured": "La verificación de vida no está configurada. Por favor, contacte al soporte."
+      "livenessVerificationNotConfigured": "La verificación de vida no está configurada. Por favor, contacte al soporte.",
+      "duplicateEmail": "Este correo ya está registrado. Use otro correo o inicie sesión.",
+      "notAuthenticated": "Inicie sesión para continuar.",
+      "genericFailed": "Algo salió mal. Inténtelo de nuevo.",
+      "unknown": "Ocurrió un error. Inténtelo de nuevo o contacte al soporte si el problema persiste."
     },
     "photos": {
       "cameraRequiredTitle": "Se Requiere Acceso a la Cámara",
@@ -1278,6 +1321,61 @@
       "step3": {
         "influencer": "Define tus términos de colaboración"
       }
+    },
+    "toasts": {
+      "configErrorTitle": "Error de configuración",
+      "configErrorDesc": "La verificación de vida no está configurada. Contacte al soporte.",
+      "livenessErrorTitle": "Error de sesión de vida",
+      "profileCreationFailed": "Error al crear perfil",
+      "profileUpdateFailed": "Error al actualizar perfil",
+      "emailRequiredTitle": "Correo requerido",
+      "emailRequiredDesc": "Ingrese su correo electrónico.",
+      "passwordRequiredTitle": "Contraseña requerida",
+      "passwordRequiredDesc": "Ingrese una contraseña.",
+      "confirmPasswordTitle": "Confirmar contraseña",
+      "confirmPasswordDesc": "Confirme su contraseña.",
+      "passwordsDoNotMatchTitle": "Las contraseñas no coinciden",
+      "passwordsDoNotMatchDesc": "Las contraseñas ingresadas no coinciden. Inténtelo de nuevo.",
+      "nameRequiredTitle": "Nombre requerido",
+      "nameRequiredDesc": "Ingrese su nombre completo.",
+      "emailRegisteredTitle": "Correo ya registrado",
+      "emailRegisteredDesc": "Este correo ya está registrado. Inicie sesión o use otro correo.",
+      "verifyEmailDesc": "Verifique su correo para validar su cuenta antes de continuar.",
+      "signupFailed": "Error al registrarse",
+      "cityRequiredTitle": "Ciudad requerida",
+      "cityRequiredDesc": "Ingrese su ciudad.",
+      "stateRequiredTitle": "Estado requerido",
+      "stateRequiredDesc": "Ingrese su estado.",
+      "birthdateRequiredTitle": "Fecha de nacimiento requerida",
+      "birthdateRequiredDesc": "Ingrese su fecha de nacimiento.",
+      "ageRestrictionTitle": "Restricción de edad",
+      "ageRestrictionDesc": "Debe tener 18 años o más para registrarse.",
+      "genderRequiredTitle": "Género requerido",
+      "genderRequiredDesc": "Seleccione cómo se identifica.",
+      "pricingRequiredTitle": "Precio requerido",
+      "pricingRequiredDesc": "Establezca su precio de licencia mensual base (mínimo $150).",
+      "campaignTypeRequiredTitle": "Tipo de campaña requerido",
+      "campaignTypeRequiredDesc": "Seleccione al menos un tipo de campaña.",
+      "industryRequiredTitle": "Industria requerida",
+      "industryRequiredDesc": "Seleccione al menos una industria.",
+      "platformRequiredTitle": "Plataforma requerida",
+      "platformRequiredDesc": "Seleccione su plataforma principal.",
+      "handleRequiredTitle": "Usuario requerido",
+      "handleRequiredDesc": "Ingrese su usuario de plataforma.",
+      "visibilityRequiredTitle": "Visibilidad requerida",
+      "visibilityRequiredDesc": "Seleccione su preferencia de visibilidad de perfil.",
+      "notSignedInTitle": "No has iniciado sesión",
+      "notSignedInDesc": "Inicie sesión para continuar.",
+      "profileSaveFailed": "Error al guardar perfil",
+      "invalidCredentials": "Credenciales de inicio de sesión inválidas",
+      "uploadFailed": "Error de carga",
+      "avatarGenFailed": "Error al generar avatar",
+      "verificationFailed": "Verificación fallida",
+      "alreadyApproved": "Ya aprobado",
+      "alreadyApprovedDesc": "Su verificación de vida ya está aprobada. No se requiere más verificación.",
+      "identityVerified": "Identidad verificada",
+      "identityVerifiedDesc": "Suba sus 3 fotos de referencia (Frente, Izquierda, Derecha) para completar su configuración.",
+      "statusCheckFailed": "Error al verificar estado"
     }
   },
   "forYou": {
@@ -1930,7 +2028,9 @@
       "productLaunch": "Lanzamiento de producto",
       "tvDigital": "TV y Digital",
       "summerCampaign": "Campaña de verano"
-    }
+    },
+    "error": "Error",
+    "success": "Éxito"
   },
   "forgotPasswordPage": {
     "title": "Restablece tu contraseña",
@@ -2032,6 +2132,28 @@
       "title": "Tu elección - Momento característico",
       "description": "Una foto que realmente te representa y cómo la gente te reconoce.",
       "bestFor": "Una foto que realmente te representa"
+    }
+  },
+  "marketingDashboard": {
+    "toasts": {
+      "campaignCreated": "¡Campaña creada con éxito!"
+    }
+  },
+  "uploadProject": {
+    "toasts": {
+      "missingFields": "Campos faltantes",
+      "missingFieldsDesc": "Complete todos los campos requeridos",
+      "projectUploaded": "¡Proyecto subido! (Modo demostración - no guardado)"
+    }
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Su contraseña ha sido actualizada."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Error de inicio de sesión"
     }
   }
 }

@@ -73,7 +73,7 @@ export default function LicensingSettings() {
       });
     } catch (e: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: e?.message || String(e),
         variant: "destructive",
       });

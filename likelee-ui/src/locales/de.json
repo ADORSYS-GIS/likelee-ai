@@ -604,7 +604,13 @@
       "archive": "Kampagnenarchiv",
       "contracts": "Lizenzen & Verträge",
       "earnings": "Einnahmen",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "profile": {
+        "edit": "Profil bearbeiten",
+        "viewPublic": "Öffentliches Profil ansehen",
+        "help": "Hilfe / Support",
+        "logout": "Abmelden"
+      }
     },
     "voiceScripts": {
       "happy": "Ich bin absolut begeistert, heute hier zu sein! Das Leben ist voller wunderbarer Überraschungen und aufregender Möglichkeiten. Jeder Morgen bringt einen Neuanfang und neue Möglichkeiten. Ich liebe es, mit Menschen in Kontakt zu treten und positive Energie zu teilen. Die Welt ist ein erstaunlicher Ort, wenn man sie mit Optimismus betrachtet. Lasst uns die kleinen Siege feiern und jeden Moment der Freude schätzen. Glück ist ansteckend, also lasst es uns verbreiten!",
@@ -708,6 +714,39 @@
         "contentHeader": "Inhaltstypen",
         "industryHeader": "Branchen"
       }
+    },
+    "toasts": {
+      "authRequiredTitle": "Authentifizierung erforderlich",
+      "authRequiredCameoDesc": "Sie müssen eingeloggt sein, um ein Cameo hochzuladen.",
+      "authRequiredPhotoDesc": "Sie müssen eingeloggt sein, um ein Foto hochzuladen.",
+      "fileTooLargeTitle": "Datei zu groß",
+      "fileTooLargeDescVideo": "Bitte laden Sie ein Video unter 50 MB hoch.",
+      "invalidFileTypeTitle": "Ungültiger Dateityp",
+      "invalidFileTypeDescVideo": "Bitte laden Sie eine gültige Videodatei hoch.",
+      "cameoUploadedTitle": "Cameo hochgeladen",
+      "cameoUploadedDesc": "Ihr Cameo-Video wurde erfolgreich hochgeladen.",
+      "uploadFailedTitle": "Upload fehlgeschlagen",
+      "uploadFailedDesc": "Upload fehlgeschlagen: {{error}}",
+      "profilePhotoUpdated": "Profilbild aktualisiert",
+      "micErrorTitle": "Mikrofonfehler",
+      "micErrorDesc": "Mikrofonzugriff fehlgeschlagen. Bitte überprüfen Sie die Berechtigungen.",
+      "voiceSuccessTitle": "Erfolg",
+      "voiceSuccessDesc": "Sprachprofil erfolgreich mit ElevenLabs erstellt",
+      "voiceErrorTitle": "Fehler beim Sprachprofil",
+      "voiceErrorDesc": "Fehler: {{error}}. Mögliche Probleme: Aufnahmequalität zu niedrig, Format nicht unterstützt oder zu kurz.",
+      "campaignApproved": "Kampagne genehmigt. Vertrag unterzeichnet. (Demo-Modus)",
+      "campaignDeclined": "Kampagne abgelehnt. (Demo-Modus)",
+      "licensePausedTitle": "Lizenz pausiert (Demo)",
+      "licensePausedImmediate": "Lizenz sofort pausiert. Sie verlieren die Zahlung für diesen Monat.",
+      "licensePausedNextMonth": "Lizenz für nächsten Monat pausiert. Sie erhalten die volle Zahlung für diesen Monat, Pause beginnt nächsten Monat.",
+      "licenseRevokedTitle": "Lizenz widerrufen (Demo)",
+      "licenseRevokedDesc": "Lizenz widerrufen. 30-tägige Kündigungsfrist hat begonnen. Sie erhalten die letzte Zahlung von {{amount}} $ am Ablaufdatum der Frist.",
+      "campaignPaused": "Kampagne pausiert. (Demo-Modus)",
+      "campaignRevoked": "Kampagne widerrufen. (Demo-Modus)",
+      "preferencesUpdated": "Lizenzierungseinstellungen aktualisiert",
+      "saveFailedTitle": "Speichern fehlgeschlagen",
+      "saveFailedDesc": "Einstellungen konnten nicht gespeichert werden: {{error}}",
+      "profileUpdatedDemo": "Profil aktualisiert. (Demo-Modus)"
     }
   },
   "creators": "Schöpfer",
@@ -972,10 +1011,10 @@
       "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
       "weakPassword": "Bitte wählen Sie ein stärkeres Passwort (mindestens 8 Zeichen).",
       "signInRequired": "Bitte melden Sie sich an, um fortzufahren.",
-      "fileTooLarge": "Die Datei ist zu groß. Bitte verwenden Sie ein kleineres Bild (max. 5 MB).",
+      "fileTooLarge": "Datei ist zu groß. Bitte verwenden Sie ein kleineres Bild (max. 5 MB).",
       "invalidFileType": "Ungültiger Dateityp. Bitte laden Sie ein JPG-, PNG- oder WebP-Bild hoch.",
       "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-      "timeout": "Zeitüberschreitung der Anfrage. Bitte versuchen Sie es erneut.",
+      "timeout": "Zeitüberschreitung der Anforderung. Bitte versuchen Sie es erneut.",
       "permissionDenied": "Zugriff verweigert. Bitte überprüfen Sie Ihre Einstellungen und versuchen Sie es erneut.",
       "genericFallback": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
       "unknownError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem weiterhin besteht.",
@@ -1027,7 +1066,11 @@
       "profileSaveFailed": "Profilspeicherung fehlgeschlagen",
       "selectionLimit": "Auswahllimit erreicht",
       "selectionLimitDescription": "Sie können maximal 3 Arbeitsarten auswählen.",
-      "livenessVerificationNotConfigured": "Die Liveness-Überprüfung ist nicht konfiguriert. Bitte kontaktieren Sie den Support."
+      "livenessVerificationNotConfigured": "Die Liveness-Überprüfung ist nicht konfiguriert. Bitte kontaktieren Sie den Support.",
+      "duplicateEmail": "Diese E-Mail ist bereits registriert. Bitte verwenden Sie eine andere E-Mail oder melden Sie sich an.",
+      "notAuthenticated": "Bitte melden Sie sich an, um fortzufahren.",
+      "genericFailed": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+      "unknown": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem weiterhin besteht."
     },
     "photos": {
       "cameraRequiredTitle": "Kamerazugriff erforderlich",
@@ -1275,6 +1318,61 @@
     "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
     "warning": {
       "limitedBatches": "Wir starten in begrenzten Chargen, um sicherzustellen, dass jeder Creator Sichtbarkeit und Kampagnenmöglichkeiten erhält. Reservieren Sie Ihr Profil, um der ersten Creator-Kohorte beizutreten."
+    },
+    "toasts": {
+      "configErrorTitle": "Konfigurationsfehler",
+      "configErrorDesc": "Liveness-Überprüfung nicht konfiguriert. Bitte Support kontaktieren.",
+      "livenessErrorTitle": "Fehler bei Liveness-Sitzung",
+      "profileCreationFailed": "Profilerstellung fehlgeschlagen",
+      "profileUpdateFailed": "Profilaktualisierung fehlgeschlagen",
+      "emailRequiredTitle": "E-Mail erforderlich",
+      "emailRequiredDesc": "Bitte geben Sie Ihre E-Mail-Adresse ein.",
+      "passwordRequiredTitle": "Passwort erforderlich",
+      "passwordRequiredDesc": "Bitte geben Sie ein Passwort ein.",
+      "confirmPasswordTitle": "Passwort bestätigen",
+      "confirmPasswordDesc": "Bitte bestätigen Sie Ihr Passwort.",
+      "passwordsDoNotMatchTitle": "Passwörter stimmen nicht überein",
+      "passwordsDoNotMatchDesc": "Die eingegebenen Passwörter stimmen nicht überein. Bitte versuchen Sie es erneut.",
+      "nameRequiredTitle": "Name erforderlich",
+      "nameRequiredDesc": "Bitte geben Sie Ihren vollständigen Namen ein.",
+      "emailRegisteredTitle": "E-Mail bereits registriert",
+      "emailRegisteredDesc": "Diese E-Mail ist bereits registriert. Bitte melden Sie sich an oder verwenden Sie eine andere E-Mail.",
+      "verifyEmailDesc": "Bitte überprüfen Sie Ihre E-Mail, um Ihr Konto zu bestätigen, bevor Sie fortfahren.",
+      "signupFailed": "Registrierung fehlgeschlagen",
+      "cityRequiredTitle": "Stadt erforderlich",
+      "cityRequiredDesc": "Bitte geben Sie Ihre Stadt ein.",
+      "stateRequiredTitle": "Bundesland/Region erforderlich",
+      "stateRequiredDesc": "Bitte geben Sie Ihr Bundesland ein.",
+      "birthdateRequiredTitle": "Geburtsdatum erforderlich",
+      "birthdateRequiredDesc": "Bitte geben Sie Ihr Geburtsdatum ein.",
+      "ageRestrictionTitle": "Altersbeschränkung",
+      "ageRestrictionDesc": "Sie müssen 18 Jahre oder älter sein, um sich zu registrieren.",
+      "genderRequiredTitle": "Geschlecht erforderlich",
+      "genderRequiredDesc": "Bitte wählen Sie, wie Sie sich identifizieren.",
+      "pricingRequiredTitle": "Preisgestaltung erforderlich",
+      "pricingRequiredDesc": "Bitte legen Sie Ihren monatlichen Basis-Lizenzpreis fest (mindestens 150 $).",
+      "campaignTypeRequiredTitle": "Kampagnentyp erforderlich",
+      "campaignTypeRequiredDesc": "Bitte wählen Sie mindestens einen Kampagnentyp aus.",
+      "industryRequiredTitle": "Branche erforderlich",
+      "industryRequiredDesc": "Bitte wählen Sie mindestens eine Branche aus.",
+      "platformRequiredTitle": "Plattform erforderlich",
+      "platformRequiredDesc": "Bitte wählen Sie Ihre primäre Plattform aus.",
+      "handleRequiredTitle": "Benutzername erforderlich",
+      "handleRequiredDesc": "Bitte geben Sie Ihren Plattform-Benutzernamen ein.",
+      "visibilityRequiredTitle": "Sichtbarkeit erforderlich",
+      "visibilityRequiredDesc": "Bitte wählen Sie Ihre Profilsichtbarkeitseinstellung.",
+      "notSignedInTitle": "Nicht angemeldet",
+      "notSignedInDesc": "Bitte melden Sie sich an, um fortzufahren.",
+      "profileSaveFailed": "Speichern des Profils fehlgeschlagen",
+      "invalidCredentials": "Ungültige Anmeldeinformationen",
+      "uploadFailed": "Upload fehlgeschlagen",
+      "avatarGenFailed": "Avatar-Erstellung fehlgeschlagen",
+      "verificationFailed": "Verifizierung fehlgeschlagen",
+      "alreadyApproved": "Bereits genehmigt",
+      "alreadyApprovedDesc": "Ihre Liveness-Prüfung wurde bereits genehmigt. Keine weitere Überprüfung erforderlich.",
+      "identityVerified": "Identität verifiziert",
+      "identityVerifiedDesc": "Bitte laden Sie Ihre 3 Referenzfotos (Vorderseite, Links, Rechts) hoch, um die Einrichtung abzuschließen.",
+      "statusCheckFailed": "Statusprüfung fehlgeschlagen"
     }
   },
   "forYou": {
@@ -1926,7 +2024,9 @@
       "productLaunch": "Produkteinführung",
       "tvDigital": "TV & Digital",
       "summerCampaign": "Sommerkampagne"
-    }
+    },
+    "error": "Fehler",
+    "success": "Erfolg"
   },
   "forgotPasswordPage": {
     "title": "Setzen Sie Ihr Passwort zurück",
@@ -2028,6 +2128,28 @@
       "title": "Ihre Wahl - Charakteristischer Moment",
       "description": "Ein Foto, das Sie wirklich repräsentiert und wie Menschen Sie erkennen.",
       "bestFor": "Ein Foto, das Sie wirklich repräsentiert"
+    }
+  },
+  "marketingDashboard": {
+    "toasts": {
+      "campaignCreated": "Kampagne erfolgreich erstellt!"
+    }
+  },
+  "uploadProject": {
+    "toasts": {
+      "missingFields": "Fehlende Felder",
+      "missingFieldsDesc": "Bitte füllen Sie alle erforderlichen Felder aus",
+      "projectUploaded": "Projekt hochgeladen! (Demomodus - nicht gespeichert)"
+    }
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Ihr Passwort wurde aktualisiert."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Anmeldung fehlgeschlagen"
     }
   }
 }

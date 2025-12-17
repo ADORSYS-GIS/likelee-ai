@@ -56,7 +56,7 @@ export default function ForgotPassword() {
                 err?.message ?? t("forgotPasswordPage.errorMessage");
               setError(msg);
               toast({
-                title: "Error",
+                title: t("common.error"),
                 description: msg,
                 variant: "destructive",
               });

@@ -197,59 +197,63 @@ const vibes = [
 ];
 
 // Utility function to convert technical errors into user-friendly messages
-function getUserFriendlyError(error: any): string {
+function getUserFriendlyError(error: any, t: any): string {
   const errorStr = String(error?.message || error || "").toLowerCase();
 
   // Email/Auth errors
   if (errorStr.includes("duplicate") && errorStr.includes("email")) {
-    return "This email is already registered. Please use a different email or sign in instead.";
+    return t("reserveProfile.errors.duplicateEmail");
   }
   if (errorStr.includes("invalid") && errorStr.includes("email")) {
-    return "Please enter a valid email address.";
+    return t("reserveProfile.errors.invalidEmail");
   }
   if (errorStr.includes("weak") || errorStr.includes("password")) {
-    return "Please choose a stronger password (at least 8 characters).";
+    return t("reserveProfile.errors.weakPassword");
   }
   if (
     errorStr.includes("not authenticated") ||
     errorStr.includes("unauthorized")
   ) {
-    return "Please sign in to continue.";
+    return t("reserveProfile.errors.notAuthenticated");
   }
 
   // Upload/Storage errors
   if (errorStr.includes("file size") || errorStr.includes("too large")) {
-    return "File is too large. Please use a smaller image (max 5MB).";
+    return t("reserveProfile.errors.fileTooLarge");
   }
   if (errorStr.includes("file type") || errorStr.includes("invalid format")) {
-    return "Invalid file type. Please upload a JPG, PNG, or WebP image.";
+    return t("reserveProfile.errors.invalidFileType");
   }
 
   // Network errors
   if (errorStr.includes("network") || errorStr.includes("fetch failed")) {
-    return "Network error. Please check your connection and try again.";
+    return t("reserveProfile.errors.networkError");
   }
   if (errorStr.includes("timeout")) {
-    return "Request timed out. Please try again.";
+    return t("reserveProfile.errors.timeout");
   }
 
   // Permission errors
   if (errorStr.includes("permission") || errorStr.includes("denied")) {
-    return "Permission denied. Please check your settings and try again.";
+    return t("reserveProfile.errors.permissionDenied");
   }
 
   // Generic fallback
   if (errorStr.includes("failed")) {
-    return "Something went wrong. Please try again.";
+    return t("reserveProfile.errors.genericFailed");
   }
 
   // If we have a clean message without technical jargon, use it
   const msg = error?.message || String(error);
+  if (msg.includes("Invalid login credentials")) {
+    return t("reserveProfile.toasts.invalidCredentials");
+  }
+
   if (msg.length < 100 && !msg.includes("{") && !msg.includes("[")) {
     return msg;
   }
 
-  return "An error occurred. Please try again or contact support if the problem persists.";
+  return t("reserveProfile.errors.unknown");
 }
 
 function ReferencePhotosStep(props: any) {
@@ -407,8 +411,8 @@ function ReferencePhotosStep(props: any) {
   const generateAvatar = async () => {
     if (!userId) {
       toast({
-        title: "Error",
-        description: "Please sign in to continue.",
+        title: t("common.error", "Error"),
+        description: t("reserveProfile.errors.notAuthenticated"),
         variant: "destructive",
       });
       return;
@@ -436,8 +440,8 @@ function ReferencePhotosStep(props: any) {
       if (data.avatar_canonical_url) setAvatarUrl(data.avatar_canonical_url);
     } catch (e: any) {
       toast({
-        title: "Avatar Generation Failed",
-        description: getUserFriendlyError(e),
+        title: t("reserveProfile.toasts.avatarGenFailed"),
+        description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
     } finally {
@@ -673,7 +677,7 @@ export default function ReserveProfile() {
   }, [step]);
 
   const [submitted, setSubmitted] = useState(false);
-  const [showWarning, setShowWarning] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(() => {
     return localStorage.getItem("reserve_profileId") || null;
@@ -851,8 +855,8 @@ export default function ReserveProfile() {
       return { publicUrl: url };
     } catch (e: any) {
       toast({
-        title: "Upload Failed",
-        description: getUserFriendlyError(e),
+        title: t("reserveProfile.toasts.uploadFailed"),
+        description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
     } finally {
@@ -891,8 +895,8 @@ export default function ReserveProfile() {
       if (data.session_url) window.open(data.session_url, "_blank");
     } catch (e: any) {
       toast({
-        title: "Verification Failed",
-        description: getUserFriendlyError(e),
+        title: t("reserveProfile.toasts.verificationFailed"),
+        description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
     } finally {
@@ -922,17 +926,16 @@ export default function ReserveProfile() {
           !cameoRightUrl
         ) {
           toast({
-            title: "Identity Verified",
-            description:
-              "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+            title: t("reserveProfile.toasts.identityVerified"),
+            description: t("reserveProfile.toasts.identityVerifiedDesc"),
           });
         }
       }
       return row;
     } catch (e: any) {
       toast({
-        title: "Status Check Failed",
-        description: getUserFriendlyError(e),
+        title: t("reserveProfile.toasts.statusCheckFailed"),
+        description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
     } finally {
@@ -981,18 +984,16 @@ export default function ReserveProfile() {
       // Prevent starting new sessions after approval (cost control)
       if (livenessStatus === "approved") {
         toast({
-          title: "Already Approved",
-          description:
-            "Your liveness check is already approved. No further verification needed.",
+          title: t("reserveProfile.toasts.alreadyApproved"),
+          description: t("reserveProfile.toasts.alreadyApprovedDesc"),
           className: "bg-green-50 border-2 border-green-400",
         });
         return;
       }
       if (!COGNITO_IDENTITY_POOL_ID) {
         toast({
-          title: "Configuration Error",
-          description:
-            "Liveness verification is not configured. Please contact support.",
+          title: t("reserveProfile.toasts.configErrorTitle"),
+          description: t("reserveProfile.toasts.configErrorDesc"),
           variant: "destructive",
         });
         return;
@@ -1064,8 +1065,8 @@ export default function ReserveProfile() {
       setShowLiveness(true);
       setLivenessError(e?.message || String(e));
       toast({
-        title: "Liveness Session Error",
-        description: getUserFriendlyError(e),
+        title: t("reserveProfile.toasts.livenessErrorTitle"),
+        description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
     }
@@ -1252,8 +1253,8 @@ export default function ReserveProfile() {
         (error as any)?.message ||
         "Unknown error occurred";
       toast({
-        title: "Profile Creation Failed",
-        description: getUserFriendlyError(error),
+        title: t("reserveProfile.toasts.profileCreationFailed"),
+        description: getUserFriendlyError(error, t),
         variant: "destructive",
       });
     },
@@ -1327,8 +1328,8 @@ export default function ReserveProfile() {
         (error as any)?.message ||
         "Unknown error occurred";
       toast({
-        title: "Profile Update Failed",
-        description: getUserFriendlyError(error),
+        title: t("reserveProfile.toasts.profileUpdateFailed"),
+        description: getUserFriendlyError(error, t),
         variant: "destructive",
       });
     },
@@ -1337,33 +1338,32 @@ export default function ReserveProfile() {
   const handleFirstContinue = () => {
     if (!formData.email) {
       toast({
-        title: "Email Required",
-        description: "Please enter your email address.",
+        title: t("reserveProfile.toasts.emailRequiredTitle"),
+        description: t("reserveProfile.toasts.emailRequiredDesc"),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!formData.password) {
       toast({
-        title: "Password Required",
-        description: "Please enter a password.",
+        title: t("reserveProfile.toasts.passwordRequiredTitle"),
+        description: t("reserveProfile.toasts.passwordRequiredDesc"),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (!formData.confirmPassword) {
       toast({
-        title: "Confirm Password",
-        description: "Please confirm your password.",
+        title: t("reserveProfile.toasts.confirmPasswordTitle"),
+        description: t("reserveProfile.toasts.confirmPasswordDesc"),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Passwords Don't Match",
-        description:
-          "The passwords you entered do not match. Please try again.",
+        title: t("reserveProfile.toasts.passwordsDoNotMatchTitle"),
+        description: t("reserveProfile.toasts.passwordsDoNotMatchDesc"),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
@@ -1374,16 +1374,16 @@ export default function ReserveProfile() {
       !formData.full_name
     ) {
       toast({
-        title: "Name Required",
-        description: "Please enter your full name or stage name.",
+        title: t("reserveProfile.toasts.nameRequiredTitle"),
+        description: t("reserveProfile.toasts.nameRequiredDesc"),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
     }
     if (creatorType !== "model_actor" && !formData.full_name) {
       toast({
-        title: "Name Required",
-        description: "Please enter your full name.",
+        title: t("reserveProfile.toasts.nameRequiredTitle"),
+        description: t("reserveProfile.toasts.nameRequiredDesc"),
         className: "bg-cyan-50 border-2 border-cyan-400",
       });
       return;
@@ -1403,9 +1403,8 @@ export default function ReserveProfile() {
         const data = await res.json();
         if (!data.available) {
           toast({
-            title: "Email Already Registered",
-            description:
-              "This email is already registered. Please log in instead or use a different email.",
+            title: t("reserveProfile.toasts.emailRegisteredTitle"),
+            description: t("reserveProfile.toasts.emailRegisteredDesc"),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
@@ -1422,8 +1421,7 @@ export default function ReserveProfile() {
         );
         if (!session) {
           toast({
-            description:
-              "Please check your email to verify your account before continuing.",
+            description: t("reserveProfile.toasts.verifyEmailDesc"),
           });
           return;
         }
@@ -1431,8 +1429,8 @@ export default function ReserveProfile() {
         setStep(2);
       } catch (e: any) {
         toast({
-          title: "Sign-up Failed",
-          description: getUserFriendlyError(e),
+          title: t("reserveProfile.toasts.signupFailed"),
+          description: getUserFriendlyError(e, t),
           variant: "destructive",
         });
       } finally {
@@ -1448,24 +1446,24 @@ export default function ReserveProfile() {
       if (creatorType === "influencer") {
         if (!formData.city?.trim()) {
           toast({
-            title: "City Required",
-            description: "Please enter your city.",
+            title: t("reserveProfile.toasts.cityRequiredTitle"),
+            description: t("reserveProfile.toasts.cityRequiredDesc"),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
         if (!formData.state?.trim()) {
           toast({
-            title: "State Required",
-            description: "Please enter your state.",
+            title: t("reserveProfile.toasts.stateRequiredTitle"),
+            description: t("reserveProfile.toasts.stateRequiredDesc"),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
         }
         if (!formData.birthdate) {
           toast({
-            title: "Birthdate Required",
-            description: "Please enter your birthdate.",
+            title: t("reserveProfile.toasts.birthdateRequiredTitle"),
+            description: t("reserveProfile.toasts.birthdateRequiredDesc"),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
@@ -1483,16 +1481,16 @@ export default function ReserveProfile() {
             : 0);
         if (isFinite(age) && age < 18) {
           toast({
-            title: "Age Restriction",
-            description: "You must be 18 or older to register.",
+            title: t("reserveProfile.toasts.ageRestrictionTitle"),
+            description: t("reserveProfile.toasts.ageRestrictionDesc"),
             variant: "destructive",
           });
           return;
         }
         if (!formData.gender?.trim()) {
           toast({
-            title: "Gender Required",
-            description: "Please select how you identify.",
+            title: t("reserveProfile.toasts.genderRequiredTitle"),
+            description: t("reserveProfile.toasts.genderRequiredDesc"),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
@@ -1502,9 +1500,8 @@ export default function ReserveProfile() {
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
         toast({
-          title: "Pricing Required",
-          description:
-            "Please set your base monthly license price (minimum $150).",
+          title: t("reserveProfile.toasts.pricingRequiredTitle"),
+          description: t("reserveProfile.toasts.pricingRequiredDesc"),
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
@@ -1522,40 +1519,40 @@ export default function ReserveProfile() {
     if (creatorType === "influencer") {
       if (!formData.content_types || formData.content_types.length === 0) {
         toast({
-          title: "Campaign Type Required",
-          description: "Please select at least one campaign type.",
+          title: t("reserveProfile.toasts.campaignTypeRequiredTitle"),
+          description: t("reserveProfile.toasts.campaignTypeRequiredDesc"),
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.industries || formData.industries.length === 0) {
         toast({
-          title: "Industry Required",
-          description: "Please select at least one industry.",
+          title: t("reserveProfile.toasts.industryRequiredTitle"),
+          description: t("reserveProfile.toasts.industryRequiredDesc"),
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.primary_platform?.trim()) {
         toast({
-          title: "Platform Required",
-          description: "Please select your primary platform.",
+          title: t("reserveProfile.toasts.platformRequiredTitle"),
+          description: t("reserveProfile.toasts.platformRequiredDesc"),
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.platform_handle?.trim()) {
         toast({
-          title: "Handle Required",
-          description: "Please enter your platform handle.",
+          title: t("reserveProfile.toasts.handleRequiredTitle"),
+          description: t("reserveProfile.toasts.handleRequiredDesc"),
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
       }
       if (!formData.visibility) {
         toast({
-          title: "Visibility Required",
-          description: "Please select your profile visibility preference.",
+          title: t("reserveProfile.toasts.visibilityRequiredTitle"),
+          description: t("reserveProfile.toasts.visibilityRequiredDesc"),
           className: "bg-cyan-50 border-2 border-cyan-400",
         });
         return;
@@ -1568,8 +1565,8 @@ export default function ReserveProfile() {
   const finalizeProfile = async () => {
     if (!user) {
       toast({
-        title: "Not Signed In",
-        description: "Please sign in to continue.",
+        title: t("reserveProfile.toasts.notSignedInTitle"),
+        description: t("reserveProfile.toasts.notSignedInDesc"),
         variant: "destructive",
       });
       return;
@@ -1653,8 +1650,8 @@ export default function ReserveProfile() {
       localStorage.removeItem("reserve_profileId");
     } catch (e: any) {
       toast({
-        title: "Profile Save Failed",
-        description: getUserFriendlyError(e),
+        title: t("reserveProfile.toasts.profileSaveFailed"),
+        description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
     }
@@ -2074,7 +2071,7 @@ export default function ReserveProfile() {
                               title: t(
                                 "reserveProfile.verification.failedTitle",
                               ),
-                              description: getUserFriendlyError(e),
+                              description: getUserFriendlyError(e, t),
                               variant: "destructive",
                             });
                             setLivenessRunning(false);

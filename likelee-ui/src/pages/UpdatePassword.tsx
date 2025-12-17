@@ -3,9 +3,11 @@ import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function UpdatePassword() {
+  const { t } = useTranslation();
   const { supabase } = useAuth();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,15 +40,15 @@ export default function UpdatePassword() {
               }
               setMessage("Password updated successfully. You can now sign in.");
               toast({
-                title: "Success",
-                description: "Your password has been updated.",
+                title: t("common.success"),
+                description: t("updatePassword.toasts.passwordUpdated"),
               });
               setTimeout(() => navigate("/login"), 2000);
             } catch (err: any) {
               const msg = err?.message ?? "Failed to update password";
               setError(msg);
               toast({
-                title: "Error",
+                title: t("common.error"),
                 description: msg,
                 variant: "destructive",
               });

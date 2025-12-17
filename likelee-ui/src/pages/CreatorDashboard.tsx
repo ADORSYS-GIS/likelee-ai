@@ -1842,8 +1842,8 @@ export default function CreatorDashboard() {
       if (!user?.id) {
         toast({
           variant: "destructive",
-          title: "Authentication Required",
-          description: "You must be logged in to upload a cameo.",
+          title: t("creatorDashboard.toasts.authRequiredTitle"),
+          description: t("creatorDashboard.toasts.authRequiredCameoDesc"),
         });
         return;
       }
@@ -1851,8 +1851,8 @@ export default function CreatorDashboard() {
       if (file.size > 50_000_000) {
         toast({
           variant: "destructive",
-          title: "File Too Large",
-          description: "Please upload a video less than 50MB.",
+          title: t("creatorDashboard.toasts.fileTooLargeTitle"),
+          description: t("creatorDashboard.toasts.fileTooLargeDescVideo"),
         });
         return;
       }
@@ -1860,8 +1860,8 @@ export default function CreatorDashboard() {
       if (!file.type.startsWith("video/")) {
         toast({
           variant: "destructive",
-          title: "Invalid File Type",
-          description: "Please upload a valid video file.",
+          title: t("creatorDashboard.toasts.invalidFileTypeTitle"),
+          description: t("creatorDashboard.toasts.invalidFileTypeDescVideo"),
         });
         return;
       }
@@ -1894,14 +1894,14 @@ export default function CreatorDashboard() {
         }));
 
         toast({
-          title: "Cameo Uploaded",
-          description: "Your cameo video has been successfully uploaded.",
+          title: t("creatorDashboard.toasts.cameoUploadedTitle"),
+          description: t("creatorDashboard.toasts.cameoUploadedDesc"),
         });
       } catch (err: any) {
         toast({
           variant: "destructive",
-          title: "Upload Failed",
-          description: `Upload failed: ${err.message || "Unknown error"}`,
+          title: t("creatorDashboard.toasts.uploadFailedTitle"),
+          description: t("creatorDashboard.toasts.uploadFailedDesc", { error: err.message || "Unknown error" }),
         });
       } finally {
         setUploadingPhoto(false);
@@ -1915,8 +1915,8 @@ export default function CreatorDashboard() {
       if (!user?.id) {
         toast({
           variant: "destructive",
-          title: "Authentication Required",
-          description: "You must be logged in to upload a photo.",
+          title: t("creatorDashboard.toasts.authRequiredTitle"),
+          description: t("creatorDashboard.toasts.authRequiredPhotoDesc"),
         });
         return;
       }
@@ -1963,13 +1963,13 @@ export default function CreatorDashboard() {
 
         await refreshProfile();
         toast({
-          title: "Profile photo updated!",
+          title: t("creatorDashboard.toasts.profilePhotoUpdated"),
         });
       } catch (err: any) {
         toast({
           variant: "destructive",
-          title: "Upload Failed",
-          description: `Upload failed: ${parseErrorMessage(err)}`,
+          title: t("creatorDashboard.toasts.uploadFailedTitle"),
+          description: t("creatorDashboard.toasts.uploadFailedDesc", { error: parseErrorMessage(err) }),
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
@@ -2062,8 +2062,8 @@ export default function CreatorDashboard() {
       console.error("Error starting recording:", error);
       toast({
         variant: "destructive",
-        title: "Microphone Error",
-        description: "Failed to access microphone. Please check permissions.",
+        title: t("creatorDashboard.toasts.micErrorTitle"),
+        description: t("creatorDashboard.toasts.micErrorDesc"),
       });
     }
   };
@@ -2164,8 +2164,8 @@ export default function CreatorDashboard() {
       );
 
       toast({
-        title: "Success",
-        description: "Voice profile created successfully with ElevenLabs!",
+        title: t("creatorDashboard.toasts.voiceSuccessTitle"),
+        description: t("creatorDashboard.toasts.voiceSuccessDesc"),
       });
     } catch (error) {
       console.error("Voice profile creation error:", error);
@@ -2182,8 +2182,8 @@ export default function CreatorDashboard() {
 
       toast({
         variant: "destructive",
-        title: "Voice Profile Error",
-        description: `Error: ${errorMessage}. Possible issues: Recording quality too low, format not supported, or too short.`,
+        title: t("creatorDashboard.toasts.voiceErrorTitle"),
+        description: t("creatorDashboard.toasts.voiceErrorDesc", { error: errorMessage }),
       });
     } finally {
       setGeneratingVoice(false);
@@ -2221,7 +2221,7 @@ export default function CreatorDashboard() {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
     toast({
-      title: "Campaign approved! Contract signed! (Demo mode)",
+      title: t("creatorDashboard.toasts.campaignApproved"),
     });
   };
 
@@ -2229,7 +2229,7 @@ export default function CreatorDashboard() {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
     toast({
-      title: "Campaign declined! (Demo mode)",
+      title: t("creatorDashboard.toasts.campaignDeclined"),
     });
   };
 
@@ -2238,16 +2238,18 @@ export default function CreatorDashboard() {
     setPauseOption(option);
     setShowPauseModal(false);
     toast({
-      title: "License Paused (Demo)",
-      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
+      title: t("creatorDashboard.toasts.licensePausedTitle"),
+      description: option === "immediate"
+        ? t("creatorDashboard.toasts.licensePausedImmediate")
+        : t("creatorDashboard.toasts.licensePausedNextMonth"),
     });
   };
 
   const handleRevokeLicense = (contract) => {
     setShowRevokeModal(false);
     toast({
-      title: "License Revoked (Demo)",
-      description: `License revoked! 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
+      title: t("creatorDashboard.toasts.licenseRevokedTitle"),
+      description: t("creatorDashboard.toasts.licenseRevokedDesc", { amount: contract.creator_earnings }),
     });
   };
 
@@ -2258,7 +2260,7 @@ export default function CreatorDashboard() {
       ),
     );
     toast({
-      title: "Campaign paused! (Demo mode)",
+      title: t("creatorDashboard.toasts.campaignPaused"),
     });
   };
 
@@ -2266,7 +2268,7 @@ export default function CreatorDashboard() {
     if (confirm("Are you sure you want to revoke this campaign license?")) {
       setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
       toast({
-        title: "Campaign revoked! (Demo mode)",
+        title: t("creatorDashboard.toasts.campaignRevoked"),
       });
     }
   };
@@ -2351,21 +2353,21 @@ export default function CreatorDashboard() {
 
       setEditingRules(false);
       toast({
-        title: "Licensing preferences updated!",
+        title: t("creatorDashboard.toasts.preferencesUpdated"),
       });
     } catch (error: any) {
       console.error("Failed to save rules:", error);
       toast({
         variant: "destructive",
-        title: "Save Failed",
-        description: `Failed to save preferences: ${error?.message || error}`,
+        title: t("creatorDashboard.toasts.saveFailedTitle"),
+        description: t("creatorDashboard.toasts.saveFailedDesc", { error: error?.message || error }),
       });
     }
   };
 
   const handleSaveProfile = () => {
     toast({
-      title: "Profile updated! (Demo mode)",
+      title: t("creatorDashboard.toasts.profileUpdatedDemo"),
     });
   };
 
@@ -5717,7 +5719,7 @@ export default function CreatorDashboard() {
                 >
                   <Edit className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    Edit Profile
+                    {t("creatorDashboard.nav.profile.edit")}
                   </span>
                 </button>
 
@@ -5730,7 +5732,7 @@ export default function CreatorDashboard() {
                 >
                   <Eye className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    View Public Profile
+                    {t("creatorDashboard.nav.profile.viewPublic")}
                   </span>
                 </button>
 
@@ -5743,7 +5745,7 @@ export default function CreatorDashboard() {
                 >
                   <HelpCircle className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    Help / Support
+                    {t("creatorDashboard.nav.profile.help")}
                   </span>
                 </button>
               </div>
@@ -5760,7 +5762,7 @@ export default function CreatorDashboard() {
                   }}
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Logout</span>
+                  <span className="text-sm font-medium">{t("creatorDashboard.nav.profile.logout")}</span>
                 </button>
               </div>
             </div>

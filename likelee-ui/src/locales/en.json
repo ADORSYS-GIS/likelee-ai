@@ -890,7 +890,9 @@
       "productLaunch": "Product Launch",
       "tvDigital": "TV & Digital",
       "summerCampaign": "Summer Campaign"
-    }
+    },
+    "error": "Error",
+    "success": "Success"
   },
   "faces.realFutures.title": "Real Faces. Real Futures.",
   "faces.realFutures.line1": "Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.",
@@ -1057,7 +1059,11 @@
       "profileSaveFailed": "Profile Save Failed",
       "selectionLimit": "Selection Limit Reached",
       "selectionLimitDescription": "You can select a maximum of 3 work types.",
-      "livenessVerificationNotConfigured": "Liveness verification is not configured. Please contact support."
+      "livenessVerificationNotConfigured": "Liveness verification is not configured. Please contact support.",
+      "duplicateEmail": "This email is already registered. Please use a different email or sign in instead.",
+      "notAuthenticated": "Please sign in to continue.",
+      "genericFailed": "Something went wrong. Please try again.",
+      "unknown": "An error occurred. Please try again or contact support if the problem persists."
     },
     "photos": {
       "label": "Upload at least 3 photos",
@@ -1325,6 +1331,61 @@
       "name": "Agency Name",
       "agentName": "Agent Name",
       "agentEmail": "Agent Email"
+    },
+    "toasts": {
+      "configErrorTitle": "Configuration Error",
+      "configErrorDesc": "Liveness verification is not configured. Please contact support.",
+      "livenessErrorTitle": "Liveness Session Error",
+      "profileCreationFailed": "Profile Creation Failed",
+      "profileUpdateFailed": "Profile Update Failed",
+      "emailRequiredTitle": "Email Required",
+      "emailRequiredDesc": "Please enter your email address.",
+      "passwordRequiredTitle": "Password Required",
+      "passwordRequiredDesc": "Please enter a password.",
+      "confirmPasswordTitle": "Confirm Password",
+      "confirmPasswordDesc": "Please confirm your password.",
+      "passwordsDoNotMatchTitle": "Passwords Don't Match",
+      "passwordsDoNotMatchDesc": "The passwords you entered do not match. Please try again.",
+      "nameRequiredTitle": "Name Required",
+      "nameRequiredDesc": "Please enter your full name.",
+      "emailRegisteredTitle": "Email Already Registered",
+      "emailRegisteredDesc": "This email is already registered. Please log in instead or use a different email.",
+      "verifyEmailDesc": "Please check your email to verify your account before continuing.",
+      "signupFailed": "Sign-up Failed",
+      "cityRequiredTitle": "City Required",
+      "cityRequiredDesc": "Please enter your city.",
+      "stateRequiredTitle": "State Required",
+      "stateRequiredDesc": "Please enter your state.",
+      "birthdateRequiredTitle": "Birthdate Required",
+      "birthdateRequiredDesc": "Please enter your birthdate.",
+      "ageRestrictionTitle": "Age Restriction",
+      "ageRestrictionDesc": "You must be 18 or older to register.",
+      "genderRequiredTitle": "Gender Required",
+      "genderRequiredDesc": "Please select how you identify.",
+      "pricingRequiredTitle": "Pricing Required",
+      "pricingRequiredDesc": "Please set your base monthly license price (minimum $150).",
+      "campaignTypeRequiredTitle": "Campaign Type Required",
+      "campaignTypeRequiredDesc": "Please select at least one campaign type.",
+      "industryRequiredTitle": "Industry Required",
+      "industryRequiredDesc": "Please select at least one industry.",
+      "platformRequiredTitle": "Platform Required",
+      "platformRequiredDesc": "Please select your primary platform.",
+      "handleRequiredTitle": "Handle Required",
+      "handleRequiredDesc": "Please enter your platform handle.",
+      "visibilityRequiredTitle": "Visibility Required",
+      "visibilityRequiredDesc": "Please select your profile visibility preference.",
+      "notSignedInTitle": "Not Signed In",
+      "notSignedInDesc": "Please sign in to continue.",
+      "profileSaveFailed": "Profile Save Failed",
+      "invalidCredentials": "Invalid login credentials",
+      "uploadFailed": "Upload Failed",
+      "avatarGenFailed": "Avatar Generation Failed",
+      "verificationFailed": "Verification Failed",
+      "alreadyApproved": "Already Approved",
+      "alreadyApprovedDesc": "Your liveness check is already approved. No further verification needed.",
+      "identityVerified": "Identity Verified",
+      "identityVerifiedDesc": "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+      "statusCheckFailed": "Status Check Failed"
     }
   },
   "terms": {
@@ -2021,7 +2082,13 @@
       "archive": "Campaign Archives",
       "contracts": "Licenses & Contracts",
       "earnings": "Earnings",
-      "settings": "Settings"
+      "settings": "Settings",
+      "profile": {
+        "edit": "Edit Profile",
+        "viewPublic": "View Public Profile",
+        "help": "Help / Support",
+        "logout": "Logout"
+      }
     },
     "likeness": {
       "howItWorks": {
@@ -2051,6 +2118,39 @@
         "contentHeader": "Content Types",
         "industryHeader": "Industries"
       }
+    },
+    "toasts": {
+      "authRequiredTitle": "Authentication Required",
+      "authRequiredCameoDesc": "You must be logged in to upload a cameo.",
+      "authRequiredPhotoDesc": "You must be logged in to upload a photo.",
+      "fileTooLargeTitle": "File Too Large",
+      "fileTooLargeDescVideo": "Please upload a video less than 50MB.",
+      "invalidFileTypeTitle": "Invalid File Type",
+      "invalidFileTypeDescVideo": "Please upload a valid video file.",
+      "cameoUploadedTitle": "Cameo Uploaded",
+      "cameoUploadedDesc": "Your cameo video has been successfully uploaded.",
+      "uploadFailedTitle": "Upload Failed",
+      "uploadFailedDesc": "Upload failed: {{error}}",
+      "profilePhotoUpdated": "Profile photo updated",
+      "micErrorTitle": "Microphone Error",
+      "micErrorDesc": "Failed to access microphone. Please check permissions.",
+      "voiceSuccessTitle": "Success",
+      "voiceSuccessDesc": "Voice profile created successfully with ElevenLabs",
+      "voiceErrorTitle": "Voice Profile Error",
+      "voiceErrorDesc": "Error: {{error}}. Possible issues: Recording quality too low, format not supported, or too short.",
+      "campaignApproved": "Campaign approved. Contract signed. (Demo mode)",
+      "campaignDeclined": "Campaign declined. (Demo mode)",
+      "licensePausedTitle": "License Paused (Demo)",
+      "licensePausedImmediate": "License paused immediately. You will forfeit this month s payment.",
+      "licensePausedNextMonth": "License scheduled to pause next month. You ll receive full payment for this month, pause starts next month.",
+      "licenseRevokedTitle": "License Revoked (Demo)",
+      "licenseRevokedDesc": "License revoked. 30-day notice period has begun. You ll receive final payment of ${{amount}} on the notice expiration date.",
+      "campaignPaused": "Campaign paused. (Demo mode)",
+      "campaignRevoked": "Campaign revoked. (Demo mode)",
+      "preferencesUpdated": "Licensing preferences updated",
+      "saveFailedTitle": "Save Failed",
+      "saveFailedDesc": "Failed to save preferences: {{error}}",
+      "profileUpdatedDemo": "Profile updated. (Demo mode)"
     }
   },
   "imageSections": {
@@ -2162,5 +2262,27 @@
     "invalidPriceDesc": "Minimum $150/month",
     "successTitle": "Success",
     "successDesc": "Pricing updated"
+  },
+  "marketingDashboard": {
+    "toasts": {
+      "campaignCreated": "Campaign created successfully!"
+    }
+  },
+  "uploadProject": {
+    "toasts": {
+      "missingFields": "Missing Fields",
+      "missingFieldsDesc": "Please fill in all required fields",
+      "projectUploaded": "Project uploaded! (Demo mode - not persisted)"
+    }
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Your password has been updated."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Sign-in failed"
+    }
   }
 }

@@ -2,11 +2,13 @@ import React from "react";
 import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
 export default function Login() {
+  const { t } = useTranslation();
   const { login, initialized, authenticated } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -61,7 +63,7 @@ export default function Login() {
                 const msg = getFriendlyErrorMessage(err);
                 setError(msg);
                 toast({
-                  title: "Sign-in failed",
+                  title: t("login.toasts.signInFailed"),
                   description: msg,
                   variant: "destructive",
                 });
