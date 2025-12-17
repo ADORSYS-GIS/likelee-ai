@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -225,65 +225,7 @@ const getImageSections = (t: any) => [
 ];
 
 // Example campaigns for blank users (shown when no real campaigns exist)
-const exampleCampaigns = [
-  {
-    id: "example-nike",
-    brand: "Nike",
-    brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    brand_image_url:
-      "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
-    campaign: "Best Nike Heritage Collection",
-    usage_type: "Social Ads",
-    rate: 15000,
-    status: "active",
-    start_date: "2024-01-15",
-    end_date: "2024-07-15",
-    active_until: "2024-07-15",
-    regions: ["North America", "Europe"],
-    impressions_week: "125000 impressions/week",
-    auto_renewal: true,
-    isExample: true,
-  },
-  {
-    id: "example-skincare",
-    brand: "Avo Beauty",
-    brand_logo:
-      "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
-    brand_image_url:
-      "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
-    campaign: "Natural Glow Collection",
-    usage_type: "Social Ads",
-    rate: 15000,
-    status: "expiring_soon",
-    start_date: "2024-02-01",
-    end_date: "2024-08-01",
-    active_until: "2024-08-01",
-    regions: ["Global"],
-    impressions_week: "89000 impressions/week",
-    auto_renewal: false,
-    isExample: true,
-  },
-  {
-    id: "example-pepsi",
-    brand: "Pepsi",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
-    brand_image_url:
-      "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
-    campaign: "Thirsty for More, Best energy drink",
-    usage_type: "Energy Drink",
-    rate: 50000,
-    status: "active",
-    start_date: "2024-03-01",
-    end_date: "2024-06-30",
-    active_until: "2024-06-30",
-    regions: ["North America"],
-    impressions_week: "250000 impressions/week",
-    auto_renewal: false,
-    isExample: true,
-  },
-];
+// Example campaigns moved inside CreatorDashboard component to support translations
 
 // Example approval for blank users (shown when no real approvals exist)
 const exampleApprovals = [
@@ -639,6 +581,77 @@ export default function CreatorDashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  const exampleCampaigns = useMemo(() => [
+    {
+      id: "example-nike",
+      brand: "Nike",
+      brand_logo:
+        "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
+      brand_image_url:
+        "https://static.nike.com/a/images/f_auto/dpr_3.0,cs_srgb/w_411,c_limit/5e039575-5856-42f8-9323-579736c2c31e/nike-just-do-it.jpg",
+      campaign: "Summer Running Collection",
+      usage_type: "Social Ads",
+      rate: 2500,
+      status: "active",
+      start_date: "2024-01-15",
+      end_date: "2024-07-15",
+      active_until: "2024-07-15",
+      regions: ["North America", "Europe"],
+      impressions_week: t(
+        "creatorDashboard.campaigns.labels.impressionsPerWeek",
+        { count: 125000 },
+      ),
+      auto_renewal: true,
+      isExample: true,
+    },
+    {
+      id: "example-skincare",
+      brand: "Avo Beauty",
+      brand_logo:
+        "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
+      brand_image_url:
+        "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
+      campaign: "Natural Glow Collection",
+      usage_type: "Social Ads",
+      rate: 15000,
+      status: "expiring_soon",
+      start_date: "2024-02-01",
+      end_date: "2024-08-01",
+      active_until: "2024-08-01",
+      regions: ["Global"],
+      impressions_week: t(
+        "creatorDashboard.campaigns.labels.impressionsPerWeek",
+        { count: 89000 },
+      ),
+      auto_renewal: false,
+      isExample: true,
+    },
+    {
+      id: "example-pepsi",
+      brand: "Pepsi",
+      brand_logo:
+        "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
+      brand_image_url:
+        "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+      campaign: "Thirsty for More, Best energy drink",
+      usage_type: "Energy Drink",
+      rate: 50000,
+      status: "active",
+      start_date: "2024-03-01",
+      end_date: "2024-06-30",
+      active_until: "2024-06-30",
+      regions: ["North America"],
+      impressions_week: t(
+        "creatorDashboard.campaigns.labels.impressionsPerWeek",
+        { count: 250000 },
+      ),
+      auto_renewal: false,
+      isExample: true,
+    },
+  ],
+    [t],
+  );
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
     useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";

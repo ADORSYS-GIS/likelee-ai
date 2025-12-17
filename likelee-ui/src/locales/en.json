@@ -1673,7 +1673,8 @@
         "monthlyRate": "Monthly Rate:",
         "activeUntil": "Active Until:",
         "regions": "Regions:",
-        "weeklyImpressions": "Weekly Impressions:"
+        "weeklyImpressions": "Weekly Impressions:",
+        "impressionsPerWeek": "{{count}} impressions/week"
       },
       "consent": {
         "title": "Your consent required for all uses.",

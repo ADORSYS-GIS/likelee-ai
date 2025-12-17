@@ -442,12 +442,15 @@
         "monthlyRate": "Tarif mensuel :",
         "activeUntil": "Actif jusqu'au :",
         "regions": "Régions :",
-        "weeklyImpressions": "Impressions hebdomadaires :"
+        "weeklyImpressions": "Impressions hebdomadaires :",
+        "impressionsPerWeek": "{{count}} impressions/semaine"
       },
       "consent": {
         "title": "Votre consentement requis pour toutes les utilisations.",
         "message": "{{count}} campagnes actives, toutes limitées dans le temps, toutes approuvées par vous. Vous pouvez mettre en pause/révoquer à tout moment."
-      }
+      },
+      "title": "Campagnes Actives",
+      "subtitle": "Suivez et gérez vos accords de licence"
     }
   },
   "reserveProfile": {

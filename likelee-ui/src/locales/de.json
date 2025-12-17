@@ -361,7 +361,8 @@
         "monthlyRate": "Monatlicher Tarif:",
         "activeUntil": "Aktiv bis:",
         "regions": "Regionen:",
-        "weeklyImpressions": "Wöchentliche Impressionen:"
+        "weeklyImpressions": "Wöchentliche Impressionen:",
+        "impressionsPerWeek": "{{count}} Impressionen/Woche"
       },
       "consent": {
         "title": "Ihre Zustimmung für alle Nutzungen erforderlich.",

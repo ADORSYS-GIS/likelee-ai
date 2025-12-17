@@ -344,7 +344,10 @@
       "thisMonthLabel": "Este Mes:",
       "impressionsLabel": "Impresiones/Semana:",
       "pause": "Pausar",
-      "viewDetails": "Ver Detalles"
+      "viewDetails": "Ver Detalles",
+      "labels": {
+        "impressionsPerWeek": "{{count}} impresiones/semana"
+      }
     },
     "voice": {
       "title": "Voz y Grabaciones",
