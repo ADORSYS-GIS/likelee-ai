@@ -64,6 +64,18 @@
       },
       "profile": {
         "photoTitle": "Foto de Perfil",
+        "placeholders": {
+          "fullName": "Tu nombre completo",
+          "bio": "Cuéntanos sobre ti...",
+          "city": "Ciudad",
+          "state": "Estado/Provincia",
+          "instagram": "@tuusuario",
+          "youtube": "@tuusuario",
+          "tiktok": "@tuusuario",
+          "portfolio": "https://tuportafolio.com",
+          "website": "https://tusitioweb.com",
+          "linkedin": "https://linkedin.com/in/tuperfil"
+        },
         "uploadText": "Subir una foto profesional",
         "uploadHint": "JPG o PNG, máx 10MB",
         "basicInfo": "Información Básica",
@@ -1038,6 +1050,132 @@
       "signup": "Registrarse",
       "login": "Iniciar Sesión"
     },
+    "createAccount": {
+      "title": "Crea Tu Cuenta",
+      "subtitle": "Empecemos con lo básico.",
+      "button": "Crear Cuenta",
+      "prompt": "¿No tienes una cuenta?",
+      "link": "Registrarse"
+    },
+    "signIn": {
+      "title": "Iniciar Sesión",
+      "subtitle": "Inicia sesión en tu cuenta de Likelee.",
+      "button": "Iniciar Sesión",
+      "prompt": "¿Ya tienes una cuenta?",
+      "link": "Iniciar Sesión"
+    },
+    "form": {
+      "socialLink": "Enlace de Redes Sociales (Instagram, TikTok, YouTube)",
+      "location": "Ubicación (Ciudad, País)",
+      "dob": "Fecha de Nacimiento",
+      "age": "Edad",
+      "genderQuestion": "¿Cómo te identificas?",
+      "genderOptions": {
+        "female": "Mujer",
+        "male": "Hombre",
+        "nonbinary": "No binario",
+        "genderFluid": "Género fluido",
+        "preferNotToSay": "Prefiero no decirlo"
+      },
+      "validation": {
+        "signInFailed": "Inicio de sesión fallido",
+        "selectionLimit": "Límite de Selección",
+        "selectionLimitDesc": "Por favor, selecciona hasta 3 opciones por ahora. Puedes añadir más tarde."
+      },
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "languages": "Idiomas",
+      "representationStatus": "Estado de Representación",
+      "instagramOptional": "Instagram (opcional)",
+      "twitterOptional": "Twitter/X (opcional)",
+      "brandCategories": "Intereses / Categorías de Marca",
+      "shortBio": "Biografía Corta",
+      "visibility": "Visibilidad del Perfil",
+      "visibilityOptions": {
+        "public": {
+          "label": "Público",
+          "description": "Visible para todos"
+        },
+        "private": {
+          "label": "Privado",
+          "description": "Solo visible para marcas y creadores de IA"
+        }
+      },
+      "step1": {
+        "athlete": "Crea tu cuenta lista para NIL",
+        "model_actor": "Crea tu cuenta de Likelee",
+        "influencer": "Empecemos con lo básico"
+      },
+      "placeholders": {
+        "fullName": "Tu nombre completo",
+        "stageName": "Tu nombre",
+        "bio": "Cuéntale a las marcas un poco sobre ti...",
+        "platform": "Seleccionar plataforma",
+        "city": "ej: Madrid",
+        "state": "ej: España",
+        "age": "21",
+        "email": "ej: juan@ejemplo.com",
+        "password": "••••••••",
+        "schoolName": "Nombre de la universidad",
+        "sport": "Selecciona tu deporte",
+        "languages": "ej: Inglés, Español",
+        "confirmPassword": "••••••••",
+        "handle": "@tuusuario",
+        "price": "150",
+        "headshot": "URL de la imagen",
+        "specify": "Por favor especifique..."
+      },
+      "perMonth": "/mes",
+      "sport": "Deporte",
+      "athleteType": "Tipo de Atleta",
+      "athleteTypes": {
+        "University": "Universitario",
+        "Professional": "Profesional",
+        "Independent": "Independiente"
+      },
+      "schoolName": "Nombre de la Escuela",
+      "headshot": "Subir Foto de Perfil (opcional)",
+      "headshotHint": "Puedes subir tu foto de perfil después de crear tu cuenta",
+      "birthdate": "Fecha de Nacimiento",
+      "licensingPricing": "Precios de Licencia",
+      "basePrice": "Precio base mensual de licencia (USD)",
+      "basePriceHint": "Mínimo $150/mes. La moneda está fijada en USD.",
+      "campaignMatch": "Ayúdanos a encontrarte las campañas adecuadas",
+      "contentInterest": "¿En qué tipo de contenido te interesa aparecer?",
+      "selectMax3": "Selecciona hasta 3 por ahora",
+      "brandinterest": "¿Con qué tipos de marcas o industrias quieres trabajar?",
+      "industry": "Industria",
+      "primaryPlatform": "Plataforma Principal",
+      "gender": "¿Cómo te identificas?",
+      "raceEthnicity": "Raza/Etnia (selecciona todas las que apliquen)",
+      "vibes": "Etiquetas de Estilo / Vibe",
+      "save": "Guardar y Continuar a Verificación",
+      "verification": {
+        "title": "Verificación de Identidad",
+        "description": "Verifica tu identidad para ser visible para las marcas y desbloquear oportunidades",
+        "whyVerify": {
+          "title": "¿Por qué verificar tu identidad?",
+          "reason1": "Sé descubierto por marcas que buscan creadores verificados",
+          "reason2": "Construye confianza y credibilidad con socios de licencias",
+          "reason3": "Desbloquea oportunidades de campañas de mayor valor"
+        },
+        "processDesc": "Usamos verificación de identidad segura para asegurar que todos los creadores en Likelee sean auténticos. Este proceso toma típicamente 2–3 minutos.",
+        "requirements": {
+          "title": "Lo que necesitarás:",
+          "item1": "Identificación emitida por el gobierno (licencia de conducir, pasaporte o identificación estatal)",
+          "item2": "Buena iluminación y acceso a cámara/micrófono",
+          "item3": "2–3 minutos en un espacio tranquilo"
+        },
+        "actions": {
+          "start": "Verificar Identidad Ahora",
+          "liveness": "Iniciar Verificación de Vida",
+          "livenessApproved": "Verificación de Vida Aprobada"
+        }
+      }
+    },
+    "authMode": {
+      "signup": "Registrarse",
+      "login": "Iniciar Sesión"
+    },
     "success": {
       "title": "Perfil reservado — bienvenido al ecosistema de Likelee",
       "description": "Estamos incorporando talentos en oleadas para mantener un equilibrio entre la demanda y la visibilidad. Tu perfil está guardado; te notificaremos cuando sea el momento de completar la verificación y activarlo.",
@@ -1598,15 +1736,16 @@
       "Casual": "Casual"
     },
     "contentTypes": {
-      "Social media ads": "Anuncios en redes sociales",
+      "Social-media ads": "Anuncios en redes sociales",
       "Web & banner campaigns": "Campañas web y banners",
       "TV / streaming commercials": "Comerciales de TV / streaming",
-      "Film & scripted streaming": "Películas y streaming con guión",
+      "Film & scripted streaming": "Cine y streaming con guión",
       "Print & outdoor ads": "Anuncios impresos y exteriores",
       "Music videos": "Videos musicales",
-      "Video-game / VR characters": "Personajes de videojuegos / RV",
-      "Stock photo / video libraries": "Bibliotecas de fotos / videos",
-      "Other": "Otro"
+      "Video-game / VR characters": "Personajes de videojuegos / VR",
+      "Stock photo / video libraries": "Bibliotecas de fotos / videos de stock",
+      "Educational / nonprofit spots": "Anuncios educativos / sin fines de lucro",
+      "Other": "Otros"
     },
     "industries": {
       "Fashion / Beauty": "Moda / Belleza",

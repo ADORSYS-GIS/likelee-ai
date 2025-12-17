@@ -1114,8 +1114,8 @@ export default function CreatorDashboard() {
             <button
               onClick={() => setContentTab("brand_content")}
               className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
             >
               {t("creatorDashboard.content.tabs.brandContent")}
@@ -1126,8 +1126,8 @@ export default function CreatorDashboard() {
             <button
               onClick={() => setContentTab("detections")}
               className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
             >
               {t("creatorDashboard.content.tabs.detections")}
@@ -1239,10 +1239,10 @@ export default function CreatorDashboard() {
                   <Card
                     key={item.id}
                     className={`p-4 border ${item.status === "needs_review"
-                        ? "border-red-200 bg-red-50"
-                        : item.status === "takedown_requested"
-                          ? "border-orange-200 bg-orange-50"
-                          : "border-green-200 bg-green-50"
+                      ? "border-red-200 bg-red-50"
+                      : item.status === "takedown_requested"
+                        ? "border-orange-200 bg-orange-50"
+                        : "border-green-200 bg-green-50"
                       }`}
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -2151,10 +2151,10 @@ export default function CreatorDashboard() {
             <span
               key={index}
               className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                  ? "text-[#32C8D1] font-bold scale-110"
-                  : index < currentWord
-                    ? "text-gray-400"
-                    : "text-gray-700"
+                ? "text-[#32C8D1] font-bold scale-110"
+                : index < currentWord
+                  ? "text-gray-400"
+                  : "text-gray-700"
                 }`}
             >
               {word}
@@ -3187,8 +3187,8 @@ export default function CreatorDashboard() {
               <Card
                 key={emotion}
                 className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                    ? "border-green-300 bg-green-50"
-                    : "border-gray-200 hover:border-[#32C8D1]"
+                  ? "border-green-300 bg-green-50"
+                  : "border-gray-200 hover:border-[#32C8D1]"
                   }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
@@ -3343,8 +3343,8 @@ export default function CreatorDashboard() {
           </div>
           <Badge
             className={`${activeCampaigns.length === 0
-                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                : "bg-green-100 text-green-700 border border-green-300"
+              ? "bg-orange-100 text-orange-700 border border-orange-300"
+              : "bg-green-100 text-green-700 border border-green-300"
               } px-4 py-2 text-lg`}
           >
             {t("creatorDashboard.campaigns.activeCount", {
@@ -3448,10 +3448,10 @@ export default function CreatorDashboard() {
                     <td className="py-4 px-4">
                       <Badge
                         className={`${campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
                           }`}
                       >
                         {campaign.status === "active"
@@ -3578,10 +3578,10 @@ export default function CreatorDashboard() {
                       </span>
                       <Badge
                         className={`${campaign.status === "active"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : campaign.status === "expiring_soon"
-                              ? "bg-orange-100 text-orange-700 border border-orange-300"
-                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : campaign.status === "expiring_soon"
+                            ? "bg-orange-100 text-orange-700 border border-orange-300"
+                            : "bg-gray-100 text-gray-700 border border-gray-300"
                           }`}
                       >
                         {campaign.status === "active"
@@ -4539,8 +4539,8 @@ export default function CreatorDashboard() {
           <button
             onClick={() => setContractsTab("active")}
             className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
           >
             {t("creatorDashboard.contracts.activeTab", {
@@ -4550,8 +4550,8 @@ export default function CreatorDashboard() {
           <button
             onClick={() => setContractsTab("expired")}
             className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
               }`}
           >
             {t("creatorDashboard.contracts.expiredTab", {
@@ -4567,8 +4567,8 @@ export default function CreatorDashboard() {
               <Card
                 key={contract.id}
                 className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                    ? "border-orange-300"
-                    : "border-gray-200"
+                  ? "border-orange-300"
+                  : "border-gray-200"
                   }`}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -5029,8 +5029,8 @@ export default function CreatorDashboard() {
         <button
           onClick={() => setSettingsTab("profile")}
           className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
         >
           {t("creatorDashboard.settingsView.tabs.profile")}
@@ -5038,8 +5038,8 @@ export default function CreatorDashboard() {
         <button
           onClick={() => setSettingsTab("rules")}
           className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
+            ? "border-[#32C8D1] text-[#32C8D1]"
+            : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
         >
           {t("creatorDashboard.settingsView.tabs.rules")}
@@ -5121,7 +5121,9 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, location: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder="City, State"
+                  placeholder={t(
+                    "creatorDashboard.settingsView.profile.placeholders.city",
+                  )}
                 />
               </div>
 
@@ -5135,7 +5137,9 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, bio: e.target.value })
                   }
                   className="border-2 border-gray-300 min-h-32"
-                  placeholder="Tell us about yourself..."
+                  placeholder={t(
+                    "creatorDashboard.settingsView.profile.placeholders.bio",
+                  )}
                 />
               </div>
 
@@ -5165,7 +5169,9 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, instagram_handle: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder="@yourhandle"
+                  placeholder={t(
+                    "creatorDashboard.settingsView.profile.placeholders.instagram",
+                  )}
                 />
               </div>
 
@@ -5180,7 +5186,9 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, tiktok_handle: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder="@yourhandle"
+                  placeholder={t(
+                    "creatorDashboard.settingsView.profile.placeholders.tiktok",
+                  )}
                 />
               </div>
 
@@ -5195,7 +5203,9 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, portfolio_url: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder="https://yourportfolio.com"
+                  placeholder={t(
+                    "creatorDashboard.settingsView.profile.placeholders.portfolio",
+                  )}
                 />
               </div>
 
@@ -5318,11 +5328,11 @@ export default function CreatorDashboard() {
                         editingRules && handleToggleContentType(type)
                       }
                       className={`cursor-pointer transition-all px-4 py-2 ${creator.content_types?.includes(type)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                         } ${!editingRules && "cursor-default"}`}
                     >
-                      {type}
+                      {t(`common.contentTypes.${type}`, type)}
                     </Badge>
                   ))}
                 </div>
@@ -5362,11 +5372,11 @@ export default function CreatorDashboard() {
                         editingRules && handleToggleIndustry(industry)
                       }
                       className={`cursor-pointer transition-all px-4 py-2 ${creator.industries?.includes(industry)
-                          ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
+                        ? "bg-[#32C8D1] text-white hover:bg-[#2AB8C1] border-2 border-[#32C8D1]"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                         } ${!editingRules && "cursor-default"}`}
                     >
-                      {industry}
+                      {t(`common.industries.${industry}`, industry)}
                     </Badge>
                   ))}
                 </div>
@@ -5474,12 +5484,12 @@ export default function CreatorDashboard() {
       {/* Sidebar */}
       <aside
         className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${isSmallScreen
-            ? sidebarOpen
-              ? "w-64"
-              : "-translate-x-full w-64"
-            : sidebarOpen
-              ? "w-64"
-              : "w-20"
+          ? sidebarOpen
+            ? "w-64"
+            : "-translate-x-full w-64"
+          : sidebarOpen
+            ? "w-64"
+            : "w-20"
           }`}
       >
         {/* Mobile Sidebar Header */}
@@ -5730,8 +5740,8 @@ export default function CreatorDashboard() {
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#32C8D1] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
                     }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />

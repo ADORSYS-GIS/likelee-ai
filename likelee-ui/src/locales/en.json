@@ -758,7 +758,7 @@
       "Casual": "Casual"
     },
     "contentTypes": {
-      "Social media ads": "Social media ads",
+      "Social-media ads": "Social-media ads",
       "Web & banner campaigns": "Web & banner campaigns",
       "TV / streaming commercials": "TV / streaming commercials",
       "Film & scripted streaming": "Film & scripted streaming",
@@ -766,6 +766,7 @@
       "Music videos": "Music videos",
       "Video-game / VR characters": "Video-game / VR characters",
       "Stock photo / video libraries": "Stock photo / video libraries",
+      "Educational / nonprofit spots": "Educational / nonprofit spots",
       "Other": "Other"
     },
     "industries": {
@@ -1745,6 +1746,18 @@
       },
       "profile": {
         "photoTitle": "Profile Photo",
+        "placeholders": {
+          "fullName": "Your full name",
+          "bio": "Tell us about yourself...",
+          "city": "City",
+          "state": "State",
+          "instagram": "@yourhandle",
+          "youtube": "@yourhandle",
+          "tiktok": "@yourhandle",
+          "portfolio": "https://yourportfolio.com",
+          "website": "https://yourwebsite.com",
+          "linkedin": "https://linkedin.com/in/yourprofile"
+        },
         "uploadText": "Upload a professional headshot",
         "uploadHint": "JPG or PNG, max 10MB",
         "basicInfo": "Basic Information",

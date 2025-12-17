@@ -213,6 +213,18 @@
       },
       "profile": {
         "photoTitle": "Photo de Profil",
+        "placeholders": {
+          "fullName": "Votre nom complet",
+          "bio": "Parlez-nous de vous...",
+          "city": "Ville",
+          "state": "État/Région",
+          "instagram": "@votreidentifiant",
+          "youtube": "@votreidentifiant",
+          "tiktok": "@votreidentifiant",
+          "portfolio": "https://votreportfolio.com",
+          "website": "https://votresiteweb.com",
+          "linkedin": "https://linkedin.com/in/votreprofil"
+        },
         "uploadText": "Télécharger une photo professionnelle",
         "uploadHint": "JPG ou PNG, max 10 Mo",
         "basicInfo": "Informations de Base",
@@ -839,7 +851,7 @@
       "Casual": "Décontracté"
     },
     "contentTypes": {
-      "Social media ads": "Publicités réseaux sociaux",
+      "Social-media ads": "Publicités réseaux sociaux",
       "Web & banner campaigns": "Campagnes Web & bannières",
       "TV / streaming commercials": "Publicités TV / streaming",
       "Film & scripted streaming": "Films & streaming scénarisé",
@@ -847,6 +859,7 @@
       "Music videos": "Clips musicaux",
       "Video-game / VR characters": "Personnages jeux vidéo / VR",
       "Stock photo / video libraries": "Banques d'images / vidéos",
+      "Educational / nonprofit spots": "Spots éducatifs / à but non lucratif",
       "Other": "Autre"
     },
     "industries": {

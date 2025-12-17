@@ -64,6 +64,18 @@
       },
       "profile": {
         "photoTitle": "Profilfoto",
+        "placeholders": {
+          "fullName": "Ihr vollständiger Name",
+          "bio": "Erzählen Sie uns über sich...",
+          "city": "Stadt",
+          "state": "Bundesland/Land",
+          "instagram": "@ihrbenutzername",
+          "youtube": "@ihrbenutzername",
+          "tiktok": "@ihrbenutzername",
+          "portfolio": "https://ihrportfolio.com",
+          "website": "https://ihrewebsite.com",
+          "linkedin": "https://linkedin.com/in/ihrprofil"
+        },
         "uploadText": "Laden Sie ein professionelles Porträtfoto hoch",
         "uploadHint": "JPG oder PNG, max. 10MB",
         "basicInfo": "Grundlegende Informationen",
@@ -840,55 +852,56 @@
       "generateAvatar": "Avatar generieren (Duix)",
       "generatedAvatar": "Generierter Avatar",
       "photoFlagged": "Ihr Foto von der Seite {{side}} wurde markiert und kann nicht verwendet werden. Bitte laden Sie ein anderes Foto hoch.",
-      "pending": "Ausstehend"
+      "pending": "Ausstehend",
+      "label": "Laden Sie mindestens 3 Fotos hoch",
+      "description2": "Diese werden verwendet, um Ihr KI-Modell zu trainieren. Stellen Sie sicher, dass sie von hoher Qualität sind und Ihr Gesicht deutlich zeigen.",
+      "drop": "Dateien hier ablegen oder klicken zum Hochladen"
     },
     "verification": {
-      "verificationFailedTitle": "Überprüfung fehlgeschlagen",
-      "statusCheckFailedTitle": "Statusprüfung fehlgeschlagen",
-      "identityVerified": "Identität überprüft",
-      "identityVerifiedDescription": "Bitte laden Sie Ihre 3 Referenzfotos (Vorderseite, Links, Rechts) hoch, um Ihre Einrichtung abzuschließen.",
-      "verificationPending": "Überprüfung ausstehend",
-      "verificationPendingDescription": "Überprüfung noch nicht abgeschlossen. KYC: {{kyc}}, Liveness: {{live}}.",
-      "title": "Identitätsprüfung",
+      "title": "Identitätsüberprüfung",
       "subtitle": "Überprüfen Sie Ihre Identität, um für Marken sichtbar zu werden und Möglichkeiten freizuschalten",
-      "description": "Wir verwenden eine sichere Identitätsprüfung, um sicherzustellen, dass alle Ersteller auf Likelee authentisch sind. Dieser Vorgang dauert in der Regel 2–3 Minuten.",
-      "status": {
-        "approved": "Genehmigt",
-        "rejected": "Abgelehnt",
-        "verifying": "Wird überprüft",
-        "notStarted": "Nicht gestartet"
-      },
+      "description": "Wir verwenden eine sichere Identitätsüberprüfung, um sicherzustellen, dass alle Ersteller auf Likelee authentisch sind. Dieser Vorgang dauert in der Regel 2–3 Minuten.",
       "whyVerify": {
         "title": "Warum Ihre Identität überprüfen?",
         "reason1": "Werden Sie von Marken entdeckt, die nach verifizierten Erstellern suchen",
         "reason2": "Bauen Sie Vertrauen und Glaubwürdigkeit bei Lizenzpartnern auf",
         "reason3": "Schalten Sie höherwertige Kampagnenmöglichkeiten frei"
       },
+      "processDesc": "Wir verwenden eine sichere Identitätsüberprüfung, um sicherzustellen, dass alle Ersteller auf Likelee authentisch sind. Dieser Vorgang dauert in der Regel 2–3 Minuten.",
       "requirements": {
         "title": "Was Sie benötigen:",
-        "item1": "Regierungsamtlicher Ausweis (Führerschein, Reisepass oder Personalausweis)",
-        "item2": "Gute Beleuchtung und Kamera-/Mikrofonzugriff",
+        "item1": "Amtlicher Ausweis (Führerschein, Reisepass oder Personalausweis)",
+        "item2": "Gute Beleuchtung und Kamera-/Mikrofonzugang",
         "item3": "2–3 Minuten an einem ruhigen Ort"
       },
       "actions": {
         "startingVerification": "Starte...",
         "verifyIdentity": "Identität jetzt überprüfen",
         "preparing": "Vorbereitung...",
-        "startLiveness": "Liveness-Prüfung starten",
+        "startLiveness": "Liveness-Check starten",
         "livenessApproved": "Liveness genehmigt"
+      },
+      "verificationFailedTitle": "Überprüfung fehlgeschlagen",
+      "statusCheckFailedTitle": "Statusprüfung fehlgeschlagen",
+      "identityVerified": "Identität überprüft",
+      "identityVerifiedDescription": "Bitte laden Sie Ihre 3 Referenzfotos (Vorderseite, Links, Rechts) hoch, um Ihre Einrichtung abzuschließen.",
+      "signup": "Registrieren",
+      "login": "Anmelden",
+      "verificationPending": "Überprüfung ausstehend",
+      "verificationPendingDescription": "Überprüfung noch nicht abgeschlossen. KYC: {{kyc}}, Liveness: {{live}}.",
+      "status": {
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt",
+        "verifying": "Wird überprüft",
+        "notStarted": "Nicht gestartet"
       }
     },
-    "liveness": {
-      "alreadyApproved": "Bereits genehmigt",
-      "alreadyApprovedDescription": "Ihre Liveness-Prüfung ist bereits genehmigt. Keine weitere Überprüfung erforderlich.",
-      "sessionError": "Fehler bei der Liveness-Sitzung"
-    },
     "createAccount": {
-      "title": "Dein Konto erstellen",
+      "title": "Konto erstellen",
       "subtitle": "Beginnen wir mit den Grundlagen.",
       "button": "Konto erstellen",
-      "prompt": "Haben Sie noch kein Konto?",
-      "link": "Anmelden"
+      "prompt": "Haben Sie kein Konto?",
+      "link": "Registrieren"
     },
     "signIn": {
       "title": "Anmelden",
@@ -898,21 +911,24 @@
       "link": "Anmelden"
     },
     "form": {
-      "labels": {
-        "fullName": "Vollständiger Name",
-        "city": "Stadt",
-        "state": "Bundesland/Land",
-        "email": "E-Mail-Adresse",
-        "confirmPassword": "Passwort bestätigen"
+      "socialLink": "Social Media Link (Instagram, TikTok, YouTube)",
+      "location": "Standort (Stadt, Land)",
+      "dob": "Geburtsdatum",
+      "age": "Alter",
+      "genderQuestion": "Wie identifizieren Sie sich?",
+      "genderOptions": {
+        "female": "Weiblich",
+        "male": "Männlich",
+        "nonbinary": "Nicht-binär",
+        "genderFluid": "Genderfluid",
+        "preferNotToSay": "Keine Angabe"
       },
-      "sport": "Sportart",
-      "athleteType": "Athletentyp",
-      "athleteTypes": {
-        "University": "Universität",
-        "Professional": "Professionell",
-        "Independent": "Unabhängig"
+      "validation": {
+        "signInFailed": "Anmeldung fehlgeschlagen",
+        "selectionLimit": "Auswahllimit",
+        "selectionLimitDesc": "Bitte wählen Sie vorerst bis zu 3 Optionen aus. Sie können später weitere hinzufügen."
       },
-      "schoolName": "Schulname",
+      "forgotPassword": "Passwort vergessen?",
       "languages": "Sprachen",
       "representationStatus": "Vertretungsstatus",
       "instagramOptional": "Instagram (optional)",
@@ -923,70 +939,68 @@
       "visibilityOptions": {
         "public": {
           "label": "Öffentlich",
-          "description": "Für alle sichtbar"
+          "description": "Für jeden sichtbar"
         },
         "private": {
           "label": "Privat",
           "description": "Nur für Marken und KI-Ersteller auffindbar"
         }
       },
+      "step1": {
+        "athlete": "Erstellen Sie Ihr NIL-fähiges Konto",
+        "model_actor": "Erstellen Sie Ihr Likelee-Konto",
+        "influencer": "Beginnen wir mit den Grundlagen"
+      },
       "placeholders": {
-        "fullName": "Max Mustermann",
+        "fullName": "Ihr vollständiger Name",
         "stageName": "Ihr Name",
-        "bio": "Erzählen Sie Marken ein wenig über sich...",
+        "bio": "Erzählen Sie Marken etwas über sich...",
         "platform": "Plattform auswählen",
-        "city": "Berlin",
-        "state": "BE",
+        "city": "z. B. Berlin",
+        "state": "z. B. Deutschland",
         "age": "21",
-        "email": "z.B. max@beispiel.de",
-        "password": "********",
+        "email": "z. B. max@beispiel.com",
+        "password": "••••••••",
         "schoolName": "Name der Universität",
-        "sport": "Wählen Sie Ihren Sport",
-        "languages": "z.B. Deutsch, Englisch",
-        "handle": "@deinhandle",
+        "sport": "Wählen Sie Ihre Sportart",
+        "languages": "z. B. Englisch, Deutsch",
+        "confirmPassword": "••••••••",
+        "handle": "@ihrbenutzername",
         "price": "150",
         "headshot": "Bild-URL",
         "specify": "Bitte angeben..."
       },
-      "vibes": "Vibe / Stil-Tags",
-      "dob": "Geburtsdatum",
-      "genderQuestion": "Wie identifizieren Sie sich?",
-      "genderOptions": {
-        "female": "Weiblich",
-        "male": "Männlich",
-        "nonbinary": "Nicht-binär",
-        "genderFluid": "Genderfluid",
-        "preferNotToSay": "Möchte ich nicht sagen"
+      "perMonth": "/Monat",
+      "sport": "Sportart",
+      "athleteType": "Athletentyp",
+      "athleteTypes": {
+        "University": "Universität",
+        "Professional": "Professionell",
+        "Independent": "Unabhängig"
       },
-      "vibes": "Vibe / Stil-Tags",
-      "headshot": "Kopfschuss hochladen (optional)",
-      "headshotHint": "Sie können Ihr Foto nach der Erstellung Ihres Kontos hochladen",
+      "schoolName": "Name der Schule",
+      "headshot": "Kopfbild hochladen (optional)",
+      "headshotHint": "Sie können Ihr Kopfbild nach der Kontoerstellung hochladen",
       "birthdate": "Geburtsdatum",
       "licensingPricing": "Lizenzpreise",
       "basePrice": "Monatlicher Basis-Lizenzpreis (USD)",
       "basePriceHint": "Mindestens 150 $/Monat. Währung ist auf USD festgelegt.",
       "campaignMatch": "Helfen Sie uns, Sie mit den richtigen Kampagnen abzugleichen",
-      "contentInterest": "In welcher Art von Inhalten möchten Sie vorgestellt werden?",
+      "contentInterest": "An welcher Art von Inhalten sind Sie interessiert?",
       "selectMax3": "Wählen Sie vorerst bis zu 3 aus",
       "brandinterest": "Mit welchen Arten von Marken oder Branchen möchten Sie arbeiten?",
-      "instagram": "Instagram (optional)",
-      "twitter": "Twitter/X (optional)",
-      "interests": "Interessen / Marken-Kategorien",
-      "bio": "Kurzbiografie",
-      "bioPlaceholder": "Erzählen Sie Marken ein wenig über sich...",
-      "handle": "Handle",
+      "industry": "Branche",
       "primaryPlatform": "Primäre Plattform",
       "gender": "Wie identifizieren Sie sich?",
-      "raceEthnicity": "Rasse/Ethnizität (wählen Sie alle zutreffenden aus)",
-      "save": "Speichern & Weiter zur Verifizierung",
-      "photos": {
-        "label": "Laden Sie mindestens 3 Fotos hoch",
-        "description": "Diese werden verwendet, um Ihr KI-Modell zu trainieren. Stellen Sie sicher, dass sie von hoher Qualität sind und Ihr Gesicht deutlich zeigen.",
-        "drop": "Dateien hier ablegen oder klicken zum Hochladen"
-      },
-      "perMonth": "/Monat"
+      "raceEthnicity": "Rasse/Ethnizität (alles Zutreffende auswählen)",
+      "vibes": "Vibe- / Stil-Tags",
+      "save": "Speichern & Weiter zur Überprüfung"
     },
-    "warning": "Dies ist ein Beta-Reservierungssystem. Ihr Profil wird gespeichert, aber Sie werden auf eine Warteliste für den vollen Zugriff gesetzt.",
+    "liveness": {
+      "alreadyApproved": "Bereits genehmigt",
+      "alreadyApprovedDescription": "Ihre Liveness-Prüfung ist bereits genehmigt. Keine weitere Überprüfung erforderlich.",
+      "sessionError": "Fehler bei der Liveness-Sitzung"
+    },
     "title": "Reservieren Sie Ihr Profil (Beta)",
     "steps": {
       "accountSetup": "Kontoeinrichtung",
@@ -1584,7 +1598,7 @@
       "Casual": "Lässig"
     },
     "contentTypes": {
-      "Social media ads": "Social-Media-Anzeigen",
+      "Social-media ads": "Social-Media-Anzeigen",
       "Web & banner campaigns": "Web- & Banner-Kampagnen",
       "TV / streaming commercials": "TV- / Streaming-Werbespots",
       "Film & scripted streaming": "Film & geskriptetes Streaming",
@@ -1592,6 +1606,7 @@
       "Music videos": "Musikvideos",
       "Video-game / VR characters": "Videospiel- / VR-Charaktere",
       "Stock photo / video libraries": "Stockfoto- / Videobibliotheken",
+      "Educational / nonprofit spots": "Bildungs- / gemeinnützige Spots",
       "Other": "Andere"
     },
     "industries": {
