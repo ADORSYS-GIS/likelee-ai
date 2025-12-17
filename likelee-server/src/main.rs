@@ -63,8 +63,7 @@ async fn main() {
         let client = aws_sdk_rekognition::Client::new(&sdk_config);
         info!(
             moderation_enabled,
-            liveness_enabled,
-            "AWS Rekognition client initialized"
+            liveness_enabled, "AWS Rekognition client initialized"
         );
         Some(client)
     } else {

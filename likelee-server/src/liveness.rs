@@ -45,10 +45,7 @@ pub async fn liveness_result(
         ));
     }
     let client = state.rekog.as_ref().unwrap();
-    let min_score: f32 = state
-        .liveness_min_score
-        .parse()
-        .unwrap_or(0.90);
+    let min_score: f32 = state.liveness_min_score.parse().unwrap_or(0.90);
     info!(session_id = %req.session_id, min_score, "liveness: fetching results");
 
     let res = client
