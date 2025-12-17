@@ -325,11 +325,11 @@
       },
       "table": {
         "brand": "Marca",
-        "usageType": "Tipo de Uso",
+        "usageType": "Tipo de uso",
         "rate": "Tarifa",
-        "activeUntil": "Activa Hasta",
+        "activeUntil": "Activa hasta",
         "status": "Estado",
-        "thisMonth": "Este Mes",
+        "thisMonth": "Este mes",
         "actions": "Acciones"
       },
       "autoRenew": "Renovación Automática",
@@ -346,7 +346,25 @@
       "pause": "Pausar",
       "viewDetails": "Ver Detalles",
       "labels": {
+        "autoRenew": "Renovación Automática",
+        "monthlyRate": "Tarifa mensual:",
+        "activeUntil": "Activa hasta:",
+        "regions": "Regiones:",
+        "weeklyImpressions": "Impresiones semanales:",
         "impressionsPerWeek": "{{count}} impresiones/semana"
+      },
+      "status": {
+        "active": "Activa",
+        "expiringSoon": "Expira pronto"
+      },
+      "actions": {
+        "viewDetails": "Ver detalles",
+        "revoke": "Revocar",
+        "pause": "Pausar"
+      },
+      "consent": {
+        "title": "Se requiere su consentimiento para todos los usos.",
+        "message": "{{count}} campañas activas, todas con límite de tiempo, todas aprobadas por usted. Puede pausar/revocar en cualquier momento."
       }
     },
     "voice": {

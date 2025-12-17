@@ -320,15 +320,15 @@
     "campaigns": {
       "title": "Aktive Kampagnen",
       "subtitle": "Verfolgen und verwalten Sie Ihre Lizenzvereinbarungen",
-      "activeCount": "{{count}} aktiv",
+      "activeCount": "{{count}} Aktiv",
       "welcome": {
         "title": "Willkommen bei Ihren aktiven Kampagnen!",
-        "message": "Dies ist ein Beispiel dafür, wie Ihre Kampagnen aussehen werden. Sie haben noch keine aktiven Kampagnen – aber wenn Marken anfangen, mit Ihnen zu arbeiten, werden sie hier erscheinen!"
+        "message": "Dies ist ein Beispiel dafür, wie Ihre Kampagnen aussehen werden. Sie haben noch keine aktiven Kampagnen, aber wenn Marken anfangen, mit Ihnen zusammenzuarbeiten, erscheinen sie hier!"
       },
       "table": {
         "brand": "Marke",
         "usageType": "Nutzungsart",
-        "rate": "Rate",
+        "rate": "Tarif",
         "activeUntil": "Aktiv bis",
         "status": "Status",
         "thisMonth": "Diesen Monat",

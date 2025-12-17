@@ -450,7 +450,21 @@
         "message": "{{count}} campagnes actives, toutes limitées dans le temps, toutes approuvées par vous. Vous pouvez mettre en pause/révoquer à tout moment."
       },
       "title": "Campagnes Actives",
-      "subtitle": "Suivez et gérez vos accords de licence"
+      "subtitle": "Suivez et gérez vos accords de licence",
+      "activeCount": "{{count}} Actives",
+      "welcome": {
+        "title": "Bienvenue dans vos Campagnes Actives !",
+        "message": "Ceci est un exemple de ce à quoi ressembleront vos campagnes. Vous n'avez pas encore de campagnes actives, mais lorsque les marques commenceront à travailler avec vous, elles apparaîtront ici !"
+      },
+      "table": {
+        "brand": "Marque",
+        "usageType": "Type d'utilisation",
+        "rate": "Tarif",
+        "activeUntil": "Actif jusqu'au",
+        "status": "Statut",
+        "thisMonth": "Ce mois",
+        "actions": "Actions"
+      }
     }
   },
   "reserveProfile": {
