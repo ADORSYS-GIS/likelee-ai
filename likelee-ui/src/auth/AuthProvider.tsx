@@ -55,13 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
-          .insert([
-            {
-              id: userId,
-              email: userEmail,
-              full_name: userFullName,
-            },
-          ])
+          .insert([{ id: userId, email: userEmail, full_name: userFullName }])
           .select()
           .single();
 
@@ -83,13 +77,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser && currentUser.email_confirmed_at) {
+          fetchProfile(
+            currentUser.id,
+            currentUser.email,
+            currentUser.user_metadata?.full_name,
+          );
+        } else {
+          setProfile(null);
+        }
         setInitialized(true);
       },
     );
     // Initialize from current session as well
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
+      const currentUser = data.session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser && currentUser.email_confirmed_at) {
+        fetchProfile(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.full_name,
+        );
+      }
       setInitialized(true);
     });
     return () => {
@@ -129,15 +141,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         });
         if (error) throw error;
-        // Ensure session exists (in some configs signUp may not start a session)
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: emailNormalized,
-            password,
-          });
-          if (signInErr) throw signInErr;
-        }
+
+        // Profile creation deferred until email verification and subsequent login/session refresh
+        // if (data.user) {
+        //   await fetchProfile(data.user.id, data.user.email, displayName);
+        // }
+
+        return { user: data.user, session: data.session };
       },
       resendEmailConfirmation: async (email: string) => {
         if (!supabase) throw new Error("Supabase not configured");
