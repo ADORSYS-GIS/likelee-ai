@@ -1163,10 +1163,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Brand Content
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1175,10 +1176,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               Detections
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1284,12 +1286,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex gap-4">
                       <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -2113,11 +2116,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -2161,12 +2164,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2596,9 +2600,9 @@ export default function CreatorDashboard() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-blue-900">
-                <strong>Preview Examples:</strong> These are sample campaigns
-                to show you what opportunities look like. Complete your
-                profile to start receiving real brand deals!
+                <strong>Preview Examples:</strong> These are sample campaigns to
+                show you what opportunities look like. Complete your profile to
+                start receiving real brand deals!
               </p>
             </div>
 
@@ -2612,9 +2616,7 @@ export default function CreatorDashboard() {
                   }}
                 >
                   <div className="absolute inset-0 bg-black bg-opacity-50 p-4 flex flex-col justify-end">
-                    <h4 className="font-bold text-xl mb-1">
-                      {campaign.brand}
-                    </h4>
+                    <h4 className="font-bold text-xl mb-1">{campaign.brand}</h4>
                     <p className="text-sm mb-2">{campaign.campaign}</p>
                     <div className="flex items-center justify-between text-sm">
                       <Badge className="bg-green-500 text-white border-none">
@@ -2629,9 +2631,7 @@ export default function CreatorDashboard() {
           </div>
         ) : (
           <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
-            <p>
-              Your campaign activity will show here once licenses activate
-            </p>
+            <p>Your campaign activity will show here once licenses activate</p>
             <p className="text-sm text-gray-500 mt-1">
               Complete your profile to start receiving brand opportunities
             </p>
@@ -2640,9 +2640,7 @@ export default function CreatorDashboard() {
 
         <Card className="p-4 md:p-5 bg-white border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
-              Profile Status
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900">Profile Status</h3>
             <Badge className="bg-[#32C8D1] text-white">
               Complete to Get Discovered During Pilot
             </Badge>
@@ -2877,9 +2875,7 @@ export default function CreatorDashboard() {
         {/* MY CAMEO Section - NOW FIRST */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              MY CAMEO
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">MY CAMEO</h3>
             <p className="text-gray-600">
               The video representation of you - brands use this for AI cameos
               and content generation
@@ -2930,10 +2926,9 @@ export default function CreatorDashboard() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-900 text-sm">
-                  <strong>About Your Cameo:</strong> Brands use this to
-                  generate AI cameos of you speaking, reference your
-                  voice/expressions, and create photorealistic content
-                  featuring you.
+                  <strong>About Your Cameo:</strong> Brands use this to generate
+                  AI cameos of you speaking, reference your voice/expressions,
+                  and create photorealistic content featuring you.
                 </p>
               </div>
 
@@ -2953,10 +2948,7 @@ export default function CreatorDashboard() {
                   <Upload className="w-4 h-4 mr-2" />
                   Re-upload New Cameo
                 </Button>
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                >
+                <Button variant="outline" className="border-2 border-gray-300">
                   <Download className="w-4 h-4 mr-2" />
                   Download
                 </Button>
@@ -3005,8 +2997,8 @@ export default function CreatorDashboard() {
                   sections filled
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {IMAGE_SECTIONS.length - completeness.filled} sections
-                  needed for "Complete Profile"
+                  {IMAGE_SECTIONS.length - completeness.filled} sections needed
+                  for "Complete Profile"
                 </p>
               </div>
               <div className="text-right">
@@ -3111,9 +3103,7 @@ export default function CreatorDashboard() {
                           </>
                         ) : (
                           <Button
-                            onClick={() =>
-                              handleImageSectionUpload(section.id)
-                            }
+                            onClick={() => handleImageSectionUpload(section.id)}
                             className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                           >
                             <Upload className="w-4 h-4 mr-2" />
@@ -3231,7 +3221,7 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? creator.kyc_status.charAt(0).toUpperCase() +
-                  creator.kyc_status.slice(1)
+                    creator.kyc_status.slice(1)
                   : "Not started"}
               </Badge>
             </div>
@@ -3242,10 +3232,7 @@ export default function CreatorDashboard() {
                   Likeness Rights
                 </span>
               </div>
-              <Badge
-                variant="outline"
-                className="bg-green-100 text-green-700"
-              >
+              <Badge variant="outline" className="bg-green-100 text-green-700">
                 Confirmed
               </Badge>
             </div>
@@ -3316,9 +3303,7 @@ export default function CreatorDashboard() {
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
-                ElevenLabs Profiles
-              </p>
+              <p className="text-sm text-gray-600 mb-1">ElevenLabs Profiles</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
               </p>
@@ -3326,10 +3311,7 @@ export default function CreatorDashboard() {
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600 mb-1">Total Usage</p>
               <p className="text-3xl font-bold text-gray-900">
-                {voiceLibrary.reduce(
-                  (sum, v) => sum + (v.usageCount || 0),
-                  0,
-                )}
+                {voiceLibrary.reduce((sum, v) => sum + (v.usageCount || 0), 0)}
               </p>
             </div>
           </div>
@@ -3354,16 +3336,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3401,8 +3385,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3412,8 +3397,8 @@ export default function CreatorDashboard() {
                       </h4>
                       <p className="text-sm text-gray-600">
                         {new Date(recording.date).toLocaleDateString()} •{" "}
-                        {recording.duration}s • Used{" "}
-                        {recording.usageCount || 0} times
+                        {recording.duration}s • Used {recording.usageCount || 0}{" "}
+                        times
                       </p>
                     </div>
                   </div>
@@ -3481,9 +3466,9 @@ export default function CreatorDashboard() {
       <div className="bg-purple-50 border border-purple-200">
         <Volume2 className="h-5 w-5 text-purple-600" />
         <p className="text-purple-900">
-          <strong>Voice Training Tips:</strong> Speak clearly, avoid
-          background noise, record in a quiet room, and maintain consistent
-          volume throughout the recording.
+          <strong>Voice Training Tips:</strong> Speak clearly, avoid background
+          noise, record in a quiet room, and maintain consistent volume
+          throughout the recording.
         </p>
       </div>
     </div>
@@ -3507,10 +3492,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {activeCampaigns.length} Active
           </Badge>
@@ -3522,9 +3508,9 @@ export default function CreatorDashboard() {
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
               <strong>Welcome to your Active Campaigns!</strong> This is an
-              example of what your campaigns will look like. You don't have
-              any active campaigns yet — but when brands start working with
-              you, they'll appear here!
+              example of what your campaigns will look like. You don't have any
+              active campaigns yet — but when brands start working with you,
+              they'll appear here!
             </p>
           </div>
         )}
@@ -3612,12 +3598,13 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? "Active"
@@ -3820,10 +3807,7 @@ export default function CreatorDashboard() {
                   <p className="text-sm text-gray-600 mb-1">Territory:</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.regions.map((region) => (
-                      <Badge
-                        key={region}
-                        className="bg-blue-100 text-blue-700"
-                      >
+                      <Badge key={region} className="bg-blue-100 text-blue-700">
                         {region}
                       </Badge>
                     ))}
@@ -3877,8 +3861,7 @@ export default function CreatorDashboard() {
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <p>
-                  Payment protected in escrow until brand approves
-                  deliverables
+                  Payment protected in escrow until brand approves deliverables
                 </p>
               </div>
             </div>
@@ -3889,8 +3872,8 @@ export default function CreatorDashboard() {
               <AlertCircle className="h-5 w-5 text-red-600" />
               <p className="text-red-900">
                 <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
-                use your likeness forever. You should negotiate for
-                time-limited terms (6 months, 1 year) instead.
+                use your likeness forever. You should negotiate for time-limited
+                terms (6 months, 1 year) instead.
               </p>
             </div>
           )}
@@ -3933,9 +3916,7 @@ export default function CreatorDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Approval Queue
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
             <p className="text-gray-600 mt-1">
               Review and approve licensing requests
             </p>
@@ -3953,9 +3934,9 @@ export default function CreatorDashboard() {
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
               <strong>Welcome to your Approval Queue!</strong> This is an
-              example of what brand requests will look like. You don't have
-              any pending approvals yet — but when brands want to work with
-              you, their requests will appear here!
+              example of what brand requests will look like. You don't have any
+              pending approvals yet — but when brands want to work with you,
+              their requests will appear here!
             </p>
           </div>
         )}
@@ -4003,9 +3984,7 @@ export default function CreatorDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-600">
-                      Term Length:
-                    </span>
+                    <span className="text-sm text-gray-600">Term Length:</span>
                     <span className="font-bold text-gray-900">
                       {approval.term_length}
                     </span>
@@ -4131,9 +4110,9 @@ export default function CreatorDashboard() {
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
               <strong>Welcome to your Campaign Archive!</strong> This is an
-              example of what your completed campaigns will look like. You
-              don't have any archived campaigns yet — but when you do, they'll
-              appear here just like this!
+              example of what your completed campaigns will look like. You don't
+              have any archived campaigns yet — but when you do, they'll appear
+              here just like this!
             </p>
           </div>
         )}
@@ -4169,9 +4148,7 @@ export default function CreatorDashboard() {
               <div className="grid md:grid-cols-4 gap-4 mb-6">
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Duration:</p>
-                  <p className="font-bold text-gray-900">
-                    {campaign.duration}
-                  </p>
+                  <p className="font-bold text-gray-900">{campaign.duration}</p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
@@ -4455,9 +4432,7 @@ export default function CreatorDashboard() {
     );
 
     const activeContracts =
-      realActiveContracts.length === 0
-        ? exampleContracts
-        : realActiveContracts;
+      realActiveContracts.length === 0 ? exampleContracts : realActiveContracts;
     const expiredContracts = realExpiredContracts;
     const showingExamples = realActiveContracts.length === 0;
 
@@ -4479,10 +4454,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>Welcome to your Licenses & Contracts!</strong> This is
-              an example of what your active licensing deals will look like.
-              You don't have any contracts yet — but when brands approve your
-              work, they'll appear here just like this!
+              <strong>Welcome to your Licenses & Contracts!</strong> This is an
+              example of what your active licensing deals will look like. You
+              don't have any contracts yet — but when brands approve your work,
+              they'll appear here just like this!
             </p>
           </div>
         )}
@@ -4491,19 +4466,21 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expired ({expiredContracts.length})
           </button>
@@ -4515,10 +4492,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -4632,9 +4610,7 @@ export default function CreatorDashboard() {
           <h2 className="text-3xl font-bold text-gray-900">
             Earnings Dashboard
           </h2>
-          <p className="text-gray-600 mt-1">
-            Track your revenue and payments
-          </p>
+          <p className="text-gray-600 mt-1">Track your revenue and payments</p>
         </div>
         <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2">
           <DollarSign className="w-4 h-4" />
@@ -4680,9 +4656,7 @@ export default function CreatorDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-2">Next Payment</p>
           <p className="text-2xl font-bold text-gray-900">To be determined</p>
-          <p className="text-sm text-gray-600 mt-1">
-            No active contracts yet
-          </p>
+          <p className="text-sm text-gray-600 mt-1">No active contracts yet</p>
         </Card>
       </div>
 
@@ -4934,19 +4908,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           My Rules
         </button>
@@ -5177,9 +5153,7 @@ export default function CreatorDashboard() {
         <div className="space-y-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
-                My Rules
-              </h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-1">My Rules</h3>
               <p className="text-sm text-gray-600">
                 Set your licensing preferences and rates
               </p>
@@ -5208,10 +5182,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {type}
@@ -5243,10 +5218,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-4 py-2 border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                          }`}
+                        className={`px-4 py-2 border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 mr-1" />}
                         {industry}
@@ -5373,9 +5349,15 @@ export default function CreatorDashboard() {
                             };
                             setCreator(updatedCreator);
                             // We need to pass this updated object to save function
-                            handleSaveRules(updatedCreator, "Licensing rate updated!");
+                            handleSaveRules(
+                              updatedCreator,
+                              "Licensing rate updated!",
+                            );
                           } else {
-                            handleSaveRules(undefined, "Licensing rate updated!");
+                            handleSaveRules(
+                              undefined,
+                              "Licensing rate updated!",
+                            );
                           }
                           setEditingLicensingRate(false);
                         }}
@@ -5392,7 +5374,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-md">
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-700 font-medium text-lg">$</span>
+                      <span className="text-gray-700 font-medium text-lg">
+                        $
+                      </span>
                       <Input
                         type="number"
                         value={
@@ -5442,12 +5426,18 @@ export default function CreatorDashboard() {
                         accept_negotiations: checked,
                       });
                       try {
-                        await handleSaveRules({
-                          ...creator,
-                          accept_negotiations: checked,
-                        }, "Accept Negotiations updated");
+                        await handleSaveRules(
+                          {
+                            ...creator,
+                            accept_negotiations: checked,
+                          },
+                          "Accept Negotiations updated",
+                        );
                       } catch (error) {
-                        console.error("Failed to update negotiation settings:", error);
+                        console.error(
+                          "Failed to update negotiation settings:",
+                          error,
+                        );
                         toast({
                           title: "Failed to update negotiation settings",
                           description: "Please try again.",
@@ -5477,14 +5467,15 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${isSmallScreen
-          ? sidebarOpen
-            ? "w-64"
-            : "-translate-x-full w-64"
-          : sidebarOpen
-            ? "w-64"
-            : "w-20"
-          }`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
+          isSmallScreen
+            ? sidebarOpen
+              ? "w-64"
+              : "-translate-x-full w-64"
+            : sidebarOpen
+              ? "w-64"
+              : "w-20"
+        }`}
       >
         {/* Mobile Sidebar Header */}
         {isSmallScreen && (
@@ -5709,7 +5700,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -5733,10 +5724,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -5771,98 +5763,96 @@ export default function CreatorDashboard() {
       </aside>
 
       {/* Mobile Header */}
-      {
-        isSmallScreen && (
-          <>
-            <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-                aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-              <h1 className="font-bold text-lg">
-                {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-              </h1>
-              <button
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-                aria-label="More options"
-              >
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="5" cy="12" r="2" />
-                  <circle cx="12" cy="12" r="2" />
-                  <circle cx="19" cy="12" r="2" />
-                </svg>
-              </button>
-            </header>
+      {isSmallScreen && (
+        <>
+          <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <h1 className="font-bold text-lg">
+              {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+            </h1>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+              aria-label="More options"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+              </svg>
+            </button>
+          </header>
 
-            {/* Mobile Menu Dropdown */}
-            {showMobileMenu && (
-              <>
-                {/* Backdrop to close menu when clicking outside */}
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowMobileMenu(false)}
-                />
-                <div className="fixed top-16 right-4 bg-white border-2 border-gray-200 shadow-xl rounded-lg z-[60] w-64">
-                  <div className="p-2">
-                    <button
-                      onClick={() => {
-                        navigate("/BrandCompany");
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                    >
-                      <Building2 className="w-5 h-5 text-gray-700" />
-                      <span className="text-sm font-medium text-gray-900">
-                        Brands
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate("/AgencySelection");
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                    >
-                      <Users className="w-5 h-5 text-gray-700" />
-                      <span className="text-sm font-medium text-gray-900">
-                        Agencies
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate("/AboutUs");
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                    >
-                      <AlertCircle className="w-5 h-5 text-gray-700" />
-                      <span className="text-sm font-medium text-gray-900">
-                        About Us
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate("/Contact");
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                    >
-                      <MessageSquare className="w-5 h-5 text-gray-700" />
-                      <span className="text-sm font-medium text-gray-900">
-                        Contact
-                      </span>
-                    </button>
-                  </div>
+          {/* Mobile Menu Dropdown */}
+          {showMobileMenu && (
+            <>
+              {/* Backdrop to close menu when clicking outside */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowMobileMenu(false)}
+              />
+              <div className="fixed top-16 right-4 bg-white border-2 border-gray-200 shadow-xl rounded-lg z-[60] w-64">
+                <div className="p-2">
+                  <button
+                    onClick={() => {
+                      navigate("/BrandCompany");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <Building2 className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Brands
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/AgencySelection");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <Users className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Agencies
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/AboutUs");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <AlertCircle className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      About Us
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/Contact");
+                      setShowMobileMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
+                  >
+                    <MessageSquare className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Contact
+                    </span>
+                  </button>
                 </div>
-              </>
-            )}
-          </>
-        )
-      }
+              </div>
+            </>
+          )}
+        </>
+      )}
 
       {/* Main Content */}
       <main
@@ -6602,33 +6592,34 @@ export default function CreatorDashboard() {
                   : "Select the industries you're open to working with:"}
               </p>
               <div className="flex flex-wrap gap-2">
-                {(showRatesModal === "content" ? CONTENT_TYPES : INDUSTRIES).map(
-                  (item) => {
-                    const isSelected =
-                      showRatesModal === "content"
-                        ? creator.content_types?.includes(item)
-                        : creator.industries?.includes(item);
-                    return (
-                      <Badge
-                        key={item}
-                        onClick={() =>
-                          showRatesModal === "content"
-                            ? handleToggleContentType(item)
-                            : handleToggleIndustry(item)
-                        }
-                        className={cn(
-                          "px-4 py-2 border-2 cursor-pointer transition-all flex items-center gap-2",
-                          isSelected
-                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-[#32C8D1] hover:bg-gray-50"
-                        )}
-                      >
-                        {isSelected && <Check className="w-4 h-4" />}
-                        {item}
-                      </Badge>
-                    );
-                  }
-                )}
+                {(showRatesModal === "content"
+                  ? CONTENT_TYPES
+                  : INDUSTRIES
+                ).map((item) => {
+                  const isSelected =
+                    showRatesModal === "content"
+                      ? creator.content_types?.includes(item)
+                      : creator.industries?.includes(item);
+                  return (
+                    <Badge
+                      key={item}
+                      onClick={() =>
+                        showRatesModal === "content"
+                          ? handleToggleContentType(item)
+                          : handleToggleIndustry(item)
+                      }
+                      className={cn(
+                        "px-4 py-2 border-2 cursor-pointer transition-all flex items-center gap-2",
+                        isSelected
+                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-[#32C8D1] hover:bg-gray-50",
+                      )}
+                    >
+                      {isSelected && <Check className="w-4 h-4" />}
+                      {item}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
 
@@ -6639,16 +6630,16 @@ export default function CreatorDashboard() {
                   Custom Rates by Content Type
                 </h4>
                 <p className="text-sm text-gray-500 mb-4">
-                  Set custom rates for specific content types. Leave blank to use
-                  your base rate of ${creator.price_per_week}/month.
+                  Set custom rates for specific content types. Leave blank to
+                  use your base rate of ${creator.price_per_week}/month.
                 </p>
                 <div className="space-y-4">
                   {CONTENT_TYPES.filter((type) =>
-                    creator.content_types?.includes(type)
+                    creator.content_types?.includes(type),
                   ).map((type) => {
                     const existing = customRates.find(
                       (r) =>
-                        r.rate_type === "content_type" && r.rate_name === type
+                        r.rate_type === "content_type" && r.rate_name === type,
                     );
                     return (
                       <div
@@ -6669,8 +6660,8 @@ export default function CreatorDashboard() {
                             defaultValue={
                               existing
                                 ? (
-                                  existing.price_per_month_cents / 100
-                                ).toString()
+                                    existing.price_per_month_cents / 100
+                                  ).toString()
                                 : ""
                             }
                             placeholder={creator.price_per_week?.toString()}
@@ -6684,7 +6675,6 @@ export default function CreatorDashboard() {
                 </div>
               </div>
             )}
-
 
             <DialogFooter className="mt-6">
               <Button
@@ -6702,24 +6692,24 @@ export default function CreatorDashboard() {
                 (showRatesModal === "industry" &&
                   creator.industries?.filter((i) => INDUSTRIES.includes(i))
                     .length > 0)) && (
-                  <Button
-                    type="submit"
-                    disabled={savingRates}
-                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white flex items-center justify-center gap-2 px-8"
-                  >
-                    {savingRates ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4" />
-                        Save Changes
-                      </>
-                    )}
-                  </Button>
-                )}
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white flex items-center justify-center gap-2 px-8"
+                >
+                  {savingRates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
@@ -6739,7 +6729,8 @@ export default function CreatorDashboard() {
 
           <div className="py-4 space-y-6 overflow-y-auto flex-1 pr-2">
             <p className="text-gray-600 text-sm">
-              Manage content types and categories you don&apos;t want to be associated with:
+              Manage content types and categories you don&apos;t want to be
+              associated with:
             </p>
 
             <div>
@@ -6748,7 +6739,9 @@ export default function CreatorDashboard() {
               </h4>
               <div className="flex flex-wrap gap-2">
                 {contentRestrictions.length === 0 ? (
-                  <p className="text-sm italic text-gray-400">No active restrictions.</p>
+                  <p className="text-sm italic text-gray-400">
+                    No active restrictions.
+                  </p>
                 ) : (
                   contentRestrictions.map((restriction) => (
                     <Badge
@@ -6810,7 +6803,8 @@ export default function CreatorDashboard() {
                 Conflicting Campaigns (Brand Exclusivity)
               </h4>
               <p className="text-sm text-gray-500 mb-3">
-                Add brands you&apos;re exclusive with to prevent competing campaigns
+                Add brands you&apos;re exclusive with to prevent competing
+                campaigns
               </p>
 
               <div className="flex flex-wrap gap-2 mb-4">
@@ -6867,6 +6861,6 @@ export default function CreatorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   );
 }

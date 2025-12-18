@@ -77,11 +77,7 @@ const ToastClose = React.forwardRef(({ className, ...props }, ref) => (
 ToastClose.displayName = "ToastClose";
 
 const ToastTitle = React.forwardRef(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("text-sm font-normal", className)}
-    {...props}
-  />
+  <div ref={ref} className={cn("text-sm font-normal", className)} {...props} />
 ));
 ToastTitle.displayName = "ToastTitle";
 
