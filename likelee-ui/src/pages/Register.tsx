@@ -47,7 +47,6 @@ export default function Register() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
-
       <h1 className="text-2xl font-bold mb-4">Create your account</h1>
       {!initialized ? (
         <p>Loading...</p>
@@ -77,9 +76,7 @@ export default function Register() {
           }}
         >
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Full name
-            </label>
+            <label className="block text-sm font-medium mb-1">Full name</label>
             <input
               type="text"
               value={name}
@@ -133,4 +130,3 @@ export default function Register() {
     </div>
   );
 }
-

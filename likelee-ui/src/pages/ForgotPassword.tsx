@@ -14,7 +14,6 @@ export default function ForgotPassword() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
-
       <h1 className="text-2xl font-bold mb-4">Reset your password</h1>
       <p className="text-gray-600 mb-6">
         Enter your email address and we will send you a link to reset your
@@ -28,12 +27,9 @@ export default function ForgotPassword() {
           setMessage(null);
           setLoading(true);
           try {
-            const { error } = await supabase.auth.resetPasswordForEmail(
-              email,
-              {
-                redirectTo: `${window.location.origin}/update-password`,
-              },
-            );
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: `${window.location.origin}/update-password`,
+            });
 
             if (error) {
               // Check for a specific error message to provide a better user experience
@@ -97,4 +93,3 @@ export default function ForgotPassword() {
     </div>
   );
 }
-

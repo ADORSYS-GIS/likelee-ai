@@ -18,7 +18,6 @@ export default function UpdatePassword() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
-
       <h1 className="text-2xl font-bold mb-4">Update your password</h1>
       <form
         className="space-y-4"
@@ -56,9 +55,7 @@ export default function UpdatePassword() {
         }}
       >
         <div>
-          <label className="block text-sm font-medium mb-1">
-            New Password
-          </label>
+          <label className="block text-sm font-medium mb-1">New Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -112,4 +109,3 @@ export default function UpdatePassword() {
     </div>
   );
 }
-

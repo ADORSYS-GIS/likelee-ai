@@ -665,19 +665,19 @@ export default function SportsAgencyDashboard() {
                 {(searchQuery ||
                   sportFilter !== "all" ||
                   consentFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSportFilter("all");
-                        setConsentFilter("all");
-                      }}
-                      className="text-gray-600"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSportFilter("all");
+                      setConsentFilter("all");
+                    }}
+                    className="text-gray-600"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear
+                  </Button>
+                )}
               </div>
 
               {/* Table */}

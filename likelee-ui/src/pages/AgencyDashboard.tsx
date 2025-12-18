@@ -1098,19 +1098,19 @@ export default function AgencyDashboard() {
                       {(searchQuery ||
                         statusFilter !== "all" ||
                         consentFilter !== "all") && (
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setSearchQuery("");
-                              setStatusFilter("all");
-                              setConsentFilter("all");
-                            }}
-                            className="text-gray-600"
-                          >
-                            <X className="w-4 h-4 mr-2" />
-                            Clear Filters
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setStatusFilter("all");
+                            setConsentFilter("all");
+                          }}
+                          className="text-gray-600"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Clear Filters
+                        </Button>
+                      )}
                     </div>
 
                     <div className="overflow-x-auto">
@@ -1300,8 +1300,8 @@ export default function AgencyDashboard() {
                                   >
                                     {talent.license_expiry !== "—"
                                       ? new Date(
-                                        talent.license_expiry,
-                                      ).toLocaleDateString()
+                                          talent.license_expiry,
+                                        ).toLocaleDateString()
                                       : "—"}
                                   </span>
                                   {isLicenseExpiring(talent.license_expiry) && (
@@ -2411,8 +2411,8 @@ export default function AgencyDashboard() {
                       >
                         {selectedTalent.license_expiry !== "—"
                           ? new Date(
-                            selectedTalent.license_expiry,
-                          ).toLocaleDateString()
+                              selectedTalent.license_expiry,
+                            ).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>

@@ -17,7 +17,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Tabs as UITabs, TabsContent as UITabsContent, TabsList as UITabsList, TabsTrigger as UITabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs as UITabs,
+  TabsContent as UITabsContent,
+  TabsList as UITabsList,
+  TabsTrigger as UITabsTrigger,
+} from "@/components/ui/tabs";
 import { Separator as UISeparator } from "@/components/ui/separator";
 
 const Tabs: any = UITabs;
@@ -26,7 +31,6 @@ const TabsList: any = UITabsList;
 const TabsTrigger: any = UITabsTrigger;
 const Separator: any = UISeparator;
 const Label: any = UILabel;
-
 
 export default function Login() {
   const { login, initialized, authenticated } = useAuth();
@@ -94,7 +98,6 @@ export default function Login() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-
       {!initialized ? (
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-[#32C8D1]/30 border-t-[#32C8D1] rounded-full animate-spin" />
@@ -165,7 +168,6 @@ export default function Login() {
                 >
                   Agency
                 </TabsTrigger>
-
               </TabsList>
 
               <TabsContent value="agency" className="mt-0">
@@ -230,7 +232,6 @@ export default function Login() {
                     </svg>
                     Continue with Google
                   </Button>
-
 
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
@@ -347,5 +348,3 @@ export default function Login() {
     </div>
   );
 }
-
-
