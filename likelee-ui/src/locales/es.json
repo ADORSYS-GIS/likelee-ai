@@ -1199,22 +1199,11 @@
       "unknown": "Ocurrió un error. Inténtelo de nuevo o contacte al soporte si el problema persiste."
     },
     "photos": {
-      "cameraRequiredTitle": "Se Requiere Acceso a la Cámara",
-      "cameraRequiredDescription": "No se puede acceder a la cámara. Por favor, permita los permisos de la cámara en la configuración de su navegador.",
-      "consentRequiredTitle": "Se Requiere Consentimiento",
-      "consentRequiredDescription": "Por favor, dé su consentimiento antes de subir sus fotos.",
-      "missingPhotosTitle": "Faltan Fotos",
-      "missingPhotosDescription": "Por favor, capture las tres vistas (frente, perfil izquierdo y perfil derecho).",
-      "uploadFailedTitle": "Error al Subir",
-      "avatarFailedTitle": "Error en la Generación del Avatar",
-      "title": "Fotos de Referencia",
-      "description": "Capture tres fotos de su cara: frente, perfil izquierdo y perfil derecho. Esto ocurre después de la verificación.",
-      "verificationPending": "La verificación está pendiente. Puede capturar y subir sus fotos de referencia ahora, pero su perfil no se activará hasta que se apruebe la verificación.",
-      "openCamera": "Abrir Cámara",
-      "livePreview": "Vista Previa de la Cámara en Vivo",
-      "currentPose": "Pose actual:",
-      "capture": "Capturar",
-      "nextPose": "Siguiente Pose",
+      "label": "Sube al menos 3 fotos",
+      "description": "Estas se utilizarán para entrenar tu modelo de IA. Asegúrate de que sean de alta calidad y que tu rostro se vea claramente.",
+      "why": "¿Por qué funcionan estas fotos?",
+      "whyDesc": "Las fotos claras y bien iluminadas ayudan a los clientes potenciales a ver tu versatilidad.",
+      "drop": "Arrastra archivos aquí o haz clic para subir",
       "front": "Frente",
       "left": "Izquierda",
       "right": "Derecha",
@@ -1526,7 +1515,16 @@
       "alreadyApprovedDesc": "Su verificación de vida ya está aprobada. No se requiere más verificación.",
       "identityVerified": "Identidad verificada",
       "identityVerifiedDesc": "Suba sus 3 fotos de referencia (Frente, Izquierda, Derecha) para completar su configuración.",
-      "statusCheckFailed": "Error al verificar estado"
+      "statusCheckFailed": "Error al verificar estado",
+      "cameraAccessRequiredTitle": "Acceso a la cámara requerido",
+      "cameraAccessRequiredDesc": "No se puede acceder a la cámara. Permita los permisos de la cámara en la configuración de su navegador.",
+      "consentRequiredTitle": "Consentimiento requerido",
+      "consentRequiredDesc": "Por favor, dé su consentimiento antes de subir sus fotos.",
+      "missingPhotosTitle": "Fotos faltantes",
+      "missingPhotosDesc": "Por favor, capture las tres vistas (frente, izquierda y derecha).",
+      "livenessFailedTitle": "Error de verificación de vida",
+      "livenessFailedDesc": "Por favor, inténtelo de nuevo con buena iluminación y siga las instrucciones.",
+      "kycErrorTitle": "Error de KYC"
     }
   },
   "forYou": {
@@ -2007,6 +2005,7 @@
     "submit": "Enviar",
     "checking": "Comprobando...",
     "back": "Atrás",
+    "goBack": "Volver",
     "continue": "Continuar",
     "platforms": {
       "instagram": "Instagram",

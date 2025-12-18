@@ -1526,7 +1526,16 @@
       "alreadyApprovedDesc": "Ihre Liveness-Prüfung wurde bereits genehmigt. Keine weitere Überprüfung erforderlich.",
       "identityVerified": "Identität verifiziert",
       "identityVerifiedDesc": "Bitte laden Sie Ihre 3 Referenzfotos (Vorderseite, Links, Rechts) hoch, um die Einrichtung abzuschließen.",
-      "statusCheckFailed": "Statusprüfung fehlgeschlagen"
+      "statusCheckFailed": "Statusprüfung fehlgeschlagen",
+      "cameraAccessRequiredTitle": "Kamerazugriff erforderlich",
+      "cameraAccessRequiredDesc": "Kamerazugriff nicht möglich. Bitte erlauben Sie Kameraberechtigungen in Ihren Browsereinstellungen.",
+      "consentRequiredTitle": "Zustimmung erforderlich",
+      "consentRequiredDesc": "Bitte geben Sie Ihre Zustimmung, bevor Sie Ihre Fotos hochladen.",
+      "missingPhotosTitle": "Fehlende Fotos",
+      "missingPhotosDesc": "Bitte nehmen Sie alle drei Ansichten auf (vorne, links und rechts).",
+      "livenessFailedTitle": "Liveness-Check fehlgeschlagen",
+      "livenessFailedDesc": "Bitte versuchen Sie es erneut bei guter Beleuchtung und folgen Sie den Anweisungen.",
+      "kycErrorTitle": "KYC-Fehler"
     }
   },
   "forYou": {
@@ -2007,6 +2016,7 @@
     "submit": "Senden",
     "checking": "Überprüfen...",
     "back": "Zurück",
+    "goBack": "Zurückgehen",
     "continue": "Weiter",
     "platforms": {
       "instagram": "Instagram",
