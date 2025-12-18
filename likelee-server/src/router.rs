@@ -114,14 +114,6 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::email::send_email),
         )
         .route(
-            "/api/liveness/create",
-            post(crate::liveness::create_session),
-        )
-        .route(
-            "/api/liveness/result",
-            post(crate::liveness::liveness_result),
-        )
-        .route(
             "/api/creator-rates",
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),

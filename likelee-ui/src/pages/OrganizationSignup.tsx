@@ -31,7 +31,6 @@ import {
   getOrganizationKycStatus,
   registerOrganization,
   updateOrganizationProfile,
-  createLivenessSession,
 } from "@/api/functions";
 
 const industries = [
@@ -383,33 +382,6 @@ export default function OrganizationSignup() {
         toast({
           title: "Error",
           description: "Failed to start organization KYC.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    const startLiveness = async () => {
-      try {
-        const res = await createLivenessSession({ user_id: user?.id });
-        const sid = (res as any)?.session_id || (res as any)?.data?.session_id;
-        if (sid) {
-          toast({
-            title: "Liveness Session Created",
-            description: `Liveness session created. Session ID: ${sid}. Open the liveness detector to proceed.`,
-          });
-        } else {
-          toast({
-            title: "Error",
-            description:
-              "Could not create liveness session. Check server configuration.",
-            variant: "destructive",
-          });
-        }
-      } catch (e) {
-        console.error("Error creating liveness session", e);
-        toast({
-          title: "Error",
-          description: "Failed to create liveness session.",
           variant: "destructive",
         });
       }

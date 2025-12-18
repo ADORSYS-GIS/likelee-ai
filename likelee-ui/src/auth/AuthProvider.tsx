@@ -33,7 +33,6 @@ export interface Profile {
   full_name?: string;
   profile_photo_url?: string;
   kyc_status?: string;
-  liveness_status?: string;
   [key: string]: any;
 }
 
