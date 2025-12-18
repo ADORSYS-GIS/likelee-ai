@@ -16,7 +16,7 @@ export function PrivacyPolicyContent() {
       <p>
         {t(
           "privacyPolicy.intro",
-          "Likelee (\"Likelee,\" \"we,\" \"us\") helps talent, creators, and brands manage licensed, consented use of likeness in AI. This Privacy Policy explains what we collect, how we use it, and your choices.",
+          'Likelee ("Likelee," "we," "us") helps talent, creators, and brands manage licensed, consented use of likeness in AI. This Privacy Policy explains what we collect, how we use it, and your choices.',
         )}
       </p>
 
@@ -26,7 +26,10 @@ export function PrivacyPolicyContent() {
         </h2>
         <p className="mb-2">
           <strong>
-            {t("privacyPolicy.sections.1.accountData.label", "Account & profile data:")}
+            {t(
+              "privacyPolicy.sections.1.accountData.label",
+              "Account & profile data:",
+            )}
           </strong>{" "}
           {t(
             "privacyPolicy.sections.1.accountData.content",
@@ -35,7 +38,10 @@ export function PrivacyPolicyContent() {
         </p>
         <p className="mb-2">
           <strong>
-            {t("privacyPolicy.sections.1.likenessMedia.label", "Likeness & media:")}
+            {t(
+              "privacyPolicy.sections.1.likenessMedia.label",
+              "Likeness & media:",
+            )}
           </strong>{" "}
           {t(
             "privacyPolicy.sections.1.likenessMedia.content",
@@ -53,7 +59,10 @@ export function PrivacyPolicyContent() {
         </p>
         <p className="mb-2">
           <strong>
-            {t("privacyPolicy.sections.1.communications.label", "Communications:")}
+            {t(
+              "privacyPolicy.sections.1.communications.label",
+              "Communications:",
+            )}
           </strong>{" "}
           {t(
             "privacyPolicy.sections.1.communications.content",
@@ -62,7 +71,10 @@ export function PrivacyPolicyContent() {
         </p>
         <p>
           <strong>
-            {t("privacyPolicy.sections.1.thirdParties.label", "From third parties (optional):")}
+            {t(
+              "privacyPolicy.sections.1.thirdParties.label",
+              "From third parties (optional):",
+            )}
           </strong>{" "}
           {t(
             "privacyPolicy.sections.1.thirdParties.content",
@@ -82,7 +94,12 @@ export function PrivacyPolicyContent() {
               "Provide and secure the service (accounts, onboarding, approvals, payouts).",
             )}
           </li>
-          <li>{t("privacyPolicy.sections.2.list.1", "Enforce your usage rules and create an audit trail.")}</li>
+          <li>
+            {t(
+              "privacyPolicy.sections.2.list.1",
+              "Enforce your usage rules and create an audit trail.",
+            )}
+          </li>
           <li>
             {t(
               "privacyPolicy.sections.2.list.2",
@@ -95,7 +112,12 @@ export function PrivacyPolicyContent() {
               "Improve features, safety, and performance (analytics and debugging).",
             )}
           </li>
-          <li>{t("privacyPolicy.sections.2.list.4", "Comply with legal obligations and prevent fraud/abuse.")}</li>
+          <li>
+            {t(
+              "privacyPolicy.sections.2.list.4",
+              "Comply with legal obligations and prevent fraud/abuse.",
+            )}
+          </li>
         </ul>
       </section>
 
@@ -221,7 +243,12 @@ export function PrivacyPolicyContent() {
               "Access, correct, download, or delete your data (subject to legal limits).",
             )}
           </li>
-          <li>{t("privacyPolicy.sections.8.list.1", "Opt out of marketing at any time.")}</li>
+          <li>
+            {t(
+              "privacyPolicy.sections.8.list.1",
+              "Opt out of marketing at any time.",
+            )}
+          </li>
           <li>
             {t(
               "privacyPolicy.sections.8.list.2",
@@ -230,11 +257,14 @@ export function PrivacyPolicyContent() {
           </li>
           <li>
             <strong>
-              {t("privacyPolicy.sections.8.list.3.label", "Do Not Sell/Share (where applicable):")}
+              {t(
+                "privacyPolicy.sections.8.list.3.label",
+                "Do Not Sell/Share (where applicable):",
+              )}
             </strong>{" "}
             {t(
               "privacyPolicy.sections.8.list.3.content",
-              "You may opt out of our licensing of de-identified/aggregated information by using the \"Do Not Sell or Share My Personal Information\" link or emailing",
+              'You may opt out of our licensing of de-identified/aggregated information by using the "Do Not Sell or Share My Personal Information" link or emailing',
             )}{" "}
             <a
               href="mailto:privacy@likelee.ai"
@@ -242,7 +272,10 @@ export function PrivacyPolicyContent() {
             >
               privacy@likelee.ai
             </a>{" "}
-            {t("privacyPolicy.sections.8.list.3.suffix", "with the subject \"Do Not Sell/Share.\"")}
+            {t(
+              "privacyPolicy.sections.8.list.3.suffix",
+              'with the subject "Do Not Sell/Share."',
+            )}
           </li>
           <li>
             {t(
