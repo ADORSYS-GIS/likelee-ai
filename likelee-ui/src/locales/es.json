@@ -37,7 +37,118 @@
   "allSizesSubtitle": "Desde nuevas empresas de comercio electrónico hasta empresas, cree campañas de alto contacto con talento verificado para cada presupuesto.",
   "legalAndCompliance": "Legal y Cumplimiento",
   "sagAftraAlignment": "Alineación SAG-AFTRA",
-  "privacyPolicy": "Política de privacidad",
+  "privacyPolicy": {
+    "title": "Política de privacidad de Likelee",
+    "lastUpdated": "Última actualización: octubre de 2025",
+    "intro": "Likelee (\"Likelee\", \"nosotros\", \"nos\") ayuda a talentos, creadores y marcas a gestionar el uso con licencia y consentimiento de su imagen en la IA. Esta Política de privacidad explica qué recopilamos, cómo lo usamos y sus opciones.",
+    "sections": {
+      "1": {
+        "title": "1) Información que recopilamos",
+        "accountData": {
+          "label": "Datos de cuenta y perfil:",
+          "content": "nombre, correo electrónico, contraseña (hash), ciudad/estado, fecha de nacimiento, etiquetas de estilo, preferencias, enlaces/nombres de usuario."
+        },
+        "likenessMedia": {
+          "label": "Imagen y medios:",
+          "content": "fotos que subas, metadatos y configuraciones que elijas para visibilidad/uso. Nota: Solo usamos la imagen/los medios de acuerdo con los controles que establezcas (por ejemplo, público/privado, usos permitidos)."
+        },
+        "usageData": {
+          "label": "Datos de uso:",
+          "content": "dispositivo/navegador, dirección IP, páginas vistas, clics, páginas de referencia."
+        },
+        "communications": {
+          "label": "Comunicaciones:",
+          "content": "mensajes y correos electrónicos que nos envíes."
+        },
+        "thirdParties": {
+          "label": "De terceros (opcional):",
+          "content": "enlaces sociales o información de marca/agencia que elijas conectar."
+        }
+      },
+      "2": {
+        "title": "2) Cómo usamos la información",
+        "list": [
+          "Proporcionar y asegurar el servicio (cuentas, incorporación, aprobaciones, pagos).",
+          "Hacer cumplir tus reglas de uso y crear un rastro de auditoría.",
+          "Comunicarnos contigo (correos electrónicos de servicio, invitaciones a cohortes, actualizaciones de políticas).",
+          "Mejorar las funciones, la seguridad y el rendimiento (análisis y depuración).",
+          "Cumplir con las obligaciones legales y prevenir el fraude/abuso."
+        ]
+      },
+      "3": {
+        "title": "3) Uso de IA e imagen",
+        "consentFirst": {
+          "label": "El consentimiento es lo primero:",
+          "content": "Tu imagen/medios se procesan solo según tus instrucciones (por ejemplo, para detectar/rastrear el uso, habilitar solicitudes con licencia)."
+        },
+        "training": {
+          "label": "Entrenamiento:",
+          "content": "No usamos tu imagen/medios para entrenar modelos públicos de terceros. Si ajustamos los sistemas internos de detección o seguridad, lo hacemos bajo tus permisos y controles de acceso seleccionados."
+        },
+        "takedowns": {
+          "label": "Retiradas:",
+          "content": "Si informas de un uso sin licencia, podemos procesar el contenido informado para investigar y actuar."
+        }
+      },
+      "4": {
+        "title": "4) Bases legales (EEE/Reino Unido)",
+        "content": "Procesamos datos personales basados en: contrato (para proporcionar el servicio), intereses legítimos (seguridad, mejora) y consentimiento (donde se requiera, por ejemplo, marketing)."
+      },
+      "5": {
+        "title": "5) Compartir",
+        "p1": "No vendemos información personal en el sentido tradicional. Podemos licenciar o poner a disposición información anónima y/o agregada a socios examinados (incluidos proveedores de tecnología de IA y análisis) para investigación, seguridad y desarrollo de productos. Exigimos a los destinatarios que la utilicen solo para fines aprobados y que eviten la reidentificación.",
+        "p2": "También compartimos información con:",
+        "list": [
+          "Proveedores de servicios (alojamiento, almacenamiento, análisis, correo electrónico) bajo contrato.",
+          "Contrapartes que apruebes (por ejemplo, marcas/agencias para solicitudes con licencia que aceptes).",
+          "Legal/Cumplimiento cuando lo exija la ley o para proteger derechos, seguridad e integridad."
+        ]
+      },
+      "6": {
+        "title": "6) Retención",
+        "content": "Conservamos los datos mientras tu cuenta esté activa y según sea necesario para los fines anteriores. Puedes solicitar la eliminación; algunos registros (por ejemplo, pagos, contratos, registros de seguridad) pueden conservarse según lo exija la ley."
+      },
+      "7": {
+        "title": "7) Seguridad",
+        "content": "Utilizamos salvaguardas estándar de la industria (cifrado en tránsito, controles de acceso). Ningún método es 100% seguro; informa de problemas a"
+      },
+      "8": {
+        "title": "8) Tus opciones y derechos",
+        "list": {
+          "0": "Acceder, corregir, descargar o eliminar tus datos (sujeto a límites legales).",
+          "1": "Optar por no recibir marketing en cualquier momento.",
+          "2": "Controlar la visibilidad del perfil y los usos permitidos para tu imagen/medios.",
+          "3": {
+            "label": "No vender/compartir (donde corresponda):",
+            "content": "Puedes optar por no participar en nuestra licencia de información anónima/agregada utilizando el enlace \"No vender ni compartir mi información personal\" o enviando un correo electrónico a",
+            "suffix": "con el asunto \"Do Not Sell/Share\"."
+          },
+          "4": "Para residentes de EEE/Reino Unido/Suiza: puedes oponerte/restringir el procesamiento y presentar una queja ante tu autoridad local."
+        },
+        "requests": "Solicitudes:"
+      },
+      "9": {
+        "title": "9) Cookies y análisis",
+        "content": "Utilizamos cookies y tecnologías similares para el inicio de sesión, las preferencias y el análisis. Puedes controlar las cookies en tu navegador; algunas funciones pueden no funcionar sin ellas."
+      },
+      "10": {
+        "title": "10) Niños",
+        "content": "Likelee no está dirigido a niños menores de 16 años (o la edad requerida por su región). No recopilamos datos de niños a sabiendas."
+      },
+      "11": {
+        "title": "11) Transferencias internacionales",
+        "content": "Si los datos se transfieren internacionalmente, utilizamos las salvaguardas adecuadas (por ejemplo, SCC)."
+      },
+      "12": {
+        "title": "12) Cambios",
+        "content": "Podemos actualizar esta Política. Publicaremos la nueva fecha arriba. Si los cambios son sustanciales, te notificaremos (por ejemplo, por correo electrónico o aviso en la aplicación)."
+      },
+      "13": {
+        "title": "13) Contacto",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
   "commercialRights": "Derechos comerciales",
   "company": "Empresa",
   "creatorDashboard": {
@@ -1182,6 +1293,14 @@
       "button": "Iniciar Sesión",
       "prompt": "¿Ya tienes una cuenta?",
       "link": "Iniciar Sesión"
+    },
+    "terms": {
+      "title": "Términos y condiciones",
+      "subtitle": "Revise y acepte nuestras políticas para completar su registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de privacidad",
+      "mustAgree": "Debe aceptar la política de privacidad para crear su cuenta.",
+      "completeRegistration": "Completar registro"
     },
     "form": {
       "socialLink": "Enlace de Redes Sociales (Instagram, TikTok, YouTube)",

@@ -37,7 +37,118 @@
   "allSizesSubtitle": "Von E-Commerce-Startups bis hin zu Unternehmen – erstellen Sie High-Touch-Kampagnen mit verifiziertem Talent für jedes Budget.",
   "legalAndCompliance": "Recht & Compliance",
   "sagAftraAlignment": "SAG-AFTRA-Ausrichtung",
-  "privacyPolicy": "Datenschutzrichtlinie",
+  "privacyPolicy": {
+    "title": "Likelee Datenschutzrichtlinie",
+    "lastUpdated": "Zuletzt aktualisiert: Oktober 2025",
+    "intro": "Likelee („Likelee“, „wir“, „uns“) unterstützt Talente, Ersteller und Marken bei der Verwaltung lizenzierter, einvernehmlicher Nutzung von Abbildern in KI. Diese Datenschutzrichtlinie erklärt, welche Daten wir sammeln, wie wir sie verwenden und welche Wahlmöglichkeiten Sie haben.",
+    "sections": {
+      "1": {
+        "title": "1) Von uns gesammelte Informationen",
+        "accountData": {
+          "label": "Konto- und Profildaten:",
+          "content": "Name, E-Mail, Passwort (gehasht), Stadt/Bundesland, Geburtsdatum, Stil-Tags, Präferenzen, Links/Handles."
+        },
+        "likenessMedia": {
+          "label": "Abbild & Medien:",
+          "content": "Fotos, die Sie hochladen, Metadaten und Einstellungen, die Sie für Sichtbarkeit/Nutzung wählen. Hinweis: Wir verwenden Abbilder/Medien nur gemäß den von Ihnen festgelegten Kontrollen (z. B. öffentlich/privat, erlaubte Nutzungen)."
+        },
+        "usageData": {
+          "label": "Nutzungsdaten:",
+          "content": "Gerät/Browser, IP-Adresse, aufgerufene Seiten, Klicks, verweisende Seiten."
+        },
+        "communications": {
+          "label": "Kommunikation:",
+          "content": "Nachrichten und E-Mails, die Sie an uns senden."
+        },
+        "thirdParties": {
+          "label": "Von Drittanbietern (optional):",
+          "content": "Soziale Links oder Marken-/Agenturinformationen, mit denen Sie sich verbinden möchten."
+        }
+      },
+      "2": {
+        "title": "2) Wie wir Informationen verwenden",
+        "list": [
+          "Bereitstellung und Sicherung des Dienstes (Konten, Onboarding, Genehmigungen, Auszahlungen).",
+          "Durchsetzung Ihrer Nutzungsregeln und Erstellung eines Audit-Trails.",
+          "Kommunikation mit Ihnen (Service-E-Mails, Kohorten-Einladungen, Richtlinien-Updates).",
+          "Verbesserung von Funktionen, Sicherheit und Leistung (Analyse und Debugging).",
+          "Einhaltung gesetzlicher Verpflichtungen und Verhinderung von Betrug/Missbrauch."
+        ]
+      },
+      "3": {
+        "title": "3) KI- & Abbildnutzung",
+        "consentFirst": {
+          "label": "Einwilligung zuerst:",
+          "content": "Ihr Abbild/Ihre Medien werden nur nach Ihren Anweisungen verarbeitet (z. B. zur Erkennung/Verfolgung der Nutzung, zur Ermöglichung lizenzierter Anfragen)."
+        },
+        "training": {
+          "label": "Training:",
+          "content": "Wir verwenden Ihr Abbild/Ihre Medien nicht zum Training öffentlicher Drittanbietermodelle. Wenn wir interne Erkennungs- oder Sicherheitssysteme optimieren, tun wir dies unter Ihren ausgewählten Berechtigungen und Zugriffskontrollen."
+        },
+        "takedowns": {
+          "label": "Entfernungen:",
+          "content": "Wenn Sie unlizenzierte Nutzung melden, können wir den gemeldeten Inhalt verarbeiten, um die Angelegenheit zu untersuchen und Maßnahmen zu ergreifen."
+        }
+      },
+      "4": {
+        "title": "4) Rechtsgrundlagen (EWR/UK)",
+        "content": "Wir verarbeiten personenbezogene Daten auf der Grundlage von: Vertrag (zur Erbringung der Dienstleistung), berechtigten Interessen (Sicherheit, Verbesserung) und Einwilligung (sofern erforderlich, z. B. Marketing)."
+      },
+      "5": {
+        "title": "5) Weitergabe",
+        "p1": "Wir verkaufen keine personenbezogenen Informationen im herkömmlichen Sinne. Wir können anonymisierte und/oder aggregierte Informationen an geprüfte Partner (einschließlich Analyse- und KI-Technologieanbieter) für Forschung, Sicherheit und Produktentwicklung lizenzieren oder zur Verfügung stellen. Wir verlangen von den Empfängern, diese nur für genehmigte Zwecke zu verwenden und eine Re-Identifizierung zu vermeiden.",
+        "p2": "Wir geben Informationen auch weiter an:",
+        "list": [
+          "Dienstleister (Hosting, Speicherung, Analyse, E-Mail) unter Vertrag.",
+          "Gegenparteien, die Sie genehmigen (z. B. Marken/Agenturen für lizenzierte Anfragen, die Sie annehmen).",
+          "Rechtsabteilung/Compliance, wenn dies gesetzlich vorgeschrieben ist oder um Rechte, Sicherheit und Integrität zu schützen."
+        ]
+      },
+      "6": {
+        "title": "6) Aufbewahrung",
+        "content": "Wir bewahren Daten auf, solange Ihr Konto aktiv ist und wie für die oben genannten Zwecke erforderlich. Sie können die Löschung beantragen; einige Aufzeichnungen (z. B. Zahlungen, Verträge, Sicherheitsprotokolle) können wie gesetzlich vorgeschrieben aufbewahrt werden."
+      },
+      "7": {
+        "title": "7) Sicherheit",
+        "content": "Wir verwenden branchenübliche Sicherheitsvorkehrungen (Verschlüsselung bei der Übertragung, Zugriffskontrollen). Keine Methode ist zu 100 % sicher; melden Sie Probleme an"
+      },
+      "8": {
+        "title": "8) Ihre Wahlmöglichkeiten & Rechte",
+        "list": {
+          "0": "Zugriff auf Ihre Daten, Korrektur, Download oder Löschung (vorbehaltlich gesetzlicher Grenzen).",
+          "1": "Abmeldung vom Marketing jederzeit möglich.",
+          "2": "Kontrolle der Profilsichtbarkeit und der zulässigen Nutzungen für Ihr Abbild/Ihre Medien.",
+          "3": {
+            "label": "Nicht verkaufen/teilen (falls zutreffend):",
+            "content": "Sie können der Lizenzierung unserer anonymisierten/aggregierten Informationen widersprechen, indem Sie den Link „Meine personenbezogenen Daten nicht verkaufen oder teilen“ verwenden oder eine E-Mail senden an",
+            "suffix": "mit dem Betreff „Do Not Sell/Share“."
+          },
+          "4": "Für Einwohner des EWR/UK/der Schweiz: Sie können der Verarbeitung widersprechen/diese einschränken und eine Beschwerde bei Ihrer örtlichen Behörde einreichen."
+        },
+        "requests": "Anfragen:"
+      },
+      "9": {
+        "title": "9) Cookies & Analytik",
+        "content": "Wir verwenden Cookies und ähnliche Technologien für die Anmeldung, Präferenzen und Analysen. Sie können Cookies in Ihrem Browser steuern; einige Funktionen funktionieren möglicherweise ohne sie nicht."
+      },
+      "10": {
+        "title": "10) Kinder",
+        "content": "Likelee ist nicht für Kinder unter 16 Jahren (oder dem in Ihrer Region erforderlichen Alter) bestimmt. Wir sammeln nicht wissentlich Daten von Kindern."
+      },
+      "11": {
+        "title": "11) Internationale Übermittlungen",
+        "content": "Wenn Daten international übermittelt werden, verwenden wir angemessene Sicherheitsvorkehrungen (z. B. SCCs)."
+      },
+      "12": {
+        "title": "12) Änderungen",
+        "content": "Wir können diese Richtlinie aktualisieren. Wir werden das neue Datum oben veröffentlichen. Wenn Änderungen wesentlich sind, werden wir Sie benachrichtigen (z. B. per E-Mail oder Hinweis in der App)."
+      },
+      "13": {
+        "title": "13) Kontakt",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
   "commercialRights": "Kommerzielle Rechte",
   "company": "Unternehmen",
   "creatorDashboard": {
@@ -1174,6 +1285,14 @@
       "button": "Anmelden",
       "prompt": "Haben Sie bereits ein Konto?",
       "link": "Anmelden"
+    },
+    "terms": {
+      "title": "AGB & Vereinbarungen",
+      "subtitle": "Bitte überprüfen und akzeptieren Sie unsere Richtlinien, um Ihre Registrierung abzuschließen.",
+      "agreeTo": "Ich stimme der",
+      "policyLink": "Datenschutzerklärung",
+      "mustAgree": "Sie müssen der Datenschutzerklärung zustimmen, um Ihr Konto zu erstellen.",
+      "completeRegistration": "Registrierung abschließen"
     },
     "form": {
       "socialLink": "Social Media Link (Instagram, TikTok, YouTube)",

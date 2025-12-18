@@ -36,7 +36,118 @@
   "allSizesSubtitle": "Des startups e-commerce aux entreprises—construisez des campagnes de haute qualité avec des talents vérifiés pour tous les budgets.",
   "legalAndCompliance": "Juridique et conformité",
   "sagAftraAlignment": "Alignement SAG-AFTRA",
-  "privacyPolicy": "Politique de confidentialité",
+  "privacyPolicy": {
+    "title": "Politique de confidentialité de Likelee",
+    "lastUpdated": "Dernière mise à jour : octobre 2025",
+    "intro": "Likelee (\"Likelee\", \"nous\", \"notre\") aide les talents, les créateurs et les marques à gérer l'utilisation sous licence et consentie de leur image dans l'IA. Cette politique de confidentialité explique ce que nous collectons, comment nous l'utilisons et vos choix.",
+    "sections": {
+      "1": {
+        "title": "1) Informations que nous collectons",
+        "accountData": {
+          "label": "Données de compte et de profil :",
+          "content": "nom, e-mail, mot de passe (haché), ville/état, date de naissance, balises de style, préférences, liens/identifiants."
+        },
+        "likenessMedia": {
+          "label": "Image et médias :",
+          "content": "photos que vous téléchargez, métadonnées et paramètres que vous choisissez pour la visibilité/l'utilisation. Remarque : nous n'utilisons l'image/les médias que selon les contrôles que vous avez définis (par exemple, public/privé, utilisations autorisées)."
+        },
+        "usageData": {
+          "label": "Données d'utilisation :",
+          "content": "appareil/navigateur, adresse IP, pages consultées, clics, pages de référence."
+        },
+        "communications": {
+          "label": "Communications :",
+          "content": "messages et e-mails que vous nous envoyez."
+        },
+        "thirdParties": {
+          "label": "De tiers (facultatif) :",
+          "content": "liens sociaux ou informations sur la marque/l'agence que vous choisissez de connecter."
+        }
+      },
+      "2": {
+        "title": "2) Comment nous utilisons les informations",
+        "list": [
+          "Fournir et sécuriser le service (comptes, intégration, approbations, paiements).",
+          "Appliquer vos règles d'utilisation et créer une piste d'audit.",
+          "Communiquer avec vous (e-mails de service, invitations de cohortes, mises à jour de politique).",
+          "Améliorer les fonctionnalités, la sécurité et les performances (analyses et débogage).",
+          "Se conformer aux obligations légales et prévenir la fraude/les abus."
+        ]
+      },
+      "3": {
+        "title": "3) Utilisation de l'IA et de l'image",
+        "consentFirst": {
+          "label": "Consentement d'abord :",
+          "content": "Votre image/vos médias ne sont traités que selon vos instructions (par exemple, pour détecter/suivre l'utilisation, permettre les demandes sous licence)."
+        },
+        "training": {
+          "label": "Entraînement :",
+          "content": "Nous n'utilisons pas votre image/vos médias pour entraîner des modèles publics tiers. Si nous affinons des systèmes internes de détection ou de sécurité, nous le faisons sous vos autorisations et contrôles d'accès sélectionnés."
+        },
+        "takedowns": {
+          "label": "Retraits :",
+          "content": "Si vous signalez une utilisation sans licence, nous pouvons traiter le contenu signalé pour enquêter et agir."
+        }
+      },
+      "4": {
+        "title": "4) Bases légales (EEE/UK)",
+        "content": "Nous traitons les données personnelles sur la base de : contrat (pour fournir le service), intérêts légitimes (sécurité, amélioration) et consentement (lorsque requis, par exemple, marketing)."
+      },
+      "5": {
+        "title": "5) Partage",
+        "p1": "Nous ne vendons pas d'informations personnelles au sens traditionnel. Nous pouvons accorder des licences ou mettre à disposition des informations anonymisées et/ou agrégées à des partenaires sélectionnés (y compris des fournisseurs d'analyses et de technologies d'IA) à des fins de recherche, de sécurité et de développement de produits. Nous exigeons des destinataires qu'ils ne les utilisent qu'à des fins approuvées et qu'ils évitent toute ré-identification.",
+        "p2": "Nous partageons également des informations avec :",
+        "list": [
+          "Fournisseurs de services (hébergement, stockage, analyses, e-mail) sous contrat.",
+          "Contreparties que vous approuvez (par exemple, marques/agences pour les demandes sous licence que vous acceptez).",
+          "Juridique/Conformité lorsque la loi l'exige ou pour protéger les droits, la sécurité et l'intégrité."
+        ]
+      },
+      "6": {
+        "title": "6) Rétention",
+        "content": "Nous conservons les données tant que votre compte est actif et selon les besoins pour les finalités ci-dessus. Vous pouvez demander la suppression ; certains enregistrements (par exemple, paiements, contrats, journaux de sécurité) peuvent être conservés comme l'exige la loi."
+      },
+      "7": {
+        "title": "7) Sécurité",
+        "content": "Nous utilisons des mesures de protection standard de l'industrie (cryptage en transit, contrôles d'accès). Aucune méthode n'est sûre à 100 % ; signalez les problèmes à"
+      },
+      "8": {
+        "title": "8) Vos choix et droits",
+        "list": {
+          "0": "Accéder, corriger, télécharger ou supprimer vos données (sous réserve des limites légales).",
+          "1": "Désactiver le marketing à tout moment.",
+          "2": "Contrôler la visibilité du profil et les utilisations autorisées pour votre image/vos médias.",
+          "3": {
+            "label": "Ne pas vendre/partager (le cas échéant) :",
+            "content": "Vous pouvez refuser l'octroi de licences pour nos informations anonymisées/agrégées en utilisant le lien \"Ne pas vendre ou partager mes informations personnelles\" ou en envoyant un e-mail à",
+            "suffix": "avec l'objet \"Do Not Sell/Share\"."
+          },
+          "4": "Pour les résidents de l'EEE/UK/Suisse : vous pouvez vous opposer/restreindre le traitement et déposer une plainte auprès de votre autorité locale."
+        },
+        "requests": "Demandes :"
+      },
+      "9": {
+        "title": "9) Cookies et analyses",
+        "content": "Nous utilisons des cookies et des technologies similaires pour la connexion, les préférences et les analyses. Vous pouvez contrôler les cookies dans votre navigateur ; certaines fonctionnalités pourraient ne pas fonctionner sans eux."
+      },
+      "10": {
+        "title": "10) Enfants",
+        "content": "Likelee n'est pas destiné aux enfants de moins de 16 ans (ou l'âge requis par votre région). Nous ne collectons pas sciemment de données auprès d'enfants."
+      },
+      "11": {
+        "title": "11) Transferts internationaux",
+        "content": "Si les données sont transférées à l'échelle internationale, nous utilisons des garanties appropriées (par exemple, clauses contractuelles types)."
+      },
+      "12": {
+        "title": "12) Changements",
+        "content": "Nous pouvons mettre à jour cette politique. Nous afficherons la nouvelle date ci-dessus. Si les changements sont importants, nous vous en informerons (par exemple, par e-mail ou avis dans l'application)."
+      },
+      "13": {
+        "title": "13) Contact",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
   "commercialRights": "Droits commerciaux",
   "company": "Entreprise",
   "creators": "Créateurs",
@@ -485,6 +596,14 @@
         "relaxed": "Détendu",
         "angry": "En colère"
       },
+      "voiceScripts": {
+        "happy": "Je suis absolument ravi d'être ici aujourd'hui ! La vie est pleine de merveilleuses surprises et d'opportunités passionnantes. Chaque matin apporte un nouveau départ et de nouvelles possibilités. J'adore me connecter avec les gens et partager des énergies positives. Le monde est un endroit incroyable quand on le regarde avec optimisme. Célébrons les petites victoires et chérissons chaque moment de joie. Le bonheur est contagieux, alors propageons-le !",
+        "emotional": "Il y a des moments dans la vie qui touchent nos cœurs profondément. Parfois, nous nous sentons dépassés par la beauté de la connexion humaine. Ces expériences façonnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnérabilité n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses propres luttes et ses propres triomphes. Honorons ces moments et laissons de la place à une émotion authentique.",
+        "excited": "Oh mon Dieu, c'est incroyable ! Je peux à peine contenir mon enthousiasme en ce moment ! Il y a tellement d'énergie et de potentiel dans cet instant. Je vibre d'anticipation pour ce qui va suivre. Pouvez-vous ressentir cette électricité dans l'air ? Ça va être absolument génial ! Je suis prêt à foncer et à faire bouger les choses. L'avenir est brillant et je suis là pour ça !",
+        "mellow": "Parfois, il est agréable de simplement ralentir et de prendre les choses avec calme. Il n'y a pas d'urgence, pas de pression. Juste une présence calme et stable dans l'instant. La vie n'a pas toujours besoin d'être intense ou dramatique. Ces moments de tranquillité ont leur propre beauté et leur propre but. Respirons simplement et apprécions le calme. Tout se déroule en son temps, et c'est parfaitement normal.",
+        "relaxed": "Salut, je me détends juste un peu aujourd'hui. Pas de stress, pas d'inquiétude. Tout coule naturellement et en douceur. Je suis dans un très bon état d'esprit en ce moment, je profite simplement de l'instant présent. La vie semble équilibrée et confortable. Il y a quelque chose de paisible à ne pas trop réfléchir. Simplement être ici, être présent et laisser les choses se passer naturellement. Tout va bien.",
+        "angry": "Je ne peux pas croire que cela arrive. C'est complètement inacceptable et franchement, j'en ai assez. Il y a des limites à ce que n'importe qui devrait supporter. Cette situation doit changer, et elle doit changer maintenant. Je suis fatigué des excuses et des promesses en l'air. Les actions parlent plus fort que les mots, et je suis prêt à exiger ce qui est juste. Ça s'arrête ici."
+      },
       "overview": {
         "title": "Aperçu du profil vocal",
         "totalRecordings": "Total d'enregistrements",
@@ -776,6 +895,14 @@
       "verifyIdentity": "Vérifier l'identité maintenant"
     },
     "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "terms": {
+      "title": "Termes & Conditions",
+      "subtitle": "Veuillez lire et accepter nos conditions pour terminer votre inscription.",
+      "agreeTo": "J'accepte la",
+      "policyLink": "Politique de confidentialité",
+      "mustAgree": "Vous devez accepter la politique de confidentialité pour créer votre compte.",
+      "completeRegistration": "Terminer l'inscription"
+    },
     "title": "Réservez votre profil",
     "steps": {
       "accountSetup": "Configuration du compte",

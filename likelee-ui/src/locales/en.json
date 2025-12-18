@@ -18,7 +18,118 @@
   "contactUs": "Contact Us",
   "legalAndCompliance": "Legal & Compliance",
   "sagAftraAlignment": "SAG-AFTRA Alignment",
-  "privacyPolicy": "Privacy Policy",
+  "privacyPolicy": {
+    "title": "Likelee Privacy Policy",
+    "lastUpdated": "Last updated: October 2025",
+    "intro": "Likelee (\"Likelee,\" \"we,\" \"us\") helps talent, creators, and brands manage licensed, consented use of likeness in AI. This Privacy Policy explains what we collect, how we use it, and your choices.",
+    "sections": {
+      "1": {
+        "title": "1) Information we collect",
+        "accountData": {
+          "label": "Account & profile data:",
+          "content": "name, email, password (hashed), city/state, date of birth, style tags, preferences, links/handles."
+        },
+        "likenessMedia": {
+          "label": "Likeness & media:",
+          "content": "photos you upload, metadata, and settings you choose for visibility/usage. Note: We only use likeness/media according to the controls you set (e.g., public/private, allowed uses)."
+        },
+        "usageData": {
+          "label": "Usage data:",
+          "content": "device/browser, IP address, pages viewed, clicks, referring pages."
+        },
+        "communications": {
+          "label": "Communications:",
+          "content": "messages and emails you send to us."
+        },
+        "thirdParties": {
+          "label": "From third parties (optional):",
+          "content": "social links or brand/agency info you choose to connect."
+        }
+      },
+      "2": {
+        "title": "2) How we use information",
+        "list": [
+          "Provide and secure the service (accounts, onboarding, approvals, payouts).",
+          "Enforce your usage rules and create an audit trail.",
+          "Communicate with you (service emails, cohort invites, policy updates).",
+          "Improve features, safety, and performance (analytics and debugging).",
+          "Comply with legal obligations and prevent fraud/abuse."
+        ]
+      },
+      "3": {
+        "title": "3) AI & likeness use",
+        "consentFirst": {
+          "label": "Consent-first:",
+          "content": "Your likeness/media is processed only as you direct (e.g., to detect/track use, enable licensed requests)."
+        },
+        "training": {
+          "label": "Training:",
+          "content": "We do not use your likeness/media to train public, third-party models. If we fine-tune internal detection or safety systems, we do so under your selected permissions and access controls."
+        },
+        "takedowns": {
+          "label": "Takedowns:",
+          "content": "If you report unlicensed use, we may process the reported content to investigate and act."
+        }
+      },
+      "4": {
+        "title": "4) Legal bases (EEA/UK)",
+        "content": "We process personal data based on: contract (to provide the service), legitimate interests (security, improvement), and consent (where required, e.g., marketing)."
+      },
+      "5": {
+        "title": "5) Sharing",
+        "p1": "We do not sell personal information in the traditional sense. We may license or make available de-identified and/or aggregated information to vetted partners (including analytics and AI technology providers) for research, safety, and product development. We require recipients to use it only for approved purposes and to avoid re-identification.",
+        "p2": "We also share information with:",
+        "list": [
+          "Service providers (hosting, storage, analytics, email) under contract.",
+          "Counterparties you approve (e.g., brands/agencies for licensed requests you accept).",
+          "Legal/Compliance when required by law or to protect rights, safety, and integrity."
+        ]
+      },
+      "6": {
+        "title": "6) Retention",
+        "content": "We keep data while your account is active and as needed for the purposes above. You can request deletion; some records (e.g., payments, contracts, safety logs) may be kept as required by law."
+      },
+      "7": {
+        "title": "7) Security",
+        "content": "We use industry-standard safeguards (encryption in transit, access controls). No method is 100% secure; report issues to"
+      },
+      "8": {
+        "title": "8) Your choices & rights",
+        "list": {
+          "0": "Access, correct, download, or delete your data (subject to legal limits).",
+          "1": "Opt out of marketing at any time.",
+          "2": "Control profile visibility and permitted uses for your likeness/media.",
+          "3": {
+            "label": "Do Not Sell/Share (where applicable):",
+            "content": "You may opt out of our licensing of de-identified/aggregated information by using the \"Do Not Sell or Share My Personal Information\" link or emailing",
+            "suffix": "with the subject \"Do Not Sell/Share.\""
+          },
+          "4": "For EEA/UK/Swiss residents: you may object/restrict processing and lodge a complaint with your local authority."
+        },
+        "requests": "Requests:"
+      },
+      "9": {
+        "title": "9) Cookies & analytics",
+        "content": "We use cookies and similar tech for sign-in, preferences, and analytics. You can control cookies in your browser; some features may not work without them."
+      },
+      "10": {
+        "title": "10) Children",
+        "content": "Likelee is not intended for children under 16 (or the age required by your region). We do not knowingly collect data from children."
+      },
+      "11": {
+        "title": "11) International transfers",
+        "content": "If data is transferred internationally, we use appropriate safeguards (e.g., SCCs)."
+      },
+      "12": {
+        "title": "12) Changes",
+        "content": "We may update this Policy. We'll post the new date above. If changes are material, we'll notify you (e.g., email or in-app notice)."
+      },
+      "13": {
+        "title": "13) Contact",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
   "commercialRights": "Commercial Rights",
   "company": "Company",
   "creators": "Creators",
@@ -1009,6 +1120,14 @@
       "button": "Sign In",
       "prompt": "Already have an account?",
       "link": "Sign In"
+    },
+    "terms": {
+      "title": "Terms & Agreements",
+      "subtitle": "Please review and agree to our policies to complete your registration.",
+      "agreeTo": "I agree to the",
+      "policyLink": "Privacy Policy",
+      "mustAgree": "You must agree to the privacy policy to create your account.",
+      "completeRegistration": "Complete Registration"
     },
     "errors": {
       "emailRegistered": "This email is already registered. Please use a different email or sign in instead.",
