@@ -64,6 +64,7 @@ async fn main() {
         Some(client)
     } else {
         info!("rekognition: disabled (moderation disabled)");
+
         None
     };
 

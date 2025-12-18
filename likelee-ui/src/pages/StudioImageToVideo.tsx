@@ -379,7 +379,7 @@ export default function StudioImageToVideo() {
                         Click to upload an image
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        JPG, PNG, WEBP up to 10MB
+                        JPG, PNG, WEBP up to 20MB
                       </p>
                     </div>
                     <input

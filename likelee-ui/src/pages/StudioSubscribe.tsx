@@ -8,6 +8,7 @@ import { Check, Sparkles, Zap, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { getUserFriendlyError } from "@/utils";
 
 const creditTiers = [
   { credits: 2000, price: 59, label: "2,000" },
@@ -60,7 +61,7 @@ export default function StudioSubscribe() {
       console.error("Checkout failed:", error);
       toast({
         title: "Error",
-        description: `Checkout failed: ${error.message || "An unknown error occurred."}`,
+        description: getUserFriendlyError(error),
         variant: "destructive",
       });
       setCheckingOut(false);

@@ -31,7 +31,7 @@ pub async fn liveness_result(
     State(state): State<AppState>,
     Json(req): Json<LivenessResultRequest>,
 ) -> Result<Json<LivenessResultResponse>, (StatusCode, String)> {
-    let enabled = state.liveness_enabled != "0";
+    let enabled = std::env::var("LIVENESS_ENABLED").unwrap_or_else(|_| "0".into()) != "0";
     if !enabled {
         return Err((
             StatusCode::PRECONDITION_REQUIRED,
@@ -45,7 +45,10 @@ pub async fn liveness_result(
         ));
     }
     let client = state.rekog.as_ref().unwrap();
-    let min_score: f32 = state.liveness_min_score.parse().unwrap_or(0.90);
+    let min_score: f32 = std::env::var("LIVENESS_MIN_SCORE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.90);
     info!(session_id = %req.session_id, min_score, "liveness: fetching results");
 
     let res = client
@@ -75,7 +78,7 @@ pub async fn create_session(
     State(state): State<AppState>,
     Json(_req): Json<LivenessCreateRequest>,
 ) -> Result<Json<LivenessCreateResponse>, (StatusCode, String)> {
-    let enabled = state.liveness_enabled != "0";
+    let enabled = std::env::var("LIVENESS_ENABLED").unwrap_or_else(|_| "0".into()) != "0";
     if !enabled {
         return Err((
             StatusCode::PRECONDITION_REQUIRED,

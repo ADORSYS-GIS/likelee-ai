@@ -53,6 +53,7 @@ pub struct ServerConfig {
     // Keep as string to allow legacy "1"/"0" values
     #[envconfig(from = "MODERATION_ENABLED", default = "1")]
     pub moderation_enabled: String,
+
     #[envconfig(from = "AWS_REGION", default = "us-east-1")]
     pub aws_region: String,
 
@@ -89,6 +90,7 @@ pub struct AppState {
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
+
     pub smtp_host: String,
     pub smtp_port: u16,
     pub smtp_user: String,
