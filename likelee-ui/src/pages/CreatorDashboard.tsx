@@ -892,6 +892,8 @@ export default function CreatorDashboard() {
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
   const [generatingVoice, setGeneratingVoice] = useState(false);
@@ -1908,6 +1910,33 @@ export default function CreatorDashboard() {
   // Recording functions
   const startRecording = async () => {
     try {
+      setIsCountingDown(true);
+      setCountdown(3);
+
+      const countdownInterval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            setIsCountingDown(false);
+            initiateMediaRecorder();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (e) {
+      console.error("Failed to start recording flow:", e);
+      setIsCountingDown(false);
+      toast({
+        variant: "destructive",
+        title: "Microphone Error",
+        description: "Please ensure microphone access is granted.",
+      });
+    }
+  };
+
+  const initiateMediaRecorder = async () => {
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       let options = { mimeType: "audio/webm" };
@@ -2005,7 +2034,7 @@ export default function CreatorDashboard() {
   const deleteRecording = async (id) => {
     const rec = voiceLibrary.find((r) => r.id === id);
 
-    toast({
+    const { dismiss } = toast({
       title: "Delete Recording?",
       description: "This action cannot be undone.",
       variant: "destructive",
@@ -2013,6 +2042,7 @@ export default function CreatorDashboard() {
         <ToastAction
           altText="Delete"
           onClick={async () => {
+            dismiss();
             setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
             try {
               const sid = rec?.server_recording_id || rec?.id;
@@ -6432,7 +6462,25 @@ export default function CreatorDashboard() {
           </DialogHeader>
 
           <div className="py-4">
-            {!isRecording ? (
+            {isCountingDown ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                  <div className="absolute inset-0 border-4 border-[#32C8D1]/20 rounded-full" />
+                  <div
+                    className="absolute inset-0 border-4 border-[#32C8D1] rounded-full transition-all duration-1000"
+                    style={{
+                      clipPath: `inset(${(3 - countdown) * 33}% 0 0 0)`,
+                    }}
+                  />
+                  <span className="text-7xl font-black text-[#32C8D1]">
+                    {countdown}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold bg-gradient-to-r from-[#32C8D1] to-teal-600 bg-clip-text text-transparent mt-8">
+                  Get ready...
+                </p>
+              </div>
+            ) : !isRecording ? (
               <div className="text-center py-8">
                 <div className="w-20 h-20 bg-[#32C8D1] rounded-full flex items-center justify-center mx-auto mb-6">
                   <Mic className="w-10 h-10 text-white" />

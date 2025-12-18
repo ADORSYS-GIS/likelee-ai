@@ -27,9 +27,9 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: "border bg-background text-foreground",
-        // Brand-matched destructive style: teal gradient background and black border/text for strong contrast
+        // Subdued destructive style: white background with teal border/text to match dashboard UI
         destructive:
-          "group border-2 border-black bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white",
+          "group border-2 border-[#32C8D1] bg-white text-gray-900 shadow-xl dark:bg-gray-950 dark:text-gray-50",
       },
     },
     defaultVariants: {
@@ -53,7 +53,7 @@ const ToastAction = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-black group-[.destructive]:hover:border-black group-[.destructive]:hover:bg-black/10 group-[.destructive]:hover:text-white group-[.destructive]:focus:ring-teal-400",
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-[#32C8D1] group-[.destructive]:bg-[#32C8D1] group-[.destructive]:text-white group-[.destructive]:hover:bg-[#2AB8C1] group-[.destructive]:focus:ring-[#32C8D1]",
       className,
     )}
     {...props}
