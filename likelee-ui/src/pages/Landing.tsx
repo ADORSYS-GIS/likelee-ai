@@ -20,6 +20,11 @@ export default function Landing() {
   const [typedIndex, setTypedIndex] = useState(0);
 
   useEffect(() => {
+    setTypedHeadline("");
+    setTypedIndex(0);
+  }, [headline]);
+
+  useEffect(() => {
     if (typedIndex > headline.length) return;
     const id = setTimeout(() => {
       setTypedHeadline(headline.slice(0, typedIndex));
@@ -39,7 +44,7 @@ export default function Landing() {
       setPhraseIdx((i) => (i + 1) % phrases.length);
     }, 2500);
     return () => clearInterval(id);
-  }, []);
+  }, [phrases.length]);
 
   useEffect(() => {
     // Add JSON-LD structured data

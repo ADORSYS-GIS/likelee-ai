@@ -1,5 +1,12 @@
 {
   "greeting": "Hallo, willkommen!",
+  "common": {
+    "signIn": "Anmelden",
+    "dashboard": "Dashboard",
+    "city": "Stadt",
+    "state": "Bundesland",
+    "logout": "Abmelden"
+  },
   "brands": "Marken",
   "agencies": "Agenturen",
   "marketingAgency": "Marketingagentur",
@@ -16,6 +23,7 @@
   "impact": "Auswirkungen",
   "support": "Unterstützung",
   "contactUs": "Kontaktieren Sie uns",
+  "legalAndCompliance": "Rechtliches & Compliance",
   "questionsContactUs": "Fragen? Kontaktieren Sie uns:",
   "landingHeadline": "Suchen Sie etwas Echtes im KI-Zeitalter?",
   "readyToUse": "Einsatzbereit",
@@ -1307,11 +1315,20 @@
       "completeRegistration": "Registrierung abschließen"
     },
     "form": {
-      "socialLink": "Social Media Link (Instagram, TikTok, YouTube)",
-      "location": "Standort (Stadt, Land)",
-      "dob": "Geburtsdatum",
-      "age": "Alter",
-      "genderQuestion": "Wie identifizieren Sie sich?",
+      "labels": {
+        "fullName": "Vollständiger Name",
+        "email": "E-Mail-Adresse",
+        "password": "Passwort",
+        "confirmPassword": "Passwort bestätigen",
+        "city": "Stadt",
+        "state": "Bundesland",
+        "socialLink": "Social Media Link",
+        "location": "Standort",
+        "dob": "Geburtsdatum",
+        "age": "Alter",
+        "genderQuestion": "Wie identifizieren Sie sich?"
+      },
+      "handle": "Benutzername / Handle",
       "genderOptions": {
         "female": "Weiblich",
         "male": "Männlich",
@@ -2325,6 +2342,31 @@
   "login": {
     "toasts": {
       "signInFailed": "Anmeldung fehlgeschlagen"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Wählen Sie Ihre Identität",
+      "subtitle": "Treten Sie dem Ökosystem bei, das für Schöpfer entwickelt wurde, um ihr digitales Abbild zu besitzen, zu kontrollieren und davon zu profitieren."
+    },
+    "influencer": {
+      "title": "Influencer & Content Creator",
+      "description": "Monetarisieren Sie Ihre soziale Präsenz, indem Sie Ihren digitalen Doppelgänger für Social-First-Kampagnen lizenzieren."
+    },
+    "model_actor": {
+      "title": "Model & Schauspieler",
+      "description": "Sichern Sie sich hochwertige kommerzielle und redaktionelle Möglichkeiten mit einem verifizierten digitalen Zwilling."
+    },
+    "athlete": {
+      "title": "Athlet (NIL)",
+      "description": "Skalieren Sie Ihre Markenpartnerschaften und erzielen Sie passives Einkommen mit einem NIL-konformen digitalen Abbild."
+    },
+    "selectButton": "Auswählen & Weiter",
+    "authModal": {
+      "title": "Willkommen bei Likelee",
+      "selected": "Sie haben ausgewählt:",
+      "signUpAs": "Registrieren als",
+      "alreadyHaveAccount": "Haben Sie bereits ein Konto? Anmelden"
     }
   }
 }

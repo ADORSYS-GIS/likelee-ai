@@ -1,5 +1,12 @@
 {
   "greeting": "Hello, Welcome!",
+  "common": {
+    "signIn": "Sign In",
+    "dashboard": "Dashboard",
+    "city": "City",
+    "state": "State",
+    "logout": "Logout"
+  },
   "brands": "Brands",
   "agencies": "Agencies",
   "marketingAgency": "Marketing Agency",
@@ -2463,6 +2470,31 @@
   "login": {
     "toasts": {
       "signInFailed": "Sign-in failed"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Choose Your Identity",
+      "subtitle": "Join the ecosystem built for creators to own, control, and profit from their digital likeness."
+    },
+    "influencer": {
+      "title": "Influencer & Content Creator",
+      "description": "Monetize your social presence by licensing your digital double for social-first campaigns."
+    },
+    "model_actor": {
+      "title": "Model & Actor",
+      "description": "Secure high-end commercial and editorial opportunities with a verified digital twin."
+    },
+    "athlete": {
+      "title": "Athlete (NIL)",
+      "description": "Scale your brand partnerships and earn passive income with NIL-compliant digital likeness."
+    },
+    "selectButton": "Select & Continue",
+    "authModal": {
+      "title": "Welcome to Likelee",
+      "selected": "You selected:",
+      "signUpAs": "Sign up as",
+      "alreadyHaveAccount": "Already have an account? Sign In"
     }
   }
 }

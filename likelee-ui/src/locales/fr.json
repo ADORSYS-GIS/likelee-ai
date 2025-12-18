@@ -1,5 +1,12 @@
 {
   "greeting": "Bonjour, bienvenue !",
+  "common": {
+    "signIn": "Se connecter",
+    "dashboard": "Tableau de bord",
+    "city": "Ville",
+    "state": "État",
+    "logout": "Déconnexion"
+  },
   "brands": "Marques",
   "agencies": "Agences",
   "marketingAgency": "Agence de marketing",
@@ -15,6 +22,7 @@
   "blog": "Blog",
   "impact": "Impact",
   "support": "Support",
+  "contactUs": "Contactez-nous",
   "questionsContactUs": "Des questions ? Contactez-nous :",
   "landingHeadline": "Vous cherchez quelque chose de réel à l'ère de l'IA ?",
   "readyToUse": "Prêt à l'emploi",
@@ -990,6 +998,7 @@
         "city": "Ville",
         "state": "État/Pays"
       },
+      "handle": "Nom d'utilisateur / Handle",
       "placeholders": {
         "fullName": "ex: Jean Dupont",
         "stageName": "Votre nom",
@@ -1647,6 +1656,31 @@
   "login": {
     "toasts": {
       "signInFailed": "Échec de la connexion"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Choisissez Votre Identité",
+      "subtitle": "Rejoignez l'écosystème conçu pour que les créateurs possèdent, contrôlent et profitent de leur double numérique."
+    },
+    "influencer": {
+      "title": "Influenceur & Créateur de Contenu",
+      "description": "Monétisez votre présence sociale en licenciant votre double numérique pour des campagnes axées sur les réseaux sociaux."
+    },
+    "model_actor": {
+      "title": "Mannequin & Acteur",
+      "description": "Sécurisez des opportunités commerciales et éditoriales haut de gamme avec un jumeau numérique vérifié."
+    },
+    "athlete": {
+      "title": "Athlète (NIL)",
+      "description": "Développez vos partenariats de marque et générez des revenus passifs avec une image numérique conforme NIL."
+    },
+    "selectButton": "Sélectionner & Continuer",
+    "authModal": {
+      "title": "Bienvenue chez Likelee",
+      "selected": "Vous avez sélectionné :",
+      "signUpAs": "S'inscrire en tant que",
+      "alreadyHaveAccount": "Vous avez déjà un compte ? Se connecter"
     }
   }
 }

@@ -1,5 +1,12 @@
 {
   "greeting": "¡Hola, bienvenido!",
+  "common": {
+    "signIn": "Iniciar Sesión",
+    "dashboard": "Panel de Control",
+    "city": "Ciudad",
+    "state": "Estado",
+    "logout": "Cerrar Sesión"
+  },
   "brands": "Marcas",
   "agencies": "Agencias",
   "marketingAgency": "Agencia de marketing",
@@ -16,6 +23,7 @@
   "impact": "Impacto",
   "support": "Soporte",
   "contactUs": "Contáctenos",
+  "legalAndCompliance": "Legal y Cumplimiento",
   "questionsContactUs": "¿Preguntas? Contáctenos:",
   "landingHeadline": "¿Buscando algo real en la era de la IA?",
   "readyToUse": "Listo para usar",
@@ -1305,6 +1313,20 @@
       "completeRegistration": "Completar registro"
     },
     "form": {
+      "labels": {
+        "fullName": "Nombre Completo",
+        "email": "Correo Electrónico",
+        "password": "Contraseña",
+        "confirmPassword": "Confirmar Contraseña",
+        "city": "Ciudad",
+        "state": "Provincia/Estado",
+        "socialLink": "Enlace de Redes Sociales",
+        "location": "Ubicación",
+        "dob": "Fecha de Nacimiento",
+        "age": "Edad",
+        "genderQuestion": "¿Cómo te identificas?"
+      },
+      "handle": "Nombre de usuario / Handle",
       "socialLink": "Enlace de Redes Sociales (Instagram, TikTok, YouTube)",
       "location": "Ubicación (Ciudad, País)",
       "dob": "Fecha de Nacimiento",
@@ -2315,6 +2337,31 @@
   "login": {
     "toasts": {
       "signInFailed": "Error de inicio de sesión"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Elige Tu Identidad",
+      "subtitle": "Únete al ecosistema diseñado para que los creadores posean, controlen y se beneficien de su imagen digital."
+    },
+    "influencer": {
+      "title": "Influencer y Creador de Contenido",
+      "description": "Monetiza tu presencia social licenciando tu doble digital para campañas enfocadas en redes sociales."
+    },
+    "model_actor": {
+      "title": "Modelo y Actor",
+      "description": "Asegura oportunidades comerciales y editoriales de alta gama con un gemelo digital verificado."
+    },
+    "athlete": {
+      "title": "Atleta (NIL)",
+      "description": "Escala tus asociaciones de marca y obtén ingresos pasivos con una imagen digital que cumple con NIL."
+    },
+    "selectButton": "Seleccionar y Continuar",
+    "authModal": {
+      "title": "Bienvenido a Likelee",
+      "selected": "Has seleccionado:",
+      "signUpAs": "Registrarse como",
+      "alreadyHaveAccount": "¿Ya tienes una cuenta? Iniciar Sesión"
     }
   }
 }
