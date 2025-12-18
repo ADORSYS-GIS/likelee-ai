@@ -4,9 +4,11 @@ import { createPageUrl } from "@/utils";
 import { Menu, X, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-
+import { useAuth } from "@/auth/AuthProvider";
+        
 export default function Layout({ children, currentPageName }) {
   const { t } = useTranslation();
+  const { authenticated, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -610,6 +612,32 @@ export default function Layout({ children, currentPageName }) {
                 >
                   {t("contact")}
                 </Link>
+
+                {!authenticated ? (
+                  <Link
+                    to="/Login"
+                    className="ml-4 px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm flex items-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign In
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 ml-4">
+                    <Link
+                      to="/CreatorDashboard"
+                      className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => logout()}
+                      className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                      title="Logout"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -709,6 +737,38 @@ export default function Layout({ children, currentPageName }) {
               </Link>
               <div className="px-4 py-3">
                 <LanguageSwitcher />
+
+              <div className="pt-4 px-4">
+                {!authenticated ? (
+                  <Link
+                    to="/Login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    Sign In
+                  </Link>
+                ) : (
+                  <div className="space-y-3 w-full">
+                    <Link
+                      to="/CreatorDashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
