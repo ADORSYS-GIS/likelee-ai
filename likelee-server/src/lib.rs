@@ -6,7 +6,6 @@ pub mod email;
 pub mod face_profiles;
 pub mod kyc;
 pub mod licenses;
-pub mod liveness;
 pub mod moderation;
 pub mod organization_profiles;
 pub mod profiles;

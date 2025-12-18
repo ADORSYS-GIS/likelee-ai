@@ -151,9 +151,6 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - DUIX_AUTH_TOKEN (default: change-me)
 - MODERATION_ENABLED (default: "1", set to "0" to disable Rekognition image moderation)
 - AWS_REGION (default: us-east-1)
-- LIVENESS_ENABLED (default: "0"; set to "1" to enable Face Liveness endpoints)
-- LIVENESS_MIN_SCORE (default: 0.90)
-- COGNITO_IDENTITY_POOL_ID (required when LIVENESS_ENABLED=1)
 - ELEVENLABS_API_KEY (optional; required to enable server-side voice cloning)
 
 Notes:
@@ -166,7 +163,6 @@ Notes:
 - VITE_API_BASE_URL – e.g. http://localhost:8787
 - VITE_AWS_REGION – must be a valid AWS region (e.g., us-east-1, eu-west-1)
 - VITE_COGNITO_IDENTITY_POOL_ID – e.g., us-east-1:xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
-- VITE_LIVENESS_DEBUG – set "1" to show in-app debug panel (optional)
 
 ### Storage Architecture (Supabase)
 

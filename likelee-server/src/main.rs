@@ -13,7 +13,6 @@ async fn main() {
         .expect("invalid/missing environment configuration");
     let port = cfg.port;
     let moderation_enabled = cfg.moderation_enabled != "0";
-    let liveness_enabled = cfg.liveness_enabled != "0";
 
     // Init tracing
     let filter = tracing_subscriber::EnvFilter::try_from_default_env()
@@ -54,20 +53,17 @@ async fn main() {
         }
     }
 
-    let rekog = if moderation_enabled || liveness_enabled {
+    let rekog = if moderation_enabled {
         let region = Region::new(cfg.aws_region.clone());
         let sdk_config = aws_config::defaults(BehaviorVersion::latest())
             .region(region)
             .load()
             .await;
         let client = aws_sdk_rekognition::Client::new(&sdk_config);
-        info!(
-            moderation_enabled,
-            liveness_enabled, "AWS Rekognition client initialized"
-        );
+        info!(moderation_enabled, "AWS Rekognition client initialized");
         Some(client)
     } else {
-        info!("rekognition: disabled (both moderation and liveness disabled)");
+        info!("rekognition: disabled (moderation disabled)");
         None
     };
 
@@ -88,8 +84,6 @@ async fn main() {
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
-        liveness_enabled: cfg.liveness_enabled.clone(),
-        liveness_min_score: cfg.liveness_min_score.clone(),
         smtp_host: cfg.smtp_host.clone(),
         smtp_port: cfg.smtp_port,
         smtp_user: cfg.smtp_user.clone(),
