@@ -774,7 +774,7 @@ export default function CreatorDashboard() {
           (creator.base_monthly_price_cents / 100).toString(),
         );
       } else if (creator?.price_per_week !== undefined) {
-        setLocalMonthlyRate(((creator.price_per_week || 0) * 4).toString());
+        setLocalMonthlyRate((creator.price_per_week || 0).toString());
       }
     }
   }, [
@@ -957,15 +957,14 @@ export default function CreatorDashboard() {
           tiktok_handle: creator.tiktok_handle,
           instagram_connected: creator.instagram_connected ?? false,
           instagram_followers: creator.instagram_followers ?? 0,
-          content_types: profile.content_types || [],
-          industries: profile.industries || [],
-          // Derive weekly price from monthly base (USD-only)
+          // Derive monthly price from base_monthly_price_cents
           price_per_week:
             typeof profile.base_monthly_price_cents === "number"
-              ? Math.round(profile.base_monthly_price_cents / 100 / 4)
+              ? Math.round(profile.base_monthly_price_cents / 100)
               : (creator.price_per_week ?? 0),
           royalty_percentage: creator.royalty_percentage ?? 0,
-          accept_negotiations: creator.accept_negotiations ?? true,
+          accept_negotiations: profile.accept_negotiations ?? true,
+          base_monthly_price_cents: profile.base_monthly_price_cents,
           kyc_status: profile.kyc_status,
           verified_at: profile.verified_at,
           cameo_front_url: profile.cameo_front_url,
@@ -2356,6 +2355,19 @@ export default function CreatorDashboard() {
     try {
       // Use override if provided, otherwise use current state
       const dataToSave = creatorOverride || creator;
+
+      // Validation: Minimum $150 monthly rate
+      const monthlyCents =
+        dataToSave.base_monthly_price_cents || dataToSave.price_per_week * 100;
+      if (monthlyCents < 15000) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Rate",
+          description: "Minimum licensing rate is $150 per month.",
+        });
+        setSavingRules(false);
+        return;
+      }
 
       const profileData = {
         email: dataToSave.email || user.email,
@@ -4821,13 +4833,13 @@ export default function CreatorDashboard() {
       // 1. Save the selection (content_types or industries) to the profile
       const profileUpdate: any = {
         email: creator.email || user.email,
+        content_types: creator.content_types,
+        industries: creator.industries,
+        accept_negotiations: creator.accept_negotiations,
+        content_restrictions: contentRestrictions,
+        brand_exclusivity: brandExclusivity,
+        base_monthly_price_cents: creator.base_monthly_price_cents,
       };
-
-      if (showRatesModal === "content") {
-        profileUpdate.content_types = creator.content_types;
-      } else if (showRatesModal === "industry") {
-        profileUpdate.industries = creator.industries;
-      }
 
       // Save profile selection
       const profileRes = await fetch(
@@ -5379,33 +5391,34 @@ export default function CreatorDashboard() {
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-md">
-                    {!editingLicensingRate ? (
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-bold text-gray-900">
-                          ${creator.price_per_week}
-                        </span>
-                        <span className="text-gray-500 font-medium">/mo</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-700 font-medium text-lg">
-                          $
-                        </span>
-                        <Input
-                          type="number"
-                          value={localMonthlyRate}
-                          onChange={(e) => {
+                    <div className="flex items-center gap-3">
+                      <span className="text-gray-700 font-medium text-lg">$</span>
+                      <Input
+                        type="number"
+                        value={
+                          editingLicensingRate
+                            ? localMonthlyRate
+                            : (creator.price_per_week || 0).toString()
+                        }
+                        onChange={(e) => {
+                          if (editingLicensingRate)
                             setLocalMonthlyRate(e.target.value);
-                          }}
-                          className="border-2 border-gray-300 text-lg"
-                          min="0"
-                          step="50"
-                        />
-                        <span className="text-gray-700 font-medium text-lg">
-                          / month
-                        </span>
-                      </div>
-                    )}
+                        }}
+                        disabled={!editingLicensingRate}
+                        readOnly={!editingLicensingRate}
+                        className={cn(
+                          "border-2 text-lg h-12 w-full",
+                          editingLicensingRate
+                            ? "border-[#32C8D1] bg-white"
+                            : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed",
+                        )}
+                        min="150"
+                        step="50"
+                      />
+                      <span className="text-gray-700 font-medium text-lg whitespace-nowrap">
+                        / month
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

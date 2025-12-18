@@ -22,23 +22,22 @@ export function getUserFriendlyError(error: any): string {
     errorStr = String(error);
   }
 
-  // Try to parse JSON errors (e.g., storage upload failed: {"statusCode": 404, "error": "Bucket not found"})
-  // This handles both inline JSON and JSON after a prefix like "storage upload failed:"
+  // Try to parse JSON errors
   try {
-    // Match JSON in the string (handles "prefix: {...}" format)
-    // Use a non-greedy match to handle nested braces
-    const jsonMatch = errorStr.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+    const jsonMatch = errorStr.match(/\{.*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      // Use the parsed error/message fields if available
-      if (parsed.message) {
-        errorStr = String(parsed.message);
-      } else if (parsed.error) {
-        errorStr = String(parsed.error);
+      // PostgREST/Supabase specific fields
+      if (parsed.message && typeof parsed.message === "string") {
+        errorStr = parsed.message;
+      } else if (parsed.details && typeof parsed.details === "string") {
+        errorStr = parsed.details;
+      } else if (parsed.error && typeof parsed.error === "string") {
+        errorStr = parsed.error;
       }
     }
   } catch (e) {
-    // JSON parsing failed, continue with original string
+    // JSON parsing failed or wasn't JSON, continue
   }
 
   // Convert to lowercase for pattern matching
