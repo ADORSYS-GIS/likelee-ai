@@ -387,7 +387,6 @@ export default function OrganizationSignup() {
       }
     };
 
-
     return (
       <div
         className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
