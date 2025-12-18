@@ -1206,6 +1206,7 @@
       "title": "Skip Identity Verification?",
       "description": "If you skip now, your profile will be created, but brands won't see you until you complete verification.",
       "note": "You can complete verification anytime from your dashboard.",
+      "confirmSkip": "Skip for Now - I'm Sure",
       "actions": {
         "back": "← Go Back",
         "confirm": "Skip for Now - I'm Sure"
@@ -1993,6 +1994,18 @@
       "subtitle": "Build your voice library for different emotions and tones",
       "voiceBadge": "Voice",
       "voiceBadgePlural": "Voices",
+      "recordingModal": {
+        "title": "Record {{emotion}} Voice Sample",
+        "ready": "Ready to Record?",
+        "instruction": "The script will scroll slowly. Speak naturally and expressively.",
+        "start": "Start Recording",
+        "stop": "Stop Recording"
+      },
+      "deleteConfirmation": {
+        "title": "Delete Recording?",
+        "description": "This action cannot be undone.",
+        "action": "Delete"
+      },
       "emotionNames": {
         "happy": "Happy",
         "emotional": "Emotional",

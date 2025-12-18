@@ -588,6 +588,18 @@
       "subtitle": "Créez votre bibliothèque vocale pour différentes émotions et tonalités",
       "voiceBadge": "Voix",
       "voiceBadgePlural": "Voix",
+      "recordingModal": {
+        "title": "Enregistrer un échantillon de voix {{emotion}}",
+        "ready": "Prêt à enregistrer ?",
+        "instruction": "Le script défilera lentement. Parlez naturellement et de manière expressive.",
+        "start": "Démarrer l'enregistrement",
+        "stop": "Arrêter l'enregistrement"
+      },
+      "deleteConfirmation": {
+        "title": "Supprimer l'enregistrement ?",
+        "description": "Cette action est irréversible.",
+        "action": "Supprimer"
+      },
       "emotionNames": {
         "happy": "Joyeux",
         "emotional": "Émotionnel",
@@ -878,7 +890,11 @@
       "title": "Ignorer la vérification d'identité ?",
       "description": "Si vous ignorez cette étape maintenant, votre profil sera créé, mais les marques ne vous verront pas tant que vous n'aurez pas terminé la vérification.",
       "note": "Vous pouvez effectuer la vérification à tout moment depuis votre tableau de bord.",
-      "confirmSkip": "Ignorer pour l'instant - Je suis sûr(e)"
+      "confirmSkip": "Passer pour l'instant - Je suis sûr",
+      "actions": {
+        "back": "← Retourner",
+        "confirm": "Passer pour l'instant - Je suis sûr"
+      }
     },
     "actions": {
       "next": "Suivant",

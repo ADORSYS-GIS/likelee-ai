@@ -584,6 +584,18 @@
       },
       "voiceBadge": "Voz",
       "voiceBadgePlural": "Voces",
+      "recordingModal": {
+        "title": "Grabar muestra de voz {{emotion}}",
+        "ready": "¿Listo para grabar?",
+        "instruction": "El guión se desplazará lentamente. Habla de forma natural y expresiva.",
+        "start": "Iniciar grabación",
+        "stop": "Detener grabación"
+      },
+      "deleteConfirmation": {
+        "title": "¿Eliminar grabación?",
+        "description": "Esta acción no se puede deshacer.",
+        "action": "Eliminar"
+      },
       "emotionNames": {
         "happy": "Feliz",
         "emotional": "Emocional",
@@ -1219,9 +1231,10 @@
       "title": "¿Omitir Verificación?",
       "description": "Tu perfil se guardará, pero no serás visible para las marcas hasta que verifiques tu identidad.",
       "note": "Nota: Puedes volver a tu panel en cualquier momento para completar la verificación.",
+      "confirmSkip": "Omitir por ahora - Estoy seguro",
       "actions": {
-        "back": "Volver",
-        "confirm": "Omitir y Finalizar"
+        "back": "← Volver",
+        "confirm": "Omitir por ahora - Estoy seguro"
       }
     },
     "actions": {

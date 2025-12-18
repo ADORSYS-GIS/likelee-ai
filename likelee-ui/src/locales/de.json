@@ -586,6 +586,18 @@
       },
       "voiceBadge": "Stimme",
       "voiceBadgePlural": "Stimmen",
+      "recordingModal": {
+        "title": "{{emotion}} Sprachprobe aufnehmen",
+        "ready": "Bereit zur Aufnahme?",
+        "instruction": "Das Skript wird langsam gescrollt. Sprechen Sie natürlich und ausdrucksstark.",
+        "start": "Aufnahme starten",
+        "stop": "Aufnahme stoppen"
+      },
+      "deleteConfirmation": {
+        "title": "Aufnahme löschen?",
+        "description": "Diese Aktion kann nicht rückgängig gemacht werden.",
+        "action": "Löschen"
+      },
       "emotionNames": {
         "happy": "Glücklich",
         "emotional": "Emotional",
@@ -1437,7 +1449,11 @@
       "title": "Verifizierung überspringen?",
       "description": "Ihr Profil wird gespeichert, aber Sie sind für Marken nicht sichtbar, bis Sie Ihre Identität verifiziert haben.",
       "note": "Hinweis: Sie können jederzeit zu Ihrem Dashboard zurückkehren, um die Verifizierung abzuschließen.",
-      "confirmSkip": "Vorerst überspringen - Ich bin sicher"
+      "confirmSkip": "Vorerst überspringen - Ich bin sicher",
+      "actions": {
+        "back": "← Zurück",
+        "confirm": "Vorerst überspringen - Ich bin sicher"
+      }
     },
     "actions": {
       "next": "Weiter",
