@@ -1197,7 +1197,7 @@
       "unknown": "An error occurred. Please try again or contact support if the problem persists."
     },
     "photos": {
-      "label": "Upload at least 3 photos",
+      "title": "Upload at least 3 photos",
       "description": "These will be used to train your AI model. Make sure they are high quality and show your face clearly.",
       "why": "Why these photos work",
       "whyDesc": "Clear, well-lit photos help potential clients see your versatility.",
