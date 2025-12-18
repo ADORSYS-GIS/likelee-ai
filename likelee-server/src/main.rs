@@ -60,10 +60,11 @@ async fn main() {
             .load()
             .await;
         let client = aws_sdk_rekognition::Client::new(&sdk_config);
-        info!("moderation: AWS Rekognition client initialized");
+        info!(moderation_enabled, "AWS Rekognition client initialized");
         Some(client)
     } else {
-        info!("moderation: disabled via MODERATION_ENABLED=0");
+        info!("rekognition: disabled (moderation disabled)");
+
         None
     };
 

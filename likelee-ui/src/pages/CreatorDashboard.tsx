@@ -755,7 +755,25 @@ export default function CreatorDashboard() {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  const [creator, setCreator] = useState<any>({});
+  const [creator, setCreator] = useState<any>({
+    name: profile?.full_name || user?.user_metadata?.full_name || "",
+    email: profile?.email || user?.email || "",
+    profile_photo: profile?.profile_photo_url || "",
+  });
+
+  // Sync creator state when auth profile changes
+  useEffect(() => {
+    if (profile) {
+      setCreator((prev: any) => ({
+        ...prev,
+        name: profile.full_name || user?.user_metadata?.full_name || prev.name,
+        email: profile.email || prev.email,
+        profile_photo: profile.profile_photo_url || prev.profile_photo,
+        kyc_status: profile.kyc_status || prev.kyc_status,
+      }));
+    }
+  }, [profile]);
+
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(
@@ -765,15 +783,6 @@ export default function CreatorDashboard() {
   const [heroMedia, setHeroMedia] = useState(null);
   const [photos, setPhotos] = useState([]);
 
-  // Initialize active section from query string if provided
-  useEffect(() => {
-    const s = searchParams.get("section");
-    if (!s) return;
-    const validIds = navigationItems.map((n) => n.id);
-    if (validIds.includes(s)) {
-      setActiveSection(s);
-    }
-  }, [searchParams]);
   const [voiceLibrary, setVoiceLibrary] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -984,33 +993,38 @@ export default function CreatorDashboard() {
           "industries:",
           profile.industries,
         );
-        setCreator({
-          name: profile.full_name || "",
-          email: profile.email || creator.email,
-          profile_photo: profile.profile_photo_url || creator.profile_photo,
+        setCreator((prev: any) => ({
+          ...prev,
+          name:
+            profile.full_name ||
+            user?.user_metadata?.full_name ||
+            prev.name ||
+            "",
+          email: profile.email || prev.email || "",
+          profile_photo: profile.profile_photo_url || prev.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(", "),
-          bio: profile.bio || creator.bio,
+          bio: profile.bio || prev.bio,
           instagram_handle: profile.platform_handle
             ? `@${profile.platform_handle}`
-            : creator.instagram_handle,
-          tiktok_handle: creator.tiktok_handle,
-          instagram_connected: creator.instagram_connected ?? false,
-          instagram_followers: creator.instagram_followers ?? 0,
+            : prev.instagram_handle,
+          tiktok_handle: prev.tiktok_handle,
+          instagram_connected: prev.instagram_connected ?? false,
+          instagram_followers: prev.instagram_followers ?? 0,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
           // Derive weekly price from monthly base (USD-only)
           price_per_week:
             typeof profile.base_monthly_price_cents === "number"
               ? Math.round(profile.base_monthly_price_cents / 100 / 4)
-              : (creator.price_per_week ?? 0),
-          royalty_percentage: creator.royalty_percentage ?? 0,
-          accept_negotiations: creator.accept_negotiations ?? true,
+              : (prev.price_per_week ?? 0),
+          royalty_percentage: prev.royalty_percentage ?? 0,
+          accept_negotiations: prev.accept_negotiations ?? true,
           kyc_status: profile.kyc_status,
           verified_at: profile.verified_at,
           cameo_front_url: profile.cameo_front_url,
           cameo_left_url: profile.cameo_left_url,
           cameo_right_url: profile.cameo_right_url,
-        });
+        }));
         // If backend provides arrays later, replace mocks
         if (Array.isArray(json.campaigns) && json.campaigns.length)
           setActiveCampaigns(json.campaigns);
@@ -1155,6 +1169,34 @@ export default function CreatorDashboard() {
       icon: Settings,
     },
   ];
+
+  // Initialize active section from query string if provided
+  useEffect(() => {
+    const s = searchParams.get("section");
+    if (!s) return;
+    const validIds = navigationItems.map((n) => n.id);
+    if (validIds.includes(s)) {
+      setActiveSection(s);
+    }
+  }, [searchParams]);
+
+  const handleHeroUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploading(true);
+      setTimeout(() => {
+        setHeroMedia({
+          url: URL.createObjectURL(file),
+          type: file.type.includes("video") ? "video" : "image",
+          name: file.name,
+        });
+        setUploading(false);
+        toast({
+          title: "Hero media uploaded! (Demo mode)",
+        });
+      }, 1000);
+    }
+  };
 
   const [contentTab, setContentTab] = useState("brand_content");
 
