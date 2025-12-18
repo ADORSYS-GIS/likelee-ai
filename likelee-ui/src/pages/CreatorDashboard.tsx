@@ -2340,11 +2340,18 @@ export default function CreatorDashboard() {
       setShowRestrictionsModal(false);
     } catch (e) {
       console.error("Error saving restrictions:", e);
-      alert("Failed to save restrictions. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Failed to save restrictions. Please try again.",
+      });
     }
   };
 
-  const handleSaveRules = async (creatorOverride?: any) => {
+  const handleSaveRules = async (
+    creatorOverride?: any,
+    successMessage: string = "Licensing preferences updated!",
+  ) => {
     setSavingRules(true);
     try {
       // Use override if provided, otherwise use current state
@@ -2400,7 +2407,7 @@ export default function CreatorDashboard() {
 
       setEditingRules(false);
       toast({
-        title: "Licensing preferences updated!",
+        title: successMessage,
       });
     } catch (error: any) {
       console.error("Failed to save rules:", error);
@@ -4810,22 +4817,6 @@ export default function CreatorDashboard() {
             }
           }
         });
-      } else if (showRatesModal === "industry") {
-        INDUSTRIES.forEach((ind) => {
-          const isSelected = creator.industries?.includes(ind);
-          if (isSelected) {
-            const val = formData.get(`rate_industry_${ind}`);
-            if (val && val.toString().trim() !== "") {
-              newRates.push({
-                rate_type: "industry",
-                rate_name: ind,
-                price_per_month_cents: Math.round(
-                  parseFloat(val.toString()) * 100,
-                ),
-              });
-            }
-          }
-        });
       }
       // 1. Save the selection (content_types or industries) to the profile
       const profileUpdate: any = {
@@ -4855,18 +4846,11 @@ export default function CreatorDashboard() {
       // 2. Save rates (only for content types)
       // If we are editing content rates, we use the new ones.
       // If we are editing industries (which have no rates now), we must preserve the existing content rates.
-      // We explicitly DO NOT preserve industry rates, effectively deleting them.
       if (showRatesModal !== "content") {
         const existingContentRates = customRates.filter(
           (r) => r.rate_type === "content_type",
         );
         newRates.push(...existingContentRates);
-      }
-      if (showRatesModal !== "industry") {
-        const existingIndustryRates = customRates.filter(
-          (r) => r.rate_type === "industry",
-        );
-        newRates.push(...existingIndustryRates);
       }
 
       const finalRates = [...newRates];
@@ -4895,21 +4879,22 @@ export default function CreatorDashboard() {
           setCustomRates(reloadedRates);
         }
 
-        alert("Changes saved successfully!");
+        toast({
+          title: "Changes saved successfully!",
+        });
       } catch (rateError: any) {
         console.error("Rate save error:", rateError);
         // If profile saved but rates failed, we still consider it a partial success
         // and close the modal, but warn the user.
-        alert(
-          `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
-        );
+        toast({
+          variant: "destructive",
+          title: "Partial Success",
+          description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+        });
       }
 
       setShowRatesModal(null);
       setEditingRules(false);
-      toast({
-        title: "Rates saved successfully!",
-      });
     } catch (e: any) {
       console.error("Save error:", e);
       toast({
@@ -5376,9 +5361,9 @@ export default function CreatorDashboard() {
                             };
                             setCreator(updatedCreator);
                             // We need to pass this updated object to save function
-                            handleSaveRules(updatedCreator);
+                            handleSaveRules(updatedCreator, "Licensing rate updated!");
                           } else {
-                            handleSaveRules();
+                            handleSaveRules(undefined, "Licensing rate updated!");
                           }
                           setEditingLicensingRate(false);
                         }}
@@ -5396,7 +5381,7 @@ export default function CreatorDashboard() {
                   <div className="flex-1 max-w-md">
                     {!editingLicensingRate ? (
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-gray-900">
+                        <span className="text-xl font-bold text-gray-900">
                           ${creator.price_per_week}
                         </span>
                         <span className="text-gray-500 font-medium">/mo</span>
@@ -5443,14 +5428,11 @@ export default function CreatorDashboard() {
                         ...creator,
                         accept_negotiations: checked,
                       });
-                      toast({
-                        title: "Accept Negotiations updated",
-                      });
                       try {
                         await handleSaveRules({
                           ...creator,
                           accept_negotiations: checked,
-                        });
+                        }, "Accept Negotiations updated");
                       } catch (error) {
                         console.error("Failed to update negotiation settings:", error);
                         toast({
@@ -6512,7 +6494,7 @@ export default function CreatorDashboard() {
             {isCountingDown ? (
               <div className="relative">
                 {renderScript()}
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/20 backdrop-blur-[2px] rounded-lg">
                   <div className="relative w-32 h-32 flex items-center justify-center">
                     <div className="absolute inset-0 border-4 border-[#32C8D1]/20 rounded-full" />
                     <div
@@ -6710,7 +6692,7 @@ export default function CreatorDashboard() {
                   <Button
                     type="submit"
                     disabled={savingRates}
-                    className="flex-1 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white flex items-center justify-center gap-2"
+                    className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white flex items-center justify-center gap-2 px-8"
                   >
                     {savingRates ? (
                       <>
@@ -6860,10 +6842,10 @@ export default function CreatorDashboard() {
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white flex items-center justify-center gap-2"
+              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white flex items-center justify-center gap-2 px-8"
               onClick={() => {
                 setShowRestrictionsModal(false);
-                handleSaveRules();
+                handleSaveRules(undefined, "Restrictions updated!");
               }}
             >
               <CheckCircle className="w-4 h-4" />
