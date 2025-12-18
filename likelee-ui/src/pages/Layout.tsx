@@ -5,7 +5,7 @@ import { Menu, X, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useAuth } from "@/auth/AuthProvider";
-        
+
 export default function Layout({ children, currentPageName }) {
   const { t } = useTranslation();
   const { authenticated, logout } = useAuth();
@@ -737,6 +737,7 @@ export default function Layout({ children, currentPageName }) {
               </Link>
               <div className="px-4 py-3">
                 <LanguageSwitcher />
+              </div>
 
               <div className="pt-4 px-4">
                 {!authenticated ? (
