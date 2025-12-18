@@ -530,8 +530,8 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("BrandCompany")}
                   className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                 >
                   {t("brands")}
@@ -542,8 +542,8 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     to={createPageUrl("AgencySelection")}
                     className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                       }`}
                   >
                     {t("agencies")}
@@ -592,8 +592,8 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AboutUs")}
                   className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                 >
                   {t("aboutUs")}
@@ -602,8 +602,8 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("Contact")}
                   className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                 >
                   {t("contact")}
@@ -627,7 +627,7 @@ export default function Layout({ children, currentPageName }) {
                     <button
                       onClick={() => logout()}
                       className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                      title="Logout"
+                      title={t("common.logout")}
                     >
                       <LogOut className="w-5 h-5" />
                     </button>
@@ -654,249 +654,245 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Mobile Navigation */}
-        {
-          mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-100 bg-white">
-              <div className="px-4 py-3 space-y-1">
-                <Link
-                  to={createPageUrl("BrandCompany")}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-100 bg-white">
+            <div className="px-4 py-3 space-y-1">
+              <Link
+                to={createPageUrl("BrandCompany")}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
                     ? "text-gray-900 bg-gray-100"
                     : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  {t("brands")}
-                </Link>
+                  }`}
+              >
+                {t("brands")}
+              </Link>
 
-                {/* Mobile For Business with sub-items */}
-                <div>
-                  <Link
-                    to={createPageUrl("AgencySelection")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
+              {/* Mobile For Business with sub-items */}
+              <div>
+                <Link
+                  to={createPageUrl("AgencySelection")}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
                       ? "text-gray-900 bg-gray-100"
                       : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                    }`}
+                >
+                  {t("agencies")}
+                </Link>
+                <div className="ml-4 mt-1 space-y-1">
+                  <Link
+                    to={createPageUrl("MarketingAgency")}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    {t("agencies")}
+                    {t("marketingAgency")}
                   </Link>
-                  <div className="ml-4 mt-1 space-y-1">
-                    <Link
-                      to={createPageUrl("MarketingAgency")}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                    >
-                      {t("marketingAgency")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("TalentAgency")}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                    >
-                      {t("talentAgencyLabel")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("SportsAgency")}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                    >
-                      {t("sportsAgency")}
-                    </Link>
-                  </div>
-                </div>
-
-                <Link
-                  to={createPageUrl("AboutUs")}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  {t("aboutUs")}
-                </Link>
-
-                <Link
-                  to={createPageUrl("Contact")}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  {t("contact")}
-                </Link>
-                <div className="px-4 py-3">
-                  <LanguageSwitcher />
-                </div>
-
-                <div className="pt-4 px-4">
-                  {!authenticated ? (
-                    <Link
-                      to="/Login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
-                    >
-                      <LogIn className="w-5 h-5" />
-                      {t("common.signIn")}
-                    </Link>
-                  ) : (
-                    <div className="space-y-3 w-full">
-                      <Link
-                        to="/CreatorDashboard"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
-                      >
-                        {t("common.dashboard")}
-                      </Link>
-                      <button
-                        onClick={() => {
-                          logout();
-                          setMobileMenuOpen(false);
-                        }}
-                        className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        {t("common.logout")}
-                      </button>
-                    </div>
-                  )}
+                  <Link
+                    to={createPageUrl("TalentAgency")}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
+                  >
+                    {t("talentAgencyLabel")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("SportsAgency")}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
+                  >
+                    {t("sportsAgency")}
+                  </Link>
                 </div>
               </div>
+
+              <Link
+                to={createPageUrl("AboutUs")}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                  }`}
+              >
+                {t("aboutUs")}
+              </Link>
+
+              <Link
+                to={createPageUrl("Contact")}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                  }`}
+              >
+                {t("contact")}
+              </Link>
+              <div className="px-4 py-3">
+                <LanguageSwitcher />
+              </div>
+
+              <div className="pt-4 px-4">
+                {!authenticated ? (
+                  <Link
+                    to="/Login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    {t("common.signIn")}
+                  </Link>
+                ) : (
+                  <div className="space-y-3 w-full">
+                    <Link
+                      to="/CreatorDashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                    >
+                      {t("common.dashboard")}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      {t("common.logout")}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          )
-        }
-      </nav >
+          </div>
+        )}
+      </nav>
 
       {/* Main Content */}
-      < main className="pt-20" > {children}</main >
+      <main className="pt-20"> {children}</main>
 
       {/* Footer - Hidden on Dashboard pages */}
-      {
-        !isDashboardPage && (
-          <footer className="bg-white border-t border-gray-200">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-              <div className="grid md:grid-cols-4 gap-12">
-                <div>
-                  <Link
-                    to={createPageUrl("Landing")}
-                    className="flex items-center gap-3 mb-6"
-                  >
-                    <img
-                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
-                      alt="Likelee Logo"
-                      loading="lazy"
-                      width="40"
-                      height="40"
-                      className="h-10 w-auto"
-                    />
-                    <span className="text-xl font-bold text-gray-900">
-                      Likelee
-                    </span>
-                  </Link>
-                  <p className="text-gray-600 text-sm leading-relaxed max-w-md">
-                    {t("footerSlogan")}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                    {t("resources")}
-                  </h3>
-                  <div className="space-y-3">
-                    <Link
-                      to="#"
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("blog")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("Impact")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("impact")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("Support")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("support")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("SalesInquiry")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("contactUs")}
-                    </Link>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                    {t("legalAndCompliance")}
-                  </h3>
-                  <div className="space-y-3">
-                    <Link
-                      to={createPageUrl("SAGAFTRAAlignment")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("sagAftraAlignment")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("PrivacyPolicy")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("privacyPolicy")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("CommercialRights")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("commercialRights")}
-                    </Link>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                    {t("company")}
-                  </h3>
-                  <div className="space-y-3">
-                    <Link
-                      to={createPageUrl("AboutUs")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("aboutUs")}
-                    </Link>
-                    <Link
-                      to={createPageUrl("Faces")}
-                      className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                    >
-                      {t("creators")}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-sm text-gray-500">{t("copyright")}</p>
-                <p className="text-sm text-gray-500">
-                  {t("followUs")}{" "}
-                  <a
-                    href="https://instagram.com/@likelee.ai"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-500 hover:text-gray-700 cursor-pointer"
-                  >
-                    @likelee.ai
-                  </a>
+      {!isDashboardPage && (
+        <footer className="bg-white border-t border-gray-200">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+            <div className="grid md:grid-cols-4 gap-12">
+              <div>
+                <Link
+                  to={createPageUrl("Landing")}
+                  className="flex items-center gap-3 mb-6"
+                >
+                  <img
+                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eaaf29851_Screenshot2025-10-12at31742PM.png"
+                    alt="Likelee Logo"
+                    loading="lazy"
+                    width="40"
+                    height="40"
+                    className="h-10 w-auto"
+                  />
+                  <span className="text-xl font-bold text-gray-900">
+                    Likelee
+                  </span>
+                </Link>
+                <p className="text-gray-600 text-sm leading-relaxed max-w-md">
+                  {t("footerSlogan")}
                 </p>
               </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
+                  {t("resources")}
+                </h3>
+                <div className="space-y-3">
+                  <Link
+                    to="#"
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("blog")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("Impact")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("impact")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("Support")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("support")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("SalesInquiry")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("contactUs")}
+                  </Link>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
+                  {t("legalAndCompliance")}
+                </h3>
+                <div className="space-y-3">
+                  <Link
+                    to={createPageUrl("SAGAFTRAAlignment")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("sagAftraAlignment")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("PrivacyPolicy")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("privacyPolicy")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("CommercialRights")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("commercialRights")}
+                  </Link>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
+                  {t("company")}
+                </h3>
+                <div className="space-y-3">
+                  <Link
+                    to={createPageUrl("AboutUs")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("aboutUs")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("Faces")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("creators")}
+                  </Link>
+                </div>
+              </div>
             </div>
-          </footer>
-        )
-      }
-    </div >
+
+            <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-500">{t("copyright")}</p>
+              <p className="text-sm text-gray-500">
+                {t("followUs")}{" "}
+                <a
+                  href="https://instagram.com/@likelee.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                >
+                  @likelee.ai
+                </a>
+              </p>
+            </div>
+          </div>
+        </footer>
+      )}
+    </div>
   );
 }
