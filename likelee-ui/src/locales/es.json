@@ -1,12 +1,5 @@
 {
   "greeting": "¡Hola, bienvenido!",
-  "common": {
-    "signIn": "Iniciar Sesión",
-    "dashboard": "Panel de Control",
-    "city": "Ciudad",
-    "state": "Estado",
-    "logout": "Cerrar Sesión"
-  },
   "brands": "Marcas",
   "agencies": "Agencias",
   "marketingAgency": "Agencia de marketing",
@@ -23,7 +16,6 @@
   "impact": "Impacto",
   "support": "Soporte",
   "contactUs": "Contáctenos",
-  "legalAndCompliance": "Legal y Cumplimiento",
   "questionsContactUs": "¿Preguntas? Contáctenos:",
   "landingHeadline": "¿Buscando algo real en la era de la IA?",
   "readyToUse": "Listo para usar",
@@ -1994,6 +1986,11 @@
   "faces.cta.steps.4": "→ Comienza a ganar — Pagos mensuales mientras las licencias estén activas",
   "faces.cta.reserveProfileButton": "Reserva Tu Perfil",
   "common": {
+    "signIn": "Iniciar Sesión",
+    "dashboard": "Panel de Control",
+    "city": "Ciudad",
+    "state": "Estado",
+    "logout": "Cerrar Sesión",
     "password": "Contraseña",
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "passwordRequired": "Contraseña *",

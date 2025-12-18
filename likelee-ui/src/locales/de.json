@@ -1,12 +1,5 @@
 {
   "greeting": "Hallo, willkommen!",
-  "common": {
-    "signIn": "Anmelden",
-    "dashboard": "Dashboard",
-    "city": "Stadt",
-    "state": "Bundesland",
-    "logout": "Abmelden"
-  },
   "brands": "Marken",
   "agencies": "Agenturen",
   "marketingAgency": "Marketingagentur",
@@ -2000,6 +1993,11 @@
   "faces.cta.steps.4": "→ Anfangen zu verdienen – Monatliche Zahlungen, solange die Lizenzen aktiv sind",
   "faces.cta.reserveProfileButton": "Profil reservieren",
   "common": {
+    "signIn": "Anmelden",
+    "dashboard": "Dashboard",
+    "city": "Stadt",
+    "state": "Bundesland",
+    "logout": "Abmelden",
     "password": "Passwort",
     "forgotPassword": "Passwort vergessen?",
     "passwordRequired": "Passwort *",

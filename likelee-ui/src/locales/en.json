@@ -1,12 +1,5 @@
 {
   "greeting": "Hello, Welcome!",
-  "common": {
-    "signIn": "Sign In",
-    "dashboard": "Dashboard",
-    "city": "City",
-    "state": "State",
-    "logout": "Logout"
-  },
   "brands": "Brands",
   "agencies": "Agencies",
   "marketingAgency": "Marketing Agency",
@@ -810,6 +803,11 @@
   "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "You approve each reuse",
   "faces.digitalTalentOwner.footer": "You're not a gig worker. You're an owner.",
   "common": {
+    "signIn": "Sign In",
+    "dashboard": "Dashboard",
+    "city": "City",
+    "state": "State",
+    "logout": "Logout",
     "password": "Password",
     "passwordRequired": "Password *",
     "confirmPassword": "Confirm Password",

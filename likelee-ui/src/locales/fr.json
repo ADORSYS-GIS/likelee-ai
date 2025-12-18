@@ -1,12 +1,5 @@
 {
   "greeting": "Bonjour, bienvenue !",
-  "common": {
-    "signIn": "Se connecter",
-    "dashboard": "Tableau de bord",
-    "city": "Ville",
-    "state": "État",
-    "logout": "Déconnexion"
-  },
   "brands": "Marques",
   "agencies": "Agences",
   "marketingAgency": "Agence de marketing",
@@ -1154,31 +1147,6 @@
       "kycErrorTitle": "Erreur KYC"
     }
   },
-  "creatorSignupOptions": {
-    "main": {
-      "title": "Quel type de créateur êtes-vous ?",
-      "subtitle": "Choisissez l'option qui vous décrit le mieux pour commencer avec la bonne configuration de profil."
-    },
-    "influencer": {
-      "title": "Influenceur / Créateur de contenu UGC",
-      "description": "Vous créez du contenu, avez une audience ou collaborez avec des marques."
-    },
-    "model_actor": {
-      "title": "Mannequin ou Acteur Indépendant",
-      "description": "Vous passez des castings, faites des campagnes ou des shootings studio — et voulez protéger votre image + des opportunités de licence."
-    },
-    "athlete": {
-      "title": "Athlète (NIL & Pro)",
-      "description": "Vous êtes un athlète universitaire ou professionnel gérant vos propres droits de nom, image et ressemblance."
-    },
-    "selectButton": "Sélectionner",
-    "authModal": {
-      "title": "Commencer",
-      "selected": "Sélectionné :",
-      "signUpAs": "S'inscrire en tant que",
-      "alreadyHaveAccount": "J'ai déjà un compte"
-    }
-  },
   "faces": {
     "hero": {
       "flipper": [
@@ -1346,6 +1314,11 @@
     }
   },
   "common": {
+    "signIn": "Se connecter",
+    "dashboard": "Tableau de bord",
+    "city": "Ville",
+    "state": "État",
+    "logout": "Déconnexion",
     "forgotPassword": "Mot de passe oublié ?",
     "saving": "Enregistrement en cours...",
     "submitting": "Envoi en cours...",
