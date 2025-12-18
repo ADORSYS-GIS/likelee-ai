@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, Sparkles, LogIn, LogOut } from "lucide-react";
+
+import { useAuth } from "@/auth/AuthProvider";
+
 
 export default function Layout({ children, currentPageName }) {
+  const { authenticated, logout } = useAuth();
+
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
 
   // Check if we're on a Studio page
   const isStudioPage =
@@ -531,11 +537,10 @@ export default function Layout({ children, currentPageName }) {
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("BrandCompany")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   Brands
                 </Link>
@@ -544,11 +549,10 @@ export default function Layout({ children, currentPageName }) {
                 <div className="relative group">
                   <Link
                     to={createPageUrl("AgencySelection")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                      location.pathname === createPageUrl("AgencySelection")
-                        ? "text-gray-900 bg-gray-100"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
                   >
                     Agencies
                   </Link>
@@ -595,27 +599,53 @@ export default function Layout({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("AboutUs")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("AboutUs")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   About Us
                 </Link>
 
                 <Link
                   to={createPageUrl("Contact")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("Contact")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                 >
                   Contact
                 </Link>
+
+                {!authenticated ? (
+                  <Link
+                    to="/Login"
+                    className="ml-4 px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm flex items-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign In
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 ml-4">
+                    <Link
+                      to="/CreatorDashboard"
+                      className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => logout()}
+                      className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                      title="Logout"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+
               </div>
             )}
+
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
@@ -640,11 +670,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("BrandCompany")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 Brands
               </Link>
@@ -654,11 +683,10 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AgencySelection")}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                    location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                    }`}
                 >
                   Agencies
                 </Link>
@@ -690,11 +718,10 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("AboutUs")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 About Us
               </Link>
@@ -702,17 +729,51 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("Contact")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
+                  ? "text-gray-900 bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 Contact
               </Link>
+
+              <div className="pt-4 px-4">
+                {!authenticated ? (
+                  <Link
+                    to="/Login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    Sign In
+                  </Link>
+                ) : (
+                  <div className="space-y-3 w-full">
+                    <Link
+                      to="/CreatorDashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-red-500 bg-red-50 rounded-lg"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+
+              </div>
             </div>
           </div>
         )}
+
       </nav>
 
       {/* Main Content */}
