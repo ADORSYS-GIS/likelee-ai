@@ -451,10 +451,9 @@ function PagesContent() {
           }
         />
 
-        <Route
-          path="/Login"
-          element={<Navigate to="/ReserveProfile" replace />}
-        />
+        <Route path="/Login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+
         <Route path="/Register" element={<Register />} />
         <Route
           path="/TwoFactorSetup"
