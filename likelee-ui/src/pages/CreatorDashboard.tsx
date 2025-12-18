@@ -4901,7 +4901,7 @@ export default function CreatorDashboard() {
         toast({
           variant: "destructive",
           title: "Partial Success",
-          description: `Selection saved, but failed to save custom rates: ${rateError.message || "Unknown error"}`,
+          description: `Selection saved, but failed to update rates: ${getUserFriendlyError(rateError)}`,
         });
       }
 
@@ -4912,7 +4912,7 @@ export default function CreatorDashboard() {
       toast({
         variant: "destructive",
         title: "Save Failed",
-        description: `Failed to save rates: ${e?.message || e}`,
+        description: `Failed to save rates: ${getUserFriendlyError(e)}`,
       });
     } finally {
       setSavingRates(false);
@@ -5409,8 +5409,8 @@ export default function CreatorDashboard() {
                         className={cn(
                           "border-2 text-lg h-12 w-full",
                           editingLicensingRate
-                            ? "border-[#32C8D1] bg-white"
-                            : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed",
+                            ? "border-[#32C8D1] bg-white text-gray-900"
+                            : "border-gray-200 bg-gray-50 text-gray-900",
                         )}
                         min="150"
                         step="50"

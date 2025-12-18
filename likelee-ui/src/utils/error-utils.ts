@@ -127,6 +127,15 @@ export function getUserFriendlyError(error: any): string {
     return "Recording quality is too low. Please try again in a quieter environment.";
   }
 
+  // Database / RPC errors
+  if (
+    errorLower.includes("pgrst202") ||
+    errorLower.includes("could not find the function") ||
+    errorLower.includes("not find function")
+  ) {
+    return "This service is currently undergoing maintenance. Please refresh the page or try again in a few minutes.";
+  }
+
   // Generic fallback for "failed" messages
   if (errorLower.includes("failed")) {
     return "Something went wrong. Please try again.";
