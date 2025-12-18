@@ -1,8 +1,0 @@
-src/pages/CreatorDashboard.tsx(2325,23): error TS1359: Identifier expected. 'false' is a reserved word that cannot be used here.
-src/pages/CreatorDashboard.tsx(2326,7): error TS1005: ',' expected.
-src/pages/CreatorDashboard.tsx(2327,16): error TS1003: Identifier expected.
-src/pages/CreatorDashboard.tsx(2327,48): error TS1005: ':' expected.
-src/pages/CreatorDashboard.tsx(2329,7): error TS1005: ',' expected.
-src/pages/CreatorDashboard.tsx(2379,7): error TS1005: 'try' expected.
-src/pages/CreatorDashboard.tsx(2384,4): error TS1472: 'catch' or 'finally' expected.
-src/pages/CreatorDashboard.tsx(6529,1): error TS1005: '}' expected.
