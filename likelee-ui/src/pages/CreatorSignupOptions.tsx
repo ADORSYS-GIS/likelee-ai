@@ -1,5 +1,4 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card as UICard } from "@/components/ui/card";
@@ -9,33 +8,35 @@ import { Users, User, Trophy } from "lucide-react";
 const Card: any = UICard;
 const Button: any = UIButton;
 
-export default function CreatorSignupOptions() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+const creatorTypes = [
+  {
+    type: "influencer",
+    icon: Users,
+    title: "Influencer / UGC Creator",
+    description:
+      "You create content, have an audience, or collaborate with brands.",
+    color: "bg-[#32C8D1]",
+  },
+  {
+    type: "model_actor",
+    icon: User,
+    title: "Independent Model or Actor",
+    description:
+      "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
+    color: "bg-purple-500",
+  },
+  {
+    type: "athlete",
+    icon: Trophy,
+    title: "Athlete (NIL & Pro)",
+    description:
+      "You're a college or pro athlete managing your own name, image, and likeness dealings.",
+    color: "bg-emerald-600",
+  },
+];
 
-  const creatorTypes = [
-    {
-      type: "influencer",
-      icon: Users,
-      title: t("creatorSignupOptions.influencer.title"),
-      description: t("creatorSignupOptions.influencer.description"),
-      color: "bg-[#32C8D1]",
-    },
-    {
-      type: "model_actor",
-      icon: User,
-      title: t("creatorSignupOptions.model_actor.title"),
-      description: t("creatorSignupOptions.model_actor.description"),
-      color: "bg-purple-500",
-    },
-    {
-      type: "athlete",
-      icon: Trophy,
-      title: t("creatorSignupOptions.athlete.title"),
-      description: t("creatorSignupOptions.athlete.description"),
-      color: "bg-emerald-600",
-    },
-  ];
+export default function CreatorSignupOptions() {
+  const navigate = useNavigate();
   const [selectedType, setSelectedType] = React.useState<string | null>(null);
   const [showAuth, setShowAuth] = React.useState(false);
 
@@ -49,10 +50,11 @@ export default function CreatorSignupOptions() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8 md:mb-16">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 md:mb-6">
-            {t("creatorSignupOptions.main.title")}
+            What type of creator are you?
           </h1>
           <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
-            {t("creatorSignupOptions.main.subtitle")}
+            Choose the option that best describes you to get started with the
+            right profile setup.
           </p>
         </div>
 
@@ -73,7 +75,11 @@ export default function CreatorSignupOptions() {
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-sm font-bold text-gray-900 leading-tight flex-1">
-                    {creator.title}
+                    {creator.type === "influencer" &&
+                      "Influencer / UGC Creator"}
+                    {creator.type === "model_actor" &&
+                      "Independent Model or Actor"}
+                    {creator.type === "athlete" && "Athlete (NIL & Pro)"}
                   </h3>
                 </div>
               </Card>
@@ -104,8 +110,8 @@ export default function CreatorSignupOptions() {
                 <p className="text-gray-700 leading-relaxed text-base mb-6">
                   {creator.description}
                 </p>
-                <Button className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform">
-                  {t("creatorSignupOptions.selectButton")}
+                <Button className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform mt-auto">
+                  Select
                 </Button>
               </Card>
             );
@@ -120,12 +126,9 @@ export default function CreatorSignupOptions() {
               onClick={() => setShowAuth(false)}
             />
             <div className="relative z-10 w-full max-w-md bg-white border-2 border-black p-6">
-              <h2 className="text-xl font-bold mb-2">
-                {t("creatorSignupOptions.authModal.title")}
-              </h2>
+              <h2 className="text-xl font-bold mb-2">Get started</h2>
               <p className="text-sm text-gray-600 mb-6">
-                {t("creatorSignupOptions.authModal.selected")}{" "}
-                {selectedType.replace("_", " ")}
+                Selected: {selectedType.replace("_", " ")}
               </p>
               <div className="space-y-3">
                 <Link
@@ -134,8 +137,7 @@ export default function CreatorSignupOptions() {
                   onClick={() => setShowAuth(false)}
                 >
                   <Button className="w-full bg-black text-white rounded-none">
-                    {t("creatorSignupOptions.authModal.signUpAs")}{" "}
-                    {selectedType.replace("_", " ")}
+                    Sign up as {selectedType.replace("_", " ")}
                   </Button>
                 </Link>
                 <Link
@@ -147,7 +149,7 @@ export default function CreatorSignupOptions() {
                     variant="outline"
                     className="w-full border-2 border-black rounded-none"
                   >
-                    {t("creatorSignupOptions.authModal.alreadyHaveAccount")}
+                    I already have an account
                   </Button>
                 </Link>
               </div>

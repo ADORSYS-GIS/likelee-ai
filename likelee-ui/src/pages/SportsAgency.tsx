@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -14,7 +13,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function SportsAgency() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,18 +20,19 @@ export default function SportsAgency() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      name: t("sportsAgencySolutions"),
-      description: t("sportsAgencySolutionsDescription"),
+      name: "Sports Agency Solutions",
+      description:
+        "Turn your athletes into year-round earners with NIL licensing that grows while booking slows.",
       provider: {
         "@type": "Organization",
         name: "Likelee",
         url: "https://likelee.ai",
       },
-      serviceType: t("sportsAgencyNILPlatform"),
+      serviceType: "Sports Agency NIL Platform",
       areaServed: "Worldwide",
       audience: {
         "@type": "Audience",
-        audienceType: t("sportsAgenciesAthleteReps"),
+        audienceType: "Sports Agencies, Athlete Representatives",
       },
     };
 
@@ -58,26 +57,29 @@ export default function SportsAgency() {
       <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
-            {t("turnAthletesYearRoundEarners")}
+            Turn Your Athletes Into Year-Round Earners
           </h1>
           <h2 className="text-xl md:text-2xl font-semibold mb-4">
-            {t("nilLicensingGrows")}
+            NIL licensing that grows while booking slows
           </h2>
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            {t("traditionalEndorsementsPayOnce")}
+            Traditional endorsements pay once. Likelee licensing pays monthly,
+            forever. Your athletes earn recurring revenue from their name,
+            image, and likeness while you manage contracts in one place and
+            collect commission on every renewal.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
-              {t("bookDemo")}
+              Book Demo
             </Button>
             <Button
               onClick={scrollToHowItWorks}
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
             >
-              {t("seeHowItWorks")}
+              See How It Works
             </Button>
           </div>
         </div>
@@ -87,10 +89,15 @@ export default function SportsAgency() {
       <section className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            {t("endorsementDealsNotEnough")}
+            Endorsement Deals Aren't Enough Anymore
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            {t("endorsementDealsNotEnoughDescription")}
+            Your athletes are looking for stable income beyond traditional
+            sponsorships. Endorsement opportunities are unpredictable and
+            one-time. Likelee creates additional revenue streams where athletes
+            earn recurring money from brands using their likeness for marketing,
+            social content, and digital campaigns without requiring new
+            contracts each time.
           </p>
         </div>
       </section>
@@ -100,7 +107,7 @@ export default function SportsAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {t("twoNILRevenueStreams")}
+              Two NIL Revenue Streams
             </h2>
           </div>
 
@@ -111,13 +118,21 @@ export default function SportsAgency() {
                 <Calendar className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("fixedTermNILLicensing")}
+                Fixed-Term NIL Licensing
               </h3>
               <p className="text-base text-gray-700 mb-6 leading-relaxed">
-                {t("fixedTermNILLicensingDescription1")}
+                Brand licenses athlete's image for a specific campaign duration
+                like 6 months, pays{" "}
+                <span className="font-bold text-green-600">$5K upfront</span>,
+                and can renew the agreement when it expires.
               </p>
               <p className="text-base text-gray-700 leading-relaxed">
-                {t("fixedTermNILLicensingDescription2")}
+                Your athlete earns $5K per renewal cycle. Over three years,
+                that's{" "}
+                <span className="font-bold text-green-600">
+                  $15K from the same likeness
+                </span>{" "}
+                versus a single $5K traditional endorsement deal.
               </p>
             </Card>
 
@@ -127,13 +142,23 @@ export default function SportsAgency() {
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("recurringMonthlyNIL")}
+                Recurring Monthly NIL
               </h3>
               <p className="text-base text-gray-700 mb-6 leading-relaxed">
-                {t("recurringMonthlyNILDescription1")}
+                Brand uses athlete's image on their website or in ongoing
+                marketing and pays{" "}
+                <span className="font-bold text-green-600">
+                  $1K every month
+                </span>{" "}
+                while those assets remain active.
               </p>
               <p className="text-base text-gray-700 leading-relaxed">
-                {t("recurringMonthlyNILDescription2")}.
+                Your athlete controls the arrangement and can revoke access
+                anytime they want. Over three years, that same athlete earns{" "}
+                <span className="font-bold text-green-600">
+                  $36K versus a one-time $5K endorsement payment
+                </span>
+                .
               </p>
             </Card>
           </div>
@@ -145,7 +170,7 @@ export default function SportsAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {t("theMathSports")}
+              The Math
             </h2>
           </div>
 
@@ -155,48 +180,42 @@ export default function SportsAgency() {
                 <thead>
                   <tr className="border-b-2 border-black">
                     <th className="text-left py-4 px-4 font-bold text-gray-900">
-                      {t("scenario")}
+                      Scenario
                     </th>
                     <th className="text-left py-4 px-4 font-bold text-gray-900">
-                      {t("traditional")}
+                      Traditional
                     </th>
                     <th className="text-left py-4 px-4 font-bold text-[#32C8D1]">
-                      {t("likelee")}
+                      Likelee
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 px-4 text-gray-700">
-                      {t("sportsDrinkEndorsement")}
+                      Sports drink endorsement (1 year)
                     </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {t("sportsDrinkEndorsementBefore")}
-                    </td>
+                    <td className="py-4 px-4 text-gray-700">$5K</td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
-                      {t("sportsDrinkEndorsementAfter")}
+                      $5K + renewals
                     </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="py-4 px-4 text-gray-700">
-                      {t("recurringBrandPartnership")}
+                      Recurring brand partnership (ongoing)
                     </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {t("recurringBrandPartnershipBefore")}
-                    </td>
+                    <td className="py-4 px-4 text-gray-700">$5K</td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
-                      {t("recurringBrandPartnershipAfter")}
+                      $1K/mo = $36K/3yrs
                     </td>
                   </tr>
                   <tr>
                     <td className="py-4 px-4 text-gray-700">
-                      {t("apparelBrandNILLicensing")}
+                      Apparel brand NIL licensing (6 mo)
                     </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {t("apparelBrandNILLicensingBefore")}
-                    </td>
+                    <td className="py-4 px-4 text-gray-700">$3K</td>
                     <td className="py-4 px-4 text-[#32C8D1] font-semibold">
-                      {t("apparelBrandNILLicensingAfter")}
+                      $5K + renewals
                     </td>
                   </tr>
                 </tbody>
@@ -205,8 +224,8 @@ export default function SportsAgency() {
           </Card>
 
           <p className="text-center text-xl font-semibold text-gray-900 mt-8">
-            {t("sameAthleteMultipleStreams")}{" "}
-            <span className="text-[#32C8D1]">{t("moreEarningPotential")}</span>
+            Same athlete. Multiple income streams.{" "}
+            <span className="text-[#32C8D1]">2-7x more earning potential.</span>
           </p>
         </div>
       </section>
@@ -216,7 +235,7 @@ export default function SportsAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {t("howItWorksSports")}
+              How It Works
             </h2>
           </div>
 
@@ -227,7 +246,9 @@ export default function SportsAgency() {
                 <span className="text-2xl font-bold text-white">1</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                {t("howItWorksSportsStep1")}
+                Add your athletes to Likelee so brands can discover their
+                verified likeness rights, review past sponsorships, and submit
+                licensing requests directly.
               </p>
             </Card>
 
@@ -237,7 +258,9 @@ export default function SportsAgency() {
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                {t("howItWorksSportsStep2")}
+                Brands request NIL licenses by specifying their intended use,
+                campaign duration, territories, and proposed compensation
+                through the platform.
               </p>
             </Card>
 
@@ -247,7 +270,8 @@ export default function SportsAgency() {
                 <span className="text-2xl font-bold text-white">3</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                {t("howItWorksSportsStep3")}
+                You review and approve terms, set the final compensation amount,
+                and the brand pays into escrow so the transaction is protected.
               </p>
             </Card>
 
@@ -257,7 +281,9 @@ export default function SportsAgency() {
                 <span className="text-2xl font-bold text-white">4</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                {t("howItWorksSportsStep4")}
+                Money releases after 48 hours of no disputes straight to your
+                agency account, where you decide how to split earnings with your
+                athlete.
               </p>
             </Card>
           </div>
@@ -280,13 +306,17 @@ export default function SportsAgency() {
                 <DollarSign className="w-12 h-12 text-green-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {t("diversifiedAthleteIncome")}
+                Diversified Athlete Income
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed mb-4">
-                {t("diversifiedAthleteIncomeDescription1")}
+                Traditional endorsements are volatile and unpredictable. NIL
+                licensing creates stable monthly income that compounds over
+                time.
               </p>
               <p className="text-sm text-gray-700 leading-relaxed">
-                {t("diversifiedAthleteIncomeDescription2")}
+                Year one brings in $60K from athlete licensing. Year two you're
+                at $180K. Year three breaks $360K. Same roster. Same team. No
+                additional negotiation burden.
               </p>
             </Card>
 
@@ -296,10 +326,14 @@ export default function SportsAgency() {
                 <Users className="w-12 h-12 text-purple-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {t("athletesStayProtected")}
+                Athletes Stay Because They're Protected
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                {t("athletesStayProtectedDescription")}
+                Recurring NIL income replaces the uncertainty of endorsement
+                deals, so your athletes don't chase other representation or feel
+                financially vulnerable. They know they're earning predictable
+                money with you while you manage every licensing agreement
+                legally.
               </p>
             </Card>
 
@@ -309,10 +343,14 @@ export default function SportsAgency() {
                 <Shield className="w-12 h-12 text-blue-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {t("fullComplianceControl")}
+                Full Compliance and Control
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                {t("fullComplianceControlDescription")}
+                Every NIL license is verified with smart contracts that specify
+                exactly what the brand can do, for how long, and in which
+                regions. Everything aligns with NCAA regulations, state NIL
+                laws, and player union standards so you're never exposing your
+                athletes to legal risk.
               </p>
             </Card>
           </div>
@@ -324,7 +362,7 @@ export default function SportsAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {t("verifiedAthleteAccess")}
+              Verified Athlete Access
             </h2>
           </div>
 
@@ -332,37 +370,38 @@ export default function SportsAgency() {
             {/* What You Get */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-6">
-                {t("whatYouGet")}
+                What You Get:
               </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
                   <p className="text-base text-gray-700">
-                    {t("verifiedIdentity")}
+                    Verified identity (government ID matched)
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
                   <p className="text-base text-gray-700">
-                    {t("confirmedNILOwnership")}
+                    Confirmed NIL ownership (athlete controls their likeness)
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
                   <p className="text-base text-gray-700">
-                    {t("preClearedLicensing")}
+                    Pre-cleared licensing (smart contracts ready)
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
                   <p className="text-base text-gray-700">
-                    {t("oneClickLicensing")}
+                    One-click licensing (SAG-AFTRA aligned agreements)
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
                   <p className="text-base text-gray-700">
-                    {t("repeatableUsage")}
+                    Repeatable usage (license the same athlete across multiple
+                    brand campaigns)
                   </p>
                 </div>
               </div>
@@ -371,10 +410,13 @@ export default function SportsAgency() {
             {/* Why It Matters */}
             <Card className="p-8 md:p-10 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-6">
-                {t("whyItMatters")}
+                Why It Matters:
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                {t("whyItMattersDescription")}
+                Your compliance team spends hours on NIL contracts and
+                verification. Likelee eliminates that friction and puts verified
+                athletes in front of brands actively looking to license NIL
+                rights.
               </p>
             </Card>
           </div>
@@ -385,23 +427,27 @@ export default function SportsAgency() {
       <section className="px-6 py-20 bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            {t("adaptOrWatch")}
+            Adapt or Watch Opportunities Pass
           </h2>
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            {t("adaptOrWatchDescription")}
+            Athletes today expect diversified income streams, not just one-time
+            endorsements. The agencies capturing market share are the ones that
+            offer stable recurring NIL revenue alongside traditional
+            sponsorships. Likelee gives you the infrastructure to deliver both
+            at scale.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
-              {t("bookADemo")}
+              Book a Demo
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("Faces"))}
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
             >
-              {t("exploreAthleteMarketplace")}
+              Explore Athlete Marketplace
             </Button>
           </div>
         </div>

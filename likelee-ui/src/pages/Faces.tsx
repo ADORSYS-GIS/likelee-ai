@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -23,24 +22,14 @@ import {
 } from "lucide-react";
 
 export default function Creators() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
 
   const messages = [
-    {
-      line1: t("faces.hero.flipper.0.line1"),
-      line2: t("faces.hero.flipper.0.line2"),
-    },
-    {
-      line1: t("faces.hero.flipper.1.line1"),
-      line2: t("faces.hero.flipper.1.line2"),
-    },
-    {
-      line1: t("faces.hero.flipper.2.line1"),
-      line2: t("faces.hero.flipper.2.line2"),
-    },
+    { line1: "Your Likeness", line2: "Unlimited Earnings" },
+    { line1: "Your Consent", line2: "Complete Control" },
+    { line1: "Your Terms", line2: "Recurring Revenue" },
   ];
 
   useEffect(() => {
@@ -56,8 +45,9 @@ export default function Creators() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      name: t("faces.meta.title"),
-      description: t("faces.meta.description"),
+      name: "Creators - Monetize Your Likeness",
+      description:
+        "Athletes, influencers, actors, and models - earn retainers from your digital twin. Set your own rates, approve usage, and track royalties.",
       url: "https://likelee.ai/faces",
       mainEntity: {
         "@type": "Service",
@@ -66,11 +56,11 @@ export default function Creators() {
           "@type": "Organization",
           name: "Likelee",
         },
-        serviceType: t("faces.meta.serviceType"),
+        serviceType: "Digital Likeness Management",
         areaServed: "Worldwide",
         audience: {
           "@type": "Audience",
-          audienceType: t("faces.meta.audienceType"),
+          audienceType: "Creators, Athletes, Influencers, Models, Actors",
         },
       },
     };
@@ -126,7 +116,9 @@ export default function Creators() {
           <Alert className="mb-8 bg-gray-50 border-2 border-black rounded-none max-w-4xl mx-auto">
             <AlertCircle className="h-5 w-5 text-[#32C8D1]" />
             <AlertDescription className="text-gray-900 font-medium">
-              {t("faces.hero.alert")}
+              Earn recurring royalties from your likeness. Not one-time
+              payments. Join the first cohort of verified creators, athletes,
+              and talent licensing their image on their terms.
             </AlertDescription>
           </Alert>
 
@@ -145,21 +137,22 @@ export default function Creators() {
               </span>
             </h1>
             <p className="text-lg md:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto mb-10 leading-relaxed">
-              {t("faces.hero.subtitle")}
+              License your likeness to brands, studios, and agencies. Set your
+              rates. Keep full control. Earn every month it's in use.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 onClick={() => navigate(createPageUrl("CreatorSignupOptions"))}
                 className="h-14 sm:h-16 px-8 sm:px-12 text-base sm:text-lg font-medium bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black shadow-lg transition-all hover:shadow-xl hover:scale-105 rounded-none"
               >
-                {t("faces.hero.signUpButton")}
+                Sign Up
               </Button>
               <Button
                 onClick={() => navigate(createPageUrl("ForYou"))}
                 variant="outline"
                 className="h-14 sm:h-16 px-8 sm:px-12 text-base sm:text-lg font-medium border-2 border-black rounded-none hover:bg-gray-50"
               >
-                {t("faces.hero.forYouButton")}
+                For You
               </Button>
             </div>
           </div>
@@ -171,13 +164,16 @@ export default function Creators() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              {t("faces.whyChoose.title")}
+              Why Creators, Athletes, and Talent Choose Likelee
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              {t("faces.whyChoose.subtitle1")}
+              The fastest way to offer brand-safe AI cameos and earn royalties
+              on every use.
             </p>
             <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
-              {t("faces.whyChoose.subtitle2")}
+              Every creator on Likelee licenses their likeness under clear,
+              time-limited rights and keeps the ability to modify, pause, or
+              withdraw permissions at any time.
             </p>
           </div>
 
@@ -187,10 +183,12 @@ export default function Creators() {
                 <DollarSign className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.whyChoose.cards.0.title")}
+                Recurring Revenue, Not One-Time Gigs
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                {t("faces.whyChoose.cards.0.description")}
+                Set your rates. Earn a monthly retainer for every active
+                campaign using your likeness. One $500 shoot used to be it. Now
+                it pays month after month.
               </p>
             </Card>
 
@@ -199,10 +197,11 @@ export default function Creators() {
                 <Shield className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.whyChoose.cards.1.title")}
+                Complete Control
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                {t("faces.whyChoose.cards.1.description")}
+                You approve every use. Pause campaigns anytime. Revoke rights
+                with one click. Your likeness, your rules.
               </p>
             </Card>
 
@@ -211,10 +210,12 @@ export default function Creators() {
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.whyChoose.cards.2.title")}
+                Full Transparency
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                {t("faces.whyChoose.cards.2.description")}
+                See exactly who's using your image, for how long, in which
+                regions, and how much you've earned. Every campaign tracked,
+                every payment verified.
               </p>
             </Card>
 
@@ -223,10 +224,11 @@ export default function Creators() {
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.whyChoose.cards.3.title")}
+                Usage Rights Dashboard
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                {t("faces.whyChoose.cards.3.description")}
+                See who's using your likeness, when rights expire, and how much
+                you've earned. Revoke or renew in one click.
               </p>
             </Card>
           </div>
@@ -238,7 +240,7 @@ export default function Creators() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-              {t("faces.featuredCreator.title")}
+              Featured Creator
             </h2>
           </div>
 
@@ -275,20 +277,20 @@ export default function Creators() {
                   <Card className="p-4 md:p-6 bg-gray-50 border-2 border-black rounded-none">
                     <DollarSign className="w-8 md:w-10 h-8 md:h-10 text-[#32C8D1] mb-3" />
                     <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">
-                      {t("faces.featuredCreator.royaltiesEarned")}
+                      Royalties Earned
                     </p>
                     <p className="text-2xl md:text-4xl font-bold text-gray-900">
                       $10,238
                     </p>
                     <p className="text-xs md:text-sm text-gray-500 mt-2">
-                      {t("faces.featuredCreator.royaltiesDescription")}
+                      From licensing to 5 brands
                     </p>
                   </Card>
 
                   <Card className="p-4 md:p-6 bg-gray-50 border-2 border-black rounded-none">
                     <BarChart3 className="w-8 md:w-10 h-8 md:h-10 text-teal-500 mb-3" />
                     <p className="text-xs md:text-sm font-medium text-gray-600 mb-1">
-                      {t("faces.featuredCreator.usageRequests")}
+                      Usage Requests
                     </p>
                     <p className="text-2xl md:text-4xl font-bold text-gray-900">
                       7
@@ -298,18 +300,18 @@ export default function Creators() {
 
                 <div className="bg-gray-50 p-4 md:p-6 border-2 border-black rounded-none">
                   <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 md:mb-6">
-                    {t("faces.featuredCreator.controlSettings")}
+                    Control Settings
                   </h3>
                   <div className="space-y-4 md:space-y-5">
                     <div className="flex items-center justify-between p-3 md:p-4 bg-white border-2 border-black rounded-none">
                       <span className="text-sm md:text-base text-gray-900 font-medium">
-                        {t("faces.featuredCreator.allowCommercialUse")}
+                        Allow Commercial Use
                       </span>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between p-3 md:p-4 bg-white border-2 border-black rounded-none">
                       <span className="text-sm md:text-base text-gray-900 font-medium">
-                        {t("faces.featuredCreator.allowFilmUse")}
+                        Allow Film Use
                       </span>
                       <Switch defaultChecked />
                     </div>
@@ -321,10 +323,10 @@ export default function Creators() {
                     variant="outline"
                     className="flex-1 h-12 font-medium border-2 border-black rounded-none text-sm md:text-base"
                   >
-                    {t("faces.featuredCreator.viewUsageReportButton")}
+                    View Usage Report
                   </Button>
                   <Button className="flex-1 h-12 font-medium bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none text-sm md:text-base">
-                    {t("faces.featuredCreator.updateSettingsButton")}
+                    Update Settings
                   </Button>
                 </div>
               </div>
@@ -338,10 +340,10 @@ export default function Creators() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              {t("faces.howItWorks.title")}
+              Start Earning in 3 Simple Steps
             </h2>
             <p className="text-xl text-gray-600">
-              {t("faces.howItWorks.subtitle")}
+              From upload to earning - it's that simple.
             </p>
           </div>
 
@@ -354,10 +356,10 @@ export default function Creators() {
                 <Upload className="w-14 h-14 text-[#32C8D1] mx-auto mb-4" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.howItWorks.steps.0.title")}
+                Upload Your Photos
               </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                {t("faces.howItWorks.steps.0.description")}
+                Create your verified digital identity with high-quality photos.
               </p>
             </div>
 
@@ -369,10 +371,10 @@ export default function Creators() {
                 <Settings className="w-14 h-14 text-teal-500 mx-auto mb-4" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.howItWorks.steps.1.title")}
+                Set Your Parameters
               </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                {t("faces.howItWorks.steps.1.description")}
+                Define usage rights, pricing, and approval requirements.
               </p>
             </div>
 
@@ -384,10 +386,11 @@ export default function Creators() {
                 <DollarSign className="w-14 h-14 text-[#32C8D1] mx-auto mb-4" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.howItWorks.steps.2.title")}
+                Start Earning
               </h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                {t("faces.howItWorks.steps.2.description")}
+                Approve requests. Earn monthly retainers. Scale with multiple
+                concurrent campaigns.
               </p>
             </div>
           </div>
@@ -399,43 +402,55 @@ export default function Creators() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {t("faces.digitalTalentOwner.title")}
+              From Creator → Digital Talent Owner
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {t("faces.digitalTalentOwner.subtitle")}
+              You've already built your image — now make it work for you.
             </p>
           </div>
 
           <Card className="p-8 md:p-12 bg-white border-2 border-black shadow-xl rounded-none mb-12">
             <p className="text-lg md:text-xl text-gray-700 leading-relaxed text-center">
-              {t("faces.digitalTalentOwner.mainContent")}
+              Licensing your likeness isn't selling out; it's scaling up. While
+              you're filming your next project, your digital twin can be earning
+              in ten more.
             </p>
           </Card>
 
           <div className="mb-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-              {t("faces.digitalTalentOwner.comparison.title")}
+              Traditional Model vs. Likelee Likeness Model
             </h3>
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.traditionalPath")}
+                    Traditional Path
                   </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.traditionalPathDescription1",
-                    )}
-                  </p>
+                  <p className="text-gray-700">You perform or shoot manually</p>
                 </Card>
                 <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.likeleeModel")}
+                    Likelee Model
+                  </h4>
+                  <p className="text-gray-700">You scale automatically</p>
+                </Card>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    Traditional Path
+                  </h4>
+                  <p className="text-gray-700">You get paid once per project</p>
+                </Card>
+                <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
+                  <h4 className="font-bold text-gray-900 mb-2">
+                    Likelee Model
                   </h4>
                   <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.likeleeModelDescription1",
-                    )}
+                    You earn monthly retainers as long as brands use your
+                    likeness
                   </p>
                 </Card>
               </div>
@@ -443,69 +458,30 @@ export default function Creators() {
               <div className="grid md:grid-cols-2 gap-6">
                 <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.traditionalPath")}
+                    Traditional Path
                   </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.traditionalPathDescription2",
-                    )}
-                  </p>
+                  <p className="text-gray-700">You often lose IP</p>
                 </Card>
                 <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.likeleeModel")}
+                    Likelee Model
                   </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.likeleeModelDescription2",
-                    )}
-                  </p>
+                  <p className="text-gray-700">You retain IP</p>
                 </Card>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.traditionalPath")}
+                    Traditional Path
                   </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.traditionalPathDescription3",
-                    )}
-                  </p>
+                  <p className="text-gray-700">You can't reuse or repurpose</p>
                 </Card>
                 <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
                   <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.likeleeModel")}
+                    Likelee Model
                   </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.likeleeModelDescription3",
-                    )}
-                  </p>
-                </Card>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="p-6 bg-gray-50 border-2 border-black rounded-none">
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.traditionalPath")}
-                  </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.traditionalPathDescription4",
-                    )}
-                  </p>
-                </Card>
-                <Card className="p-6 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none">
-                  <h4 className="font-bold text-gray-900 mb-2">
-                    {t("faces.digitalTalentOwner.comparison.likeleeModel")}
-                  </h4>
-                  <p className="text-gray-700">
-                    {t(
-                      "faces.digitalTalentOwner.comparison.likeleeModelDescription4",
-                    )}
-                  </p>
+                  <p className="text-gray-700">You approve each reuse</p>
                 </Card>
               </div>
             </div>
@@ -513,7 +489,7 @@ export default function Creators() {
 
           <Card className="p-8 bg-gradient-to-r from-[#32C8D1] to-teal-500 border-2 border-black rounded-none text-center">
             <p className="text-2xl md:text-3xl font-bold text-white">
-              {t("faces.digitalTalentOwner.footer")}
+              You're not a gig worker. You're an owner.
             </p>
           </Card>
         </div>
@@ -524,18 +500,25 @@ export default function Creators() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {t("faces.realFutures.title")}
+              Real Faces. Real Futures.
             </h2>
           </div>
 
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed mb-12">
-            <p>{t("faces.realFutures.line1")}</p>
-            <p className="font-bold text-gray-900 text-xl">
-              {t("faces.realFutures.line2")}
+            <p>
+              Brands and studios are already generating AI campaigns — most use
+              unlicensed or synthetic faces.
             </p>
-            <p>{t("faces.realFutures.line3")}</p>
             <p className="font-bold text-gray-900 text-xl">
-              {t("faces.realFutures.line4")}
+              Likelee is where real talent powers the AI world.
+            </p>
+            <p>
+              Every creator, model, and performer is verified, tracked, and paid
+              monthly retainers.
+            </p>
+            <p className="font-bold text-gray-900 text-xl">
+              You're not being replaced by AI — you're becoming its monthly
+              revenue stream.
             </p>
           </div>
         </div>
@@ -546,15 +529,21 @@ export default function Creators() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {t("faces.valueFloor.title")}
+              Creator Value Floor
             </h2>
           </div>
 
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed mb-12">
-            <p>{t("faces.valueFloor.line1")}</p>
-            <p>{t("faces.valueFloor.line2")}</p>
+            <p>
+              No likeness license on Likelee pays below the community minimum.
+            </p>
+            <p>
+              You can also set your own floor so brands and studios can't
+              lowball you.
+            </p>
             <p className="font-bold text-gray-900">
-              {t("faces.valueFloor.line3")}
+              Transparency builds trust. We publish average creator earnings and
+              benchmark data so you always know your true market value.
             </p>
           </div>
 
@@ -562,23 +551,23 @@ export default function Creators() {
             <Card className="p-8 bg-gray-50 border-2 border-black rounded-none text-center">
               <p className="text-5xl font-bold text-gray-900 mb-4">$350</p>
               <p className="text-gray-700 font-medium">
-                {t("faces.valueFloor.cards.0.description")}
+                Minimum monthly retainer per active license
               </p>
             </Card>
 
             <Card className="p-8 bg-gradient-to-br from-[#32C8D1]/10 to-teal-500/10 border-2 border-[#32C8D1] rounded-none text-center">
               <p className="text-5xl font-bold text-gray-900 mb-4">$1,200</p>
               <p className="text-gray-700 font-medium">
-                {t("faces.valueFloor.cards.1.description")}
+                Average monthly retainer per campaign
               </p>
             </Card>
 
             <Card className="p-8 bg-gray-50 border-2 border-black rounded-none text-center">
               <p className="text-2xl font-bold text-gray-900 mb-4">
-                {t("faces.valueFloor.cards.2.title")}
+                As long as licensed
               </p>
               <p className="text-gray-700 font-medium">
-                {t("faces.valueFloor.cards.2.description")}
+                Recurring payment while brand uses your likeness
               </p>
             </Card>
           </div>
@@ -590,10 +579,11 @@ export default function Creators() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              {t("faces.realEarnings.title")}
+              Real Creators. Real Earnings.
             </h2>
             <p className="text-xl text-gray-600">
-              {t("faces.realEarnings.subtitle")}
+              See what creators, models, and performers are earning through
+              monthly likeness licensing.
             </p>
           </div>
 
@@ -604,15 +594,28 @@ export default function Creators() {
                   $1,500/month
                 </p>
                 <p className="text-xl font-semibold text-gray-900 mb-4">
-                  {t("faces.realEarnings.cards.0.title")}
+                  Recurring retainer across 3 active brand licenses
                 </p>
               </div>
               <div className="space-y-3 text-gray-700">
-                <p>{t("faces.realEarnings.cards.0.line1")}</p>
-                <p>{t("faces.realEarnings.cards.0.line2")}</p>
-                <p>{t("faces.realEarnings.cards.0.line3")}</p>
+                <p>
+                  → License 1 (Brand A):{" "}
+                  <span className="font-bold">$500/month</span> — Active for 6
+                  months (so far)
+                </p>
+                <p>
+                  → License 2 (Brand B):{" "}
+                  <span className="font-bold">$600/month</span> — Active for 4
+                  months (so far)
+                </p>
+                <p>
+                  → License 3 (Brand C):{" "}
+                  <span className="font-bold">$400/month</span> — Active for 2
+                  months (so far)
+                </p>
                 <p className="pt-4 border-t-2 border-gray-200 font-bold text-gray-900">
-                  {t("faces.realEarnings.cards.0.total")}
+                  Total earned to date: $7,500 (and still earning monthly as
+                  licenses remain active)
                 </p>
               </div>
             </Card>
@@ -623,15 +626,15 @@ export default function Creators() {
                   $700/month
                 </p>
                 <p className="text-xl font-semibold text-gray-900 mb-4">
-                  {t("faces.realEarnings.cards.1.title")}
+                  Single retainer for music label's AI music video campaign
                 </p>
               </div>
               <div className="space-y-3 text-gray-700">
-                <p>{t("faces.realEarnings.cards.1.line1")}</p>
-                <p>{t("faces.realEarnings.cards.1.line2")}</p>
-                <p>{t("faces.realEarnings.cards.1.line3")}</p>
+                <p>→ Licensed for 12-month campaign</p>
+                <p>→ Brand uses your likeness for ongoing content generation</p>
+                <p>→ You earn $700/month for full year</p>
                 <p className="pt-4 border-t-2 border-gray-200 font-bold text-gray-900">
-                  {t("faces.realEarnings.cards.1.total")}
+                  Total: $8,400
                 </p>
               </div>
             </Card>
@@ -642,15 +645,31 @@ export default function Creators() {
                   $3,600/year
                 </p>
                 <p className="text-xl font-semibold text-gray-900 mb-4">
-                  {t("faces.realEarnings.cards.2.title")}
+                  Three licenses stacked together
                 </p>
               </div>
               <div className="space-y-3 text-gray-700">
-                <p>{t("faces.realEarnings.cards.2.line1")}</p>
-                <p>{t("faces.realEarnings.cards.2.line2")}</p>
-                <p>{t("faces.realEarnings.cards.2.line3")}</p>
+                <p>
+                  → License 1 (Tech Brand):{" "}
+                  <span className="font-bold">
+                    $400/month × 9 months = $3,600
+                  </span>
+                </p>
+                <p>
+                  → License 2 (Fashion Brand):{" "}
+                  <span className="font-bold">
+                    $300/month × 6 months = $1,800
+                  </span>
+                </p>
+                <p>
+                  → License 3 (Wellness Brand):{" "}
+                  <span className="font-bold">
+                    $250/month × 4 months = $1,000
+                  </span>
+                </p>
                 <p className="pt-4 border-t-2 border-gray-200 font-bold text-gray-900">
-                  {t("faces.realEarnings.cards.2.total")}
+                  Combined earnings: $6,400 (and more licenses can be added
+                  simultaneously)
                 </p>
               </div>
             </Card>
@@ -663,7 +682,7 @@ export default function Creators() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {t("faces.retainerModel.title")}
+              How It Works: Monthly Retainer Model
             </h2>
           </div>
 
@@ -672,45 +691,45 @@ export default function Creators() {
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
                 <span className="font-bold text-gray-900">
-                  {t("faces.retainerModel.steps.0.title")}
+                  You license your likeness
                 </span>{" "}
-                → {t("faces.retainerModel.steps.0.description")}
+                → Brand gets usage rights
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
                 <span className="font-bold text-gray-900">
-                  {t("faces.retainerModel.steps.1.title")}
+                  You earn monthly
                 </span>{" "}
-                → {t("faces.retainerModel.steps.1.description")}
+                → As long as your license is active, you get paid every month
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
                 <span className="font-bold text-gray-900">
-                  {t("faces.retainerModel.steps.2.title")}
+                  License is active for X months
                 </span>{" "}
-                → {t("faces.retainerModel.steps.2.description")}
+                → You agreed to a 90-day, 6-month, or 12-month license period
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
                 <span className="font-bold text-gray-900">
-                  {t("faces.retainerModel.steps.3.title")}
+                  When license ends
                 </span>{" "}
-                → {t("faces.retainerModel.steps.3.description")}
+                → You decide to renew, revoke, or move on to new brands
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div className="w-3 h-3 bg-[#32C8D1] rounded-full mt-2 flex-shrink-0"></div>
               <p>
                 <span className="font-bold text-gray-900">
-                  {t("faces.retainerModel.steps.4.title")}
+                  You can have multiple licenses at once
                 </span>{" "}
-                → {t("faces.retainerModel.steps.4.description")}
+                → Each brand pays you separately, each month
               </p>
             </div>
           </div>
@@ -722,54 +741,55 @@ export default function Creators() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {t("faces.retainerAdvantage.title")}
+              The Monthly Retainer Advantage
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="p-8 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("faces.retainerAdvantage.cards.0.title")}
+                ✓ Predictable Income
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                {t("faces.retainerAdvantage.cards.0.description")}
+                Know exactly how much you're earning each month
               </p>
             </Card>
 
             <Card className="p-8 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("faces.retainerAdvantage.cards.1.title")}
+                ✓ Passive While Active
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                {t("faces.retainerAdvantage.cards.1.description")}
+                You don't work; the brand generates content; you get paid
                 monthly
               </p>
             </Card>
 
             <Card className="p-8 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("faces.retainerAdvantage.cards.2.title")}
+                ✓ Stack Multiple Licenses
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                {t("faces.retainerAdvantage.cards.2.description")}
+                Work with 3, 4, or 5 brands at once; get paid by all of them
               </p>
             </Card>
 
             <Card className="p-8 bg-white border-2 border-black rounded-none">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("faces.retainerAdvantage.cards.2.title")}
+                ✓ You Control the Timeline
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                {t("faces.retainerAdvantage.cards.2.description")}
+                Set license duration, then decide to renew or end it
               </p>
             </Card>
 
             <Card className="p-8 bg-white border-2 border-black rounded-none md:col-span-2">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {t("faces.retainerAdvantage.cards.3.title")}
+                ✓ Full Transparency
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                {t("faces.retainerAdvantage.cards.3.description")}
+                Know exactly which brands are using you and how much you're
+                earning from each
               </p>
             </Card>
           </div>
@@ -780,13 +800,15 @@ export default function Creators() {
       <section className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            {t("faces.realMonthlyIncome.title")}
+            Real Creators. Real Monthly Income.
           </h2>
           <p className="text-xl text-gray-700 leading-relaxed mb-8">
-            {t("faces.realMonthlyIncome.subtitle1")}
+            Creators on Likelee aren't waiting for payments. They're earning
+            monthly, predictably, passively.
           </p>
           <p className="text-xl font-bold text-gray-900">
-            {t("faces.realMonthlyIncome.subtitle2")}
+            While you create new content, your licensed likeness generates
+            recurring monthly revenue.
           </p>
         </div>
       </section>
@@ -796,15 +818,21 @@ export default function Creators() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {t("faces.likenessStaysYours.title")}
+              Your Likeness Stays Yours
             </h2>
           </div>
 
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
-            <p>{t("faces.likenessStaysYours.line1")}</p>
-            <p>{t("faces.likenessStaysYours.line2")}</p>
+            <p>
+              Your consent never expires on its own. Every license has an end
+              date. If you say no, we say no.
+            </p>
+            <p>
+              If a brand wants to keep using your likeness, they renew—and you
+              decide if it's worth it.
+            </p>
             <p className="font-semibold text-gray-900">
-              {t("faces.likenessStaysYours.line3")}
+              Watermarked contracts. Automated takedowns. Real legal protection.
             </p>
           </div>
         </div>
@@ -815,9 +843,11 @@ export default function Creators() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              {t("faces.faq.title")}
+              Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600">{t("faces.faq.subtitle")}</p>
+            <p className="text-xl text-gray-600">
+              Everything you need to know about being a Creator on Likelee
+            </p>
           </div>
 
           <Accordion type="single" collapsible className="space-y-4">
@@ -826,10 +856,13 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.0.title")}
+                What is a "Creator"?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.0.description")}
+                A Creator is any verified individual licensing their likeness
+                (face, voice, or digital twin) for campaigns or AI-assisted
+                productions. You keep ownership of your image; Likelee only
+                facilitates licensed use under your chosen terms.
               </AccordionContent>
             </AccordionItem>
 
@@ -838,10 +871,13 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.1.title")}
+                How do I get verified?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.1.description")}
+                After your account is granted into the ecosystem, you'll receive
+                a welcome email and verification link. You'll submit ID and a
+                short selfie video so our system can confirm your authenticity
+                and produce your cameo.
               </AccordionContent>
             </AccordionItem>
 
@@ -850,10 +886,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.2.title")}
+                Can my likeness be used without consent?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.2.description")}
+                Never. Each usage request requires your explicit approval. No
+                brand, studio, or AI partner can use your likeness unless you've
+                granted permission for that specific context.
               </AccordionContent>
             </AccordionItem>
 
@@ -862,10 +900,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.3.title")}
+                Can I remove my likeness from the platform?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.3.description")}
+                Yes. You can deactivate or delete your profile anytime. Existing
+                active licences will expire automatically at the end of their
+                contractual term, and no new usages can occur.
               </AccordionContent>
             </AccordionItem>
 
@@ -874,10 +914,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.4.title")}
+                What if a brand asks for "in perpetuity" rights?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.4.description")}
+                Likelee does not allow perpetual-use clauses by default. If you
+                choose to accept one, you'll be shown a clear warning about what
+                it means and can negotiate higher compensation or decline.
               </AccordionContent>
             </AccordionItem>
 
@@ -886,10 +928,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.5.title")}
+                Can my likeness be used to train AI models?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.5.description")}
+                Only if you explicitly enable the "AI training rights" option.
+                This is disabled by default. You'll always see a disclosure when
+                a campaign involves generative or synthetic use.
               </AccordionContent>
             </AccordionItem>
 
@@ -898,10 +942,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.6.title")}
+                What protections exist if my likeness is misused?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.6.description")}
+                Likelee tracks every approved asset and maintains digital
+                proofs. If misuse occurs, our rights-enforcement team assists
+                you with takedowns and documentation for legal follow-up.
               </AccordionContent>
             </AccordionItem>
 
@@ -910,10 +956,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.7.title")}
+                Do I still own my digital likeness?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.7.description")}
+                Yes. You retain full ownership. You're licensing usage, not
+                transferring ownership. All digital replicas remain tied to your
+                verified identity.
               </AccordionContent>
             </AccordionItem>
 
@@ -922,10 +970,12 @@ export default function Creators() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faces.faq.questions.8.title")}
+                Can I negotiate rates for different types of usage?
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faces.faq.questions.8.description")}
+                Absolutely. You can set separate pricing for human-recorded UGC,
+                AI cameos, and full AI digital twins. Our system auto-applies
+                your chosen rate based on campaign type and duration.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -936,20 +986,38 @@ export default function Creators() {
       <section className="px-6 py-24 bg-gradient-to-br from-[#32C8D1] via-teal-500 to-cyan-600">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            {t("faces.cta.title")}
+            Ready to become a digital talent owner?
           </h2>
-          <p className="text-xl text-white mb-8">{t("faces.cta.subtitle")}</p>
+          <p className="text-xl text-white mb-8">
+            Join creators, models, and performers building sustainable income
+            through monthly likeness licensing.
+          </p>
 
           <div className="bg-white/10 backdrop-blur-sm border-2 border-white p-8 rounded-none mb-10">
             <h3 className="text-2xl font-bold text-white mb-6">
-              {t("faces.cta.howToGetStarted")}
+              How to get started:
             </h3>
             <div className="space-y-3 text-lg text-white text-left max-w-2xl mx-auto">
-              <p>{t("faces.cta.steps.0")}</p>
-              <p>{t("faces.cta.steps.1")}</p>
-              <p>{t("faces.cta.steps.2")}</p>
-              <p>{t("faces.cta.steps.3")}</p>
-              <p>{t("faces.cta.steps.4")}</p>
+              <p>
+                → Upload your cameo — Record a short video of yourself (AI
+                reference)
+              </p>
+              <p>
+                → Upload reference images — 15 photos from different
+                angles/styles
+              </p>
+              <p>
+                → Set your minimum rate — You decide your floor price
+                ($350+/month)
+              </p>
+              <p>
+                → Brands find you — They request licenses, you approve or
+                decline
+              </p>
+              <p>
+                → Start earning — Monthly payments as long as licenses are
+                active
+              </p>
             </div>
           </div>
 
@@ -957,7 +1025,7 @@ export default function Creators() {
             onClick={() => navigate(createPageUrl("ReserveProfile"))}
             className="h-16 px-12 text-lg font-medium bg-white hover:bg-gray-100 text-[#32C8D1] border-2 border-black shadow-2xl transition-all hover:scale-105 rounded-none"
           >
-            {t("faces.cta.reserveProfileButton")}
+            Reserve Your Profile
           </Button>
         </div>
       </section>

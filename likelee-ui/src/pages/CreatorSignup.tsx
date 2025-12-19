@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -28,45 +27,39 @@ import {
 } from "lucide-react";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 
-const getContentTypes = (t: any) => [
-  t("creatorSignup.options.contentTypes.aiGeneratedFilms"),
-  t("creatorSignup.options.contentTypes.aiDrivenCommercials"),
-  t("creatorSignup.options.contentTypes.aiArtInstallations"),
-  t("creatorSignup.options.contentTypes.virtualRealityExperiences"),
-  t("creatorSignup.options.contentTypes.interactiveMedia"),
-  t("creatorSignup.options.contentTypes.digitalFashion"),
-  t("creatorSignup.options.contentTypes.musicVideos"),
-  t("creatorSignup.options.contentTypes.other"),
+const contentTypes = [
+  "AI-generated films",
+  "AI-driven commercials",
+  "AI art installations",
+  "Virtual-reality experiences",
+  "Interactive media",
+  "Digital fashion",
+  "Music videos",
+  "Other",
 ];
 
-const getAiTools = (t: any) => [
-  t("creatorSignup.options.aiTools.adobeFirefly"),
-  t("creatorSignup.options.aiTools.dallE4"),
-  t("creatorSignup.options.aiTools.googleVeo"),
-  t("creatorSignup.options.aiTools.hailouMinimax"),
-  t("creatorSignup.options.aiTools.inVideoAi"),
-  t("creatorSignup.options.aiTools.klingAi"),
-  t("creatorSignup.options.aiTools.lumaDreamMachine"),
-  t("creatorSignup.options.aiTools.metaMovieGen"),
-  t("creatorSignup.options.aiTools.midjourney"),
-  t("creatorSignup.options.aiTools.openAiSora"),
-  t("creatorSignup.options.aiTools.pikaLabs"),
-  t("creatorSignup.options.aiTools.runwayGen4"),
-  t("creatorSignup.options.aiTools.stableDiffusionXl"),
-  t("creatorSignup.options.aiTools.stableVideoDiffusion"),
-  t("creatorSignup.options.aiTools.synthesia"),
-  t("creatorSignup.options.aiTools.vidu"),
-  t("creatorSignup.options.aiTools.other"),
+const aiTools = [
+  "Adobe Firefly",
+  "DALL·E 4",
+  "Google Veo",
+  "Hailou Minimax",
+  "InVideo AI",
+  "Kling AI",
+  "Luma Dream Machine",
+  "Meta Movie Gen",
+  "Midjourney",
+  "OpenAI Sora",
+  "Pika Labs",
+  "Runway Gen-4",
+  "Stable Diffusion XL",
+  "Stable Video Diffusion",
+  "Synthesia",
+  "Vidu",
+  "Other",
 ];
 
 export default function CreatorSignup() {
-  const { t } = useTranslation();
   const { toast } = useToast();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
-
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("signup_formData");
     return saved
@@ -122,7 +115,7 @@ export default function CreatorSignup() {
 
   // Initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
-    mutationFn: (data: typeof formData) => {
+    mutationFn: (data) => {
       return base44.entities.CreatorProfile.create({
         full_name: data.full_name,
         name: data.full_name,
@@ -135,7 +128,7 @@ export default function CreatorSignup() {
         status: "waitlist",
       });
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       setProfileId(data.id);
       setStep(2);
     },
@@ -151,7 +144,7 @@ export default function CreatorSignup() {
 
   // Profile update (Step 2)
   const updateProfileMutation = useMutation({
-    mutationFn: async (dataToUpdate: typeof formData) => {
+    mutationFn: async (dataToUpdate) => {
       if (!profileId) {
         throw new Error(
           "Profile ID not found for update. Please complete Step 1 first.",
@@ -449,7 +442,7 @@ export default function CreatorSignup() {
                     htmlFor="full_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("common.fullNameRequired")}
+                    Full Name *
                   </Label>
                   <Input
                     id="full_name"
@@ -458,7 +451,7 @@ export default function CreatorSignup() {
                       setFormData({ ...formData, full_name: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("common.johnDoe")}
+                    placeholder="John Doe"
                   />
                 </div>
 
@@ -467,7 +460,7 @@ export default function CreatorSignup() {
                     htmlFor="email"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("common.emailRequired")}
+                    Email Address *
                   </Label>
                   <Input
                     id="email"
@@ -477,7 +470,7 @@ export default function CreatorSignup() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("common.emailPlaceholder")}
+                    placeholder="you@example.com"
                   />
                 </div>
 
@@ -486,7 +479,7 @@ export default function CreatorSignup() {
                     htmlFor="password"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("common.passwordRequired")}
+                    Password *
                   </Label>
                   <div className="relative">
                     <Input
@@ -518,7 +511,7 @@ export default function CreatorSignup() {
                     htmlFor="confirmPassword"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("common.confirmPasswordRequired")}
+                    Confirm Password *
                   </Label>
                   <div className="relative">
                     <Input
@@ -575,7 +568,7 @@ export default function CreatorSignup() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("common.instagramPlaceholder")}
+                        placeholder="@yourusername"
                       />
                     </div>
 
@@ -596,7 +589,7 @@ export default function CreatorSignup() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("common.instagramPlaceholder")}
+                        placeholder="@yourusername"
                       />
                     </div>
 
@@ -617,7 +610,7 @@ export default function CreatorSignup() {
                           })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("common.youtubePlaceholder")}
+                        placeholder="@yourchannel"
                       />
                     </div>
                   </div>
@@ -628,7 +621,7 @@ export default function CreatorSignup() {
                     htmlFor="agency_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("common.agencyOptional")}
+                    Agency (if applicable)
                   </Label>
                   <Input
                     id="agency_name"
@@ -637,7 +630,7 @@ export default function CreatorSignup() {
                       setFormData({ ...formData, agency_name: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("common.agencyNamePlaceholder")}
+                    placeholder="Your agency name"
                   />
                   <p className="text-xs text-gray-500 mt-2">
                     If you're represented by an agency, enter their name here
@@ -681,13 +674,13 @@ export default function CreatorSignup() {
                     <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                       <Checkbox
                         id="select_all_content"
-                        checked={getContentTypes(t)
+                        checked={contentTypes
                           .filter((t) => t !== "Other")
                           .every((type) =>
                             formData.content_types.includes(type),
                           )}
                         onCheckedChange={() =>
-                          toggleSelectAll("content_types", getContentTypes(t))
+                          toggleSelectAll("content_types", contentTypes)
                         }
                         className="border-2 border-gray-900"
                       />
@@ -698,7 +691,7 @@ export default function CreatorSignup() {
                         Select All
                       </label>
                     </div>
-                    {getContentTypes(t).map((type) => (
+                    {contentTypes.map((type) => (
                       <div
                         key={type}
                         className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -730,7 +723,7 @@ export default function CreatorSignup() {
                         })
                       }
                       className="mt-3 border-2 border-gray-300 rounded-none"
-                      placeholder={t("common.contentTypePlaceholder")}
+                      placeholder="Please specify your content type..."
                     />
                   )}
                 </div>
@@ -743,11 +736,11 @@ export default function CreatorSignup() {
                     <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                       <Checkbox
                         id="select_all_ai_tools"
-                        checked={getAiTools(t).every((tool) =>
-                          formData.ai_tools.includes(tool),
-                        )}
+                        checked={aiTools
+                          .filter((t) => t !== "Other")
+                          .every((tool) => formData.ai_tools.includes(tool))}
                         onCheckedChange={() =>
-                          toggleSelectAll("ai_tools", getAiTools(t))
+                          toggleSelectAll("ai_tools", aiTools)
                         }
                         className="border-2 border-gray-900"
                       />
@@ -758,7 +751,7 @@ export default function CreatorSignup() {
                         Select All
                       </label>
                     </div>
-                    {getAiTools(t).map((tool) => (
+                    {aiTools.map((tool) => (
                       <div
                         key={tool}
                         className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
@@ -790,7 +783,7 @@ export default function CreatorSignup() {
                         })
                       }
                       className="mt-3 border-2 border-gray-300 rounded-none"
-                      placeholder={t("common.aiToolPlaceholder")}
+                      placeholder="Please specify your AI tools..."
                     />
                   )}
                 </div>
@@ -807,7 +800,7 @@ export default function CreatorSignup() {
                         htmlFor="city"
                         className="text-sm font-medium text-gray-700 mb-2 block"
                       >
-                        {t("common.cityRequired")}
+                        City *
                       </Label>
                       <Input
                         id="city"
@@ -816,7 +809,7 @@ export default function CreatorSignup() {
                           setFormData({ ...formData, city: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("common.cityPlaceholder")}
+                        placeholder="Los Angeles"
                       />
                     </div>
                     <div>
@@ -824,7 +817,7 @@ export default function CreatorSignup() {
                         htmlFor="state"
                         className="text-sm font-medium text-gray-700 mb-2 block"
                       >
-                        {t("common.stateCountryRequired")}
+                        State / Country *
                       </Label>
                       <Input
                         id="state"
@@ -833,7 +826,7 @@ export default function CreatorSignup() {
                           setFormData({ ...formData, state: e.target.value })
                         }
                         className="border-2 border-gray-300 rounded-none"
-                        placeholder={t("common.statePlaceholder")}
+                        placeholder="CA / USA"
                       />
                     </div>
                   </div>
@@ -843,7 +836,7 @@ export default function CreatorSignup() {
                       htmlFor="experience"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("common.experienceRequired")}
+                      Years of AI creative experience *
                     </Label>
                     <Select
                       value={formData.experience}
@@ -880,7 +873,7 @@ export default function CreatorSignup() {
                       htmlFor="portfolio_url"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("common.portfolioUrl")}
+                      Portfolio URL
                     </Label>
                     <Input
                       id="portfolio_url"
@@ -893,7 +886,7 @@ export default function CreatorSignup() {
                         })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder={t("common.portfolioPlaceholder")}
+                      placeholder="https://yourportfolio.com"
                     />
                   </div>
 
@@ -902,7 +895,7 @@ export default function CreatorSignup() {
                       htmlFor="social_url"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("common.socialMediaUrl")}
+                      Social Media URL
                     </Label>
                     <Input
                       id="social_url"
@@ -912,7 +905,7 @@ export default function CreatorSignup() {
                         setFormData({ ...formData, social_url: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none"
-                      placeholder={t("common.socialProfilePlaceholder")}
+                      placeholder="https://instagram.com/yourprofile"
                     />
                   </div>
                 </div>
@@ -931,7 +924,7 @@ export default function CreatorSignup() {
                       htmlFor="profilePhotoInput"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("common.profilePhotoOptional")}
+                      Profile Photo (optional)
                     </Label>
                     <p className="text-sm text-gray-500 mb-3">
                       Minimum 800 × 800 px, JPG or PNG, maximum 5 MB

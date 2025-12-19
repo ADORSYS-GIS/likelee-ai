@@ -76,48 +76,4 @@ export const base44 = {
     }
     return (await res.json()) as T;
   },
-  get entities() {
-    return new Proxy(
-      {},
-      {
-        get: (_target, entityName: string) => ({
-          list: (sort?: string, limit?: number) =>
-            base44.get(`/entities/${entityName}`, { params: { sort, limit } }),
-          filter: (filter: any) =>
-            base44.post(`/entities/${entityName}/filter`, filter),
-          get: (id: string) => base44.get(`/entities/${entityName}/${id}`),
-          create: (data: any) => base44.post(`/entities/${entityName}`, data),
-          update: (id: string, data: any) =>
-            base44.post(`/entities/${entityName}/${id}`, data),
-          delete: (id: string) =>
-            base44.post(`/entities/${entityName}/${id}/delete`),
-        }),
-      },
-    ) as any;
-  },
-  get integrations() {
-    return new Proxy(
-      {},
-      {
-        get: (_target, integrationName: string) =>
-          new Proxy(
-            {},
-            {
-              get: (__target, methodName: string) => (data: any) =>
-                base44.post(
-                  `/integrations/${integrationName}/${methodName}`,
-                  data,
-                ),
-            },
-          ),
-      },
-    ) as any;
-  },
-  get auth() {
-    return {
-      login: (data: any) => base44.post("/auth/login", data),
-      signup: (data: any) => base44.post("/auth/signup", data),
-      me: () => base44.get("/auth/me"),
-    } as any;
-  },
 };
