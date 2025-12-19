@@ -1811,7 +1811,63 @@
       "PauseLicense": "Pause License",
       "revokeLicense": "Revoke License",
       "messageBrand": "Message Brand",
-      "viewFullLegalContract": "View Full Legal Contract"
+      "viewFullLegalContract": "View Full Legal Contract",
+      "modals": {
+        "pause": {
+          "title": "Pause This License?",
+          "warningTitle": "⚠️ IMPORTANT PAYMENT WARNING",
+          "warningDescription": "If you pause NOW (mid-month):",
+          "warningBullets": {
+            "noPayment": "You will NOT receive payment for {{month}}",
+            "earnedSoFar": "Even though you've earned ${{amount}} so far this month",
+            "forfeited": "That money will be forfeited"
+          },
+          "option1": {
+            "title": "OPTION 1: Pause Immediately",
+            "effective": "Effective:",
+            "effectiveToday": "Today",
+            "thisMonthPayment": "This Month's Payment:",
+            "forfeited": "✗ FORFEITED (${{amount}})",
+            "nextMonthPayment": "Next Month's Payment:",
+            "paused": "✗ PAUSED",
+            "description": "Use this if you want to stop immediately and are okay losing this month's partial payment."
+          },
+          "option2": {
+            "title": "OPTION 2: Pause Next Month",
+            "recommended": "Recommended",
+            "effective": "Effective:",
+            "thisMonthPayment": "This Month's Payment:",
+            "willBePaid": "✓ YOU'LL GET PAID (${{amount}})",
+            "nextMonthPayment": "Next Month's Payment:",
+            "paused": "✗ PAUSED",
+            "description": "Use this to keep earning through the end of this month, then pause starting next month."
+          },
+          "cancel": "Cancel - Don't Pause"
+        },
+        "revoke": {
+          "title": "Revoke This License?",
+          "whatHappens": "What happens when you revoke:",
+          "bullets": {
+            "endPermanently": "You're requesting to END this license permanently",
+            "noticePeriod": "30-day notice period begins (they keep rights for 30 more days)",
+            "takedown": "After 30 days, they must take down all content",
+            "earningsStop": "Your earnings STOP after the 30-day period ends",
+            "cannotReactivate": "The license cannot be reactivated"
+          },
+          "timeline": {
+            "title": "Revocation Timeline",
+            "noticeStarts": "Notice Starts",
+            "finalTakedown": "Final Takedown"
+          },
+          "days1to30": "Days 1-30: {{brand}} can still use your likeness (final payments due)",
+          "day30": "Day 30: All content must be taken down",
+          "finalPayment": "Your Final Payment: ${{amount}} on {{date}}",
+          "reasonLabel": "Reason for revoking (optional):",
+          "reasonPlaceholder": "e.g., I don't want to work with this brand anymore",
+          "cancel": "Cancel",
+          "confirm": "Yes, Revoke License"
+        }
+      }
     },
     "archive": {
       "title": "Campaign Archive",

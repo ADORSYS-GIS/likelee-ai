@@ -415,7 +415,63 @@
       "pauseLicense": "Pausar Licencia",
       "revokeLicense": "Revocar Licencia",
       "messageBrand": "Mensaje a la Marca",
-      "viewFullLegalContract": "Ver Contrato Legal Completo"
+      "viewFullLegalContract": "Ver Contrato Legal Completo",
+      "modals": {
+        "pause": {
+          "title": "¿Pausar esta licencia?",
+          "warningTitle": "⚠️ ADVERTENCIA DE PAGO IMPORTANTE",
+          "warningDescription": "Si programas la pausa AHORA (mediados de mes):",
+          "warningBullets": {
+            "noPayment": "NO recibirás el pago de {{month}}",
+            "earnedSoFar": "A pesar de que has ganado ${{amount}} hasta ahora este mes",
+            "forfeited": "Ese dinero se perderá"
+          },
+          "option1": {
+            "title": "OPCIÓN 1: Pausar inmediatamente",
+            "effective": "Efectivo:",
+            "effectiveToday": "Hoy",
+            "thisMonthPayment": "Pago de este mes:",
+            "forfeited": "✗ PERDIDO (${{amount}})",
+            "nextMonthPayment": "Pago del próximo mes:",
+            "paused": "✗ PAUSADO",
+            "description": "Usa esta opción si quieres detenerte inmediatamente y estás de acuerdo con perder el pago parcial de este mes."
+          },
+          "option2": {
+            "title": "OPCIÓN 2: Pausar el próximo mes",
+            "recommended": "Recomendado",
+            "effective": "Efectivo:",
+            "thisMonthPayment": "Pago de este mes:",
+            "willBePaid": "✓ RECIBIRÁS TU PAGO (${{amount}})",
+            "nextMonthPayment": "Pago del próximo mes:",
+            "paused": "✗ PAUSADO",
+            "description": "Usa esta opción para seguir ganando hasta el final de este mes, luego pausar a partir del próximo mes."
+          },
+          "cancel": "Cancelar - No pausar"
+        },
+        "revoke": {
+          "title": "¿Revocar esta licencia?",
+          "whatHappens": "Qué sucede cuando revocas:",
+          "bullets": {
+            "endPermanently": "Estás solicitando TERMINAR esta licencia permanentemente",
+            "noticePeriod": "Comienza el período de aviso de 30 días (ellos conservan los derechos por 30 días más)",
+            "takedown": "Después de 30 días, deben retirar todo el contenido",
+            "earningsStop": "Tus ganancias se DETIENEN después de que finalice el período de 30 días",
+            "cannotReactivate": "La licencia no se puede reactivar"
+          },
+          "timeline": {
+            "title": "Cronología de revocación",
+            "noticeStarts": "El aviso comienza",
+            "finalTakedown": "Retiro final"
+          },
+          "days1to30": "Días 1-30: {{brand}} aún puede usar tu imagen (pagos finales pendientes)",
+          "day30": "Día 30: Todo el contenido debe ser retirado",
+          "finalPayment": "Tu pago final: ${{amount}} el {{date}}",
+          "reasonLabel": "Motivo de la revocación (opcional):",
+          "reasonPlaceholder": "ej: Ya no quiero trabajar con esta marca",
+          "cancel": "Cancelar",
+          "confirm": "Sí, revocar licencia"
+        }
+      }
     },
     "archive": {
       "title": "Archivo de Campañas",

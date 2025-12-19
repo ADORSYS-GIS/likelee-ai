@@ -505,7 +505,63 @@
       "pauseLicense": "Mettre la Licence en Pause",
       "revokeLicense": "Révoquer la Licence",
       "messageBrand": "Envoyer un Message à la Marque",
-      "viewFullLegalContract": "Voir le Contrat Légal Complet"
+      "viewFullLegalContract": "Voir le Contrat Légal Complet",
+      "modals": {
+        "pause": {
+          "title": "Mettre cette licence en pause ?",
+          "warningTitle": "⚠️ AVERTISSEMENT DE PAIEMENT IMPORTANT",
+          "warningDescription": "Si vous mettez en pause MAINTENANT (mi-mois) :",
+          "warningBullets": {
+            "noPayment": "Vous ne recevrez PAS de paiement pour {{month}}",
+            "earnedSoFar": "Même si vous avez gagné {{amount}} $ jusqu'à présent ce mois-ci",
+            "forfeited": "Cet argent sera perdu"
+          },
+          "option1": {
+            "title": "OPTION 1 : Pause immédiate",
+            "effective": "Effectif :",
+            "effectiveToday": "Aujourd'hui",
+            "thisMonthPayment": "Paiement de ce mois :",
+            "forfeited": "✗ PERDU ({{amount}} $)",
+            "nextMonthPayment": "Paiement du mois prochain :",
+            "paused": "✗ EN PAUSE",
+            "description": "Utilisez cette option si vous souhaitez arrêter immédiatement et acceptez de perdre le paiement partiel de ce mois."
+          },
+          "option2": {
+            "title": "OPTION 2 : Pause le mois prochain",
+            "recommended": "Recommandé",
+            "effective": "Effectif :",
+            "thisMonthPayment": "Paiement de ce mois :",
+            "willBePaid": "✓ VOUS SEREZ PAYÉ ({{amount}} $)",
+            "nextMonthPayment": "Paiement du mois prochain :",
+            "paused": "✗ EN PAUSE",
+            "description": "Utilisez cette option pour continuer à gagner jusqu'à la fin de ce mois, puis mettre en pause à partir du mois prochain."
+          },
+          "cancel": "Annuler - Ne pas mettre en pause"
+        },
+        "revoke": {
+          "title": "Révoquer cette licence ?",
+          "whatHappens": "Ce qui se passe lorsque vous révoquez :",
+          "bullets": {
+            "endPermanently": "Vous demandez de TERMINER cette licence de manière permanente",
+            "noticePeriod": "La période de préavis de 30 jours commence (ils conservent les droits pendant 30 jours supplémentaires)",
+            "takedown": "Après 30 jours, ils doivent retirer tout le contenu",
+            "earningsStop": "Vos gains S'ARRÊTENT après la fin de la période de 30 jours",
+            "cannotReactivate": "La licence ne peut pas être réactivée"
+          },
+          "timeline": {
+            "title": "Chronologie de la révocation",
+            "noticeStarts": "Début du préavis",
+            "finalTakedown": "Retrait final"
+          },
+          "days1to30": "Jours 1-30 : {{brand}} peut toujours utiliser votre image (paiements finaux dus)",
+          "day30": "Jour 30 : Tout le contenu doit être retiré",
+          "finalPayment": "Votre paiement final : {{amount}} $ le {{date}}",
+          "reasonLabel": "Raison de la révocation (facultatif) :",
+          "reasonPlaceholder": "ex: Je ne veux plus travailler avec cette marque",
+          "cancel": "Annuler",
+          "confirm": "Oui, révoquer la licence"
+        }
+      }
     },
     "nav": {
       "dashboard": "Tableau de Bord",

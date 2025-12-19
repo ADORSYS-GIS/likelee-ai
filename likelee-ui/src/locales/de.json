@@ -418,7 +418,63 @@
       "pauseLicense": "Lizenz pausieren",
       "revokeLicense": "Lizenz widerrufen",
       "messageBrand": "Marke kontaktieren",
-      "viewFullLegalContract": "Vollständigen rechtlichen Vertrag anzeigen"
+      "viewFullLegalContract": "Vollständigen rechtlichen Vertrag anzeigen",
+      "modals": {
+        "pause": {
+          "title": "Diese Lizenz pausieren?",
+          "warningTitle": "⚠️ WICHTIGER ZAHLUNGSHINWEIS",
+          "warningDescription": "Wenn Sie JETZT pausieren (Mitte des Monats):",
+          "warningBullets": {
+            "noPayment": "Sie erhalten KEINE Zahlung für {{month}}",
+            "earnedSoFar": "Obwohl Sie in diesem Monat bisher ${{amount}} verdient haben",
+            "forfeited": "Dieses Geld verfällt"
+          },
+          "option1": {
+            "title": "OPTION 1: Sofort pausieren",
+            "effective": "Wirksam ab:",
+            "effectiveToday": "Heute",
+            "thisMonthPayment": "Zahlung für diesen Monat:",
+            "forfeited": "✗ VERFALLEN (${{amount}})",
+            "nextMonthPayment": "Zahlung für den nächsten Monat:",
+            "paused": "✗ PAUSIERT",
+            "description": "Verwenden Sie dies, wenn Sie sofort aufhören möchten und damit einverstanden sind, die Teilzahlung für diesen Monat zu verlieren."
+          },
+          "option2": {
+            "title": "OPTION 2: Nächsten Monat pausieren",
+            "recommended": "Empfohlen",
+            "effective": "Wirksam ab:",
+            "thisMonthPayment": "Zahlung für diesen Monat:",
+            "willBePaid": "✓ SIE ERHALTEN IHRE ZAHLUNG (${{amount}})",
+            "nextMonthPayment": "Zahlung für den nächsten Monat:",
+            "paused": "✗ PAUSIERT",
+            "description": "Verwenden Sie dies, um bis Ende dieses Monats weiter zu verdienen und ab nächstem Monat zu pausieren."
+          },
+          "cancel": "Abbrechen - Nicht pausieren"
+        },
+        "revoke": {
+          "title": "Diese Lizenz widerrufen?",
+          "whatHappens": "Was passiert, wenn Sie widerrufen:",
+          "bullets": {
+            "endPermanently": "Sie beantragen, diese Lizenz dauerhaft zu BEENDEN",
+            "noticePeriod": "Die 30-tägige Kündigungsfrist beginnt (sie behalten die Rechte für weitere 30 Tage)",
+            "takedown": "Nach 30 Tagen müssen alle Inhalte entfernt werden",
+            "earningsStop": "Ihre Einnahmen STOPPEN nach Ablauf der 30-Tage-Frist",
+            "cannotReactivate": "Die Lizenz kann nicht reaktiviert werden"
+          },
+          "timeline": {
+            "title": "Zeitplan für den Widerruf",
+            "noticeStarts": "Kündigungsbeginn",
+            "finalTakedown": "Endgültige Entfernung"
+          },
+          "days1to30": "Tage 1-30: {{brand}} kann Ihr Ebenbild weiterhin verwenden (Schlusszahlungen fällig)",
+          "day30": "Tag 30: Alle Inhalte müssen entfernt werden",
+          "finalPayment": "Ihre Schlusszahlung: ${{amount}} am {{date}}",
+          "reasonLabel": "Grund für den Widerruf (optional):",
+          "reasonPlaceholder": "z.B. Ich möchte nicht mehr mit dieser Marke zusammenarbeiten",
+          "cancel": "Abbrechen",
+          "confirm": "Ja, Lizenz widerrufen"
+        }
+      }
     },
     "archive": {
       "title": "Kampagnenarchiv",
