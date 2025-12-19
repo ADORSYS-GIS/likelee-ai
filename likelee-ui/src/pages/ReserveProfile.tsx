@@ -484,52 +484,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Front</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.front || uploadedUrls.front ? (
-                    <img
-                      src={
-                        captures.front ? captures.front.url : uploadedUrls.front
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Left</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.left || uploadedUrls.left ? (
-                    <img
-                      src={captures.left ? captures.left.url : uploadedUrls.left}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-900">Right</Label>
-                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                  {captures.right || uploadedUrls.right ? (
-                    <img
-                      src={
-                        captures.right ? captures.right.url : uploadedUrls.right
-                      }
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-500">Pending</span>
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Front</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.front || uploadedUrls.front ? (
+                  <img
+                    src={
+                      captures.front ? captures.front.url : uploadedUrls.front
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
               </div>
             </div>
-          )}
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Left</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.left || uploadedUrls.left ? (
+                  <img
+                    src={captures.left ? captures.left.url : uploadedUrls.left}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-900">Right</Label>
+              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {captures.right || uploadedUrls.right ? (
+                  <img
+                    src={
+                      captures.right ? captures.right.url : uploadedUrls.right
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-gray-500">Pending</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -851,7 +851,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) { }
+      } catch (_e) {}
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -1299,8 +1299,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-            (today.getMonth() === birth.getMonth() &&
-              today.getDate() < birth.getDate())
+          (today.getMonth() === birth.getMonth() &&
+            today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -2261,57 +2261,57 @@ export default function ReserveProfile() {
                 {/* Influencer & Model/Actor vibes */}
                 {(creatorType === "influencer" ||
                   creatorType === "model_actor") && (
-                    <div>
-                      <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                        Vibe / Style Tags
-                      </Label>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                        <Checkbox
-                          id="select-all-vibes"
-                          checked={vibes.every((vibe) =>
-                            formData.vibes.includes(vibe),
-                          )}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData({ ...formData, vibes: [...vibes] });
-                            } else {
-                              setFormData({ ...formData, vibes: [] });
-                            }
-                          }}
-                          className="border-2 border-gray-400"
-                        />
-                        <label
-                          htmlFor="select-all-vibes"
-                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                        >
-                          Select All
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {vibes.map((vibe) => (
-                          <div
-                            key={vibe}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={vibe}
-                              checked={formData.vibes.includes(vibe)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("vibes", vibe)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={vibe}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {vibe}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                      Vibe / Style Tags
+                    </Label>
+                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                      <Checkbox
+                        id="select-all-vibes"
+                        checked={vibes.every((vibe) =>
+                          formData.vibes.includes(vibe),
+                        )}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ ...formData, vibes: [...vibes] });
+                          } else {
+                            setFormData({ ...formData, vibes: [] });
+                          }
+                        }}
+                        className="border-2 border-gray-400"
+                      />
+                      <label
+                        htmlFor="select-all-vibes"
+                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
                     </div>
-                  )}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {vibes.map((vibe) => (
+                        <div
+                          key={vibe}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={vibe}
+                            checked={formData.vibes.includes(vibe)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("vibes", vibe)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={vibe}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {vibe}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Pricing (USD-only) */}
@@ -2395,192 +2395,192 @@ export default function ReserveProfile() {
                 {/* Influencer & Model/Actor Step 3 */}
                 {(creatorType === "influencer" ||
                   creatorType === "model_actor") && (
-                    <>
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <Label className="text-sm font-medium text-gray-900">
-                            What kind of content are you interested in being
-                            featured in?
-                          </Label>
-                          <span className="text-xs text-gray-500">
-                            Select up to 3 for now
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                          <Checkbox
-                            id="select-all-content"
-                            checked={contentTypes.every((type) =>
-                              formData.content_types.includes(type),
-                            )}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData({
-                                  ...formData,
-                                  content_types: [...contentTypes],
-                                });
-                              } else {
-                                setFormData({ ...formData, content_types: [] });
+                  <>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="text-sm font-medium text-gray-900">
+                          What kind of content are you interested in being
+                          featured in?
+                        </Label>
+                        <span className="text-xs text-gray-500">
+                          Select up to 3 for now
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-content"
+                          checked={contentTypes.every((type) =>
+                            formData.content_types.includes(type),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData({
+                                ...formData,
+                                content_types: [...contentTypes],
+                              });
+                            } else {
+                              setFormData({ ...formData, content_types: [] });
+                            }
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-content"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {contentTypes.map((type) => (
+                          <div
+                            key={type}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
+                            <Checkbox
+                              id={type}
+                              checked={formData.content_types.includes(type)}
+                              onCheckedChange={() =>
+                                toggleArrayItem("content_types", type)
                               }
-                            }}
-                            className="border-2 border-gray-400"
-                          />
-                          <label
-                            htmlFor="select-all-content"
-                            className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                          >
-                            Select All
-                          </label>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {contentTypes.map((type) => (
-                            <div
-                              key={type}
-                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                              className="border-2 border-gray-400"
+                            />
+                            <label
+                              htmlFor={type}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              <Checkbox
-                                id={type}
-                                checked={formData.content_types.includes(type)}
-                                onCheckedChange={() =>
-                                  toggleArrayItem("content_types", type)
-                                }
-                                className="border-2 border-gray-400"
-                              />
-                              <label
-                                htmlFor={type}
-                                className="text-sm text-gray-700 cursor-pointer flex-1"
-                              >
-                                {type}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                        {formData.content_types.includes("Other") && (
-                          <Input
-                            value={formData.content_other}
-                            onChange={(e) =>
+                              {type}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      {formData.content_types.includes("Other") && (
+                        <Input
+                          value={formData.content_other}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              content_other: e.target.value,
+                            })
+                          }
+                          className="mt-3 border-2 border-gray-300 rounded-none"
+                          placeholder="Please specify..."
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="text-sm font-medium text-gray-900">
+                          What types of brands or industries do you want to work
+                          with?
+                        </Label>
+                        <span className="text-xs text-gray-500">
+                          Select up to 3 for now
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-industries"
+                          checked={industries.every((industry) =>
+                            formData.industries.includes(industry),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
                               setFormData({
                                 ...formData,
-                                content_other: e.target.value,
-                              })
+                                industries: [...industries],
+                              });
+                            } else {
+                              setFormData({ ...formData, industries: [] });
                             }
-                            className="mt-3 border-2 border-gray-300 rounded-none"
-                            placeholder="Please specify..."
-                          />
-                        )}
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-industries"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
                       </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <Label className="text-sm font-medium text-gray-900">
-                            What types of brands or industries do you want to work
-                            with?
-                          </Label>
-                          <span className="text-xs text-gray-500">
-                            Select up to 3 for now
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                          <Checkbox
-                            id="select-all-industries"
-                            checked={industries.every((industry) =>
-                              formData.industries.includes(industry),
-                            )}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setFormData({
-                                  ...formData,
-                                  industries: [...industries],
-                                });
-                              } else {
-                                setFormData({ ...formData, industries: [] });
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {industries.map((industry) => (
+                          <div
+                            key={industry}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                          >
+                            <Checkbox
+                              id={industry}
+                              checked={formData.industries.includes(industry)}
+                              onCheckedChange={() =>
+                                toggleArrayItem("industries", industry)
                               }
-                            }}
-                            className="border-2 border-gray-400"
-                          />
-                          <label
-                            htmlFor="select-all-industries"
-                            className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                          >
-                            Select All
-                          </label>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {industries.map((industry) => (
-                            <div
-                              key={industry}
-                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                              className="border-2 border-gray-400"
+                            />
+                            <label
+                              htmlFor={industry}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
                             >
-                              <Checkbox
-                                id={industry}
-                                checked={formData.industries.includes(industry)}
-                                onCheckedChange={() =>
-                                  toggleArrayItem("industries", industry)
-                                }
-                                className="border-2 border-gray-400"
-                              />
-                              <label
-                                htmlFor={industry}
-                                className="text-sm text-gray-700 cursor-pointer flex-1"
-                              >
-                                {industry}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
+                              {industry}
+                            </label>
+                          </div>
+                        ))}
                       </div>
+                    </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label
-                            htmlFor="primary_platform"
-                            className="text-sm font-medium text-gray-700 mb-2 block"
-                          >
-                            Primary Platform
-                          </Label>
-                          <Select
-                            value={formData.primary_platform}
-                            onValueChange={(value) =>
-                              setFormData({
-                                ...formData,
-                                primary_platform: value,
-                              })
-                            }
-                          >
-                            <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                              <SelectValue placeholder="Select platform" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="instagram">Instagram</SelectItem>
-                              <SelectItem value="tiktok">TikTok</SelectItem>
-                              <SelectItem value="youtube">YouTube</SelectItem>
-                              <SelectItem value="twitter">Twitter/X</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label
-                            htmlFor="platform_handle"
-                            className="text-sm font-medium text-gray-700 mb-2 block"
-                          >
-                            Handle
-                          </Label>
-                          <Input
-                            id="platform_handle"
-                            value={formData.platform_handle}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                platform_handle: e.target.value,
-                              })
-                            }
-                            className="border-2 border-gray-300 rounded-none"
-                            placeholder="@yourhandle"
-                          />
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label
+                          htmlFor="primary_platform"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
+                          Primary Platform
+                        </Label>
+                        <Select
+                          value={formData.primary_platform}
+                          onValueChange={(value) =>
+                            setFormData({
+                              ...formData,
+                              primary_platform: value,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                            <SelectValue placeholder="Select platform" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="instagram">Instagram</SelectItem>
+                            <SelectItem value="tiktok">TikTok</SelectItem>
+                            <SelectItem value="youtube">YouTube</SelectItem>
+                            <SelectItem value="twitter">Twitter/X</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </>
-                  )}
+                      <div>
+                        <Label
+                          htmlFor="platform_handle"
+                          className="text-sm font-medium text-gray-700 mb-2 block"
+                        >
+                          Handle
+                        </Label>
+                        <Input
+                          id="platform_handle"
+                          value={formData.platform_handle}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              platform_handle: e.target.value,
+                            })
+                          }
+                          className="border-2 border-gray-300 rounded-none"
+                          placeholder="@yourhandle"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Model/Actor Step 3 */}
                 {creatorType === "model_actor" && (
@@ -3056,9 +3056,9 @@ export default function ReserveProfile() {
                   {isRecovering
                     ? t("common.loading", "Loading...")
                     : t(
-                      "reserveProfile.terms.completeRegistration",
-                      "Complete Registration",
-                    )}
+                        "reserveProfile.terms.completeRegistration",
+                        "Complete Registration",
+                      )}
                 </Button>
               </div>
             </div>
