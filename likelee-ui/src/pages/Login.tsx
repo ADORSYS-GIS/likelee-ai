@@ -2,6 +2,7 @@ import React from "react";
 import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, Mail, Lock, Sparkles } from "lucide-react";
 
@@ -33,6 +34,7 @@ const Separator: any = UISeparator;
 const Label: any = UILabel;
 
 export default function Login() {
+  const { t } = useTranslation();
   const { login, initialized, authenticated } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");

@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -21,25 +22,25 @@ import {
 } from "lucide-react";
 
 export default function SportsAgency() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      name: "Sports Agency NIL Management",
-      description:
-        "License your athletes' likenesses for AI-powered content. Earn recurring revenue.",
+      name: t("sportsAgencySolutions"),
+      description: t("sportsAgencySolutionsDescription"),
       provider: {
         "@type": "Organization",
         name: "Likelee",
         url: "https://likelee.ai",
       },
-      serviceType: "Sports Agency NIL Platform",
+      serviceType: t("sportsAgencyNILPlatform"),
       areaServed: "Worldwide",
       audience: {
         "@type": "Audience",
-        audienceType: "Sports Agencies, Athlete Representatives",
+        audienceType: t("sportsAgenciesAthleteReps"),
       },
     };
 
@@ -56,54 +57,52 @@ export default function SportsAgency() {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section className="px-6 pt-24 pb-16 bg-white">
-        <div className="max-w-5xl mx-auto text-center">
-          <Badge className="mb-6 bg-gray-100 text-gray-900 px-4 py-2 rounded-none border-2 border-black">
-            For Sports Agencies & Athlete Representatives
-          </Badge>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-            License Your Athletes' Likenesses for
-            <span className="block bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-              AI-Powered Content
-            </span>
+      <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
+            {t("turnAthletesYearRoundEarners")}
           </h1>
-          <Card className="p-8 bg-white border-2 border-black shadow-xl rounded-none mb-8">
-            <p className="text-xl md:text-2xl text-gray-700 leading-relaxed mb-6">
-              Brands are building AI-powered campaigns right now. They need
-              verified athlete likenesses. Your athletes should be earning
-              recurring royalties from every use.
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <Zap className="w-8 h-8 text-emerald-600" />
-              <p className="text-2xl font-bold text-gray-900">
-                Likelee is the infrastructure to make it happen at scale.
-              </p>
-            </div>
-          </Card>
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">
+            {t("nilLicensingGrows")}
+          </h2>
+          <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
+            {t("traditionalEndorsementsPayOnce")}
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
-              className="h-16 px-10 text-lg font-medium bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white border-2 border-black shadow-xl transition-all hover:scale-105 rounded-none"
+              className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
             >
-              <Rocket className="w-5 h-5 mr-2" />
-              Book a Demo
+              {t("bookDemo")}
+            </Button>
+            <Button
+              onClick={scrollToHowItWorks}
+              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
+            >
+              {t("seeHowItWorks")}
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Section 1: The Opportunity */}
+      {/* Section 1: Endorsement Deals Aren't Enough Anymore */}
       <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <Target className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              You Already Know Licensing.
-              <span className="block text-emerald-600">
-                You're Missing the AI-Powered Opportunity.
-              </span>
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+            {t("endorsementDealsNotEnough")}
+          </h2>
+          <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+            {t("endorsementDealsNotEnoughDescription")}
+          </p>
+        </div>
+      </section>
+
+      {/* Section 2: Two NIL Revenue Streams */}
+      <section className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {t("twoNILRevenueStreams")}
             </h2>
           </div>
 
@@ -111,78 +110,151 @@ export default function SportsAgency() {
             <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
               <CheckCircle2 className="w-10 h-10 text-green-600 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                What You Know
+                {t("fixedTermNILLicensing")}
               </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>✓ You manage athlete sponsorships</p>
-                <p>✓ You understand licensing</p>
-                <p>✓ You negotiate deals</p>
-              </div>
+              <p className="text-base text-gray-700 mb-6 leading-relaxed">
+                {t("fixedTermNILLicensingDescription1")}
+              </p>
+              <p className="text-base text-gray-700 leading-relaxed">
+                {t("fixedTermNILLicensingDescription2")}
+              </p>
             </Card>
 
             <Card className="p-8 bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-600 rounded-none">
               <Zap className="w-10 h-10 text-emerald-600 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                What You're Missing
+                {t("recurringMonthlyNIL")}
               </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Licensing athlete likenesses for AI campaigns</p>
-                <p>→ Digital content & synthetic media deals</p>
-                <p>→ Recurring royalty infrastructure</p>
-              </div>
+              <p className="text-base text-gray-700 mb-6 leading-relaxed">
+                {t("recurringMonthlyNILDescription1")}
+              </p>
+              <p className="text-base text-gray-700 leading-relaxed">
+                {t("recurringMonthlyNILDescription2")}.
+              </p>
             </Card>
           </div>
-
-          <Card className="p-8 bg-gradient-to-r from-emerald-600 to-green-600 border-2 border-black rounded-none text-center">
-            <p className="text-2xl md:text-3xl font-bold text-white mb-3">
-              Brands need this. Athletes should be earning from it.
-            </p>
-            <p className="text-xl text-white mb-4">
-              You're not set up to offer it.
-            </p>
-            <div className="flex items-center justify-center gap-3 mt-6">
-              <DollarSign className="w-10 h-10 text-yellow-300" />
-              <p className="text-3xl font-bold text-yellow-300">
-                That's recurring revenue you're leaving on the table.
-              </p>
-            </div>
-          </Card>
         </div>
       </section>
 
-      {/* Section 2: The Dashboard */}
+      {/* Section 3: The Math */}
       <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-emerald-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <BarChart3 className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
-              One Dashboard. All Licenses.
-              <span className="block text-green-600">Real Revenue.</span>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {t("theMathSports")}
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6 mb-10">
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <Shield className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">
-                License athlete likenesses
+          <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-black">
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      {t("scenario")}
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900">
+                      {t("traditional")}
+                    </th>
+                    <th className="text-left py-4 px-4 font-bold text-[#32C8D1]">
+                      {t("likelee")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("sportsDrinkEndorsement")}
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("sportsDrinkEndorsementBefore")}
+                    </td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">
+                      {t("sportsDrinkEndorsementAfter")}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("recurringBrandPartnership")}
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("recurringBrandPartnershipBefore")}
+                    </td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">
+                      {t("recurringBrandPartnershipAfter")}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("apparelBrandNILLicensing")}
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {t("apparelBrandNILLicensingBefore")}
+                    </td>
+                    <td className="py-4 px-4 text-[#32C8D1] font-semibold">
+                      {t("apparelBrandNILLicensingAfter")}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <p className="text-center text-xl font-semibold text-gray-900 mt-8">
+            {t("sameAthleteMultipleStreams")}{" "}
+            <span className="text-[#32C8D1]">{t("moreEarningPotential")}</span>
+          </p>
+        </div>
+      </section>
+
+      {/* Section 4: How It Works */}
+      <section id="how-it-works" className="px-6 py-20 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {t("howItWorksSports")}
+            </h2>
+          </div>
+
+          <div className="space-y-8">
+            {/* Step 1 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">1</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                {t("howItWorksSportsStep1")}
               </p>
             </Card>
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <BarChart3 className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">Track usage</p>
-            </Card>
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <DollarSign className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">
-                Collect recurring payments
+
+            {/* Step 2 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                {t("howItWorksSportsStep2")}
               </p>
             </Card>
-            <Card className="p-6 bg-white border-2 border-black rounded-none text-center">
-              <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <p className="font-bold text-gray-900">Manage compliance</p>
+
+            {/* Step 3 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                {t("howItWorksSportsStep3")}
+              </p>
+            </Card>
+
+            {/* Step 4 */}
+            <Card className="p-4 md:p-5 bg-white border-2 border-black rounded-none flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-[#0D1B3A] flex-shrink-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">4</span>
+              </div>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                {t("howItWorksSportsStep4")}
+              </p>
             </Card>
           </div>
 
@@ -235,46 +307,39 @@ export default function SportsAgency() {
                 <p>→ Government ID verification</p>
                 <p>→ Liveness check</p>
               </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                {t("diversifiedAthleteIncome")}
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                {t("diversifiedAthleteIncomeDescription1")}
+              </p>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {t("diversifiedAthleteIncomeDescription2")}
+              </p>
             </Card>
 
             <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
               <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-teal-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
                 <span className="text-3xl font-bold text-white">2</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Set Terms
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                {t("athletesStayProtected")}
               </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Athletes define what they're OK with</p>
-                <p>→ Set pricing</p>
-                <p>→ Choose territories & use cases</p>
-              </div>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {t("athletesStayProtectedDescription")}
+              </p>
             </Card>
 
             <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Brands License
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                {t("fullComplianceControl")}
               </h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Brands search your roster</p>
-                <p>→ Submit license requests</p>
-                <p>→ You approve each one</p>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-teal-600 border-2 border-black flex items-center justify-center mb-6 shadow-lg rounded-none">
-                <span className="text-3xl font-bold text-white">4</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Get Paid</h3>
-              <div className="space-y-2 text-gray-700">
-                <p>→ Payment into escrow</p>
-                <p>→ Usage tracked real-time</p>
-                <p>→ Recurring royalties flow automatically</p>
-              </div>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {t("fullComplianceControlDescription")}
+              </p>
             </Card>
           </div>
         </div>
@@ -282,46 +347,30 @@ export default function SportsAgency() {
 
       {/* Section 4: Real Results */}
       <section className="px-6 py-20 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <BarChart3 className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Real Results
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {t("verifiedAthleteAccess")}
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="p-10 bg-white border-2 border-black rounded-none shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <Trophy className="w-12 h-12 text-emerald-600" />
-                <h3 className="text-2xl font-bold text-gray-900">
-                  15-Athlete Regional Agency
-                </h3>
-              </div>
+            {/* What You Get */}
+            <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
+                {t("whatYouGet")}
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <DollarSign className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">
-                    <span className="font-bold text-gray-900">
-                      $2.5K-$5K/month
-                    </span>{" "}
-                    per athlete in recurring likeness licensing
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    {t("verifiedIdentity")}
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">
-                    <span className="font-bold text-emerald-600">
-                      3-5× more revenue
-                    </span>
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-gray-700">
-                    <span className="font-bold">Same team</span>
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    {t("confirmedNILOwnership")}
                   </p>
                 </div>
               </div>
@@ -336,22 +385,21 @@ export default function SportsAgency() {
               </div>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <DollarSign className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">
-                    <span className="font-bold">$150K+/month</span> new
-                    recurring revenue from AI-powered likeness licensing
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    {t("preClearedLicensing")}
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Users className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">
-                    <span className="font-bold">No new hires needed</span>
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    {t("oneClickLicensing")}
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Rocket className="w-6 h-6 text-yellow-300 mt-1 flex-shrink-0" />
-                  <p className="text-lg text-white">
-                    Infrastructure scales with you
+                  <CheckCircle2 className="w-6 h-6 text-[#32C8D1] flex-shrink-0 mt-1" />
+                  <p className="text-base text-gray-700">
+                    {t("repeatableUsage")}
                   </p>
                 </div>
               </div>
@@ -360,69 +408,41 @@ export default function SportsAgency() {
         </div>
       </section>
 
-      {/* Section 5: Why This Matters Now */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black flex items-center justify-center mx-auto mb-6 shadow-xl rounded-none">
-              <Clock className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
-              Why This Matters
-              <span className="block text-emerald-600">Right Now</span>
-            </h2>
-          </div>
-
-          <div className="space-y-8">
-            <Card className="p-8 bg-gray-50 border-2 border-black rounded-none">
-              <div className="flex items-start gap-4">
-                <CheckCircle2 className="w-8 h-8 text-green-600 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-xl font-bold text-gray-900 mb-2">
-                    AI-powered content is standard
-                  </p>
-                  <p className="text-lg text-gray-700">
-                    Brands are using athlete likenesses in AI campaigns every
-                    day
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-600 rounded-none">
-              <div className="flex items-start gap-4">
-                <AlertCircle className="w-8 h-8 text-red-600 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 mb-2">
-                    The Question:
-                  </p>
-                  <p className="text-xl text-gray-700">
-                    Are your athletes getting paid?
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-10 bg-gradient-to-br from-emerald-600 to-green-600 border-2 border-black rounded-none text-center shadow-2xl">
-              <div className="flex items-center justify-center gap-4 mb-4">
-                <Award className="w-12 h-12 text-yellow-300" />
-                <p className="text-3xl font-bold text-white">
-                  Your Competitive Advantage
-                </p>
-              </div>
-              <p className="text-xl text-white">
-                Most agencies aren't set up to offer this. You can be first.
+            {/* Why It Matters */}
+            <Card className="p-8 md:p-10 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black rounded-none">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
+                {t("whyItMatters")}
+              </h3>
+              <p className="text-base text-gray-700 leading-relaxed">
+                {t("whyItMattersDescription")}
               </p>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="px-6 py-24 bg-gradient-to-br from-emerald-600 via-green-600 to-teal-600">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="w-24 h-24 bg-white border-2 border-black flex items-center justify-center mx-auto mb-8 shadow-2xl rounded-none">
-            <Rocket className="w-12 h-12 text-emerald-600" />
+      {/* Final CTA Section */}
+      <section className="px-6 py-20 bg-[#0D1B3A] text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            {t("adaptOrWatch")}
+          </h2>
+          <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
+            {t("adaptOrWatchDescription")}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              className="h-12 px-10 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
+            >
+              {t("bookADemo")}
+            </Button>
+            <Button
+              onClick={() => navigate(createPageUrl("Faces"))}
+              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
+            >
+              {t("exploreAthleteMarketplace")}
+            </Button>
           </div>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
             Ready to Scale AI-Powered Likeness Licensing?

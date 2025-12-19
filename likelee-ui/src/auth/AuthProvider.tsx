@@ -22,6 +22,16 @@ interface AuthContextValue {
   ) => Promise<void>;
   refreshToken: () => Promise<void>;
   resendEmailConfirmation?: (email: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  full_name?: string;
+  profile_photo_url?: string;
+  kyc_status?: string;
+  [key: string]: any;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
