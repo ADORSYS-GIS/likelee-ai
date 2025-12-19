@@ -4,26 +4,28 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Users, Trophy, Megaphone } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AgencySelection() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const items = [
     {
-      title: "Talent / Modeling Agency",
-      desc: "Represent actors, models, and influencers",
+      title: t("talentModelingAgency"),
+      desc: t("talentModelingAgencyMessage"),
       icon: Users,
       to: createPageUrl("TalentAgency"),
     },
     {
-      title: "Sports Agency",
-      desc: "Manage athletes and sports talent",
+      title: t("sportsAgency"),
+      desc: t("sportsAgencyMessage"),
       icon: Trophy,
       to: createPageUrl("SportsAgency"),
     },
     {
-      title: "Marketing Agency",
-      desc: "Create campaigns and manage brand partnerships",
+      title: t("marketingAgency"),
+      desc: t("marketingAgencyMessage"),
       icon: Megaphone,
       to: createPageUrl("MarketingAgency"),
     },
@@ -34,10 +36,10 @@ export default function AgencySelection() {
       <section className="px-6 pt-20 pb-10">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-            What Type of Agency Are You?
+            {t("whatTypeOfAgencyAreYou")}
           </h1>
           <p className="text-gray-600 text-base md:text-lg">
-            Select your agency type to learn more about how Likelee can help you
+            {t("whatTypeOfAgencyAreYouMessage")}
           </p>
         </div>
       </section>
@@ -59,7 +61,7 @@ export default function AgencySelection() {
                   variant="outline"
                   className="mt-2 border-2 border-black rounded-none"
                 >
-                  Learn More
+                  {t("learnMore")}
                 </Button>
               </div>
             </Card>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, CheckCircle2, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export default function Landing() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const createPageUrl = (path) => {
@@ -13,9 +15,14 @@ export default function Landing() {
       .replace(/^-/, "")}`;
   };
 
-  const headline = "Fishing for Something Real in the AI Era?";
+  const headline = t("landingHeadline");
   const [typedHeadline, setTypedHeadline] = useState("");
   const [typedIndex, setTypedIndex] = useState(0);
+
+  useEffect(() => {
+    setTypedHeadline("");
+    setTypedIndex(0);
+  }, [headline]);
 
   useEffect(() => {
     if (typedIndex > headline.length) return;
@@ -24,16 +31,20 @@ export default function Landing() {
       setTypedIndex((i) => i + 1);
     }, 40);
     return () => clearTimeout(id);
-  }, [typedIndex]);
+  }, [typedIndex, headline]);
 
-  const phrases = ["Ready to Use", "Verified Protection", "Licensed Faces"];
+  const phrases = [
+    t("readyToUse"),
+    t("verifiedProtection"),
+    t("licensedFaces"),
+  ];
   const [phraseIdx, setPhraseIdx] = useState(0);
   useEffect(() => {
     const id = setInterval(() => {
       setPhraseIdx((i) => (i + 1) % phrases.length);
     }, 2500);
     return () => clearInterval(id);
-  }, []);
+  }, [phrases.length]);
 
   useEffect(() => {
     // Add JSON-LD structured data
@@ -99,24 +110,22 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-              Build Real Athlete Partnerships That Pay Year-Round
+              {t("heroTitle")}
             </h1>
-            <p className="mt-6 text-gray-600 text-lg">
-              One retainer, consistent presence. Athletes earn, you win.
-            </p>
+            <p className="mt-6 text-gray-600 text-lg">{t("heroSubtitle")}</p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button
                 onClick={() => navigate("/BrandCompany")}
                 className="h-12 px-8 bg-gradient-to-r from-[#F7B750] to-[#FAD54C] text-white border-2 border-black rounded-none"
               >
-                For Brands
+                {t("forBrands")}
               </Button>
               <Button
                 onClick={() => navigate("/AgencySelection")}
                 variant="outline"
                 className="h-12 px-8 border-2 border-black rounded-none"
               >
-                For Agencies
+                {t("forAgencies")}
               </Button>
             </div>
           </div>
@@ -186,11 +195,9 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Transform How You Work with Talent
+              {t("transformTalentTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              From months of vetting to minutes of browsing.
-            </p>
+            <p className="mt-4 text-gray-600">{t("transformTalentSubtitle")}</p>
           </div>
         </div>
       </section>
@@ -233,12 +240,9 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Don't Lose User Trust using Fake Avatars
+              {t("userTrustTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              Real creators bring genuine belief, and your audiences feel it
-              instantly.
-            </p>
+            <p className="mt-4 text-gray-600">{t("userTrustSubtitle")}</p>
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -305,11 +309,9 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Scale Your Catalog Without Scaling Costs
+              {t("scaleCatalogTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              Same influencer. Infinite product variations. Launch in hours.
-            </p>
+            <p className="mt-4 text-gray-600">{t("scaleCatalogSubtitle")}</p>
           </div>
         </div>
       </section>
@@ -352,12 +354,9 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Premium Talent with Zero Production Headaches
+              {t("premiumTalentTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              Skip shoot day and access verified models from top agencies. All
-              with premium results.
-            </p>
+            <p className="mt-4 text-gray-600">{t("premiumTalentSubtitle")}</p>
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -424,12 +423,9 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              Built for Brands of All Sizes
+              {t("allSizesTitle")}
             </h2>
-            <p className="mt-4 text-gray-600">
-              From ecom startups to enterprises—build high-touch campaigns with
-              verified talent for every budget.
-            </p>
+            <p className="mt-4 text-gray-600">{t("allSizesSubtitle")}</p>
           </div>
         </div>
       </section>

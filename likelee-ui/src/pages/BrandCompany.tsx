@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function BrandCompany() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,19 +37,18 @@ export default function BrandCompany() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
-      name: "Brand & Company Campaign Solutions",
-      description:
-        "Launch verified talent campaigns. Project-based. Transparent pricing. No hidden costs. Access verified creators and AI filmmakers.",
+      name: t("brandCampaignSolutions"),
+      description: t("brandCampaignSolutionsDescription"),
       provider: {
         "@type": "Organization",
         name: "Likelee",
         url: "https://likelee.ai",
       },
-      serviceType: "Brand Marketing & Creator Licensing",
-      areaServed: "Worldwide",
+      serviceType: t("brandMarketingLicensing"),
+      areaServed: t("worldwide"),
       audience: {
         "@type": "Audience",
-        audienceType: "Brands, Companies, Marketing Teams",
+        audienceType: t("brandAudiences"),
       },
     };
 
@@ -66,11 +67,10 @@ export default function BrandCompany() {
       <section className="relative px-6 pt-16 pb-8 bg-white">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-4">
-            Don't Lose Brand Trust Using False Avatars
+            {t("dontLoseBrandTrust")}
           </h1>
           <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-6">
-            License real athletes, influencers, and creator likenesses with
-            Likelee.
+            {t("licenseRealTalent")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -81,14 +81,14 @@ export default function BrandCompany() {
               }
               className="h-12 sm:h-14 px-8 sm:px-10 font-medium bg-gradient-to-r from-[#F7B750] to-[#FAD54C] text-white border-2 border-black shadow-xl rounded-none"
             >
-              Browse Marketplace
+              {t("browseMarketplace")}
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               variant="outline"
               className="h-12 sm:h-14 px-8 sm:px-10 font-medium border-2 border-black rounded-none"
             >
-              Schedule Demo
+              {t("scheduleDemo")}
             </Button>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default function BrandCompany() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
+              {t("faq")}
             </h2>
           </div>
           <Accordion type="single" collapsible className="space-y-4">
@@ -106,14 +106,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                What's the difference between a Verified Creator and an AI
-                Filmmaker?
+                {t("faqVerifiedCreatorVsAiFilmmakerTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Verified Creators are real people who've licensed their likeness
-                (influencers, athletes, actors, models). AI Filmmakers create
-                content using AI tools (Sora, Runway, Pika, etc.). Both are
-                available on Likelee.
+                {t("faqVerifiedCreatorVsAiFilmmakerDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -121,12 +117,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                Can I hire the same talent for multiple campaigns?
+                {t("faqMultipleCampaignsTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Yes. If a creator's contract allows renewal, you can re-book
-                them at the same rates (or renegotiate). Most creators prefer
-                repeat work.
+                {t("faqMultipleCampaignsDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -134,12 +128,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                What if I need revisions?
+                {t("faqRevisionsTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Revisions are project-to-project based on what's agreed upfront.
-                Minor tweaks are usually included. Major scope changes = new
-                project with new pricing.
+                {t("faqRevisionsDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -147,12 +139,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                How long does approval take?
+                {t("faqApprovalTimeTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Most creators respond within 24 hours. Some respond within
-                hours. Urgency is factored into pricing (faster turnaround =
-                higher price, usually).
+                {t("faqApprovalTimeDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -160,12 +150,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                Can you guarantee deliverables?
+                {t("faqGuaranteedDeliverablesTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Talent is incentivized to deliver (they don't get paid the 50%
-                on completion if they don't). If they fail to deliver, we help
-                you find replacement talent or issue a refund.
+                {t("faqGuaranteedDeliverablesDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -173,11 +161,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                What formats do you deliver?
+                {t("faqFormatsTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Whatever you request: MP4, MOV, ProRes, social-optimized cuts,
-                etc. Specify in the brief.
+                {t("faqFormatsDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -185,11 +172,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                What if I exceed the licensed timeframe?
+                {t("faqExceedLicensedTimeframeTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                You can renew the license by re-contracting with the talent.
-                Renewal is usually 20–30% of original project cost.
+                {t("faqExceedLicensedTimeframeDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -197,11 +183,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                Is this verified consent?
+                {t("faqVerifiedConsentTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Yes. Every talent on Likelee has verified their likeness rights.
-                Contracts are SAG-AFTRA-aligned. You're protected.
+                {t("faqVerifiedConsentDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -209,11 +194,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                What if someone uses my asset without permission?
+                {t("faqUnauthorizedUseTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Watermarks + automated DMCA takedowns. We scan the web and issue
-                takedowns automatically.
+                {t("faqUnauthorizedUseDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -221,11 +205,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                Can we negotiate pricing?
+                {t("faqNegotiatePricingTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Yes. Post your budget. Talent quotes back. You can
-                counter-offer. It's project-based, so there's flexibility.
+                {t("faqNegotiatePricingDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -233,11 +216,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                Can I work with my own agency on Likelee?
+                {t("faqWorkWithOwnAgencyTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Yes. Invite them to manage projects. They source talent, submit
-                briefs, you approve. Same transparent pricing applies.
+                {t("faqWorkWithOwnAgencyDescription")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
@@ -245,12 +227,10 @@ export default function BrandCompany() {
               className="border-2 border-black rounded-none bg-white"
             >
               <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                Are there agencies I can work with on Likelee?
+                {t("faqAgenciesOnLikeleeTitle")}
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                Yes. Browse Partner Agencies on Likelee. They specialize in
-                different industries and can handle the entire project from
-                sourcing to delivery.
+                {t("faqAgenciesOnLikeleeDescription")}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
