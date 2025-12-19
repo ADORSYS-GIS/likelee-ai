@@ -5585,9 +5585,9 @@ export default function CreatorDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRatesModal("content")}
-                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-9 px-4 rounded-md shadow-sm"
+                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-3.5 h-3.5" />
                     {t("creatorDashboard.settingsView.rules.editRate")}
                   </Button>
                 </div>
@@ -5597,7 +5597,7 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-3 py-1.5 text-xs transition-all border-2 ${isSelected
+                        className={`px-2 py-1 text-xs transition-all border-2 ${isSelected
                           ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
                           : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
                           } cursor-default font-normal flex items-center gap-2 rounded-lg`}
@@ -5620,9 +5620,9 @@ export default function CreatorDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRatesModal("industry")}
-                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-9 px-4 rounded-md shadow-sm"
+                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-3.5 h-3.5" />
                     {t("creatorDashboard.settingsView.rules.edit")}
                   </Button>
                 </div>
@@ -5632,7 +5632,7 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-3 py-1.5 text-xs transition-all border-2 ${isSelected
+                        className={`px-2 py-1 text-xs transition-all border-2 ${isSelected
                           ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
                           : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
                           } cursor-default font-normal flex items-center gap-2 rounded-lg`}
@@ -5657,9 +5657,9 @@ export default function CreatorDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowRestrictionsModal(true)}
-                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-9 px-4 rounded-md shadow-sm"
+                    className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-3.5 h-3.5" />
                     {t("creatorDashboard.settingsView.rules.edit")}
                   </Button>
                 </div>
@@ -5669,7 +5669,7 @@ export default function CreatorDashboard() {
                     creator.content_restrictions.map((restriction) => (
                       <Badge
                         key={restriction}
-                        className="px-3 py-1.5 text-xs bg-[#F34D4D] text-white border-2 border-[#F34D4D] hover:bg-[#E23C3C] cursor-default font-normal flex items-center gap-2 rounded-lg"
+                        className="px-2 py-1 text-xs bg-[#F34D4D] text-white border-2 border-[#F34D4D] hover:bg-[#E23C3C] cursor-default font-normal flex items-center gap-2 rounded-lg"
                       >
                         <X className="w-3 h-3" />
                         {restriction}
@@ -5699,8 +5699,9 @@ export default function CreatorDashboard() {
                       creator.brand_exclusivity.map((brand) => (
                         <Badge
                           key={brand}
-                          className="px-3 py-1 text-xs bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 cursor-default font-normal"
+                          className="px-2 py-1 text-xs bg-amber-100/50 text-amber-800 border-2 border-amber-200 hover:bg-amber-200/50 cursor-default font-normal flex items-center gap-2 rounded-lg"
                         >
+                          <Ban className="w-3 h-3" />
                           {brand}
                         </Badge>
                       ))
@@ -5745,9 +5746,9 @@ export default function CreatorDashboard() {
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingRules(true)}
-                        className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-9 px-4 rounded-md shadow-sm"
+                        className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                         {t("creatorDashboard.settingsView.rules.edit")}
                       </Button>
                     )}
@@ -5756,24 +5757,27 @@ export default function CreatorDashboard() {
                 <p className="text-sm text-gray-600 mb-6 font-normal">
                   {t("creatorDashboard.settingsView.rules.baseRateDesc")}
                 </p>
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-medium text-gray-400">$</span>
-                  <Input
-                    type="number"
-                    value={creator.price_per_month || 0}
-                    onChange={(e) =>
-                      setCreator({
-                        ...creator,
-                        price_per_month: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    disabled={!editingRules}
-                    className={`max-w-[240px] h-12 text-lg font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto ${!editingRules ? "bg-gray-50 text-gray-500 cursor-not-allowed border-transparent" : "bg-white"
-                      }`}
-                  />
-                  <span className="text-base font-semibold text-gray-700">
-                    / {t("creatorDashboard.settingsView.rules.perMonth")}
-                  </span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-medium text-gray-900">$</span>
+                    <Input
+                      type="number"
+                      value={creator.price_per_month || 0}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          price_per_month: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      disabled={!editingRules}
+                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${!editingRules ? "bg-gray-50 text-gray-900 cursor-not-allowed border-gray-200" : "bg-white"
+                        }`}
+                    />
+                  </div>
+                  <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
+                    <span className="text-xl">/</span>
+                    <span className="text-base">month</span>
+                  </div>
                 </div>
               </div>
 
@@ -7064,12 +7068,12 @@ export default function CreatorDashboard() {
                           }
                         });
                       }}
-                      className={`px-3 py-1.5 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-2 ${isSelected
+                      className={`px-2 py-1 rounded-lg border-2 text-[10px] font-normal transition-all flex items-center gap-1.5 ${isSelected
                         ? "bg-[#32C8D1] border-[#32C8D1] text-white"
                         : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
                         }`}
                     >
-                      {isSelected && <Check className="w-3 h-3" />}
+                      {isSelected && <Check className="w-2.5 h-2.5" />}
                       {t(`common.contentTypes.${type}`, type)}
                     </button>
                   );
@@ -7103,22 +7107,25 @@ export default function CreatorDashboard() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <span className="text-gray-400 font-medium text-lg">$</span>
-                        <Input
-                          type="number"
-                          name={`rate_content_${type}`}
-                          defaultValue={
-                            existing
-                              ? (existing.price_per_month_cents / 100).toString()
-                              : ""
-                          }
-                          className="w-32 h-11 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-xl font-normal text-gray-700 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
-                          min="0"
-                        />
-                        <span className="text-gray-500 font-medium text-sm">
-                          / mo
-                        </span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-medium text-gray-900">$</span>
+                          <Input
+                            type="number"
+                            name={`rate_content_${type}`}
+                            defaultValue={
+                              existing
+                                ? (existing.price_per_month_cents / 100).toString()
+                                : ""
+                            }
+                            className="w-28 h-10 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg font-normal text-gray-900 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
+                            min="0"
+                          />
+                        </div>
+                        <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
+                          <span className="text-xl">/</span>
+                          <span className="text-base text-sm">month</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -7131,14 +7138,14 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRatesModal(null)}
-                className="h-12 w-full max-w-[240px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
+                className="h-10 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm"
               >
                 {t("creatorDashboard.settingsView.rules.modals.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={savingRates}
-                className="h-12 w-full max-w-[240px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
+                className="h-10 w-full max-w-[200px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-lg shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2 text-sm"
               >
                 {savingRates ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -7190,7 +7197,7 @@ export default function CreatorDashboard() {
                           }
                         });
                       }}
-                      className={`px-3 py-1.5 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-2 ${isSelected
+                      className={`px-2 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-2 ${isSelected
                         ? "bg-[#32C8D1] border-[#32C8D1] text-white"
                         : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
                         }`}
@@ -7208,14 +7215,14 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRatesModal(null)}
-                className="h-12 w-full max-w-[240px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
+                className="h-10 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm"
               >
                 {t("creatorDashboard.settingsView.rules.modals.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={savingRates}
-                className="h-12 w-full max-w-[240px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
+                className="h-10 w-full max-w-[200px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-lg shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2 text-sm"
               >
                 {savingRates ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -7258,7 +7265,7 @@ export default function CreatorDashboard() {
                   creator.content_restrictions.map((restriction) => (
                     <Badge
                       key={restriction}
-                      className="px-3 py-1.5 text-xs bg-[#F34D4D] text-white border-none hover:bg-[#E23C3C] cursor-default flex items-center gap-2 rounded-lg font-normal"
+                      className="px-2 py-1 text-xs bg-[#F34D4D] text-white border-none hover:bg-[#E23C3C] cursor-default flex items-center gap-2 rounded-lg font-normal"
                     >
                       <span>{restriction}</span>
                       <button
@@ -7272,7 +7279,7 @@ export default function CreatorDashboard() {
                         }}
                         className="hover:scale-110 transition-transform"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-3 h-3" />
                       </button>
                     </Badge>
                   ))
@@ -7304,7 +7311,7 @@ export default function CreatorDashboard() {
                         });
                       }
                     }}
-                    className="px-3 py-1.5 text-xs bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 rounded-lg flex items-center gap-2 font-normal transition-all"
+                    className="px-2 py-1 text-xs bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 rounded-lg flex items-center gap-2 font-normal transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     {restriction}
@@ -7363,7 +7370,7 @@ export default function CreatorDashboard() {
                   className="h-11 bg-[#F34D4D] hover:bg-[#E23C3C] text-white px-6 rounded-xl flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  {t("common.add")}
+                  {t("creatorDashboard.common.add")}
                 </Button>
               </div>
             </div>
@@ -7385,7 +7392,7 @@ export default function CreatorDashboard() {
                   creator.brand_exclusivity.map((brand) => (
                     <Badge
                       key={brand}
-                      className="px-3 py-1.5 text-xs bg-[#FFF8E7] text-[#D97706] border border-[#FDE68A] hover:bg-[#FEF3C7] cursor-default flex items-center gap-2 rounded-lg font-normal"
+                      className="px-2 py-1 text-xs bg-[#FFF8E7] text-[#D97706] border border-[#FDE68A] hover:bg-[#FEF3C7] cursor-default flex items-center gap-2 rounded-lg font-normal"
                     >
                       {brand}
                       <button
@@ -7444,7 +7451,7 @@ export default function CreatorDashboard() {
                   className="h-11 bg-[#F59E0B] hover:bg-[#D97706] text-white px-6 rounded-xl flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  {t("common.add")}
+                  {t("creatorDashboard.common.add")}
                 </Button>
               </div>
             </div>
