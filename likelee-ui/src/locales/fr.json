@@ -428,6 +428,30 @@
         "acceptAndSign": "Accepter & Signer",
         "backToQueue": "Retour à la file"
       },
+      "backToQueue": "Retour à la file",
+      "contractReviewTitle": "{{brand}} - Révision du contrat",
+      "contractReviewSubtitle": "Examinez les termes avant d'approuver",
+      "whatYouWillEarn": "Ce que vous allez gagner",
+      "yourMonthlyPayment": "Votre paiement mensuel :",
+      "ifYouKeepThisFor": "Si vous gardez ceci pendant {{term}} :",
+      "totalEstimatedEarnings": "Total des gains estimés",
+      "contractTerms": "Termes du contrat",
+      "duration": "Durée :",
+      "territory": "Territoire :",
+      "usageType": "Type d'utilisation :",
+      "industries": "Secteurs d'activité :",
+      "yourRightsAndProtections": "Vos droits & protections",
+      "canPause": "Vous pouvez mettre cette licence en pause à tout moment (arrêt temporaire de l'utilisation)",
+      "canRevoke": "Vous pouvez la révoquer avec un préavis de 30 jours (arrêt définitif)",
+      "licenseExpires": "La licence expire à une date précise (pas pour toujours)",
+      "paymentProtected": "Paiement protégé en séquestre jusqu'à ce que la marque approuve les livrables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Avertissement d'utilisation perpétuelle :",
+        "message": "Cette marque souhaite utiliser votre image pour toujours. Vous devriez négocier pour des termes limités dans le temps (6 mois, 1 an) à la place."
+      },
+      "decline": "Refuser",
+      "counterOffer": "Contre-offre",
+      "acceptAndSign": "Accepter & Signer",
       "contractReview": {
         "title": "Révision du contrat de {{brand}}",
         "subtitle": "Veuillez lire attentivement tous les termes ci-dessous avant d'accepter."
@@ -1372,6 +1396,7 @@
   "common": {
     "signIn": "Se connecter",
     "dashboard": "Tableau de bord",
+    "ongoing": "En continu",
     "city": "Ville",
     "state": "État",
     "logout": "Déconnexion",

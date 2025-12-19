@@ -813,6 +813,7 @@
     "confirmPassword": "Confirm Password",
     "confirmPasswordRequired": "Confirm Password *",
     "fullNameRequired": "Full Name *",
+    "ongoing": "Ongoing",
     "emailRequired": "Email Address *",
     "cityRequired": "City *",
     "stateCountryRequired": "State / Country *",

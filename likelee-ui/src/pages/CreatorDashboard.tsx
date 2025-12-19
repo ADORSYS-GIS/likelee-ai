@@ -4006,7 +4006,7 @@ export default function CreatorDashboard() {
                 <p className="text-3xl font-bold text-gray-900">
                   $
                   {approval.term_length === "Perpetual"
-                    ? "Ongoing"
+                    ? t("common.ongoing")
                     : approval.proposed_rate * parseInt(approval.term_length)}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
@@ -4024,7 +4024,9 @@ export default function CreatorDashboard() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">Duration:</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {t("creatorDashboard.approvals.duration")}
+                  </p>
                   <p className="font-bold text-gray-900 text-lg">
                     {approval.term_length}
                   </p>

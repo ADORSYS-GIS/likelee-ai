@@ -2044,6 +2044,7 @@
   "common": {
     "signIn": "Iniciar Sesión",
     "dashboard": "Panel de Control",
+    "ongoing": "En curso",
     "city": "Ciudad",
     "state": "Estado",
     "logout": "Cerrar Sesión",

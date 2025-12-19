@@ -555,11 +555,35 @@
         "decline": "Ablehnen",
         "counterOffer": "Gegenangebot",
         "acceptAndSign": "Akzeptieren & Unterschreiben",
-        "backToQueue": "Zurück zur Warteschlange"
+        "backToQueue": "Zurück zur Liste"
       },
+      "backToQueue": "Zurück zur Liste",
+      "contractReviewTitle": "{{brand}} - Vertragsprüfung",
+      "contractReviewSubtitle": "Prüfen Sie die Bedingungen vor der Zustimmung",
+      "whatYouWillEarn": "Ihre Einnahmen",
+      "yourMonthlyPayment": "Ihre monatliche Zahlung:",
+      "ifYouKeepThisFor": "Wenn Sie dies für {{term}} behalten:",
+      "totalEstimatedEarnings": "Geschätzte Gesamteinnahmen",
+      "contractTerms": "Vertragsbedingungen",
+      "duration": "Dauer:",
+      "territory": "Gebiet:",
+      "usageType": "Nutzungsart:",
+      "industries": "Branchen:",
+      "yourRightsAndProtections": "Ihre Rechte & Schutzmaßnahmen",
+      "canPause": "Sie können diese Lizenz jederzeit pausieren (Nutzung vorübergehend stoppen)",
+      "canRevoke": "Sie können sie mit einer Frist von 30 Tagen widerrufen (dauerhaft beenden)",
+      "licenseExpires": "Die Lizenz läuft an einem bestimmten Datum aus (nicht für immer)",
+      "paymentProtected": "Zahlung auf einem Treuhandkonto geschützt, bis die Marke die Ergebnisse genehmigt",
+      "perpetualUseWarning": {
+        "title": "⚠️ Warnung vor unbefristeter Nutzung:",
+        "message": "Diese Marke möchte Ihr Ebenbild für immer verwenden. Sie sollten stattdessen zeitlich begrenzte Bedingungen (6 Monate, 1 Jahr) aushandeln."
+      },
+      "decline": "Ablehnen",
+      "counterOffer": "Gegenangebot",
+      "acceptAndSign": "Akzeptieren & Unterschreiben",
       "contractReview": {
-        "title": "Vertrag von {{brand}} überprüfen",
-        "subtitle": "Bitte lesen Sie alle Bedingungen unten sorgfältig durch, bevor Sie akzeptieren."
+        "title": "Vertragsprüfung von {{brand}}",
+        "subtitle": "Bitte lesen Sie alle untenstehenden Bedingungen sorgfältig durch, bevor Sie zustimmen."
       }
     },
     "campaigns": {
@@ -2051,6 +2075,7 @@
   "common": {
     "signIn": "Anmelden",
     "dashboard": "Dashboard",
+    "ongoing": "Laufend",
     "city": "Stadt",
     "state": "Bundesland",
     "logout": "Abmelden",
