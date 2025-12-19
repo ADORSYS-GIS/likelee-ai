@@ -17,6 +17,7 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 2025-12-04_voice_assets.sql
 - 20251204101400_add_creator_custom_rates.sql
 - 20251205160000_add_negotiations_and_restrictions.sql
+- 20251219213500_rename_rates_column.sql
 
 Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 

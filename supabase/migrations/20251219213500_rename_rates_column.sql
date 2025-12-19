@@ -55,4 +55,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 4. RLS Policy Fix: Ensure the server (service_role) and app can read rates reliably
+ALTER TABLE public.creator_custom_rates ENABLE ROW LEVEL SECURITY;
+
+-- Remove old restrictive policies
+DROP POLICY IF EXISTS "Creators can view their own custom rates" ON public.creator_custom_rates;
+DROP POLICY IF EXISTS "Public select rates" ON public.creator_custom_rates;
+
+-- Allow public reading (licensing rates are often public or server-managed)
+-- This ensures the server-side fetch doesn't return empty due to lack of creator context.
+CREATE POLICY "Public select rates" 
+ON public.creator_custom_rates 
+FOR SELECT 
+USING (true);
+
+-- Keep modification restricted to the owner
+DROP POLICY IF EXISTS "Creators can modify their own rates" ON public.creator_custom_rates;
+CREATE POLICY "Creators can modify their own rates" 
+ON public.creator_custom_rates 
+FOR ALL 
+USING (auth.uid() = creator_id);
+
 COMMIT;

@@ -5220,7 +5220,8 @@ export default function CreatorDashboard() {
         finalSelections.forEach((type) => {
           const val = formData.get(`rate_content_${type}`);
           const parsed = parseFloat(val?.toString() || "");
-          const finalVal = isNaN(parsed) ? (creator.price_per_month || 0) : parsed;
+          const existing = (customRates || []).find(r => r.rate_type === "content_type" && r.rate_name === type);
+          const finalVal = isNaN(parsed) ? (existing ? existing.price_per_month_cents / 100 : (creator.price_per_month || 0)) : parsed;
 
           newRates.push({
             rate_type: "content_type",
@@ -5243,6 +5244,7 @@ export default function CreatorDashboard() {
       );
       const finalRates = [...newRates, ...preservedRates];
 
+      console.log("Saving rates for user:", user.id, finalRates);
       const res = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         {
@@ -5251,6 +5253,7 @@ export default function CreatorDashboard() {
           body: JSON.stringify(finalRates),
         },
       );
+      console.log("POST response status:", res.status);
 
       // Persist category selections to profiles table as well
       const profileStatus = await supabase
@@ -5275,16 +5278,19 @@ export default function CreatorDashboard() {
         throw new Error(`Failed to save: ${errorText}`);
       }
 
+      // Update local state immediately to ensure UI is snappy
+      setCustomRates(finalRates);
+
       // Reload rates from database to confirm persistence
       const reloadRes = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
       );
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
+        console.log("Reloaded rates from DB:", reloadedRates);
         setCustomRates(reloadedRates);
       } else {
-        // Fallback: update local customRates state immediately to prevent visual regression
-        setCustomRates(finalRates);
+        console.error("Reload fetch failed:", reloadRes.status);
       }
 
       const successTitle = showRatesModal === "content"
