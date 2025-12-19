@@ -307,7 +307,9 @@ pub async fn get_status(
                     rows = serde_json::from_str(&text2)
                         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
                 } else {
-                    debug!(status = %res.status(), "Veriff decision request failed");
+                    let status = res.status();
+                    let body = res.text().await.unwrap_or_default();
+                    warn!(%status, body = %body, "Veriff decision request failed");
                 }
             }
             Err(e) => {
