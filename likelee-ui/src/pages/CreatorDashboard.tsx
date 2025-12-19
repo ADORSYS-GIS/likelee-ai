@@ -79,6 +79,7 @@ import {
   Check,
   Youtube,
   ArrowLeft,
+  Ban,
 } from "lucide-react";
 import {
   LineChart,
