@@ -648,6 +648,7 @@ function ReferencePhotosStep(props: any) {
 }
 
 export default function ReserveProfile() {
+  const urlParams = new URLSearchParams(window.location.search);
   const [creatorType, setCreatorType] = useState(() => {
     const saved = localStorage.getItem("reserve_creatorType");
     const param = urlParams.get("type");
@@ -1338,7 +1339,7 @@ export default function ReserveProfile() {
           });
           return;
         }
-        // Move to next step; profile will be saved at the end (step 5)
+        // Move to next step; profile will be handled by AuthProvider or later steps
         setStep(2);
       } catch (e: any) {
         toast({
@@ -1427,6 +1428,16 @@ export default function ReserveProfile() {
           return;
         }
       }
+      if (creatorType === "model_actor") {
+        if (!formData.representation_status) {
+          toast({
+            title: t("reserveProfile.toasts.representationRequiredTitle"),
+            description: t("reserveProfile.toasts.representationRequiredDesc"),
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+          return;
+        }
+      }
       // Pricing required in onboarding step (applies to all creator types)
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
@@ -1446,8 +1457,8 @@ export default function ReserveProfile() {
   };
 
   const handleSubmit = async () => {
-    // Step 3 validations for influencer
-    if (creatorType === "influencer") {
+    // Step 3 validations for influencer and model_actor
+    if (creatorType === "influencer" || creatorType === "model_actor") {
       if (!formData.content_types || formData.content_types.length === 0) {
         toast({
           title: t("reserveProfile.toasts.campaignTypeRequiredTitle"),
@@ -1489,8 +1500,8 @@ export default function ReserveProfile() {
         return;
       }
     }
-    console.log("Collected step 3 data (no write yet):", formData);
-    setStep(4);
+    // Save profile data before moving to verification
+    updateProfileMutation.mutate(formData);
   };
 
   const finalizeProfile = async () => {
@@ -2308,62 +2319,130 @@ export default function ReserveProfile() {
                         </div>
                       ))}
                     </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                        {t(
+                          "reserveProfile.form.representationStatus",
+                          "Representation Status",
+                        )}
+                      </Label>
+                      <RadioGroup
+                        value={formData.representation_status}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            representation_status: value,
+                          })
+                        }
+                      >
+                        <div className="space-y-2">
+                          {["Agency", "Independent"].map((option) => (
+                            <div
+                              key={option}
+                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                            >
+                              <RadioGroupItem
+                                value={option}
+                                id={option}
+                                className="border-2 border-gray-400"
+                              />
+                              <Label
+                                htmlFor={option}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
+                                {t(
+                                  `common.representationStatus.options.${option}`,
+                                  option,
+                                )}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="headshot_url"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("reserveProfile.form.headshot")}
+                      </Label>
+                      <Input
+                        id="headshot_url"
+                        type="text"
+                        value={formData.headshot_url}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            headshot_url: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.headshot",
+                        )}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {t("reserveProfile.form.headshotHint")}
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {/* Influencer vibes */}
-                {creatorType === "influencer" && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                      {t("reserveProfile.form.vibes")}
-                    </Label>
-                    <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                      <Checkbox
-                        id="select-all-vibes"
-                        checked={vibes.every((vibe) =>
-                          formData.vibes.includes(vibe),
-                        )}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({ ...formData, vibes: [...vibes] });
-                          } else {
-                            setFormData({ ...formData, vibes: [] });
-                          }
-                        }}
-                        className="border-2 border-gray-400"
-                      />
-                      <label
-                        htmlFor="select-all-vibes"
-                        className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                      >
-                        {t("reserveProfile.form.selectAll", "Select All")}
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {vibes.map((vibe) => (
-                        <div
-                          key={vibe}
-                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                        >
-                          <Checkbox
-                            id={vibe}
-                            checked={formData.vibes.includes(vibe)}
-                            onCheckedChange={() =>
-                              toggleArrayItem("vibes", vibe)
+                {/* Influencer & Model/Actor vibes */}
+                {(creatorType === "influencer" ||
+                  creatorType === "model_actor") && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                        {t("reserveProfile.form.vibes")}
+                      </Label>
+                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                        <Checkbox
+                          id="select-all-vibes"
+                          checked={vibes.every((vibe) =>
+                            formData.vibes.includes(vibe),
+                          )}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData({ ...formData, vibes: [...vibes] });
+                            } else {
+                              setFormData({ ...formData, vibes: [] });
                             }
-                            className="border-2 border-gray-400"
-                          />
-                          <label
-                            htmlFor={vibe}
-                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          }}
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor="select-all-vibes"
+                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                        >
+                          {t("reserveProfile.form.selectAll", "Select All")}
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {vibes.map((vibe) => (
+                          <div
+                            key={vibe}
+                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                           >
-                            {t(`common.vibes.${vibe}`, vibe)}
-                          </label>
-                        </div>
-                      ))}
+                            <Checkbox
+                              id={vibe}
+                              checked={formData.vibes.includes(vibe)}
+                              onCheckedChange={() =>
+                                toggleArrayItem("vibes", vibe)
+                              }
+                              className="border-2 border-gray-400"
+                            />
+                            <label
+                              htmlFor={vibe}
+                              className="text-sm text-gray-700 cursor-pointer flex-1"
+                            >
+                              {t(`common.vibes.${vibe}`, vibe)}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {/* Pricing (USD-only) */}
@@ -2448,309 +2527,208 @@ export default function ReserveProfile() {
               </div>
 
               <div className="space-y-6">
-                {/* Influencer Step 3 */}
-                {creatorType === "influencer" && (
-                  <>
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          {t("reserveProfile.form.contentInterest")}
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          {t("reserveProfile.form.selectMax3")}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                        <Checkbox
-                          id="select-all-content"
-                          checked={contentTypes.every((type) =>
-                            formData.content_types.includes(type),
-                          )}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData({
-                                ...formData,
-                                content_types: [...contentTypes],
-                              });
-                            } else {
-                              setFormData({ ...formData, content_types: [] });
-                            }
-                          }}
-                          className="border-2 border-gray-400"
-                        />
-                        <label
-                          htmlFor="select-all-content"
-                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                        >
-                          {t("reserveProfile.form.selectAll", "Select All")}
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {contentTypes.map((type) => (
-                          <div
-                            key={type}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={type}
-                              checked={formData.content_types.includes(type)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("content_types", type)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={type}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(`common.contentTypes.${type}`, type)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                      {formData.content_types.includes("Other") && (
-                        <Input
-                          value={formData.content_other}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              content_other: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none mt-2"
-                          placeholder={t(
-                            "reserveProfile.form.placeholders.specify",
-                          )}
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-medium text-gray-900">
-                          {t(
-                            "reserveProfile.form.brandinterest",
-                            "What types of brands or industries do you want to work with?",
-                          )}
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          {t("reserveProfile.form.selectMax3")}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
-                        <Checkbox
-                          id="select-all-industries"
-                          checked={industries.every((industry) =>
-                            formData.industries.includes(industry),
-                          )}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData({
-                                ...formData,
-                                industries: [...industries],
-                              });
-                            } else {
-                              setFormData({ ...formData, industries: [] });
-                            }
-                          }}
-                          className="border-2 border-gray-400"
-                        />
-                        <label
-                          htmlFor="select-all-industries"
-                          className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                        >
-                          {t("reserveProfile.form.selectAll", "Select All")}
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {industries.map((industry) => (
-                          <div
-                            key={industry}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={industry}
-                              checked={formData.industries.includes(industry)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("industries", industry)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={industry}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(`common.industries.${industry}`, industry)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Influencer & Model/Actor Step 3 */}
+                {(creatorType === "influencer" ||
+                  creatorType === "model_actor") && (
+                    <>
                       <div>
-                        <Label
-                          htmlFor="primary_platform"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          {t("reserveProfile.form.primaryPlatform")}
-                        </Label>
-                        <Select
-                          value={formData.primary_platform}
-                          onValueChange={(value) =>
-                            setFormData({
-                              ...formData,
-                              primary_platform: value,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                            <SelectValue
-                              placeholder={t(
-                                "reserveProfile.form.placeholders.platform",
-                                "Select platform",
-                              )}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="instagram">Instagram</SelectItem>
-                            <SelectItem value="tiktok">TikTok</SelectItem>
-                            <SelectItem value="youtube">YouTube</SelectItem>
-                            <SelectItem value="twitter">Twitter/X</SelectItem>
-                            <SelectItem value="other">
-                              {t("common.platforms.other", "Other")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label
-                          htmlFor="platform_handle"
-                          className="text-sm font-medium text-gray-700 mb-2 block"
-                        >
-                          {t("reserveProfile.form.handle")}
-                        </Label>
-                        <Input
-                          id="platform_handle"
-                          value={formData.platform_handle}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              platform_handle: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300 rounded-none"
-                          placeholder={t(
-                            "reserveProfile.form.placeholders.handle",
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Model/Actor Step 3 */}
-                {creatorType === "model_actor" && (
-                  <>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                        {t(
-                          "reserveProfile.form.representationStatus",
-                          "Representation Status",
-                        )}
-                      </Label>
-                      <RadioGroup
-                        value={formData.representation_status}
-                        onValueChange={(value) =>
-                          setFormData({
-                            ...formData,
-                            representation_status: value,
-                          })
-                        }
-                      >
-                        <div className="space-y-2">
-                          {["Agency", "Independent"].map((option) => (
+                        <div className="flex items-center justify-between mb-3">
+                          <Label className="text-sm font-medium text-gray-900">
+                            {t("reserveProfile.form.contentInterest")}
+                          </Label>
+                          <span className="text-xs text-gray-500">
+                            {t("reserveProfile.form.selectMax3")}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                          <Checkbox
+                            id="select-all-content"
+                            checked={contentTypes.every((type) =>
+                              formData.content_types.includes(type),
+                            )}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  content_types: [...contentTypes],
+                                });
+                              } else {
+                                setFormData({ ...formData, content_types: [] });
+                              }
+                            }}
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor="select-all-content"
+                            className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                          >
+                            {t("reserveProfile.form.selectAll", "Select All")}
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {contentTypes.map((type) => (
                             <div
-                              key={option}
+                              key={type}
                               className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                             >
-                              <RadioGroupItem
-                                value={option}
-                                id={option}
+                              <Checkbox
+                                id={type}
+                                checked={formData.content_types.includes(type)}
+                                onCheckedChange={() =>
+                                  toggleArrayItem("content_types", type)
+                                }
                                 className="border-2 border-gray-400"
                               />
-                              <Label
-                                htmlFor={option}
+                              <label
+                                htmlFor={type}
                                 className="text-sm text-gray-700 cursor-pointer flex-1"
                               >
-                                {t(
-                                  `common.representationStatus.options.${option}`,
-                                  option,
-                                )}
-                              </Label>
+                                {t(`common.contentTypes.${type}`, type)}
+                              </label>
                             </div>
                           ))}
                         </div>
-                      </RadioGroup>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                        {t("reserveProfile.form.vibes")}
-                      </Label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {vibes.map((vibe) => (
-                          <div
-                            key={vibe}
-                            className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                          >
-                            <Checkbox
-                              id={vibe}
-                              checked={formData.vibes.includes(vibe)}
-                              onCheckedChange={() =>
-                                toggleArrayItem("vibes", vibe)
-                              }
-                              className="border-2 border-gray-400"
-                            />
-                            <label
-                              htmlFor={vibe}
-                              className="text-sm text-gray-700 cursor-pointer flex-1"
-                            >
-                              {t(`common.vibes.options.${vibe}`, vibe)}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="headshot_url"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                      >
-                        {t("reserveProfile.form.headshot")}
-                      </Label>
-                      <Input
-                        id="headshot_url"
-                        type="text"
-                        value={formData.headshot_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            headshot_url: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
-                        placeholder={t(
-                          "reserveProfile.form.placeholders.headshot",
+                        {formData.content_types.includes("Other") && (
+                          <Input
+                            value={formData.content_other}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                content_other: e.target.value,
+                              })
+                            }
+                            className="border-2 border-gray-300 rounded-none mt-2"
+                            placeholder={t(
+                              "reserveProfile.form.placeholders.specify",
+                            )}
+                          />
                         )}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {t("reserveProfile.form.headshotHint")}
-                      </p>
-                    </div>
-                  </>
-                )}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <Label className="text-sm font-medium text-gray-900">
+                            {t(
+                              "reserveProfile.form.brandinterest",
+                              "What types of brands or industries do you want to work with?",
+                            )}
+                          </Label>
+                          <span className="text-xs text-gray-500">
+                            {t("reserveProfile.form.selectMax3")}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 p-3 border-2 border-gray-300 rounded-none bg-gray-50 mb-3">
+                          <Checkbox
+                            id="select-all-industries"
+                            checked={industries.every((industry) =>
+                              formData.industries.includes(industry),
+                            )}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  industries: [...industries],
+                                });
+                              } else {
+                                setFormData({ ...formData, industries: [] });
+                              }
+                            }}
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor="select-all-industries"
+                            className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
+                          >
+                            {t("reserveProfile.form.selectAll", "Select All")}
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {industries.map((industry) => (
+                            <div
+                              key={industry}
+                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                            >
+                              <Checkbox
+                                id={industry}
+                                checked={formData.industries.includes(industry)}
+                                onCheckedChange={() =>
+                                  toggleArrayItem("industries", industry)
+                                }
+                                className="border-2 border-gray-400"
+                              />
+                              <label
+                                htmlFor={industry}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
+                                {t(`common.industries.${industry}`, industry)}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label
+                            htmlFor="primary_platform"
+                            className="text-sm font-medium text-gray-700 mb-2 block"
+                          >
+                            {t("reserveProfile.form.primaryPlatform")}
+                          </Label>
+                          <Select
+                            value={formData.primary_platform}
+                            onValueChange={(value) =>
+                              setFormData({
+                                ...formData,
+                                primary_platform: value,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                              <SelectValue
+                                placeholder={t(
+                                  "reserveProfile.form.placeholders.platform",
+                                  "Select platform",
+                                )}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="instagram">Instagram</SelectItem>
+                              <SelectItem value="tiktok">TikTok</SelectItem>
+                              <SelectItem value="youtube">YouTube</SelectItem>
+                              <SelectItem value="twitter">Twitter/X</SelectItem>
+                              <SelectItem value="other">
+                                {t("common.platforms.other", "Other")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label
+                            htmlFor="platform_handle"
+                            className="text-sm font-medium text-gray-700 mb-2 block"
+                          >
+                            {t("reserveProfile.form.handle")}
+                          </Label>
+                          <Input
+                            id="platform_handle"
+                            value={formData.platform_handle}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                platform_handle: e.target.value,
+                              })
+                            }
+                            className="border-2 border-gray-300 rounded-none"
+                            placeholder={t(
+                              "reserveProfile.form.placeholders.handle",
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
 
                 {/* Athlete Step 3 */}
                 {creatorType === "athlete" && (
