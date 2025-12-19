@@ -6,7 +6,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::info;
 
 use crate::config::AppState;
 
@@ -34,7 +33,6 @@ pub async fn get_creator_rates(
         .execute()
         .await;
 
-    info!(user_id = %q.user_id, "Fetching custom rates from DB");
 
     match response {
         Ok(res) => {
@@ -51,7 +49,6 @@ pub async fn get_creator_rates(
                 };
                 match serde_json::from_str::<Vec<CustomRate>>(&body_text) {
                     Ok(rates) => {
-                        info!(user_id = %q.user_id, count = rates.len(), "Successfully fetched rates");
                         (StatusCode::OK, Json(rates)).into_response()
                     },
                     Err(_) => (
@@ -89,7 +86,6 @@ pub async fn upsert_creator_rates(
         .execute()
         .await;
 
-    info!(user_id = %q.user_id, "Upserting rates via RPC");
 
     match response {
         Ok(res) => {

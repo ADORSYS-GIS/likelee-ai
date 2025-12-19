@@ -1024,7 +1024,6 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        console.log("Fetching dashboard data for user:", user.id);
         const res = await fetch(
           api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
           { signal: abort.signal },
@@ -1032,12 +1031,6 @@ export default function CreatorDashboard() {
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
         const profile = json.profile || {};
-        console.log(
-          "Dashboard loaded with content_types:",
-          profile.content_types,
-          "industries:",
-          profile.industries,
-        );
         setCreator((prev: any) => ({
           ...prev,
           name:
@@ -1063,7 +1056,9 @@ export default function CreatorDashboard() {
               ? Math.round(profile.base_monthly_price_cents / 100)
               : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
-          accept_negotiations: prev.accept_negotiations ?? true,
+          accept_negotiations: profile.accept_negotiations ?? prev.accept_negotiations ?? true,
+          content_restrictions: profile.content_restrictions || [],
+          brand_exclusivity: profile.brand_exclusivity || [],
           kyc_status: profile.kyc_status,
           verified_at: profile.verified_at,
           cameo_front_url: profile.cameo_front_url,
@@ -2440,14 +2435,14 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleSaveRules = async (customToast?: any) => {
+  const handleSaveRules = async (customToast?: any, overrides?: Partial<typeof creator>) => {
     if (!user) return;
 
     // Robust safeguard for React event objects being passed to toast
     const toastTitle = typeof customToast === "string" ? customToast : t("creatorDashboard.toasts.preferencesUpdated");
 
     // Only send fields that exist in the profiles table
-    // Exclude frontend-only fields like accept_negotiations, royalty_percentage, etc.
+    // Apply overrides if provided (e.g. for immediate toggle updates)
     const profileData = {
       email: creator.email || user.email,
       full_name: creator.name,
@@ -2456,20 +2451,13 @@ export default function CreatorDashboard() {
       state: creator.location?.split(",")[1]?.trim(),
       base_monthly_price_cents: (creator.price_per_month || 0) * 100,
       platform_handle: creator.instagram_handle?.replace("@", ""),
-      accept_negotiations: creator.accept_negotiations,
-      content_restrictions: creator.content_restrictions,
-      brand_exclusivity: creator.brand_exclusivity,
-      content_types: creator.content_types,
-      industries: creator.industries,
+      accept_negotiations: overrides?.accept_negotiations ?? creator.accept_negotiations,
+      content_restrictions: overrides?.content_restrictions ?? creator.content_restrictions,
+      brand_exclusivity: overrides?.brand_exclusivity ?? creator.brand_exclusivity,
+      content_types: overrides?.content_types ?? creator.content_types,
+      industries: overrides?.industries ?? creator.industries,
     };
 
-    console.log("Saving profile with data:", {
-      content_types: profileData.content_types,
-      industries: profileData.industries,
-      email: profileData.email,
-      price_per_month: creator.price_per_month,
-      base_monthly_price_cents: profileData.base_monthly_price_cents,
-    });
 
     try {
       const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
@@ -2485,7 +2473,6 @@ export default function CreatorDashboard() {
       }
 
       const responseData = await res.json();
-      console.log("Save response:", responseData);
 
       // Update creator state with the saved data from the response
       if (Array.isArray(responseData) && responseData.length > 0) {
@@ -2494,6 +2481,9 @@ export default function CreatorDashboard() {
           ...prev,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
+          content_restrictions: savedProfile.content_restrictions ?? prev.content_restrictions,
+          brand_exclusivity: savedProfile.brand_exclusivity ?? prev.brand_exclusivity,
+          accept_negotiations: savedProfile.accept_negotiations ?? prev.accept_negotiations,
           price_per_month: savedProfile.base_monthly_price_cents
             ? Math.round(savedProfile.base_monthly_price_cents / 100)
             : prev.price_per_month,
@@ -5244,7 +5234,6 @@ export default function CreatorDashboard() {
       );
       const finalRates = [...newRates, ...preservedRates];
 
-      console.log("Saving rates for user:", user.id, finalRates);
       const res = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         {
@@ -5253,7 +5242,6 @@ export default function CreatorDashboard() {
           body: JSON.stringify(finalRates),
         },
       );
-      console.log("POST response status:", res.status);
 
       // Persist category selections to profiles table as well
       const profileStatus = await supabase
@@ -5287,10 +5275,7 @@ export default function CreatorDashboard() {
       );
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
-        console.log("Reloaded rates from DB:", reloadedRates);
         setCustomRates(reloadedRates);
-      } else {
-        console.error("Reload fetch failed:", reloadRes.status);
       }
 
       const successTitle = showRatesModal === "content"
@@ -5844,6 +5829,7 @@ export default function CreatorDashboard() {
                       setCreator({ ...creator, accept_negotiations: checked });
                       handleSaveRules(
                         `Negotiation ${checked ? "enabled" : "disabled"}!`,
+                        { accept_negotiations: checked },
                       );
                     }}
                     className="data-[state=checked]:bg-[#32C8D1]"
