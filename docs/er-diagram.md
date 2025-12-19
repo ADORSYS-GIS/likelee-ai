@@ -261,7 +261,7 @@ erDiagram
     uuid creator_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
     text rate_type "'content_type' or 'industry'"
     text rate_name
-    integer price_per_week_cents
+    integer price_per_month_cents
     timestamptz created_at "default now()"
     timestamptz updated_at "default now()"
   }

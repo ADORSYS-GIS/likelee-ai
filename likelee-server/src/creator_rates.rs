@@ -18,7 +18,7 @@ pub struct RateQuery {
 pub struct CustomRate {
     pub rate_type: String,
     pub rate_name: String,
-    pub price_per_week_cents: i32,
+    pub price_per_month_cents: i32,
 }
 
 pub async fn get_creator_rates(
@@ -28,7 +28,7 @@ pub async fn get_creator_rates(
     let response = ctx
         .pg
         .from("creator_custom_rates")
-        .select("rate_type, rate_name, price_per_week_cents")
+        .select("rate_type, rate_name, price_per_month_cents")
         .eq("creator_id", &q.user_id)
         .execute()
         .await;

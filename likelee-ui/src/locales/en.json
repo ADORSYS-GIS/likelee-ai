@@ -1673,14 +1673,45 @@
         "save": "Save",
         "contentOpenTo": "Content I'm Open To",
         "industries": "Industries I Work With",
+        "contentNotComfortableHigh": "Content I'm NOT Comfortable With",
+        "conflictingCampaigns": "Conflicting Campaigns (Brand Exclusivity)",
+        "brandExclusivityDesc": "Add brands you're exclusive with to prevent competing campaigns",
+        "noBrandExclusivity": "No brand exclusivity set",
+        "noRestrictions": "No content restrictions set",
         "customRatesAlert": "Want different rates for each content type? Click below to customize.",
+        "editRate": "Edit Rate",
         "editInitialRate": "Edit Initial Licensing Rate",
         "initialRate": "Initial Licensing Rate",
-        "baseRateDesc": "Base rate per week for cameo usage",
-        "perWeek": "/ week",
+        "baseRateDesc": "Base rate per month for cameo usage",
+        "perMonth": "/ month",
         "acceptNegotiations": "Accept Negotiations",
-        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate"
+        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate",
+        "modals": {
+          "contentTitle": "Edit Content I'm Open To",
+          "selectContentTypes": "Select the content types you're open to working with:",
+          "customRatesTitle": "Custom Rates by Content Type",
+          "customRatesDesc": "Set custom rates for specific content types. Leave blank to use your base rate of {{rate}}.",
+          "industryTitle": "Edit Industries I Work With",
+          "selectIndustries": "Select the industries you're open to working with:",
+          "restrictionsTitle": "Edit Content I'm NOT Comfortable With",
+          "restrictionsDesc": "Manage content types and categories you don't want to be associated with:",
+          "currentRestrictions": "Current Restrictions:",
+          "clickToAdd": "Click to add restrictions:",
+          "addCustomRestriction": "Add custom restriction:",
+          "customPlaceholder": "Add custom restriction (max 25 chars)",
+          "brandExclusivityTitle": "Conflicting Campaigns (Brand Exclusivity)",
+          "brandExclusivityDesc": "Add brands you're exclusive with to prevent competing campaigns",
+          "brandPlaceholder": "Enter brand name (max 25 chars)",
+          "cancel": "Cancel",
+          "saveChanges": "Save Changes",
+          "perMonth": "/ mo",
+          "noBrandExclusivity": "No brand exclusivity set",
+          "noRestrictions": "No content restrictions set"
+        }
       }
+    },
+    "common": {
+      "add": "Add"
     },
     "referenceImageLibrary": {
       "title": "REFERENCE IMAGE LIBRARY",
