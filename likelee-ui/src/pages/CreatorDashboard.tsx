@@ -5219,12 +5219,13 @@ export default function CreatorDashboard() {
       if (showRatesModal === "content") {
         finalSelections.forEach((type) => {
           const val = formData.get(`rate_content_${type}`);
+          const parsed = parseFloat(val?.toString() || "");
+          const finalVal = isNaN(parsed) ? (creator.price_per_month || 0) : parsed;
+
           newRates.push({
             rate_type: "content_type",
             rate_name: type,
-            price_per_month_cents: Math.round(
-              parseFloat(val?.toString() || (creator.price_per_month || 0).toString()) * 100,
-            ),
+            price_per_month_cents: Math.round(finalVal * 100),
           });
         });
       } else if (showRatesModal === "industry") {
@@ -5281,6 +5282,9 @@ export default function CreatorDashboard() {
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
         setCustomRates(reloadedRates);
+      } else {
+        // Fallback: update local customRates state immediately to prevent visual regression
+        setCustomRates(finalRates);
       }
 
       const successTitle = showRatesModal === "content"
