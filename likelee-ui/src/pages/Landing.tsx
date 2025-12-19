@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, CheckCircle2, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
 
 export default function Landing() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const createPageUrl = (path) => {
@@ -15,14 +13,9 @@ export default function Landing() {
       .replace(/^-/, "")}`;
   };
 
-  const headline = t("landingHeadline");
+  const headline = "Fishing for Something Real in the AI Era?";
   const [typedHeadline, setTypedHeadline] = useState("");
   const [typedIndex, setTypedIndex] = useState(0);
-
-  useEffect(() => {
-    setTypedHeadline("");
-    setTypedIndex(0);
-  }, [headline]);
 
   useEffect(() => {
     if (typedIndex > headline.length) return;
@@ -31,20 +24,16 @@ export default function Landing() {
       setTypedIndex((i) => i + 1);
     }, 40);
     return () => clearTimeout(id);
-  }, [typedIndex, headline]);
+  }, [typedIndex]);
 
-  const phrases = [
-    t("readyToUse"),
-    t("verifiedProtection"),
-    t("licensedFaces"),
-  ];
+  const phrases = ["Ready to Use", "Verified Protection", "Licensed Faces"];
   const [phraseIdx, setPhraseIdx] = useState(0);
   useEffect(() => {
     const id = setInterval(() => {
       setPhraseIdx((i) => (i + 1) % phrases.length);
     }, 2500);
     return () => clearInterval(id);
-  }, [phrases.length]);
+  }, []);
 
   useEffect(() => {
     // Add JSON-LD structured data
@@ -110,22 +99,24 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">
-              {t("heroTitle")}
+              Build Real Athlete Partnerships That Pay Year-Round
             </h1>
-            <p className="mt-6 text-gray-600 text-lg">{t("heroSubtitle")}</p>
+            <p className="mt-6 text-gray-600 text-lg">
+              One retainer, consistent presence. Athletes earn, you win.
+            </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button
                 onClick={() => navigate("/BrandCompany")}
                 className="h-12 px-8 bg-gradient-to-r from-[#F7B750] to-[#FAD54C] text-white border-2 border-black rounded-none"
               >
-                {t("forBrands")}
+                For Brands
               </Button>
               <Button
                 onClick={() => navigate("/AgencySelection")}
                 variant="outline"
                 className="h-12 px-8 border-2 border-black rounded-none"
               >
-                {t("forAgencies")}
+                For Agencies
               </Button>
             </div>
           </div>
@@ -195,9 +186,11 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t("transformTalentTitle")}
+              Transform How You Work with Talent
             </h2>
-            <p className="mt-4 text-gray-600">{t("transformTalentSubtitle")}</p>
+            <p className="mt-4 text-gray-600">
+              From months of vetting to minutes of browsing.
+            </p>
           </div>
         </div>
       </section>
@@ -240,9 +233,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t("userTrustTitle")}
+              Don't Lose User Trust using Fake Avatars
             </h2>
-            <p className="mt-4 text-gray-600">{t("userTrustSubtitle")}</p>
+            <p className="mt-4 text-gray-600">
+              Real creators bring genuine belief, and your audiences feel it
+              instantly.
+            </p>
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -309,9 +305,11 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t("scaleCatalogTitle")}
+              Scale Your Catalog Without Scaling Costs
             </h2>
-            <p className="mt-4 text-gray-600">{t("scaleCatalogSubtitle")}</p>
+            <p className="mt-4 text-gray-600">
+              Same influencer. Infinite product variations. Launch in hours.
+            </p>
           </div>
         </div>
       </section>
@@ -354,9 +352,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t("premiumTalentTitle")}
+              Premium Talent with Zero Production Headaches
             </h2>
-            <p className="mt-4 text-gray-600">{t("premiumTalentSubtitle")}</p>
+            <p className="mt-4 text-gray-600">
+              Skip shoot day and access verified models from top agencies. All
+              with premium results.
+            </p>
           </div>
           <div className="flex justify-center">
             <div className="relative w-[240px] sm:w-[280px] md:w-[320px] aspect-[9/18.8] rounded-[2.5rem] border-8 border-black shadow-2xl overflow-hidden">
@@ -423,9 +424,12 @@ export default function Landing() {
           </div>
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">
-              {t("allSizesTitle")}
+              Built for Brands of All Sizes
             </h2>
-            <p className="mt-4 text-gray-600">{t("allSizesSubtitle")}</p>
+            <p className="mt-4 text-gray-600">
+              From ecom startups to enterprises—build high-touch campaigns with
+              verified talent for every budget.
+            </p>
           </div>
         </div>
       </section>

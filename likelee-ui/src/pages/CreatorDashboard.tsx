@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -96,8 +96,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import CameoUpload from "./CameoUpload";
-import { useTranslation } from "react-i18next";
-
 const CONTENT_TYPES = [
   "Social-media ads",
   "Web & banner campaigns",
@@ -124,113 +122,377 @@ const INDUSTRIES = [
 ];
 
 // Voice recording scripts for different emotions
-const getVoiceScripts = (t: any) => ({
-  happy: t("creatorDashboard.voiceScripts.happy"),
-  emotional: t("creatorDashboard.voiceScripts.emotional"),
-  excited: t("creatorDashboard.voiceScripts.excited"),
-  mellow: t("creatorDashboard.voiceScripts.mellow"),
-  relaxed: t("creatorDashboard.voiceScripts.relaxed"),
-  angry: t("creatorDashboard.voiceScripts.angry"),
-});
+const VOICE_SCRIPTS = {
+  happy:
+    "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
 
-const getImageSections = (t: any) => [
+  emotional:
+    "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+
+  excited:
+    "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+
+  mellow:
+    "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+
+  relaxed:
+    "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+
+  angry:
+    "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here.",
+};
+
+const IMAGE_SECTIONS = [
   {
     id: "headshot_neutral",
-    title: t("imageSections.headshot_neutral.title"),
-    description: t("imageSections.headshot_neutral.description"),
-    bestFor: t("imageSections.headshot_neutral.bestFor"),
+    title: "Headshots - Neutral Expression",
+    description:
+      "Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+    bestFor: "Brands need a clean face reference",
   },
   {
     id: "headshot_smiling",
-    title: t("imageSections.headshot_smiling.title"),
-    description: t("imageSections.headshot_smiling.description"),
-    bestFor: t("imageSections.headshot_smiling.bestFor"),
+    title: "Headshots - Smiling",
+    description:
+      "Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+    bestFor: "Brands want to show you happy/approachable",
   },
   {
     id: "fullbody_casual",
-    title: t("imageSections.fullbody_casual.title"),
-    description: t("imageSections.fullbody_casual.description"),
-    bestFor: t("imageSections.fullbody_casual.bestFor"),
+    title: "Full Body - Casual Outfit",
+    description: "Full body shot in casual everyday clothing. Natural pose.",
+    bestFor: "Everyday casual look",
   },
   {
     id: "fullbody_formal",
-    title: t("imageSections.fullbody_formal.title"),
-    description: t("imageSections.fullbody_formal.description"),
-    bestFor: t("imageSections.fullbody_formal.bestFor"),
+    title: "Full Body - Formal/Professional",
+    description: "Full body shot in professional or formal attire.",
+    bestFor: "Professional or business contexts",
   },
   {
     id: "side_profile",
-    title: t("imageSections.side_profile.title"),
-    description: t("imageSections.side_profile.description"),
-    bestFor: t("imageSections.side_profile.bestFor"),
+    title: "Side Profile",
+    description: "Clean side view of your face and upper body.",
+    bestFor: "Brands need your side angle",
   },
   {
     id: "three_quarter",
-    title: t("imageSections.three_quarter.title"),
-    description: t("imageSections.three_quarter.description"),
-    bestFor: t("imageSections.three_quarter.bestFor"),
+    title: "3/4 Angle",
+    description: "Face turned at a 45-degree angle, natural expression.",
+    bestFor: "Natural conversational angle",
   },
   {
     id: "hair_down",
-    title: t("imageSections.hair_down.title"),
-    description: t("imageSections.hair_down.description"),
-    bestFor: t("imageSections.hair_down.bestFor"),
+    title: "Hair Down - Loose/Wavy",
+    description: "Hair worn down in your natural style.",
+    bestFor: "Casual, relaxed look",
   },
   {
     id: "hair_up",
-    title: t("imageSections.hair_up.title"),
-    description: t("imageSections.hair_up.description"),
-    bestFor: t("imageSections.hair_up.bestFor"),
+    title: "Hair Up - Ponytail/Bun",
+    description: "Hair pulled up/back, clean look.",
+    bestFor: "Professional or active look",
   },
   {
     id: "hair_styling",
-    title: t("imageSections.hair_styling.title"),
-    description: t("imageSections.hair_styling.description"),
-    bestFor: t("imageSections.hair_styling.bestFor"),
+    title: "Hair Styling - Braids/Specific Style",
+    description: "If you have a signature hairstyle.",
+    bestFor: "If you have a signature style",
   },
   {
     id: "upper_body",
-    title: t("imageSections.upper_body.title"),
-    description: t("imageSections.upper_body.description"),
-    bestFor: t("imageSections.upper_body.bestFor"),
+    title: "Upper Body Close-Up",
+    description: "Shoulders and up, detailed facial features visible.",
+    bestFor: "Close-up shots, detailed facial features",
   },
   {
     id: "outdoors",
-    title: t("imageSections.outdoors.title"),
-    description: t("imageSections.outdoors.description"),
-    bestFor: t("imageSections.outdoors.bestFor"),
+    title: "In Environment - Outdoors",
+    description: "You in an outdoor setting (park, street, nature).",
+    bestFor: "Contextual, lifestyle content",
   },
   {
     id: "indoors",
-    title: t("imageSections.indoors.title"),
-    description: t("imageSections.indoors.description"),
-    bestFor: t("imageSections.indoors.bestFor"),
+    title: "In Environment - Indoors",
+    description: "You in an indoor setting (home, office, cafe).",
+    bestFor: "Indoor/office/home contexts",
   },
   {
     id: "makeup_variation",
-    title: t("imageSections.makeup_variation.title"),
-    description: t("imageSections.makeup_variation.description"),
-    bestFor: t("imageSections.makeup_variation.bestFor"),
+    title: "Different Makeup Style",
+    description: "If you vary your makeup style, show different looks.",
+    bestFor: "If you vary makeup, brands should know",
   },
   {
     id: "seasonal",
-    title: t("imageSections.seasonal.title"),
-    description: t("imageSections.seasonal.description"),
-    bestFor: t("imageSections.seasonal.bestFor"),
+    title: "Seasonal/Outfit Variation",
+    description: "Different seasonal styles or outfit variations.",
+    bestFor: "Seasonal campaigns, different looks",
   },
   {
     id: "signature",
-    title: t("imageSections.signature.title"),
-    description: t("imageSections.signature.description"),
-    bestFor: t("imageSections.signature.bestFor"),
+    title: "Your Choice - Signature Moment",
+    description:
+      "A photo that really represents YOU and how people recognize you.",
+    bestFor: "A photo that really represents YOU",
   },
 ];
 
 // Example campaigns for blank users (shown when no real campaigns exist)
-// Example campaigns moved inside CreatorDashboard component to support translations
+const exampleCampaigns = [
+  {
+    id: "example-nike",
+    brand: "Nike",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    brand_image_url:
+      "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
+    campaign: "Best Nike Heritage Collection",
+    usage_type: "Social Ads",
+    rate: 15000,
+    status: "active",
+    start_date: "2024-01-15",
+    end_date: "2024-07-15",
+    active_until: "2024-07-15",
+    regions: ["North America", "Europe"],
+    impressions_week: "125000 impressions/week",
+    auto_renewal: true,
+    isExample: true,
+  },
+  {
+    id: "example-skincare",
+    brand: "Avo Beauty",
+    brand_logo:
+      "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
+    brand_image_url:
+      "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
+    campaign: "Natural Glow Collection",
+    usage_type: "Social Ads",
+    rate: 15000,
+    status: "expiring_soon",
+    start_date: "2024-02-01",
+    end_date: "2024-08-01",
+    active_until: "2024-08-01",
+    regions: ["Global"],
+    impressions_week: "89000 impressions/week",
+    auto_renewal: false,
+    isExample: true,
+  },
+  {
+    id: "example-pepsi",
+    brand: "Pepsi",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
+    brand_image_url:
+      "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
+    campaign: "Thirsty for More, Best energy drink",
+    usage_type: "Energy Drink",
+    rate: 50000,
+    status: "active",
+    start_date: "2024-03-01",
+    end_date: "2024-06-30",
+    active_until: "2024-06-30",
+    regions: ["North America"],
+    impressions_week: "250000 impressions/week",
+    auto_renewal: false,
+    isExample: true,
+  },
+];
 
 // Example approval for blank users (shown when no real approvals exist)
-// Example data (approvals, archived campaigns, contracts) moved inside component to support translations
+const exampleApprovals = [
+  {
+    id: "example-adidas-approval",
+    brand: "Adidas Running",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
+    campaign_type: "Social Media Campaign",
+    requested_date: "2025-02-06",
+    proposed_rate: 600,
+    term_length: "6 months",
+    estimated_monthly: 540, // after 10% Likelee fee
+    regions: ["North America", "Asia"],
+    industries: ["Sports / Fitness"],
+    usage_type: "Social Media",
+    duration: "6 months",
+    territory: "North America, Asia",
+    perpetual: false,
+    isExample: true,
+  },
+  {
+    id: "example-samsung-approval",
+    brand: "Samsung Electronic",
+    brand_logo:
+      "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
+    campaign_type: "Product Launch",
+    requested_date: "2025-02-10",
+    proposed_rate: 800,
+    term_length: "3 months",
+    estimated_monthly: 720,
+    regions: ["Global"],
+    industries: ["Tech"],
+    usage_type: "TV & Digital",
+    duration: "3 months",
+    territory: "Global",
+    perpetual: false,
+    isExample: true,
+  },
+  {
+    id: "example-pepsi-approval",
+    brand: "Pepsi",
+    brand_logo:
+      "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
+    campaign_type: "Summer Campaign",
+    requested_date: "2025-02-12",
+    proposed_rate: 700,
+    term_length: "4 months",
+    estimated_monthly: 630,
+    regions: ["North America", "Europe"],
+    industries: ["Food & Beverage"],
+    usage_type: "Social Media",
+    duration: "4 months",
+    territory: "North America, Europe",
+    perpetual: false,
+    isExample: true,
+  },
+];
+
+// Example archived campaign for blank users (shown when no real archived campaigns exist)
+const exampleArchivedCampaigns = [
+  {
+    id: "example-spotify-archive",
+    brand: "Spotify Premium",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
+    campaign: "Audio Campaign",
+    campaign_type: "Audio Campaign",
+    completed_date: "2/1/2026",
+    duration: "2 months",
+    monthly_rate: 600,
+    total_earned: 1200,
+    regions: ["Global"],
+    show_on_portfolio: false,
+    isExample: true,
+  },
+  {
+    id: "example-lululemon-archive",
+    brand: "Lululemon",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
+    campaign: "Yoga Collection",
+    campaign_type: "Social Media Campaign",
+    completed_date: "1/15/2026",
+    duration: "3 months",
+    monthly_rate: 750,
+    total_earned: 2250,
+    regions: ["North America"],
+    show_on_portfolio: true,
+    isExample: true,
+  },
+  {
+    id: "example-shopify-archive",
+    brand: "Shopify",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
+    campaign: "Entrepreneur Stories",
+    campaign_type: "Digital Ad",
+    completed_date: "12/20/2025",
+    duration: "1 month",
+    monthly_rate: 900,
+    total_earned: 900,
+    regions: ["Global"],
+    show_on_portfolio: true,
+    isExample: true,
+  },
+];
+
+// Example contract for blank users (shown when no real contracts exist)
+const exampleContracts = [
+  {
+    id: "example-nike-contract",
+    brand: "Nike Sportswear",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    project_name: "Spring Running Campaign",
+    creator_earnings: 500,
+    earnings_to_date: 3000,
+    amount_paid: 3000,
+    payment_status: "Paid",
+    start_date: "2026-01-01",
+    end_date: "2026-06-30",
+    effective_date: "2026-01-01",
+    expiration_date: "2026-06-30",
+    status: "active",
+    days_until_expiration: 132,
+    days_remaining: 132,
+    usage_description: "Instagram Reels (15-30s each) Hero Image",
+    deliverables: "Instagram Reels (15-30s each) Hero Image",
+    territory: "North America, Europe",
+    channels: ["Social Media", "Website"],
+    restrictions: "Competitor brands, political content",
+    prohibited_uses: "Competitor brands, political content",
+    auto_renew: false,
+    can_pause: true,
+    can_revoke: true,
+    isExample: true,
+  },
+  {
+    id: "example-glossier-contract",
+    brand: "Glossier Beauty",
+    brand_logo:
+      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
+    project_name: "Spring Beauty Collection",
+    creator_earnings: 750,
+    earnings_to_date: 4500,
+    amount_paid: 4500,
+    payment_status: "Paid",
+    start_date: "2026-01-01",
+    end_date: "2026-04-15",
+    effective_date: "2026-01-01",
+    expiration_date: "2026-04-15",
+    status: "active",
+    days_until_expiration: 75,
+    days_remaining: 75,
+    usage_description: "Social Media, Website",
+    deliverables: "TikTok Videos, Instagram Posts",
+    territory: "North America",
+    channels: ["Social Media", "Website"],
+    restrictions: "Competitor brands",
+    prohibited_uses: "Competitor brands",
+    auto_renew: false,
+    can_pause: true,
+    can_revoke: true,
+    isExample: true,
+  },
+  {
+    id: "example-tesla-contract",
+    brand: "Tesla Motors",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
+    project_name: "Model Y Launch",
+    creator_earnings: 1200,
+    earnings_to_date: 7200,
+    amount_paid: 7200,
+    payment_status: "Paid",
+    start_date: "2026-01-01",
+    end_date: "2026-03-15",
+    effective_date: "2026-01-01",
+    expiration_date: "2026-03-15",
+    status: "expiring_soon",
+    days_until_expiration: 45,
+    days_remaining: 45,
+    usage_description: "TV Commercial, Digital Ads",
+    deliverables: "TV Commercial, Digital Ads",
+    territory: "Global",
+    channels: ["TV", "Digital"],
+    restrictions: "Competitor automotive brands",
+    prohibited_uses: "Competitor automotive brands",
+    auto_renew: false,
+    can_pause: true,
+    can_revoke: true,
+    isExample: true,
+  },
+];
 
 // Example content items for blank users
 const exampleContentItems = [
@@ -239,7 +501,7 @@ const exampleContentItems = [
     brand: "Nike Sportswear",
     brand_logo:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    titleKey: "instagramReel",
+    title: "Instagram Reel",
     thumbnail_url:
       "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
     platform: "Instagram",
@@ -254,7 +516,7 @@ const exampleContentItems = [
     brand: "Glossier Beauty",
     brand_logo:
       "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    titleKey: "webBanner",
+    title: "Web Banner",
     thumbnail_url:
       "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
     platform: "Website",
@@ -269,7 +531,7 @@ const exampleContentItems = [
     brand: "Tesla Motors",
     brand_logo:
       "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    titleKey: "tvCommercial",
+    title: "TV Commercial",
     thumbnail_url:
       "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
     platform: "YouTube",
@@ -373,353 +635,9 @@ const earningsByIndustry: any[] = [];
 
 const mockContracts: any[] = [];
 
-function parseErrorMessage(err: any, t: any): string {
-  let msg = err?.message || String(err);
-
-  // Check for specific error patterns and return user-friendly translation keys
-  const lowerMsg = msg.toLowerCase();
-
-  // Storage/bucket errors
-  if (
-    lowerMsg.includes("bucket not found") ||
-    lowerMsg.includes("bucket") ||
-    lowerMsg.includes("storage")
-  ) {
-    return t("common.errors.bucketNotFound");
-  }
-
-  // Database constraint errors
-  if (
-    lowerMsg.includes("constraint") ||
-    lowerMsg.includes("violates") ||
-    lowerMsg.includes("duplicate")
-  ) {
-    return t("common.errors.constraintViolation");
-  }
-
-  // Generic database errors
-  if (
-    lowerMsg.includes("database") ||
-    lowerMsg.includes("postgres") ||
-    lowerMsg.includes("sql")
-  ) {
-    return t("common.errors.databaseError");
-  }
-
-  // Upload/storage errors
-  if (lowerMsg.includes("upload") || lowerMsg.includes("file")) {
-    return t("common.errors.uploadFailed");
-  }
-
-  // Save errors
-  if (
-    lowerMsg.includes("save") ||
-    lowerMsg.includes("update") ||
-    lowerMsg.includes("insert")
-  ) {
-    return t("common.errors.saveFailed");
-  }
-
-  // Try to parse JSON error messages
-  try {
-    const jsonMatch = msg.match(/(\{.*\})/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      const errorMsg = parsed.message || parsed.error || msg;
-      // Recursively check the parsed message
-      return parseErrorMessage({ message: errorMsg }, t);
-    }
-  } catch (e) {
-    // Parsing failed, continue
-  }
-
-  // Default to generic error
-  return t("common.errors.genericError");
-}
-
 export default function CreatorDashboard() {
-  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  const exampleCampaigns = useMemo(
-    () => [
-      {
-        id: "example-nike",
-        brand: "Nike",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-        brand_image_url:
-          "https://static.nike.com/a/images/f_auto/dpr_3.0,cs_srgb/w_411,c_limit/5e039575-5856-42f8-9323-579736c2c31e/nike-just-do-it.jpg",
-        campaign: "Summer Running Collection",
-        usage_type: "Social Ads",
-        rate: 2500,
-        status: "active",
-        start_date: "2024-01-15",
-        end_date: "2024-07-15",
-        active_until: "2024-07-15",
-        regions: ["North America", "Europe"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 125000 },
-        ),
-        auto_renewal: true,
-        isExample: true,
-      },
-      {
-        id: "example-skincare",
-        brand: "Avo Beauty",
-        brand_logo:
-          "https://www.avoclinic.com/wp-content/uploads/2025/10/Avo-Logo.png",
-        brand_image_url:
-          "https://media.cnn.com/api/v1/images/stellar/prod/230713052220-09-uncover-kenya-africa-startup-spc-intl-green-tea.jpg?c=original&q=h_447,c_fill",
-        campaign: "Natural Glow Collection",
-        usage_type: "Social Ads",
-        rate: 15000,
-        status: "expiring_soon",
-        start_date: "2024-02-01",
-        end_date: "2024-08-01",
-        active_until: "2024-08-01",
-        regions: ["Global"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 89000 },
-        ),
-        auto_renewal: false,
-        isExample: true,
-      },
-      {
-        id: "example-pepsi",
-        brand: "Pepsi",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/0/0f/Pepsi_logo_2014.svg",
-        brand_image_url:
-          "https://www.multivu.com/players/tr/7812852-pepsi-global-loveitliveit-football-campaign/external/painttheworldtr_1520024258552-1-HR.jpg",
-        campaign: "Thirsty for More, Best energy drink",
-        usage_type: "Energy Drink",
-        rate: 50000,
-        status: "active",
-        start_date: "2024-03-01",
-        end_date: "2024-06-30",
-        active_until: "2024-06-30",
-        regions: ["North America"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 250000 },
-        ),
-        auto_renewal: false,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
-
-  const exampleApprovals = useMemo(
-    () => [
-      {
-        id: "example-adidas-approval",
-        brand: "Adidas Running",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
-        campaign_type: t("common.usageTypes.socialMediaCampaign"),
-        requested_date: "2025-02-06",
-        proposed_rate: 600,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 6,
-        }),
-        estimated_monthly: 540, // after 10% Likelee fee
-        regions: [t("common.regions.northAmerica"), t("common.regions.asia")],
-        industries: [t("common.industries.sportsFitness")],
-        usage_type: t("common.usageTypes.socialMedia"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 6 }),
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.asia")}`,
-        perpetual: false,
-        isExample: true,
-      },
-      {
-        id: "example-samsung-approval",
-        brand: "Samsung Electronic",
-        brand_logo:
-          "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
-        campaign_type: t("common.usageTypes.productLaunch"),
-        requested_date: "2025-02-10",
-        proposed_rate: 800,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 3,
-        }),
-        estimated_monthly: 720,
-        regions: [t("common.regions.global")],
-        industries: [t("common.industries.tech")],
-        usage_type: t("common.usageTypes.tvDigital"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
-        territory: t("common.regions.global"),
-        perpetual: false,
-        isExample: true,
-      },
-      {
-        id: "example-pepsi-approval",
-        brand: "Pepsi",
-        brand_logo:
-          "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
-        campaign_type: t("common.usageTypes.summerCampaign"),
-        requested_date: "2025-02-12",
-        proposed_rate: 700,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 4,
-        }),
-        estimated_monthly: 630,
-        regions: [t("common.regions.northAmerica"), t("common.regions.europe")],
-        industries: [t("common.industries.foodBeverage")],
-        usage_type: t("common.usageTypes.socialMedia"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 4 }),
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
-        perpetual: false,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
-
-  const exampleArchivedCampaigns = useMemo(
-    () => [
-      {
-        id: "example-spotify-archive",
-        brand: "Spotify Premium",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2048px-Spotify_logo_without_text.svg.png",
-        campaign: "Audio Campaign",
-        campaign_type: "Audio Campaign",
-        completed_date: "2/1/2026",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 2 }),
-        monthly_rate: 600,
-        total_earned: 1200,
-        regions: [t("common.regions.global")],
-        show_on_portfolio: false,
-        isExample: true,
-      },
-      {
-        id: "example-lululemon-archive",
-        brand: "Lululemon",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
-        campaign: "Yoga Collection",
-        campaign_type: t("common.usageTypes.socialMediaCampaign"),
-        completed_date: "1/15/2026",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
-        monthly_rate: 750,
-        total_earned: 2250,
-        regions: [t("common.regions.northAmerica")],
-        show_on_portfolio: true,
-        isExample: true,
-      },
-      {
-        id: "example-shopify-archive",
-        brand: "Shopify",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg",
-        campaign: "Entrepreneur Stories",
-        campaign_type: "Digital Ad",
-        completed_date: "12/20/2025",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 1 }),
-        monthly_rate: 900,
-        total_earned: 900,
-        regions: [t("common.regions.global")],
-        show_on_portfolio: true,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
-
-  const exampleContracts = useMemo(
-    () => [
-      {
-        id: "example-nike-contract",
-        brand: "Nike Sportswear",
-        brand_logo:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-        project_name: "Spring Running Campaign",
-        creator_earnings: 500,
-        earnings_to_date: 3000,
-        amount_paid: 3000,
-        payment_status: "Paid",
-        start_date: "2026-01-01",
-        end_date: "2026-06-30",
-        effective_date: "2026-01-01",
-        expiration_date: "2026-06-30",
-        status: "active",
-        days_until_expiration: 132,
-        days_remaining: 132,
-        usage_description: "Instagram Reels, Hero Image",
-        deliverables: "Instagram Reels, Hero Image",
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
-        channels: [t("common.usageTypes.socialMedia"), "Website"],
-        restrictions: "Competitor brands, political content",
-        prohibited_uses: "Competitor brands, political content",
-        auto_renew: false,
-        can_pause: true,
-        can_revoke: true,
-        isExample: true,
-      },
-      {
-        id: "example-glossier-contract",
-        brand: "Glossier Beauty",
-        brand_logo:
-          "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-        project_name: "Spring Beauty Collection",
-        creator_earnings: 750,
-        earnings_to_date: 4500,
-        amount_paid: 4500,
-        payment_status: "Paid",
-        start_date: "2026-01-01",
-        end_date: "2026-04-15",
-        effective_date: "2026-01-01",
-        expiration_date: "2026-04-15",
-        status: "active",
-        days_until_expiration: 75,
-        days_remaining: 75,
-        usage_description: t("common.usageTypes.socialMedia"),
-        deliverables: "TikTok Videos, Instagram Posts",
-        territory: t("common.regions.northAmerica"),
-        channels: [t("common.usageTypes.socialMedia"), "Website"],
-        restrictions: "Competitor brands",
-        prohibited_uses: "Competitor brands",
-        auto_renew: false,
-        can_pause: true,
-        can_revoke: true,
-        isExample: true,
-      },
-      {
-        id: "example-tesla-contract",
-        brand: "Tesla Motors",
-        brand_logo:
-          "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-        project_name: "Model Y Launch",
-        creator_earnings: 1200,
-        earnings_to_date: 7200,
-        amount_paid: 7200,
-        payment_status: "Paid",
-        start_date: "2026-01-01",
-        end_date: "2026-03-15",
-        effective_date: "2026-01-01",
-        expiration_date: "2026-03-15",
-        status: "expiring_soon",
-        days_until_expiration: 45,
-        days_remaining: 45,
-        usage_description: "TV Commercial, Digital Ads",
-        deliverables: "TV Commercial, Digital Ads",
-        territory: t("common.regions.global"),
-        channels: [t("common.usageTypes.tvDigital")],
-        restrictions: "Competitor automotive brands",
-        prohibited_uses: "Competitor automotive brands",
-        auto_renew: false,
-        can_pause: true,
-        can_revoke: true,
-        isExample: true,
-      },
-    ],
-    [t],
-  );
   const { user, profile, initialized, authenticated, logout, refreshProfile } =
     useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -737,7 +655,6 @@ export default function CreatorDashboard() {
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
-  const IMAGE_SECTIONS = getImageSections(t);
 
   useEffect(() => {
     const handleResize = () => {
@@ -780,11 +697,7 @@ export default function CreatorDashboard() {
     null,
   );
 
-  const heroMedia = useMemo(() => {
-    return creator.cameo_front_url
-      ? { type: "video" as const, url: creator.cameo_front_url }
-      : null;
-  }, [creator.cameo_front_url]);
+  const [heroMedia, setHeroMedia] = useState(null);
   const [photos, setPhotos] = useState([]);
 
   const [voiceLibrary, setVoiceLibrary] = useState([]);
@@ -947,7 +860,6 @@ export default function CreatorDashboard() {
   // Voice recording states
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
-  const VOICE_SCRIPTS = getVoiceScripts(t);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
@@ -1118,60 +1030,40 @@ export default function CreatorDashboard() {
   };
 
   const navigationItems = [
-    {
-      id: "dashboard",
-      label: t("creatorDashboard.nav.dashboard"),
-      icon: LayoutDashboard,
-    },
-    {
-      id: "content",
-      label: t("creatorDashboard.nav.content"),
-      icon: PlayCircle,
-    },
-    {
-      id: "likeness",
-      label: t("creatorDashboard.nav.likeness"),
-      icon: ImageIcon,
-    },
-    { id: "voice", label: t("creatorDashboard.nav.voice"), icon: Mic },
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "content", label: "Content", icon: PlayCircle },
+    { id: "likeness", label: "My Likeness", icon: ImageIcon },
+    { id: "voice", label: "Voice & Recordings", icon: Mic },
     {
       id: "campaigns",
-      label: t("creatorDashboard.nav.campaigns"),
+      label: "Active Campaigns",
       icon: Target,
       badge: activeCampaigns.length,
     },
     {
       id: "approvals",
-      label: t("creatorDashboard.nav.approvals"),
+      label: "Approval Queue",
       icon: CheckSquare,
       badge: pendingCount,
       urgent: pendingCount > 0,
     },
     {
       id: "archive",
-      label: t("creatorDashboard.nav.archive"),
+      label: "Campaign Archive",
       icon: Archive,
       badge: undefined,
     },
     {
       id: "contracts",
-      label: t("creatorDashboard.nav.contracts"),
+      label: "Licenses & Contracts",
       icon: FileText,
       badge:
         contracts.filter((c) => c.status === "expiring_soon").length > 0
           ? contracts.filter((c) => c.status === "expiring_soon").length
           : undefined,
     },
-    {
-      id: "earnings",
-      label: t("creatorDashboard.nav.earnings"),
-      icon: DollarSign,
-    },
-    {
-      id: "settings",
-      label: t("creatorDashboard.nav.settings"),
-      icon: Settings,
-    },
+    { id: "earnings", label: "Earnings", icon: DollarSign },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   // Initialize active section from query string if provided
@@ -1183,6 +1075,24 @@ export default function CreatorDashboard() {
       setActiveSection(s);
     }
   }, [searchParams]);
+
+  const handleHeroUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploading(true);
+      setTimeout(() => {
+        setHeroMedia({
+          url: URL.createObjectURL(file),
+          type: file.type.includes("video") ? "video" : "image",
+          name: file.name,
+        });
+        setUploading(false);
+        toast({
+          title: "Hero media uploaded! (Demo mode)",
+        });
+      }, 1000);
+    }
+  };
 
   const [contentTab, setContentTab] = useState("brand_content");
 
@@ -1196,11 +1106,9 @@ export default function CreatorDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            {t("creatorDashboard.content.title")}
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900">Content</h2>
           <p className="text-gray-600 mt-1">
-            {t("creatorDashboard.content.subtitle")}
+            Track content created with your likeness
           </p>
         </div>
 
@@ -1208,7 +1116,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
             <p className="text-blue-900 text-sm">
-              {t("creatorDashboard.content.welcome.message")}
+              Welcome to your Content page! This is an example of what brand
+              content and detections will look like. You don't have any content
+              yet — but when brands create content with your likeness, it will
+              appear here!
             </p>
           </div>
         )}
@@ -1224,7 +1135,7 @@ export default function CreatorDashboard() {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              {t("creatorDashboard.content.tabs.brandContent")}
+              Brand Content
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
                 {itemsToShow.length}
               </Badge>
@@ -1237,7 +1148,7 @@ export default function CreatorDashboard() {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              {t("creatorDashboard.content.tabs.detections")}
+              Detections
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
                 {detectionsCount}
               </Badge>
@@ -1249,7 +1160,8 @@ export default function CreatorDashboard() {
           <>
             <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
               <Eye className="h-4 w-4" />
-              {t("creatorDashboard.content.brandContent.info")}
+              This feed shows all authorized content that brands have published
+              using your likeness.
             </div>
 
             {itemsToShow.length > 0 ? (
@@ -1286,13 +1198,7 @@ export default function CreatorDashboard() {
                           <h3 className="font-bold text-gray-900 text-base">
                             {item.brand}
                           </h3>
-                          <p className="text-sm text-gray-500">
-                            {(item as any).titleKey
-                              ? t(
-                                  `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                                )
-                              : item.title}
-                          </p>
+                          <p className="text-sm text-gray-500">{item.title}</p>
                         </div>
                         <Badge
                           variant="secondary"
@@ -1304,18 +1210,14 @@ export default function CreatorDashboard() {
 
                       <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
                         <div>
-                          <p className="text-xs text-gray-500 mb-0.5">
-                            {t("creatorDashboard.content.brandContent.views")}
-                          </p>
+                          <p className="text-xs text-gray-500 mb-0.5">Views</p>
                           <p className="font-bold text-gray-900 text-sm">
                             {item.views}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-0.5">
-                            {t(
-                              "creatorDashboard.content.brandContent.engagement",
-                            )}
+                            Engagement
                           </p>
                           <p className="font-bold text-gray-900 text-sm">
                             {item.engagement}
@@ -1323,11 +1225,7 @@ export default function CreatorDashboard() {
                         </div>
                       </div>
                       <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-                        {t("creatorDashboard.content.brandContent.published", {
-                          date: new Date(item.published_at).toLocaleDateString(
-                            i18n.language,
-                          ),
-                        })}
+                        Published {item.published_at}
                       </div>
                     </div>
                   </Card>
@@ -1335,9 +1233,7 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">
-                  {t("creatorDashboard.content.brandContent.noContent")}
-                </p>
+                <p className="text-gray-500">No brand content found.</p>
               </div>
             )}
           </>
@@ -1347,7 +1243,8 @@ export default function CreatorDashboard() {
           <>
             <div className="flex items-center gap-2 text-sm text-orange-800 bg-orange-50 p-3 rounded-lg border border-orange-100">
               <ShieldAlert className="h-4 w-4" />
-              {t("creatorDashboard.content.detections.info")}
+              Likeness Protection Active. We continuously scan the web for
+              unauthorized use of your likeness. Review detected content below.
             </div>
 
             {detectionsToShow.length > 0 ? (
@@ -1394,25 +1291,19 @@ export default function CreatorDashboard() {
                               {item.status === "needs_review" && (
                                 <Badge className="bg-red-500 text-white hover:bg-red-600 border-none">
                                   <AlertTriangle className="w-3 h-3 mr-1" />
-                                  {t(
-                                    "creatorDashboard.content.detections.needsReview",
-                                  )}
+                                  Needs Review
                                 </Badge>
                               )}
                               {item.status === "takedown_requested" && (
                                 <Badge className="bg-orange-400 text-white hover:bg-orange-500 border-none">
                                   <Clock className="w-3 h-3 mr-1" />
-                                  {t(
-                                    "creatorDashboard.content.detections.takedownRequested",
-                                  )}
+                                  Takedown Requested
                                 </Badge>
                               )}
                               {item.status === "resolved" && (
                                 <Badge className="bg-green-500 text-white hover:bg-green-600 border-none">
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  {t(
-                                    "creatorDashboard.content.detections.resolved",
-                                  )}
+                                  Resolved
                                 </Badge>
                               )}
                             </div>
@@ -1422,14 +1313,10 @@ export default function CreatorDashboard() {
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-gray-500 mb-1">
-                              {t(
-                                "creatorDashboard.content.detections.detected",
-                              )}
+                              Detected
                             </p>
                             <p className="font-medium text-gray-900">
-                              {new Date(item.detected_at).toLocaleDateString(
-                                i18n.language,
-                              )}
+                              {item.detected_at}
                             </p>
                           </div>
                         </div>
@@ -1437,18 +1324,14 @@ export default function CreatorDashboard() {
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 mb-4">
                           <div className="bg-white px-3 py-1.5 rounded border border-gray-100 shadow-sm">
                             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">
-                              {t(
-                                "creatorDashboard.content.detections.matchConfidence",
-                              )}
+                              Match Confidence
                             </p>
                             <p className="font-bold text-lg text-red-500">
                               {item.match_confidence}%
                             </p>
                           </div>
                           <button className="text-sm text-[#32C8D1] hover:underline flex items-center gap-1 font-medium">
-                            {t(
-                              "creatorDashboard.content.detections.viewOriginal",
-                            )}{" "}
+                            View Original Content{" "}
                             <ExternalLink className="w-3 h-3" />
                           </button>
                         </div>
@@ -1461,34 +1344,28 @@ export default function CreatorDashboard() {
                                 className="bg-red-600 hover:bg-red-700 text-white gap-2 w-full sm:w-auto"
                               >
                                 <XCircle className="w-4 h-4" />
-                                {t(
-                                  "creatorDashboard.content.detections.requestTakedown",
-                                )}
+                                Request Takedown
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="bg-white border-gray-300 text-gray-600 hover:bg-gray-50 w-full sm:w-auto"
                               >
-                                {t(
-                                  "creatorDashboard.content.detections.dismiss",
-                                )}
+                                Dismiss (It's Authorized)
                               </Button>
                             </>
                           )}
                           {item.status === "takedown_requested" && (
                             <p className="text-sm text-orange-700 flex items-center gap-2">
-                              {t(
-                                "creatorDashboard.content.detections.takedownSent",
-                              )}
+                              Takedown request sent. Platforms typically respond
+                              within 24-72 hours.
                             </p>
                           )}
                           {item.status === "resolved" && (
                             <p className="text-sm text-green-700 flex items-center gap-2">
                               <Check className="w-4 h-4" />
-                              {t(
-                                "creatorDashboard.content.detections.contentRemoved",
-                              )}
+                              Content has been removed or verified as
+                              authorized.
                             </p>
                           )}
                         </div>
@@ -1499,16 +1376,14 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">
-                  {t("creatorDashboard.content.detections.noDetections")}
-                </p>
+                <p className="text-gray-500">No detections found.</p>
               </div>
             )}
 
             {/* How Detection Works */}
             <div className="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
               <h3 className="font-bold text-gray-900 mb-4">
-                {t("creatorDashboard.content.detections.howItWorks.title")}
+                How Detection Works
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
@@ -1516,14 +1391,10 @@ export default function CreatorDashboard() {
                     <Eye className="w-6 h-6 text-[#32C8D1]" />
                   </div>
                   <p className="font-bold text-gray-900 text-sm mb-1">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.scanning.title",
-                    )}
+                    Continuous Scanning
                   </p>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.scanning.desc",
-                    )}
+                    We scan major platforms for facial matches
                   </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
@@ -1531,14 +1402,10 @@ export default function CreatorDashboard() {
                     <AlertCircle className="w-6 h-6 text-orange-500" />
                   </div>
                   <p className="font-bold text-gray-900 text-sm mb-1">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.ai.title",
-                    )}
+                    AI Matching
                   </p>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.ai.desc",
-                    )}
+                    Advanced AI compares against your likeness
                   </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
@@ -1546,14 +1413,10 @@ export default function CreatorDashboard() {
                     <Shield className="w-6 h-6 text-green-500" />
                   </div>
                   <p className="font-bold text-gray-900 text-sm mb-1">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.takedown.title",
-                    )}
+                    Takedown Support
                   </p>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    {t(
-                      "creatorDashboard.content.detections.howItWorks.takedown.desc",
-                    )}
+                    We help file DMCA and platform reports
                   </p>
                 </div>
               </div>
@@ -1580,200 +1443,228 @@ export default function CreatorDashboard() {
     };
 
     return (
-      <div>
+      <div className="space-y-6 relative">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Public Profile Preview
+            </h2>
+            <p className="text-gray-600 mt-1">
+              This is how brands see your profile
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShowCardModal(!showCardModal)}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              {showCardModal ? "Hide Card" : "View Card"}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                setActiveSection("settings");
+                setSettingsTab("profile");
+              }}
+            >
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </Button>
+          </div>
+        </div>
+
         <Card className="overflow-hidden border-gray-200 bg-white">
           {/* Banner */}
           <div className="h-48 bg-[#32C8D1]"></div>
-          {/* Header Section with Avatar */}
-          <div className="relative flex justify-between items-start mb-6">
-            <div className="flex items-end -mt-16 mb-4">
-              <div className="relative">
-                <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                  <AvatarImage
-                    src={
-                      profile?.profile_photo_url ||
-                      creator.profile_photo ||
-                      user?.user_metadata?.avatar_url
-                    }
-                  />
-                  <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                    {data.first_name && data.first_name[0] !== "["
-                      ? data.first_name[0].toUpperCase()
-                      : user?.email?.[0].toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <div className="ml-6 mb-2">
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {data.first_name}
-                  </h1>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
-                  >
-                    <CheckCircle2 className="h-3 w-3" />
-                    {t("creatorDashboard.publicProfile.verifiedUser")}
-                  </Badge>
+
+          <div className="px-8 pb-8">
+            {/* Header Section with Avatar */}
+            <div className="relative flex justify-between items-start mb-6">
+              <div className="flex items-end -mt-16 mb-4">
+                <div className="relative">
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                    <AvatarImage
+                      src={
+                        profile?.profile_photo_url ||
+                        creator.profile_photo ||
+                        user?.user_metadata?.avatar_url
+                      }
+                    />
+                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                      {data.first_name && data.first_name[0] !== "["
+                        ? data.first_name[0].toUpperCase()
+                        : user?.email?.[0].toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-                <div className="flex items-center gap-4 text-gray-600 text-sm">
-                  <span>{data.location}</span>
-                  <span className="flex items-center gap-1">
+                <div className="ml-6 mb-2">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {data.first_name}
+                    </h1>
                     <Badge
                       variant="secondary"
-                      className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                      className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
                     >
-                      {data.handles}
-                    </Badge>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {data.followers}{" "}
-                    {t("creatorDashboard.publicProfile.followers")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bio */}
-          <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.active_campaigns}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.activeCampaigns")}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.completed_projects}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.completedProjects")}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.voice_profiles}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.voiceProfiles")}
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-6 mb-8">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
-                {t("creatorDashboard.publicProfile.openToWork")}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.open_to_work.map((tag: string) => (
-                  <Badge
-                    key={tag}
-                    variant="default"
-                    className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
-                  >
-                    {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
-                {t("creatorDashboard.publicProfile.industries")}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.industries.map((tag: string) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
-                  >
-                    {t(`common.industries.${tag}`, { defaultValue: tag })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Licensing Rate */}
-          <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-gray-900 mb-1">
-                {t("creatorDashboard.publicProfile.licensingRate")}
-              </h3>
-              <p className="text-gray-600 text-sm mb-2">
-                {t("creatorDashboard.publicProfile.baseRateDescription")}
-              </p>
-              <div className="flex items-center gap-2 text-green-700 text-sm">
-                <CheckCircle2 className="h-4 w-4" />
-                {t("creatorDashboard.publicProfile.openToNegotiations")}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-[#32C8D1]">
-                ${data.base_rate}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.perWeek")}
-              </div>
-            </div>
-          </div>
-
-          {/* Portfolio */}
-          <div>
-            <h3 className="font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.publicProfile.portfolio")}
-            </h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              {data.portfolio.map((item: any) => (
-                <div
-                  key={item.id}
-                  className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
-                >
-                  <img
-                    src={item.logo}
-                    alt={item.brand}
-                    className="w-10 h-10 object-contain"
-                  />
-                  <div>
-                    <div className="font-bold text-gray-900 text-sm">
-                      {item.brand}
-                    </div>
-                    <div className="text-xs text-gray-500">{item.campaign}</div>
-                    <Badge variant="secondary" className="mt-1 text-[10px] h-5">
-                      {item.duration}
+                      <CheckCircle2 className="h-3 w-3" />
+                      Verified creator
                     </Badge>
                   </div>
+                  <div className="flex items-center gap-4 text-gray-600 text-sm">
+                    <span>{data.location}</span>
+                    <span className="flex items-center gap-1">
+                      <Badge
+                        variant="secondary"
+                        className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                      >
+                        {data.handles}
+                      </Badge>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {data.followers} followers
+                    </span>
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
 
-          {/* Social Links */}
-          <div className="flex gap-3 mt-8">
-            <Button variant="outline" className="gap-2">
-              <Instagram className="h-4 w-4" />
-              Instagram
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Video className="h-4 w-4" />
-              TikTok
-            </Button>
+            {/* Bio */}
+            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.active_campaigns}
+                </div>
+                <div className="text-sm text-gray-500">Active Campaigns</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.completed_projects}
+                </div>
+                <div className="text-sm text-gray-500">Completed Projects</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.voice_profiles}
+                </div>
+                <div className="text-sm text-gray-500">Voice Profiles</div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-6 mb-8">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                  Open to Work With
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.open_to_work.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="default"
+                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                  Industries
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.industries.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Licensing Rate */}
+            <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">Licensing Rate</h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  Base rate for cameo usage
+                </p>
+                <div className="flex items-center gap-2 text-green-700 text-sm">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Open to negotiations
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-[#32C8D1]">
+                  ${data.base_rate}
+                </div>
+                <div className="text-sm text-gray-500">per week</div>
+              </div>
+            </div>
+
+            {/* Portfolio */}
+            <div>
+              <h3 className="font-bold text-gray-900 mb-4">Portfolio</h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                {data.portfolio.map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
+                  >
+                    <img
+                      src={item.logo}
+                      alt={item.brand}
+                      className="w-10 h-10 object-contain"
+                    />
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">
+                        {item.brand}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {item.campaign}
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="mt-1 text-[10px] h-5"
+                      >
+                        {item.duration}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="flex gap-3 mt-8">
+              <Button variant="outline" className="gap-2">
+                <Instagram className="h-4 w-4" />
+                Instagram
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Video className="h-4 w-4" />
+                TikTok
+              </Button>
+            </div>
           </div>
         </Card>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start">
           <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
-            {t("creatorDashboard.publicProfile.previewNote")}
+            This is a preview of how your profile appears to brands. Make sure
+            your information is up-to-date to attract more opportunities.
           </p>
         </div>
 
@@ -1813,12 +1704,6 @@ export default function CreatorDashboard() {
                     variant="secondary"
                     className="bg-green-100 text-green-700 border-green-200 text-[10px]"
                   >
-                    {t("creatorDashboard.publicProfile.verifiedCreator")}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
-                  >
                     Verified Creator
                   </Badge>
                 </div>
@@ -1846,33 +1731,25 @@ export default function CreatorDashboard() {
 
                 <div className="grid grid-cols-2 gap-y-4 gap-x-8 mb-6">
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">
-                      {t("creatorDashboard.publicProfile.followers")}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-0.5">Followers</p>
                     <p className="font-bold text-gray-900">{data.followers}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">
-                      {t("creatorDashboard.publicProfile.engagement")}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-0.5">Engagement</p>
                     <p className="font-bold text-gray-900">4.2%</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">
-                      {t("creatorDashboard.publicProfile.turnaround")}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-0.5">Turnaround</p>
                     <p className="font-bold text-gray-900">12h</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">
-                      {t("creatorDashboard.publicProfile.from")}
-                    </p>
+                    <p className="text-xs text-gray-500 mb-0.5">From</p>
                     <p className="font-bold text-gray-900">${data.base_rate}</p>
                   </div>
                 </div>
 
                 <Button className="w-full bg-black hover:bg-gray-800 text-white mb-3 rounded-full">
-                  {t("creatorDashboard.publicProfile.requestCameo")}
+                  Request Cameo
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1881,14 +1758,14 @@ export default function CreatorDashboard() {
                     className="rounded-full border-gray-200"
                   >
                     <Play className="h-4 w-4 mr-2" />
-                    {t("creatorDashboard.publicProfile.preview")}
+                    Preview
                   </Button>
                   <Button
                     variant="outline"
                     className="rounded-full border-gray-200"
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    {t("creatorDashboard.publicProfile.profile")}
+                    Profile
                   </Button>
                 </div>
               </div>
@@ -1899,83 +1776,26 @@ export default function CreatorDashboard() {
     );
   };
 
-  const handleDeletePhoto = (index) => {
-    setPhotos(photos.filter((_, i) => i !== index));
+  const handlePhotosUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setUploading(true);
+      setTimeout(() => {
+        const newPhotos = files.map((file) => ({
+          url: URL.createObjectURL(file),
+          name: file.name,
+        }));
+        setPhotos([...photos, ...newPhotos]);
+        setUploading(false);
+        toast({
+          title: `${files.length} photo(s) uploaded!`,
+        });
+      }, 1000);
+    }
   };
 
-  // ...
-  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!user?.id) {
-        toast({
-          variant: "destructive",
-          title: t("creatorDashboard.toasts.authRequiredTitle"),
-          description: t("creatorDashboard.toasts.authRequiredCameoDesc"),
-        });
-        return;
-      }
-
-      if (file.size > 50_000_000) {
-        toast({
-          variant: "destructive",
-          title: t("creatorDashboard.toasts.fileTooLargeTitle"),
-          description: t("creatorDashboard.toasts.fileTooLargeDescVideo"),
-        });
-        return;
-      }
-
-      if (!file.type.startsWith("video/")) {
-        toast({
-          variant: "destructive",
-          title: t("creatorDashboard.toasts.invalidFileTypeTitle"),
-          description: t("creatorDashboard.toasts.invalidFileTypeDescVideo"),
-        });
-        return;
-      }
-
-      setUploadingPhoto(true);
-
-      try {
-        const owner = user.id.replace(/[^a-zA-Z0-9_-]/g, "_");
-        const path = `cameo/${owner}/${Date.now()}_front_${file.name.replace(/[^a-zA-Z0-9_.-]/g, "_")}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("profiles")
-          .upload(path, file, { upsert: false });
-
-        if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage.from("profiles").getPublicUrl(path);
-        const publicUrl = data.publicUrl;
-
-        const { error: dbError } = await supabase
-          .from("profiles")
-          .update({ cameo_front_url: publicUrl })
-          .eq("id", user.id);
-
-        if (dbError) throw dbError;
-
-        setCreator((prev: any) => ({
-          ...prev,
-          cameo_front_url: publicUrl,
-        }));
-
-        toast({
-          title: t("creatorDashboard.toasts.cameoUploadedTitle"),
-          description: t("creatorDashboard.toasts.cameoUploadedDesc"),
-        });
-      } catch (err: any) {
-        console.error("Cameo upload error:", err);
-        toast({
-          variant: "destructive",
-          title: t("common.error"),
-          description: parseErrorMessage(err, t),
-        });
-      } finally {
-        setUploadingPhoto(false);
-      }
-    }
+  const handleDeletePhoto = (index) => {
+    setPhotos(photos.filter((_, i) => i !== index));
   };
 
   const handlePhotoUpload = async (e) => {
@@ -1984,8 +1804,8 @@ export default function CreatorDashboard() {
       if (!user?.id) {
         toast({
           variant: "destructive",
-          title: t("creatorDashboard.toasts.authRequiredTitle"),
-          description: t("creatorDashboard.toasts.authRequiredPhotoDesc"),
+          title: "Authentication Required",
+          description: "You must be logged in to upload a photo.",
         });
         return;
       }
@@ -2036,14 +1856,13 @@ export default function CreatorDashboard() {
 
         await refreshProfile();
         toast({
-          title: t("creatorDashboard.toasts.profilePhotoUpdated"),
+          title: "Profile photo updated!",
         });
       } catch (err: any) {
-        console.error("Profile photo upload error:", err);
         toast({
           variant: "destructive",
-          title: t("common.error"),
-          description: parseErrorMessage(err, t),
+          title: "Upload Failed",
+          description: getUserFriendlyError(err),
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
@@ -2136,8 +1955,8 @@ export default function CreatorDashboard() {
       console.error("Error starting recording:", error);
       toast({
         variant: "destructive",
-        title: t("creatorDashboard.toasts.micErrorTitle"),
-        description: t("creatorDashboard.toasts.micErrorDesc"),
+        title: "Microphone Error",
+        description: "Failed to access microphone. Please check permissions.",
       });
     }
   };
@@ -2168,25 +1987,15 @@ export default function CreatorDashboard() {
   const deleteRecording = async (id) => {
     const rec = voiceLibrary.find((r) => r.id === id);
 
-    const { dismiss } = toast({
-      title: t(
-        "creatorDashboard.voice.deleteConfirmation.title",
-        "Delete Recording?",
-      ),
-      description: t(
-        "creatorDashboard.voice.deleteConfirmation.description",
-        "This action cannot be undone.",
-      ),
+    toast({
+      title: "Delete Recording?",
+      description: "This action cannot be undone.",
       variant: "destructive",
       action: (
         <ToastAction
-          altText={t(
-            "creatorDashboard.voice.deleteConfirmation.action",
-            "Delete",
-          )}
+          altText="Delete"
           onClick={async () => {
             setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
-            dismiss();
             try {
               const sid = rec?.server_recording_id || rec?.id;
               if (sid) {
@@ -2197,12 +2006,12 @@ export default function CreatorDashboard() {
                   },
                 );
               }
-            } catch (err) {
-              console.error("Error deleting recording:", err);
+            } catch (_) {
+              // best-effort
             }
           }}
         >
-          {t("creatorDashboard.voice.deleteConfirmation.action", "Delete")}
+          Delete
         </ToastAction>
       ),
     });
@@ -2264,8 +2073,8 @@ export default function CreatorDashboard() {
       );
 
       toast({
-        title: t("creatorDashboard.toasts.voiceSuccessTitle"),
-        description: t("creatorDashboard.toasts.voiceSuccessDesc"),
+        title: "Success",
+        description: "Voice profile created successfully with ElevenLabs!",
       });
     } catch (error) {
       console.error("Voice profile creation error:", error);
@@ -2282,10 +2091,8 @@ export default function CreatorDashboard() {
 
       toast({
         variant: "destructive",
-        title: t("creatorDashboard.toasts.voiceErrorTitle"),
-        description: t("creatorDashboard.toasts.voiceErrorDesc", {
-          error: errorMessage,
-        }),
+        title: "Voice Profile Error",
+        description: getUserFriendlyError(error),
       });
     } finally {
       setGeneratingVoice(false);
@@ -2324,7 +2131,7 @@ export default function CreatorDashboard() {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
     toast({
-      title: t("creatorDashboard.toasts.campaignApproved"),
+      title: "Campaign approved! Contract signed! (Demo mode)",
     });
   };
 
@@ -2332,7 +2139,7 @@ export default function CreatorDashboard() {
     setPendingApprovals(pendingApprovals.filter((a) => a.id !== approvalId));
     setShowApprovalContract(null);
     toast({
-      title: t("creatorDashboard.toasts.campaignDeclined"),
+      title: "Campaign declined! (Demo mode)",
     });
   };
 
@@ -2341,21 +2148,16 @@ export default function CreatorDashboard() {
     setPauseOption(option);
     setShowPauseModal(false);
     toast({
-      title: t("creatorDashboard.toasts.licensePausedTitle"),
-      description:
-        option === "immediate"
-          ? t("creatorDashboard.toasts.licensePausedImmediate")
-          : t("creatorDashboard.toasts.licensePausedNextMonth"),
+      title: "License Paused (Demo)",
+      description: `License ${option === "immediate" ? "paused immediately" : "scheduled to pause next month"}! ${option === "immediate" ? "You will forfeit this month's payment." : "You'll receive full payment for this month, pause starts next month."}`,
     });
   };
 
   const handleRevokeLicense = (contract) => {
     setShowRevokeModal(false);
     toast({
-      title: t("creatorDashboard.toasts.licenseRevokedTitle"),
-      description: t("creatorDashboard.toasts.licenseRevokedDesc", {
-        amount: contract.creator_earnings,
-      }),
+      title: "License Revoked (Demo)",
+      description: `License revoked! 30-day notice period has begun. You'll receive final payment of $${contract.creator_earnings} on the notice expiration date.`,
     });
   };
 
@@ -2366,17 +2168,31 @@ export default function CreatorDashboard() {
       ),
     );
     toast({
-      title: t("creatorDashboard.toasts.campaignPaused"),
+      title: "Campaign paused! (Demo mode)",
     });
   };
 
   const handleRevokeCampaign = (campaignId) => {
-    if (confirm("Are you sure you want to revoke this campaign license?")) {
-      setActiveCampaigns(activeCampaigns.filter((c) => c.id !== campaignId));
-      toast({
-        title: t("creatorDashboard.toasts.campaignRevoked"),
-      });
-    }
+    toast({
+      title: "Revoke Campaign License?",
+      description: "Are you sure you want to revoke this campaign?",
+      variant: "destructive",
+      action: (
+        <ToastAction
+          altText="Revoke"
+          onClick={() => {
+            setActiveCampaigns(
+              activeCampaigns.filter((c) => c.id !== campaignId),
+            );
+            toast({
+              title: "Campaign revoked! (Demo mode)",
+            });
+          }}
+        >
+          Revoke
+        </ToastAction>
+      ),
+    });
   };
 
   const handleToggleContentType = (type) => {
@@ -2459,21 +2275,21 @@ export default function CreatorDashboard() {
 
       setEditingRules(false);
       toast({
-        title: t("creatorDashboard.toasts.preferencesUpdated"),
+        title: "Licensing preferences updated!",
       });
     } catch (error: any) {
       console.error("Failed to save rules:", error);
       toast({
         variant: "destructive",
-        title: t("common.error"),
-        description: parseErrorMessage(error, t),
+        title: "Save Failed",
+        description: getUserFriendlyError(error),
       });
     }
   };
 
   const handleSaveProfile = () => {
     toast({
-      title: t("creatorDashboard.toasts.profileUpdatedDemo"),
+      title: "Profile updated! (Demo mode)",
     });
   };
 
@@ -2489,7 +2305,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                {t("creatorDashboard.dashboard.totalMonthlyRevenue")}
+                Total Monthly Revenue
               </p>
               <DollarSign className="w-5 h-5 text-[#32C8D1]" />
             </div>
@@ -2497,13 +2313,13 @@ export default function CreatorDashboard() {
               ${totalMonthlyRevenue.toLocaleString()}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.dashboard.revenueInfo")}
+              Your revenue will appear here once your first license activates
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                {t("creatorDashboard.dashboard.activeCampaigns")}
+                Active Campaigns
               </p>
               <Target className="w-5 h-5 text-[#32C8D1]" />
             </div>
@@ -2511,25 +2327,26 @@ export default function CreatorDashboard() {
               {activeCampaigns.length}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.dashboard.activeCampaignsInfo")}
+              Ready for your first deal? Complete your profile below to get
+              discovered
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                {t("creatorDashboard.dashboard.pendingApprovals")}
+                Pending Approvals
               </p>
               <AlertCircle className="w-5 h-5 text-gray-500" />
             </div>
             <p className="text-4xl font-bold text-gray-900">{pendingCount}</p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.dashboard.pendingApprovalsInfo")}
+              Brands are waiting to see your complete profile
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                {t("creatorDashboard.dashboard.annualRunRate")}
+                Annual Run Rate
               </p>
               <TrendingUp className="w-5 h-5 text-[#32C8D1]" />
             </div>
@@ -2537,14 +2354,12 @@ export default function CreatorDashboard() {
               ${annualRunRate.toLocaleString()}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.dashboard.annualRunRateInfo")}
+              Based on active licenses
             </p>
           </Card>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900">
-          {t("creatorDashboard.dashboard.quickActions")}
-        </h3>
+        <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <Card
             className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
@@ -2555,14 +2370,15 @@ export default function CreatorDashboard() {
                 <ImageIcon className="w-6 h-6 text-[#32C8D1]" />
               </div>
               <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300">
-                {t("creatorDashboard.dashboard.priority")}
+                Priority
               </Badge>
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              {t("creatorDashboard.dashboard.completeProfile")}
+              Complete Your Profile
             </h3>
             <p className="text-sm text-gray-600">
-              {t("creatorDashboard.dashboard.completeProfileInfo")}
+              Add reference images and your cameo video to get discovered by
+              brands
             </p>
           </Card>
           <Card
@@ -2578,26 +2394,23 @@ export default function CreatorDashboard() {
               </Badge>
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              {t("creatorDashboard.dashboard.uploadVoiceTone")}
+              Upload Your First Voice Tone
             </h3>
             <p className="text-sm text-gray-600">
-              {t("creatorDashboard.dashboard.uploadVoiceToneInfo")}
+              Strengthen your profile with voice recordings
             </p>
           </Card>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900">
-          {t("creatorDashboard.dashboard.recentActivity")}
-        </h3>
+        <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
         {activeCampaigns.length === 0 ? (
           <div className="space-y-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-blue-900">
-                <strong>
-                  {t("creatorDashboard.dashboard.previewExamples.title")}
-                </strong>{" "}
-                {t("creatorDashboard.dashboard.previewExamples.message")}
+                <strong>Preview Examples:</strong> These are sample campaigns to
+                show you what opportunities look like. Complete your profile to
+                start receiving real brand deals!
               </p>
             </div>
 
@@ -2615,7 +2428,7 @@ export default function CreatorDashboard() {
                     <p className="text-sm mb-2">{campaign.campaign}</p>
                     <div className="flex items-center justify-between text-sm">
                       <Badge className="bg-green-500 text-white border-none">
-                        {t("creatorDashboard.dashboard.active")}
+                        Active
                       </Badge>
                       <span className="font-bold">${campaign.rate}/mo</span>
                     </div>
@@ -2626,20 +2439,18 @@ export default function CreatorDashboard() {
           </div>
         ) : (
           <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
-            <p>{t("creatorDashboard.dashboard.noCampaigns")}</p>
+            <p>Your campaign activity will show here once licenses activate</p>
             <p className="text-sm text-gray-500 mt-1">
-              {t("creatorDashboard.dashboard.noCampaignsInfo")}
+              Complete your profile to start receiving brand opportunities
             </p>
           </Card>
         )}
 
         <Card className="p-4 md:p-5 bg-white border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
-              {t("creatorDashboard.dashboard.profileStatus")}
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900">Profile Status</h3>
             <Badge className="bg-[#32C8D1] text-white">
-              {t("creatorDashboard.dashboard.completeToGetDiscovered")}
+              Complete to Get Discovered During Pilot
             </Badge>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
@@ -2647,7 +2458,7 @@ export default function CreatorDashboard() {
             <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-cyan-600" />
-                <span>{t("creatorDashboard.dashboard.referenceImages")}</span>
+                <span>Reference Images</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
                 {imagesFilled}/{imagesTotal}
@@ -2662,7 +2473,7 @@ export default function CreatorDashboard() {
             <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
                 <Mic className="w-4 h-4 text-purple-600" />
-                <span>{t("creatorDashboard.dashboard.voiceRecordings")}</span>
+                <span>Voice Recordings</span>
               </div>
               <div className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.length}/6
@@ -2678,11 +2489,11 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm text-gray-600 flex items-center gap-2">
                   <Video className="w-4 h-4 text-orange-600" />
-                  <span>{t("creatorDashboard.dashboard.cameoVideo")}</span>
+                  <span>Cameo Video</span>
                 </div>
                 {!cameoPresent && (
                   <span className="text-xs bg-red-100 text-red-700 border border-red-300 rounded px-2 py-0.5">
-                    {t("creatorDashboard.dashboard.missing")}
+                    Missing
                   </span>
                 )}
               </div>
@@ -2833,10 +2644,11 @@ export default function CreatorDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.myLikeness")}
-            </h2>
-            <p className="text-gray-600 mt-1">{t("faces.meta.description")}</p>
+            <h2 className="text-3xl font-bold text-gray-900">My Likeness</h2>
+            <p className="text-gray-600 mt-1">
+              Your complete likeness profile - used by brands to generate
+              content
+            </p>
           </div>
         </div>
 
@@ -2845,14 +2657,11 @@ export default function CreatorDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                {t("creatorDashboard.completeness.profileCompleteness", {
-                  percentage: completeness.percentage,
-                })}
+                Profile Completeness: {completeness.percentage}%
               </h3>
               <p className="text-gray-700">
-                {t("creatorDashboard.completeness.missingSections", {
-                  count: IMAGE_SECTIONS.length - completeness.filled,
-                })}
+                You're missing {IMAGE_SECTIONS.length - completeness.filled}{" "}
+                sections
               </p>
             </div>
           </div>
@@ -2860,10 +2669,8 @@ export default function CreatorDashboard() {
           <div className="bg-white border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>
-                {t("creatorDashboard.myLikenessSection.banner.strong")}
-              </strong>{" "}
-              {t("creatorDashboard.myLikenessSection.banner.text")}
+              <strong>Complete profiles earn 15% more.</strong> Brands pay
+              premium rates for creators with full reference libraries.
             </p>
           </div>
         </Card>
@@ -2871,11 +2678,10 @@ export default function CreatorDashboard() {
         {/* MY CAMEO Section - NOW FIRST */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.dashboard.cameoVideo").toUpperCase()}
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">MY CAMEO</h3>
             <p className="text-gray-600">
-              {t("creatorDashboard.cameoVideo.description")}
+              The video representation of you - brands use this for AI cameos
+              and content generation
             </p>
           </div>
 
@@ -2884,29 +2690,21 @@ export default function CreatorDashboard() {
               <Card className="p-4 bg-green-50 border border-green-200">
                 <div className="grid md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.uploaded")}
-                    </p>
+                    <p className="text-gray-600 mb-1">Uploaded:</p>
                     <p className="font-bold text-gray-900">Nov 12, 2024</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.duration")}
-                    </p>
+                    <p className="text-gray-600 mb-1">Duration:</p>
                     <p className="font-bold text-gray-900">45 seconds</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.quality")}
-                    </p>
+                    <p className="text-gray-600 mb-1">Quality:</p>
                     <p className="font-bold text-gray-900">4K</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.status")}
-                    </p>
+                    <p className="text-gray-600 mb-1">Status:</p>
                     <Badge className="bg-green-500 text-white">
-                      {t("creatorDashboard.cameoVideo.verified")}
+                      ✓ Verified & Approved
                     </Badge>
                   </div>
                 </div>
@@ -2931,10 +2729,9 @@ export default function CreatorDashboard() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-900 text-sm">
-                  <strong>
-                    {t("creatorDashboard.cameoVideo.aboutCameo.title")}
-                  </strong>{" "}
-                  {t("creatorDashboard.cameoVideo.aboutCameo.text")}
+                  <strong>About Your Cameo:</strong> Brands use this to generate
+                  AI cameos of you speaking, reference your voice/expressions,
+                  and create photorealistic content featuring you.
                 </p>
               </div>
 
@@ -2944,7 +2741,7 @@ export default function CreatorDashboard() {
                   className="flex-1 border-2 border-gray-300"
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.cameoVideo.actions.watchFull")}
+                  Watch Full Cameo
                 </Button>
                 <Button
                   onClick={() => setShowReuploadCameoModal(true)}
@@ -2952,11 +2749,11 @@ export default function CreatorDashboard() {
                   className="flex-1 border-2 border-[#32C8D1] text-[#32C8D1]"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.cameoVideo.actions.reupload")}
+                  Re-upload New Cameo
                 </Button>
                 <Button variant="outline" className="border-2 border-gray-300">
                   <Download className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.cameoVideo.actions.download")}
+                  Download
                 </Button>
               </div>
             </div>
@@ -2966,10 +2763,10 @@ export default function CreatorDashboard() {
               <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
                 <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-lg font-medium text-gray-900 mb-2">
-                  {t("creatorDashboard.cameoVideo.comingSoon.title")}
+                  Coming Soon
                 </p>
                 <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.cameoVideo.comingSoon.text")}
+                  Cameo video upload will be available soon
                 </p>
               </div>
 
@@ -2977,10 +2774,9 @@ export default function CreatorDashboard() {
               <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-amber-900 text-sm">
-                  <strong>
-                    {t("creatorDashboard.cameoVideo.warning.title")}
-                  </strong>{" "}
-                  {t("creatorDashboard.cameoVideo.warning.text")}
+                  <strong>Your cameo is required to start earning.</strong>{" "}
+                  Brands need this video reference to create content featuring
+                  you.
                 </p>
               </div>
             </div>
@@ -2991,23 +2787,21 @@ export default function CreatorDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              {t("creatorDashboard.referenceImageLibrary.title")}
+              REFERENCE IMAGE LIBRARY
             </h3>
             <p className="text-gray-600 mb-4">
-              {t("creatorDashboard.referenceImageLibrary.subtitle")}
+              Brands use these to match your appearance across different
+              contexts
             </p>
             <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div>
                 <p className="font-bold text-gray-900 text-lg">
-                  {t(
-                    "creatorDashboard.referenceImageLibrary.completenessFilled",
-                    { filled: completeness.filled, total: completeness.total },
-                  )}
+                  Completeness: {completeness.filled}/{completeness.total}{" "}
+                  sections filled
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {t("creatorDashboard.referenceImageLibrary.sectionsNeeded", {
-                    count: IMAGE_SECTIONS.length - completeness.filled,
-                  })}
+                  {IMAGE_SECTIONS.length - completeness.filled} sections needed
+                  for "Complete Profile"
                 </p>
               </div>
               <div className="text-right">
@@ -3021,10 +2815,10 @@ export default function CreatorDashboard() {
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>
-                {t("creatorDashboard.myLikenessSection.howThisWorks.title")}
-              </strong>{" "}
-              {t("creatorDashboard.myLikenessSection.howThisWorks.text")}
+              <strong>How This Works:</strong> Upload photos in 15 different
+              categories. Brands use these to generate images of you that look
+              consistent and photorealistic. More variety = better quality
+              content = higher rates.
             </p>
           </div>
 
@@ -3049,12 +2843,7 @@ export default function CreatorDashboard() {
                             {section.title}
                           </h4>
                           <p className="text-sm text-gray-600 mb-2">
-                            <strong>
-                              {t(
-                                "creatorDashboard.myLikenessSection.imageStatus.bestFor",
-                              )}
-                            </strong>{" "}
-                            {section.bestFor}
+                            <strong>Best For:</strong> {section.bestFor}
                           </p>
                           <Badge
                             variant="outline"
@@ -3064,13 +2853,7 @@ export default function CreatorDashboard() {
                                 : "bg-gray-300 text-gray-700"
                             }
                           >
-                            {hasImage
-                              ? t(
-                                  "creatorDashboard.myLikenessSection.imageStatus.uploaded",
-                                )
-                              : t(
-                                  "creatorDashboard.myLikenessSection.imageStatus.missing",
-                                )}
+                            {hasImage ? "UPLOADED" : "MISSING"}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -3098,11 +2881,7 @@ export default function CreatorDashboard() {
                               }
                             >
                               <Eye className="w-4 h-4 mr-1" />
-                              <span className="text-xs sm:text-sm">
-                                {t(
-                                  "creatorDashboard.myLikenessSection.imageActions.view",
-                                )}
-                              </span>
+                              <span className="text-xs sm:text-sm">View</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -3114,9 +2893,7 @@ export default function CreatorDashboard() {
                             >
                               <Upload className="w-4 h-4 mr-1" />
                               <span className="text-xs sm:text-sm">
-                                {t(
-                                  "creatorDashboard.myLikenessSection.imageActions.replace",
-                                )}
+                                Replace
                               </span>
                             </Button>
                             <Button
@@ -3126,11 +2903,7 @@ export default function CreatorDashboard() {
                               onClick={() => deleteReferenceImage(section.id)}
                             >
                               <Trash2 className="w-4 h-4 mr-1" />
-                              <span className="text-xs sm:text-sm">
-                                {t(
-                                  "creatorDashboard.myLikenessSection.imageActions.delete",
-                                )}
-                              </span>
+                              <span className="text-xs sm:text-sm">Delete</span>
                             </Button>
                           </>
                         ) : (
@@ -3139,9 +2912,7 @@ export default function CreatorDashboard() {
                             className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                           >
                             <Upload className="w-4 h-4 mr-2" />
-                            {t(
-                              "creatorDashboard.myLikenessSection.imageActions.uploadImage",
-                            )}
+                            Upload Image
                           </Button>
                         )}
                       </div>
@@ -3155,11 +2926,10 @@ export default function CreatorDashboard() {
           {/* Quality Standards */}
           <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600" />
-            <p className="text-gray-700 text-sm">
-              <strong>
-                {t("creatorDashboard.myLikenessSection.qualityStandards.title")}
-              </strong>{" "}
-              {t("creatorDashboard.myLikenessSection.qualityStandards.text")}
+            <p className="text-amber-900">
+              <strong>Quality Standards:</strong> High-resolution (minimum
+              1080x1080), clear lighting, face/body clearly visible, no heavy
+              filters, professional quality preferred.
             </p>
           </div>
         </Card>
@@ -3167,16 +2937,16 @@ export default function CreatorDashboard() {
         {/* Content Guidelines */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.usageGuidelines.title")}
+            USAGE GUIDELINES
           </h3>
           <p className="text-gray-600 mb-6">
-            {t("creatorDashboard.usageGuidelines.subtitle")}
+            Tell brands what you're comfortable with
           </p>
 
           <div className="space-y-6">
             <div>
               <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                {t("creatorDashboard.usageGuidelines.comfortableWith")}
+                Comfortable With:
               </Label>
               <div className="flex flex-wrap gap-2">
                 {contentPreferences.comfortable.map((item) => (
@@ -3185,7 +2955,7 @@ export default function CreatorDashboard() {
                     variant="outline"
                     className="bg-green-100 text-green-700 border border-green-300 px-3 py-2"
                   >
-                    {t(`common.contentTypes.${item}`, { defaultValue: item })}
+                    {item}
                   </Badge>
                 ))}
               </div>
@@ -3193,7 +2963,7 @@ export default function CreatorDashboard() {
 
             <div>
               <Label className="text-lg font-semibold text-gray-900 block mb-3">
-                {t("creatorDashboard.usageGuidelines.notComfortableWith")}
+                Not Comfortable With:
               </Label>
               <div className="flex flex-wrap gap-2">
                 {contentPreferences.not_comfortable.map((item) => (
@@ -3202,7 +2972,7 @@ export default function CreatorDashboard() {
                     variant="outline"
                     className="bg-red-100 text-red-700 border border-red-300 px-3 py-2"
                   >
-                    ✗ {t(`common.contentTypes.${item}`, { defaultValue: item })}
+                    ✗ {item}
                   </Badge>
                 ))}
               </div>
@@ -3213,7 +2983,7 @@ export default function CreatorDashboard() {
               className="w-full border-2 border-gray-300"
             >
               <Settings className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.usageGuidelines.editPreferences")}
+              Edit Preferences
             </Button>
           </div>
         </Card>
@@ -3221,7 +2991,7 @@ export default function CreatorDashboard() {
         {/* Verification Status */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.verificationStatus.title")}
+            Verification & Status
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -3239,9 +3009,7 @@ export default function CreatorDashboard() {
                   <AlertCircle className="w-5 h-5 text-gray-500" />
                 )}
                 <span className="font-medium text-gray-900">
-                  {t(
-                    "creatorDashboard.verificationStatus.identityVerification",
-                  )}
+                  Identity Verification
                 </span>
               </div>
               <Badge
@@ -3257,21 +3025,25 @@ export default function CreatorDashboard() {
                 }
               >
                 {creator?.kyc_status
-                  ? t(
-                      `creatorDashboard.verificationStatus.${creator.kyc_status}`,
-                    )
-                  : t("creatorDashboard.verificationStatus.notStarted")}
+                  ? creator.kyc_status
+                      .replace(/_/g, " ")
+                      .split(" ")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                      )
+                      .join(" ")
+                  : "Not Started"}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-[#32C8D1]" />
                 <span className="font-medium text-gray-900">
-                  {t("creatorDashboard.verificationStatus.likenessRights")}
+                  Likeness Rights
                 </span>
               </div>
               <Badge variant="outline" className="bg-green-100 text-green-700">
-                {t("creatorDashboard.verificationStatus.confirmed")}
+                Confirmed
               </Badge>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
@@ -3286,7 +3058,7 @@ export default function CreatorDashboard() {
                 ) : (
                   <Shield className="w-4 h-4 mr-2" />
                 )}
-                {t("creatorDashboard.verificationStatus.completeVerification")}
+                Complete Verification
               </Button>
               <Button
                 onClick={refreshVerificationFromDashboard}
@@ -3299,7 +3071,7 @@ export default function CreatorDashboard() {
                 ) : (
                   <RefreshCw className="w-4 h-4 mr-2" />
                 )}
-                {t("creatorDashboard.verificationStatus.refreshStatus")}
+                Refresh Status
               </Button>
             </div>
           </div>
@@ -3313,22 +3085,17 @@ export default function CreatorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            {t("creatorDashboard.voice.title")}
+            Voice & Recordings
           </h2>
           <p className="text-gray-600 mt-1">
-            {t("creatorDashboard.voice.subtitle")}
+            Build your voice library for different emotions and tones
           </p>
         </div>
         <Badge
           variant="outline"
           className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
         >
-          {voiceLibrary.length}{" "}
-          {t(
-            voiceLibrary.length !== 1
-              ? "creatorDashboard.voice.voiceBadgePlural"
-              : "creatorDashboard.voice.voiceBadge",
-          )}
+          {voiceLibrary.length} Voice{voiceLibrary.length !== 1 ? "s" : ""}
         </Badge>
       </div>
 
@@ -3336,29 +3103,23 @@ export default function CreatorDashboard() {
       {voiceLibrary.length > 0 && (
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.voice.overview.title")}
+            Voice Profile Overview
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.voice.overview.totalRecordings")}
-              </p>
+              <p className="text-sm text-gray-600 mb-1">Total Recordings</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.length}
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.voice.overview.elevenLabsProfiles")}
-              </p>
+              <p className="text-sm text-gray-600 mb-1">ElevenLabs Profiles</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.voice.overview.totalUsage")}
-              </p>
+              <p className="text-sm text-gray-600 mb-1">Total Usage</p>
               <p className="text-3xl font-bold text-gray-900">
                 {voiceLibrary.reduce((sum, v) => sum + (v.usageCount || 0), 0)}
               </p>
@@ -3370,10 +3131,11 @@ export default function CreatorDashboard() {
       {/* Record New Voice Sample */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          {t("creatorDashboard.voice.record.title")}
+          Record New Voice Sample
         </h3>
         <p className="text-gray-600 mb-6">
-          {t("creatorDashboard.voice.record.subtitle")}
+          Record samples with different emotions to create a versatile voice
+          profile
         </p>
 
         <div className="grid md:grid-cols-3 gap-4">
@@ -3401,17 +3163,15 @@ export default function CreatorDashboard() {
                   </div>
                   <div>
                     <h4 className="font-bold text-gray-900 capitalize text-lg">
-                      {t(`creatorDashboard.voice.emotionNames.${emotion}`)}
+                      {emotion}
                     </h4>
-                    <p className="text-xs text-gray-500">
-                      {t("creatorDashboard.voice.record.duration")}
-                    </p>
+                    <p className="text-xs text-gray-500">~60 seconds</p>
                   </div>
                 </div>
                 {hasRecording && (
                   <Badge className="bg-green-500 text-white">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
-                    {t("creatorDashboard.voice.record.recorded")}
+                    Recorded
                   </Badge>
                 )}
               </Card>
@@ -3424,7 +3184,7 @@ export default function CreatorDashboard() {
       {voiceLibrary.length > 0 && (
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">
-            {t("creatorDashboard.voice.library.title")}
+            Voice Library
           </h3>
           <div className="space-y-4">
             {voiceLibrary.map((recording) => (
@@ -3443,24 +3203,19 @@ export default function CreatorDashboard() {
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-900 capitalize text-xl">
-                        {t(
-                          `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
-                          recording.emotion,
-                        )}
+                        {recording.emotion}
                       </h4>
                       <p className="text-sm text-gray-600">
                         {new Date(recording.date).toLocaleDateString()} •{" "}
-                        {recording.duration}s •{" "}
-                        {t("creatorDashboard.voice.library.used", {
-                          count: recording.usageCount || 0,
-                        })}
+                        {recording.duration}s • Used {recording.usageCount || 0}{" "}
+                        times
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {recording.voiceProfileCreated && (
                       <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                        {t("creatorDashboard.voice.library.elevenLabsReady")}
+                        ElevenLabs Ready
                       </Badge>
                     )}
                     <Button
@@ -3479,7 +3234,7 @@ export default function CreatorDashboard() {
                       variant="outline"
                       size="sm"
                     >
-                      {t("creatorDashboard.voice.library.reRecord")}
+                      Re-record
                     </Button>
                     <Button
                       onClick={() => deleteRecording(recording.id)}
@@ -3501,12 +3256,12 @@ export default function CreatorDashboard() {
                     {generatingVoice ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {t("creatorDashboard.voice.library.creatingProfile")}
+                        Creating Voice Profile...
                       </>
                     ) : (
                       <>
                         <PlayCircle className="w-4 h-4 mr-2" />
-                        {t("creatorDashboard.voice.library.createProfile")}
+                        Create Voice Profile with ElevenLabs
                       </>
                     )}
                   </Button>
@@ -3521,8 +3276,9 @@ export default function CreatorDashboard() {
       <div className="bg-purple-50 border border-purple-200">
         <Volume2 className="h-5 w-5 text-purple-600" />
         <p className="text-purple-900">
-          <strong>{t("creatorDashboard.voice.tips.title")}</strong>{" "}
-          {t("creatorDashboard.voice.tips.message")}
+          <strong>Voice Training Tips:</strong> Speak clearly, avoid background
+          noise, record in a quiet room, and maintain consistent volume
+          throughout the recording.
         </p>
       </div>
     </div>
@@ -3539,10 +3295,10 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.campaigns.title")}
+              Active Campaigns
             </h2>
             <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.campaigns.subtitle")}
+              Track and manage your licensing agreements
             </p>
           </div>
           <Badge
@@ -3552,9 +3308,7 @@ export default function CreatorDashboard() {
                 : "bg-green-100 text-green-700 border border-green-300"
             } px-4 py-2 text-lg`}
           >
-            {t("creatorDashboard.campaigns.activeCount", {
-              count: activeCampaigns.length,
-            })}
+            {activeCampaigns.length} Active
           </Badge>
         </div>
 
@@ -3563,8 +3317,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>{t("creatorDashboard.campaigns.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.campaigns.welcome.message")}
+              <strong>Welcome to your Active Campaigns!</strong> This is an
+              example of what your campaigns will look like. You don't have any
+              active campaigns yet — but when brands start working with you,
+              they'll appear here!
             </p>
           </div>
         )}
@@ -3576,25 +3332,25 @@ export default function CreatorDashboard() {
               <thead>
                 <tr className="border-b-2 border-gray-300">
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.brand")}
+                    Brand
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.usageType")}
+                    Usage Type
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.rate")}
+                    Rate
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.activeUntil")}
+                    Active Until
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.status")}
+                    Status
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.thisMonth")}
+                    This Month
                   </th>
                   <th className="text-left py-4 px-4 font-bold text-gray-900">
-                    {t("creatorDashboard.campaigns.table.actions")}
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -3646,7 +3402,7 @@ export default function CreatorDashboard() {
                           className="ml-2 bg-blue-100 text-blue-700 border border-blue-300 text-xs"
                           variant="outline"
                         >
-                          {t("creatorDashboard.campaigns.labels.autoRenew")}
+                          Auto-Renew
                         </Badge>
                       )}
                     </td>
@@ -3661,11 +3417,9 @@ export default function CreatorDashboard() {
                         }`}
                       >
                         {campaign.status === "active"
-                          ? t("creatorDashboard.campaigns.status.active")
+                          ? "Active"
                           : campaign.status === "expiring_soon"
-                            ? t(
-                                "creatorDashboard.campaigns.status.expiringSoon",
-                              )
+                            ? "Expiring Soon"
                             : campaign.status}
                       </Badge>
                     </td>
@@ -3689,7 +3443,7 @@ export default function CreatorDashboard() {
                           size="sm"
                           className="text-red-600 hover:bg-red-50"
                         >
-                          {t("creatorDashboard.campaigns.actions.revoke")}
+                          Revoke
                         </Button>
                       </div>
                     </td>
@@ -3753,9 +3507,7 @@ export default function CreatorDashboard() {
                   <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
                     {/* Rate */}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.rateLabel")}
-                      </span>
+                      <span className="text-sm text-gray-600">Rate:</span>
                       <span className="font-bold text-gray-900">
                         ${campaign.rate.toLocaleString()}/mo
                       </span>
@@ -3764,7 +3516,7 @@ export default function CreatorDashboard() {
                     {/* Active Until */}
                     <div className="flex justify-between items-center py-2">
                       <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.activeUntilLabel")}
+                        Active Until:
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-900">
@@ -3774,7 +3526,7 @@ export default function CreatorDashboard() {
                         </span>
                         {campaign.auto_renewal && (
                           <Badge className="bg-blue-100 text-blue-700 border border-blue-300 text-xs">
-                            {t("creatorDashboard.campaigns.labels.autoRenew")}
+                            Auto-Renew
                           </Badge>
                         )}
                       </div>
@@ -3782,9 +3534,7 @@ export default function CreatorDashboard() {
 
                     {/* Status */}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.statusLabel")}
-                      </span>
+                      <span className="text-sm text-gray-600">Status:</span>
                       <Badge
                         className={`${
                           campaign.status === "active"
@@ -3795,20 +3545,16 @@ export default function CreatorDashboard() {
                         }`}
                       >
                         {campaign.status === "active"
-                          ? t("creatorDashboard.campaigns.status.active")
+                          ? "Active"
                           : campaign.status === "expiring_soon"
-                            ? t(
-                                "creatorDashboard.campaigns.status.expiringSoon",
-                              )
+                            ? "Expiring Soon"
                             : campaign.status}
                       </Badge>
                     </div>
 
                     {/* This Month */}
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-gray-600">
-                        {t("creatorDashboard.campaigns.thisMonthLabel")}
-                      </span>
+                      <span className="text-sm text-gray-600">This Month:</span>
                       <span className="font-bold text-green-600">
                         $
                         {campaign.earnings_this_month ||
@@ -3820,7 +3566,7 @@ export default function CreatorDashboard() {
                     {campaign.impressions_week && (
                       <div className="flex justify-between items-center py-2">
                         <span className="text-sm text-gray-600">
-                          {t("creatorDashboard.campaigns.impressionsLabel")}
+                          Impressions/Week:
                         </span>
                         <span className="text-sm font-medium text-gray-900">
                           {campaign.impressions_week.toLocaleString()}
@@ -3840,7 +3586,7 @@ export default function CreatorDashboard() {
                         className="flex-1"
                       >
                         <Pause className="w-4 h-4 mr-2" />
-                        {t("creatorDashboard.campaigns.pause")}
+                        Pause
                       </Button>
                       <Button
                         onClick={(e) => {
@@ -3891,41 +3637,31 @@ export default function CreatorDashboard() {
                       : "bg-orange-100 text-orange-700 border border-orange-300"
                   }
                 >
-                  {campaign.status === "active"
-                    ? t("creatorDashboard.campaigns.status.active")
-                    : t("creatorDashboard.campaigns.status.expiringSoon")}
+                  {campaign.status === "active" ? "Active" : "Expiring Soon"}
                 </Badge>
               </div>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.monthlyRate")}
-                  </span>
+                  <span className="text-gray-600">Monthly Rate:</span>
                   <span className="font-bold text-gray-900">
                     ${campaign.rate.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.activeUntil")}
-                  </span>
+                  <span className="text-gray-600">Active Until:</span>
                   <span className="font-medium text-gray-900">
                     {new Date(campaign.active_until).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.regions")}
-                  </span>
+                  <span className="text-gray-600">Regions:</span>
                   <span className="font-medium text-gray-900">
                     {campaign.regions.join(", ")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    {t("creatorDashboard.campaigns.labels.weeklyImpressions")}
-                  </span>
+                  <span className="text-gray-600">Weekly Impressions:</span>
                   <span className="font-medium text-gray-900">
                     {campaign.impressions_week.toLocaleString()}
                   </span>
@@ -3935,14 +3671,14 @@ export default function CreatorDashboard() {
               <div className="flex gap-2 mt-6">
                 <Button variant="outline" className="flex-1">
                   <Eye className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.campaigns.actions.viewDetails")}
+                  View Details
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1 text-red-600 hover:bg-red-50"
                   onClick={() => handleRevokeCampaign(campaign.id)}
                 >
-                  {t("creatorDashboard.campaigns.actions.revoke")}
+                  Revoke
                 </Button>
               </div>
             </Card>
@@ -3953,10 +3689,9 @@ export default function CreatorDashboard() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
           <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
-            <strong>{t("creatorDashboard.campaigns.consent.title")}</strong>{" "}
-            {t("creatorDashboard.campaigns.consent.message", {
-              count: activeCampaigns.length,
-            })}
+            <strong>Your consent required for all uses.</strong>{" "}
+            {activeCampaigns.length} active campaigns, all time-limited, all
+            approved by you. You can pause/revoke anytime.
           </p>
         </div>
       </div>
@@ -3980,16 +3715,14 @@ export default function CreatorDashboard() {
               className="border-2 border-gray-300 w-fit"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.approvals.backToQueue")}
+              Back to Queue
             </Button>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {t("creatorDashboard.approvals.contractReviewTitle", {
-                  brand: approval.brand,
-                })}
+                {approval.brand} - Contract Review
               </h1>
               <p className="text-gray-600 text-sm sm:text-base">
-                {t("creatorDashboard.approvals.contractReviewSubtitle")}
+                Review terms before approving
               </p>
             </div>
           </div>
@@ -3997,31 +3730,27 @@ export default function CreatorDashboard() {
           {/* What You're Earning */}
           <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.approvals.whatYouWillEarn")}
+              What You'll Earn
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.approvals.yourMonthlyPayment")}
-                </p>
+                <p className="text-gray-700 mb-2">Your Monthly Payment:</p>
                 <p className="text-5xl font-bold text-green-600">
                   ${approval.proposed_rate}
                 </p>
               </div>
               <div>
                 <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.approvals.ifYouKeepThisFor", {
-                    term: approval.term_length,
-                  })}
+                  If you keep this for {approval.term_length}:
                 </p>
                 <p className="text-3xl font-bold text-gray-900">
                   $
                   {approval.term_length === "Perpetual"
-                    ? t("common.ongoing")
+                    ? "Ongoing"
                     : approval.proposed_rate * parseInt(approval.term_length)}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  {t("creatorDashboard.approvals.totalEstimatedEarnings")}
+                  Total estimated earnings
                 </p>
               </div>
             </div>
@@ -4030,22 +3759,18 @@ export default function CreatorDashboard() {
           {/* Contract Terms */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.approvals.contractTerms")}
+              Contract Terms
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.duration")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Duration:</p>
                   <p className="font-bold text-gray-900 text-lg">
                     {approval.term_length}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.territory")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Territory:</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.regions.map((region) => (
                       <Badge
@@ -4061,17 +3786,13 @@ export default function CreatorDashboard() {
               </div>
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.usageType")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Usage Type:</p>
                   <p className="font-bold text-gray-900 text-lg">
                     {approval.usage_type}
                   </p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.approvals.industries")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Industries:</p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {approval.industries.map((industry) => (
                       <Badge
@@ -4091,24 +3812,28 @@ export default function CreatorDashboard() {
           {/* Your Rights */}
           <Card className="p-6 bg-blue-50 border-2 border-blue-300">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.approvals.yourRightsAndProtections")}
+              Your Rights & Protections
             </h3>
             <div className="space-y-3 text-gray-900">
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.canPause")}</p>
+                <p>
+                  You can pause this license anytime (temporarily stop usage)
+                </p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.canRevoke")}</p>
+                <p>You can revoke with 30 days notice (permanently end)</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.licenseExpires")}</p>
+                <p>License expires on a specific date (not forever)</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p>{t("creatorDashboard.approvals.paymentProtected")}</p>
+                <p>
+                  Payment protected in escrow until brand approves deliverables
+                </p>
               </div>
             </div>
           </Card>
@@ -4117,10 +3842,9 @@ export default function CreatorDashboard() {
             <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-red-900 text-sm">
-                <strong>
-                  {t("creatorDashboard.approvals.perpetualUseWarning.title")}
-                </strong>{" "}
-                {t("creatorDashboard.approvals.perpetualUseWarning.message")}
+                <strong>⚠️ Perpetual Use Warning:</strong> This brand wants to
+                use your likeness forever. You should negotiate for time-limited
+                terms (6 months, 1 year) instead.
               </p>
             </div>
           )}
@@ -4133,21 +3857,21 @@ export default function CreatorDashboard() {
               className="flex-1 h-14 border-2 border-gray-300"
             >
               <XCircle className="w-5 h-5 mr-2" />
-              {t("creatorDashboard.approvals.decline")}
+              Decline
             </Button>
             <Button
               variant="outline"
               className="flex-1 h-14 border-2 border-[#32C8D1] text-[#32C8D1]"
             >
               <MessageSquare className="w-5 h-5 mr-2" />
-              {t("creatorDashboard.approvals.counterOffer")}
+              Counter Offer
             </Button>
             <Button
               onClick={() => handleApprove(approval.id)}
               className="flex-1 h-14 bg-green-600 hover:bg-green-700 text-white"
             >
               <CheckCircle2 className="w-5 h-5 mr-2" />
-              {t("creatorDashboard.approvals.acceptAndSign")}
+              Accept & Sign
             </Button>
           </div>
         </div>
@@ -4163,20 +3887,16 @@ export default function CreatorDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.approvals.title")}
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
             <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.approvals.subtitle")}
+              Review and approve licensing requests
             </p>
           </div>
           <Badge
             variant="secondary"
             className={`${pendingCount > 0 ? "bg-yellow-100 text-yellow-700 border border-yellow-300" : "bg-gray-100 text-gray-700 border border-gray-300"} px-4 py-2 text-lg`}
           >
-            {t("creatorDashboard.approvals.pendingCount", {
-              count: pendingCount,
-            })}
+            {pendingCount} Pending
           </Badge>
         </div>
 
@@ -4185,8 +3905,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>{t("creatorDashboard.approvals.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.approvals.welcome.message")}
+              <strong>Welcome to your Approval Queue!</strong> This is an
+              example of what brand requests will look like. You don't have any
+              pending approvals yet — but when brands want to work with you,
+              their requests will appear here!
             </p>
           </div>
         )}
@@ -4210,11 +3932,8 @@ export default function CreatorDashboard() {
                     </h3>
                     <p className="text-gray-600">{approval.usage_type}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {t("creatorDashboard.approvals.requestedOn", {
-                        date: new Date(
-                          approval.requested_date,
-                        ).toLocaleDateString(),
-                      })}
+                      Requested{" "}
+                      {new Date(approval.requested_date).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -4224,7 +3943,7 @@ export default function CreatorDashboard() {
                     className="bg-red-500 text-white"
                   >
                     <AlertCircle className="w-4 h-4 mr-1" />
-                    {t("creatorDashboard.approvals.perpetualRequest")}
+                    Perpetual Request
                   </Badge>
                 )}
               </div>
@@ -4233,25 +3952,21 @@ export default function CreatorDashboard() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
-                      {t("creatorDashboard.approvals.proposedRate")}
+                      Proposed Rate:
                     </span>
                     <span className="font-bold text-gray-900 text-lg">
-                      {t("creatorDashboard.approvals.labels.pricePerMonth", {
-                        price: approval.proposed_rate,
-                      })}
+                      ${approval.proposed_rate}/month
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">
-                      {t("creatorDashboard.approvals.termLength")}
-                    </span>
+                    <span className="text-sm text-gray-600">Term Length:</span>
                     <span className="font-bold text-gray-900">
                       {approval.term_length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">
-                      {t("creatorDashboard.approvals.estimatedMonthly")}
+                      Estimated Monthly:
                     </span>
                     <span className="font-bold text-green-600 text-lg">
                       ${approval.proposed_rate}
@@ -4261,9 +3976,7 @@ export default function CreatorDashboard() {
 
                 <div className="space-y-3">
                   <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("creatorDashboard.approvals.regions")}
-                    </p>
+                    <p className="text-sm text-gray-600 mb-2">Regions:</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.regions.map((region) => (
                         <Badge
@@ -4277,9 +3990,7 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("creatorDashboard.approvals.industries")}
-                    </p>
+                    <p className="text-sm text-gray-600 mb-2">Industries:</p>
                     <div className="flex flex-wrap gap-2">
                       {approval.industries.map((industry) => (
                         <Badge
@@ -4299,10 +4010,10 @@ export default function CreatorDashboard() {
                 <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <p className="text-red-900 text-sm">
-                    <strong>
-                      {t("creatorDashboard.approvals.warning.title")}
-                    </strong>{" "}
-                    {t("creatorDashboard.approvals.warning.message")}
+                    <strong>Warning:</strong> This is a perpetual-use request.
+                    You would give up long-term control of your likeness for
+                    this campaign. Consider negotiating for time-limited terms
+                    instead.
                   </p>
                 </div>
               )}
@@ -4314,7 +4025,7 @@ export default function CreatorDashboard() {
                   className="flex-1 h-12 border-2 border-blue-300 text-blue-600 w-full sm:w-auto"
                 >
                   <FileText className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.viewContract")}
+                  View Contract
                 </Button>
                 <Button
                   onClick={() => handleDecline(approval.id)}
@@ -4322,21 +4033,20 @@ export default function CreatorDashboard() {
                   className="h-12 border-2 border-gray-300 w-full sm:w-auto"
                 >
                   <XCircle className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.decline")}
+                  Decline
                 </Button>
                 <Button
                   variant="outline"
                   className="h-12 border-2 border-[#32C8D1] text-[#32C8D1] w-full sm:w-auto"
                 >
-                  <MessageSquare className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.counterOffer")}
+                  Counter Offer
                 </Button>
                 <Button
                   onClick={() => handleApprove(approval.id)}
                   className="h-12 bg-green-600 hover:bg-green-700 text-white px-8 w-full sm:w-auto"
                 >
                   <CheckCircle2 className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.approvals.actions.acceptAndSign")}
+                  Accept & Sign
                 </Button>
               </div>
             </Card>
@@ -4360,16 +4070,14 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.archive.title")}
+              Campaign Archive
             </h2>
             <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.archive.subtitle")}
+              View your completed campaigns and manage portfolio visibility
             </p>
           </div>
           <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 text-lg">
-            {t("creatorDashboard.archive.completedCount", {
-              count: archivedCampaigns.length,
-            })}
+            {archivedCampaigns.length} Completed
           </Badge>
         </div>
 
@@ -4378,8 +4086,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>{t("creatorDashboard.archive.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.archive.welcome.message")}
+              <strong>Welcome to your Campaign Archive!</strong> This is an
+              example of what your completed campaigns will look like. You don't
+              have any archived campaigns yet — but when you do, they'll appear
+              here just like this!
             </p>
           </div>
         )}
@@ -4403,44 +4113,34 @@ export default function CreatorDashboard() {
                     </h3>
                     <p className="text-gray-600">{campaign.campaign_type}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {t("creatorDashboard.archive.completedOn", {
-                        date: campaign.completed_date,
-                      })}
+                      Completed {campaign.completed_date}
                     </p>
                   </div>
                 </div>
                 <Badge className="bg-green-100 text-green-700 border border-green-300">
-                  {t("creatorDashboard.archive.status.completed")}
+                  Completed
                 </Badge>
               </div>
 
               <div className="grid md:grid-cols-4 gap-4 mb-6">
                 <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.duration")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Duration:</p>
                   <p className="font-bold text-gray-900">{campaign.duration}</p>
                 </div>
                 <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.monthlyRate")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Monthly Rate:</p>
                   <p className="font-bold text-gray-900">
                     ${campaign.monthly_rate}
                   </p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.totalEarned")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Total Earned:</p>
                   <p className="font-bold text-green-600 text-lg">
                     ${campaign.total_earned.toLocaleString()}
                   </p>
                 </div>
                 <div className="p-3 bg-slate-100 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.archive.regions")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Regions:</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {campaign.regions.map((region) => (
                       <Badge
@@ -4478,12 +4178,12 @@ export default function CreatorDashboard() {
                   />
                   <div>
                     <p className="font-semibold text-gray-900">
-                      {t("creatorDashboard.archive.showOnPortfolio")}
+                      Show on Portfolio
                     </p>
                     <p className="text-sm text-gray-600">
                       {campaign.show_on_portfolio
-                        ? t("creatorDashboard.archive.visibleOnPortfolio")
-                        : t("creatorDashboard.archive.hiddenFromPortfolio")}
+                        ? "Visible to brands viewing your profile"
+                        : "Hidden from public portfolio"}
                     </p>
                   </div>
                 </div>
@@ -4493,7 +4193,7 @@ export default function CreatorDashboard() {
                   disabled={campaign.isExample}
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.archive.viewDetails")}
+                  View Details
                 </Button>
               </div>
             </Card>
@@ -4530,7 +4230,7 @@ export default function CreatorDashboard() {
               className="border-2 border-gray-300 w-fit"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("creatorDashboard.contracts.backToContracts")}
+              Back to Contracts
             </Button>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -4545,36 +4245,28 @@ export default function CreatorDashboard() {
           {/* What You're Earning */}
           <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.whatYoureEarning")}
+              What You're Earning
             </h3>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.monthlyPayment")}
-                </p>
+                <p className="text-gray-700 mb-2">Monthly Payment:</p>
                 <p className="text-4xl font-bold text-green-600">
                   ${contract.creator_earnings}
                 </p>
               </div>
               <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.totalEarnedSoFar")}
-                </p>
+                <p className="text-gray-700 mb-2">Total Earned So Far:</p>
                 <p className="text-3xl font-bold text-gray-900">
                   ${contract.earnings_to_date.toLocaleString()}
                 </p>
               </div>
               <div>
-                <p className="text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.paymentStatus")}
-                </p>
+                <p className="text-gray-700 mb-2">Payment Status:</p>
                 <Badge className="bg-green-500 text-white text-lg">
-                  {t("creatorDashboard.contracts.paid")}
+                  ✓ Paid
                 </Badge>
                 <p className="text-sm text-gray-600 mt-2">
-                  {t("creatorDashboard.contracts.amountReceived", {
-                    amount: contract.amount_paid,
-                  })}
+                  ${contract.amount_paid} received
                 </p>
               </div>
             </div>
@@ -4583,28 +4275,22 @@ export default function CreatorDashboard() {
           {/* Timeline */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.yourTimeline")}
+              Your Timeline
             </h3>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.contracts.started")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Started</p>
                   <p className="font-bold text-gray-900">
                     {new Date(contract.effective_date).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.contracts.today")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Today</p>
                   <div className="w-4 h-4 bg-[#32C8D1] rounded-full mx-auto"></div>
                 </div>
                 <div className="text-center flex-1">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {t("creatorDashboard.contracts.expires")}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-1">Expires</p>
                   <p className="font-bold text-gray-900">
                     {new Date(contract.expiration_date).toLocaleDateString()}
                   </p>
@@ -4617,19 +4303,15 @@ export default function CreatorDashboard() {
                 ></div>
               </div>
               <p className="text-center text-sm text-gray-600 mt-3">
-                {t("creatorDashboard.contracts.daysRemaining", {
-                  count: contract.days_remaining,
-                })}
+                {contract.days_remaining} days remaining
               </p>
             </div>
             {contract.auto_renew && (
               <div className="mt-4 bg-blue-50 border border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <p className="text-blue-900 text-sm">
-                  <strong>
-                    {t("creatorDashboard.contracts.autoRenewal.title")}
-                  </strong>{" "}
-                  {t("creatorDashboard.contracts.autoRenewal.message")}
+                  <strong>Auto-Renewal Enabled:</strong> After expiration, you
+                  can decide whether to renew on new terms.
                 </p>
               </div>
             )}
@@ -4638,42 +4320,38 @@ export default function CreatorDashboard() {
           {/* How Your Likeness Is Being Used */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.howLikenessIsUsed")}
+              How Your Likeness Is Being Used
             </h3>
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.whatTheyreUsing")}
+                  What They're Using:
                 </p>
                 <p className="text-gray-900">{contract.deliverables}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.whereTheyCanUseIt")}
+                  Where They Can Use It:
                 </p>
                 <p className="text-gray-900 mb-2">
-                  <strong>{t("creatorDashboard.contracts.territory")}</strong>{" "}
-                  {contract.territory}
+                  <strong>Territory:</strong> {contract.territory}
                 </p>
                 <p className="text-gray-900">
-                  <strong>{t("creatorDashboard.contracts.channels")}</strong>{" "}
-                  {contract.channels.join(", ")}
+                  <strong>Channels:</strong> {contract.channels.join(", ")}
                 </p>
               </div>
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-sm font-semibold text-red-700 mb-2">
-                  {t("creatorDashboard.contracts.whatTheyCantDo")}
+                  What They CAN'T Do:
                 </p>
                 <p className="text-red-900">{contract.prohibited_uses}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
-                  {t("creatorDashboard.contracts.revisions")}
+                  Revisions:
                 </p>
                 <p className="text-gray-900">
-                  {t("creatorDashboard.contracts.roundsIncluded", {
-                    count: contract.revisions,
-                  })}
+                  {contract.revisions} rounds included
                 </p>
               </div>
             </div>
@@ -4682,7 +4360,7 @@ export default function CreatorDashboard() {
           {/* Actions */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.contracts.manageLicense")}
+              Manage This License
             </h3>
             <div className="grid md:grid-cols-2 gap-4">
               <Button
@@ -4693,7 +4371,7 @@ export default function CreatorDashboard() {
                 className="h-12 border-2 border-amber-300 text-amber-700 hover:bg-amber-50"
               >
                 <Pause className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.pauseLicense")}
+                Pause License
               </Button>
               <Button
                 onClick={() => {
@@ -4703,21 +4381,21 @@ export default function CreatorDashboard() {
                 className="h-12 border-2 border-red-300 text-red-600 hover:bg-red-50"
               >
                 <XCircle className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.revokeLicense")}
+                Revoke (30-day notice)
               </Button>
               <Button
                 variant="outline"
                 className="h-12 border-2 border-blue-300 text-blue-600 hover:bg-blue-50"
               >
                 <MessageSquare className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.messageBrand")}
+                Message Brand
               </Button>
               <Button
                 variant="outline"
                 className="h-12 border-2 border-gray-300"
               >
                 <FileText className="w-5 h-5 mr-2" />
-                {t("creatorDashboard.contracts.viewFullLegalContract")}
+                View Full Legal Contract
               </Button>
             </div>
           </Card>
@@ -4743,10 +4421,10 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.contracts.title")}
+              Licenses & Contracts
             </h2>
             <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.contracts.subtitle")}
+              Track all your licensing deals and earnings
             </p>
           </div>
         </div>
@@ -4756,8 +4434,10 @@ export default function CreatorDashboard() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-blue-900">
-              <strong>{t("creatorDashboard.contracts.welcome.title")}</strong>{" "}
-              {t("creatorDashboard.contracts.welcome.message")}
+              <strong>Welcome to your Licenses & Contracts!</strong> This is an
+              example of what your active licensing deals will look like. You
+              don't have any contracts yet — but when brands approve your work,
+              they'll appear here just like this!
             </p>
           </div>
         )}
@@ -4772,9 +4452,7 @@ export default function CreatorDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            {t("creatorDashboard.contracts.activeTab", {
-              count: activeContracts.length,
-            })}
+            Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractsTab("expired")}
@@ -4784,9 +4462,7 @@ export default function CreatorDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            {t("creatorDashboard.contracts.expiredTab", {
-              count: expiredContracts.length,
-            })}
+            Expired ({expiredContracts.length})
           </button>
         </div>
 
@@ -4823,14 +4499,16 @@ export default function CreatorDashboard() {
                         : "bg-orange-100 text-orange-700 border border-orange-300"
                     }
                   >
-                    {t(`creatorDashboard.contracts.status.${contract.status}`)}
+                    {contract.status === "active"
+                      ? "✓ Active & Earning"
+                      : "⏳ Expiring Soon"}
                   </Badge>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4 mb-4">
                   <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                     <p className="text-sm text-gray-600 mb-1">
-                      {t("creatorDashboard.contracts.yourMonthlyFee")}
+                      Your Monthly Fee:
                     </p>
                     <p className="text-2xl font-bold text-green-600">
                       ${contract.creator_earnings}
@@ -4838,7 +4516,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-1">
-                      {t("creatorDashboard.contracts.earnedToDate")}
+                      Earned to Date:
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
                       ${contract.earnings_to_date.toLocaleString()}
@@ -4846,7 +4524,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-sm text-gray-600 mb-1">
-                      {t("creatorDashboard.contracts.daysRemainingLabel")}
+                      Days Remaining:
                     </p>
                     <p className="text-2xl font-bold text-gray-900">
                       {contract.days_remaining}
@@ -4859,11 +4537,9 @@ export default function CreatorDashboard() {
                     <Clock className="h-5 w-5 text-orange-600 shrink-0" />
                     <p className="text-orange-900 text-sm">
                       <span className="font-bold">
-                        {t("creatorDashboard.contracts.expiringIn", {
-                          count: contract.days_remaining,
-                        })}
+                        Expiring in {contract.days_remaining} days!
                       </span>{" "}
-                      {t("creatorDashboard.contracts.renewLicensePrompt")}
+                      Would you like to renew this license?
                     </p>
                   </div>
                 )}
@@ -4877,12 +4553,12 @@ export default function CreatorDashboard() {
                     className="flex-1 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    {t("creatorDashboard.contracts.viewDetails")}
+                    View Details
                   </Button>
                   {contract.status === "expiring_soon" && (
                     <Button className="bg-green-600 hover:bg-green-700 text-white">
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      {t("creatorDashboard.contracts.renew")}
+                      Renew
                     </Button>
                   )}
                 </div>
@@ -4896,10 +4572,10 @@ export default function CreatorDashboard() {
           <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              {t("creatorDashboard.contracts.noExpiredContracts")}
+              No Expired Contracts
             </h3>
             <p className="text-gray-600">
-              {t("creatorDashboard.contracts.completedContractsWillAppearHere")}
+              Completed contracts will appear here
             </p>
           </Card>
         )}
@@ -4915,17 +4591,17 @@ export default function CreatorDashboard() {
         className="mb-8 flex items-center gap-2"
       >
         <ArrowLeft className="w-4 h-4" />
-        {t("creatorDashboard.earnings.bankConnection.back")}
+        Back
       </Button>
       <Card className="p-10 text-center bg-white border border-gray-200 shadow-sm">
         <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <FileText className="w-8 h-8 text-green-600" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          {t("creatorDashboard.earnings.bankConnection.title")}
+          Connect Your Bank Account
         </h2>
         <p className="text-gray-600 mb-8">
-          {t("creatorDashboard.earnings.bankConnection.subtitle")}
+          Link your bank account to receive your earnings directly.
         </p>
 
         <div className="space-y-4 text-left mb-8">
@@ -4933,21 +4609,19 @@ export default function CreatorDashboard() {
             <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-gray-900">
-                {t("creatorDashboard.earnings.bankConnection.securityTitle")}
+                Bank-level Security
               </h3>
               <p className="text-sm text-gray-600">
-                {t("creatorDashboard.earnings.bankConnection.securityMessage")}
+                Your information is encrypted and protected
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
             <Lock className="w-6 h-6 text-green-600 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-gray-900">
-                {t("creatorDashboard.earnings.bankConnection.privateTitle")}
-              </h3>
+              <h3 className="font-semibold text-gray-900">Private & Secure</h3>
               <p className="text-sm text-gray-600">
-                {t("creatorDashboard.earnings.bankConnection.privateMessage")}
+                We never store your banking credentials
               </p>
             </div>
           </div>
@@ -4957,10 +4631,11 @@ export default function CreatorDashboard() {
           size="lg"
           className="w-full h-12 bg-green-500 hover:bg-green-600 text-white text-base"
         >
-          {t("creatorDashboard.earnings.bankConnection.button")}
+          Connect Bank Account
         </Button>
         <p className="text-xs text-gray-500 mt-4">
-          {t("creatorDashboard.earnings.bankConnection.comingSoon")}
+          Bank connection coming soon. We're integrating secure payment
+          processing.
         </p>
       </Card>
     </div>
@@ -4975,10 +4650,10 @@ export default function CreatorDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              {t("creatorDashboard.earnings.title")}
+              Earnings Dashboard
             </h2>
             <p className="text-gray-600 mt-1">
-              {t("creatorDashboard.earnings.subtitle")}
+              Track your revenue and payments
             </p>
           </div>
           <Button
@@ -4986,7 +4661,7 @@ export default function CreatorDashboard() {
             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
           >
             <DollarSign className="w-4 h-4" />
-            {t("creatorDashboard.earnings.actions.cashOut")}
+            Cash Out
           </Button>
         </div>
 
@@ -4995,50 +4670,41 @@ export default function CreatorDashboard() {
           <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <p>
             <span className="font-semibold">
-              {t("creatorDashboard.earnings.readyTitle")}
+              Your earnings dashboard is ready!
             </span>{" "}
-            {t("creatorDashboard.earnings.readyMessage")}
+            Once your licenses activate, you'll see real-time earnings here.
+            Currently, you have no active contracts.
           </p>
         </div>
 
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">
-              {t("creatorDashboard.earnings.metrics.totalEarnedYTD")}
-            </p>
+            <p className="text-sm text-gray-600 mb-2">Total Earned YTD</p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.earnings.metrics.willUpdate")}
+              Will update once your first license activates
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">
-              {t("creatorDashboard.earnings.metrics.thisMonthRecurring")}
-            </p>
+            <p className="text-sm text-gray-600 mb-2">This Month's Recurring</p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.earnings.metrics.waitingForCampaigns")}
+              Waiting for active campaigns
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">
-              {t("creatorDashboard.earnings.metrics.projectedNextMonth")}
-            </p>
+            <p className="text-sm text-gray-600 mb-2">Projected Next Month</p>
             <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.earnings.metrics.willCalculate")}
+              Will calculate based on active licenses
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">
-              {t("creatorDashboard.earnings.metrics.nextPayment")}
-            </p>
-            <p className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.earnings.metrics.toBeDetermined")}
-            </p>
+            <p className="text-sm text-gray-600 mb-2">Next Payment</p>
+            <p className="text-2xl font-bold text-gray-900">To be determined</p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.earnings.metrics.noActiveContracts")}
+              No active contracts yet
             </p>
           </Card>
         </div>
@@ -5047,29 +4713,25 @@ export default function CreatorDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.earnings.charts.revenueTrend")}
+              Revenue Trend (Last 6 Months)
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <div>
-                {t("creatorDashboard.earnings.charts.revenuePlaceholder")}
-              </div>
+              <div>Your revenue trend will appear here</div>
               <div className="text-sm text-gray-500 mt-1">
-                {t("creatorDashboard.earnings.charts.activePlaceholder")}
+                Once you have active campaigns
               </div>
             </div>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.earnings.charts.industryBreakdown")}
+              Earnings by Industry
             </h3>
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <div>
-                {t("creatorDashboard.earnings.charts.industryPlaceholder")}
-              </div>
+              <div>Your industry breakdown will appear here</div>
               <div className="text-sm text-gray-500 mt-1">
-                {t("creatorDashboard.earnings.charts.activePlaceholder")}
+                Once you have active campaigns
               </div>
             </div>
           </Card>
@@ -5079,31 +4741,26 @@ export default function CreatorDashboard() {
         <Card className="p-6 bg-gradient-to-r from-cyan-50 to-white border border-cyan-200">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              {t("creatorDashboard.earnings.comparison.title")}
+              This is what your earnings could look like
             </h3>
             <p className="text-sm text-gray-600">
-              {t("creatorDashboard.earnings.comparison.subtitle")}
+              See how Likelee's recurring model compares to traditional one-time
+              payments
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="p-5 bg-white rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.earnings.comparison.traditionalModel")}
-              </p>
+              <p className="text-sm text-gray-600 mb-1">Traditional Model:</p>
               <p className="text-3xl font-bold text-gray-900">$500</p>
               <p className="text-sm text-gray-600">
-                {t("creatorDashboard.earnings.comparison.traditionalDesc")}
+                One-time payment per campaign
               </p>
             </div>
             <div className="p-5 bg-white rounded-lg border border-cyan-300">
-              <p className="text-sm text-gray-600 mb-1">
-                {t("creatorDashboard.earnings.comparison.likeleeModel")}
-              </p>
-              <p className="text-3xl font-bold text-[#32C8D1]">
-                {t("creatorDashboard.earnings.comparison.likeleeAmount")}
-              </p>
+              <p className="text-sm text-gray-600 mb-1">Likelee Model:</p>
+              <p className="text-3xl font-bold text-[#32C8D1]">$2,500+/month</p>
               <p className="text-sm text-gray-600">
-                {t("creatorDashboard.earnings.comparison.likeleeDesc")}
+                Per active license • Recurring revenue
               </p>
             </div>
           </div>
@@ -5112,16 +4769,16 @@ export default function CreatorDashboard() {
         {/* Earnings by Campaign */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.earnings.campaigns.title")}
+            Earnings by Campaign
           </h3>
           {activeCampaigns.length === 0 ? (
             <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
               <Gift className="w-12 h-12 text-gray-400 mx-auto mb-3" />
               <div className="font-semibold text-gray-900">
-                {t("creatorDashboard.earnings.campaigns.placeholderTitle")}
+                Your campaigns will appear here
               </div>
               <div className="text-sm text-gray-500 mt-1">
-                {t("creatorDashboard.earnings.campaigns.placeholderMessage")}
+                Once you have active licenses generating revenue
               </div>
             </div>
           ) : (
@@ -5138,9 +4795,7 @@ export default function CreatorDashboard() {
                     <div className="font-bold text-gray-900">
                       ${(c.earnings_this_month || 0).toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {t("creatorDashboard.earnings.campaigns.thisMonth")}
-                    </div>
+                    <div className="text-xs text-gray-500">this month</div>
                   </div>
                 </div>
               ))}
@@ -5151,15 +4806,15 @@ export default function CreatorDashboard() {
         {/* Payment History */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            {t("creatorDashboard.earnings.history.title")}
+            Payment History
           </h3>
           <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
             <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <div className="font-semibold text-gray-900">
-              {t("creatorDashboard.earnings.history.placeholderTitle")}
+              Your payment history will appear here
             </div>
             <div className="text-sm text-gray-500 mt-1">
-              {t("creatorDashboard.earnings.history.placeholderMessage")}
+              Once you receive your first payout
             </div>
           </div>
         </Card>
@@ -5168,7 +4823,7 @@ export default function CreatorDashboard() {
           disabled
           className="w-full mt-3 border-2 border-gray-200 text-gray-400 cursor-not-allowed"
         >
-          {t("creatorDashboard.earnings.actions.downloadTax")}
+          Download Tax Summary (1099)
         </Button>
       </div>
     );
@@ -5267,11 +4922,9 @@ export default function CreatorDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            {t("creatorDashboard.settingsView.title")}
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900">Settings</h2>
           <p className="text-gray-600 mt-1">
-            {t("creatorDashboard.settingsView.subtitle")}
+            Manage your profile and preferences
           </p>
         </div>
       </div>
@@ -5286,7 +4939,7 @@ export default function CreatorDashboard() {
               : "border-transparent text-gray-600 hover:text-gray-900"
           }`}
         >
-          {t("creatorDashboard.settingsView.tabs.profile")}
+          Profile Settings
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
@@ -5296,7 +4949,7 @@ export default function CreatorDashboard() {
               : "border-transparent text-gray-600 hover:text-gray-900"
           }`}
         >
-          {t("creatorDashboard.settingsView.tabs.rules")}
+          My Rules
         </button>
       </div>
 
@@ -5306,7 +4959,7 @@ export default function CreatorDashboard() {
           {/* Profile Photo */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.settingsView.profile.photoTitle")}
+              Profile Photo
             </h3>
             <div className="flex items-center gap-6">
               <div className="relative">
@@ -5328,11 +4981,9 @@ export default function CreatorDashboard() {
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-2">
-                  {t("creatorDashboard.settingsView.profile.uploadText")}
+                  Upload a professional headshot
                 </p>
-                <p className="text-xs text-gray-500">
-                  {t("creatorDashboard.settingsView.profile.uploadHint")}
-                </p>
+                <p className="text-xs text-gray-500">JPG or PNG, max 20MB</p>
               </div>
             </div>
           </Card>
@@ -5340,12 +4991,12 @@ export default function CreatorDashboard() {
           {/* Basic Information */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.settingsView.profile.basicInfo")}
+              Basic Information
             </h3>
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("creatorDashboard.settingsView.profile.name")}
+                  Name
                 </Label>
                 <Input
                   value={creator.name}
@@ -5358,7 +5009,7 @@ export default function CreatorDashboard() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("creatorDashboard.settingsView.profile.email")}
+                  Email
                 </Label>
                 <Input
                   value={creator.email}
@@ -5369,7 +5020,7 @@ export default function CreatorDashboard() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("creatorDashboard.settingsView.profile.location")}
+                  Location
                 </Label>
                 <Input
                   value={creator.location}
@@ -5377,15 +5028,13 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, location: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.city",
-                  )}
+                  placeholder="City, State"
                 />
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("creatorDashboard.settingsView.profile.bio")}
+                  Bio
                 </Label>
                 <Textarea
                   value={creator.bio}
@@ -5393,9 +5042,7 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, bio: e.target.value })
                   }
                   className="border-2 border-gray-300 min-h-32"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.bio",
-                  )}
+                  placeholder="Tell us about yourself..."
                 />
               </div>
 
@@ -5403,7 +5050,7 @@ export default function CreatorDashboard() {
                 onClick={handleSaveProfile}
                 className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               >
-                {t("creatorDashboard.settingsView.profile.saveProfile")}
+                Save Profile
               </Button>
             </div>
           </Card>
@@ -5411,13 +5058,13 @@ export default function CreatorDashboard() {
           {/* Social Media Links */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.settingsView.profile.socialMedia")}
+              Social Media
             </h3>
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   <Instagram className="w-4 h-4 inline mr-2" />
-                  {t("creatorDashboard.settingsView.profile.instagram")}
+                  Instagram Handle
                 </Label>
                 <Input
                   value={creator.instagram_handle || ""}
@@ -5425,16 +5072,14 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, instagram_handle: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.instagram",
-                  )}
+                  placeholder="@yourhandle"
                 />
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   <Video className="w-4 h-4 inline mr-2" />
-                  {t("creatorDashboard.settingsView.profile.tiktok")}
+                  TikTok Handle
                 </Label>
                 <Input
                   value={creator.tiktok_handle || ""}
@@ -5442,16 +5087,14 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, tiktok_handle: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.tiktok",
-                  )}
+                  placeholder="@yourhandle"
                 />
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   <LinkIcon className="w-4 h-4 inline mr-2" />
-                  {t("creatorDashboard.settingsView.profile.portfolio")}
+                  Portfolio Link
                 </Label>
                 <Input
                   value={creator.portfolio_url || ""}
@@ -5459,9 +5102,7 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, portfolio_url: e.target.value })
                   }
                   className="border-2 border-gray-300"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.portfolio",
-                  )}
+                  placeholder="https://yourportfolio.com"
                 />
               </div>
 
@@ -5469,7 +5110,7 @@ export default function CreatorDashboard() {
                 onClick={handleSaveProfile}
                 className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               >
-                {t("creatorDashboard.settingsView.profile.saveSocial")}
+                Save Social Links
               </Button>
             </div>
           </Card>
@@ -5477,19 +5118,17 @@ export default function CreatorDashboard() {
           {/* Visibility Settings */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6">
-              {t("creatorDashboard.settingsView.profile.visibility")}
+              Visibility Settings
             </h3>
 
             <div className="space-y-6">
               <div className="flex items-center justify-between py-4 border-b border-gray-200">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.visibleToBrands")}
+                    Visible to Brands
                   </Label>
                   <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.visibleToBrandsDesc",
-                    )}
+                    Allow brands to discover and contact you
                   </p>
                 </div>
                 <Switch
@@ -5506,12 +5145,10 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between py-4 border-b border-gray-200">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t("creatorDashboard.settingsView.profile.enableLicensing")}
+                    Enable Licensing
                   </Label>
                   <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.enableLicensingDesc",
-                    )}
+                    Accept licensing requests from brands
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -5520,14 +5157,10 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between py-4">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    {t(
-                      "creatorDashboard.settingsView.profile.emailNotifications",
-                    )}
+                    Email Notifications
                   </Label>
                   <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.settingsView.profile.emailNotificationsDesc",
-                    )}
+                    Receive updates about campaigns and approvals
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -5544,10 +5177,10 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  {t("creatorDashboard.settingsView.rules.title")}
+                  My Rules
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.settingsView.rules.subtitle")}
+                  Set your licensing preferences and rates
                 </p>
               </div>
               {!editingRules ? (
@@ -5557,7 +5190,7 @@ export default function CreatorDashboard() {
                   className="border-2 border-gray-300"
                 >
                   <Edit className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.settingsView.rules.edit")}
+                  Edit
                 </Button>
               ) : (
                 <div className="flex gap-2">
@@ -5566,13 +5199,13 @@ export default function CreatorDashboard() {
                     variant="outline"
                     className="border-2 border-gray-300"
                   >
-                    {t("creatorDashboard.settingsView.rules.cancel")}
+                    Cancel
                   </Button>
                   <Button
                     onClick={handleSaveRules}
                     className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   >
-                    {t("creatorDashboard.settingsView.rules.save")}
+                    Save
                   </Button>
                 </div>
               )}
@@ -5582,7 +5215,7 @@ export default function CreatorDashboard() {
               {/* Content Types */}
               <div>
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  {t("creatorDashboard.settingsView.rules.contentOpenTo")}
+                  Content I'm Open To
                 </Label>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {CONTENT_TYPES.map((type) => (
@@ -5597,7 +5230,7 @@ export default function CreatorDashboard() {
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                       } ${!editingRules && "cursor-default"}`}
                     >
-                      {t(`common.contentTypes.${type}`, type)}
+                      {type}
                     </Badge>
                   ))}
                 </div>
@@ -5608,9 +5241,8 @@ export default function CreatorDashboard() {
                       <Alert className="bg-blue-50 border border-blue-200 mb-3">
                         <AlertCircle className="h-5 w-5 text-blue-600" />
                         <AlertDescription className="text-blue-900 text-sm">
-                          {t(
-                            "creatorDashboard.settingsView.rules.customRatesAlert",
-                          )}
+                          Want different rates for each content type? Click
+                          below to customize.
                         </AlertDescription>
                       </Alert>
                       <Button
@@ -5620,9 +5252,7 @@ export default function CreatorDashboard() {
                         className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                       >
                         <Edit className="w-4 h-4 mr-2" />
-                        {t(
-                          "creatorDashboard.settingsView.rules.editInitialRate",
-                        )}
+                        Edit Initial Licensing Rate
                       </Button>
                     </>
                   )}
@@ -5631,7 +5261,7 @@ export default function CreatorDashboard() {
               {/* Industries */}
               <div className="pt-6 border-t border-gray-200">
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  {t("creatorDashboard.settingsView.rules.industries")}
+                  Industries I Work With
                 </Label>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {INDUSTRIES.map((industry) => (
@@ -5646,7 +5276,7 @@ export default function CreatorDashboard() {
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-300"
                       } ${!editingRules && "cursor-default"}`}
                     >
-                      {t(`common.industries.${industry}`, industry)}
+                      {industry}
                     </Badge>
                   ))}
                 </div>
@@ -5657,9 +5287,8 @@ export default function CreatorDashboard() {
                       <Alert className="bg-blue-50 border border-blue-200 mb-3">
                         <AlertCircle className="h-5 w-5 text-blue-600" />
                         <AlertDescription className="text-blue-900 text-sm">
-                          {t(
-                            "creatorDashboard.settingsView.rules.customRatesAlert",
-                          )}
+                          Want different rates for each industry? Click below to
+                          customize.
                         </AlertDescription>
                       </Alert>
                       <Button
@@ -5669,9 +5298,7 @@ export default function CreatorDashboard() {
                         className="border-2 border-[#32C8D1] text-[#32C8D1] hover:bg-[#32C8D1] hover:text-white"
                       >
                         <Edit className="w-4 h-4 mr-2" />
-                        {t(
-                          "creatorDashboard.settingsView.rules.editInitialRate",
-                        )}
+                        Edit Initial Licensing Rate
                       </Button>
                     </>
                   )}
@@ -5680,10 +5307,10 @@ export default function CreatorDashboard() {
               {/* Pricing */}
               <div className="pt-6 border-t border-gray-200">
                 <Label className="text-base font-semibold text-gray-900 block mb-3">
-                  {t("creatorDashboard.settingsView.rules.initialRate")}
+                  Initial Licensing Rate
                 </Label>
                 <p className="text-sm text-gray-600 mb-4">
-                  {t("creatorDashboard.settingsView.rules.baseRateDesc")}
+                  Base rate per week for cameo usage
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 max-w-md">
@@ -5706,7 +5333,7 @@ export default function CreatorDashboard() {
                         step="50"
                       />
                       <span className="text-gray-700 font-medium text-lg">
-                        {t("creatorDashboard.settingsView.rules.perWeek")}
+                        / week
                       </span>
                     </div>
                   </div>
@@ -5718,14 +5345,10 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-base font-semibold text-gray-900 block mb-1">
-                      {t(
-                        "creatorDashboard.settingsView.rules.acceptNegotiations",
-                      )}
+                      Accept Negotiations
                     </Label>
                     <p className="text-sm text-gray-600">
-                      {t(
-                        "creatorDashboard.settingsView.rules.acceptNegotiationsDesc",
-                      )}
+                      Allow brands to propose counter-offers to your base rate
                     </p>
                   </div>
                   <Switch
@@ -5957,7 +5580,7 @@ export default function CreatorDashboard() {
                 >
                   <Edit className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.edit")}
+                    Edit Profile
                   </span>
                 </button>
 
@@ -5970,7 +5593,7 @@ export default function CreatorDashboard() {
                 >
                   <Eye className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.viewPublic")}
+                    View Public Profile
                   </span>
                 </button>
 
@@ -5983,7 +5606,7 @@ export default function CreatorDashboard() {
                 >
                   <HelpCircle className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.help")}
+                    Help / Support
                   </span>
                 </button>
               </div>
@@ -6000,9 +5623,7 @@ export default function CreatorDashboard() {
                   }}
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    {t("creatorDashboard.nav.profile.logout")}
-                  </span>
+                  <span className="text-sm font-medium">Logout</span>
                 </button>
               </div>
             </div>
@@ -6284,7 +5905,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.contracts.modals.pause.title")}
+              Pause This License?
             </DialogTitle>
           </DialogHeader>
 
@@ -6295,7 +5916,7 @@ export default function CreatorDashboard() {
                 contracts.find((c) => c.id === selectedContract) ||
                 exampleContracts.find((c) => c.id === selectedContract);
               if (!contract) return null;
-              const currentMonth = new Date().toLocaleString(i18n.language, {
+              const currentMonth = new Date().toLocaleString("default", {
                 month: "long",
               });
               const proratedAmount = Math.round(
@@ -6307,34 +5928,15 @@ export default function CreatorDashboard() {
                   <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-lg flex gap-3">
                     <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                     <div className="text-amber-900 text-sm">
-                      <p className="font-bold">
-                        {t(
-                          "creatorDashboard.contracts.modals.pause.warningTitle",
-                        )}
-                      </p>
-                      <p className="mt-2">
-                        {t(
-                          "creatorDashboard.contracts.modals.pause.warningDescription",
-                        )}
-                      </p>
+                      <p className="font-bold">⚠️ IMPORTANT PAYMENT WARNING</p>
+                      <p className="mt-2">If you pause NOW (mid-month):</p>
                       <ul className="list-disc ml-4 mt-1 space-y-1">
+                        <li>You will NOT receive payment for {currentMonth}</li>
                         <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.pause.warningBullets.noPayment",
-                            { month: currentMonth },
-                          )}
+                          Even though you've earned ${proratedAmount} so far
+                          this month
                         </li>
-                        <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.pause.warningBullets.earnedSoFar",
-                            { amount: proratedAmount },
-                          )}
-                        </li>
-                        <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.pause.warningBullets.forfeited",
-                          )}
-                        </li>
+                        <li>That money will be forfeited</li>
                       </ul>
                     </div>
                   </div>
@@ -6345,51 +5947,26 @@ export default function CreatorDashboard() {
                       onClick={() => handlePauseLicense(contract, true)}
                     >
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
-                        {t(
-                          "creatorDashboard.contracts.modals.pause.option1.title",
-                        )}
+                        OPTION 1: Pause Immediately
                       </h3>
                       <div className="space-y-2 text-sm text-gray-700 mb-4">
                         <p>
-                          <strong>
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option1.effective",
-                            )}
-                          </strong>{" "}
-                          {t(
-                            "creatorDashboard.contracts.modals.pause.option1.effectiveToday",
-                          )}
+                          <strong>Effective:</strong> Today
                         </p>
                         <p>
-                          <strong>
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option1.thisMonthPayment",
-                            )}
-                          </strong>{" "}
+                          <strong>This Month's Payment:</strong>{" "}
                           <span className="text-red-600 font-bold">
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option1.forfeited",
-                              { amount: proratedAmount },
-                            )}
+                            ✗ FORFEITED (${proratedAmount})
                           </span>
                         </p>
                         <p>
-                          <strong>
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option1.nextMonthPayment",
-                            )}
-                          </strong>{" "}
-                          <span className="text-red-600">
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option1.paused",
-                            )}
-                          </span>
+                          <strong>Next Month's Payment:</strong>{" "}
+                          <span className="text-red-600">✗ PAUSED</span>
                         </p>
                       </div>
                       <p className="text-sm text-gray-600">
-                        {t(
-                          "creatorDashboard.contracts.modals.pause.option1.description",
-                        )}
+                        Use this if you want to stop immediately and are okay
+                        losing this month's partial payment.
                       </p>
                     </Card>
 
@@ -6399,59 +5976,35 @@ export default function CreatorDashboard() {
                     >
                       <div className="flex items-start gap-2 mb-2">
                         <Badge className="bg-green-500 text-white">
-                          {t(
-                            "creatorDashboard.contracts.modals.pause.option2.recommended",
-                          )}
+                          Recommended
                         </Badge>
                       </div>
                       <h3 className="text-lg font-bold text-gray-900 mb-2">
-                        {t(
-                          "creatorDashboard.contracts.modals.pause.option2.title",
-                        )}
+                        OPTION 2: Pause Next Month
                       </h3>
                       <div className="space-y-2 text-sm text-gray-700 mb-4">
                         <p>
-                          <strong>
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option2.effective",
-                            )}
-                          </strong>{" "}
+                          <strong>Effective:</strong>{" "}
                           {new Date(
                             new Date().getFullYear(),
                             new Date().getMonth() + 1,
                             1,
-                          ).toLocaleDateString(i18n.language)}
+                          ).toLocaleDateString()}
                         </p>
                         <p>
-                          <strong>
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option2.thisMonthPayment",
-                            )}
-                          </strong>{" "}
+                          <strong>This Month's Payment:</strong>{" "}
                           <span className="text-green-600 font-bold">
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option2.willBePaid",
-                              { amount: contract.creator_earnings },
-                            )}
+                            ✓ YOU'LL GET PAID (${contract.creator_earnings})
                           </span>
                         </p>
                         <p>
-                          <strong>
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option2.nextMonthPayment",
-                            )}
-                          </strong>{" "}
-                          <span className="text-red-600">
-                            {t(
-                              "creatorDashboard.contracts.modals.pause.option2.paused",
-                            )}
-                          </span>
+                          <strong>Next Month's Payment:</strong>{" "}
+                          <span className="text-red-600">✗ PAUSED</span>
                         </p>
                       </div>
                       <p className="text-sm text-gray-600">
-                        {t(
-                          "creatorDashboard.contracts.modals.pause.option2.description",
-                        )}
+                        Use this to keep earning through the end of this month,
+                        then pause starting next month.
                       </p>
                     </Card>
                   </div>
@@ -6462,7 +6015,7 @@ export default function CreatorDashboard() {
                       onClick={() => setShowPauseModal(false)}
                       className="border-2 border-gray-300"
                     >
-                      {t("creatorDashboard.contracts.modals.pause.cancel")}
+                      Cancel - Don't Pause
                     </Button>
                   </div>
                 </div>
@@ -6476,7 +6029,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.contracts.modals.revoke.title")}
+              Revoke This License?
             </DialogTitle>
           </DialogHeader>
 
@@ -6496,67 +6049,42 @@ export default function CreatorDashboard() {
                   <div className="bg-red-50 border-2 border-red-300 p-4 rounded-lg flex gap-3">
                     <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                     <div className="text-red-900 text-sm">
-                      <p className="font-bold">
-                        {t(
-                          "creatorDashboard.contracts.modals.revoke.whatHappens",
-                        )}
-                      </p>
+                      <p className="font-bold">What happens when you revoke:</p>
                       <ul className="list-disc ml-4 mt-1 space-y-1">
                         <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.bullets.endPermanently",
-                          )}
+                          You're requesting to END this license permanently
                         </li>
                         <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.bullets.noticePeriod",
-                          )}
+                          30-day notice period begins (they keep rights for 30
+                          more days)
                         </li>
-                        <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.bullets.takedown",
-                          )}
-                        </li>
-                        <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.bullets.earningsStop",
-                          )}
-                        </li>
-                        <li>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.bullets.cannotReactivate",
-                          )}
-                        </li>
+                        <li>After 30 days, they must take down all content</li>
+                        <li>Your earnings STOP after the 30-day period ends</li>
+                        <li>The license cannot be reactivated</li>
                       </ul>
                     </div>
                   </div>
 
                   <Card className="p-6 bg-gray-50 border border-gray-200">
                     <h3 className="font-bold text-gray-900 mb-4">
-                      {t(
-                        "creatorDashboard.contracts.modals.revoke.timeline.title",
-                      )}
+                      Revocation Timeline
                     </h3>
                     <div className="relative">
                       <div className="flex items-center justify-between mb-4">
                         <div className="text-center flex-1">
                           <p className="text-sm text-gray-600 mb-1">
-                            {t(
-                              "creatorDashboard.contracts.modals.revoke.timeline.noticeStarts",
-                            )}
+                            Notice Starts
                           </p>
                           <p className="font-bold text-gray-900">
-                            {revocationDate.toLocaleDateString(i18n.language)}
+                            {revocationDate.toLocaleDateString()}
                           </p>
                         </div>
                         <div className="text-center flex-1">
                           <p className="text-sm text-gray-600 mb-1">
-                            {t(
-                              "creatorDashboard.contracts.modals.revoke.timeline.finalTakedown",
-                            )}
+                            Final Takedown
                           </p>
                           <p className="font-bold text-gray-900">
-                            {finalDate.toLocaleDateString(i18n.language)}
+                            {finalDate.toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -6566,44 +6094,26 @@ export default function CreatorDashboard() {
                     </div>
                     <div className="mt-6 space-y-2 text-sm">
                       <p className="text-gray-700">
-                        <strong>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.days1to30",
-                            {
-                              brand: contract.brand,
-                            },
-                          )}
-                        </strong>
+                        <strong>Days 1-30:</strong> {contract.brand} can still
+                        use your likeness (final payments due)
                       </p>
                       <p className="text-gray-700">
-                        <strong>
-                          {t("creatorDashboard.contracts.modals.revoke.day30")}
-                        </strong>
+                        <strong>Day 30:</strong> All content must be taken down
                       </p>
                       <p className="text-gray-700">
-                        <strong>
-                          {t(
-                            "creatorDashboard.contracts.modals.revoke.finalPayment",
-                            {
-                              amount: contract.creator_earnings,
-                              date: finalDate.toLocaleDateString(i18n.language),
-                            },
-                          )}
-                        </strong>
+                        <strong>Your Final Payment:</strong> $
+                        {contract.creator_earnings} on{" "}
+                        {finalDate.toLocaleDateString()}
                       </p>
                     </div>
                   </Card>
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 block mb-2">
-                      {t(
-                        "creatorDashboard.contracts.modals.revoke.reasonLabel",
-                      )}
+                      Reason for revoking (optional):
                     </Label>
                     <Textarea
-                      placeholder={t(
-                        "creatorDashboard.contracts.modals.revoke.reasonPlaceholder",
-                      )}
+                      placeholder="e.g., I don't want to work with this brand anymore"
                       className="border-2 border-gray-300"
                       rows={3}
                     />
@@ -6615,14 +6125,14 @@ export default function CreatorDashboard() {
                       onClick={() => setShowRevokeModal(false)}
                       className="flex-1 border-2 border-gray-300"
                     >
-                      {t("creatorDashboard.contracts.modals.revoke.cancel")}
+                      Cancel
                     </Button>
                     <Button
                       onClick={() => handleRevokeLicense(contract)}
                       className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                     >
                       <XCircle className="w-5 h-5 mr-2" />
-                      {t("creatorDashboard.contracts.modals.revoke.confirm")}
+                      Yes, Revoke License
                     </Button>
                   </div>
                 </div>
@@ -6762,7 +6272,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.uploadModal.modalTitle")}
+              Upload Reference Image
             </DialogTitle>
           </DialogHeader>
 
@@ -6778,52 +6288,42 @@ export default function CreatorDashboard() {
                   <>
                     <div>
                       <p className="text-gray-700 mb-2">
-                        <strong>
-                          {t("creatorDashboard.uploadModal.sectionLabel")}
-                        </strong>{" "}
-                        {section.title}
+                        <strong>Section:</strong> {section.title}
                       </p>
                       <p className="text-gray-600">
-                        <strong>
-                          {t("creatorDashboard.uploadModal.bestForLabel")}
-                        </strong>{" "}
-                        {section.bestFor}
+                        <strong>Best For:</strong> {section.bestFor}
                       </p>
                     </div>
 
                     <Card className="p-4 bg-gray-50 border border-gray-200">
                       <h4 className="font-bold text-gray-900 mb-3">
-                        {t("creatorDashboard.uploadModal.requirementsTitle")}
+                        Requirements Checklist:
                       </h4>
                       <div className="space-y-2 text-sm text-gray-700">
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
+                          <p>At least 1080x1080 resolution</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
+                          <p>Face/body clearly visible</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>Good lighting (natural or studio)</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>Recent photo (from last 3 months)</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>No heavy filters</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="w-4 h-4 text-green-600" />
                           <p>
-                            {t("creatorDashboard.uploadModal.goodLighting")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t(
-                              "creatorDashboard.uploadModal.professionalQuality",
-                            )}
+                            Professional quality preferred (not selfie-style)
                           </p>
                         </div>
                       </div>
@@ -6843,10 +6343,10 @@ export default function CreatorDashboard() {
                       >
                         <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                         <p className="text-gray-700 font-medium mb-2">
-                          {t("creatorDashboard.uploadModal.dragOrClick")}
+                          Drag photos here or click to browse
                         </p>
                         <p className="text-sm text-gray-500">
-                          {t("creatorDashboard.uploadModal.fileInfo")}
+                          File Size: Max 20MB | Formats: JPG, PNG, WebP
                         </p>
                       </label>
                     </div>
@@ -6854,7 +6354,7 @@ export default function CreatorDashboard() {
                     {previewImage && (
                       <div>
                         <h4 className="font-bold text-gray-900 mb-3">
-                          {t("creatorDashboard.uploadModal.preview")}
+                          Preview:
                         </h4>
                         <img
                           src={previewImage.url}
@@ -6874,7 +6374,7 @@ export default function CreatorDashboard() {
                         }}
                         className="flex-1 border-2 border-gray-300"
                       >
-                        {t("creatorDashboard.uploadModal.cancel")}
+                        Cancel
                       </Button>
                       <Button
                         onClick={confirmImageUpload}
@@ -6884,12 +6384,12 @@ export default function CreatorDashboard() {
                         {uploadingToSection ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            {t("creatorDashboard.uploadModal.uploading")}
+                            Uploading...
                           </>
                         ) : (
                           <>
                             <Upload className="w-4 h-4 mr-2" />
-                            {t("creatorDashboard.uploadModal.upload")}
+                            Upload
                           </>
                         )}
                       </Button>
@@ -6905,13 +6405,8 @@ export default function CreatorDashboard() {
       <Dialog open={showRecordingModal} onOpenChange={setShowRecordingModal}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.voice.recordingModal.title", {
-                emotion: t(
-                  `creatorDashboard.voice.emotionNames.${selectedEmotion?.toLowerCase()}`,
-                  selectedEmotion,
-                ),
-              })}
+            <DialogTitle className="text-2xl font-bold text-gray-900 capitalize">
+              Record {selectedEmotion} Voice Sample
             </DialogTitle>
           </DialogHeader>
 
@@ -6922,17 +6417,18 @@ export default function CreatorDashboard() {
                   <Mic className="w-10 h-10 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {t("creatorDashboard.voice.recordingModal.ready")}
+                  Ready to Record?
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {t("creatorDashboard.voice.recordingModal.instruction")}
+                  The script will scroll slowly. Speak naturally and
+                  expressively.
                 </p>
                 <Button
                   onClick={startRecording}
                   className="h-14 px-8 bg-red-500 hover:bg-red-600 text-white text-lg"
                 >
                   <Mic className="w-5 h-5 mr-2" />
-                  {t("creatorDashboard.voice.recordingModal.start")}
+                  Start Recording
                 </Button>
               </div>
             ) : (
@@ -6953,7 +6449,7 @@ export default function CreatorDashboard() {
                     className="h-12 px-8 bg-red-500 hover:bg-red-600 text-white"
                   >
                     <Square className="w-5 h-5 mr-2" />
-                    {t("creatorDashboard.voice.recordingModal.stop")}
+                    Stop Recording
                   </Button>
                 </div>
 
@@ -6976,8 +6472,8 @@ export default function CreatorDashboard() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {showRatesModal === "content"
-                ? t("creatorDashboard.rules.modals.contentTitle")
-                : t("creatorDashboard.rules.modals.industryTitle")}
+                ? "Customize Content Type Rates"
+                : "Customize Industry Rates"}
             </DialogTitle>
           </DialogHeader>
 
@@ -6988,13 +6484,10 @@ export default function CreatorDashboard() {
             <Alert className="bg-blue-50 border border-blue-200 mb-6">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                {showRatesModal === "content"
-                  ? t("creatorDashboard.rules.modals.contentDesc", {
-                      rate: `$${creator.price_per_week}/week`,
-                    })
-                  : t("creatorDashboard.rules.modals.industryDesc", {
-                      rate: `$${creator.price_per_week}/week`,
-                    })}
+                Set specific weekly rates for different{" "}
+                {showRatesModal === "content" ? "content types" : "industries"}.
+                If left blank, your base rate (${creator.price_per_week}/week)
+                will apply.
               </AlertDescription>
             </Alert>
 
@@ -7008,7 +6501,7 @@ export default function CreatorDashboard() {
                 <div className="mb-8">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Video className="w-5 h-5 text-[#32C8D1]" />
-                    {t("creatorDashboard.rules.modals.contentHeader")}
+                    Content Types
                   </h4>
                   <div className="grid gap-4">
                     {creator.content_types
@@ -7019,30 +6512,13 @@ export default function CreatorDashboard() {
                             r.rate_type === "content_type" &&
                             r.rate_name === type,
                         );
-                        // Simple mapping for translation key
-                        const keyMap: Record<string, string> = {
-                          "Social-media ads": "socialMediaAds",
-                          "Web & banner campaigns": "webBanner",
-                          "TV / streaming commercials": "tvStreaming",
-                          "Film & scripted streaming": "filmScripted",
-                          "Print & outdoor ads": "printOutdoor",
-                          "Music videos": "musicVideos",
-                          "Video-game / VR characters": "videoGameVR",
-                          "Stock photo / video libraries": "stockLibraries",
-                          "Educational / nonprofit spots":
-                            "educationalNonprofit",
-                        };
-                        const info = keyMap[type]
-                          ? t(`common.contentTypes.${keyMap[type]}`)
-                          : type;
-
                         return (
                           <div
                             key={type}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                           >
                             <Label className="font-medium text-gray-700">
-                              {info}
+                              {type}
                             </Label>
                             <div className="flex items-center gap-2 w-48">
                               <span className="text-gray-500">$</span>
@@ -7061,9 +6537,7 @@ export default function CreatorDashboard() {
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">
-                                {t("creatorDashboard.rules.modals.perWeek")}
-                              </span>
+                              <span className="text-gray-500 text-sm">/wk</span>
                             </div>
                           </div>
                         );
@@ -7074,10 +6548,9 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>
-                      {t("creatorDashboard.rules.modals.noContentTitle")}
-                    </strong>{" "}
-                    {t("creatorDashboard.rules.modals.noContentMsg")}
+                    <strong>No content types selected.</strong> Please go back
+                    to "My Rules" and select the content types you're open to
+                    first.
                   </AlertDescription>
                 </Alert>
               ))}
@@ -7089,7 +6562,7 @@ export default function CreatorDashboard() {
                 <div className="mb-6">
                   <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Briefcase className="w-5 h-5 text-purple-500" />
-                    {t("creatorDashboard.rules.modals.industryHeader")}
+                    Industries
                   </h4>
                   <div className="grid gap-4">
                     {creator.industries
@@ -7099,30 +6572,13 @@ export default function CreatorDashboard() {
                           (r) =>
                             r.rate_type === "industry" && r.rate_name === ind,
                         );
-                        // Simple mapping for translation key
-                        const keyMap: Record<string, string> = {
-                          "Fashion / Beauty": "fashionBeauty",
-                          "Tech / Electronics": "techElectronics",
-                          "Sports / Fitness": "sportsFitness",
-                          "Food / Beverage": "foodBeverage",
-                          "Film / Gaming / Music": "filmGamingMusic",
-                          Automotive: "automotive",
-                          "Finance / Fintech": "financeFintech",
-                          "Health / Wellness": "healthWellness",
-                          "Luxury & Lifestyle": "luxuryLifestyle",
-                          "Travel / Hospitality": "travelHospitality",
-                        };
-                        const info = keyMap[ind]
-                          ? t(`common.industries.${keyMap[ind]}`)
-                          : ind;
-
                         return (
                           <div
                             key={ind}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                           >
                             <Label className="font-medium text-gray-700">
-                              {info}
+                              {ind}
                             </Label>
                             <div className="flex items-center gap-2 w-48">
                               <span className="text-gray-500">$</span>
@@ -7141,9 +6597,7 @@ export default function CreatorDashboard() {
                                 min="0"
                                 step="1"
                               />
-                              <span className="text-gray-500 text-sm">
-                                {t("creatorDashboard.rules.modals.perWeek")}
-                              </span>
+                              <span className="text-gray-500 text-sm">/wk</span>
                             </div>
                           </div>
                         );
@@ -7154,10 +6608,8 @@ export default function CreatorDashboard() {
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
                   <AlertDescription className="text-amber-900">
-                    <strong>
-                      {t("creatorDashboard.rules.modals.noIndustryTitle")}
-                    </strong>{" "}
-                    {t("creatorDashboard.rules.modals.noIndustryMsg")}
+                    <strong>No industries selected.</strong> Please go back to
+                    "My Rules" and select the industries you work with first.
                   </AlertDescription>
                 </Alert>
               ))}
@@ -7169,7 +6621,7 @@ export default function CreatorDashboard() {
                 onClick={() => setShowRatesModal(null)}
                 className="border-2 border-gray-300"
               >
-                {t("creatorDashboard.rules.modals.cancel")}
+                Cancel
               </Button>
               {/* Only show Save Rates button if there are items to customize */}
               {((showRatesModal === "content" &&
@@ -7186,10 +6638,10 @@ export default function CreatorDashboard() {
                   {savingRates ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {t("creatorDashboard.rules.modals.saving")}
+                      Saving...
                     </>
                   ) : (
-                    t("creatorDashboard.rules.modals.save")
+                    "Save Rates"
                   )}
                 </Button>
               )}

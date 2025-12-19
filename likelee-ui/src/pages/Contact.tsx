@@ -3,10 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 export default function Contact() {
-  const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -31,10 +29,10 @@ export default function Contact() {
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            {t("thankYou")}
+            Thank You!
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            {t("thankYouMessage")}
+            We've received your message and will be in touch within 24 hours.
           </p>
         </Card>
       </div>
@@ -46,10 +44,10 @@ export default function Contact() {
       <div className="max-w-2xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {t("seeLikeleeInAction")}
+            See Likelee in Action
           </h1>
           <p className="text-lg text-gray-600">
-            {t("seeLikeleeInActionMessage")}
+            We'd love to show you a product demo with expert Q&A.
           </p>
         </div>
 
@@ -64,7 +62,7 @@ export default function Contact() {
                 setFormData({ ...formData, email: e.target.value })
               }
               className="h-12 border-gray-300 rounded-md"
-              placeholder={t("businessEmail")}
+              placeholder="Business Email"
             />
           </div>
           <div>
@@ -76,7 +74,7 @@ export default function Contact() {
                 setFormData({ ...formData, contact_name: e.target.value })
               }
               className="h-12 border-gray-300 rounded-md"
-              placeholder={t("fullName")}
+              placeholder="Full Name"
             />
           </div>
           <div>
@@ -88,7 +86,7 @@ export default function Contact() {
                 setFormData({ ...formData, phone: e.target.value })
               }
               className="h-12 border-gray-300 rounded-md"
-              placeholder={t("phone")}
+              placeholder="Phone"
             />
           </div>
 
@@ -96,7 +94,7 @@ export default function Contact() {
             type="submit"
             className="w-full h-12 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
           >
-            {t("continue")}
+            Continue
           </Button>
         </form>
       </div>
