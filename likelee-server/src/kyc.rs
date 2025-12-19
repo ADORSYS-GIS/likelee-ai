@@ -352,7 +352,8 @@ pub async fn veriff_webhook(
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
     let sig_hdr = headers
         .get("x-hmac-signature")
-        .or_else(|| headers.get("vrf-hmac-sigature"));
+        .or_else(|| headers.get("vrf-hmac-signature"))
+        .or_else(|| headers.get("x-veriff-signature"));
     let provided = sig_hdr.and_then(|v| v.to_str().ok()).ok_or((
         axum::http::StatusCode::UNAUTHORIZED,
         "missing signature".to_string(),
