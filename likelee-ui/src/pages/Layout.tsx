@@ -871,56 +871,49 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
-                  {t("company")}
-                </h3>
-                <div className="space-y-3">
-                  <Link
-                    to={createPageUrl("AboutUs")}
-                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                  >
-                    {t("aboutUs")}
-                  </Link>
-                  <Link
-                    to={createPageUrl("Faces")}
-                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                  >
-                    {t("creators")}
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-gray-500">{t("copyright")}</p>
-              <p className="text-sm text-gray-500">
-                {t("followUs")}{" "}
-                <a
-                  href="https://instagram.com/@likelee.ai"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
+                {t("company")}
+              </h3>
+              <div className="space-y-3">
+                <Link
+                  to={createPageUrl("AboutUs")}
+                  className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                 >
-                  About Us
+                  {t("aboutUs")}
                 </Link>
                 <Link
                   to={createPageUrl("Faces")}
                   className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                 >
-                  Creators
+                  {t("creators")}
                 </Link>
               </div>
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-gray-500">{t("copyright")}</p>
             <p className="text-sm text-gray-500">
-              © 2025 Likelee. All rights reserved.
+              {t("followUs")}{" "}
+              <a
+                href="https://instagram.com/@likelee.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              >
+                About Us
+              </a>
+              <Link
+                to={createPageUrl("Faces")}
+                className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+              >
+                Creators
+              </Link>
             </p>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

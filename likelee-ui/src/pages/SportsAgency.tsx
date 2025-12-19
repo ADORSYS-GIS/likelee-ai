@@ -408,19 +408,15 @@ export default function SportsAgency() {
         </div>
       </section>
 
-            {/* Why It Matters */}
-            <Card className="p-8 md:p-10 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black rounded-none">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                {t("whyItMatters")}
-              </h3>
-              <p className="text-base text-gray-700 leading-relaxed">
-                {t("whyItMattersDescription")}
-              </p>
-            </Card>
-          </div>
-        </div>
-      </section>
-
+      {/* Why It Matters */}
+      <Card className="p-8 md:p-10 bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-black rounded-none">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">
+          {t("whyItMatters")}
+        </h3>
+        <p className="text-base text-gray-700 leading-relaxed">
+          {t("whyItMattersDescription")}
+        </p>
+      </Card>
       {/* Final CTA Section */}
       <section className="px-6 py-20 bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">

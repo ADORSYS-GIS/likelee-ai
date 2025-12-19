@@ -722,8 +722,14 @@ export default function CreatorDashboard() {
     ],
     [t],
   );
-  const { user, profile, initialized, authenticated, logout, refreshProfile } =
-    useAuth();
+  const {
+    user,
+    profile,
+    initialized,
+    authenticated,
+    logout,
+    refreshProfile: refreshAuthProfile,
+  } = useAuth();
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
     try {
@@ -1072,7 +1078,7 @@ export default function CreatorDashboard() {
           cameo_front_url: profile.cameo_front_url,
           cameo_left_url: profile.cameo_left_url,
           cameo_right_url: profile.cameo_right_url,
-        });
+        }));
 
         if (
           profile.content_restrictions &&
@@ -5138,7 +5144,6 @@ export default function CreatorDashboard() {
         <p className="text-gray-600 mb-8">
           {t("creatorDashboard.earnings.bankConnection.subtitle")}
         </p>
-      </div>
 
         <div className="space-y-4 text-left mb-8">
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
@@ -5807,209 +5812,207 @@ export default function CreatorDashboard() {
                   {t("creatorDashboard.settingsView.rules.edit")}
                 </Button>
               ) : (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRatesModal("content")}
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                <>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRatesModal("content")}
+                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
+                      {t("creatorDashboard.settingsView.rules.cancel")}
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {CONTENT_TYPES.map((type) => {
+                      const isSelected = creator.content_types?.includes(type);
+                      return (
+                        <Badge
+                          key={type}
+                          className={`px-4 py-2 border-2 ${
+                            isSelected
+                              ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                              : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3 h-3 mr-1" />}
+                          {type}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Industries */}
+            <div className="pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-base font-semibold text-gray-900">
+                  Industries I Work With
+                </Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRatesModal("industry")}
+                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  {t("creatorDashboard.settingsView.rules.save")}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {INDUSTRIES.map((industry) => {
+                  const isSelected = creator.industries?.includes(industry);
+                  return (
+                    <Badge
+                      key={industry}
+                      className={`px-4 py-2 border-2 ${
+                        isSelected
+                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
+                          : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3 mr-1" />}
+                      {industry}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Content I'm NOT Comfortable With */}
+            <div className="pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-base font-semibold text-gray-900">
+                  Content I'm NOT Comfortable With
+                </Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRestrictionsModal(true)}
+                  className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {contentRestrictions.map((restriction) => (
+                  <Badge
+                    key={restriction}
+                    className="bg-red-500 text-white px-4 py-2 border-2 border-red-500 hover:!bg-red-500"
                   >
-                    {t("creatorDashboard.settingsView.rules.cancel")}
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {CONTENT_TYPES.map((type) => {
-                    const isSelected = creator.content_types?.includes(type);
-                    return (
-                      <Badge
-                        key={type}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
-                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3 h-3 mr-1" />}
-                        {type}
-                      </Badge>
-                    );
-                  })}
-                </div>
+                    ✕ {restriction}
+                  </Badge>
+                ))}
               </div>
 
-              {/* Industries */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Industries I Work With
-                  </Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRatesModal("industry")}
-                    className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
-                  >
-                    {t("creatorDashboard.settingsView.rules.save")}
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {INDUSTRIES.map((industry) => {
-                    const isSelected = creator.industries?.includes(industry);
-                    return (
-                      <Badge
-                        key={industry}
-                        className={`px-4 py-2 border-2 ${
-                          isSelected
-                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:!bg-[#32C8D1]"
-                            : "bg-gray-100 text-gray-700 border-gray-300 hover:!bg-gray-100"
-                        }`}
+              {/* Conflicting Campaigns (Brand Exclusivity) */}
+              <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-1">
+                  Conflicting Campaigns (Brand Exclusivity)
+                </h4>
+                <p className="text-sm text-gray-600 mb-2">
+                  Add brands you're exclusive with to prevent competing
+                  campaigns
+                </p>
+                {brandExclusivity.length === 0 ? (
+                  <p className="text-sm italic text-gray-500">
+                    No brand exclusivity set
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {brandExclusivity.map((brand) => (
+                      <span
+                        key={brand}
+                        className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]"
                       >
-                        {isSelected && <Check className="w-3 h-3 mr-1" />}
-                        {industry}
-                      </Badge>
-                    );
-                  })}
-                </div>
+                        {brand}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Content I'm NOT Comfortable With */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Content I'm NOT Comfortable With
-                  </Label>
+            {/* Pricing */}
+            <div className="pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-base font-semibold text-gray-900">
+                  Initial Licensing Rate
+                </Label>
+                {!editingLicensingRate ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowRestrictionsModal(true)}
+                    onClick={() => setEditingLicensingRate(true)}
                     className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {contentRestrictions.map((restriction) => (
-                    <Badge
-                      key={restriction}
-                      className="bg-red-500 text-white px-4 py-2 border-2 border-red-500 hover:!bg-red-500"
-                    >
-                      ✕ {restriction}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Conflicting Campaigns (Brand Exclusivity) */}
-                <div className="mt-4 p-4 bg-[#FFF9E6] border border-[#FFE066] rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-1">
-                    Conflicting Campaigns (Brand Exclusivity)
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Add brands you're exclusive with to prevent competing
-                    campaigns
-                  </p>
-                  {brandExclusivity.length === 0 ? (
-                    <p className="text-sm italic text-gray-500">
-                      No brand exclusivity set
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {brandExclusivity.map((brand) => (
-                        <span
-                          key={brand}
-                          className="text-sm text-gray-700 font-medium bg-white px-2 py-1 rounded border border-[#FFE066]"
-                        >
-                          {brand}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Pricing */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Initial Licensing Rate
-                  </Label>
-                  {!editingLicensingRate ? (
+                ) : (
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setEditingLicensingRate(true)}
-                      className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+                      onClick={() => setEditingLicensingRate(false)}
+                      className="border-2 border-gray-300"
                     >
                       <Edit className="w-4 h-4 mr-2" />
-                      Edit
+                      {t("creatorDashboard.settingsView.rules.editInitialRate")}
                     </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingLicensingRate(false)}
-                        className="border-2 border-gray-300"
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        {t(
-                          "creatorDashboard.settingsView.rules.editInitialRate",
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          // Commit local rate to creator state before saving
-                          const val = parseInt(localMonthlyRate);
-                          if (!isNaN(val)) {
-                            // We need to update the creator state reference that handleSaveRules uses
-                            // Since handleSaveRules uses the 'creator' state variable, we need to update it
-                            // However, setState is async. So we might need to pass the value or update it differently.
-                            // Actually, handleSaveRules uses the current state.
-                            // Let's update it and then call save? No, race condition.
-                            // Better: Update the creator object directly in handleSaveRules or pass it.
-                            // For now, let's update state and assume the user clicks save again? No.
-                            // Let's manually update the creator state and wait a tick? No.
-                            // Let's modify handleSaveRules to accept an override or read from a ref?
-                            // Or simpler: Just update the state here, and handleSaveRules will read it?
-                            // Wait, handleSaveRules reads 'creator'. If I setCreator here, it won't be updated in the same closure if I call handleSaveRules immediately.
-                            // I will update handleSaveRules to take an optional override.
-                            // But I can't easily change handleSaveRules signature without checking all calls.
-                            // Let's just update the state and rely on the fact that we are in a functional component?
-                            // No, the closure captures the old state.
-                            // I will update the creator state, and then call handleSaveRules in a useEffect or similar?
-                            // Actually, I can just update the creator object in place? No, immutable.
-                            // I will modify handleSaveRules to read from a ref?
-                            // Or I can just pass the new price to handleSaveRules?
-                            // Let's try passing the price to handleSaveRules.
-                            // Let's try passing the price to handleSaveRules.
-                            const val = parseFloat(localMonthlyRate);
-                            const monthlyCents = Math.round(val * 100);
-                            const updatedCreator = {
-                              ...creator,
-                              price_per_week: val,
-                              base_monthly_price_cents: monthlyCents,
-                            };
-                            setCreator(updatedCreator);
-                            // We need to pass this updated object to save function
-                            handleSaveRules(
-                              updatedCreator,
-                              "Licensing rate updated!",
-                            );
-                          } else {
-                            handleSaveRules(
-                              undefined,
-                              "Licensing rate updated!",
-                            );
-                          }
-                          setEditingLicensingRate(false);
-                        }}
-                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                      >
-                        Save
-                      </Button>
-                    </div>
-                  )}
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        // Commit local rate to creator state before saving
+                        const val = parseInt(localMonthlyRate);
+                        if (!isNaN(val)) {
+                          // We need to update the creator state reference that handleSaveRules uses
+                          // Since handleSaveRules uses the 'creator' state variable, we need to update it
+                          // However, setState is async. So we might need to pass the value or update it differently.
+                          // Actually, handleSaveRules uses the current state.
+                          // Let's update it and then call save? No, race condition.
+                          // Better: Update the creator object directly in handleSaveRules or pass it.
+                          // For now, let's update state and assume the user clicks save again? No.
+                          // Let's manually update the creator state and wait a tick? No.
+                          // Let's modify handleSaveRules to accept an override or read from a ref?
+                          // Or simpler: Just update the state here, and handleSaveRules will read it?
+                          // Wait, handleSaveRules reads 'creator'. If I setCreator here, it won't be updated in the same closure if I call handleSaveRules immediately.
+                          // I will update handleSaveRules to take an optional override.
+                          // But I can't easily change handleSaveRules signature without checking all calls.
+                          // Let's just update the state and rely on the fact that we are in a functional component?
+                          // No, the closure captures the old state.
+                          // I will update the creator state, and then call handleSaveRules in a useEffect or similar?
+                          // Actually, I can just update the creator object in place? No, immutable.
+                          // I will modify handleSaveRules to read from a ref?
+                          // Or I can just pass the new price to handleSaveRules?
+                          // Let's try passing the price to handleSaveRules.
+                          // Let's try passing the price to handleSaveRules.
+                          const val = parseFloat(localMonthlyRate);
+                          const monthlyCents = Math.round(val * 100);
+                          const updatedCreator = {
+                            ...creator,
+                            price_per_week: val,
+                            base_monthly_price_cents: monthlyCents,
+                          };
+                          setCreator(updatedCreator);
+                          // We need to pass this updated object to save function
+                          handleSaveRules(
+                            updatedCreator,
+                            "Licensing rate updated!",
+                          );
+                        } else {
+                          handleSaveRules(undefined, "Licensing rate updated!");
+                        }
+                        setEditingLicensingRate(false);
+                      }}
+                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                    >
+                      Save
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Pricing */}
@@ -7526,27 +7529,9 @@ export default function CreatorDashboard() {
                               </span>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-400 font-medium">$</span>
-                          <Input
-                            type="number"
-                            name={`rate_content_${type}`}
-                            defaultValue={
-                              existing
-                                ? (
-                                    existing.price_per_month_cents / 100
-                                  ).toString()
-                                : ""
-                            }
-                            placeholder={creator.price_per_week?.toString()}
-                            className="w-32 bg-white"
-                          />
-                          <span className="text-gray-400 text-sm">/mo</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                  </div>
                 </div>
               ) : (
                 <Alert className="bg-amber-50 border border-amber-200 mb-6">
