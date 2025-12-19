@@ -268,10 +268,22 @@ pub async fn get_status(
                     debug!(body = %body, "Veriff decision body");
                     let v: serde_json::Value =
                         serde_json::from_str(&body).unwrap_or(serde_json::json!({}));
+                    // Try multiple shapes: { decision: { status } } or { verification: { decision: { status } } }
                     let status = v
                         .get("decision")
                         .and_then(|d| d.get("status"))
                         .and_then(|s| s.as_str())
+                        .or_else(|| {
+                            v.get("verification")
+                                .and_then(|vv| vv.get("decision"))
+                                .and_then(|d| d.get("status"))
+                                .and_then(|s| s.as_str())
+                        })
+                        .or_else(|| {
+                            v.get("verification")
+                                .and_then(|vv| vv.get("status"))
+                                .and_then(|s| s.as_str())
+                        })
                         .unwrap_or("pending")
                         .to_lowercase();
                     let approved = status == "approved";
