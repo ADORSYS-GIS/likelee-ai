@@ -253,8 +253,8 @@ pub async fn get_status(
         );
         info!(endpoint = %url, "GET Veriff decision");
         let client = reqwest::Client::new();
-        let empty: &[u8] = &[];
-        let sig = compute_hmac_hex(&state.veriff.shared_secret, empty);
+        // Veriff expects HMAC of the query ID (session/verification id) for decision GET
+        let sig = compute_hmac_hex(&state.veriff.shared_secret, session_id.as_bytes());
         match client
             .get(&url)
             .header("x-auth-client", &state.veriff.api_key)
