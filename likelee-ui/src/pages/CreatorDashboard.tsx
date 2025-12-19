@@ -1256,10 +1256,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1268,10 +1269,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {t("creatorDashboard.content.tabs.detections")}
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1325,8 +1327,8 @@ export default function CreatorDashboard() {
                           <p className="text-sm text-gray-500">
                             {(item as any).titleKey
                               ? t(
-                                `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                              )
+                                  `creatorDashboard.content.examples.${(item as any).titleKey}`,
+                                )
                               : item.title}
                           </p>
                         </div>
@@ -1391,12 +1393,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -2289,11 +2292,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -2339,12 +2342,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -3103,11 +3107,11 @@ export default function CreatorDashboard() {
                           >
                             {hasImage
                               ? t(
-                                "creatorDashboard.myLikenessSection.imageStatus.uploaded",
-                              )
+                                  "creatorDashboard.myLikenessSection.imageStatus.uploaded",
+                                )
                               : t(
-                                "creatorDashboard.myLikenessSection.imageStatus.missing",
-                              )}
+                                  "creatorDashboard.myLikenessSection.imageStatus.missing",
+                                )}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -3295,8 +3299,8 @@ export default function CreatorDashboard() {
               >
                 {creator?.kyc_status
                   ? t(
-                    `creatorDashboard.verificationStatus.${creator.kyc_status}`,
-                  )
+                      `creatorDashboard.verificationStatus.${creator.kyc_status}`,
+                    )
                   : t("creatorDashboard.verificationStatus.notStarted")}
               </Badge>
             </div>
@@ -3421,16 +3425,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3470,8 +3476,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3580,10 +3587,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {t("creatorDashboard.campaigns.activeCount", {
               count: activeCampaigns.length,
@@ -3685,19 +3693,20 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
                             ? t(
-                              "creatorDashboard.campaigns.status.expiringSoon",
-                            )
+                                "creatorDashboard.campaigns.status.expiringSoon",
+                              )
                             : campaign.status}
                       </Badge>
                     </td>
@@ -3774,8 +3783,9 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
-                      }`}
+                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                      isExpanded ? "rotate-90" : ""
+                    }`}
                   />
                 </button>
 
@@ -3817,19 +3827,20 @@ export default function CreatorDashboard() {
                         {t("creatorDashboard.campaigns.statusLabel")}
                       </span>
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
                             ? t(
-                              "creatorDashboard.campaigns.status.expiringSoon",
-                            )
+                                "creatorDashboard.campaigns.status.expiringSoon",
+                              )
                             : campaign.status}
                       </Badge>
                     </div>
@@ -4796,10 +4807,11 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {t("creatorDashboard.contracts.activeTab", {
               count: activeContracts.length,
@@ -4807,10 +4819,11 @@ export default function CreatorDashboard() {
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {t("creatorDashboard.contracts.expiredTab", {
               count: expiredContracts.length,
@@ -4824,10 +4837,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -5218,12 +5232,17 @@ export default function CreatorDashboard() {
               newRates.push({
                 rate_type: "content_type",
                 rate_name: type,
-                price_per_month_cents: Math.round(parseFloat(val.toString()) * 100),
+                price_per_month_cents: Math.round(
+                  parseFloat(val.toString()) * 100,
+                ),
               });
             }
           }
         });
-        setCreator((prev: any) => ({ ...prev, content_types: selectedContentTypes }));
+        setCreator((prev: any) => ({
+          ...prev,
+          content_types: selectedContentTypes,
+        }));
       } else if (showRatesModal === "industry") {
         const selectedIndustries: string[] = [];
         INDUSTRIES.forEach((ind) => {
@@ -5231,12 +5250,18 @@ export default function CreatorDashboard() {
             selectedIndustries.push(ind);
           }
         });
-        setCreator((prev: any) => ({ ...prev, industries: selectedIndustries }));
+        setCreator((prev: any) => ({
+          ...prev,
+          industries: selectedIndustries,
+        }));
       }
 
       // Get existing rates for the OTHER type to preserve them
-      const otherRateType = showRatesModal === "content" ? "industry" : "content_type";
-      const preservedRates = customRates.filter((r) => r.rate_type === otherRateType);
+      const otherRateType =
+        showRatesModal === "content" ? "industry" : "content_type";
+      const preservedRates = customRates.filter(
+        (r) => r.rate_type === otherRateType,
+      );
       const finalRates = [...newRates, ...preservedRates];
 
       const res = await fetch(
@@ -5257,7 +5282,8 @@ export default function CreatorDashboard() {
         })
         .eq("id", user.id);
 
-      if (profileStatus.error) console.error("Profile category update error:", profileStatus.error);
+      if (profileStatus.error)
+        console.error("Profile category update error:", profileStatus.error);
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -5307,19 +5333,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.profile")}
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.rules")}
         </button>
@@ -5598,10 +5626,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-3 py-1.5 text-sm transition-all border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
-                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                          } cursor-default font-normal flex items-center gap-2 rounded-lg`}
+                        className={`px-3 py-1.5 text-sm transition-all border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                            : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                        } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
                         {t(`common.contentTypes.${type}`, type)}
@@ -5633,10 +5662,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-3 py-1.5 text-sm transition-all border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
-                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                          } cursor-default font-normal flex items-center gap-2 rounded-lg`}
+                        className={`px-3 py-1.5 text-sm transition-all border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                            : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                        } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
                         {t(`common.industries.${industry}`, industry)}
@@ -5666,7 +5696,7 @@ export default function CreatorDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {creator.content_restrictions &&
-                    creator.content_restrictions.length > 0 ? (
+                  creator.content_restrictions.length > 0 ? (
                     creator.content_restrictions.map((restriction) => (
                       <Badge
                         key={restriction}
@@ -5696,7 +5726,7 @@ export default function CreatorDashboard() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {creator.brand_exclusivity &&
-                      creator.brand_exclusivity.length > 0 ? (
+                    creator.brand_exclusivity.length > 0 ? (
                       creator.brand_exclusivity.map((brand) => (
                         <Badge
                           key={brand}
@@ -5732,7 +5762,9 @@ export default function CreatorDashboard() {
                           variant="outline"
                           className="border-2 border-gray-300 font-medium"
                         >
-                          {t("creatorDashboard.settingsView.rules.modals.cancel")}
+                          {t(
+                            "creatorDashboard.settingsView.rules.modals.cancel",
+                          )}
                         </Button>
                         <Button
                           size="sm"
@@ -5771,8 +5803,11 @@ export default function CreatorDashboard() {
                         })
                       }
                       disabled={!editingRules}
-                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${!editingRules ? "bg-gray-50 text-gray-900 cursor-not-allowed border-gray-200" : "bg-white"
-                        }`}
+                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${
+                        !editingRules
+                          ? "bg-gray-50 text-gray-900 cursor-not-allowed border-gray-200"
+                          : "bg-white"
+                      }`}
                     />
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
@@ -5829,14 +5864,15 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${isSmallScreen
-          ? sidebarOpen
-            ? "w-64"
-            : "-translate-x-full w-64"
-          : sidebarOpen
-            ? "w-64"
-            : "w-20"
-          }`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
+          isSmallScreen
+            ? sidebarOpen
+              ? "w-64"
+              : "-translate-x-full w-64"
+            : sidebarOpen
+              ? "w-64"
+              : "w-20"
+        }`}
       >
         {/* Mobile Sidebar Header */}
         {isSmallScreen && (
@@ -6061,7 +6097,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -6087,10 +6123,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -7050,7 +7087,9 @@ export default function CreatorDashboard() {
           >
             <div>
               <p className="text-sm text-gray-600 mb-4 font-normal">
-                {t("creatorDashboard.settingsView.rules.modals.selectContentTypes")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.selectContentTypes",
+                )}
               </p>
               <div className="flex flex-wrap gap-2">
                 {CONTENT_TYPES.map((type) => {
@@ -7063,16 +7102,25 @@ export default function CreatorDashboard() {
                         setCreator((prev: any) => {
                           const current = prev.content_types || [];
                           if (current.includes(type)) {
-                            return { ...prev, content_types: current.filter((t: string) => t !== type) };
+                            return {
+                              ...prev,
+                              content_types: current.filter(
+                                (t: string) => t !== type,
+                              ),
+                            };
                           } else {
-                            return { ...prev, content_types: [...current, type] };
+                            return {
+                              ...prev,
+                              content_types: [...current, type],
+                            };
                           }
                         });
                       }}
-                      className={`px-3 py-1.5 rounded-lg border-2 text-sm font-normal transition-all flex items-center gap-2 ${isSelected
-                        ? "bg-[#32C8D1] border-[#32C8D1] text-white"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
-                        }`}
+                      className={`px-3 py-1.5 rounded-lg border-2 text-sm font-normal transition-all flex items-center gap-2 ${
+                        isSelected
+                          ? "bg-[#32C8D1] border-[#32C8D1] text-white"
+                          : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
+                      }`}
                     >
                       {isSelected && <Check className="w-4 h-4" />}
                       {t(`common.contentTypes.${type}`, type)}
@@ -7084,21 +7132,30 @@ export default function CreatorDashboard() {
 
             <div className="pt-6 border-t border-gray-100">
               <h4 className="text-base font-semibold text-gray-900 mb-1">
-                {t("creatorDashboard.settingsView.rules.modals.customRatesTitle")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.customRatesTitle",
+                )}
               </h4>
               <p className="text-sm text-gray-600 mb-2 font-normal">
-                {t("creatorDashboard.settingsView.rules.modals.customRatesDesc", { rate: `$${creator.price_per_month || 0}/month` })}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.customRatesDesc",
+                  { rate: `$${creator.price_per_month || 0}/month` },
+                )}
               </p>
 
               <div className="space-y-4">
                 {(creator.content_types || []).map((type) => {
                   const info = t(`common.contentTypes.${type}`, type);
                   const existing = customRates.find(
-                    (r) => r.rate_type === "content_type" && r.rate_name === type
+                    (r) =>
+                      r.rate_type === "content_type" && r.rate_name === type,
                   );
 
                   return (
-                    <div key={type} className="bg-gray-50/50 border border-gray-100 rounded-xl p-5 flex items-center justify-between">
+                    <div
+                      key={type}
+                      className="bg-gray-50/50 border border-gray-100 rounded-xl p-5 flex items-center justify-between"
+                    >
                       <div>
                         <Label className="font-semibold text-gray-900 text-base block mb-0.5">
                           {info}
@@ -7110,13 +7167,17 @@ export default function CreatorDashboard() {
 
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-xl font-medium text-gray-900">$</span>
+                          <span className="text-xl font-medium text-gray-900">
+                            $
+                          </span>
                           <Input
                             type="number"
                             name={`rate_content_${type}`}
                             defaultValue={
                               existing
-                                ? (existing.price_per_month_cents / 100).toString()
+                                ? (
+                                    existing.price_per_month_cents / 100
+                                  ).toString()
                                 : ""
                             }
                             className="w-28 h-10 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg font-normal text-gray-900 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
@@ -7153,7 +7214,9 @@ export default function CreatorDashboard() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t("creatorDashboard.settingsView.rules.modals.saveChanges")}
+                    {t(
+                      "creatorDashboard.settingsView.rules.modals.saveChanges",
+                    )}
                   </>
                 )}
               </Button>
@@ -7179,7 +7242,9 @@ export default function CreatorDashboard() {
           >
             <div>
               <p className="text-sm text-gray-600 mb-2 font-normal">
-                {t("creatorDashboard.settingsView.rules.modals.selectIndustries")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.selectIndustries",
+                )}
               </p>
               <div className="flex flex-wrap gap-2">
                 {INDUSTRIES.map((industry) => {
@@ -7192,16 +7257,25 @@ export default function CreatorDashboard() {
                         setCreator((prev: any) => {
                           const current = prev.industries || [];
                           if (current.includes(industry)) {
-                            return { ...prev, industries: current.filter((i: string) => i !== industry) };
+                            return {
+                              ...prev,
+                              industries: current.filter(
+                                (i: string) => i !== industry,
+                              ),
+                            };
                           } else {
-                            return { ...prev, industries: [...current, industry] };
+                            return {
+                              ...prev,
+                              industries: [...current, industry],
+                            };
                           }
                         });
                       }}
-                      className={`px-3 py-1.5 rounded-lg border-2 text-sm font-normal transition-all flex items-center gap-2 ${isSelected
-                        ? "bg-[#32C8D1] border-[#32C8D1] text-white"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
-                        }`}
+                      className={`px-3 py-1.5 rounded-lg border-2 text-sm font-normal transition-all flex items-center gap-2 ${
+                        isSelected
+                          ? "bg-[#32C8D1] border-[#32C8D1] text-white"
+                          : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
+                      }`}
                     >
                       {isSelected && <Check className="w-4 h-4" />}
                       {t(`common.industries.${industry}`, industry)}
@@ -7230,7 +7304,9 @@ export default function CreatorDashboard() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t("creatorDashboard.settingsView.rules.modals.saveChanges")}
+                    {t(
+                      "creatorDashboard.settingsView.rules.modals.saveChanges",
+                    )}
                   </>
                 )}
               </Button>
@@ -7246,7 +7322,9 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t("creatorDashboard.settingsView.rules.modals.restrictionsTitle")}
+              {t(
+                "creatorDashboard.settingsView.rules.modals.restrictionsTitle",
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -7258,11 +7336,13 @@ export default function CreatorDashboard() {
             {/* Current Restrictions Section */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {t("creatorDashboard.settingsView.rules.modals.currentRestrictions")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.currentRestrictions",
+                )}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {creator.content_restrictions &&
-                  creator.content_restrictions.length > 0 ? (
+                creator.content_restrictions.length > 0 ? (
                   creator.content_restrictions.map((restriction) => (
                     <Badge
                       key={restriction}
@@ -7324,11 +7404,15 @@ export default function CreatorDashboard() {
             {/* Custom Restriction Input */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-900">
-                {t("creatorDashboard.settingsView.rules.modals.addCustomRestriction")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.addCustomRestriction",
+                )}
               </h4>
               <div className="flex gap-2">
                 <Input
-                  placeholder={t("creatorDashboard.settingsView.rules.modals.customPlaceholder")}
+                  placeholder={t(
+                    "creatorDashboard.settingsView.rules.modals.customPlaceholder",
+                  )}
                   value={newRestriction}
                   onChange={(e) => setNewRestriction(e.target.value)}
                   maxLength={25}
@@ -7378,15 +7462,22 @@ export default function CreatorDashboard() {
             {/* Brand Exclusivity Section */}
             <div className="pt-6 border-t border-gray-100 space-y-4">
               <h4 className="text-base font-semibold text-gray-900">
-                {t("creatorDashboard.settingsView.rules.modals.brandExclusivityTitle")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.brandExclusivityTitle",
+                )}
               </h4>
               <p className="text-sm text-gray-600 font-normal">
-                {t("creatorDashboard.settingsView.rules.modals.brandExclusivityDesc")}
+                {t(
+                  "creatorDashboard.settingsView.rules.modals.brandExclusivityDesc",
+                )}
               </p>
               <div className="flex flex-wrap gap-2">
-                {!creator.brand_exclusivity || creator.brand_exclusivity.length === 0 ? (
+                {!creator.brand_exclusivity ||
+                creator.brand_exclusivity.length === 0 ? (
                   <p className="text-sm text-gray-400 font-normal italic">
-                    {t("creatorDashboard.settingsView.rules.modals.noBrandExclusivity")}
+                    {t(
+                      "creatorDashboard.settingsView.rules.modals.noBrandExclusivity",
+                    )}
                   </p>
                 ) : (
                   creator.brand_exclusivity.map((brand) => (
@@ -7414,7 +7505,9 @@ export default function CreatorDashboard() {
               </div>
               <div className="flex gap-2">
                 <Input
-                  placeholder={t("creatorDashboard.settingsView.rules.modals.brandPlaceholder")}
+                  placeholder={t(
+                    "creatorDashboard.settingsView.rules.modals.brandPlaceholder",
+                  )}
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
                   maxLength={25}
