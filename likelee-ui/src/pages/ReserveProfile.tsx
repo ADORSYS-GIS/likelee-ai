@@ -544,52 +544,52 @@ function ReferencePhotosStep(props: any) {
           uploadedUrls.front ||
           uploadedUrls.left ||
           uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Front</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.front || uploadedUrls.front ? (
+                    <img
+                      src={
+                        captures.front ? captures.front.url : uploadedUrls.front
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Left</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.left || uploadedUrls.left ? (
+                    <img
+                      src={captures.left ? captures.left.url : uploadedUrls.left}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-900">Right</Label>
+                <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  {captures.right || uploadedUrls.right ? (
+                    <img
+                      src={
+                        captures.right ? captures.right.url : uploadedUrls.right
+                      }
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500">Pending</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
         <div className="flex items-center gap-2">
           <Checkbox
@@ -648,13 +648,24 @@ function ReferencePhotosStep(props: any) {
 }
 
 export default function ReserveProfile() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
+  const [creatorType, setCreatorType] = useState(() => {
+    const saved = localStorage.getItem("reserve_creatorType");
+    const param = urlParams.get("type");
+    if (param) return param;
+    return saved || "influencer"; // influencer, model_actor, athlete
+  });
+
+  useEffect(() => {
+    if (creatorType) {
+      localStorage.setItem("reserve_creatorType", creatorType);
+    }
+  }, [creatorType]);
+
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, user, initialized, authenticated } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -690,47 +701,47 @@ export default function ReserveProfile() {
     return saved
       ? JSON.parse(saved)
       : {
-          creator_type: creatorType,
-          email: "",
-          password: "",
-          confirmPassword: "",
-          full_name: "",
-          stage_name: "",
+        creator_type: creatorType,
+        email: "",
+        password: "",
+        confirmPassword: "",
+        full_name: "",
+        stage_name: "",
 
-          // Common fields
-          city: "",
-          state: "",
-          birthdate: "",
-          gender: "",
-          ethnicity: [],
-          vibes: [],
-          visibility: "private",
-          // Pricing (USD-only)
-          base_monthly_price_usd: "",
+        // Common fields
+        city: "",
+        state: "",
+        birthdate: "",
+        gender: "",
+        ethnicity: [],
+        vibes: [],
+        visibility: "private",
+        // Pricing (USD-only)
+        base_monthly_price_usd: "",
 
-          // Influencer specific
-          content_types: [],
-          content_other: "",
-          industries: [],
-          primary_platform: "",
-          platform_handle: "",
+        // Influencer specific
+        content_types: [],
+        content_other: "",
+        industries: [],
+        primary_platform: "",
+        platform_handle: "",
 
-          // Model specific
-          work_types: [],
-          representation_status: "",
-          headshot_url: "",
+        // Model specific
+        work_types: [],
+        representation_status: "",
+        headshot_url: "",
 
-          // Athlete specific
-          sport: "",
-          athlete_type: "",
-          school_name: "",
-          age: "",
-          languages: "",
-          instagram_handle: "",
-          twitter_handle: "",
-          brand_categories: [],
-          bio: "",
-        };
+        // Athlete specific
+        sport: "",
+        athlete_type: "",
+        school_name: "",
+        age: "",
+        languages: "",
+        instagram_handle: "",
+        twitter_handle: "",
+        brand_categories: [],
+        bio: "",
+      };
   });
 
   useEffect(() => {
@@ -738,6 +749,74 @@ export default function ReserveProfile() {
     const { password, confirmPassword, ...safeData } = formData;
     localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
+
+  // Data recovery: If user is logged in, fetch existing profile and merge into formData
+  const [isRecovering, setIsRecovering] = useState(false);
+
+  useEffect(() => {
+    const recoverData = async () => {
+      if (!user || !supabase) return;
+      try {
+        setIsRecovering(true);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data) {
+          setFormData((prev: any) => ({
+            ...prev,
+            full_name: prev.full_name || data.full_name || "",
+            stage_name: prev.stage_name || data.stage_name || "",
+            city: prev.city || data.city || "",
+            state: prev.state || data.state || "",
+            birthdate: prev.birthdate || data.birthdate || "",
+            gender: prev.gender || data.gender || "",
+            base_monthly_price_usd:
+              prev.base_monthly_price_usd ||
+              (data.base_monthly_price_cents
+                ? (data.base_monthly_price_cents / 100).toString()
+                : ""),
+            creator_type: prev.creator_type || data.creator_type || creatorType,
+            instagram_handle: prev.instagram_handle || data.instagram_handle || "",
+            twitter_handle: prev.twitter_handle || data.twitter_handle || "",
+            bio: prev.bio || data.bio || "",
+            primary_platform: prev.primary_platform || data.primary_platform || "",
+            platform_handle: prev.platform_handle || data.platform_handle || "",
+            content_types:
+              prev.content_types?.length > 0
+                ? prev.content_types
+                : data.content_types || [],
+            industries:
+              prev.industries?.length > 0
+                ? prev.industries
+                : data.industries || [],
+            work_types:
+              prev.work_types?.length > 0
+                ? prev.work_types
+                : data.work_types || [],
+            ethnicity:
+              prev.ethnicity?.length > 0
+                ? prev.ethnicity
+                : data.ethnicity || [],
+            vibes:
+              prev.vibes?.length > 0
+                ? prev.vibes
+                : data.vibes || [],
+            visibility: prev.visibility || data.visibility || "private",
+          }));
+          if (data.creator_type) setCreatorType(data.creator_type);
+        }
+      } catch (e) {
+        console.error("Error recovering profile data:", e);
+      } finally {
+        setIsRecovering(false);
+      }
+    };
+    recoverData();
+  }, [user]);
 
   // Cameo reference image URLs
   const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null);
@@ -847,7 +926,7 @@ export default function ReserveProfile() {
             .update({ [column]: url })
             .eq("id", user.id);
         }
-      } catch (_e) {}
+      } catch (_e) { }
       return { publicUrl: url };
     } catch (e: any) {
       toast({
@@ -973,7 +1052,6 @@ export default function ReserveProfile() {
   const progress = (step / totalSteps) * 100;
 
   // Verification state
-  const { initialized, authenticated, user } = useAuth();
   const [kycStatus, setKycStatus] = useState<
     "not_started" | "pending" | "approved" | "rejected"
   >("not_started");
@@ -1328,8 +1406,8 @@ export default function ReserveProfile() {
           today.getFullYear() -
           birth.getFullYear() -
           (today.getMonth() < birth.getMonth() ||
-          (today.getMonth() === birth.getMonth() &&
-            today.getDate() < birth.getDate())
+            (today.getMonth() === birth.getMonth() &&
+              today.getDate() < birth.getDate())
             ? 1
             : 0);
         if (isFinite(age) && age < 18) {
@@ -1448,13 +1526,23 @@ export default function ReserveProfile() {
       }
 
       const monthlyUsd = Number(formData.base_monthly_price_usd);
+      if (!isFinite(monthlyUsd) || monthlyUsd < 150) {
+        toast({
+          title: t("reserveProfile.toasts.pricingRequiredTitle"),
+          description: t("reserveProfile.toasts.pricingRequiredDesc"),
+          variant: "destructive",
+        });
+        setStep(2); // Send them back to fix it
+        return;
+      }
+
       const payload: any = {
         id: user.id,
         email: formData.email,
         full_name:
-          creatorType === "model_actor"
+          (creatorType === "model_actor"
             ? formData.stage_name || formData.full_name
-            : formData.full_name,
+            : formData.full_name) || "",
         creator_type: creatorType,
         content_types: formData.content_types || [],
         content_other: formData.content_other || null,
@@ -1482,9 +1570,7 @@ export default function ReserveProfile() {
         visibility: formData.visibility || "private",
         status: "waitlist",
         // Pricing in cents (USD-only)
-        base_monthly_price_cents: isFinite(monthlyUsd)
-          ? Math.round(monthlyUsd * 100)
-          : 15000,
+        base_monthly_price_cents: Math.round(monthlyUsd * 100),
         currency_code: "USD",
       };
       if (front) (payload as any).cameo_front_url = front;
@@ -1952,12 +2038,11 @@ export default function ReserveProfile() {
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
                             {t(
-                              `reserveProfile.form.genderOptions.${
-                                option === "Prefer not to say"
-                                  ? "preferNotToSay"
-                                  : option === "Gender fluid"
-                                    ? "genderFluid"
-                                    : option.toLowerCase()
+                              `reserveProfile.form.genderOptions.${option === "Prefer not to say"
+                                ? "preferNotToSay"
+                                : option === "Gender fluid"
+                                  ? "genderFluid"
+                                  : option.toLowerCase()
                               }`,
                               option,
                             )}
@@ -2340,9 +2425,9 @@ export default function ReserveProfile() {
                 >
                   {creatorType === "athlete"
                     ? t(
-                        "reserveProfile.actions.nextBrandSetup",
-                        "Next: Brand Setup",
-                      )
+                      "reserveProfile.actions.nextBrandSetup",
+                      "Next: Brand Setup",
+                    )
                     : t("common.continue")}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -2927,13 +3012,13 @@ export default function ReserveProfile() {
                 >
                   {kycLoading
                     ? t(
-                        "reserveProfile.actions.startingVerification",
-                        "Starting…",
-                      )
+                      "reserveProfile.actions.startingVerification",
+                      "Starting…",
+                    )
                     : t(
-                        "reserveProfile.actions.verifyIdentity",
-                        "Verify Identity Now",
-                      )}
+                      "reserveProfile.actions.verifyIdentity",
+                      "Verify Identity Now",
+                    )}
                 </Button>
                 <div className="text-sm text-gray-700 flex items-center justify-between">
                   <span>
@@ -2975,9 +3060,9 @@ export default function ReserveProfile() {
                       {kycLoading
                         ? t("common.checking", "Checking…")
                         : t(
-                            "reserveProfile.actions.verifyAndContinue",
-                            "Verify & Continue",
-                          )}
+                          "reserveProfile.actions.verifyAndContinue",
+                          "Verify & Continue",
+                        )}
                     </Button>
                   </div>
                 </div>
@@ -3098,13 +3183,15 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={finalizeProfile}
-                  disabled={!agreedToTerms}
+                  disabled={!agreedToTerms || isRecovering}
                   className="w-2/3 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t(
-                    "reserveProfile.terms.completeRegistration",
-                    "Complete Registration",
-                  )}
+                  {isRecovering
+                    ? t("common.loading", "Loading...")
+                    : t(
+                      "reserveProfile.terms.completeRegistration",
+                      "Complete Registration",
+                    )}
                 </Button>
               </div>
             </div>
