@@ -355,7 +355,7 @@ const exampleProfilePreviewData = {
   ],
 };
 
-// Empty defaults for campaigns (until wired to real data)
+// Empty defaults for campaigns (until wired to real data.)
 const mockActiveCampaigns: any[] = [];
 
 const mockPendingApprovals: any[] = [];
