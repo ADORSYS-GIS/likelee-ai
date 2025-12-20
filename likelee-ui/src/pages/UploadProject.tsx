@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,7 +52,6 @@ const skills = [
 
 export default function UploadProject() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const [project, setProject] = useState({
@@ -78,8 +76,8 @@ export default function UploadProject() {
   const handleSubmit = () => {
     if (!project.title || !project.description || !project.project_type) {
       toast({
-        title: t("uploadProject.toasts.missingFields"),
-        description: t("uploadProject.toasts.missingFieldsDesc"),
+        title: "Missing Fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -89,8 +87,8 @@ export default function UploadProject() {
     setTimeout(() => {
       setUploading(false);
       toast({
-        title: t("common.success"),
-        description: t("uploadProject.toasts.projectUploaded"),
+        title: "Success",
+        description: "Project uploaded! (Demo mode - not persisted)",
       });
       navigate(createPageUrl("DemoTalentDashboard"));
     }, 2000);
