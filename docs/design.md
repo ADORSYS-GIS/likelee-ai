@@ -291,6 +291,15 @@ Notes:
 - If session creation succeeds but UI stays pending: verify CloudTrail for `StartFaceLivenessSession` in the selected region.
 - If no event appears: fix Cognito role trust/policy or region mismatch; ensure camera/mic are allowed.
 
+### Signup Flow State Persistence & Data Recovery
+
+To ensure a robust multi-step signup flow (especially after external redirects like Veriff), the following mechanisms are implemented:
+
+- **Local State Persistence**: Critical fields like `creatorType` are persisted to `localStorage` on change.
+- **Data Recovery on Mount**: When the `ReserveProfile` component mounts, it checks for an authenticated user. If present, it fetches existing profile data from Supabase and merges it into the local `formData` state. This acts as a safety net if `localStorage` is cleared or the session is lost during redirect.
+- **Robust Finalization**: The `finalizeProfile` function uses the recovered/merged data and validates critical fields (like pricing) before the final upsert, preventing amnesia-related data loss or constraint violations.
+- **Pricing Validation**: Hard fallbacks for pricing are avoided. If pricing data is missing after recovery, the user is redirected back to the pricing step to ensure explicit consent and data integrity.
+
 ---
 
 Appendix: Add Context/Container/Component/Deployment diagrams. Link ADRs for IdP, Stripe model, watermarking/C2PA, model routing providers.
