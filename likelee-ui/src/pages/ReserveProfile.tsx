@@ -589,10 +589,24 @@ function ReferencePhotosStep(props: any) {
 
 export default function ReserveProfile() {
   const urlParams = new URLSearchParams(window.location.search);
-  const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
+  const [creatorType, setCreatorType] = useState(() => {
+    const saved = localStorage.getItem("reserve_creatorType");
+    const param = urlParams.get("type");
+    if (param) return param;
+    return saved || "influencer"; // influencer, model_actor, athlete
+  });
+
+  useEffect(() => {
+    if (creatorType) {
+      localStorage.setItem("reserve_creatorType", creatorType);
+    }
+  }, [creatorType]);
+
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
   const [authMode, setAuthMode] = useState<"signup" | "login">(initialMode);
-  const { login, register } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { login, register, user, initialized, authenticated } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(() => {
@@ -612,8 +626,7 @@ export default function ReserveProfile() {
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [formData, setFormData] = useState({
     creator_type: creatorType,
     email: "",
@@ -662,6 +675,73 @@ export default function ReserveProfile() {
     const { password, confirmPassword, ...safeData } = formData;
     localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
+
+  // Data recovery: If user is logged in, fetch existing profile and merge into formData
+  const [isRecovering, setIsRecovering] = useState(false);
+
+  useEffect(() => {
+    const recoverData = async () => {
+      if (!user || !supabase) return;
+      try {
+        setIsRecovering(true);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data) {
+          setFormData((prev: any) => ({
+            ...prev,
+            full_name: prev.full_name || data.full_name || "",
+            stage_name: prev.stage_name || data.stage_name || "",
+            city: prev.city || data.city || "",
+            state: prev.state || data.state || "",
+            birthdate: prev.birthdate || data.birthdate || "",
+            gender: prev.gender || data.gender || "",
+            base_monthly_price_usd:
+              prev.base_monthly_price_usd ||
+              (data.base_monthly_price_cents
+                ? (data.base_monthly_price_cents / 100).toString()
+                : ""),
+            creator_type: prev.creator_type || data.creator_type || creatorType,
+            instagram_handle:
+              prev.instagram_handle || data.instagram_handle || "",
+            twitter_handle: prev.twitter_handle || data.twitter_handle || "",
+            bio: prev.bio || data.bio || "",
+            primary_platform:
+              prev.primary_platform || data.primary_platform || "",
+            platform_handle: prev.platform_handle || data.platform_handle || "",
+            content_types:
+              prev.content_types?.length > 0
+                ? prev.content_types
+                : data.content_types || [],
+            industries:
+              prev.industries?.length > 0
+                ? prev.industries
+                : data.industries || [],
+            work_types:
+              prev.work_types?.length > 0
+                ? prev.work_types
+                : data.work_types || [],
+            ethnicity:
+              prev.ethnicity?.length > 0
+                ? prev.ethnicity
+                : data.ethnicity || [],
+            vibes: prev.vibes?.length > 0 ? prev.vibes : data.vibes || [],
+            visibility: prev.visibility || data.visibility || "private",
+          }));
+          if (data.creator_type) setCreatorType(data.creator_type);
+        }
+      } catch (e) {
+        console.error("Error recovering profile data:", e);
+      } finally {
+        setIsRecovering(false);
+      }
+    };
+    recoverData();
+  }, [user]);
 
   // Cameo reference image URLs
   const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null);
@@ -890,7 +970,6 @@ export default function ReserveProfile() {
   const progress = (step / totalSteps) * 100;
 
   // Verification state
-  const { initialized, authenticated, user } = useAuth();
   const [kycStatus, setKycStatus] = useState<
     "not_started" | "pending" | "approved" | "rejected"
   >("not_started");
@@ -1157,7 +1236,7 @@ export default function ReserveProfile() {
           });
           return;
         }
-        // Move to next step; profile will be saved at the end (step 5)
+        // Move to next step; profile will be handled by AuthProvider or later steps
         setStep(2);
       } catch (e: any) {
         const msg = (e?.message || "").toLowerCase();
@@ -1241,6 +1320,16 @@ export default function ReserveProfile() {
           return;
         }
       }
+      if (creatorType === "model_actor") {
+        if (!formData.representation_status) {
+          toast({
+            title: t("reserveProfile.toasts.representationRequiredTitle"),
+            description: t("reserveProfile.toasts.representationRequiredDesc"),
+            className: "bg-cyan-50 border-2 border-cyan-400",
+          });
+          return;
+        }
+      }
       // Pricing required in onboarding step (applies to all creator types)
       const monthly = Number(formData.base_monthly_price_usd);
       if (!isFinite(monthly) || monthly < 150) {
@@ -1261,8 +1350,8 @@ export default function ReserveProfile() {
   };
 
   const handleSubmit = async () => {
-    // Step 3 validations for influencer
-    if (creatorType === "influencer") {
+    // Step 3 validations for influencer and model_actor
+    if (creatorType === "influencer" || creatorType === "model_actor") {
       if (!formData.content_types || formData.content_types.length === 0) {
         toast({
           title: "Campaign Type Required",
@@ -1304,8 +1393,8 @@ export default function ReserveProfile() {
         return;
       }
     }
-    console.log("Collected step 3 data (no write yet):", formData);
-    setStep(4);
+    // Save profile data before moving to verification
+    updateProfileMutation.mutate(formData);
   };
 
   const finalizeProfile = async () => {
@@ -1341,13 +1430,23 @@ export default function ReserveProfile() {
       }
 
       const monthlyUsd = Number(formData.base_monthly_price_usd);
+      if (!isFinite(monthlyUsd) || monthlyUsd < 150) {
+        toast({
+          title: t("reserveProfile.toasts.pricingRequiredTitle"),
+          description: t("reserveProfile.toasts.pricingRequiredDesc"),
+          variant: "destructive",
+        });
+        setStep(2); // Send them back to fix it
+        return;
+      }
+
       const payload: any = {
         id: user.id,
         email: formData.email,
         full_name:
-          creatorType === "model_actor"
+          (creatorType === "model_actor"
             ? formData.stage_name || formData.full_name
-            : formData.full_name,
+            : formData.full_name) || "",
         creator_type: creatorType,
         content_types: formData.content_types || [],
         content_other: formData.content_other || null,
@@ -1375,9 +1474,7 @@ export default function ReserveProfile() {
         visibility: formData.visibility || "private",
         status: "waitlist",
         // Pricing in cents (USD-only)
-        base_monthly_price_cents: isFinite(monthlyUsd)
-          ? Math.round(monthlyUsd * 100)
-          : 15000,
+        base_monthly_price_cents: Math.round(monthlyUsd * 100),
         currency_code: "USD",
       };
       if (front) (payload as any).cameo_front_url = front;
@@ -2091,11 +2188,79 @@ export default function ReserveProfile() {
                         </div>
                       ))}
                     </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                        {t(
+                          "reserveProfile.form.representationStatus",
+                          "Representation Status",
+                        )}
+                      </Label>
+                      <RadioGroup
+                        value={formData.representation_status}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            representation_status: value,
+                          })
+                        }
+                      >
+                        <div className="space-y-2">
+                          {["Agency", "Independent"].map((option) => (
+                            <div
+                              key={option}
+                              className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                            >
+                              <RadioGroupItem
+                                value={option}
+                                id={option}
+                                className="border-2 border-gray-400"
+                              />
+                              <Label
+                                htmlFor={option}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
+                                {t(
+                                  `common.representationStatus.options.${option}`,
+                                  option,
+                                )}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="headshot_url"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        {t("reserveProfile.form.headshot")}
+                      </Label>
+                      <Input
+                        id="headshot_url"
+                        type="text"
+                        value={formData.headshot_url}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            headshot_url: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                        placeholder={t(
+                          "reserveProfile.form.placeholders.headshot",
+                        )}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {t("reserveProfile.form.headshotHint")}
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {/* Influencer vibes */}
-                {creatorType === "influencer" && (
+                {/* Influencer & Model/Actor vibes */}
+                {(creatorType === "influencer" ||
+                  creatorType === "model_actor") && (
                   <div>
                     <Label className="text-sm font-medium text-gray-900 mb-3 block">
                       Vibe / Style Tags
@@ -2227,8 +2392,9 @@ export default function ReserveProfile() {
               </div>
 
               <div className="space-y-6">
-                {/* Influencer Step 3 */}
-                {creatorType === "influencer" && (
+                {/* Influencer & Model/Actor Step 3 */}
+                {(creatorType === "influencer" ||
+                  creatorType === "model_actor") && (
                   <>
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -2884,10 +3050,15 @@ export default function ReserveProfile() {
                 </Button>
                 <Button
                   onClick={finalizeProfile}
-                  disabled={!agreedToTerms}
+                  disabled={!agreedToTerms || isRecovering}
                   className="w-2/3 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Complete Registration
+                  {isRecovering
+                    ? t("common.loading", "Loading...")
+                    : t(
+                        "reserveProfile.terms.completeRegistration",
+                        "Complete Registration",
+                      )}
                 </Button>
               </div>
             </div>
