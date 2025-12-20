@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -198,10 +199,14 @@ export default function MarketingAgencyDashboard() {
   const [showCreatorProfile, setShowCreatorProfile] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleCreateCampaign = (campaignData) => {
     console.log("New campaign created:", campaignData);
-    toast({ title: "Success", description: "Campaign created successfully!" });
+    toast({
+      title: t("common.success"),
+      description: t("marketingDashboard.toasts.campaignCreated"),
+    });
   };
 
   const getFilteredCampaigns = () => {
