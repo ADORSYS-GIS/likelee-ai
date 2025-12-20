@@ -42,6 +42,12 @@ import { getUserFriendlyError } from "@/utils";
 import { PrivacyPolicyContent } from "@/components/PrivacyPolicyContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+// Dummy translation helper to replace missing i18n
+const t = (key: string, fallback?: string | object) => {
+  if (typeof fallback === "string") return fallback;
+  return key;
+};
+
 // Cast UI components to any to avoid TS forwardRef prop typing frictions within this large form file only
 const Button: any = UIButton;
 const Input: any = UIInput;
