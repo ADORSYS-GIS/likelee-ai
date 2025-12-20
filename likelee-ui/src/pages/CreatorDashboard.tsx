@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -659,10 +660,11 @@ const earningsByIndustry: any[] = [];
 const mockContracts: any[] = [];
 
 export default function CreatorDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const exampleCampaigns = useMemo(
+  const exampleCampaigns = React.useMemo(
     () => [
       {
         id: "example-nike",
@@ -734,7 +736,7 @@ export default function CreatorDashboard() {
     [t],
   );
 
-  const exampleApprovals = useMemo(
+  const exampleApprovals = React.useMemo(
     () => [
       {
         id: "example-adidas-approval",
@@ -800,7 +802,7 @@ export default function CreatorDashboard() {
     [t],
   );
 
-  const exampleArchivedCampaigns = useMemo(
+  const exampleArchivedCampaigns = React.useMemo(
     () => [
       {
         id: "example-spotify-archive",
@@ -851,7 +853,7 @@ export default function CreatorDashboard() {
     [t],
   );
 
-  const exampleContracts = useMemo(
+  const exampleContracts = React.useMemo(
     () => [
       {
         id: "example-nike-contract",
