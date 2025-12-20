@@ -450,7 +450,7 @@ export default function CreatorDashboard() {
         brand_logo:
           "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
         brand_image_url:
-          "https://static.nike.com/a/images/f_auto/dpr_3.0,cs_srgb/w_411,c_limit/5e039575-5856-42f8-9323-579736c2c31e/nike-just-do-it.jpg",
+          "https://9f8e62d4.delivery.rocketcdn.me/wp-content/uploads/2024/09/man-wearing-black-nike-hoodie-1.jpg",
         campaign: "Summer Running Collection",
         usage_type: "Social Ads",
         rate: 2500,
