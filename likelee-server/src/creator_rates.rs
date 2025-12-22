@@ -33,7 +33,6 @@ pub async fn get_creator_rates(
         .execute()
         .await;
 
-
     match response {
         Ok(res) => {
             if res.status().is_success() {
@@ -48,9 +47,7 @@ pub async fn get_creator_rates(
                     }
                 };
                 match serde_json::from_str::<Vec<CustomRate>>(&body_text) {
-                    Ok(rates) => {
-                        (StatusCode::OK, Json(rates)).into_response()
-                    },
+                    Ok(rates) => (StatusCode::OK, Json(rates)).into_response(),
                     Err(_) => (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         "Failed to parse rates from response",
@@ -85,7 +82,6 @@ pub async fn upsert_creator_rates(
         .rpc("upsert_creator_rates", rpc_payload.to_string())
         .execute()
         .await;
-
 
     match response {
         Ok(res) => {
