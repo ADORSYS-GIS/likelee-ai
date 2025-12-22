@@ -1,0 +1,1740 @@
+{
+  "greeting": "Bonjour, bienvenue !",
+  "brands": "Marques",
+  "agencies": "Agences",
+  "marketingAgency": "Agence de marketing",
+  "marketingAgencySub": "Publicité et services créatifs",
+  "talentAgencyLabel": "Agence de talents / mannequins",
+  "talentAgencySub": "Représentation de talents",
+  "sportsAgency": "Agence sportive",
+  "sportsAgencySub": "Représentation d'athlètes et NIL",
+  "aboutUs": "À propos de nous",
+  "contact": "Contact",
+  "footerSlogan": "L'écosystème de talents vérifiés pour les médias pilotés par l'IA.",
+  "resources": "Ressources",
+  "blog": "Blog",
+  "impact": "Impact",
+  "support": "Support",
+  "contactUs": "Contactez-nous",
+  "questionsContactUs": "Des questions ? Contactez-nous :",
+  "landingHeadline": "Vous cherchez quelque chose de réel à l'ère de l'IA ?",
+  "readyToUse": "Prêt à l'emploi",
+  "verifiedProtection": "Protection vérifiée",
+  "licensedFaces": "Visages sous licence",
+  "heroTitle": "Construisez de vrais partenariats avec des athlètes qui rapportent toute l'année",
+  "heroSubtitle": "Un acompte, une présence constante. Les athlètes gagnent, vous gagnez.",
+  "forBrands": "Pour les marques",
+  "forAgencies": "Pour les agences",
+  "transformTalentTitle": "Transformez votre façon de travailler avec les talents",
+  "transformTalentSubtitle": "De mois de vérification à quelques minutes de navigation.",
+  "userTrustTitle": "Ne perdez pas la confiance des utilisateurs avec de faux avatars",
+  "userTrustSubtitle": "Les vrais créateurs apportent une croyance authentique, et votre public le ressent instantanément.",
+  "scaleCatalogTitle": "Faites évoluer votre catalogue sans augmenter les coûts",
+  "scaleCatalogSubtitle": "Même influenceur. Variations de produits infinies. Lancez en quelques heures.",
+  "premiumTalentTitle": "Talents premium sans maux de tête de production",
+  "premiumTalentSubtitle": "Évitez le jour du tournage et accédez à des mannequins vérifiés des meilleures agences. Le tout avec des résultats premium.",
+  "allSizesTitle": "Conçu pour les marques de toutes tailles",
+  "allSizesSubtitle": "Des startups e-commerce aux entreprises—construisez des campagnes de haute qualité avec des talents vérifiés pour tous les budgets.",
+  "legalAndCompliance": "Juridique et conformité",
+  "sagAftraAlignment": "Alignement SAG-AFTRA",
+  "privacyPolicy": {
+    "title": "Politique de confidentialité de Likelee",
+    "lastUpdated": "Dernière mise à jour : octobre 2025",
+    "intro": "Likelee (\"Likelee\", \"nous\", \"notre\") aide les talents, les créateurs et les marques à gérer l'utilisation sous licence et consentie de leur image dans l'IA. Cette politique de confidentialité explique ce que nous collectons, comment nous l'utilisons et vos choix.",
+    "sections": {
+      "1": {
+        "title": "1) Informations que nous collectons",
+        "accountData": {
+          "label": "Données de compte et de profil :",
+          "content": "nom, e-mail, mot de passe (haché), ville/état, date de naissance, balises de style, préférences, liens/identifiants."
+        },
+        "likenessMedia": {
+          "label": "Image et médias :",
+          "content": "photos que vous téléchargez, métadonnées et paramètres que vous choisissez pour la visibilité/l'utilisation. Remarque : nous n'utilisons l'image/les médias que selon les contrôles que vous avez définis (par exemple, public/privé, utilisations autorisées)."
+        },
+        "usageData": {
+          "label": "Données d'utilisation :",
+          "content": "appareil/navigateur, adresse IP, pages consultées, clics, pages de référence."
+        },
+        "communications": {
+          "label": "Communications :",
+          "content": "messages et e-mails que vous nous envoyez."
+        },
+        "thirdParties": {
+          "label": "De tiers (facultatif) :",
+          "content": "liens sociaux ou informations sur la marque/l'agence que vous choisissez de connecter."
+        }
+      },
+      "2": {
+        "title": "2) Comment nous utilisons les informations",
+        "list": [
+          "Fournir et sécuriser le service (comptes, intégration, approbations, paiements).",
+          "Appliquer vos règles d'utilisation et créer une piste d'audit.",
+          "Communiquer avec vous (e-mails de service, invitations de cohortes, mises à jour de politique).",
+          "Améliorer les fonctionnalités, la sécurité et les performances (analyses et débogage).",
+          "Se conformer aux obligations légales et prévenir la fraude/les abus."
+        ]
+      },
+      "3": {
+        "title": "3) Utilisation de l'IA et de l'image",
+        "consentFirst": {
+          "label": "Consentement d'abord :",
+          "content": "Votre image/vos médias ne sont traités que selon vos instructions (par exemple, pour détecter/suivre l'utilisation, permettre les demandes sous licence)."
+        },
+        "training": {
+          "label": "Entraînement :",
+          "content": "Nous n'utilisons pas votre image/vos médias pour entraîner des modèles publics tiers. Si nous affinons des systèmes internes de détection ou de sécurité, nous le faisons sous vos autorisations et contrôles d'accès sélectionnés."
+        },
+        "takedowns": {
+          "label": "Retraits :",
+          "content": "Si vous signalez une utilisation sans licence, nous pouvons traiter le contenu signalé pour enquêter et agir."
+        }
+      },
+      "4": {
+        "title": "4) Bases légales (EEE/UK)",
+        "content": "Nous traitons les données personnelles sur la base de : contrat (pour fournir le service), intérêts légitimes (sécurité, amélioration) et consentement (lorsque requis, par exemple, marketing)."
+      },
+      "5": {
+        "title": "5) Partage",
+        "p1": "Nous ne vendons pas d'informations personnelles au sens traditionnel. Nous pouvons accorder des licences ou mettre à disposition des informations anonymisées et/ou agrégées à des partenaires sélectionnés (y compris des fournisseurs d'analyses et de technologies d'IA) à des fins de recherche, de sécurité et de développement de produits. Nous exigeons des destinataires qu'ils ne les utilisent qu'à des fins approuvées et qu'ils évitent toute ré-identification.",
+        "p2": "Nous partageons également des informations avec :",
+        "list": [
+          "Fournisseurs de services (hébergement, stockage, analyses, e-mail) sous contrat.",
+          "Contreparties que vous approuvez (par exemple, marques/agences pour les demandes sous licence que vous acceptez).",
+          "Juridique/Conformité lorsque la loi l'exige ou pour protéger les droits, la sécurité et l'intégrité."
+        ]
+      },
+      "6": {
+        "title": "6) Rétention",
+        "content": "Nous conservons les données tant que votre compte est actif et selon les besoins pour les finalités ci-dessus. Vous pouvez demander la suppression ; certains enregistrements (par exemple, paiements, contrats, journaux de sécurité) peuvent être conservés comme l'exige la loi."
+      },
+      "7": {
+        "title": "7) Sécurité",
+        "content": "Nous utilisons des mesures de protection standard de l'industrie (cryptage en transit, contrôles d'accès). Aucune méthode n'est sûre à 100 % ; signalez les problèmes à"
+      },
+      "8": {
+        "title": "8) Vos choix et droits",
+        "list": {
+          "0": "Accéder, corriger, télécharger ou supprimer vos données (sous réserve des limites légales).",
+          "1": "Désactiver le marketing à tout moment.",
+          "2": "Contrôler la visibilité du profil et les utilisations autorisées pour votre image/vos médias.",
+          "3": {
+            "label": "Ne pas vendre/partager (le cas échéant) :",
+            "content": "Vous pouvez refuser l'octroi de licences pour nos informations anonymisées/agrégées en utilisant le lien \"Ne pas vendre ou partager mes informations personnelles\" ou en envoyant un e-mail à",
+            "suffix": "avec l'objet \"Do Not Sell/Share\"."
+          },
+          "4": "Pour les résidents de l'EEE/UK/Suisse : vous pouvez vous opposer/restreindre le traitement et déposer une plainte auprès de votre autorité locale."
+        },
+        "requests": "Demandes :"
+      },
+      "9": {
+        "title": "9) Cookies et analyses",
+        "content": "Nous utilisons des cookies et des technologies similaires pour la connexion, les préférences et les analyses. Vous pouvez contrôler les cookies dans votre navigateur ; certaines fonctionnalités pourraient ne pas fonctionner sans eux."
+      },
+      "10": {
+        "title": "10) Enfants",
+        "content": "Likelee n'est pas destiné aux enfants de moins de 16 ans (ou l'âge requis par votre région). Nous ne collectons pas sciemment de données auprès d'enfants."
+      },
+      "11": {
+        "title": "11) Transferts internationaux",
+        "content": "Si les données sont transférées à l'échelle internationale, nous utilisons des garanties appropriées (par exemple, clauses contractuelles types)."
+      },
+      "12": {
+        "title": "12) Changements",
+        "content": "Nous pouvons mettre à jour cette politique. Nous afficherons la nouvelle date ci-dessus. Si les changements sont importants, nous vous en informerons (par exemple, par e-mail ou avis dans l'application)."
+      },
+      "13": {
+        "title": "13) Contact",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
+  "commercialRights": "Droits commerciaux",
+  "company": "Entreprise",
+  "creators": "Créateurs",
+  "copyright": "© 2025 Likelee. Tous droits réservés.",
+  "followUs": "Suivez-nous sur Instagram",
+  "creatorDashboard": {
+    "myLikeness": "Mon Apparence",
+    "activeCampaigns": "Campagnes Actives",
+    "licensesAndContracts": "Licences et Contrats",
+    "earningsDashboard": "Tableau de Bord des Gains",
+    "earnings": {
+      "title": "Tableau de Bord des Gains",
+      "byIndustry": "Gains par Industrie",
+      "byCampaign": "Gains par Campagne",
+      "bankConnection": {
+        "title": "Connectez votre compte bancaire",
+        "subtitle": "Liez votre compte bancaire pour recevoir vos gains directement.",
+        "securityTitle": "Sécurité bancaire",
+        "securityMessage": "Vos informations sont cryptées et protégées",
+        "privateTitle": "Privé et sécurisé",
+        "privateMessage": "Nous ne stockons jamais vos identifiants bancaires",
+        "button": "Connecter le compte bancaire",
+        "comingSoon": "Connexion bancaire bientôt disponible. Nous intégrons un traitement de paiement sécurisé.",
+        "back": "Retour"
+      },
+      "subtitle": "Suivez vos revenus et paiements",
+      "readyTitle": "Votre tableau de bord des revenus est prêt",
+      "readyMessage": "Une fois vos licences actives, vous verrez vos revenus en temps réel ici. Actuellement, vous n'avez aucun contrat actif.",
+      "actions": {
+        "cashOut": "Retrait",
+        "downloadTax": "Télécharger le résumé fiscal (1099)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total gagné (YTD)",
+        "willUpdate": "Se mettra à jour dès l'activation de votre première licence",
+        "thisMonthRecurring": "Récurrent ce mois-ci",
+        "waitingForCampaigns": "En attente de campagnes actives",
+        "projectedNextMonth": "Projeté mois prochain",
+        "willCalculate": "Calculera selon les licences actives",
+        "nextPayment": "Prochain paiement",
+        "toBeDetermined": "À déterminer",
+        "noActiveContracts": "Pas de contrats actifs"
+      },
+      "charts": {
+        "revenueTrend": "Tendance des revenus (6 derniers mois)",
+        "revenuePlaceholder": "Votre tendance de revenus apparaîtra ici",
+        "activePlaceholder": "Une fois que vous aurez des campagnes actives",
+        "industryBreakdown": "Revenus par industrie",
+        "industryPlaceholder": "Votre répartition par industrie apparaîtra ici"
+      },
+      "comparison": {
+        "title": "Voici à quoi pourraient ressembler vos revenus",
+        "subtitle": "Comparez le modèle récurrent de Likelee au modèle traditionnel unique",
+        "traditionalModel": "Modèle traditionnel :",
+        "traditionalDesc": "Paiement unique par campagne",
+        "likeleeModel": "Modèle Likelee :",
+        "likeleeAmount": "2 500 $ + / mois",
+        "likeleeDesc": "Par licence active • Revenu récurrent"
+      },
+      "campaigns": {
+        "title": "Revenus par campagne",
+        "placeholderTitle": "Vos campagnes apparaîtront ici",
+        "placeholderMessage": "Une fois que vous aurez des licences actives générant des revenus",
+        "thisMonth": "ce mois-ci"
+      },
+      "history": {
+        "title": "Historique des paiements",
+        "placeholderTitle": "Votre historique de paiements apparaîtra ici",
+        "placeholderMessage": "Une fois que vous recevrez votre premier virement"
+      }
+    },
+    "settings": "Paramètres",
+    "settingsContent": {
+      "myRules": "Mes Règles",
+      "profileSettings": "Paramètres du Profil"
+    },
+    "completeness": {
+      "profileCompleteness": "Complétude du profil: {{percentage}}%",
+      "missingSections": "Il vous manque {{count}} sections"
+    },
+    "referenceImageLibrary": {
+      "title": "BIBLIOTHÈQUE D'IMAGES DE RÉFÉRENCE",
+      "subtitle": "Les marques utilisent ces images pour faire correspondre votre apparence dans différents contextes",
+      "completenessFilled": "Complétude: {{filled}}/{{total}} sections remplies",
+      "sectionsNeeded": "{{count}} sections nécessaires pour \"Profil Complet\""
+    },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Les profils complets gagnent 15 % de plus.",
+        "text": "Les marques paient des tarifs premium pour les créateurs avec des bibliothèques de référence complètes."
+      },
+      "howThisWorks": {
+        "title": "Comment cela fonctionne :",
+        "text": "Téléchargez des photos dans 15 catégories différentes. Les marques les utilisent pour générer des images de vous cohérentes et photoréalistes. Plus de variété = meilleure qualité de contenu = tarifs plus élevés."
+      },
+      "qualityStandards": {
+        "title": "Normes de qualité :",
+        "text": "Haute résolution (minimum 1080x1080), éclairage clair, visage/corps clairement visible, pas de filtres lourds, qualité professionnelle préférée."
+      },
+      "imageActions": {
+        "view": "Voir",
+        "replace": "Remplacer",
+        "delete": "Supprimer",
+        "upload": "Télécharger",
+        "uploadImage": "Télécharger l'image"
+      },
+      "imageStatus": {
+        "uploaded": "TÉLÉCHARGÉ",
+        "missing": "MANQUANT",
+        "bestFor": "Idéal pour :"
+      }
+    },
+    "usageGuidelines": {
+      "title": "DIRECTIVES D'UTILISATION",
+      "subtitle": "Dites aux marques ce avec quoi vous êtes à l'aise",
+      "comfortableWith": "À l'aise avec :",
+      "notComfortableWith": "Pas à l'aise avec :",
+      "editPreferences": "Modifier les préférences"
+    },
+    "verificationStatus": {
+      "title": "Vérification et statut",
+      "identityVerification": "Vérification d'identité",
+      "likenessRights": "Droits d'image",
+      "confirmed": "Confirmé",
+      "notStarted": "Non commencé",
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "viewVerification": "Voir les détails de vérification",
+      "updateRights": "Mettre à jour l'accord de droits",
+      "completeVerification": "Compléter la vérification",
+      "refreshStatus": "Actualiser le statut"
+    },
+    "cameoVideo": {
+      "title": "VIDÉO CAMÉO",
+      "description": "La représentation vidéo de vous - les marques l'utilisent pour les caméos IA et la génération de contenu",
+      "uploaded": "Téléchargé :",
+      "duration": "Durée :",
+      "quality": "Qualité :",
+      "status": "Statut :",
+      "verified": "✓ Vérifié et approuvé",
+      "aboutCameo": {
+        "title": "À propos de votre caméo :",
+        "text": "Les marques l'utilisent pour générer des caméos IA de vous en train de parler, référencer votre voix/expressions et créer du contenu photoréaliste vous mettant en vedette."
+      },
+      "actions": {
+        "watchFull": "Regarder le caméo complet",
+        "reupload": "Re-télécharger un nouveau caméo",
+        "download": "Télécharger"
+      },
+      "comingSoon": {
+        "title": "Bientôt disponible",
+        "text": "Le téléchargement de vidéo caméo sera bientôt disponible"
+      },
+      "warning": {
+        "title": "Votre caméo est requis pour commencer à gagner.",
+        "text": "Les marques ont besoin de cette référence vidéo pour créer du contenu vous mettant en vedette."
+      }
+    },
+    "dashboard": {
+      "totalMonthlyRevenue": "Revenu Mensuel Total",
+      "revenueInfo": "Revenu mensuel récurrent actuel",
+      "activeCampaigns": "Campagnes Actives",
+      "activeCampaignsInfo": "Génère des revenus actuellement",
+      "pendingApprovals": "Approbations en Attente",
+      "pendingApprovalsInfo": "Campagnes attendant votre examen",
+      "annualRunRate": "Taux Annuel",
+      "annualRunRateInfo": "Gains annuels projetés",
+      "quickActions": "Actions Rapides",
+      "priority": "PRIORITÉ",
+      "completeProfile": "Complétez Votre Profil",
+      "completeProfileInfo": "Il vous manque X sections. Complétez-les pour être vérifié.",
+      "uploadVoiceTone": "Télécharger le Ton de Voix",
+      "uploadVoiceToneInfo": "Ajoutez des échantillons de voix pour activer les campagnes audio",
+      "recentActivity": "Activité Récente",
+      "previewExamples": {
+        "title": "Exemples d'aperçu :",
+        "message": "Voici des exemples de campagnes pour vous montrer à quoi ressemblera votre tableau de bord."
+      },
+      "active": "ACTIF",
+      "noCampaigns": "Aucune Campagne Active",
+      "noCampaignsInfo": "Complétez votre profil pour commencer à recevoir des offres !",
+      "profileStatus": "Statut du Profil",
+      "completeToGetDiscovered": "Compléter pour être découvert",
+      "referenceImages": "Images de Référence",
+      "voiceRecordings": "Enregistrements Vocaux",
+      "cameoVideo": "Vidéo Caméo",
+      "missing": "MANQUANT"
+    },
+    "content": {
+      "title": "Contenu",
+      "subtitle": "Suivez le contenu créé avec votre image",
+      "welcome": {
+        "title": "Bienvenue sur votre page de Contenu !",
+        "message": "Voici un exemple de ce à quoi ressembleront le contenu de marque et les détections. Vous n'avez pas encore de contenu, mais lorsque les marques créeront du contenu avec votre image, il apparaîtra ici !"
+      },
+      "examples": {
+        "instagramReel": "Reel Instagram",
+        "webBanner": "Bannière Web",
+        "tvCommercial": "Publicité TV"
+      },
+      "tabs": {
+        "brandContent": "Contenu de Marque",
+        "detections": "Détections"
+      },
+      "brandContent": {
+        "info": "Ce flux montre tout le contenu autorisé que les marques ont publié en utilisant votre image.",
+        "views": "Vues",
+        "engagement": "Engagement",
+        "published": "Publié le {{date}}",
+        "noContent": "Aucun contenu de marque trouvé."
+      },
+      "detections": {
+        "info": "Protection de l'Image active. Nous scannons continuellement le web pour détecter toute utilisation non autorisée de votre image. Examinez le contenu détecté ci-dessous.",
+        "needsReview": "À Examiner",
+        "takedownRequested": "Retrait Demandé",
+        "resolved": "Résolu",
+        "detected": "Détecté",
+        "matchConfidence": "Confiance de Correspondance",
+        "viewOriginal": "Voir le Contenu Original",
+        "requestTakedown": "Demander le Retrait",
+        "dismiss": "Ignorer (C'est autorisé)",
+        "takedownSent": "Demande de retrait envoyée. Les plateformes répondent généralement sous 24 à 72 heures.",
+        "contentRemoved": "Le contenu a été supprimé ou vérifié comme autorisé.",
+        "noDetections": "Aucune détection trouvée.",
+        "howItWorks": {
+          "title": "Comment fonctionne la détection",
+          "scanning": {
+            "title": "Scanner Continu",
+            "desc": "Nous scannons les principales plateformes pour des correspondances faciales"
+          },
+          "ai": {
+            "title": "Correspondance IA",
+            "desc": "Une IA avancée compare avec votre image"
+          },
+          "takedown": {
+            "title": "Support de Retrait",
+            "desc": "Nous aidons à déposer des rapports DMCA et de plateforme"
+          }
+        }
+      }
+    },
+    "approvals": {
+      "title": "Approbations en Attente",
+      "subtitle": "Examiner et approuver les demandes de campagne des marques",
+      "pendingCount": "{{count}} En Attente",
+      "welcome": {
+        "title": "Bienvenue !",
+        "message": "Voici un exemple de ce à quoi ressemble une demande de campagne."
+      },
+      "requestedOn": "Demandé le {{date}}",
+      "perpetualRequest": "DEMANDE PERPÉTUELLE",
+      "proposedRate": "Tarif Proposé",
+      "termLength": "Durée du Mandat",
+      "estimatedMonthly": "Est. Mensuel",
+      "regions": "Régions",
+      "industries": "Industries",
+      "warning": {
+        "title": "Avertissement :",
+        "message": "Cette demande inclut des droits 'À Perpétuité'. Cela signifie que la marque possède les droits pour toujours."
+      },
+      "viewContract": "Voir le Contrat",
+      "labels": {
+        "industries": "Industries :",
+        "regions": "Régions :",
+        "estimatedMonthly": "Mensuel estimé :",
+        "termLength": "Durée :",
+        "proposedRate": "Tarif proposé :",
+        "requestedOn": "Demandé le {{date}}",
+        "pricePerMonth": "{{price}} $ / mois",
+        "months": "{{count}} mois"
+      },
+      "actions": {
+        "viewContract": "Voir le contrat",
+        "decline": "Refuser",
+        "counterOffer": "Contre-offre",
+        "acceptAndSign": "Accepter & Signer",
+        "backToQueue": "Retour à la file"
+      },
+      "backToQueue": "Retour à la file",
+      "contractReviewTitle": "{{brand}} - Révision du contrat",
+      "contractReviewSubtitle": "Examinez les termes avant d'approuver",
+      "whatYouWillEarn": "Ce que vous allez gagner",
+      "yourMonthlyPayment": "Votre paiement mensuel :",
+      "ifYouKeepThisFor": "Si vous gardez ceci pendant {{term}} :",
+      "totalEstimatedEarnings": "Total des gains estimés",
+      "contractTerms": "Termes du contrat",
+      "duration": "Durée :",
+      "territory": "Territoire :",
+      "usageType": "Type d'utilisation :",
+      "industries": "Secteurs d'activité :",
+      "yourRightsAndProtections": "Vos droits & protections",
+      "canPause": "Vous pouvez mettre cette licence en pause à tout moment (arrêt temporaire de l'utilisation)",
+      "canRevoke": "Vous pouvez la révoquer avec un préavis de 30 jours (arrêt définitif)",
+      "licenseExpires": "La licence expire à une date précise (pas pour toujours)",
+      "paymentProtected": "Paiement protégé en séquestre jusqu'à ce que la marque approuve les livrables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Avertissement d'utilisation perpétuelle :",
+        "message": "Cette marque souhaite utiliser votre image pour toujours. Vous devriez négocier pour des termes limités dans le temps (6 mois, 1 an) à la place."
+      },
+      "decline": "Refuser",
+      "counterOffer": "Contre-offre",
+      "acceptAndSign": "Accepter & Signer",
+      "contractReview": {
+        "title": "Révision du contrat de {{brand}}",
+        "subtitle": "Veuillez lire attentivement tous les termes ci-dessous avant d'accepter."
+      }
+    },
+    "archive": {
+      "title": "Archives des Campagnes",
+      "subtitle": "Historique des campagnes passées et des gains",
+      "completedCount": "{{count}} Terminées",
+      "welcome": {
+        "title": "Bienvenue !",
+        "message": "Au fur et à mesure que vous terminez des campagnes, elles apparaîtront ici dans vos archives."
+      },
+      "completedOn": "Terminé le {{date}}",
+      "status": {
+        "completed": "TERMINÉ"
+      },
+      "duration": "Durée",
+      "monthlyRate": "Tarif Mensuel",
+      "totalEarned": "Total Gagné",
+      "regions": "Régions",
+      "showOnPortfolio": "Afficher sur le Portfolio",
+      "visibleOnPortfolio": "Visible sur votre profil public",
+      "hiddenFromPortfolio": "Masqué de votre profil public",
+      "viewDetails": "Voir les Détails"
+    },
+    "contracts": {
+      "title": "Licences et Contrats",
+      "subtitle": "Gérez vos accords actifs et l'utilisation des droits",
+      "welcome": {
+        "title": "Bienvenue !",
+        "message": "Gérez vos contrats actifs ici. Mettez en pause, révoquez ou renouvelez à tout moment."
+      },
+      "activeTab": "Actifs ({{count}})",
+      "expiredTab": "Expirés ({{count}})",
+      "status": {
+        "active": "Actif",
+        "expiring_soon": "Expire Bientôt",
+        "expired": "Expiré"
+      },
+      "yourMonthlyFee": "Votre Frais Mensuel",
+      "earnedToDate": "Gagné à Ce Jour",
+      "daysRemainingLabel": "Jours Restants",
+      "expiringIn": "Expire dans {{count}} jours",
+      "renewLicensePrompt": "- renouveler la licence ?",
+      "viewDetails": "Voir les Détails",
+      "renew": "Renouveler",
+      "noExpiredContracts": "Aucun Contrat Expiré",
+      "completedContractsWillAppearHere": "Les contrats terminés apparaîtront ici",
+      "backToContracts": "Retour aux Contrats",
+      "whatYoureEarning": "Ce Que Vous Gagnez",
+      "monthlyPayment": "Paiement Mensuel",
+      "totalEarnedSoFar": "Total Gagné Jusqu'à Présent",
+      "paymentStatus": "Statut du Paiement",
+      "paid": "PAYÉ",
+      "amountReceived": "${{amount}} reçus ce mois-ci",
+      "yourTimeline": "Votre Chronologie",
+      "started": "Commencé",
+      "today": "Aujourd'hui",
+      "expires": "Expire",
+      "daysRemaining": "{{count}} jours restants dans le contrat",
+      "autoRenewal": {
+        "title": "Renouvellement Auto Actif :",
+        "message": "Ce contrat sera renouvelé automatiquement pour une autre durée sauf annulation."
+      },
+      "howLikenessIsUsed": "Comment Votre Apparence Est Utilisée",
+      "whatTheyreUsing": "Ce Qu'ils Utilisent",
+      "whereTheyCanUseIt": "Où Ils Peuvent L'utiliser",
+      "territory": "Territoire :",
+      "channels": "Canaux :",
+      "whatTheyCantDo": "Ce Qu'ils NE PEUVENT PAS Faire",
+      "revisions": "Révisions",
+      "roundsIncluded": "{{count}} tours inclus",
+      "manageLicense": "Gérer la Licence",
+      "pauseLicense": "Mettre la Licence en Pause",
+      "revokeLicense": "Révoquer la Licence",
+      "messageBrand": "Envoyer un Message à la Marque",
+      "viewFullLegalContract": "Voir le Contrat Légal Complet",
+      "modals": {
+        "pause": {
+          "title": "Mettre cette licence en pause ?",
+          "warningTitle": "⚠️ AVERTISSEMENT DE PAIEMENT IMPORTANT",
+          "warningDescription": "Si vous mettez en pause MAINTENANT (mi-mois) :",
+          "warningBullets": {
+            "noPayment": "Vous ne recevrez PAS de paiement pour {{month}}",
+            "earnedSoFar": "Même si vous avez gagné {{amount}} $ jusqu'à présent ce mois-ci",
+            "forfeited": "Cet argent sera perdu"
+          },
+          "option1": {
+            "title": "OPTION 1 : Pause immédiate",
+            "effective": "Effectif :",
+            "effectiveToday": "Aujourd'hui",
+            "thisMonthPayment": "Paiement de ce mois :",
+            "forfeited": "✗ PERDU ({{amount}} $)",
+            "nextMonthPayment": "Paiement du mois prochain :",
+            "paused": "✗ EN PAUSE",
+            "description": "Utilisez cette option si vous souhaitez arrêter immédiatement et acceptez de perdre le paiement partiel de ce mois."
+          },
+          "option2": {
+            "title": "OPTION 2 : Pause le mois prochain",
+            "recommended": "Recommandé",
+            "effective": "Effectif :",
+            "thisMonthPayment": "Paiement de ce mois :",
+            "willBePaid": "✓ VOUS SEREZ PAYÉ ({{amount}} $)",
+            "nextMonthPayment": "Paiement du mois prochain :",
+            "paused": "✗ EN PAUSE",
+            "description": "Utilisez cette option pour continuer à gagner jusqu'à la fin de ce mois, puis mettre en pause à partir du mois prochain."
+          },
+          "cancel": "Annuler - Ne pas mettre en pause"
+        },
+        "revoke": {
+          "title": "Révoquer cette licence ?",
+          "whatHappens": "Ce qui se passe lorsque vous révoquez :",
+          "bullets": {
+            "endPermanently": "Vous demandez de TERMINER cette licence de manière permanente",
+            "noticePeriod": "La période de préavis de 30 jours commence (ils conservent les droits pendant 30 jours supplémentaires)",
+            "takedown": "Après 30 jours, ils doivent retirer tout le contenu",
+            "earningsStop": "Vos gains S'ARRÊTENT après la fin de la période de 30 jours",
+            "cannotReactivate": "La licence ne peut pas être réactivée"
+          },
+          "timeline": {
+            "title": "Chronologie de la révocation",
+            "noticeStarts": "Début du préavis",
+            "finalTakedown": "Retrait final"
+          },
+          "days1to30": "Jours 1-30 : {{brand}} peut toujours utiliser votre image (paiements finaux dus)",
+          "day30": "Jour 30 : Tout le contenu doit être retiré",
+          "finalPayment": "Votre paiement final : {{amount}} $ le {{date}}",
+          "reasonLabel": "Raison de la révocation (facultatif) :",
+          "reasonPlaceholder": "ex: Je ne veux plus travailler avec cette marque",
+          "cancel": "Annuler",
+          "confirm": "Oui, révoquer la licence"
+        }
+      }
+    },
+    "nav": {
+      "dashboard": "Tableau de Bord",
+      "content": "Contenu",
+      "likeness": "Mon Apparence",
+      "voice": "Voix et Enregistrements",
+      "campaigns": "Campagnes Actives",
+      "approvals": "File d'attente d'approbation",
+      "archive": "Archives des Campagnes",
+      "contracts": "Licences et Contrats",
+      "earnings": "Gains",
+      "settings": "Paramètres",
+      "profile": {
+        "edit": "Modifier le profil",
+        "viewPublic": "Voir le profil public",
+        "help": "Aide / Support",
+        "logout": "Déconnexion"
+      }
+    },
+    "settingsView": {
+      "title": "Paramètres",
+      "subtitle": "Gérez votre profil et vos préférences",
+      "tabs": {
+        "profile": "Paramètres du Profil",
+        "rules": "Mes Règles"
+      },
+      "profile": {
+        "photoTitle": "Photo de Profil",
+        "placeholders": {
+          "fullName": "Votre nom complet",
+          "bio": "Parlez-nous de vous...",
+          "city": "Ville",
+          "state": "État/Région",
+          "instagram": "@votreidentifiant",
+          "youtube": "@votreidentifiant",
+          "tiktok": "@votreidentifiant",
+          "portfolio": "https://votreportfolio.com",
+          "website": "https://votresiteweb.com",
+          "linkedin": "https://linkedin.com/in/votreprofil"
+        },
+        "uploadText": "Télécharger une photo professionnelle",
+        "uploadHint": "JPG ou PNG, max 10 Mo",
+        "basicInfo": "Informations de Base",
+        "name": "Nom",
+        "email": "E-mail",
+        "location": "Emplacement",
+        "bio": "Bio",
+        "saveProfile": "Enregistrer le Profil",
+        "socialMedia": "Réseaux Sociaux",
+        "instagram": "Identifiant Instagram",
+        "tiktok": "Identifiant TikTok",
+        "portfolio": "Lien Portfolio",
+        "saveSocial": "Enregistrer les Liens Sociaux",
+        "visibility": "Paramètres de Visibilité",
+        "visibleToBrands": "Visible par les Marques",
+        "visibleToBrandsDesc": "Permettre aux marques de vous découvrir et de vous contacter",
+        "enableLicensing": "Activer les Licences",
+        "enableLicensingDesc": "Accepter les demandes de licence des marques",
+        "emailNotifications": "Notifications par E-mail",
+        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations"
+      },
+      "rules": {
+        "title": "Mes Règles",
+        "subtitle": "Définissez vos préférences de licence et vos tarifs",
+        "edit": "Modifier",
+        "cancel": "Annuler",
+        "save": "Enregistrer",
+        "contentOpenTo": "Contenu auquel je suis ouvert(e)",
+        "industries": "Industries avec lesquelles je travaille",
+        "customRatesAlert": "Vous souhaitez des tarifs différents pour chaque type de contenu ? Cliquez ci-dessous pour personnaliser.",
+        "editInitialRate": "Modifier le tarif de licence initial",
+        "initialRate": "Tarif de Licence Initial",
+        "baseRateDesc": "Tarif de base par semaine pour l'utilisation de caméos",
+        "perWeek": "/ semaine",
+        "acceptNegotiations": "Accepter les Négociations",
+        "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base"
+      }
+    },
+    "voice": {
+      "title": "Voix & Enregistrements",
+      "subtitle": "Créez votre bibliothèque vocale pour différentes émotions et tonalités",
+      "voiceBadge": "Voix",
+      "voiceBadgePlural": "Voix",
+      "recordingModal": {
+        "title": "Enregistrer un échantillon de voix {{emotion}}",
+        "ready": "Prêt à enregistrer ?",
+        "instruction": "Le script défilera lentement. Parlez naturellement et de manière expressive.",
+        "start": "Démarrer l'enregistrement",
+        "stop": "Arrêter l'enregistrement"
+      },
+      "deleteConfirmation": {
+        "title": "Supprimer l'enregistrement ?",
+        "description": "Cette action est irréversible.",
+        "action": "Supprimer"
+      },
+      "emotionNames": {
+        "happy": "Joyeux",
+        "emotional": "Émotionnel",
+        "excited": "Excité",
+        "mellow": "Doux",
+        "relaxed": "Détendu",
+        "angry": "En colère"
+      },
+      "voiceScripts": {
+        "happy": "Je suis absolument ravi d'être ici aujourd'hui ! La vie est pleine de merveilleuses surprises et d'opportunités passionnantes. Chaque matin apporte un nouveau départ et de nouvelles possibilités. J'adore me connecter avec les gens et partager des énergies positives. Le monde est un endroit incroyable quand on le regarde avec optimisme. Célébrons les petites victoires et chérissons chaque moment de joie. Le bonheur est contagieux, alors propageons-le !",
+        "emotional": "Il y a des moments dans la vie qui touchent nos cœurs profondément. Parfois, nous nous sentons dépassés par la beauté de la connexion humaine. Ces expériences façonnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnérabilité n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses propres luttes et ses propres triomphes. Honorons ces moments et laissons de la place à une émotion authentique.",
+        "excited": "Oh mon Dieu, c'est incroyable ! Je peux à peine contenir mon enthousiasme en ce moment ! Il y a tellement d'énergie et de potentiel dans cet instant. Je vibre d'anticipation pour ce qui va suivre. Pouvez-vous ressentir cette électricité dans l'air ? Ça va être absolument génial ! Je suis prêt à foncer et à faire bouger les choses. L'avenir est brillant et je suis là pour ça !",
+        "mellow": "Parfois, il est agréable de simplement ralentir et de prendre les choses avec calme. Il n'y a pas d'urgence, pas de pression. Juste une présence calme et stable dans l'instant. La vie n'a pas toujours besoin d'être intense ou dramatique. Ces moments de tranquillité ont leur propre beauté et leur propre but. Respirons simplement et apprécions le calme. Tout se déroule en son temps, et c'est parfaitement normal.",
+        "relaxed": "Salut, je me détends juste un peu aujourd'hui. Pas de stress, pas d'inquiétude. Tout coule naturellement et en douceur. Je suis dans un très bon état d'esprit en ce moment, je profite simplement de l'instant présent. La vie semble équilibrée et confortable. Il y a quelque chose de paisible à ne pas trop réfléchir. Simplement être ici, être présent et laisser les choses se passer naturellement. Tout va bien.",
+        "angry": "Je ne peux pas croire que cela arrive. C'est complètement inacceptable et franchement, j'en ai assez. Il y a des limites à ce que n'importe qui devrait supporter. Cette situation doit changer, et elle doit changer maintenant. Je suis fatigué des excuses et des promesses en l'air. Les actions parlent plus fort que les mots, et je suis prêt à exiger ce qui est juste. Ça s'arrête ici."
+      },
+      "overview": {
+        "title": "Aperçu du profil vocal",
+        "totalRecordings": "Total d'enregistrements",
+        "elevenLabsProfiles": "Profils ElevenLabs",
+        "totalUsage": "Utilisation totale"
+      },
+      "record": {
+        "title": "Enregistrer un nouvel échantillon vocal",
+        "subtitle": "Enregistrez des échantillons avec différentes émotions pour créer un profil vocal polyvalent",
+        "duration": "~60 secondes",
+        "recorded": "Enregistré"
+      },
+      "library": {
+        "title": "Bibliothèque vocale",
+        "used": "Utilisé {{count}} fois",
+        "elevenLabsReady": "Prêt pour ElevenLabs",
+        "reRecord": "Réenregistrer",
+        "creatingProfile": "Création du profil vocal...",
+        "createProfile": "Créer un profil vocal avec ElevenLabs"
+      },
+      "tips": {
+        "title": "Conseils d'entraînement vocal :",
+        "message": "Parlez clairement, évitez le bruit de fond, enregistrez dans une pièce calme et maintenez un volume constant tout au long de l'enregistrement."
+      }
+    },
+    "campaigns": {
+      "status": {
+        "active": "Actif",
+        "expiringSoon": "Expire bientôt"
+      },
+      "actions": {
+        "viewDetails": "Voir les détails",
+        "revoke": "Révoquer",
+        "pause": "Pause"
+      },
+      "labels": {
+        "autoRenew": "Renouvellement automatique",
+        "monthlyRate": "Tarif mensuel :",
+        "activeUntil": "Actif jusqu'au :",
+        "regions": "Régions :",
+        "weeklyImpressions": "Impressions hebdomadaires :",
+        "impressionsPerWeek": "{{count}} impressions/semaine"
+      },
+      "consent": {
+        "title": "Votre consentement requis pour toutes les utilisations.",
+        "message": "{{count}} campagnes actives, toutes limitées dans le temps, toutes approuvées par vous. Vous pouvez mettre en pause/révoquer à tout moment."
+      },
+      "title": "Campagnes Actives",
+      "subtitle": "Suivez et gérez vos accords de licence",
+      "activeCount": "{{count}} Actives",
+      "welcome": {
+        "title": "Bienvenue dans vos Campagnes Actives !",
+        "message": "Ceci est un exemple de ce à quoi ressembleront vos campagnes. Vous n'avez pas encore de campagnes actives, mais lorsque les marques commenceront à travailler avec vous, elles apparaîtront ici !"
+      },
+      "table": {
+        "brand": "Marque",
+        "usageType": "Type d'utilisation",
+        "rate": "Tarif",
+        "activeUntil": "Actif jusqu'au",
+        "status": "Statut",
+        "thisMonth": "Ce mois",
+        "actions": "Actions"
+      }
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/sem",
+        "cancel": "Annuler",
+        "save": "Enregistrer les tarifs",
+        "saving": "Enregistrement...",
+        "contentTitle": "Personnaliser les tarifs des types de contenu",
+        "industryTitle": "Personnaliser les tarifs de l industrie",
+        "contentDesc": "Définissez des tarifs hebdomadaires spécifiques pour différents types de contenu. Si laissé vide, votre tarif de base ({rate}) s appliquera.",
+        "industryDesc": "Définissez des tarifs hebdomadaires spécifiques pour différentes industries. Si laissé vide, votre tarif de base ({rate}) s appliquera.",
+        "noContentTitle": "Aucun type de contenu sélectionné.",
+        "noContentMsg": "Veuillez retourner à \"Mes règles\" et sélectionner d abord les types de contenu auxquels vous êtes ouvert.",
+        "noIndustryTitle": "Aucune industrie sélectionnée.",
+        "noIndustryMsg": "Veuillez retourner à \"Mes règles\" et sélectionner d abord les industries avec lesquelles vous travaillez.",
+        "contentHeader": "Types de contenu",
+        "industryHeader": "Industries"
+      }
+    },
+    "toasts": {
+      "authRequiredTitle": "Authentification requise",
+      "authRequiredCameoDesc": "Vous devez être connecté pour télécharger un caméo.",
+      "authRequiredPhotoDesc": "Vous devez être connecté pour télécharger une photo.",
+      "fileTooLargeTitle": "Fichier trop volumineux",
+      "fileTooLargeDescVideo": "Veuillez télécharger une vidéo de moins de 50 Mo.",
+      "invalidFileTypeTitle": "Type de fichier invalide",
+      "invalidFileTypeDescVideo": "Veuillez télécharger un fichier vidéo valide.",
+      "cameoUploadedTitle": "Caméo téléchargé",
+      "cameoUploadedDesc": "Votre vidéo caméo a été téléchargée avec succès.",
+      "uploadFailedTitle": "Échec du téléchargement",
+      "uploadFailedDesc": "Échec du téléchargement : {{error}}",
+      "profilePhotoUpdated": "Photo de profil mise à jour",
+      "micErrorTitle": "Erreur de microphone",
+      "micErrorDesc": "Impossible d accéder au microphone. Veuillez vérifier les autorisations.",
+      "voiceSuccessTitle": "Succès",
+      "voiceSuccessDesc": "Profil vocal créé avec succès avec ElevenLabs",
+      "voiceErrorTitle": "Erreur de profil vocal",
+      "voiceErrorDesc": "Erreur : {{error}}. Problèmes possibles : qualité d enregistrement trop faible, format non pris en charge ou trop court.",
+      "campaignApproved": "Campagne approuvée. Contrat signé. (Mode démo)",
+      "campaignDeclined": "Campagne refusée. (Mode démo)",
+      "licensePausedTitle": "Licence suspendue (Démo)",
+      "licensePausedImmediate": "Licence suspendue immédiatement. Vous perdrez le paiement de ce mois.",
+      "licensePausedNextMonth": "Licence prévue pour être suspendue le mois prochain. Vous recevrez le paiement complet pour ce mois, la pause commence le mois prochain.",
+      "licenseRevokedTitle": "Licence révoquée (Démo)",
+      "licenseRevokedDesc": "Licence révoquée. La période de préavis de 30 jours a commencé. Vous recevrez un paiement final de {{amount}} $ à la date d expiration du préavis.",
+      "campaignPaused": "Campagne en pause. (Mode démo)",
+      "campaignRevoked": "Campagne révoquée. (Mode démo)",
+      "preferencesUpdated": "Préférences de licence mises à jour",
+      "saveFailedTitle": "Échec de l enregistrement",
+      "saveFailedDesc": "Échec de l enregistrement des préférences : {{error}}",
+      "profileUpdatedDemo": "Profil mis à jour. (Mode démo)"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Liste de contrôle des exigences :",
+      "resolution": "Résolution d'au moins 1080x1080",
+      "faceVisible": "Visage/corps clairement visible",
+      "goodLighting": "Bon éclairage (naturel ou studio)",
+      "recentPhoto": "Photo récente (des 3 derniers mois)",
+      "noFilters": "Pas de filtres lourds",
+      "professionalQuality": "Qualité professionnelle préférée (pas de style selfie)",
+      "dragOrClick": "Glissez les photos ici ou cliquez pour parcourir",
+      "fileInfo": "Taille du fichier : Max 10 Mo | Formats : JPG, PNG, WebP",
+      "preview": "Aperçu :",
+      "cancel": "Annuler",
+      "upload": "Télécharger",
+      "uploading": "Téléchargement...",
+      "modalTitle": "Télécharger une image de référence",
+      "sectionLabel": "Section :",
+      "bestForLabel": "Idéal pour :"
+    }
+  },
+  "reserveProfile": {
+    "verification": {
+      "title": "Vérification d'identité",
+      "subtitle": "Vérifiez votre identité pour devenir visible auprès des marques et débloquer des opportunités",
+      "description": "Nous utilisons une vérification d'identité sécurisée pour garantir l'authenticité de tous les créateurs sur Likelee. Ce processus prend généralement 2 à 3 minutes.",
+      "status": {
+        "approved": "Approuvé",
+        "rejected": "Rejeté",
+        "verifying": "Vérification en cours",
+        "notStarted": "Non démarré"
+      },
+      "whyVerify": {
+        "title": "Pourquoi vérifier votre identité ?",
+        "reason1": "Soyez découvert par les marques à la recherche de créateurs vérifiés",
+        "reason2": "Renforcez la confiance et la crédibilité auprès des partenaires de licence",
+        "reason3": "Débloquez des opportunités de campagne de plus grande valeur"
+      },
+      "requirements": {
+        "title": "Ce dont vous aurez besoin :",
+        "item1": "Pièce d'identité délivrée par le gouvernement (permis de conduire, passeport ou carte d'identité)",
+        "item2": "Bonne éclairage et accès à la caméra/microphone",
+        "item3": "2 à 3 minutes dans un endroit calme"
+      },
+      "actions": {
+        "startingVerification": "Démarrage...",
+        "verifyIdentity": "Vérifier l'identité maintenant",
+        "preparing": "Préparation...",
+        "startLiveness": "Démarrer la vérification de vivacité",
+        "livenessApproved": "Vivacité approuvée"
+      },
+      "verificationFailedTitle": "Échec de la vérification",
+      "statusCheckFailedTitle": "Échec de la vérification du statut",
+      "identityVerified": "Identité vérifiée",
+      "identityVerifiedDescription": "Veuillez télécharger vos 3 photos de référence (Face, Gauche, Droite) pour terminer votre configuration.",
+      "verificationPending": "Vérification en attente",
+      "verificationPendingDescription": "La vérification n'est pas encore terminée. KYC : {{kyc}}, Vivacité : {{live}}."
+    },
+    "errors": {
+      "emailRegistered": "Cet e-mail est déjà enregistré. Veuillez utiliser un autre e-mail ou vous connecter.",
+      "invalidEmail": "Veuillez entrer une adresse email valide.",
+      "weakPassword": "Veuillez choisir un mot de passe plus fort (au moins 8 caractères).",
+      "signInRequired": "Veuillez vous connecter pour continuer.",
+      "fileTooLarge": "Le fichier est trop volumineux. Veuillez utiliser une image plus petite (max 5 Mo).",
+      "invalidFileType": "Type de fichier invalide. Veuillez télécharger une image JPG, PNG ou WebP.",
+      "networkError": "Erreur réseau. Veuillez vérifier votre connexion et réessayer.",
+      "timeout": "Délai d attente dépassé. Veuillez réessayer.",
+      "permissionDenied": "Permission refusée. Veuillez vérifier vos paramètres et réessayer.",
+      "genericFallback": "Une erreur s'est produite. Veuillez réessayer.",
+      "unknownError": "Une erreur s'est produite. Veuillez réessayer ou contacter le support si le problème persiste.",
+      "imageFlagged": "Image signalée par la modération",
+      "configurationError": "Erreur de configuration",
+      "imageUploadNotConfigured": "Le téléchargement d'images n'est pas configuré. Veuillez contacter le support.",
+      "photoFlagged": "Photo signalée",
+      "photoFlaggedDescription": "Votre photo de {{side}} a été signalée et ne peut pas être utilisée. Veuillez télécharger une autre photo.",
+      "uploadFailed": "Échec du téléchargement",
+      "notReady": "Pas prêt",
+      "notReadyDescription": "Veuillez terminer les étapes précédentes avant de commencer la vérification.",
+      "profileCreationFailed": "Échec de la création du profil",
+      "profileUpdateFailed": "Échec de la mise à jour du profil",
+      "emailRequired": "E-mail requis",
+      "emailRequiredDescription": "Veuillez saisir votre adresse e-mail.",
+      "passwordRequired": "Mot de passe requis",
+      "passwordRequiredDescription": "Veuillez saisir votre mot de passe.",
+      "confirmPassword": "Confirmation du mot de passe requise",
+      "confirmPasswordDescription": "Veuillez confirmer votre mot de passe.",
+      "passwordsDontMatch": "Les mots de passe ne correspondent pas",
+      "passwordsDontMatchDescription": "Veuillez vous assurer que vos mots de passe correspondent.",
+      "nameRequired": "Nom requis",
+      "nameRequiredDescription": "Veuillez saisir votre nom complet ou votre nom de scène.",
+      "emailAlreadyRegistered": "E-mail déjà enregistré",
+      "emailAlreadyRegisteredDescription": "Cet e-mail est déjà utilisé. Veuillez vous connecter ou utiliser un autre e-mail.",
+      "signUpFailed": "Échec de l'inscription",
+      "cityRequired": "Ville requise",
+      "cityRequiredDescription": "Veuillez saisir votre ville.",
+      "stateRequired": "État/Pays requis",
+      "stateRequiredDescription": "Veuillez saisir votre état ou votre pays.",
+      "birthdateRequired": "Date de naissance requise",
+      "birthdateRequiredDescription": "Veuillez saisir votre date de naissance.",
+      "ageRestriction": "Restriction d'âge",
+      "ageRestrictionDescription": "Vous devez avoir au moins 18 ans pour vous inscrire.",
+      "genderRequired": "Genre requis",
+      "genderRequiredDescription": "Veuillez sélectionner votre genre.",
+      "pricingRequired": "Tarification requise",
+      "pricingRequiredDescription": "Veuillez définir un prix de base mensuel d'au moins 150 $.",
+      "campaignTypeRequired": "Type de campagne requis",
+      "campaignTypeRequiredDescription": "Veuillez sélectionner au moins un type de campagne.",
+      "industryRequired": "Industrie requise",
+      "industryRequiredDescription": "Veuillez sélectionner au moins une industrie.",
+      "platformRequired": "Plateforme requise",
+      "platformRequiredDescription": "Veuillez sélectionner votre plateforme de médias sociaux principale.",
+      "handleRequired": "Nom d'utilisateur requis",
+      "handleRequiredDescription": "Veuillez saisir votre nom d'utilisateur pour la plateforme sélectionnée.",
+      "visibilityRequired": "Visibilité requise",
+      "visibilityRequiredDescription": "Veuillez définir la visibilité de votre profil.",
+      "profileSaveFailed": "Échec de la sauvegarde du profil",
+      "selectionLimit": "Limite de sélection atteinte",
+      "selectionLimitDescription": "Vous pouvez sélectionner un maximum de 3 types de travaux.",
+      "livenessVerificationNotConfigured": "La vérification de la vivacité n'est pas configurée. Veuillez contacter le support.",
+      "duplicateEmail": "Cet email est déjà enregistré. Veuillez utiliser un autre e-mail ou vous connecter.",
+      "cityRequiredTitle": "Ville requise",
+      "cityRequiredDesc": "Veuillez saisir votre ville.",
+      "stateRequiredTitle": "État/Pays requis",
+      "stateRequiredDesc": "Veuillez saisir votre état ou votre pays.",
+      "birthdateRequiredTitle": "Date de naissance requise",
+      "birthdateRequiredDesc": "Veuillez saisir votre date de naissance.",
+      "ageRestrictionTitle": "Restriction d'âge",
+      "ageRestrictionDesc": "Vous devez avoir au moins 18 ans pour vous inscrire.",
+      "genderRequiredTitle": "Genre requis",
+      "genderRequiredDesc": "Veuillez sélectionner votre genre.",
+      "pricingRequiredTitle": "Tarification requise",
+      "pricingRequiredDesc": "Veuillez définir un prix de base mensuel d'au moins 150 $.",
+      "campaignTypeRequiredTitle": "Type de campagne requis",
+      "campaignTypeRequiredDesc": "Veuillez sélectionner au moins un type de campagne.",
+      "industryRequiredTitle": "Industrie requise",
+      "industryRequiredDesc": "Veuillez sélectionner au moins une industrie.",
+      "platformRequiredTitle": "Plateforme requise",
+      "platformRequiredDesc": "Veuillez sélectionner votre plateforme de médias sociaux principale.",
+      "handleRequiredTitle": "Nom d'utilisateur requis",
+      "handleRequiredDesc": "Veuillez saisir votre nom d'utilisateur pour la plateforme sélectionnée.",
+      "visibilityRequiredTitle": "Visibilité requise",
+      "visibilityRequiredDesc": "Veuillez définir la visibilité de votre profil.",
+      "profileSaveFailedTitle": "Échec de la sauvegarde du profil",
+      "selectionLimitTitle": "Limite de sélection atteinte",
+      "selectionLimitDesc": "Vous pouvez sélectionner un maximum de 3 types de travaux.",
+      "livenessVerificationNotConfiguredTitle": "La vérification de la vivacité n'est pas configurée",
+      "livenessVerificationNotConfiguredDesc": "Veuillez contacter le support.",
+      "duplicateEmailTitle": "Email déjà enregistré",
+      "duplicateEmailDesc": "Cet email est déjà enregistré. Veuillez utiliser un autre e-mail ou vous connecter.",
+      "notAuthenticatedTitle": "Non authentifié",
+      "notAuthenticatedDesc": "Veuillez vous connecter pour continuer.",
+      "genericFailedTitle": "Échec générique",
+      "genericFailedDesc": "Une erreur s'est produite. Veuillez réessayer.",
+      "unknownDesc": "Une erreur s'est produite. Veuillez réessayer ou contacter le support si le problème persiste."
+    },
+    "photos": {
+      "label": "Téléchargez au moins 3 photos",
+      "description": "Celles-ci seront utilisées pour entraîner votre modèle d'IA. Assurez-vous qu'elles sont de haute qualité et que votre visage est clairement visible.",
+      "why": "Pourquoi ces photos fonctionnent",
+      "whyDesc": "Des photos claires et bien éclairées aident les clients potentiels à voir votre polyvalence.",
+      "drop": "Déposez les fichiers ici ou cliquez pour télécharger",
+      "front": "Face",
+      "left": "Gauche",
+      "right": "Droite",
+      "pending": "En attente",
+      "livePreview": "Aperçu de la caméra en direct",
+      "currentPose": "Pose actuelle :",
+      "openCamera": "Ouvrir la caméra",
+      "capture": "Capturer",
+      "nextPose": "Pose suivante",
+      "verificationPending": "Attendez ! Nous devons vérifier votre identité avant que vous puissiez télécharger des photos. Cela garantit que votre modèle d'IA n'est entraîné que sur vous.",
+      "generateAvatar": "Générer Avatar (Duix)",
+      "generatedAvatar": "Avatar généré",
+      "photoFlagged": "Votre photo {{side}} a été signalée et ne peut pas être utilisée. Veuillez télécharger une photo différente."
+    },
+    "skipModal": {
+      "title": "Ignorer la vérification d'identité ?",
+      "description": "Si vous ignorez cette étape maintenant, votre profil sera créé, mais les marques ne vous verront pas tant que vous n'aurez pas terminé la vérification.",
+      "note": "Vous pouvez effectuer la vérification à tout moment depuis votre tableau de bord.",
+      "confirmSkip": "Passer pour l'instant - Je suis sûr",
+      "actions": {
+        "back": "← Retourner",
+        "confirm": "Passer pour l'instant - Je suis sûr"
+      }
+    },
+    "actions": {
+      "next": "Suivant",
+      "back": "Retour",
+      "startLiveness": "Démarrer la vérification",
+      "skip": "Passer pour l'instant",
+      "verifyAndContinue": "Vérifier et continuer",
+      "close": "Fermer",
+      "login": "S'identifier",
+      "signup": "S'inscrire",
+      "continue": "Continuer",
+      "saveAndVerify": "Enregistrer et vérifier",
+      "startingVerification": "Démarrage…",
+      "verifyIdentity": "Vérifier l'identité maintenant"
+    },
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "terms": {
+      "title": "Termes & Conditions",
+      "subtitle": "Veuillez lire et accepter nos conditions pour terminer votre inscription.",
+      "agreeTo": "J'accepte la",
+      "policyLink": "Politique de confidentialité",
+      "mustAgree": "Vous devez accepter la politique de confidentialité pour créer votre compte.",
+      "completeRegistration": "Terminer l'inscription"
+    },
+    "title": "Réservez votre profil",
+    "steps": {
+      "accountSetup": "Configuration du compte",
+      "personalDetails": "Détails personnels",
+      "verification": "Vérification",
+      "photos": "Photos",
+      "finalize": "Finaliser"
+    },
+    "stepDescriptions": {
+      "step1": {
+        "creator": "Créez votre compte pour commencer.",
+        "model_actor": "Créez votre compte pour commencer.",
+        "athlete": "Créez votre compte pour commencer.",
+        "influencer": "Créez votre compte pour commencer."
+      },
+      "step2": {
+        "influencer": "Dites-nous-en un peu plus sur vous",
+        "model_actor": "Commençons votre portfolio",
+        "athlete": "Parlez-nous de votre sport"
+      },
+      "step3": {
+        "influencer": "Aidez-nous à vous associer aux bonnes campagnes",
+        "model_actor": "Aidez-nous à personnaliser vos opportunités",
+        "athlete": "Préparez-vous à attirer des sponsors et des partenariats"
+      }
+    },
+    "stepTitles": {
+      "step1": "Créez Votre Compte",
+      "step2": {
+        "influencer": "Bases du Profil",
+        "model_actor": "Détails du Talent",
+        "athlete": "Infos Athlète"
+      },
+      "step3": {
+        "influencer": "Opportunités",
+        "model_actor": "Préférences",
+        "athlete": "Configuration de Marque"
+      }
+    },
+    "stepProgress": "Étape {{step}} sur {{total}}",
+    "authMode": {
+      "signup": "S'inscrire",
+      "login": "Se connecter"
+    },
+    "form": {
+      "labels": {
+        "email": "Adresse e-mail",
+        "password": "Mot de passe",
+        "confirmPassword": "Confirmez le mot de passe",
+        "fullName": "Nom complet",
+        "city": "Ville",
+        "state": "État/Pays"
+      },
+      "handle": "Nom d'utilisateur / Handle",
+      "placeholders": {
+        "fullName": "ex: Jean Dupont",
+        "stageName": "Votre nom",
+        "bio": "Parlez un peu de vous aux marques...",
+        "platform": "Sélectionner la plateforme",
+        "email": "ex: jean@exemple.com",
+        "password": "********",
+        "schoolName": "Nom de l'université",
+        "sport": "Sélectionnez votre sport",
+        "languages": "par ex. anglais, espagnol",
+        "confirmPassword": "********",
+        "handle": "@votreidentifiant",
+        "price": "150",
+        "headshot": "URL de l'image",
+        "specify": "Veuillez préciser...",
+        "age": "ex: 25"
+      },
+      "sport": "Le sport",
+      "athleteType": "Type d'athlète",
+      "athleteTypes": {
+        "University": "Université",
+        "Professional": "Professionnel",
+        "Independent": "Indépendant"
+      },
+      "schoolName": "Nom de l'école",
+      "languages": "Langues",
+      "representationStatus": "Statut de représentation",
+      "instagramOptional": "Instagram (facultatif)",
+      "twitterOptional": "Twitter/X (facultatif)",
+      "brandCategories": "Intérêts / Catégories de marques",
+      "shortBio": "Courte biographie",
+      "visibility": "Visibilité du profil",
+      "visibilityOptions": {
+        "public": {
+          "label": "Public",
+          "description": "Visible par tout le monde"
+        },
+        "private": {
+          "label": "Privé",
+          "description": "Découvrable uniquement par les marques et les créateurs IA"
+        }
+      },
+      "age": "Âge",
+      "dob": "Date de naissance",
+      "genderQuestion": "Quel est votre genre ?",
+      "genderOptions": {
+        "female": "Femme",
+        "male": "Homme",
+        "nonbinary": "Non binaire",
+        "genderFluid": "Fluide de genre",
+        "preferNotToSay": "Préfère ne pas dire"
+      },
+      "validation": {
+        "signInFailed": "Échec de la connexion",
+        "selectionLimit": "Limite de sélection",
+        "selectionLimitDesc": "Veuillez sélectionner jusqu'à 3 options pour l'instant. Vous pourrez en ajouter d'autres plus tard."
+      },
+      "forgotPassword": "Mot de passe oublié ?",
+      "selectAll": "Tout sélectionner",
+      "vibes": "Tags d'Ambiance / Style",
+      "headshot": "Télécharger une photo (facultatif)",
+      "headshotHint": "Vous pouvez télécharger votre photo après avoir créé votre compte",
+      "birthdate": "Date de naissance",
+      "licensingPricing": "Prix de la Licence",
+      "basePrice": "Prix de base mensuel de la licence (USD)",
+      "basePriceHint": "Minimum 150$/mois. La devise est bloquée en USD.",
+      "campaignMatch": "Aidez-nous à vous trouver les bonnes campagnes",
+      "contentInterest": "Dans quel type de contenu souhaitez-vous apparaître ?",
+      "selectMax3": "Sélectionnez jusqu'à 3 pour l'instant",
+      "brandinterest": "Avec quels types de marques ou d'industries voulez-vous travailler ?",
+      "gender": "Comment vous identifiez-vous ?",
+      "raceEthnicity": "Race / Ethnicité (sélectionnez tout ce qui s'applique)",
+      "primaryPlatform": "Plateforme principale",
+      "handle": "Identifiant",
+      "perMonth": "/mois",
+      "save": "Enregistrer et continuer vers la vérification"
+    },
+    "warning": {
+      "limitedBatches": "Nous lançons par lots limités pour garantir à chaque créateur visibilité et opportunités de campagne. Réservez votre profil pour rejoindre la première cohorte de créateurs."
+    },
+    "success": {
+      "title": "Profil réservé — bienvenue dans l'écosystème Likelee",
+      "description": "Nous intégrons les talents par vagues. Vous recevrez un e-mail dès que votre profil sera en ligne et consultable par les marques. En attendant, vous pouvez modifier vos détails ou consulter votre tableau de bord.",
+      "dashboardButton": "Aller au tableau de bord"
+    },
+    "liveness": {
+      "alreadyApproved": "Déjà approuvé",
+      "alreadyApprovedDescription": "Votre vérification de vivacité est déjà approuvée. Aucune autre vérification n'est nécessaire.",
+      "sessionError": "Erreur de session de vivacité"
+    },
+    "toasts": {
+      "configErrorTitle": "Erreur de configuration",
+      "configErrorDesc": "La vérification de vivacité n est pas configurée. Veuillez contacter le support.",
+      "livenessErrorTitle": "Erreur de session de vivacité",
+      "profileCreationFailed": "Échec de la création du profil",
+      "profileUpdateFailed": "Échec de la mise à jour du profil",
+      "emailRequiredTitle": "Email requis",
+      "emailRequiredDesc": "Veuillez entrer votre adresse email.",
+      "passwordRequiredTitle": "Mot de passe requis",
+      "passwordRequiredDesc": "Veuillez entrer un mot de passe.",
+      "confirmPasswordTitle": "Confirmer le mot de passe",
+      "confirmPasswordDesc": "Veuillez confirmer votre mot de passe.",
+      "passwordsDoNotMatchTitle": "Les mots de passe ne correspondent pas",
+      "passwordsDoNotMatchDesc": "Les mots de passe saisis ne correspondent pas. Veuillez réessayer.",
+      "nameRequiredTitle": "Nom requis",
+      "nameRequiredDesc": "Veuillez entrer votre nom complet.",
+      "emailRegisteredTitle": "Email déjà enregistré",
+      "emailRegisteredDesc": "Cet email est déjà enregistré. Veuillez vous connecter ou utiliser un autre email.",
+      "verifyEmailDesc": "Veuillez vérifier votre email pour valider votre compte avant de continuer.",
+      "signupFailed": "Échec de l inscription",
+      "cityRequiredTitle": "Ville requise",
+      "cityRequiredDesc": "Veuillez entrer votre ville.",
+      "stateRequiredTitle": "État/Région requis",
+      "stateRequiredDesc": "Veuillez entrer votre état/région.",
+      "birthdateRequiredTitle": "Date de naissance requise",
+      "birthdateRequiredDesc": "Veuillez entrer votre date de naissance.",
+      "ageRestrictionTitle": "Restriction d âge",
+      "ageRestrictionDesc": "Vous devez avoir 18 ans ou plus pour vous inscrire.",
+      "genderRequiredTitle": "Genre requis",
+      "genderRequiredDesc": "Veuillez sélectionner comment vous vous identifiez.",
+      "pricingRequiredTitle": "Tarification requise",
+      "pricingRequiredDesc": "Veuillez définir votre prix de licence mensuel de base (minimum 150 $).",
+      "campaignTypeRequiredTitle": "Type de campagne requis",
+      "campaignTypeRequiredDesc": "Veuillez sélectionner au moins un type de campagne.",
+      "industryRequiredTitle": "Industrie requise",
+      "industryRequiredDesc": "Veuillez sélectionner au moins une industrie.",
+      "platformRequiredTitle": "Plateforme requise",
+      "platformRequiredDesc": "Veuillez sélectionner votre plateforme principale.",
+      "handleRequiredTitle": "Identifiant requis",
+      "handleRequiredDesc": "Veuillez entrer votre identifiant de plateforme.",
+      "visibilityRequiredTitle": "Visibilité requise",
+      "visibilityRequiredDesc": "Veuillez sélectionner votre préférence de visibilité de profil.",
+      "notSignedInTitle": "Non connecté",
+      "notSignedInDesc": "Veuillez vous connecter pour continuer.",
+      "profileSaveFailed": "Échec de l enregistrement du profil",
+      "invalidCredentials": "Identifiants de connexion invalides",
+      "uploadFailed": "Échec du téléchargement",
+      "avatarGenFailed": "Échec de la génération de l avatar",
+      "verificationFailed": "Échec de la vérification",
+      "alreadyApproved": "Déjà approuvé",
+      "alreadyApprovedDesc": "Votre vérification de vivacité est déjà approuvée. Aucune autre vérification requise.",
+      "identityVerified": "Identité vérifiée",
+      "identityVerifiedDesc": "Veuillez télécharger vos 3 photos de référence (Face, Gauche, Droite) pour terminer votre configuration.",
+      "statusCheckFailed": "Échec de la vérification du statut",
+      "cameraAccessRequiredTitle": "Accès caméra requis",
+      "cameraAccessRequiredDesc": "Impossible d'accéder à la caméra. Veuillez autoriser les permissions caméra dans les paramètres de votre navigateur.",
+      "consentRequiredTitle": "Consentement requis",
+      "consentRequiredDesc": "Veuillez donner votre consentement avant de télécharger vos photos.",
+      "missingPhotosTitle": "Photos manquantes",
+      "missingPhotosDesc": "Veuillez capturer les trois vues (face, gauche et droite).",
+      "livenessFailedTitle": "Échec de la vérification de présence",
+      "livenessFailedDesc": "Veuillez réessayer avec un bon éclairage et suivre les instructions.",
+      "kycErrorTitle": "Erreur KYC"
+    }
+  },
+  "faces": {
+    "hero": {
+      "flipper": [
+        {
+          "line1": "Votre Apparence",
+          "line2": "Gains Illimités"
+        },
+        {
+          "line1": "Votre Consentement",
+          "line2": "Contrôle Total"
+        },
+        {
+          "line1": "Vos Conditions",
+          "line2": "Revenu Récurrent"
+        }
+      ],
+      "alert": "Gagnez des royalties récurrentes grâce à votre apparence. Pas de paiements uniques. Rejoignez la première cohorte de créateurs, d'athlètes et de talents vérifiés qui licencient leur image selon leurs conditions.",
+      "subtitle": "Licenciez votre apparence aux marques, studios et agences. Fixez vos tarifs. Gardez un contrôle total. Gagnez chaque mois qu'elle est utilisée.",
+      "signUpButton": "S'inscrire",
+      "forYouButton": "Pour Vous"
+    },
+    "meta": {
+      "title": "Créateurs - Monétisez Votre Apparence",
+      "description": "Athlètes, influenceurs, acteurs et mannequins - gagnez des revenus récurrents grâce à votre jumeau numérique. Fixez vos propres tarifs, approuvez l'utilisation et suivez les royalties.",
+      "serviceType": "Gestion de l'Apparence Numérique",
+      "audienceType": "Créateurs, Athlètes, Influenceurs, Mannequins, Acteurs"
+    },
+    "whyChoose": {
+      "title": "Pourquoi les Créateurs, Athlètes et Talents Choisissent Likelee",
+      "subtitle1": "Le moyen le plus rapide d'offrir des caméos IA sûrs pour les marques et de gagner des royalties à chaque utilisation.",
+      "subtitle2": "Chaque créateur sur Likelee licencie son apparence sous des droits clairs et limités dans le temps et conserve la capacité de modifier, mettre en pause ou retirer les permissions à tout moment.",
+      "cards": [
+        {
+          "title": "Revenus Récurrents, Pas de Gigs Uniques",
+          "description": "Fixez vos tarifs. Gagnez un acompte mensuel pour chaque campagne active utilisant votre apparence. Un shooting à 500 $ était tout ce qu'il y avait. Maintenant, cela paie mois après mois."
+        },
+        {
+          "title": "Contrôle Total",
+          "description": "Vous approuvez chaque utilisation. Mettez en pause les campagnes à tout moment. Révocquez les droits en un clic. Votre apparence, vos règles."
+        },
+        {
+          "title": "Transparence Totale",
+          "description": "Voyez exactement qui utilise votre image, pour combien de temps, dans quelles régions et combien vous avez gagné. Chaque campagne suivie, chaque paiement vérifié."
+        },
+        {
+          "title": "Tableau de Bord des Droits d'Utilisation",
+          "description": "Voyez qui utilise votre apparence, quand les droits expirent et combien vous avez gagné. Révocquez ou renouvelez en un clic."
+        }
+      ]
+    },
+    "featuredCreator": {
+      "title": "Créateur en Vedette",
+      "royaltiesEarned": "Royalties Gagnées",
+      "royaltiesDescription": "De la licence à 5 marques",
+      "usageRequests": "Demandes d'Utilisation",
+      "controlSettings": "Paramètres de Contrôle",
+      "allowCommercialUse": "Autoriser l'Usage Commercial",
+      "allowFilmUse": "Autoriser l'Usage Film",
+      "viewUsageReportButton": "Voir le Rapport d'Utilisation",
+      "updateSettingsButton": "Mettre à Jour les Paramètres"
+    },
+    "howItWorks": {
+      "title": "Commencez à Gagner en 3 Étapes Simples",
+      "subtitle": "Du téléchargement aux gains - c'est aussi simple que ça.",
+      "steps": [
+        {
+          "title": "Téléchargez Vos Photos",
+          "description": "Créez votre identité numérique vérifiée avec des photos de haute qualité."
+        },
+        {
+          "title": "Définissez Vos Paramètres",
+          "description": "Définissez les droits d'utilisation, les prix et les exigences d'approbation."
+        },
+        {
+          "title": "Commencez à Gagner",
+          "description": "Approuvez les demandes. Gagnez des acomptes mensuels. Évoluez avec plusieurs campagnes simultanées."
+        }
+      ]
+    },
+    "digitalTalentOwner": {
+      "title": "De Créateur → Propriétaire de Talent Numérique",
+      "subtitle": "Vous avez déjà construit votre image — maintenant faites-la travailler pour vous.",
+      "mainContent": "Licencier votre apparence n'est pas se vendre ; c'est passer à l'échelle supérieure. Pendant que vous filmez votre prochain projet, votre jumeau numérique peut en gagner dix autres.",
+      "footer": "Vous n'êtes pas un travailleur à la tâche. Vous êtes un propriétaire.",
+      "comparison": {
+        "title": "Modèle Traditionnel vs Modèle d'Apparence Likelee",
+        "traditionalPath": "Voie Traditionnelle",
+        "traditionalPathDescription1": "Vous jouez ou filmez manuellement",
+        "likeleeModel": "Modèle Likelee",
+        "likeleeModelDescription1": "Vous passez à l'échelle automatiquement",
+        "traditionalPathDescription2": "Vous êtes payé une fois par projet",
+        "likeleeModelDescription2": "Vous gagnez des acomptes mensuels tant que les marques utilisent votre apparence",
+        "traditionalPathDescription3": "Vous perdez souvent la propriété intellectuelle",
+        "likeleeModelDescription3": "Vous conservez la propriété intellectuelle",
+        "traditionalPathDescription4": "Vous ne pouvez pas réutiliser ou réadapter",
+        "likeleeModelDescription4": "Vous approuvez chaque réutilisation"
+      }
+    },
+    "realFutures": {
+      "title": "Vrais Visages. Vrais Futurs.",
+      "line1": "Les marques et les studios génèrent déjà des campagnes IA — la plupart utilisent des visages non licenciés ou synthétiques.",
+      "line2": "Likelee est l'endroit où le vrai talent alimente le monde de l'IA.",
+      "line3": "Chaque créateur, modèle et interprète est vérifié, suivi et payé avec des acomptes mensuels.",
+      "line4": "Vous n'êtes pas remplacé par l'IA — vous devenez son flux de revenus mensuel."
+    },
+    "valueFloor": {
+      "title": "Plancher de Valeur du Créateur",
+      "line1": "Aucune licence d'apparence sur Likelee ne paie en dessous du minimum communautaire.",
+      "line2": "Vous pouvez également fixer votre propre plancher afin que les marques et les studios ne puissent pas vous sous-payer.",
+      "line3": "La transparence renforce la confiance. Nous publions les gains moyens des créateurs et les données de référence afin que vous connaissiez toujours votre véritable valeur marchande."
+    },
+    "faq": {
+      "subtitle": "Tout ce que vous devez savoir pour être un Créateur sur Likelee",
+      "questions": [
+        {
+          "title": "Qu'est-ce qu'un \"Créateur\" ?",
+          "description": "Un Créateur est tout individu vérifié qui licencie son apparence (visage, voix ou jumeau numérique) pour des campagnes ou des productions assistées par IA. Vous conservez la propriété de votre image ; Likelee facilite simplement l'utilisation sous licence selon les conditions que vous choisissez."
+        },
+        {
+          "title": "Comment me faire vérifier ?",
+          "description": "Une fois votre compte accordé dans l'écosystème, vous recevrez un e-mail de bienvenue et un lien de vérification. Vous soumettrez une pièce d'identité et une courte vidéo selfie afin que notre système puisse confirmer votre authenticité et produire votre caméo."
+        },
+        {
+          "title": "Mon apparence peut-elle être utilisée sans mon consentement ?",
+          "description": "Jamais. Chaque demande d'utilisation nécessite votre approbation explicite. Aucune marque, studio ou partenaire IA ne peut utiliser votre apparence à moins que vous n'ayez donné la permission pour ce contexte spécifique."
+        },
+        {
+          "title": "Puis-je retirer mon apparence de la plateforme ?",
+          "description": "Oui. Vous pouvez désactiver ou supprimer votre profil à tout moment. Les licences actives existantes expireront automatiquement à la fin de leur durée contractuelle, et aucune nouvelle utilisation ne pourra avoir lieu."
+        },
+        {
+          "title": "Et si une marque demande des droits \"à perpétuité\" ?",
+          "description": "Likelee n'autorise pas les clauses d'utilisation perpétuelle par défaut. Si vous choisissez d'en accepter une, un avertissement clair vous sera présenté sur ce que cela signifie, et vous pourrez négocier une rémunération plus élevée ou refuser."
+        },
+        {
+          "title": "Mon apparence peut-elle être utilisée pour entraîner des modèles IA ?",
+          "description": "Uniquement si vous activez explicitement l'option \"droits d'entraînement IA\". Celle-ci est désactivée par défaut. Vous verrez toujours une divulgation lorsqu'une campagne implique une utilisation générative ou synthétique."
+        },
+        {
+          "title": "Quelles protections existent si mon apparence est mal utilisée ?",
+          "description": "Likelee suit chaque actif approuvé et conserve une preuve numérique. En cas de mauvaise utilisation, notre équipe d'application des droits vous aide avec les retraits et la documentation pour les poursuites judiciaires."
+        },
+        {
+          "title": "Suis-je toujours propriétaire de mon apparence numérique ?",
+          "description": "Oui. Vous conservez la pleine propriété. Vous licenciez l'utilisation, vous ne transférez pas la propriété. Toutes les répliques numériques restent liées à votre identité vérifiée."
+        },
+        {
+          "title": "Puis-je négocier les tarifs pour différents types d'utilisation ?",
+          "description": "Absolument. Vous pouvez fixer des prix distincts pour le contenu UGC enregistré par des humains, les caméos IA et les jumeaux numériques IA complets. Notre système applique automatiquement le tarif choisi en fonction du type de campagne et de la durée."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Prêt à devenir propriétaire de talent numérique ?",
+      "subtitle": "Rejoignez les créateurs, modèles et interprètes qui construisent un revenu durable grâce à la licence mensuelle de leur apparence.",
+      "howToGetStarted": "Comment commencer :",
+      "steps": [
+        "→ Téléchargez votre caméo — Enregistrez une courte vidéo de vous-même (référence IA)",
+        "→ Téléchargez des images de référence — 15 photos sous différents angles/styles",
+        "→ Fixez votre tarif plancher — Vous décidez de votre prix minimum (350 $+/mois)",
+        "→ Les marques vous trouvent — Elles demandent des licences, vous approuvez ou refusez",
+        "→ Commencez à gagner — Paiements mensuels tant que les licences sont actives"
+      ],
+      "reserveProfileButton": "Réservez Votre Profil"
+    }
+  },
+  "common": {
+    "signIn": "Se connecter",
+    "dashboard": "Tableau de bord",
+    "ongoing": "En continu",
+    "city": "Ville",
+    "state": "État",
+    "logout": "Déconnexion",
+    "forgotPassword": "Mot de passe oublié ?",
+    "saving": "Enregistrement en cours...",
+    "submitting": "Envoi en cours...",
+    "submit": "Envoyer",
+    "back": "Retour",
+    "goBack": "Retourner",
+    "continue": "Continuer",
+    "loading": "Chargement...",
+    "checking": "Vérification...",
+    "platforms": {
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "youtube": "YouTube",
+      "twitter": "Twitter/X",
+      "other": "Autre"
+    },
+    "raceEthnicity": {
+      "options": {
+        "Asian": "Asiatique",
+        "Black / African American": "Noir / Afro-américain",
+        "Hispanic / Latino": "Hispanique / Latino",
+        "Middle Eastern / North African": "Moyen-Oriental / Nord-Africain",
+        "Native American / Indigenous": "Amérindien / Autochtone",
+        "Pacific Islander": "Insulaire du Pacifique",
+        "White / Caucasian": "Blanc / Caucasien",
+        "Mixed / Multiracial": "Mixte / Multiracial",
+        "Prefer not to say": "Préfère ne pas dire"
+      }
+    },
+    "genderOptions": {
+      "female": "Femme",
+      "male": "Homme",
+      "nonbinary": "Non binaire",
+      "genderFluid": "Fluide de genre",
+      "preferNotToSay": "Préfère ne pas dire"
+    },
+    "vibes": {
+      "Streetwear": "Streetwear",
+      "Glam": "Glamour",
+      "Natural": "Naturel",
+      "Classic": "Classique",
+      "Edgy": "Avant-gardiste",
+      "Athletic": "Athlétique",
+      "Runway": "Défilé",
+      "Editorial": "Éditorial",
+      "Commercial": "Commercial",
+      "Casual": "Décontracté"
+    },
+    "contentTypes": {
+      "Social-media ads": "Publicités réseaux sociaux",
+      "Web & banner campaigns": "Campagnes Web & bannières",
+      "TV / streaming commercials": "Publicités TV / streaming",
+      "Film & scripted streaming": "Films & streaming scénarisé",
+      "Print & outdoor ads": "Publicités imprimées & extérieures",
+      "Music videos": "Clips musicaux",
+      "Video-game / VR characters": "Personnages jeux vidéo / VR",
+      "Stock photo / video libraries": "Banques d'images / vidéos",
+      "Educational / nonprofit spots": "Spots éducatifs / à but non lucratif",
+      "Fashion & Beauty": "Mode & Beauté",
+      "Product Reviews": "Critiques de produits",
+      "Testimonials": "Témoignages",
+      "Social Media Content": "Contenu réseaux sociaux",
+      "Educational Content": "Contenu éducatif",
+      "Fitness/Wellness": "Fitness/Bien-être",
+      "Lifestyle Content": "Contenu lifestyle",
+      "Political Content": "Contenu politique",
+      "Controversial Topics": "Sujets controversés",
+      "Explicit/Adult Content": "Contenu explicite/adulte",
+      "Pharmaceutical Claims": "Allégations pharmaceutiques",
+      "Financial/Investment Advice": "Conseils financiers/investissement",
+      "Other": "Autre",
+      "socialMediaAds": "Publicités réseaux sociaux",
+      "webBanner": "Campagnes Web et bannières",
+      "tvStreaming": "Publicités TV / streaming",
+      "filmScripted": "Films et séries scriptées",
+      "printOutdoor": "Publicités imprimées et extérieures",
+      "musicVideos": "Clips musicaux",
+      "videoGameVR": "Personnages de jeux vidéo / VR",
+      "stockLibraries": "Banques d'images / vidéos",
+      "educationalNonprofit": "Spots éducatifs / à but non lucratif"
+    },
+    "industries": {
+      "Fashion / Beauty": "Mode / Beauté",
+      "Tech / Electronics": "Tech / Électronique",
+      "Sports / Fitness": "Sports / Fitness",
+      "Food / Beverage": "Alimentation / Boissons",
+      "Film / Gaming / Music": "Cinéma / Jeux / Musique",
+      "Automotive": "Automobile",
+      "Finance / Fintech": "Finance / Fintech",
+      "Health / Wellness": "Santé / Bien-être",
+      "Luxury & Lifestyle": "Luxe & Art de vivre",
+      "Travel / Hospitality": "Voyage / Hôtellerie",
+      "Education": "Éducation",
+      "Real Estate": "Immobilier",
+      "Entertainment": "Divertissement",
+      "Open to any industry": "Ouvert à toute industrie",
+      "sportsFitness": "Sport / Fitness",
+      "foodBeverage": "Alimentation / Boissons",
+      "tech": "Tech",
+      "fashionBeauty": "Mode / Beauté",
+      "techElectronics": "Tech / Électronique",
+      "filmGamingMusic": "Cinéma / Jeux / Musique",
+      "automotive": "Automobile",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Santé / Bien-être",
+      "luxuryLifestyle": "Luxe & Art de vivre",
+      "travelHospitality": "Voyage / Hôtellerie"
+    },
+    "sports": {
+      "Football": "Football américain",
+      "Basketball": "Basketball",
+      "Baseball": "Baseball",
+      "Soccer": "Football (Soccer)",
+      "Tennis": "Tennis",
+      "Golf": "Golf",
+      "Track & Field": "Athlétisme",
+      "Swimming": "Natation",
+      "Gymnastics": "Gymnastique",
+      "Volleyball": "Volleyball",
+      "Wrestling": "Lutte",
+      "Boxing": "Boxe",
+      "MMA": "MMA",
+      "Hockey": "Hockey",
+      "Lacrosse": "Lacrosse",
+      "Softball": "Softball",
+      "Cheerleading": "Cheerleading",
+      "Dance": "Danse",
+      "Esports": "Esports",
+      "Other": "Autre"
+    },
+    "workTypes": {
+      "Print / Editorial": "Presse / Éditorial",
+      "Runway / Fashion Shows": "Défilés / Mode",
+      "Commercial / Lifestyle": "Commercial / Art de vivre",
+      "Film / TV": "Cinéma / TV",
+      "Digital / Social": "Digital / Social",
+      "Fitness / Athletic": "Fitness / Athlétique",
+      "Beauty / Cosmetics": "Beauté / Cosmétiques",
+      "Luxury / High Fashion": "Luxe / Haute Couture",
+      "Street Style / Urban": "Street Style / Urbain",
+      "E-commerce / Catalog": "E-commerce / Catalogue",
+      "Trade Shows / Events": "Salons / Événements",
+      "Parts Modeling (hands, feet)": "Mannequinat de détail (mains, pieds)",
+      "Plus Size": "Grande taille",
+      "Mature / Senior": "Mature / Senior",
+      "Petite": "Petite taille",
+      "Other": "Autre"
+    },
+    "brandCategories": {
+      "Sportswear / Athletic Apparel": "Vêtements de sport",
+      "Footwear": "Chaussures",
+      "Sports Equipment": "Équipement sportif",
+      "Health / Nutrition / Supplements": "Santé / Nutrition / Compléments",
+      "Tech / Wearables": "Tech / Objets connectés",
+      "Energy Drinks / Beverages": "Boissons énergisantes",
+      "Gaming / Esports": "Jeux vidéo / Esports",
+      "Automotive": "Automobile",
+      "Finance / Fintech": "Finance / Fintech",
+      "Education / Training": "Éducation / Formation",
+      "Open to any brand": "Ouvert à toute marque"
+    },
+    "regions": {
+      "northAmerica": "Amérique du Nord",
+      "europe": "Europe",
+      "asia": "Asie",
+      "global": "Mondial"
+    },
+    "usageTypes": {
+      "socialMedia": "Réseaux sociaux",
+      "socialMediaCampaign": "Campagne réseaux sociaux",
+      "productLaunch": "Lancement de produit",
+      "tvDigital": "TV & Numérique",
+      "summerCampaign": "Campagne d'été"
+    },
+    "error": "Erreur",
+    "success": "Succès",
+    "errors": {
+      "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+      "uploadFailedSupport": "Échec du téléchargement. Veuillez contacter le support si cela persiste.",
+      "saveFailed": "Impossible d'enregistrer les modifications. Veuillez réessayer.",
+      "saveFailedSupport": "Impossible d'enregistrer. Veuillez contacter le support si cela persiste.",
+      "storageError": "Erreur de stockage. Veuillez réessayer plus tard.",
+      "databaseError": "Impossible de traiter la demande. Veuillez réessayer.",
+      "genericError": "Une erreur s'est produite. Veuillez réessayer ou contacter le support.",
+      "bucketNotFound": "Service de téléchargement indisponible. Veuillez réessayer plus tard.",
+      "constraintViolation": "Données invalides. Veuillez vérifier votre saisie et réessayer."
+    }
+  },
+  "forgotPasswordPage": {
+    "title": "Réinitialisez votre mot de passe",
+    "instructions": "Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "emailLabel": "E-mail",
+    "submitButton": {
+      "sending": "Envoi...",
+      "default": "Envoyer le lien de réinitialisation"
+    },
+    "backToSignIn": "Retour à la connexion",
+    "successMessage": "Si un compte existe pour cet e-mail, un lien de réinitialisation du mot de passe a été envoyé.",
+    "errorMessage": "Échec de l'envoi du lien de réinitialisation"
+  },
+  "licensingSettingsPage": {
+    "title": "Paramètres de Licence",
+    "subtitle": "La tarification est publique et en USD uniquement. Définissez votre prix de base mensuel.",
+    "basePriceLabel": "Prix de base mensuel de la licence (USD)",
+    "perMonth": "/mois",
+    "minimumHint": "Minimum 150$/mois.",
+    "saveButton": "Enregistrer la Tarification",
+    "savingButton": "Enregistrement...",
+    "invalidPriceTitle": "Prix Invalide",
+    "invalidPriceDesc": "Minimum 150$/mois",
+    "successTitle": "Succès",
+    "successDesc": "Tarification mise à jour"
+  },
+  "imageSections": {
+    "headshot_neutral": {
+      "title": "Photos de tête - Expression neutre",
+      "description": "Visage de face, expression neutre (ni souriant ni renfrogné). Bon éclairage sur le visage. Vêtements professionnels ou fond uni. 1080x1080 minimum.",
+      "bestFor": "Les marques ont besoin d'une référence de visage propre"
+    },
+    "headshot_smiling": {
+      "title": "Photos de tête - Souriant",
+      "description": "Visage de face, sourire naturel (authentique, pas forcé). Bon éclairage. Cadre professionnel. 1080x1080 minimum.",
+      "bestFor": "Les marques veulent vous montrer heureux/accessible"
+    },
+    "fullbody_casual": {
+      "title": "Corps entier - Tenue décontractée",
+      "description": "Photo en pied en vêtements décontractés du quotidien. Pose naturelle.",
+      "bestFor": "Look décontracté quotidien"
+    },
+    "fullbody_formal": {
+      "title": "Corps entier - Formel/Professionnel",
+      "description": "Photo en pied en tenue professionnelle ou formelle.",
+      "bestFor": "Contextes professionnels ou d'affaires"
+    },
+    "side_profile": {
+      "title": "Profil latéral",
+      "description": "Vue latérale nette de votre visage et du haut du corps.",
+      "bestFor": "Les marques ont besoin de votre angle latéral"
+    },
+    "three_quarter": {
+      "title": "Angle 3/4",
+      "description": "Visage tourné à un angle de 45 degrés, expression naturelle.",
+      "bestFor": "Angle conversationnel naturel"
+    },
+    "hair_down": {
+      "title": "Cheveux détachés - Lâches/Ondulés",
+      "description": "Cheveux portés détachés dans votre style naturel.",
+      "bestFor": "Look décontracté et détendu"
+    },
+    "hair_up": {
+      "title": "Cheveux attachés - Queue de cheval/Chignon",
+      "description": "Cheveux tirés en arrière/attachés, look soigné.",
+      "bestFor": "Look professionnel ou actif"
+    },
+    "hair_styling": {
+      "title": "Coiffure - Tresses/Style spécifique",
+      "description": "Si vous avez une coiffure signature.",
+      "bestFor": "Si vous avez un style signature"
+    },
+    "upper_body": {
+      "title": "Gros plan du haut du corps",
+      "description": "Épaules et au-dessus, traits du visage détaillés visibles.",
+      "bestFor": "Plans rapprochés, traits du visage détaillés"
+    },
+    "outdoors": {
+      "title": "En environnement - Extérieur",
+      "description": "Vous dans un cadre extérieur (parc, rue, nature).",
+      "bestFor": "Contenu contextuel, lifestyle"
+    },
+    "indoors": {
+      "title": "En environnement - Intérieur",
+      "description": "Vous dans un cadre intérieur (maison, bureau, café).",
+      "bestFor": "Contextes intérieurs/bureau/maison"
+    },
+    "makeup_variation": {
+      "title": "Style de maquillage différent",
+      "description": "Si vous variez votre style de maquillage, montrez différents looks.",
+      "bestFor": "Si vous variez le maquillage, les marques devraient le savoir"
+    },
+    "seasonal": {
+      "title": "Variation saisonnière/Tenue",
+      "description": "Différents styles saisonniers ou variations de tenues.",
+      "bestFor": "Campagnes saisonnières, différents looks"
+    },
+    "signature": {
+      "title": "Votre choix - Moment signature",
+      "description": "Une photo qui vous représente vraiment et comment les gens vous reconnaissent.",
+      "bestFor": "Une photo qui vous représente vraiment"
+    }
+  },
+  "marketingDashboard": {
+    "toasts": {
+      "campaignCreated": "Campagne créée avec succès !"
+    }
+  },
+  "uploadProject": {
+    "toasts": {
+      "missingFields": "Champs manquants",
+      "missingFieldsDesc": "Veuillez remplir tous les champs obligatoires",
+      "projectUploaded": "Projet téléchargé ! (Mode démo - non enregistré)"
+    }
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Votre mot de passe a été mis à jour."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Échec de la connexion"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Choisissez Votre Identité",
+      "subtitle": "Rejoignez l'écosystème conçu pour que les créateurs possèdent, contrôlent et profitent de leur double numérique."
+    },
+    "influencer": {
+      "title": "Influenceur & Créateur de Contenu",
+      "description": "Monétisez votre présence sociale en licenciant votre double numérique pour des campagnes axées sur les réseaux sociaux."
+    },
+    "model_actor": {
+      "title": "Mannequin & Acteur",
+      "description": "Sécurisez des opportunités commerciales et éditoriales haut de gamme avec un jumeau numérique vérifié."
+    },
+    "athlete": {
+      "title": "Athlète (NIL)",
+      "description": "Développez vos partenariats de marque et générez des revenus passifs avec une image numérique conforme NIL."
+    },
+    "selectButton": "Sélectionner & Continuer",
+    "authModal": {
+      "title": "Bienvenue chez Likelee",
+      "selected": "Vous avez sélectionné :",
+      "signUpAs": "S'inscrire en tant que",
+      "alreadyHaveAccount": "Vous avez déjà un compte ? Se connecter"
+    }
+  }
+}

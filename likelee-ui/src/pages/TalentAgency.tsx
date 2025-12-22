@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -13,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function TalentAgency() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,20 +54,19 @@ export default function TalentAgency() {
       <section className="relative px-6 py-20 overflow-hidden bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
-            Your Talent Could Earn 10x More
+            {t("talentAgency.hero.title")}
           </h1>
           <p className="text-lg md:text-xl font-semibold mb-4">
-            Turn one-time shoots into recurring revenue
+            {t("talentAgency.hero.subtitle")}
           </p>
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            Traditional bookings pay $1.5K once and you're done. Likelee
-            licensing pays monthly, forever, and your roster earns consistently.
+            {t("talentAgency.hero.description")}
           </p>
           <Button
             onClick={() => navigate(createPageUrl("SalesInquiry"))}
             className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
           >
-            Book Demo
+            {t("talentAgency.hero.cta")}
           </Button>
         </div>
       </section>
@@ -74,14 +75,10 @@ export default function TalentAgency() {
       <section className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            Bookings are dropping, licensing is rising.
+            {t("talentAgency.bookingsDropping.title")}
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed">
-            Brands are shifting budgets toward AI experiments, but they still
-            need real verified talent for authentic campaigns. Likelee creates
-            recurring income streams for your talent while booking frequency
-            fluctuates. You earn recurring commission every month they stay
-            licensed.
+            {t("talentAgency.bookingsDropping.description")}
           </p>
         </div>
       </section>
@@ -91,7 +88,7 @@ export default function TalentAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Two Ways to Earn
+              {t("talentAgency.twoWays.title")}
             </h2>
           </div>
 
@@ -102,15 +99,14 @@ export default function TalentAgency() {
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Recurring Monthly Licensing
+                {t("talentAgency.twoWays.recurring.title")}
               </h3>
               <p className="text-base text-gray-700 leading-relaxed">
-                Brand uses your talent's likeness on their website indefinitely
-                and pays{" "}
+                {t("talentAgency.twoWays.recurring.description")}{" "}
                 <span className="font-bold text-indigo-600">
-                  $400 every month
+                  {t("talentAgency.twoWays.recurring.highlight")}
                 </span>{" "}
-                while those photos remain live.
+                {t("talentAgency.twoWays.recurring.suffix")}
               </p>
             </Card>
 
@@ -120,21 +116,21 @@ export default function TalentAgency() {
                 <Clock className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Fixed-Term Licensing
+                {t("talentAgency.twoWays.fixed.title")}
               </h3>
               <p className="text-base text-gray-700 mb-6 leading-relaxed">
-                Brand licenses your talent's face for a specific campaign
-                duration like 6 months, pays{" "}
-                <span className="font-bold text-purple-600">$2.5K upfront</span>
-                , and renews at the end of the term.
+                {t("talentAgency.twoWays.fixed.description")}{" "}
+                <span className="font-bold text-purple-600">
+                  {t("talentAgency.twoWays.fixed.highlight")}
+                </span>
+                {t("talentAgency.twoWays.fixed.suffix")}
               </p>
               <p className="text-base text-gray-700 leading-relaxed">
-                Your talent earns $2.5K per renewal cycle. Over three years,
-                that's{" "}
+                {t("talentAgency.twoWays.fixed.example")}{" "}
                 <span className="font-bold text-purple-600">
-                  $7.5K from the same talent
+                  {t("talentAgency.twoWays.fixed.exampleHighlight")}
                 </span>{" "}
-                versus $1.5K with traditional booking.
+                {t("talentAgency.twoWays.fixed.exampleSuffix")}
               </p>
             </Card>
           </div>
@@ -146,7 +142,7 @@ export default function TalentAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              How It Works
+              {t("talentAgency.howItWorks.title")}
             </h2>
           </div>
 
@@ -157,8 +153,7 @@ export default function TalentAgency() {
                 <span className="text-3xl font-bold text-white">1</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Add your talent to Likelee so they can review licensing requests
-                and watch their earnings accumulate in real time.
+                {t("talentAgency.howItWorks.step1")}
               </p>
             </Card>
 
@@ -168,9 +163,7 @@ export default function TalentAgency() {
                 <span className="text-3xl font-bold text-white">2</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Brands discover and request licenses by submitting their
-                proposed use, territory, duration, and payment amount directly
-                through the platform.
+                {t("talentAgency.howItWorks.step2")}
               </p>
             </Card>
 
@@ -180,8 +173,7 @@ export default function TalentAgency() {
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                You review and approve terms, set the final payment amount, and
-                the brand pays into escrow so the transaction is protected.
+                {t("talentAgency.howItWorks.step3")}
               </p>
             </Card>
 
@@ -191,9 +183,7 @@ export default function TalentAgency() {
                 <span className="text-3xl font-bold text-white">4</span>
               </div>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Money releases after 48 hours of no disputes straight to your
-                agency account, where you decide how to split earnings with your
-                talent.
+                {t("talentAgency.howItWorks.step4")}
               </p>
             </Card>
           </div>
@@ -205,7 +195,7 @@ export default function TalentAgency() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Agencies Win
+              {t("talentAgency.whyAgenciesWin.title")}
             </h2>
           </div>
 
@@ -216,13 +206,10 @@ export default function TalentAgency() {
                 <DollarSign className="w-12 h-12 text-indigo-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Recurring Revenue That Scales
+                {t("talentAgency.whyAgenciesWin.revenue.title")}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Year one brings in $50K from licensing. Year two you're at
-                $150K. Year three breaks $300K. You're using the same team, the
-                same talent roster, and conducting zero additional shoots to
-                reach that growth.
+                {t("talentAgency.whyAgenciesWin.revenue.description")}
               </p>
             </Card>
 
@@ -232,13 +219,10 @@ export default function TalentAgency() {
                 <Users className="w-12 h-12 text-purple-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Talent Stays Because They Feel Secure
+                {t("talentAgency.whyAgenciesWin.retention.title")}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Licensing income replaces the volatility of booking cycles, so
-                your talent doesn't panic when bookings slow down or jump to
-                competing agencies. They know they're earning predictable money
-                with you.
+                {t("talentAgency.whyAgenciesWin.retention.description")}
               </p>
             </Card>
 
@@ -248,13 +232,10 @@ export default function TalentAgency() {
                 <Shield className="w-12 h-12 text-green-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Legal Protection Built In
+                {t("talentAgency.whyAgenciesWin.protection.title")}
               </h3>
               <p className="text-sm text-gray-700 leading-relaxed">
-                Every license is verified and tracked with smart contracts that
-                spell out exactly what the brand can do, for how long, and in
-                which regions. Everything aligns with SAG-AFTRA standards and
-                GDPR compliance so you're never exposing your talent legally.
+                {t("talentAgency.whyAgenciesWin.protection.description")}
               </p>
             </Card>
           </div>
@@ -265,21 +246,17 @@ export default function TalentAgency() {
       <section className="px-6 py-20 bg-[#0D1B3A] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Adapt Now or Shrink Later
+            {t("talentAgency.cta.title")}
           </h2>
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
-            The agencies thriving right now are the ones that own both the
-            traditional booking pipeline and the emerging AI landscape
-            simultaneously. Likelee gives you the infrastructure to build and
-            manage both at scale, turning your existing roster into a recurring
-            revenue engine.
+            {t("talentAgency.cta.description")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
             >
-              Book a Demo
+              {t("talentAgency.cta.bookDemo")}
             </Button>
             <Button
               onClick={() => {
@@ -288,7 +265,7 @@ export default function TalentAgency() {
               }}
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
             >
-              See How It Works
+              {t("talentAgency.cta.howItWorks")}
             </Button>
           </div>
         </div>
