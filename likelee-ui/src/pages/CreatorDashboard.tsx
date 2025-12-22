@@ -681,10 +681,7 @@ export default function CreatorDashboard() {
         end_date: "2024-07-15",
         active_until: "2024-07-15",
         regions: ["North America", "Europe"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 125000 },
-        ),
+        impressions_week: "125000 impressions/week",
         auto_renewal: true,
         isExample: true,
       },
@@ -703,10 +700,7 @@ export default function CreatorDashboard() {
         end_date: "2024-08-01",
         active_until: "2024-08-01",
         regions: ["Global"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 89000 },
-        ),
+        impressions_week: "89000 impressions/week",
         auto_renewal: false,
         isExample: true,
       },
@@ -725,10 +719,7 @@ export default function CreatorDashboard() {
         end_date: "2024-06-30",
         active_until: "2024-06-30",
         regions: ["North America"],
-        impressions_week: t(
-          "creatorDashboard.campaigns.labels.impressionsPerWeek",
-          { count: 250000 },
-        ),
+        impressions_week: "250000 impressions/week",
         auto_renewal: false,
         isExample: true,
       },
@@ -743,18 +734,16 @@ export default function CreatorDashboard() {
         brand: "Adidas Running",
         brand_logo:
           "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
-        campaign_type: t("common.usageTypes.socialMediaCampaign"),
+        campaign_type: "Social Media Campaign",
         requested_date: "2025-02-06",
         proposed_rate: 600,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 6,
-        }),
+        term_length: "6 months",
         estimated_monthly: 540, // after 10% Likelee fee
-        regions: [t("common.regions.northAmerica"), t("common.regions.asia")],
-        industries: [t("common.industries.sportsFitness")],
-        usage_type: t("common.usageTypes.socialMedia"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 6 }),
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.asia")}`,
+        regions: ["North America", "Asia"],
+        industries: ["Sports & Fitness"],
+        usage_type: "Social Media",
+        duration: "6 months",
+        territory: `${"North America"}, ${"Asia"}`,
         perpetual: false,
         isExample: true,
       },
@@ -763,18 +752,16 @@ export default function CreatorDashboard() {
         brand: "Samsung Electronic",
         brand_logo:
           "https://www.techoffside.com/wp-content/uploads/2020/11/samsung-logo.jpg",
-        campaign_type: t("common.usageTypes.productLaunch"),
+        campaign_type: "Product Launch",
         requested_date: "2025-02-10",
         proposed_rate: 800,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 3,
-        }),
+        term_length: "3 months",
         estimated_monthly: 720,
-        regions: [t("common.regions.global")],
-        industries: [t("common.industries.tech")],
-        usage_type: t("common.usageTypes.tvDigital"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
-        territory: t("common.regions.global"),
+        regions: ["Global"],
+        industries: ["Tech"],
+        usage_type: "TV & Digital",
+        duration: "3 months",
+        territory: "Global",
         perpetual: false,
         isExample: true,
       },
@@ -783,18 +770,16 @@ export default function CreatorDashboard() {
         brand: "Pepsi",
         brand_logo:
           "https://www.timeoutriyadh.com/cloud/timeoutriyadh/2024/03/01/Pepsi-1-2.jpg",
-        campaign_type: t("common.usageTypes.summerCampaign"),
+        campaign_type: "Summer Campaign",
         requested_date: "2025-02-12",
         proposed_rate: 700,
-        term_length: t("creatorDashboard.approvals.labels.months", {
-          count: 4,
-        }),
+        term_length: "4 months",
         estimated_monthly: 630,
-        regions: [t("common.regions.northAmerica"), t("common.regions.europe")],
-        industries: [t("common.industries.foodBeverage")],
-        usage_type: t("common.usageTypes.socialMedia"),
-        duration: t("creatorDashboard.approvals.labels.months", { count: 4 }),
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
+        regions: ["North America", "Europe"],
+        industries: ["Food & Beverage"],
+        usage_type: "Social Media",
+        duration: "4 months",
+        territory: `${"North America"}, ${"Europe"}`,
         perpetual: false,
         isExample: true,
       },
@@ -812,10 +797,10 @@ export default function CreatorDashboard() {
         campaign: "Audio Campaign",
         campaign_type: "Audio Campaign",
         completed_date: "2/1/2026",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 2 }),
+        duration: "2 months",
         monthly_rate: 600,
         total_earned: 1200,
-        regions: [t("common.regions.global")],
+        regions: ["Global"],
         show_on_portfolio: false,
         isExample: true,
       },
@@ -825,12 +810,12 @@ export default function CreatorDashboard() {
         brand_logo:
           "https://upload.wikimedia.org/wikipedia/commons/2/22/Lululemon_Athletica_logo.svg",
         campaign: "Yoga Collection",
-        campaign_type: t("common.usageTypes.socialMediaCampaign"),
+        campaign_type: "Social Media Campaign",
         completed_date: "1/15/2026",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 3 }),
+        duration: "3 months",
         monthly_rate: 750,
         total_earned: 2250,
-        regions: [t("common.regions.northAmerica")],
+        regions: ["North America"],
         show_on_portfolio: true,
         isExample: true,
       },
@@ -842,10 +827,10 @@ export default function CreatorDashboard() {
         campaign: "Entrepreneur Stories",
         campaign_type: "Digital Ad",
         completed_date: "12/20/2025",
-        duration: t("creatorDashboard.approvals.labels.months", { count: 1 }),
+        duration: "1 months",
         monthly_rate: 900,
         total_earned: 900,
-        regions: [t("common.regions.global")],
+        regions: ["Global"],
         show_on_portfolio: true,
         isExample: true,
       },
@@ -874,8 +859,8 @@ export default function CreatorDashboard() {
         days_remaining: 132,
         usage_description: "Instagram Reels, Hero Image",
         deliverables: "Instagram Reels, Hero Image",
-        territory: `${t("common.regions.northAmerica")}, ${t("common.regions.europe")}`,
-        channels: [t("common.usageTypes.socialMedia"), "Website"],
+        territory: `${"North America"}, ${"Europe"}`,
+        channels: ["Social Media", "Website"],
         restrictions: "Competitor brands, political content",
         prohibited_uses: "Competitor brands, political content",
         auto_renew: false,
@@ -900,10 +885,10 @@ export default function CreatorDashboard() {
         status: "active",
         days_until_expiration: 75,
         days_remaining: 75,
-        usage_description: t("common.usageTypes.socialMedia"),
+        usage_description: "Social Media",
         deliverables: "TikTok Videos, Instagram Posts",
-        territory: t("common.regions.northAmerica"),
-        channels: [t("common.usageTypes.socialMedia"), "Website"],
+        territory: "North America",
+        channels: ["Social Media", "Website"],
         restrictions: "Competitor brands",
         prohibited_uses: "Competitor brands",
         auto_renew: false,
@@ -930,8 +915,8 @@ export default function CreatorDashboard() {
         days_remaining: 45,
         usage_description: "TV Commercial, Digital Ads",
         deliverables: "TV Commercial, Digital Ads",
-        territory: t("common.regions.global"),
-        channels: [t("common.usageTypes.tvDigital")],
+        territory: "Global",
+        channels: ["TV & Digital"],
         restrictions: "Competitor automotive brands",
         prohibited_uses: "Competitor automotive brands",
         auto_renew: false,
@@ -1515,9 +1500,7 @@ export default function CreatorDashboard() {
                           </h3>
                           <p className="text-sm text-gray-500">
                             {(item as any).titleKey
-                              ? t(
-                                `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                              )
+                              ? item.title
                               : item.title}
                           </p>
                         </div>
@@ -2542,7 +2525,7 @@ export default function CreatorDashboard() {
     if (!user) return;
 
     // Robust safeguard for React event objects being passed to toast
-    const toastTitle = typeof customToast === "string" ? customToast : t("creatorDashboard.toasts.preferencesUpdated");
+    const toastTitle = typeof customToast === "string" ? customToast : "Licensing preferences updated!";
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -3174,12 +3157,8 @@ export default function CreatorDashboard() {
                             }
                           >
                             {hasImage
-                              ? t(
-                                "creatorDashboard.myLikenessSection.imageStatus.uploaded",
-                              )
-                              : t(
-                                "creatorDashboard.myLikenessSection.imageStatus.missing",
-                              )}
+                              ? "UPLOADED"
+                              : "MISSING"}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -3351,10 +3330,8 @@ export default function CreatorDashboard() {
                 }
               >
                 {creator?.kyc_status
-                  ? t(
-                    `creatorDashboard.verificationStatus.${creator.kyc_status}`,
-                  )
-                  : t("creatorDashboard.verificationStatus.notStarted")}
+                  ? creator.kyc_status
+                  : "Not Started"}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -3736,9 +3713,7 @@ export default function CreatorDashboard() {
                         {campaign.status === "active"
                           ? "Active"
                           : campaign.status === "expiring_soon"
-                            ? t(
-                              "creatorDashboard.campaigns.status.expiringSoon",
-                            )
+                            ? "Expiring Soon"
                             : campaign.status}
                       </Badge>
                     </td>
@@ -3864,9 +3839,7 @@ export default function CreatorDashboard() {
                         {campaign.status === "active"
                           ? "Active"
                           : campaign.status === "expiring_soon"
-                            ? t(
-                              "creatorDashboard.campaigns.status.expiringSoon",
-                            )
+                            ? "Expiring Soon"
                             : campaign.status}
                       </Badge>
                     </div>
@@ -5510,10 +5483,10 @@ export default function CreatorDashboard() {
           <Card className="p-0 overflow-hidden bg-white border border-gray-200">
             <div className="p-6 pb-2">
               <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                {t("creatorDashboard.settingsView.rules.title")}
+                {"My Rules"}
               </h3>
               <p className="text-sm text-gray-600">
-                {t("creatorDashboard.settingsView.rules.subtitle")}
+                {"Set your licensing preferences and rates"}
               </p>
             </div>
 
@@ -5522,7 +5495,7 @@ export default function CreatorDashboard() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t("creatorDashboard.settingsView.rules.contentOpenTo")}
+                    {"Content I'm Open To"}
                   </h4>
                   <Button
                     variant="outline"
@@ -5534,7 +5507,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {t("creatorDashboard.settingsView.rules.editRate")}
+                    {"Edit Rate"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -5549,7 +5522,7 @@ export default function CreatorDashboard() {
                           } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
-                        {t(`common.contentTypes.${type}`, type)}
+                        {type}
                       </Badge>
                     );
                   })}
@@ -5560,7 +5533,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t("creatorDashboard.settingsView.rules.industries")}
+                    {"Industries I Work With"}
                   </h4>
                   <Button
                     variant="outline"
@@ -5572,7 +5545,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {t("creatorDashboard.settingsView.rules.edit")}
+                    {"Edit"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -5587,7 +5560,7 @@ export default function CreatorDashboard() {
                           } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
-                        {t(`common.industries.${industry}`, industry)}
+                        {industry}
                       </Badge>
                     );
                   })}
@@ -5598,9 +5571,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t(
-                      "creatorDashboard.settingsView.rules.contentNotComfortableHigh",
-                    )}
+                    {"Content I'm NOT Comfortable With"}
                   </h4>
                   <Button
                     variant="outline"
@@ -5609,7 +5580,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {t("creatorDashboard.settingsView.rules.edit")}
+                    {"Edit"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-6">
@@ -5633,14 +5604,10 @@ export default function CreatorDashboard() {
 
                 <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-5">
                   <h5 className="font-semibold text-gray-900 mb-1">
-                    {t(
-                      "creatorDashboard.settingsView.rules.conflictingCampaigns",
-                    )}
+                    {"Conflicting Campaigns (Brand Exclusivity)"}
                   </h5>
                   <p className="text-sm text-gray-600 mb-3 font-normal">
-                    {t(
-                      "creatorDashboard.settingsView.rules.brandExclusivityDesc",
-                    )}
+                    {"Brands you won't work with simultaneously"}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {creator.brand_exclusivity &&
@@ -5656,9 +5623,7 @@ export default function CreatorDashboard() {
                       ))
                     ) : (
                       <p className="text-sm text-gray-500 italic font-normal">
-                        {t(
-                          "creatorDashboard.settingsView.rules.noBrandExclusivity",
-                        )}
+                        {"No brand exclusivity set"}
                       </p>
                     )}
                   </div>
@@ -5669,7 +5634,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t("creatorDashboard.settingsView.rules.initialRate")}
+                    {"Initial Licensing Rate"}
                   </h4>
                   <div className="flex gap-2">
                     {editingRules ? (
@@ -5680,16 +5645,14 @@ export default function CreatorDashboard() {
                           variant="outline"
                           className="border-2 border-gray-300 font-medium"
                         >
-                          {t(
-                            "creatorDashboard.settingsView.rules.modals.cancel",
-                          )}
+                          Cancel
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleSaveRules()}
                           className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white font-medium"
                         >
-                          {t("creatorDashboard.settingsView.rules.save")}
+                          {"Save"}
                         </Button>
                       </>
                     ) : (
@@ -5700,13 +5663,13 @@ export default function CreatorDashboard() {
                         className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        {t("creatorDashboard.settingsView.rules.edit")}
+                        {"Edit"}
                       </Button>
                     )}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-2 font-normal">
-                  {t("creatorDashboard.settingsView.rules.baseRateDesc")}
+                  {"This is your base monthly rate for standard social media licensing"}
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -5742,9 +5705,7 @@ export default function CreatorDashboard() {
                       Accept Negotiations
                     </Label>
                     <p className="text-sm text-gray-600 font-normal">
-                      {t(
-                        "creatorDashboard.settingsView.rules.acceptNegotiationsDesc",
-                      )}
+                      {"Allow brands to negotiate custom rates"}
                     </p>
                   </div>
                   <Switch
@@ -6863,7 +6824,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t("creatorDashboard.settingsView.rules.modals.contentTitle")}
+              {"Customize Content Type Rate"}
             </DialogTitle>
             <DialogDescription className="sr-only">
               Adjust custom rates for specific content types.
@@ -6876,9 +6837,7 @@ export default function CreatorDashboard() {
           >
             <div>
               <p className="text-sm text-gray-600 mb-4 font-normal">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.selectContentTypes",
-                )}
+                {"Select content types you're open to creating"}
               </p>
               <div className="flex flex-wrap gap-2">
                 {CONTENT_TYPES.map((type) => {
@@ -6901,7 +6860,7 @@ export default function CreatorDashboard() {
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
                       <span className="truncate">
-                        {t(`common.contentTypes.${type}`, type)}
+                        {type}
                       </span>
                     </button>
                   );
@@ -6911,20 +6870,15 @@ export default function CreatorDashboard() {
 
             <div className="pt-6 border-t border-gray-100">
               <h4 className="text-base font-semibold text-gray-900 mb-1">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.customRatesTitle",
-                )}
+                {"Custom Rates"}
               </h4>
               <p className="text-sm text-gray-600 mb-2 font-normal">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.customRatesDesc",
-                  { rate: `$${creator.price_per_month || 0}/mo` },
-                )}
+                Set custom rates for specific content types or industries. Your base rate is ${creator.price_per_month || 0}/mo.
               </p>
 
               <div className="space-y-3">
                 {tempContentTypes.map((type) => {
-                  const info = t(`common.contentTypes.${type}`, type);
+                  const info = type;
                   const existing = customRates.find(
                     (r) =>
                       r.rate_type === "content_type" && r.rate_name === type,
@@ -6981,7 +6935,7 @@ export default function CreatorDashboard() {
                 onClick={() => setShowRatesModal(null)}
                 className="h-11 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
               >
-                {t("creatorDashboard.settingsView.rules.modals.cancel")}
+                {"Cancel"}
               </Button>
               <Button
                 type="submit"
@@ -6993,9 +6947,7 @@ export default function CreatorDashboard() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t(
-                      "creatorDashboard.settingsView.rules.modals.saveChanges",
-                    )}
+                    {"Save Changes"}
                   </>
                 )}
               </Button>
@@ -7011,7 +6963,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t("creatorDashboard.settingsView.rules.modals.industryTitle")}
+              {"Customize Industry Rate"}
             </DialogTitle>
             <DialogDescription className="sr-only">
               Select industries you are open to working with.
@@ -7024,9 +6976,7 @@ export default function CreatorDashboard() {
           >
             <div>
               <p className="text-sm text-gray-600 mb-2 font-normal">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.selectIndustries",
-                )}
+                {"Select industries you're interested in working with"}
               </p>
               <div className="flex flex-wrap gap-2">
                 {INDUSTRIES.map((industry) => {
@@ -7049,7 +6999,7 @@ export default function CreatorDashboard() {
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
                       <span className="truncate">
-                        {t(`common.industries.${industry}`, industry)}
+                        {industry}
                       </span>
                     </button>
                   );
@@ -7064,7 +7014,7 @@ export default function CreatorDashboard() {
                 onClick={() => setShowRatesModal(null)}
                 className="h-11 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
               >
-                {t("creatorDashboard.settingsView.rules.modals.cancel")}
+                {"Cancel"}
               </Button>
               <Button
                 type="submit"
@@ -7076,9 +7026,7 @@ export default function CreatorDashboard() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t(
-                      "creatorDashboard.settingsView.rules.modals.saveChanges",
-                    )}
+                    {"Save Changes"}
                   </>
                 )}
               </Button>
@@ -7094,9 +7042,7 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t(
-                "creatorDashboard.settingsView.rules.modals.restrictionsTitle",
-              )}
+              {"Content Restrictions"}
             </DialogTitle>
             <DialogDescription className="sr-only">
               Manage content restrictions and brand exclusivity.
@@ -7105,15 +7051,13 @@ export default function CreatorDashboard() {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <p className="text-sm text-gray-600 font-normal">
-              {t("creatorDashboard.settingsView.rules.modals.restrictionsDesc")}
+              {"Specify any content you're not comfortable with"}
             </p>
 
             {/* Current Restrictions Section */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.currentRestrictions",
-                )}
+                {"Current Restrictions"}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {creator.content_restrictions &&
@@ -7141,9 +7085,7 @@ export default function CreatorDashboard() {
                   ))
                 ) : (
                   <p className="text-xs text-gray-400 font-normal italic">
-                    {t(
-                      "creatorDashboard.settingsView.rules.modals.noRestrictions",
-                    )}
+                    {"No restrictions set"}
                   </p>
                 )}
               </div>
@@ -7152,7 +7094,7 @@ export default function CreatorDashboard() {
             {/* Predefined Selection Grid */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {t("creatorDashboard.settingsView.rules.modals.clickToAdd")}
+                {"Click to add restrictions"}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {RESTRICTIONS.filter(
@@ -7181,15 +7123,11 @@ export default function CreatorDashboard() {
             {/* Custom Restriction Input */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-900">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.addCustomRestriction",
-                )}
+                {"Add Custom Restriction"}
               </h4>
               <div className="flex gap-2">
                 <Input
-                  placeholder={t(
-                    "creatorDashboard.settingsView.rules.modals.customPlaceholder",
-                  )}
+                  placeholder={"e.g., No political content"}
                   value={newRestriction}
                   onChange={(e) => setNewRestriction(e.target.value)}
                   maxLength={25}
@@ -7239,22 +7177,16 @@ export default function CreatorDashboard() {
             {/* Brand Exclusivity Section */}
             <div className="pt-6 border-t border-gray-100 space-y-4">
               <h4 className="text-base font-semibold text-gray-900">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.brandExclusivityTitle",
-                )}
+                {"Brand Exclusivity"}
               </h4>
               <p className="text-sm text-gray-600 font-normal">
-                {t(
-                  "creatorDashboard.settingsView.rules.modals.brandExclusivityDesc",
-                )}
+                {"Specify brands you won't work with simultaneously"}
               </p>
               <div className="flex flex-wrap gap-2">
                 {!creator.brand_exclusivity ||
                   creator.brand_exclusivity.length === 0 ? (
                   <p className="text-sm text-gray-400 font-normal italic">
-                    {t(
-                      "creatorDashboard.settingsView.rules.modals.noBrandExclusivity",
-                    )}
+                    {"No brand exclusivity set"}
                   </p>
                 ) : (
                   creator.brand_exclusivity.map((brand) => (
@@ -7282,9 +7214,7 @@ export default function CreatorDashboard() {
               </div>
               <div className="flex gap-2">
                 <Input
-                  placeholder={t(
-                    "creatorDashboard.settingsView.rules.modals.brandPlaceholder",
-                  )}
+                  placeholder={"e.g., Nike, Adidas"}
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
                   maxLength={25}
@@ -7332,7 +7262,7 @@ export default function CreatorDashboard() {
               onClick={() => setShowRestrictionsModal(false)}
               className="h-12 w-full max-w-[240px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
             >
-              {t("creatorDashboard.settingsView.rules.modals.cancel")}
+              {"Cancel"}
             </Button>
             <Button
               onClick={() => {
@@ -7342,7 +7272,7 @@ export default function CreatorDashboard() {
               className="h-12 w-full max-w-[240px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-5 h-5" />
-              {t("creatorDashboard.settingsView.rules.modals.saveChanges")}
+              {"Save Changes"}
             </Button>
           </div>
         </DialogContent>
