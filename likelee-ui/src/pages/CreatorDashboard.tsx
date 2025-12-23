@@ -2073,10 +2073,34 @@ export default function CreatorDashboard() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      let options = { mimeType: "audio/webm" };
-      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        options = { mimeType: "audio/webm;codecs=opus" };
+      if (typeof window === "undefined" || !("MediaRecorder" in window)) {
+        throw new Error("MediaRecorder is not supported on this device/browser");
       }
+
+      // Pick the best supported audio MIME type for the current browser (mobile-friendly)
+      const pickSupportedMime = () => {
+        const candidates = [
+          "audio/mp4;codecs=mp4a.40.2",
+          "audio/mp4",
+          "audio/webm;codecs=opus",
+          "audio/webm",
+          "audio/ogg;codecs=opus",
+          "audio/ogg",
+        ];
+        for (const mt of candidates) {
+          try {
+            if ((window as any).MediaRecorder?.isTypeSupported?.(mt)) {
+              return mt;
+            }
+          } catch (_) {
+            // ignore and try next
+          }
+        }
+        return ""; // let browser choose
+      };
+
+      const chosenMime = pickSupportedMime();
+      const options: MediaRecorderOptions = chosenMime ? { mimeType: chosenMime } : {};
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
       audioChunksRef.current = [];
@@ -2086,7 +2110,7 @@ export default function CreatorDashboard() {
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const mimeType = mediaRecorderRef.current.mimeType;
+        const mimeType = mediaRecorderRef.current?.mimeType || chosenMime || "audio/webm";
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         const audioUrl = URL.createObjectURL(audioBlob);
 
@@ -2111,8 +2135,16 @@ export default function CreatorDashboard() {
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
+      mediaRecorderRef.current.onerror = (e: any) => {
+        console.error("MediaRecorder error:", e?.error || e);
+      };
+
+      mediaRecorderRef.current.onstart = () => {
+        setIsRecording(true);
+      };
+
+      // On some mobile browsers (iOS Safari), providing a timeslice helps emit data chunks
+      mediaRecorderRef.current.start(1000);
 
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
