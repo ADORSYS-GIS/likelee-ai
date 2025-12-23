@@ -1,5 +1,4 @@
 import React from "react";
-import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -55,7 +54,7 @@ export default function Login() {
       if (creatorType) {
         navigate(
           `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
-          { replace: true },
+          { replace: true }
         );
       } else {
         navigate("/CreatorDashboard", { replace: true });
@@ -73,7 +72,7 @@ export default function Login() {
       await login(email, password);
       if (creatorType) {
         navigate(
-          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
+          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`
         );
       } else {
         navigate("/CreatorDashboard");
@@ -99,8 +98,7 @@ export default function Login() {
   };
 
   return (
-    <Layout currentPageName="Login">
-      <div className="max-w-md mx-auto px-6 py-16">
+    <div className="max-w-md mx-auto px-6 py-16">
         <h1 className="text-2xl font-bold mb-4">Sign in</h1>
         {!initialized ? (
           <p>Loading...</p>
@@ -339,6 +337,5 @@ export default function Login() {
           </Card>
         )}
       </div>
-    </Layout>
   );
 }
