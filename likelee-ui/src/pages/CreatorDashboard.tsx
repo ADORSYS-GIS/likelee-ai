@@ -2102,11 +2102,19 @@ export default function CreatorDashboard() {
       const chosenMime = pickSupportedMime();
       const options: MediaRecorderOptions = chosenMime ? { mimeType: chosenMime } : {};
 
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
+      // Safely construct MediaRecorder; if options cause an error, retry without options
+      try {
+        mediaRecorderRef.current = new MediaRecorder(stream, options);
+      } catch (_) {
+        mediaRecorderRef.current = new MediaRecorder(stream);
+      }
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        // Some mobile browsers may emit empty chunks; ignore those
+        if (event?.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorderRef.current.onstop = async () => {
@@ -2143,22 +2151,33 @@ export default function CreatorDashboard() {
         setIsRecording(true);
       };
 
-      // On some mobile browsers (iOS Safari), providing a timeslice helps emit data chunks
-      mediaRecorderRef.current.start(1000);
+      // Mark recording active immediately (some browsers delay onstart)
+      setIsRecording(true);
+      // On some mobile browsers, a shorter timeslice improves data flow
+      mediaRecorderRef.current.start(250);
 
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setRecordingTime(elapsed);
 
-        const script = VOICE_SCRIPTS[selectedEmotion];
-        const words = script.split(" ");
-        const wordsPerSecond = words.length / 60;
-        const wordIndex = Math.min(
-          Math.floor(elapsed * wordsPerSecond),
-          words.length - 1,
-        );
-        setCurrentWord(wordIndex);
+        // Safely update word progress; avoid crashes if script is missing
+        try {
+          const script = selectedEmotion ? VOICE_SCRIPTS[selectedEmotion] : "";
+          if (typeof script === "string" && script.length > 0) {
+            const words = script.split(" ");
+            const wordsPerSecond = words.length / 60;
+            const wordIndex = Math.min(
+              Math.floor(elapsed * wordsPerSecond),
+              Math.max(words.length - 1, 0),
+            );
+            setCurrentWord(wordIndex);
+          } else {
+            setCurrentWord(0);
+          }
+        } catch {
+          setCurrentWord(0);
+        }
 
         if (elapsed >= 60) {
           stopRecording();
