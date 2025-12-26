@@ -1,5 +1,4 @@
 import React from "react";
-import Layout from "./Layout";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -35,7 +34,7 @@ const Label: any = UILabel;
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login, initialized, authenticated } = useAuth();
+  const { login, loginWithProvider, initialized, authenticated } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -55,7 +54,7 @@ export default function Login() {
       if (creatorType) {
         navigate(
           `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
-          { replace: true },
+          { replace: true }
         );
       } else {
         navigate("/CreatorDashboard", { replace: true });
@@ -73,7 +72,7 @@ export default function Login() {
       await login(email, password);
       if (creatorType) {
         navigate(
-          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
+          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`
         );
       } else {
         navigate("/CreatorDashboard");
@@ -99,8 +98,7 @@ export default function Login() {
   };
 
   return (
-    <Layout currentPageName="Login">
-      <div className="max-w-md mx-auto px-6 py-16">
+    <div className="max-w-md mx-auto px-6 py-16">
         <h1 className="text-2xl font-bold mb-4">Sign in</h1>
         {!initialized ? (
           <p>Loading...</p>
@@ -192,12 +190,16 @@ export default function Login() {
                     <Button
                       variant="outline"
                       className="w-full h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold flex items-center justify-center gap-3 rounded-xl transition-all"
-                      onClick={() => {
-                        toast({
-                          title: "Coming Soon",
-                          description:
-                            "Google Sign-In will be available shortly.",
-                        });
+                      onClick={async () => {
+                        try {
+                          await loginWithProvider("google");
+                        } catch (err: any) {
+                          toast({
+                            title: "Google sign-in failed",
+                            description: getFriendlyErrorMessage(err),
+                            variant: "destructive",
+                          });
+                        }
                       }}
                     >
                       <svg
@@ -339,6 +341,5 @@ export default function Login() {
           </Card>
         )}
       </div>
-    </Layout>
   );
 }

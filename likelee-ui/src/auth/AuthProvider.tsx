@@ -16,6 +16,7 @@ interface AuthContextValue {
   user?: User | null;
   profile?: Profile | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithProvider: (provider: "google") => Promise<void>;
   logout: () => Promise<void>;
   register: (
     email: string,
@@ -136,6 +137,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
+        });
+        if (error) throw error;
+      },
+      loginWithProvider: async (provider: "google") => {
+        if (!supabase) throw new Error("Supabase not configured");
+        const redirectTo = window.location.href; // return to current page so existing logic can route accordingly
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo },
         });
         if (error) throw error;
       },

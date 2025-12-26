@@ -81,6 +81,7 @@ import {
   Youtube,
   ArrowLeft,
   Ban,
+  BadgeCheck,
 } from "lucide-react";
 import {
   LineChart,
@@ -996,6 +997,7 @@ export default function CreatorDashboard() {
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const dataChunkCountRef = useRef(0);
   const timerRef = useRef(null);
 
   // Track if we've loaded data for the current user to prevent unnecessary refetches
@@ -2108,62 +2110,164 @@ export default function CreatorDashboard() {
   // Recording functions
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 44100,
+        } as any,
+      });
 
-      let options = { mimeType: "audio/webm" };
-      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        options = { mimeType: "audio/webm;codecs=opus" };
+      if (typeof window === "undefined" || !("MediaRecorder" in window)) {
+        throw new Error("MediaRecorder is not supported on this device/browser");
       }
 
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
+      // Pick the best supported audio MIME type for the current browser (mobile-friendly)
+      const pickSupportedMime = () => {
+        const candidates = [
+          "audio/mp4;codecs=mp4a.40.2",
+          "audio/mp4",
+          "audio/webm;codecs=opus",
+          "audio/webm",
+          "audio/ogg;codecs=opus",
+          "audio/ogg",
+        ];
+        for (const mt of candidates) {
+          try {
+            if ((window as any).MediaRecorder?.isTypeSupported?.(mt)) {
+              return mt;
+            }
+          } catch (_) {
+            // ignore and try next
+          }
+        }
+        return ""; // let browser choose
+      };
+
+      const chosenMime = pickSupportedMime();
+      const options: MediaRecorderOptions = chosenMime ? { mimeType: chosenMime } : {};
+
+      // Safely construct MediaRecorder; if options cause an error, retry without options
+      try {
+        mediaRecorderRef.current = new MediaRecorder(stream, options);
+      } catch (_) {
+        mediaRecorderRef.current = new MediaRecorder(stream);
+      }
       audioChunksRef.current = [];
+      dataChunkCountRef.current = 0;
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        // Some mobile browsers may emit empty chunks; ignore those
+        if (event?.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+          dataChunkCountRef.current += 1;
+        }
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const mimeType = mediaRecorderRef.current.mimeType;
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        const audioUrl = URL.createObjectURL(audioBlob);
+        const finalize = () => {
+          if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
+            console.warn("Recording stopped but no audio chunks were captured (after wait).");
+            toast({
+              variant: "destructive",
+              title: t("creatorDashboard.toasts.micNoDataTitle", "No audio data received"),
+              description: t(
+                "creatorDashboard.toasts.micNoDataDesc",
+                "Your browser did not deliver audio data. Please ensure microphone access is granted and try again."
+              ),
+            });
+            // Cleanup tracks
+            stream.getTracks().forEach((track) => track.stop());
+            setIsRecording(false);
+            clearInterval(timerRef.current);
+            return;
+          }
 
-        const newRecording = {
-          id: Date.now(),
-          emotion: selectedEmotion,
-          url: audioUrl,
-          blob: audioBlob,
-          mimeType: mimeType,
-          duration: recordingTime,
-          date: new Date().toISOString(),
-          accessible: true,
-          voiceProfileCreated: false,
-          usageCount: 0,
+          const mimeType = mediaRecorderRef.current?.mimeType || chosenMime || "audio/webm";
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          const audioUrl = URL.createObjectURL(audioBlob);
+
+          const newRecording = {
+            id: Date.now(),
+            emotion: selectedEmotion,
+            url: audioUrl,
+            blob: audioBlob,
+            mimeType: mimeType,
+            duration: recordingTime,
+            date: new Date().toISOString(),
+            accessible: true,
+            voiceProfileCreated: false,
+            usageCount: 0,
+          };
+
+          setVoiceLibrary([...voiceLibrary, newRecording]);
+          setShowRecordingModal(false);
+          setRecordingTime(0);
+          setCurrentWord(0);
+
+          stream.getTracks().forEach((track) => track.stop());
         };
 
-        setVoiceLibrary([...voiceLibrary, newRecording]);
-        setShowRecordingModal(false);
-        setRecordingTime(0);
-        setCurrentWord(0);
-
-        stream.getTracks().forEach((track) => track.stop());
+        // If no chunks yet, some browsers emit the final chunk just after stop
+        if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
+          setTimeout(finalize, 150);
+        } else {
+          finalize();
+        }
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.onerror = (e: any) => {
+        console.error("MediaRecorder error:", e?.error || e);
+      };
+
+      mediaRecorderRef.current.onstart = () => {
+        setIsRecording(true);
+      };
+
+      // Mark recording active immediately (some browsers delay onstart)
       setIsRecording(true);
+      // On some mobile browsers, a shorter timeslice improves data flow
+      mediaRecorderRef.current.start(250);
+
+      // Diagnostics: if no chunks after 2s, notify for debugging
+      setTimeout(() => {
+        if (isRecording && dataChunkCountRef.current === 0) {
+          console.warn("No audio chunks received after 2s; device/browser may not be emitting data.");
+          toast({
+            variant: "destructive",
+            title: t("creatorDashboard.toasts.micNoDataTitle", "No audio data received"),
+            description: t(
+              "creatorDashboard.toasts.micNoDataDesc",
+              "Your browser did not deliver audio data. Please ensure microphone access is granted and try again."
+            ),
+          });
+        }
+      }, 2000);
 
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setRecordingTime(elapsed);
 
-        const script = VOICE_SCRIPTS[selectedEmotion];
-        const words = script.split(" ");
-        const wordsPerSecond = words.length / 60;
-        const wordIndex = Math.min(
-          Math.floor(elapsed * wordsPerSecond),
-          words.length - 1,
-        );
-        setCurrentWord(wordIndex);
+        // Safely update word progress; avoid crashes if script is missing
+        try {
+          const script = selectedEmotion ? VOICE_SCRIPTS[selectedEmotion] : "";
+          if (typeof script === "string" && script.length > 0) {
+            const words = script.split(" ");
+            const wordsPerSecond = words.length / 60;
+            const wordIndex = Math.min(
+              Math.floor(elapsed * wordsPerSecond),
+              Math.max(words.length - 1, 0),
+            );
+            setCurrentWord(wordIndex);
+          } else {
+            setCurrentWord(0);
+          }
+        } catch {
+          setCurrentWord(0);
+        }
 
         if (elapsed >= 60) {
           stopRecording();
@@ -3326,7 +3430,7 @@ export default function CreatorDashboard() {
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={startVerificationFromDashboard}
-                disabled={kycLoading}
+                disabled={kycLoading || creator?.kyc_status === "approved"}
                 variant="outline"
                 className="border-2 border-gray-300 w-full sm:w-auto"
               >
@@ -5984,12 +6088,15 @@ export default function CreatorDashboard() {
                   {creator.name}
                 </p>
                 {creator?.kyc_status === "approved" && (
-                  <Badge
-                    variant="outline"
-                    className="bg-green-100 text-green-700 border border-green-300"
+                  <span
+                    className="inline-flex items-center justify-center shrink-0"
+                    title="Verified"
                   >
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Creator
-                  </Badge>
+                    <BadgeCheck
+                      className="w-6 h-6 text-emerald-500 drop-shadow-sm"
+                      aria-label="Verified"
+                    />
+                  </span>
                 )}
               </div>
             </div>
