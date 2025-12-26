@@ -79,6 +79,7 @@ import {
   Check,
   Youtube,
   ArrowLeft,
+  BadgeCheck,
 } from "lucide-react";
 import {
   LineChart,
@@ -3380,7 +3381,7 @@ export default function CreatorDashboard() {
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={startVerificationFromDashboard}
-                disabled={kycLoading}
+                disabled={kycLoading || creator?.kyc_status === "approved"}
                 variant="outline"
                 className="border-2 border-gray-300 w-full sm:w-auto"
               >
@@ -5965,12 +5966,15 @@ export default function CreatorDashboard() {
                   {creator.name}
                 </p>
                 {creator?.kyc_status === "approved" && (
-                  <Badge
-                    variant="outline"
-                    className="bg-green-100 text-green-700 border border-green-300"
+                  <span
+                    className="inline-flex items-center justify-center shrink-0"
+                    title="Verified"
                   >
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Verified Creator
-                  </Badge>
+                    <BadgeCheck
+                      className="w-6 h-6 text-emerald-500 drop-shadow-sm"
+                      aria-label="Verified"
+                    />
+                  </span>
                 )}
               </div>
             </div>
