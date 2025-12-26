@@ -2121,7 +2121,9 @@ export default function CreatorDashboard() {
       });
 
       if (typeof window === "undefined" || !("MediaRecorder" in window)) {
-        throw new Error("MediaRecorder is not supported on this device/browser");
+        throw new Error(
+          "MediaRecorder is not supported on this device/browser",
+        );
       }
 
       // Pick the best supported audio MIME type for the current browser (mobile-friendly)
@@ -2147,7 +2149,9 @@ export default function CreatorDashboard() {
       };
 
       const chosenMime = pickSupportedMime();
-      const options: MediaRecorderOptions = chosenMime ? { mimeType: chosenMime } : {};
+      const options: MediaRecorderOptions = chosenMime
+        ? { mimeType: chosenMime }
+        : {};
 
       // Safely construct MediaRecorder; if options cause an error, retry without options
       try {
@@ -2169,13 +2173,18 @@ export default function CreatorDashboard() {
       mediaRecorderRef.current.onstop = async () => {
         const finalize = () => {
           if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-            console.warn("Recording stopped but no audio chunks were captured (after wait).");
+            console.warn(
+              "Recording stopped but no audio chunks were captured (after wait).",
+            );
             toast({
               variant: "destructive",
-              title: t("creatorDashboard.toasts.micNoDataTitle", "No audio data received"),
+              title: t(
+                "creatorDashboard.toasts.micNoDataTitle",
+                "No audio data received",
+              ),
               description: t(
                 "creatorDashboard.toasts.micNoDataDesc",
-                "Your browser did not deliver audio data. Please ensure microphone access is granted and try again."
+                "Your browser did not deliver audio data. Please ensure microphone access is granted and try again.",
               ),
             });
             // Cleanup tracks
@@ -2185,8 +2194,11 @@ export default function CreatorDashboard() {
             return;
           }
 
-          const mimeType = mediaRecorderRef.current?.mimeType || chosenMime || "audio/webm";
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+          const mimeType =
+            mediaRecorderRef.current?.mimeType || chosenMime || "audio/webm";
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: mimeType,
+          });
           const audioUrl = URL.createObjectURL(audioBlob);
 
           const newRecording = {
@@ -2234,13 +2246,18 @@ export default function CreatorDashboard() {
       // Diagnostics: if no chunks after 2s, notify for debugging
       setTimeout(() => {
         if (isRecording && dataChunkCountRef.current === 0) {
-          console.warn("No audio chunks received after 2s; device/browser may not be emitting data.");
+          console.warn(
+            "No audio chunks received after 2s; device/browser may not be emitting data.",
+          );
           toast({
             variant: "destructive",
-            title: t("creatorDashboard.toasts.micNoDataTitle", "No audio data received"),
+            title: t(
+              "creatorDashboard.toasts.micNoDataTitle",
+              "No audio data received",
+            ),
             description: t(
               "creatorDashboard.toasts.micNoDataDesc",
-              "Your browser did not deliver audio data. Please ensure microphone access is granted and try again."
+              "Your browser did not deliver audio data. Please ensure microphone access is granted and try again.",
             ),
           });
         }
