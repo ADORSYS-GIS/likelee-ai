@@ -34,7 +34,7 @@ const Label: any = UILabel;
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login, initialized, authenticated } = useAuth();
+  const { login, loginWithProvider, initialized, authenticated } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -190,12 +190,16 @@ export default function Login() {
                     <Button
                       variant="outline"
                       className="w-full h-12 border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold flex items-center justify-center gap-3 rounded-xl transition-all"
-                      onClick={() => {
-                        toast({
-                          title: "Coming Soon",
-                          description:
-                            "Google Sign-In will be available shortly.",
-                        });
+                      onClick={async () => {
+                        try {
+                          await loginWithProvider("google");
+                        } catch (err: any) {
+                          toast({
+                            title: "Google sign-in failed",
+                            description: getFriendlyErrorMessage(err),
+                            variant: "destructive",
+                          });
+                        }
                       }}
                     >
                       <svg
