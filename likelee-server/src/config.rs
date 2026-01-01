@@ -77,6 +77,19 @@ pub struct ServerConfig {
 
     #[envconfig(from = "EMAIL_CONTACT_TO", default = "")]
     pub email_contact_to: String,
+
+    // Tavus API configuration
+    #[envconfig(from = "TAVUS_API_KEY", default = "")]
+    pub tavus_api_key: String,
+
+    #[envconfig(from = "TAVUS_BASE_URL", default = "https://tavusapi.com")] 
+    pub tavus_base_url: String,
+
+    #[envconfig(from = "TAVUS_WEBHOOK_SECRET", default = "")]
+    pub tavus_webhook_secret: String,
+
+    #[envconfig(from = "TAVUS_CALLBACK_URL", default = "")]
+    pub tavus_callback_url: String,
 }
 
 #[derive(Clone)]
@@ -90,6 +103,10 @@ pub struct AppState {
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
+    pub tavus_api_key: String,
+    pub tavus_base_url: String,
+    pub tavus_webhook_secret: String,
+    pub tavus_callback_url: String,
 
     pub smtp_host: String,
     pub smtp_port: u16,

@@ -739,6 +739,60 @@ export default function CreatorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const IMAGE_SECTIONS = getImageSections(t);
+  const cameoFileRef = useRef<HTMLInputElement | null>(null);
+
+  const startStatusPolling = () => {
+    const uid = user?.id;
+    if (!uid) return;
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts += 1;
+      try {
+        const r = await fetch(api(`/api/avatar/status?user_id=${encodeURIComponent(uid)}`));
+        if (r.ok) {
+          const j = await r.json();
+          setReplicaId(j?.replica_id || null);
+          setAvatarStatus(j?.status || null);
+          if (j?.status === "completed" || j?.status === "error" || attempts > 120) {
+            clearInterval(interval);
+          }
+        }
+      } catch (_) {
+        // ignore transient errors
+      }
+    }, 5000);
+  };
+
+  const handleGenerateAvatar = async () => {
+    if (!user?.id) return;
+    if (!creator?.cameo_front_url) {
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: "Please upload a short training video first.",
+      });
+      return;
+    }
+    try {
+      setAvatarOpLoading(true);
+      const res = await fetch(api(`/api/avatar/generate`), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ user_id: user.id }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      if (json?.tavus_avatar_id) setReplicaId(json.tavus_avatar_id);
+      setAvatarStatus(json?.status || "started");
+      // start polling
+      startStatusPolling();
+      toast({ title: "Avatar training started", description: "We will notify you when it is complete." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to start avatar training" });
+    } finally {
+      setAvatarOpLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -811,6 +865,9 @@ export default function CreatorDashboard() {
   const [selectedImageSection, setSelectedImageSection] = useState(null);
   const [uploadingToSection, setUploadingToSection] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [replicaId, setReplicaId] = useState<string | null>(null);
+  const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
+  const [avatarOpLoading, setAvatarOpLoading] = useState(false);
   const [referenceImages, setReferenceImages] = useState({
     headshot_neutral: null,
     headshot_smiling: null,
@@ -1030,7 +1087,10 @@ export default function CreatorDashboard() {
           cameo_front_url: profile.cameo_front_url,
           cameo_left_url: profile.cameo_left_url,
           cameo_right_url: profile.cameo_right_url,
+          avatar_canonical_url: profile.avatar_canonical_url,
         }));
+        setReplicaId(profile.tavus_avatar_id || null);
+        setAvatarStatus(profile.tavus_avatar_status || null);
         // If backend provides arrays later, replace mocks
         if (Array.isArray(json.campaigns) && json.campaigns.length)
           setActiveCampaigns(json.campaigns);
@@ -1943,12 +2003,12 @@ export default function CreatorDashboard() {
         const path = `cameo/${owner}/${Date.now()}_front_${file.name.replace(/[^a-zA-Z0-9_.-]/g, "_")}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("profiles")
+          .from("likelee-public")
           .upload(path, file, { upsert: false });
 
         if (uploadError) throw uploadError;
 
-        const { data } = supabase.storage.from("profiles").getPublicUrl(path);
+        const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
         const publicUrl = data.publicUrl;
 
         const { error: dbError } = await supabase
@@ -3054,38 +3114,74 @@ export default function CreatorDashboard() {
                   onClick={() => setShowReuploadCameoModal(true)}
                   variant="outline"
                   className="flex-1 border-2 border-[#32C8D1] text-[#32C8D1]"
+                  disabled={uploadingPhoto}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   {t("creatorDashboard.cameoVideo.actions.reupload")}
                 </Button>
-                <Button variant="outline" className="border-2 border-gray-300">
+                <Button variant="outline" className="border-2 border-gray-300" disabled={uploadingPhoto}>
                   <Download className="w-4 h-4 mr-2" />
                   {t("creatorDashboard.cameoVideo.actions.download")}
                 </Button>
               </div>
+
+              {/* Generate Avatar when a video already exists */}
+              <div className="text-center pt-4">
+                <Button
+                  className="mx-auto"
+                  onClick={handleGenerateAvatar}
+                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto}
+                >
+                  {avatarOpLoading ? t("common.loading") : "Generate Digital Avatar"}
+                </Button>
+                {uploadingPhoto && (
+                  <p className="text-xs text-gray-500 mt-3">Uploading video… please wait</p>
+                )}
+                {avatarStatus && (
+                  <p className="text-xs text-gray-500 mt-3">Status: {avatarStatus}</p>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Coming Soon Upload Box */}
+              {/* Generate Avatar Action */}
               <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
                 <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-900 mb-2">
-                  {t("creatorDashboard.cameoVideo.comingSoon.title")}
+                <p className="text-lg font-medium text-gray-900 mb-2">Create your Digital Avatar</p>
+                <p className="text-sm text-gray-600 mb-6">
+                  Upload a short training video in the Cameo section, then start training your avatar. You can keep working while we process it.
                 </p>
-                <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.cameoVideo.comingSoon.text")}
-                </p>
-              </div>
-
-              {/* Yellow Warning Alert */}
-              <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-amber-900 text-sm">
-                  <strong>
-                    {t("creatorDashboard.cameoVideo.warning.title")}
-                  </strong>{" "}
-                  {t("creatorDashboard.cameoVideo.warning.text")}
-                </p>
+                {/* Inline uploader for camera roll / files */}
+                <input
+                  type="file"
+                  id="reuploadCameoInline"
+                  accept="video/*"
+                  capture
+                  onChange={handleHeroUpload}
+                  className="hidden"
+                  ref={cameoFileRef}
+                />
+                <Button
+                  variant="outline"
+                  className="mb-4"
+                  onClick={() => cameoFileRef.current?.click()}
+                  disabled={uploadingPhoto}
+                >
+                  {t("creatorDashboard.cameoVideo.actions.reupload")}
+                </Button>
+                <Button
+                  className="mx-auto"
+                  onClick={handleGenerateAvatar}
+                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto}
+                >
+                  {avatarOpLoading ? t("common.loading") : "Generate Digital Avatar"}
+                </Button>
+                {uploadingPhoto && (
+                  <p className="text-xs text-gray-500 mt-3">Uploading video… please wait</p>
+                )}
+                {avatarStatus && (
+                  <p className="text-xs text-gray-500 mt-3">Status: {avatarStatus}</p>
+                )}
               </div>
             </div>
           )}

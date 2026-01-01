@@ -38,6 +38,8 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
+        .route("/api/avatar/status", get(crate::avatar::get_avatar_status))
+        .route("/webhooks/tavus", post(crate::avatar::tavus_webhook))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::profiles::check_email))
         .route("/api/profile", post(crate::profiles::upsert_profile))
