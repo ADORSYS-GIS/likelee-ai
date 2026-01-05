@@ -2642,7 +2642,7 @@ export default function CreatorDashboard() {
 
       setEditingRules(false);
       toast({
-        title: t("creatorDashboard.toasts.preferencesUpdated"),
+        title: toastTitle,
       });
     } catch (error: any) {
       console.error("Failed to save rules:", error);
@@ -5392,11 +5392,19 @@ export default function CreatorDashboard() {
               : creator.price_per_month || 0
             : parsed;
 
-          newRates.push({
-            rate_type: "content_type",
-            rate_name: type,
-            price_per_month_cents: Math.round(finalVal * 100),
-          });
+          // Optimization: Only save rate if it differs from the base rate to allow dynamic updates
+          // When price matches base rate, we don't save it, so the frontend will default to the live base rate next time
+          const isDefault = Math.round(finalVal * 100) === baseRate;
+          // But we must respect explicit user intent if they typed it.
+          // However, to fix the user's issue of "not updating when base changes", we must treat matching rates as "default".
+
+          if (!isDefault) {
+            newRates.push({
+              rate_type: "content_type",
+              rate_name: type,
+              price_per_month_cents: Math.round(finalVal * 100),
+            });
+          }
         });
       } else if (showRatesModal === "industry") {
         // Industries don't have custom rates in this UI yet, but we collect them
@@ -5828,7 +5836,9 @@ export default function CreatorDashboard() {
                     }}
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
-                    {t("creatorDashboard.settingsView.rules.save")}
+                    {/* Button changed to Edit per user request */}
+                    <Edit className="w-3.5 h-3.5" />
+                    {"Edit"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
