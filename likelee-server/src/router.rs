@@ -54,6 +54,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::face_profiles::update_face_profile),
         )
         .route(
+            "/api/faces/search",
+            get(crate::face_profiles::search_faces),
+        )
+        .route(
             "/api/moderation/image",
             post(crate::moderation::moderate_image),
         )
