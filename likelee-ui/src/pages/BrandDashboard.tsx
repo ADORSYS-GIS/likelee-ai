@@ -671,7 +671,33 @@ export default function BrandDashboard() {
         if (!response.ok) throw new Error("Failed to fetch");
         const data = await response.json();
         if (Array.isArray(data)) {
-          setCreators(data);
+          const mappedData = data.map((creator: any) => ({
+            ...creator,
+            id: creator.id || Math.random().toString(36).substr(2, 9),
+            name: creator.full_name || creator.name || "Unknown Creator",
+            image:
+              creator.profile_photo_url ||
+              creator.image ||
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
+            location:
+              creator.location ||
+              (creator.city && creator.state
+                ? `${creator.city}, ${creator.state}`
+                : "Unknown Location"),
+            tagline: creator.tagline || "Professional Creator",
+            followers: creator.followers || 0,
+            engagement: creator.engagement || "0%",
+            price: creator.price || 0,
+            turnaround: creator.turnaround || "N/A",
+            tags: Array.isArray(creator.tags)
+              ? creator.tags
+              : Array.isArray(creator.facial_features)
+                ? creator.facial_features
+                : [],
+            verified:
+              creator.kyc_status === "approved" || creator.verified || false,
+          }));
+          setCreators(mappedData);
         } else {
           console.error("API returned non-array data:", data);
           setCreators(mockCreators);
