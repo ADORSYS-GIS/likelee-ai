@@ -25,7 +25,7 @@ const api = (path: string) => new URL(path, API_BASE_ABS).toString();
 interface CustomRate {
   rate_type: string;
   rate_name: string;
-  price_per_week_cents: number;
+  price_per_month_cents: number;
 }
 
 interface CustomRatesModalProps {
@@ -65,14 +65,14 @@ export const CustomRatesModal: React.FC<CustomRatesModalProps> = ({
           (d: CustomRate) =>
             d.rate_type === p.rate_type && d.rate_name === p.rate_name,
         );
-        return existing || { ...p, price_per_week_cents: 0 };
+        return existing || { ...p, price_per_month_cents: 0 };
       });
       setRates(combinedRates);
     } catch (error) {
       console.error("Error fetching custom rates:", error);
       // Initialize with default structure on error
       setRates(
-        getAllPossibleRates().map((p) => ({ ...p, price_per_week_cents: 0 })),
+        getAllPossibleRates().map((p) => ({ ...p, price_per_month_cents: 0 })),
       );
     } finally {
       setIsLoading(false);
@@ -83,24 +83,24 @@ export const CustomRatesModal: React.FC<CustomRatesModalProps> = ({
     const contentRates = (creator.content_types || []).map((name: string) => ({
       rate_type: "content_type",
       rate_name: name,
-      price_per_week_cents: 0,
+      price_per_month_cents: 0,
     }));
     const industryRates = (creator.industries || []).map((name: string) => ({
       rate_type: "industry",
       rate_name: name,
-      price_per_week_cents: 0,
+      price_per_month_cents: 0,
     }));
     return [...contentRates, ...industryRates];
   };
 
   const handleRateChange = (index: number, value: string) => {
     const newRates = [...rates];
-    newRates[index].price_per_week_cents = parseInt(value, 10) * 100 || 0;
+    newRates[index].price_per_month_cents = parseInt(value, 10) * 100 || 0;
     setRates(newRates);
   };
 
   const handleSave = () => {
-    onSave(rates.filter((r) => r.price_per_week_cents > 0));
+    onSave(rates.filter((r) => r.price_per_month_cents > 0));
     onClose();
   };
 
@@ -127,13 +127,13 @@ export const CustomRatesModal: React.FC<CustomRatesModalProps> = ({
                   <span className="text-gray-600">$</span>
                   <Input
                     type="number"
-                    value={rate.price_per_week_cents / 100}
+                    value={rate.price_per_month_cents / 100}
                     onChange={(e) => handleRateChange(index, e.target.value)}
                     className="text-right"
                     placeholder="0"
                     min="0"
                   />
-                  <span className="text-sm text-gray-500">/ week</span>
+                  <span className="text-sm text-gray-500">/ mo</span>
                 </div>
               </div>
             ))}
