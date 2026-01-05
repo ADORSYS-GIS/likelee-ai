@@ -29,11 +29,11 @@ pub struct FaceProfileResponse {
 #[derive(Deserialize)]
 pub struct SearchFacesQuery {
     pub query: Option<String>,
-    pub creator_types: Option<String>, // comma separated
-    pub races: Option<String>,         // comma separated
-    pub hair_colors: Option<String>,   // comma separated
-    pub hairstyles: Option<String>,    // comma separated
-    pub eye_colors: Option<String>,    // comma separated
+    pub creator_types: Option<String>,   // comma separated
+    pub races: Option<String>,           // comma separated
+    pub hair_colors: Option<String>,     // comma separated
+    pub hairstyles: Option<String>,      // comma separated
+    pub eye_colors: Option<String>,      // comma separated
     pub facial_features: Option<String>, // comma separated
     pub age_min: Option<i32>,
     pub age_max: Option<i32>,
