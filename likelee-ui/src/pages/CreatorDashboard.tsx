@@ -102,7 +102,7 @@ import CameoUpload from "./CameoUpload";
 import { useTranslation } from "react-i18next";
 
 const CONTENT_TYPES = [
-  "Social-media ads",
+  "Social media ads",
   "Web & banner campaigns",
   "TV / streaming commercials",
   "Film & scripted streaming",
@@ -1093,7 +1093,15 @@ export default function CreatorDashboard() {
         );
         if (res.ok) {
           const data = await res.json();
-          setCustomRates(data);
+          setCustomRates(
+            data.filter(
+              (rate: any) =>
+                rate.rate_name !== "Social-media ads" &&
+                rate.rate_name !== "Other" &&
+                (CONTENT_TYPES.includes(rate.rate_name) ||
+                  INDUSTRIES.includes(rate.rate_name)),
+            ),
+          );
         }
       } catch (e) {
         console.error("Failed to fetch rates", e);
@@ -2539,13 +2547,18 @@ export default function CreatorDashboard() {
 
   const handleToggleContentType = (type) => {
     const current = creator.content_types || [];
-    if (current.includes(type)) {
+    // Filter out the known typo before processing
+    const cleaned_current = current.filter(
+      (t) => t !== "Social-medial ads" && t !== "Social-media ads",
+    );
+
+    if (cleaned_current.includes(type)) {
       setCreator({
         ...creator,
-        content_types: current.filter((t) => t !== type),
+        content_types: cleaned_current.filter((t) => t !== type),
       });
     } else {
-      setCreator({ ...creator, content_types: [...current, type] });
+      setCreator({ ...creator, content_types: [...cleaned_current, type] });
     }
   };
 
@@ -5350,17 +5363,29 @@ export default function CreatorDashboard() {
       const formData = new FormData(e.target);
       const newRates: any[] = [];
 
+      // Define baseRate in cents from creator's base monthly price
+      const baseRate = (creator.price_per_month || 0) * 100;
+
       // Which selections to use?
       const finalSelections =
         showRatesModal === "content" ? tempContentTypes : tempIndustries;
 
       if (showRatesModal === "content") {
+        const tempRates = CONTENT_TYPES.map((type) => {
+          const existingRate = customRates.find(
+            (r) => r.rate_name === type && r.rate_name !== "Social-media ads",
+          );
+          return {
+            rate_type: showRatesModal,
+            rate_name: type,
+            price_per_month_cents:
+              existingRate?.price_per_month_cents ?? baseRate,
+          };
+        });
         finalSelections.forEach((type) => {
           const val = formData.get(`rate_content_${type}`);
           const parsed = parseFloat(val?.toString() || "");
-          const existing = (customRates || []).find(
-            (r) => r.rate_type === "content_type" && r.rate_name === type,
-          );
+          const existing = tempRates.find((r) => r.rate_name === type);
           const finalVal = isNaN(parsed)
             ? existing
               ? existing.price_per_month_cents / 100
@@ -5767,7 +5792,9 @@ export default function CreatorDashboard() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {CONTENT_TYPES.map((type) => {
+                  {CONTENT_TYPES.filter(
+                    (type) => type !== "Social-medial ads",
+                  ).map((type) => {
                     const isSelected = creator.content_types?.includes(type);
                     return (
                       <Badge
@@ -7236,7 +7263,10 @@ export default function CreatorDashboard() {
                 {"Select content types you're open to creating"}
               </p>
               <div className="flex flex-wrap gap-2">
-                {CONTENT_TYPES.map((type) => {
+                {CONTENT_TYPES.filter(
+                  (type) =>
+                    type !== "Social-medial ads" && type !== "Social-media ads",
+                ).map((type) => {
                   const isSelected = tempContentTypes.includes(type);
                   return (
                     <button
@@ -7273,54 +7303,60 @@ export default function CreatorDashboard() {
               </p>
 
               <div className="space-y-3">
-                {tempContentTypes.map((type) => {
-                  const info = type;
-                  const existing = customRates.find(
-                    (r) =>
-                      r.rate_type === "content_type" && r.rate_name === type,
-                  );
+                {tempContentTypes
+                  .filter(
+                    (type) =>
+                      type !== "Social-medial ads" &&
+                      type !== "Social-media ads",
+                  )
+                  .map((type) => {
+                    const info = type;
+                    const existing = customRates.find(
+                      (r) =>
+                        r.rate_type === "content_type" && r.rate_name === type,
+                    );
 
-                  return (
-                    <div
-                      key={type}
-                      className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 flex items-center justify-between"
-                    >
-                      <div>
-                        <Label className="font-medium text-gray-900 text-base block mb-0.5">
-                          {info}
-                        </Label>
-                        <p className="text-xs text-gray-400 font-normal italic">
-                          Using base rate: ${creator.price_per_month || 0}/mo
-                        </p>
-                      </div>
+                    return (
+                      <div
+                        key={type}
+                        className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 flex items-center justify-between"
+                      >
+                        <div>
+                          <Label className="font-medium text-gray-900 text-base block mb-0.5">
+                            {info}
+                          </Label>
+                          <p className="text-xs text-gray-400 font-normal italic">
+                            Using base rate: ${creator.price_per_month || 0}/mo
+                          </p>
+                        </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-lg font-medium text-gray-900">
-                            $
-                          </span>
-                          <Input
-                            type="number"
-                            name={`rate_content_${type}`}
-                            defaultValue={
-                              existing
-                                ? (
-                                    existing.price_per_month_cents / 100
-                                  ).toString()
-                                : (creator.price_per_month || 0).toString()
-                            }
-                            className="w-24 h-9 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg font-normal text-gray-900 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
-                            min="0"
-                          />
-                        </div>
-                        <div className="flex flex-col -space-y-0.5 text-gray-900 font-medium leading-tight">
-                          <span className="text-lg">/</span>
-                          <span className="text-base text-[10px]">mo</span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-lg font-medium text-gray-900">
+                              $
+                            </span>
+                            <Input
+                              type="number"
+                              name={`rate_content_${type}`}
+                              defaultValue={
+                                existing
+                                  ? (
+                                      existing.price_per_month_cents / 100
+                                    ).toString()
+                                  : (creator.price_per_month || 0).toString()
+                              }
+                              className="w-24 h-9 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg font-normal text-gray-900 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
+                              min="0"
+                            />
+                          </div>
+                          <div className="flex flex-col -space-y-0.5 text-gray-900 font-medium leading-tight">
+                            <span className="text-lg">/</span>
+                            <span className="text-base text-[10px]">mo</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
 
