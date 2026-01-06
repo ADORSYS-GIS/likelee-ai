@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -636,42 +637,35 @@ export default function BrandDashboard() {
     const fetchCreators = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (searchQuery) params.append("query", searchQuery);
+        const params: any = {};
+        if (searchQuery) params.query = searchQuery;
         if (filters.creator_types.length > 0)
-          params.append("creator_types", filters.creator_types.join(","));
-        if (filters.races.length > 0)
-          params.append("races", filters.races.join(","));
+          params.creator_types = filters.creator_types.join(",");
+        if (filters.races.length > 0) params.races = filters.races.join(",");
         if (filters.hair_colors.length > 0)
-          params.append("hair_colors", filters.hair_colors.join(","));
+          params.hair_colors = filters.hair_colors.join(",");
         if (filters.hairstyles.length > 0)
-          params.append("hairstyles", filters.hairstyles.join(","));
+          params.hairstyles = filters.hairstyles.join(",");
         if (filters.eye_colors.length > 0)
-          params.append("eye_colors", filters.eye_colors.join(","));
+          params.eye_colors = filters.eye_colors.join(",");
         if (filters.facial_features.length > 0)
-          params.append("facial_features", filters.facial_features.join(","));
+          params.facial_features = filters.facial_features.join(",");
+        if (filters.niches.length > 0) params.niches = filters.niches.join(",");
 
-        if (filters.age_range[0] > 18)
-          params.append("age_min", filters.age_range[0].toString());
-        if (filters.age_range[1] < 65)
-          params.append("age_max", filters.age_range[1].toString());
+        if (filters.age_range[0] > 18) params.age_min = filters.age_range[0];
+        if (filters.age_range[1] < 65) params.age_max = filters.age_range[1];
 
         if (filters.height_range[0] > 140)
-          params.append("height_min", filters.height_range[0].toString());
+          params.height_min = filters.height_range[0];
         if (filters.height_range[1] < 210)
-          params.append("height_max", filters.height_range[1].toString());
+          params.height_max = filters.height_range[1];
 
         if (filters.weight_range[0] > 40)
-          params.append("weight_min", filters.weight_range[0].toString());
+          params.weight_min = filters.weight_range[0];
         if (filters.weight_range[1] < 150)
-          params.append("weight_max", filters.weight_range[1].toString());
+          params.weight_max = filters.weight_range[1];
 
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await fetch(
-          `${apiUrl}/api/faces/search?${params.toString()}`,
-        );
-        if (!response.ok) throw new Error("Failed to fetch");
-        const data = await response.json();
+        const data = await base44.get("faces/search", { params });
         if (Array.isArray(data)) {
           const mappedData = data.map((creator: any) => ({
             ...creator,
@@ -1330,17 +1324,15 @@ export default function BrandDashboard() {
               {mockActivities.map((activity, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border ${
-                    activity.urgent
-                      ? "bg-yellow-50 border-yellow-300"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
+                  className={`p-3 rounded-lg border ${activity.urgent
+                    ? "bg-yellow-50 border-yellow-300"
+                    : "bg-gray-50 border-gray-200"
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.urgent ? "bg-yellow-500" : "bg-gray-400"
-                      }`}
+                      className={`w-2 h-2 rounded-full mt-2 ${activity.urgent ? "bg-yellow-500" : "bg-gray-400"
+                        }`}
                     />
                     <div className="flex-1">
                       <p className="text-sm text-gray-900 font-medium">
@@ -1455,51 +1447,51 @@ export default function BrandDashboard() {
             {(selectedCreator.instagram ||
               selectedCreator.tiktok ||
               selectedCreator.portfolio_url) && (
-              <Card className="p-6 bg-white border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
-                <div className="space-y-2">
-                  {selectedCreator.instagram && (
-                    <a
-                      href={selectedCreator.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>Instagram</span>
-                    </a>
-                  )}
-                  {selectedCreator.tiktok && (
-                    <a
-                      href={selectedCreator.tiktok}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>TikTok</span>
-                    </a>
-                  )}
-                  {selectedCreator.portfolio_url && (
-                    <a
-                      href={selectedCreator.portfolio_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>Portfolio</span>
-                    </a>
-                  )}
-                  {selectedCreator.sport && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Star className="w-4 h-4" />
-                      <span>Sport: {selectedCreator.sport}</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
+                <Card className="p-6 bg-white border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
+                  <div className="space-y-2">
+                    {selectedCreator.instagram && (
+                      <a
+                        href={selectedCreator.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>Instagram</span>
+                      </a>
+                    )}
+                    {selectedCreator.tiktok && (
+                      <a
+                        href={selectedCreator.tiktok}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>TikTok</span>
+                      </a>
+                    )}
+                    {selectedCreator.portfolio_url && (
+                      <a
+                        href={selectedCreator.portfolio_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>Portfolio</span>
+                      </a>
+                    )}
+                    {selectedCreator.sport && (
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <Star className="w-4 h-4" />
+                        <span>Sport: {selectedCreator.sport}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
           </div>
 
           {/* Right Column - Details */}
@@ -2024,38 +2016,38 @@ export default function BrandDashboard() {
               {/* Model Measurements */}
               {(filters.creator_types.length === 0 ||
                 filters.creator_types.includes("model")) && (
-                <div className="pt-4 border-t border-gray-100">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                    Model Measurements (inches)
-                  </Label>
-                  <div className="flex gap-4 max-w-md">
-                    <Input
-                      placeholder="Bust"
-                      value={filters.bust}
-                      onChange={(e) =>
-                        setFilters({ ...filters, bust: e.target.value })
-                      }
-                      className="border-2 border-gray-300"
-                    />
-                    <Input
-                      placeholder="Waist"
-                      value={filters.waist}
-                      onChange={(e) =>
-                        setFilters({ ...filters, waist: e.target.value })
-                      }
-                      className="border-2 border-gray-300"
-                    />
-                    <Input
-                      placeholder="Hips"
-                      value={filters.hips}
-                      onChange={(e) =>
-                        setFilters({ ...filters, hips: e.target.value })
-                      }
-                      className="border-2 border-gray-300"
-                    />
+                  <div className="pt-4 border-t border-gray-100">
+                    <Label className="text-sm font-semibold text-gray-900 mb-3 block">
+                      Model Measurements (inches)
+                    </Label>
+                    <div className="flex gap-4 max-w-md">
+                      <Input
+                        placeholder="Bust"
+                        value={filters.bust}
+                        onChange={(e) =>
+                          setFilters({ ...filters, bust: e.target.value })
+                        }
+                        className="border-2 border-gray-300"
+                      />
+                      <Input
+                        placeholder="Waist"
+                        value={filters.waist}
+                        onChange={(e) =>
+                          setFilters({ ...filters, waist: e.target.value })
+                        }
+                        className="border-2 border-gray-300"
+                      />
+                      <Input
+                        placeholder="Hips"
+                        value={filters.hips}
+                        onChange={(e) =>
+                          setFilters({ ...filters, hips: e.target.value })
+                        }
+                        className="border-2 border-gray-300"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </Card>
         )}
@@ -3068,43 +3060,39 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setCampaignView("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "active"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "active"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active (
             {mockCampaigns.filter((c) => c.status === "in_progress").length})
           </button>
           <button
             onClick={() => setCampaignView("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "pending"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "pending"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Pending Approval ({pendingApprovalCount})
           </button>
           <button
             onClick={() => setCampaignView("completed")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "completed"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "completed"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Completed (
             {mockCampaigns.filter((c) => c.status === "completed").length})
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "drafts"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "drafts"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Drafts ({mockCampaigns.filter((c) => c.status === "draft").length})
           </button>
@@ -3701,31 +3689,28 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractDetailTab("summary")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "summary"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "summary"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Summary
           </button>
           <button
             onClick={() => setContractDetailTab("full_text")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "full_text"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "full_text"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Full Text
           </button>
           <button
             onClick={() => setContractDetailTab("custom")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "custom"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "custom"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Custom Clauses{" "}
             {contract.custom_clauses.length > 0 &&
@@ -3733,11 +3718,10 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setContractDetailTab("history")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "history"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "history"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             History
           </button>
@@ -4254,31 +4238,28 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractHubTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "active"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "active"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractHubTab("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "pending"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "pending"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Pending Signature ({pendingContracts.length})
           </button>
           <button
             onClick={() => setContractHubTab("all")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "all"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "all"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             All Contracts ({mockContracts.length})
           </button>
@@ -4471,11 +4452,10 @@ export default function BrandDashboard() {
             {mockContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 border ${
-                  contract.status === "signed"
-                    ? "bg-white border-gray-200"
-                    : "bg-yellow-50 border-yellow-300"
-                }`}
+                className={`p-6 border ${contract.status === "signed"
+                  ? "bg-white border-gray-200"
+                  : "bg-yellow-50 border-yellow-300"
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -4561,42 +4541,38 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setUsageRightsTab("licenses")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "licenses"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "licenses"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active Licenses
           </button>
           <button
             onClick={() => setUsageRightsTab("expiring")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "expiring"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "expiring"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Expiring Soon{" "}
             {expiringLicenses.length > 0 && `(${expiringLicenses.length})`}
           </button>
           <button
             onClick={() => setUsageRightsTab("contracts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "contracts"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "contracts"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Contract Hub
           </button>
           <button
             onClick={() => setUsageRightsTab("compliance")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "compliance"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "compliance"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Compliance
           </button>
@@ -4780,16 +4756,16 @@ export default function BrandDashboard() {
                   ))}
                 {mockLicenses.filter((l) => l.status === "expiring_soon")
                   .length === 0 && (
-                  <div className="col-span-3 text-center py-12">
-                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No licenses expiring soon
-                    </h3>
-                    <p className="text-gray-600">
-                      All your licenses are active for 30+ days
-                    </p>
-                  </div>
-                )}
+                    <div className="col-span-3 text-center py-12">
+                      <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        No licenses expiring soon
+                      </h3>
+                      <p className="text-gray-600">
+                        All your licenses are active for 30+ days
+                      </p>
+                    </div>
+                  )}
               </div>
             </Card>
           </div>
@@ -6415,26 +6391,26 @@ export default function BrandDashboard() {
                     contractData.add_restrictions ||
                     contractData.add_liability ||
                     contractData.add_special_terms) && (
-                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="font-semibold text-yellow-900 mb-2">
-                        Custom Terms Added:
-                      </p>
-                      <ul className="text-sm text-yellow-800 space-y-1">
-                        {contractData.add_disclaimer && (
-                          <li>• Required disclaimer included</li>
-                        )}
-                        {contractData.add_restrictions && (
-                          <li>• Content restrictions added</li>
-                        )}
-                        {contractData.add_liability && (
-                          <li>• Liability waiver included</li>
-                        )}
-                        {contractData.add_special_terms && (
-                          <li>• Special terms added</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
+                      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="font-semibold text-yellow-900 mb-2">
+                          Custom Terms Added:
+                        </p>
+                        <ul className="text-sm text-yellow-800 space-y-1">
+                          {contractData.add_disclaimer && (
+                            <li>• Required disclaimer included</li>
+                          )}
+                          {contractData.add_restrictions && (
+                            <li>• Content restrictions added</li>
+                          )}
+                          {contractData.add_liability && (
+                            <li>• Liability waiver included</li>
+                          )}
+                          {contractData.add_special_terms && (
+                            <li>• Special terms added</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                 </Card>
 
                 <Card className="p-6 bg-green-50 border-2 border-green-300">
@@ -6516,11 +6492,10 @@ export default function BrandDashboard() {
                     setShowContractHub(false);
                     setSelectedContract(null);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#F7B750] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
+                    ? "bg-[#F7B750] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (

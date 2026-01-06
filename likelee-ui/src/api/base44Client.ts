@@ -39,11 +39,13 @@ if (!RAW_BASE) {
 // Ensure absolute base URL by resolving relative values against the current origin
 const API_BASE = (() => {
   try {
-    if (RAW_BASE && RAW_BASE.startsWith("http")) return RAW_BASE;
-    const abs = new URL(RAW_BASE || "/api", window.location.origin).toString();
-    return abs;
+    const base = RAW_BASE || "/api";
+    // Ensure base ends with a slash so that new URL(relative, base) works as expected
+    const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+    if (normalizedBase.startsWith("http")) return normalizedBase;
+    return new URL(normalizedBase, window.location.origin).toString();
   } catch {
-    return new URL("/api", window.location.origin).toString();
+    return new URL("/api/", window.location.origin).toString();
   }
 })();
 
