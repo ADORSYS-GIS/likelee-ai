@@ -18,6 +18,7 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 20251204101400_add_creator_custom_rates.sql
 - 20251205160000_add_negotiations_and_restrictions.sql
 - 20251219213500_rename_rates_column.sql
+- 20260101_profiles_physical_attributes.sql
 
 Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
@@ -63,6 +64,17 @@ erDiagram
     text school_name
     integer age
     text languages
+
+    %% physical attributes & discovery
+    text race
+    text hair_color
+    text hairstyle
+    text eye_color
+    integer height_cm
+    integer weight_kg
+    text[] facial_features
+    text role "default 'creator'"
+    text tagline
 
     %% verification
     text kyc_status "not_started | pending | approved | rejected (default not_started)"
