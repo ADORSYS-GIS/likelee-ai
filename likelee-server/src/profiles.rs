@@ -1,4 +1,4 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -9,8 +9,15 @@ use tracing::warn;
 
 pub async fn upsert_profile(
     State(state): State<AppState>,
+    user: AuthUser,
     Json(mut body): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Force the ID and email from the authenticated user
+    body["id"] = serde_json::Value::String(user.id.clone());
+    if let Some(email) = user.email {
+        body["email"] = serde_json::Value::String(email);
+    }
+
     let email = body
         .get("email")
         .and_then(|v| v.as_str())
@@ -140,11 +147,11 @@ pub struct PhotoUploadQuery {
 /// Handles the profile photo upload and updates the user's profile.
 pub async fn upload_profile_photo(
     State(state): State<AppState>,
-    Query(q): Query<PhotoUploadQuery>,
+    user: AuthUser,
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let user_id = q.user_id;
+    let user_id = user.id;
     if user_id.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "user_id is required".to_string()));
     }

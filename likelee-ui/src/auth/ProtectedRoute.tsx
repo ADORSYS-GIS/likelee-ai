@@ -4,14 +4,24 @@ import { useAuth } from "./AuthProvider";
 
 export default function ProtectedRoute({
   children,
+  allowedRoles,
 }: {
   children: React.ReactNode;
+  allowedRoles?: string[];
 }) {
-  const { initialized, authenticated } = useAuth();
+  const { initialized, authenticated, profile } = useAuth();
   const location = useLocation();
 
   if (!initialized) return null;
-  if (!authenticated)
+
+  if (!authenticated) {
     return <Navigate to="/Login" replace state={{ from: location }} />;
+  }
+
+  // Check for role-based access if allowedRoles is provided
+  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
+    return <Navigate to="/Unauthorized" replace />;
+  }
+
   return <>{children}</>;
 }

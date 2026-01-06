@@ -1,4 +1,4 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -89,16 +89,13 @@ fn compute_hmac_hex(secret: &str, body: &[u8]) -> String {
 
 pub async fn create_session(
     State(state): State<AppState>,
+    user: AuthUser,
     Json(req): Json<SessionRequest>,
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
     let profile_id = req
-        .user_id
+        .organization_id
         .as_ref()
-        .or(req.organization_id.as_ref())
-        .ok_or((
-            StatusCode::BAD_REQUEST,
-            "missing user_id or organization_id".to_string(),
-        ))?;
+        .unwrap_or(&user.id);
     debug!(%profile_id, "Creating Veriff session");
     let veriff_body = VeriffCreateSessionBody {
         verification: VeriffVerification {
@@ -209,12 +206,10 @@ pub struct StatusQuery {
 
 pub async fn get_status(
     State(state): State<AppState>,
+    user: AuthUser,
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let profile_id = q.user_id.as_ref().or(q.organization_id.as_ref()).ok_or((
-        StatusCode::BAD_REQUEST,
-        "missing user_id or organization_id".to_string(),
-    ))?;
+    let profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
     let resp = state
         .pg
         .from("profiles")

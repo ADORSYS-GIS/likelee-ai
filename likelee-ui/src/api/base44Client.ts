@@ -49,11 +49,26 @@ const API_BASE = (() => {
   }
 })();
 
+import { supabase } from "@/lib/supabase";
+
 export const base44 = {
   async get<T = any>(url: string, config?: RequestConfig): Promise<T> {
     const full = buildUrl(API_BASE, url, config?.params);
-    const res = await fetch(full, { headers: { ...(config?.headers || {}) } });
-    if (!res.ok) throw new Error(`GET ${full} failed: ${res.status}`);
+
+    // Get token from Supabase
+    const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const token = session?.access_token;
+
+    const headers = {
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const res = await fetch(full, { headers });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`GET ${full} failed: ${res.status} ${txt}`);
+    }
     return (await res.json()) as T;
   },
   async post<T = any>(
@@ -62,10 +77,18 @@ export const base44 = {
     config?: RequestConfig,
   ): Promise<T> {
     const full = buildUrl(API_BASE, url, config?.params);
+
+    // Get token from Supabase
+    const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const token = session?.access_token;
+
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
-    const headers = isForm
-      ? { ...(config?.headers || {}) }
-      : { "Content-Type": "application/json", ...(config?.headers || {}) };
+    const headers = {
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
     const body = isForm
       ? data
       : data !== undefined

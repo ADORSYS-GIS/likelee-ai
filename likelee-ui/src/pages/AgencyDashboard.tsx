@@ -560,15 +560,15 @@ export default function AgencyDashboard() {
     isLoading: isOwnerKycLoading,
     refetch: refetchOwnerKyc,
   } = useQuery<KycStatusResponse | any>({
-    queryKey: ["ownerKycStatus", user?.id],
-    queryFn: () => fetchUserKycStatus(user!.id),
+    queryKey: ["ownerKycStatus"],
+    queryFn: () => fetchUserKycStatus(),
     enabled: !!user?.id,
   });
 
   const startOwnerKyc = async () => {
     if (!user?.id) return;
     try {
-      const session = await createKycSession({ user_id: user.id });
+      const session = await createKycSession();
       // If base client returns raw axios-like response, handle .session_url accordingly
       const url =
         (session as any)?.session_url || (session as any)?.data?.session_url;
@@ -1098,19 +1098,19 @@ export default function AgencyDashboard() {
                       {(searchQuery ||
                         statusFilter !== "all" ||
                         consentFilter !== "all") && (
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setSearchQuery("");
-                            setStatusFilter("all");
-                            setConsentFilter("all");
-                          }}
-                          className="text-gray-600"
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          Clear Filters
-                        </Button>
-                      )}
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setStatusFilter("all");
+                              setConsentFilter("all");
+                            }}
+                            className="text-gray-600"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Clear Filters
+                          </Button>
+                        )}
                     </div>
 
                     <div className="overflow-x-auto">
@@ -1300,8 +1300,8 @@ export default function AgencyDashboard() {
                                   >
                                     {talent.license_expiry !== "—"
                                       ? new Date(
-                                          talent.license_expiry,
-                                        ).toLocaleDateString()
+                                        talent.license_expiry,
+                                      ).toLocaleDateString()
                                       : "—"}
                                   </span>
                                   {isLicenseExpiring(talent.license_expiry) && (
@@ -2411,8 +2411,8 @@ export default function AgencyDashboard() {
                       >
                         {selectedTalent.license_expiry !== "—"
                           ? new Date(
-                              selectedTalent.license_expiry,
-                            ).toLocaleDateString()
+                            selectedTalent.license_expiry,
+                          ).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>

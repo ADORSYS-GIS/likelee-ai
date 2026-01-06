@@ -1,4 +1,5 @@
 pub mod avatar;
+pub mod auth;
 pub mod config;
 pub mod creator_rates;
 pub mod dashboard;

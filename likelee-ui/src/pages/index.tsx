@@ -117,6 +117,7 @@ import ForgotPassword from "./ForgotPassword";
 import UpdatePassword from "./UpdatePassword";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
+import Unauthorized from "./Unauthorized";
 
 const PAGES = {
   BrandsStudios: BrandsStudios,
@@ -222,6 +223,7 @@ const PAGES = {
 
   RoyaltyWallet: RoyaltyWallet,
   PublicProfile: PublicProfile,
+  Unauthorized: Unauthorized,
 };
 
 function _getCurrentPage(url) {
@@ -320,7 +322,7 @@ function PagesContent() {
         <Route
           path="/TalentDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <TalentDashboard />
             </ProtectedRoute>
           }
@@ -329,7 +331,7 @@ function PagesContent() {
         <Route
           path="/UploadProject"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <UploadProject />
             </ProtectedRoute>
           }
@@ -338,7 +340,7 @@ function PagesContent() {
         <Route
           path="/DemoTalentDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <DemoTalentDashboard />
             </ProtectedRoute>
           }
@@ -347,7 +349,7 @@ function PagesContent() {
         <Route
           path="/CreatorDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <CreatorDashboard />
             </ProtectedRoute>
           }
@@ -356,7 +358,7 @@ function PagesContent() {
         <Route
           path="/AgencyDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["agency"]}>
               <AgencyDashboard />
             </ProtectedRoute>
           }
@@ -367,7 +369,7 @@ function PagesContent() {
         <Route
           path="/BrandDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["brand"]}>
               <BrandDashboard />
             </ProtectedRoute>
           }
@@ -376,7 +378,7 @@ function PagesContent() {
         <Route
           path="/MarketingAgencyDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["agency"]}>
               <MarketingAgencyDashboard />
             </ProtectedRoute>
           }
@@ -385,7 +387,7 @@ function PagesContent() {
         <Route
           path="/BrandCampaignDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["brand"]}>
               <BrandCampaignDashboard />
             </ProtectedRoute>
           }
@@ -394,7 +396,7 @@ function PagesContent() {
         <Route
           path="/PostJob"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["brand", "agency"]}>
               <PostJob />
             </ProtectedRoute>
           }
@@ -405,7 +407,7 @@ function PagesContent() {
         <Route
           path="/SportsAgencyDashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["agency"]}>
               <SportsAgencyDashboard />
             </ProtectedRoute>
           }
@@ -425,7 +427,7 @@ function PagesContent() {
         <Route
           path="/LicensingSettings"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <LicensingSettings />
             </ProtectedRoute>
           }
@@ -434,7 +436,7 @@ function PagesContent() {
         <Route
           path="/CameoUpload"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <CameoUpload />
             </ProtectedRoute>
           }
@@ -443,7 +445,7 @@ function PagesContent() {
         <Route
           path="/RoyaltyWallet"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <RoyaltyWallet />
             </ProtectedRoute>
           }
@@ -452,7 +454,7 @@ function PagesContent() {
         <Route
           path="/PublicProfile"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["creator"]}>
               <PublicProfile />
             </ProtectedRoute>
           }
@@ -472,6 +474,7 @@ function PagesContent() {
             </ProtectedRoute>
           }
         />
+        <Route path="/Unauthorized" element={<Unauthorized />} />
       </Routes>
     </Layout>
   );

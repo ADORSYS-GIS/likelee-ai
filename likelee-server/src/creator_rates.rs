@@ -1,13 +1,12 @@
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
-    extract::{Query, State},
+    extract::State,
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-
-use crate::config::AppState;
 
 #[derive(Deserialize)]
 pub struct RateQuery {
@@ -23,13 +22,13 @@ pub struct CustomRate {
 
 pub async fn get_creator_rates(
     State(ctx): State<AppState>,
-    Query(q): Query<RateQuery>,
+    user: AuthUser,
 ) -> impl IntoResponse {
     let response = ctx
         .pg
         .from("creator_custom_rates")
         .select("rate_type, rate_name, price_per_month_cents")
-        .eq("creator_id", &q.user_id)
+        .eq("creator_id", &user.id)
         .execute()
         .await;
 
@@ -68,12 +67,12 @@ pub async fn get_creator_rates(
 
 pub async fn upsert_creator_rates(
     State(ctx): State<AppState>,
-    Query(q): Query<RateQuery>,
+    user: AuthUser,
     Json(rates): Json<Vec<CustomRate>>,
 ) -> impl IntoResponse {
     // Use an RPC function to handle the upsert logic transactionally
     let rpc_payload = json!({
-        "p_creator_id": &q.user_id,
+        "p_creator_id": &user.id,
         "p_rates": rates
     });
 

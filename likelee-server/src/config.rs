@@ -23,6 +23,9 @@ pub struct ServerConfig {
     #[envconfig(from = "SUPABASE_SERVICE_KEY")]
     pub supabase_service_key: String,
 
+    #[envconfig(from = "SUPABASE_JWT_SECRET")]
+    pub supabase_jwt_secret: String,
+
     #[envconfig(from = "SUPABASE_BUCKET_PRIVATE", default = "likelee-private")]
     pub supabase_bucket_private: String,
 
@@ -87,6 +90,7 @@ pub struct AppState {
     pub rekog: Option<RekogClient>,
     pub supabase_url: String,
     pub supabase_service_key: String,
+    pub supabase_jwt_secret: String,
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
