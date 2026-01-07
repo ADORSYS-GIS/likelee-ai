@@ -186,7 +186,7 @@ pub async fn get_avatar_status(
     if rows.is_empty() {
         return Err((StatusCode::NOT_FOUND, "profile not found".into()));
     }
-    let mut row = rows[0].clone();
+    let row = rows[0].clone();
     let replica_id = row.get("tavus_avatar_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let mut status = row.get("tavus_avatar_status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
 

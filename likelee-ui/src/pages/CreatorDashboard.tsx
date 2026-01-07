@@ -762,6 +762,8 @@ export default function CreatorDashboard() {
     }, 5000);
   };
 
+  // (moved below handleRefreshAvatarStatus definition)
+
   const handleGenerateAvatar = async () => {
     if (!user?.id) return;
     if (!creator?.cameo_front_url) {
@@ -774,13 +776,21 @@ export default function CreatorDashboard() {
     }
     try {
       setAvatarOpLoading(true);
-      const res = await fetch(api(`/api/creatify/avatar-from-video`), {
+      const res = await fetch(api(`/api/creatify/avatar-from-video?debug=1`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ user_id: user.id }),
       });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
+      if (json?.debug_request || json?.debug_v2_body || json?.debug_v1_body || json?.debug_v1b_body) {
+        console.group("Creatify Avatar Debug");
+        if (json.debug_request) console.log("payload to Creatify (personas_v2)", json.debug_request);
+        if (json.debug_v2_body) console.log("raw v2 response (/api/personas_v2)", json.debug_v2_body);
+        if (json.debug_v1_body) console.log("raw v1 response (/api/personas)", json.debug_v1_body);
+        if (json.debug_v1b_body) console.log("raw v1 alt response (/api/personas alt)", json.debug_v1b_body);
+        console.groupEnd();
+      }
       setAvatarStatus(json?.status || "pending");
       // start polling
       startStatusPolling();
@@ -808,6 +818,46 @@ export default function CreatorDashboard() {
       }
     } catch (e: any) {
       toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to fetch avatar status" });
+    }
+  };
+
+  // Creator profile state (declare before any hooks that reference `creator`)
+  const [creator, setCreator] = useState<any>({
+    name: profile?.full_name || user?.user_metadata?.full_name || "",
+    email: profile?.email || user?.email || "",
+    profile_photo: profile?.profile_photo_url || "",
+  });
+
+  // Auto-show status and fetch latest once when an avatar exists
+  useEffect(() => {
+    const existingId = (creator as any)?.creatify_avatar_id;
+    const existingStatus = (creator as any)?.creatify_avatar_status;
+    if (existingStatus && !avatarStatus) {
+      setAvatarStatus(existingStatus);
+    }
+    if (user?.id && typeof existingId === "string" && existingId.trim()) {
+      handleRefreshAvatarStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, (creator as any)?.creatify_avatar_id, (creator as any)?.creatify_avatar_status]);
+
+  // Creatify: Check avatar status by explicit avatar_id
+  const handleCheckAvatarStatusById = async () => {
+    try {
+      let id: string | undefined = (creator as any)?.creatify_avatar_id;
+      if (!id || typeof id !== "string" || !id.trim()) {
+        const entered = window.prompt("Enter your Creatify avatar_id to check status:");
+        if (!entered) return;
+        id = entered.trim();
+      }
+      const r = await fetch(api(`/api/creatify/avatar/status/by-id?avatar_id=${encodeURIComponent(id)}`));
+      if (!r.ok) throw new Error(await r.text());
+      const j = await r.json();
+      const status = j?.process_status || j?.status || (j?.is_active ? "active" : "unknown");
+      setAvatarStatus(status || "pending");
+      toast({ title: "Avatar lookup", description: `id: ${id}\nstatus: ${status}` });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to check avatar by id" });
     }
   };
 
@@ -846,11 +896,7 @@ export default function CreatorDashboard() {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  const [creator, setCreator] = useState<any>({
-    name: profile?.full_name || user?.user_metadata?.full_name || "",
-    email: profile?.email || user?.email || "",
-    profile_photo: profile?.profile_photo_url || "",
-  });
+  
 
   // Sync creator state when auth profile changes
   useEffect(() => {
@@ -3115,7 +3161,7 @@ export default function CreatorDashboard() {
                   <video
                     src={heroMedia.url}
                     controls
-                    className="w-full h-96 object-cover border-2 border-gray-200 rounded-lg"
+                    className="w-full max-h-96 object-contain border-2 border-gray-200 rounded-lg bg-black"
                   />
                 ) : (
                   <img
@@ -3164,7 +3210,7 @@ export default function CreatorDashboard() {
                 <Button
                   className="mx-auto"
                   onClick={handleGenerateAvatar}
-                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto}
+                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto || Boolean((creator as any)?.creatify_avatar_id)}
                 >
                   {avatarOpLoading ? t("common.loading") : "Create Avatar"}
                 </Button>
@@ -3172,13 +3218,25 @@ export default function CreatorDashboard() {
                   <p className="text-xs text-gray-500 mt-3">Uploading video… please wait</p>
                 )}
                 {avatarStatus && (
-                  <p className="text-xs text-gray-500 mt-3">Status: {avatarStatus}</p>
+                  <p
+                    className={`text-xs mt-3 ${
+                      (avatarStatus === "ready" || avatarStatus === "active")
+                        ? "text-green-600"
+                        : (["reviewing", "pending", "queued"].includes(String(avatarStatus).toLowerCase()))
+                        ? "text-amber-600"
+                        : (["failed", "rejected", "error"].includes(String(avatarStatus).toLowerCase()))
+                        ? "text-red-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    Status: {avatarStatus} · Typically approved in 1–2 days
+                  </p>
                 )}
                 <div className="flex items-center justify-center gap-3 mt-4">
                   <Button variant="outline" onClick={handleRefreshAvatarStatus} disabled={!creator?.cameo_front_url}>
                     Check Status
                   </Button>
-                  <Button onClick={handleCreateVideo} disabled={!creator?.cameo_front_url}>
+                  <Button onClick={handleCreateVideo} disabled={!creator?.cameo_front_url || !((avatarStatus === "ready") || (avatarStatus === "active"))}>
                     Create Video
                   </Button>
                 </div>
@@ -3214,7 +3272,7 @@ export default function CreatorDashboard() {
                 <Button
                   className="mx-auto"
                   onClick={handleGenerateAvatar}
-                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto}
+                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto || Boolean((creator as any)?.creatify_avatar_id)}
                 >
                   {avatarOpLoading ? t("common.loading") : "Create Avatar"}
                 </Button>
@@ -3222,13 +3280,25 @@ export default function CreatorDashboard() {
                   <p className="text-xs text-gray-500 mt-3">Uploading video… please wait</p>
                 )}
                 {avatarStatus && (
-                  <p className="text-xs text-gray-500 mt-3">Status: {avatarStatus}</p>
+                  <p
+                    className={`text-xs mt-3 ${
+                      (avatarStatus === "ready" || avatarStatus === "active")
+                        ? "text-green-600"
+                        : (["reviewing", "pending", "queued"].includes(String(avatarStatus).toLowerCase()))
+                        ? "text-amber-600"
+                        : (["failed", "rejected", "error"].includes(String(avatarStatus).toLowerCase()))
+                        ? "text-red-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    Status: {avatarStatus} · Typically approved in 1–2 days
+                  </p>
                 )}
                 <div className="flex items-center justify-center gap-3 mt-4">
                   <Button variant="outline" onClick={handleRefreshAvatarStatus} disabled={!creator?.cameo_front_url}>
                     Check Status
                   </Button>
-                  <Button onClick={handleCreateVideo} disabled={!creator?.cameo_front_url}>
+                  <Button onClick={handleCreateVideo} disabled={!creator?.cameo_front_url || !((avatarStatus === "ready") || (avatarStatus === "active"))}>
                     Create Video
                   </Button>
                 </div>
