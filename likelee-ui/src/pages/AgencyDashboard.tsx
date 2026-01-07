@@ -363,8 +363,8 @@ const ROSTER_INSIGHTS_DATA = [
 
 const CLIENTS_PERFORMANCE_DATA = [
   { name: "L'Oreal", budget: 45000, color: "#6366f1", roi: "3.2x" }, // Indigo
-  { name: "Nike", budget: 28500, color: "#8b5cf6", roi: "2.8x" },  // Violet
-  { name: "Zara", budget: 15000, color: "#f59e0b", roi: "2.5x" },  // Amber
+  { name: "Nike", budget: 28500, color: "#8b5cf6", roi: "2.8x" }, // Violet
+  { name: "Zara", budget: 15000, color: "#f59e0b", roi: "2.5x" }, // Amber
   { name: "Glossier", budget: 12500, color: "#ec4899", roi: "3.5x" }, // Rose
 ];
 
@@ -1532,13 +1532,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1657,15 +1657,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -2506,9 +2507,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -2776,7 +2777,10 @@ const LicenseTemplatesView = () => {
                   placeholder="Organic Social Media (Instagram, TikTok, Facebook)"
                   value={newTemplate.usageScope}
                   onChange={(e) =>
-                    setNewTemplate({ ...newTemplate, usageScope: e.target.value })
+                    setNewTemplate({
+                      ...newTemplate,
+                      usageScope: e.target.value,
+                    })
                   }
                   className="h-11 border-gray-200 focus:ring-indigo-500/20"
                 />
@@ -2791,7 +2795,10 @@ const LicenseTemplatesView = () => {
                     placeholder="90 days"
                     value={newTemplate.duration}
                     onChange={(e) =>
-                      setNewTemplate({ ...newTemplate, duration: e.target.value })
+                      setNewTemplate({
+                        ...newTemplate,
+                        duration: e.target.value,
+                      })
                     }
                     className="h-11 border-gray-200 focus:ring-indigo-500/20"
                   />
@@ -2826,9 +2833,15 @@ const LicenseTemplatesView = () => {
                       <SelectValue placeholder="Non-exclusive" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Non-exclusive">Non-exclusive</SelectItem>
-                      <SelectItem value="Category exclusive">Category exclusive</SelectItem>
-                      <SelectItem value="Full exclusivity">Full exclusivity</SelectItem>
+                      <SelectItem value="Non-exclusive">
+                        Non-exclusive
+                      </SelectItem>
+                      <SelectItem value="Category exclusive">
+                        Category exclusive
+                      </SelectItem>
+                      <SelectItem value="Full exclusivity">
+                        Full exclusivity
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -2952,9 +2965,13 @@ const LicenseTemplatesView = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Social Media">Social Media</SelectItem>
+                          <SelectItem value="Social Media">
+                            Social Media
+                          </SelectItem>
                           <SelectItem value="E-commerce">E-commerce</SelectItem>
-                          <SelectItem value="Advertising">Advertising</SelectItem>
+                          <SelectItem value="Advertising">
+                            Advertising
+                          </SelectItem>
                           <SelectItem value="Editorial">Editorial</SelectItem>
                           <SelectItem value="Film & TV">Film & TV</SelectItem>
                           <SelectItem value="Custom">Custom</SelectItem>
@@ -3047,9 +3064,15 @@ const LicenseTemplatesView = () => {
                           <SelectValue placeholder="Non-exclusive" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Non-exclusive">Non-exclusive</SelectItem>
-                          <SelectItem value="Category exclusive">Category exclusive</SelectItem>
-                          <SelectItem value="Full exclusivity">Full exclusivity</SelectItem>
+                          <SelectItem value="Non-exclusive">
+                            Non-exclusive
+                          </SelectItem>
+                          <SelectItem value="Category exclusive">
+                            Category exclusive
+                          </SelectItem>
+                          <SelectItem value="Full exclusivity">
+                            Full exclusivity
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -3298,10 +3321,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -5124,7 +5148,8 @@ const CONSENT_DATA = [
   {
     id: 1,
     name: "Emma",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "2/16/2025",
     expiryDate: "8/15/2025",
@@ -5133,7 +5158,8 @@ const CONSENT_DATA = [
   {
     id: 2,
     name: "Sergine",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "3/26/2025",
     expiryDate: "9/22/2025",
@@ -5142,7 +5168,8 @@ const CONSENT_DATA = [
   {
     id: 3,
     name: "Milan",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "1/31/2025",
     expiryDate: "7/30/2025",
@@ -5151,7 +5178,8 @@ const CONSENT_DATA = [
   {
     id: 4,
     name: "Julia",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
     status: "warning",
     consentDate: "8/19/2024",
     expiryDate: "2/15/2025",
@@ -5160,7 +5188,8 @@ const CONSENT_DATA = [
   {
     id: 5,
     name: "Matt",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "4/15/2025",
     expiryDate: "10/12/2025",
@@ -5169,7 +5198,8 @@ const CONSENT_DATA = [
   {
     id: 6,
     name: "Carla",
-    image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "5/12/2025",
     expiryDate: "11/8/2025",
@@ -5178,7 +5208,8 @@ const CONSENT_DATA = [
   {
     id: 7,
     name: "Luisa",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "12/22/2024",
     expiryDate: "6/20/2025",
@@ -5187,7 +5218,8 @@ const CONSENT_DATA = [
   {
     id: 8,
     name: "Clemence",
-    image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "3/1/2025",
     expiryDate: "8/28/2025",
@@ -5196,7 +5228,8 @@ const CONSENT_DATA = [
   {
     id: 9,
     name: "Lina",
-    image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=150",
     status: "compliant",
     consentDate: "3/19/2025",
     expiryDate: "9/15/2025",
@@ -5205,7 +5238,8 @@ const CONSENT_DATA = [
   {
     id: 10,
     name: "Aaron",
-    image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150",
+    image:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150",
     status: "error",
     consentDate: "N/A",
     expiryDate: "N/A",
@@ -5214,28 +5248,227 @@ const CONSENT_DATA = [
 ];
 
 const LICENSE_COMPLIANCE_DATA = [
-  { talent: "Emma", brand: "Glossier", scope: "Social Media", date: "2/16/2025", expiry: "8/15/2025", days: "Expired", level: "EXPIRED", auto: false, image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Sergine", brand: "Everlane", scope: "Social Media", date: "3/26/2025", expiry: "9/22/2025", days: "Expired", level: "EXPIRED", auto: true, image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Milan", brand: "Carhartt WIP", scope: "Social Media", date: "1/31/2025", expiry: "7/30/2025", days: "Expired", level: "EXPIRED", auto: false, image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Julia", brand: "& Other Stories", scope: "Social Media", date: "8/19/2024", expiry: "2/15/2025", days: "Expired", level: "EXPIRED", auto: true, image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Matt", brand: "Aesop", scope: "Social Media", date: "4/15/2025", expiry: "10/12/2025", days: "Expired", level: "EXPIRED", auto: false, image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Carla", brand: "Reformation", scope: "Social Media", date: "5/12/2025", expiry: "11/8/2025", days: "Expired", level: "EXPIRED", auto: true, image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Luisa", brand: "Ganni", scope: "Social Media", date: "12/22/2024", expiry: "6/20/2025", days: "Expired", level: "EXPIRED", auto: false, image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Clemence", brand: "COS", scope: "Social Media", date: "3/1/2025", expiry: "8/28/2025", days: "Expired", level: "EXPIRED", auto: true, image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Lina", brand: "Sezane", scope: "Social Media", date: "3/19/2025", expiry: "9/15/2025", days: "Expired", level: "EXPIRED", auto: false, image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=150" },
+  {
+    talent: "Emma",
+    brand: "Glossier",
+    scope: "Social Media",
+    date: "2/16/2025",
+    expiry: "8/15/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: false,
+    image:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Sergine",
+    brand: "Everlane",
+    scope: "Social Media",
+    date: "3/26/2025",
+    expiry: "9/22/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: true,
+    image:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Milan",
+    brand: "Carhartt WIP",
+    scope: "Social Media",
+    date: "1/31/2025",
+    expiry: "7/30/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: false,
+    image:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Julia",
+    brand: "& Other Stories",
+    scope: "Social Media",
+    date: "8/19/2024",
+    expiry: "2/15/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: true,
+    image:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Matt",
+    brand: "Aesop",
+    scope: "Social Media",
+    date: "4/15/2025",
+    expiry: "10/12/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: false,
+    image:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Carla",
+    brand: "Reformation",
+    scope: "Social Media",
+    date: "5/12/2025",
+    expiry: "11/8/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: true,
+    image:
+      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Luisa",
+    brand: "Ganni",
+    scope: "Social Media",
+    date: "12/22/2024",
+    expiry: "6/20/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: false,
+    image:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Clemence",
+    brand: "COS",
+    scope: "Social Media",
+    date: "3/1/2025",
+    expiry: "8/28/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: true,
+    image:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Lina",
+    brand: "Sezane",
+    scope: "Social Media",
+    date: "3/19/2025",
+    expiry: "9/15/2025",
+    days: "Expired",
+    level: "EXPIRED",
+    auto: false,
+    image:
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=150",
+  },
 ];
 
 const DOCS_CHECKLIST = [
-  { talent: "Emma", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Sergine", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Milan", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Julia", id: true, tax: true, consent: false, contract: true, bank: true, status: "Pending", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Matt", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Carla", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Luisa", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Clemence", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Lina", id: true, tax: true, consent: true, contract: true, bank: true, status: "Complete", image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=150" },
-  { talent: "Aaron", id: false, tax: false, consent: false, contract: false, bank: false, status: "Pending", image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150" },
+  {
+    talent: "Emma",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Sergine",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Milan",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Julia",
+    id: true,
+    tax: true,
+    consent: false,
+    contract: true,
+    bank: true,
+    status: "Pending",
+    image:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Matt",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Carla",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Luisa",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Clemence",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Lina",
+    id: true,
+    tax: true,
+    consent: true,
+    contract: true,
+    bank: true,
+    status: "Complete",
+    image:
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=150",
+  },
+  {
+    talent: "Aaron",
+    id: false,
+    tax: false,
+    consent: false,
+    contract: false,
+    bank: false,
+    status: "Pending",
+    image:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150",
+  },
 ];
 
 const BRAND_USAGE = [
@@ -5263,7 +5496,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -5315,7 +5548,6 @@ const ComplianceHubView = () => {
     );
   };
 
-
   return (
     <div className="space-y-6 pb-20 scroll-smooth">
       <div className="flex justify-between items-center py-2 mb-2">
@@ -5345,7 +5577,10 @@ const ComplianceHubView = () => {
       {/* Overview Cards */}
       <div className="grid grid-cols-4 gap-6">
         {OVERVIEW_CARDS_DATA.map((card, idx) => (
-          <Card key={idx} className={`p-6 bg-white border ${card.borderColor || "border-gray-200"} shadow-sm relative overflow-hidden`}>
+          <Card
+            key={idx}
+            className={`p-6 bg-white border ${card.borderColor || "border-gray-200"} shadow-sm relative overflow-hidden`}
+          >
             <div className="flex items-center gap-3 mb-4">
               <card.icon className={`w-6 h-6 ${card.iconColor}`} />
               <h3 className="text-sm font-bold text-gray-700">{card.title}</h3>
@@ -5359,9 +5594,16 @@ const ComplianceHubView = () => {
             {card.stats ? (
               <div className="space-y-2 mb-4">
                 {card.stats.map((stat, sIdx) => (
-                  <div key={sIdx} className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500 font-medium">{stat.label}</span>
-                    <span className={`font-bold ${stat.color}`}>{stat.value}</span>
+                  <div
+                    key={sIdx}
+                    className="flex justify-between items-center text-xs"
+                  >
+                    <span className="text-gray-500 font-medium">
+                      {stat.label}
+                    </span>
+                    <span className={`font-bold ${stat.color}`}>
+                      {stat.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -5384,7 +5626,9 @@ const ComplianceHubView = () => {
             )}
 
             {card.action && (
-              <div className={`mt-2 ${card.bgBadge} text-white text-[10px] font-bold py-1.5 rounded text-center tracking-wider flex items-center justify-center gap-2`}>
+              <div
+                className={`mt-2 ${card.bgBadge} text-white text-[10px] font-bold py-1.5 rounded text-center tracking-wider flex items-center justify-center gap-2`}
+              >
                 <AlertCircle className="w-3 h-3" /> {card.action}
               </div>
             )}
@@ -5401,7 +5645,9 @@ const ComplianceHubView = () => {
       {/* Talent Consent Audit */}
       <Card className="p-0 border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Talent Consent Audit</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            Talent Consent Audit
+          </h3>
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -5413,64 +5659,104 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
-              <RefreshCw className={`w-3 h-3 ${selectedTalentIds.length > 0 ? "animate-spin-slow" : ""}`} /> Send Renewal Requests ({selectedTalentIds.length})
+              <RefreshCw
+                className={`w-3 h-3 ${selectedTalentIds.length > 0 ? "animate-spin-slow" : ""}`}
+              />{" "}
+              Send Renewal Requests ({selectedTalentIds.length})
             </Button>
           </div>
         </div>
         <div className="divide-y divide-gray-100">
           {CONSENT_DATA.map((talent) => (
-            <div key={talent.id} className={`p-4 flex items-center gap-6 ${talent.status === 'warning' ? 'bg-orange-50/30 border-y border-orange-200/50' : talent.status === 'error' ? 'bg-red-50/30 border-y border-red-200/50' : 'hover:bg-gray-50/50'} transition-colors`}>
+            <div
+              key={talent.id}
+              className={`p-4 flex items-center gap-6 ${talent.status === "warning" ? "bg-orange-50/30 border-y border-orange-200/50" : talent.status === "error" ? "bg-red-50/30 border-y border-red-200/50" : "hover:bg-gray-50/50"} transition-colors`}
+            >
               <Checkbox
                 className="border-gray-300"
                 checked={selectedTalentIds.includes(talent.id)}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    setSelectedTalentIds(prev => [...prev, talent.id]);
+                    setSelectedTalentIds((prev) => [...prev, talent.id]);
                   } else {
-                    setSelectedTalentIds(prev => prev.filter(id => id !== talent.id));
+                    setSelectedTalentIds((prev) =>
+                      prev.filter((id) => id !== talent.id),
+                    );
                   }
                 }}
               />
               <div className="flex items-center gap-3 min-w-[150px]">
-                <img src={talent.image} alt={talent.name} className="w-10 h-10 rounded-full object-cover border border-gray-100" />
+                <img
+                  src={talent.image}
+                  alt={talent.name}
+                  className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                />
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-gray-900">{talent.name}</span>
-                  {talent.status === 'compliant' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                  {talent.status === 'warning' && <Clock className="w-4 h-4 text-orange-500" />}
-                  {talent.status === 'error' && <X className="w-4 h-4 text-red-500" />}
+                  {talent.status === "compliant" && (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  )}
+                  {talent.status === "warning" && (
+                    <Clock className="w-4 h-4 text-orange-500" />
+                  )}
+                  {talent.status === "error" && (
+                    <X className="w-4 h-4 text-red-500" />
+                  )}
                 </div>
               </div>
               <div className="flex-1 flex gap-8 text-[11px] font-medium text-gray-500">
                 <div className="flex flex-col gap-1">
-                  <span className="text-gray-400 text-[10px] uppercase tracking-wider">Consent Date</span>
-                  <span className="text-gray-700 font-bold">{talent.consentDate}</span>
+                  <span className="text-gray-400 text-[10px] uppercase tracking-wider">
+                    Consent Date
+                  </span>
+                  <span className="text-gray-700 font-bold">
+                    {talent.consentDate}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-gray-400 text-[10px] uppercase tracking-wider">Expiry Date</span>
-                  <span className={`${talent.status === 'warning' || talent.status === 'error' ? 'text-orange-600' : 'text-gray-700'} font-bold`}>{talent.expiryDate}</span>
+                  <span className="text-gray-400 text-[10px] uppercase tracking-wider">
+                    Expiry Date
+                  </span>
+                  <span
+                    className={`${talent.status === "warning" || talent.status === "error" ? "text-orange-600" : "text-gray-700"} font-bold`}
+                  >
+                    {talent.expiryDate}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-gray-400 text-[10px] uppercase tracking-wider">Consent Types</span>
+                  <span className="text-gray-400 text-[10px] uppercase tracking-wider">
+                    Consent Types
+                  </span>
                   <div className="flex gap-2 mt-0.5">
                     {talent.types.map((type, tIdx) => (
-                      <span key={tIdx} className={`px-2 py-0.5 rounded-sm font-bold text-[9px] ${type === 'N/A' ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white uppercase'}`}>{type}</span>
+                      <span
+                        key={tIdx}
+                        className={`px-2 py-0.5 rounded-sm font-bold text-[9px] ${type === "N/A" ? "bg-gray-100 text-gray-400" : "bg-gray-900 text-white uppercase"}`}
+                      >
+                        {type}
+                      </span>
                     ))}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {(talent.status === 'warning' || talent.status === 'error') && (
+                {(talent.status === "warning" || talent.status === "error") && (
                   <Button className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] h-8 px-4 font-bold rounded-md">
                     Request Renewal
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+                >
                   <Eye className="w-4 h-4" />
                 </Button>
               </div>
@@ -5482,10 +5768,19 @@ const ComplianceHubView = () => {
       {/* License Compliance */}
       <Card className="p-0 border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">License Compliance</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            License Compliance
+          </h3>
           <div className="flex gap-2">
-            {["30-day alerts: ON", "60-day alerts: ON", "90-day alerts: ON"].map((alert) => (
-              <span key={alert} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded border border-indigo-100">
+            {[
+              "30-day alerts: ON",
+              "60-day alerts: ON",
+              "90-day alerts: ON",
+            ].map((alert) => (
+              <span
+                key={alert}
+                className="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded border border-indigo-100"
+              >
                 {alert}
               </span>
             ))}
@@ -5511,7 +5806,10 @@ const ComplianceHubView = () => {
                 <tr key={idx} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <img src={row.image} className="w-6 h-6 rounded-full object-cover" />
+                      <img
+                        src={row.image}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
                       <span className="font-bold">{row.talent}</span>
                     </div>
                   </td>
@@ -5519,20 +5817,28 @@ const ComplianceHubView = () => {
                   <td className="px-4 py-4">{row.scope}</td>
                   <td className="px-4 py-4">{row.date}</td>
                   <td className="px-4 py-4">{row.expiry}</td>
-                  <td className="px-4 py-4 text-red-600 font-bold">{row.days}</td>
+                  <td className="px-4 py-4 text-red-600 font-bold">
+                    {row.days}
+                  </td>
                   <td className="px-4 py-4">
-                    <span className="bg-red-50 text-red-600 text-[9px] px-2 py-1 rounded font-black tracking-tighter">{row.level}</span>
+                    <span className="bg-red-50 text-red-600 text-[9px] px-2 py-1 rounded font-black tracking-tighter">
+                      {row.level}
+                    </span>
                   </td>
                   <td className="px-4 py-4">
                     <div
-                      className={`w-8 h-4 rounded-full relative ${row.auto ? 'bg-indigo-600' : 'bg-gray-200'} transition-colors cursor-pointer`}
+                      className={`w-8 h-4 rounded-full relative ${row.auto ? "bg-indigo-600" : "bg-gray-200"} transition-colors cursor-pointer`}
                       onClick={() => toggleAutoRenew(row.talent)}
                     >
-                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${row.auto ? 'left-[17px]' : 'left-0.5'}`}></div>
+                      <div
+                        className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${row.auto ? "left-[17px]" : "left-0.5"}`}
+                      ></div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-blue-600">
-                    <button className="font-bold text-[10px] border border-gray-200 px-2 py-1 rounded hover:bg-gray-50 text-gray-700">Renew</button>
+                    <button className="font-bold text-[10px] border border-gray-200 px-2 py-1 rounded hover:bg-gray-50 text-gray-700">
+                      Renew
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -5541,10 +5847,14 @@ const ComplianceHubView = () => {
         </div>
         <div className="p-4 bg-indigo-50/30 border-t border-indigo-100 text-[10px] text-gray-500 font-medium">
           <p className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-gray-900">Automated Alerts:</span> Email notifications sent automatically at 90, 60, and 30 days before license expiry.
+            <span className="font-bold text-gray-900">Automated Alerts:</span>{" "}
+            Email notifications sent automatically at 90, 60, and 30 days before
+            license expiry.
           </p>
           <p className="flex items-center gap-2">
-            <span className="font-bold text-gray-900">Auto-Renew:</span> When enabled, license renewal requests are automatically sent 30 days before expiry.
+            <span className="font-bold text-gray-900">Auto-Renew:</span> When
+            enabled, license renewal requests are automatically sent 30 days
+            before expiry.
           </p>
         </div>
       </Card>
@@ -5552,18 +5862,26 @@ const ComplianceHubView = () => {
       {/* Talent Documentation Checklist */}
       <Card className="p-0 border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Talent Documentation Checklist</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            Talent Documentation Checklist
+          </h3>
           <div className="flex gap-3">
             <Button
               variant="outline"
               className="text-xs font-bold border-gray-300 h-8 gap-2"
-              onClick={() => handleActionToast("Exporting documentation checklist as CSV...")}
+              onClick={() =>
+                handleActionToast("Exporting documentation checklist as CSV...")
+              }
             >
               <Download className="w-4 h-4" /> Export Checklist
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold h-8 gap-2"
-              onClick={() => handleActionToast("Bulk upload for all - File picker would open here")}
+              onClick={() =>
+                handleActionToast(
+                  "Bulk upload for all - File picker would open here",
+                )
+              }
             >
               <RefreshCw className="w-4 h-4" /> Bulk Upload Docs
             </Button>
@@ -5571,17 +5889,29 @@ const ComplianceHubView = () => {
         </div>
 
         <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100">
-          {["ID Verification", "Tax Docs", "Consent Forms", "Contracts", "Bank Info"].map((tab) => (
+          {[
+            "ID Verification",
+            "Tax Docs",
+            "Consent Forms",
+            "Contracts",
+            "Bank Info",
+          ].map((tab) => (
             <div
               key={tab}
               className="p-4 flex flex-col items-center gap-2 group cursor-pointer hover:bg-gray-50/50 transition-all"
-              onClick={() => handleActionToast(`Bulk upload for ${tab.replace('Info', 'Info')} - File picker would open here`)}
+              onClick={() =>
+                handleActionToast(
+                  `Bulk upload for ${tab.replace("Info", "Info")} - File picker would open here`,
+                )
+              }
             >
               <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 group-hover:bg-white transition-colors">
                 <FileText className="w-5 h-5 text-gray-400 group-hover:text-indigo-600" />
               </div>
               <div className="text-center">
-                <p className="text-[10px] font-bold text-gray-400 uppercase">Upload</p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase">
+                  Upload
+                </p>
                 <p className="text-[11px] font-bold text-gray-800">{tab}</p>
               </div>
             </div>
@@ -5607,17 +5937,28 @@ const ComplianceHubView = () => {
                 <tr key={idx} className="hover:bg-gray-50/30">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <img src={row.image} className="w-6 h-6 rounded-full object-cover" />
+                      <img
+                        src={row.image}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
                       <span className="font-bold">{row.talent}</span>
                     </div>
                   </td>
-                  {[row.id, row.tax, row.consent, row.contract, row.bank].map((check, cIdx) => (
-                    <td key={cIdx} className="px-4 py-4 text-center">
-                      {check ? <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" /> : <XCircle className="w-4 h-4 text-red-500 mx-auto" />}
-                    </td>
-                  ))}
+                  {[row.id, row.tax, row.consent, row.contract, row.bank].map(
+                    (check, cIdx) => (
+                      <td key={cIdx} className="px-4 py-4 text-center">
+                        {check ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-500 mx-auto" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500 mx-auto" />
+                        )}
+                      </td>
+                    ),
+                  )}
                   <td className="px-4 py-4">
-                    <div className={`mx-auto w-max px-3 py-1 rounded-full text-[10px] font-bold ${row.status === 'Complete' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
+                    <div
+                      className={`mx-auto w-max px-3 py-1 rounded-full text-[10px] font-bold ${row.status === "Complete" ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"}`}
+                    >
                       {row.status}
                     </div>
                   </td>
@@ -5634,44 +5975,67 @@ const ComplianceHubView = () => {
       {/* Brand Usage Monitoring */}
       <Card className="p-0 border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900">Brand Usage Monitoring</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            Brand Usage Monitoring
+          </h3>
         </div>
         <div className="p-8 space-y-8">
           <div className="grid grid-cols-3 gap-6">
             <div className="p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <span className="text-xs font-bold text-green-700">Authorized Usages</span>
+                <span className="text-xs font-bold text-green-700">
+                  Authorized Usages
+                </span>
               </div>
               <p className="text-3xl font-bold text-gray-900">73</p>
-              <p className="text-[10px] text-green-600 font-bold mt-1">Last 30 days</p>
+              <p className="text-[10px] text-green-600 font-bold mt-1">
+                Last 30 days
+              </p>
             </div>
             <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-xs font-bold text-red-700">Flagged Usage</span>
+                <span className="text-xs font-bold text-red-700">
+                  Flagged Usage
+                </span>
               </div>
               <p className="text-3xl font-bold text-gray-900">0</p>
-              <p className="text-[10px] text-red-600 font-bold mt-1">Requires attention</p>
+              <p className="text-[10px] text-red-600 font-bold mt-1">
+                Requires attention
+              </p>
             </div>
             <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <Eye className="w-5 h-5 text-blue-600" />
-                <span className="text-xs font-bold text-blue-700">Under Review</span>
+                <span className="text-xs font-bold text-blue-700">
+                  Under Review
+                </span>
               </div>
               <p className="text-3xl font-bold text-gray-900">2</p>
-              <p className="text-[10px] text-blue-600 font-bold mt-1">Pending approval</p>
+              <p className="text-[10px] text-blue-600 font-bold mt-1">
+                Pending approval
+              </p>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-sm font-bold text-gray-900 px-1">Usage by Brand</h4>
+            <h4 className="text-sm font-bold text-gray-900 px-1">
+              Usage by Brand
+            </h4>
             <div className="space-y-2">
               {BRAND_USAGE.map((brand, idx) => (
-                <div key={idx} className="p-4 bg-gray-50/50 border border-gray-100 rounded-lg flex justify-between items-center group hover:bg-white hover:shadow-sm transition-all">
+                <div
+                  key={idx}
+                  className="p-4 bg-gray-50/50 border border-gray-100 rounded-lg flex justify-between items-center group hover:bg-white hover:shadow-sm transition-all"
+                >
                   <div>
-                    <p className="text-sm font-bold text-gray-900">{brand.brand}</p>
-                    <p className="text-[11px] text-gray-500 font-medium">{brand.count}</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {brand.brand}
+                    </p>
+                    <p className="text-[11px] text-gray-500 font-medium">
+                      {brand.count}
+                    </p>
                   </div>
                   <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded-full group-hover:bg-green-100 transition-colors">
                     {brand.status}
@@ -5685,8 +6049,12 @@ const ComplianceHubView = () => {
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
               <Shield className="w-10 h-10 text-gray-200" />
             </div>
-            <p className="text-sm font-bold text-gray-900 mb-1">No flagged usage detected</p>
-            <p className="text-xs text-gray-400 font-medium">All brand usages are authorized and compliant</p>
+            <p className="text-sm font-bold text-gray-900 mb-1">
+              No flagged usage detected
+            </p>
+            <p className="text-xs text-gray-400 font-medium">
+              All brand usages are authorized and compliant
+            </p>
           </div>
         </div>
       </Card>
@@ -5708,15 +6076,21 @@ const RoyaltiesPayoutsView = () => {
   const [isEditingDefaultRate, setIsEditingDefaultRate] = useState(false);
   const [defaultCommissionRate, setDefaultCommissionRate] = useState(15);
 
-  const filteredTalent = selectedTier === "All Tiers"
-    ? TALENT_DATA
-    : TALENT_DATA.filter(t => t.tier === selectedTier);
+  const filteredTalent =
+    selectedTier === "All Tiers"
+      ? TALENT_DATA
+      : TALENT_DATA.filter((t) => t.tier === selectedTier);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center bg-white p-6 border-b border-gray-100 rounded-xl">
-        <h2 className="text-2xl font-bold text-gray-900">Commission & Payout Management</h2>
-        <Button variant="outline" className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Commission & Payout Management
+        </h2>
+        <Button
+          variant="outline"
+          className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm"
+        >
           <Download className="w-4 h-4" /> Export Report
         </Button>
       </div>
@@ -5728,7 +6102,9 @@ const RoyaltiesPayoutsView = () => {
             <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center border border-green-100">
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
-            <p className="text-sm font-bold text-gray-500">Accrued This Month</p>
+            <p className="text-sm font-bold text-gray-500">
+              Accrued This Month
+            </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">$8,450</h3>
           <p className="text-xs font-bold text-green-600">Ready for payout</p>
@@ -5742,7 +6118,9 @@ const RoyaltiesPayoutsView = () => {
             <p className="text-sm font-bold text-gray-500">Pending Approval</p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">$3,200</h3>
-          <p className="text-xs font-bold text-gray-400">Awaiting brand confirmation</p>
+          <p className="text-xs font-bold text-gray-400">
+            Awaiting brand confirmation
+          </p>
         </Card>
 
         <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -5761,10 +6139,14 @@ const RoyaltiesPayoutsView = () => {
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-indigo-100 shadow-sm">
               <Percent className="w-6 h-6 text-indigo-600" />
             </div>
-            <p className="text-sm font-bold text-indigo-500">Agency Commission YTD</p>
+            <p className="text-sm font-bold text-indigo-500">
+              Agency Commission YTD
+            </p>
           </div>
           <h3 className="text-3xl font-bold text-indigo-900 mb-1">$18,720</h3>
-          <p className="text-xs font-bold text-indigo-500">15% avg commission rate</p>
+          <p className="text-xs font-bold text-indigo-500">
+            15% avg commission rate
+          </p>
         </Card>
       </div>
 
@@ -5774,10 +6156,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -5788,53 +6171,93 @@ const RoyaltiesPayoutsView = () => {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
             <div className="flex justify-between items-center mb-10">
-              <h3 className="text-lg font-bold text-gray-900">Default Commission Rate</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Default Commission Rate
+              </h3>
               {isEditingDefaultRate ? (
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" onClick={() => { setIsEditingDefaultRate(false); setDefaultCommissionRate(15); }} className="font-bold border-gray-200">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditingDefaultRate(false);
+                      setDefaultCommissionRate(15);
+                    }}
+                    className="font-bold border-gray-200"
+                  >
                     <X className="w-4 h-4 mr-2" /> Cancel
                   </Button>
-                  <Button onClick={() => setIsEditingDefaultRate(false)} className="bg-indigo-600 hover:bg-indigo-700 font-bold">
+                  <Button
+                    onClick={() => setIsEditingDefaultRate(false)}
+                    className="bg-indigo-600 hover:bg-indigo-700 font-bold"
+                  >
                     <Save className="w-4 h-4 mr-2" /> Save Changes
                   </Button>
                 </div>
               ) : (
-                <Button variant="outline" onClick={() => setIsEditingDefaultRate(true)} className="font-bold gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingDefaultRate(true)}
+                  className="font-bold gap-2"
+                >
                   <Settings className="w-4 h-4" /> Edit Settings
                 </Button>
               )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <Label className="text-sm font-bold text-gray-900">Agency Commission Rate</Label>
+                <Label className="text-sm font-bold text-gray-900">
+                  Agency Commission Rate
+                </Label>
                 <div className="flex items-center gap-4">
                   <div className="relative w-32">
                     <Input
                       type="number"
                       value={defaultCommissionRate}
-                      onChange={(e) => isEditingDefaultRate && setDefaultCommissionRate(Number(e.target.value))}
+                      onChange={(e) =>
+                        isEditingDefaultRate &&
+                        setDefaultCommissionRate(Number(e.target.value))
+                      }
                       readOnly={!isEditingDefaultRate}
-                      className={`h-14 bg-gray-50 border-gray-200 text-2xl font-bold text-gray-900 pl-4 pr-10 ${isEditingDefaultRate ? 'bg-white border-indigo-500 ring-2 ring-indigo-100' : ''}`}
+                      className={`h-14 bg-gray-50 border-gray-200 text-2xl font-bold text-gray-900 pl-4 pr-10 ${isEditingDefaultRate ? "bg-white border-indigo-500 ring-2 ring-indigo-100" : ""}`}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">%</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">
+                      %
+                    </span>
                   </div>
                 </div>
-                <p className="text-sm font-medium text-gray-500 italic">Talent sees: <span className="text-gray-900 font-bold">"Agency takes {defaultCommissionRate}% commission"</span></p>
+                <p className="text-sm font-medium text-gray-500 italic">
+                  Talent sees:{" "}
+                  <span className="text-gray-900 font-bold">
+                    "Agency takes {defaultCommissionRate}% commission"
+                  </span>
+                </p>
               </div>
               <div className="bg-indigo-50/50 p-8 rounded-2xl border border-indigo-100 flex flex-col justify-center">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Example Breakdown:</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                  Example Breakdown:
+                </p>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-indigo-50">
-                    <span className="text-sm font-bold text-gray-600">License Deal:</span>
-                    <span className="text-sm font-black text-gray-900">$1,000</span>
+                    <span className="text-sm font-bold text-gray-600">
+                      License Deal:
+                    </span>
+                    <span className="text-sm font-black text-gray-900">
+                      $1,000
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-indigo-50">
-                    <span className="text-sm font-bold text-green-600">Talent Receives:</span>
-                    <span className="text-sm font-black text-green-600">${(1000 * (1 - defaultCommissionRate / 100)).toFixed(0)}</span>
+                    <span className="text-sm font-bold text-green-600">
+                      Talent Receives:
+                    </span>
+                    <span className="text-sm font-black text-green-600">
+                      ${(1000 * (1 - defaultCommissionRate / 100)).toFixed(0)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2 font-black text-indigo-600">
                     <span className="text-sm">Agency Commission:</span>
-                    <span className="text-sm">${(1000 * (defaultCommissionRate / 100)).toFixed(0)}</span>
+                    <span className="text-sm">
+                      ${(1000 * (defaultCommissionRate / 100)).toFixed(0)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -5842,58 +6265,92 @@ const RoyaltiesPayoutsView = () => {
           </Card>
 
           <Card className="p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Commission by Performance Tier</h3>
-            <p className="text-sm font-medium text-gray-500 mb-10">Set different commission rates based on talent performance tier. Higher-performing talent can earn lower commission rates as an incentive.</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Commission by Performance Tier
+            </h3>
+            <p className="text-sm font-medium text-gray-500 mb-10">
+              Set different commission rates based on talent performance tier.
+              Higher-performing talent can earn lower commission rates as an
+              incentive.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="p-8 bg-[#FAF5FF] border border-purple-100 rounded-2xl space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-purple-900">Premium Tier</span>
+                  <span className="text-sm font-bold text-purple-900">
+                    Premium Tier
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-white border border-purple-200 rounded text-sm font-bold text-gray-500">12</span>
+                    <span className="px-3 py-1 bg-white border border-purple-200 rounded text-sm font-bold text-gray-500">
+                      12
+                    </span>
                     <span className="text-gray-400 font-bold">%</span>
                   </div>
                 </div>
                 <div className="w-full bg-purple-200 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-900 rounded-full" style={{ width: '85%' }} />
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: "85%" }}
+                  />
                 </div>
               </div>
 
               <div className="p-8 bg-[#F0F9FF] border border-blue-100 rounded-2xl space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-blue-900">Core Tier</span>
+                  <span className="text-sm font-bold text-blue-900">
+                    Core Tier
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-white border border-blue-200 rounded text-sm font-bold text-gray-500">15</span>
+                    <span className="px-3 py-1 bg-white border border-blue-200 rounded text-sm font-bold text-gray-500">
+                      15
+                    </span>
                     <span className="text-gray-400 font-bold">%</span>
                   </div>
                 </div>
                 <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-900 rounded-full" style={{ width: '65%' }} />
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: "65%" }}
+                  />
                 </div>
               </div>
 
               <div className="p-8 bg-[#F0FDF4] border border-green-100 rounded-2xl space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-green-900">Growth Tier</span>
+                  <span className="text-sm font-bold text-green-900">
+                    Growth Tier
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-white border border-green-200 rounded text-sm font-bold text-gray-500">18</span>
+                    <span className="px-3 py-1 bg-white border border-green-200 rounded text-sm font-bold text-gray-500">
+                      18
+                    </span>
                     <span className="text-gray-400 font-bold">%</span>
                   </div>
                 </div>
                 <div className="w-full bg-green-200 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-900 rounded-full" style={{ width: '45%' }} />
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: "45%" }}
+                  />
                 </div>
               </div>
 
               <div className="p-8 bg-gray-50 border border-gray-100 rounded-2xl space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-gray-900">Inactive Tier</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    Inactive Tier
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-white border border-gray-200 rounded text-sm font-bold text-gray-500">20</span>
+                    <span className="px-3 py-1 bg-white border border-gray-200 rounded text-sm font-bold text-gray-500">
+                      20
+                    </span>
                     <span className="text-gray-400 font-bold">%</span>
                   </div>
                 </div>
                 <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-900 rounded-full" style={{ width: '10%' }} />
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: "10%" }}
+                  />
                 </div>
               </div>
             </div>
@@ -5902,8 +6359,13 @@ const RoyaltiesPayoutsView = () => {
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden rounded-xl">
             <div className="p-10 border-b border-gray-100 flex justify-between items-center">
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-gray-900">Talent Commission Settings</h3>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Set custom commission rates for specific talent when needed (e.g., special contracts, VIP talent)</p>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Talent Commission Settings
+                </h3>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Set custom commission rates for specific talent when needed
+                  (e.g., special contracts, VIP talent)
+                </p>
               </div>
               <Button
                 variant="outline"
@@ -5926,23 +6388,54 @@ const RoyaltiesPayoutsView = () => {
               <div className="p-8 bg-gray-50/50">
                 <div className="border border-blue-100 bg-[#F0F9FF] rounded-lg overflow-hidden">
                   <div className="p-4 border-b border-blue-100">
-                    <h4 className="text-sm font-bold text-gray-900">Commission Changes History</h4>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Commission Changes History
+                    </h4>
                   </div>
                   <div className="divide-y divide-blue-50">
                     {[
-                      { name: "Julia", date: "Jan 20, 2025", admin: "Admin", oldRate: 15, newRate: 12 },
-                      { name: "Carla", date: "Jan 15, 2025", admin: "Admin", oldRate: 15, newRate: 10 },
-                      { name: "Milan", date: "Jan 10, 2025", admin: "Admin", oldRate: 18, newRate: 15 },
+                      {
+                        name: "Julia",
+                        date: "Jan 20, 2025",
+                        admin: "Admin",
+                        oldRate: 15,
+                        newRate: 12,
+                      },
+                      {
+                        name: "Carla",
+                        date: "Jan 15, 2025",
+                        admin: "Admin",
+                        oldRate: 15,
+                        newRate: 10,
+                      },
+                      {
+                        name: "Milan",
+                        date: "Jan 10, 2025",
+                        admin: "Admin",
+                        oldRate: 18,
+                        newRate: 15,
+                      },
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-white/50 hover:bg-white transition-colors">
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-4 bg-white/50 hover:bg-white transition-colors"
+                      >
                         <div>
-                          <p className="text-sm font-bold text-gray-900">{item.name}</p>
-                          <p className="text-xs text-gray-500">{item.date} by {item.admin}</p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {item.date} by {item.admin}
+                          </p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="px-3 py-1 rounded bg-red-50 text-red-600 text-xs font-bold">{item.oldRate}%</span>
+                          <span className="px-3 py-1 rounded bg-red-50 text-red-600 text-xs font-bold">
+                            {item.oldRate}%
+                          </span>
                           <span className="text-gray-300">→</span>
-                          <span className="px-3 py-1 rounded bg-green-50 text-green-600 text-xs font-bold">{item.newRate}%</span>
+                          <span className="px-3 py-1 rounded bg-green-50 text-green-600 text-xs font-bold">
+                            {item.newRate}%
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -5953,7 +6446,9 @@ const RoyaltiesPayoutsView = () => {
               <>
                 <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filter by Tier:</span>
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Filter by Tier:
+                    </span>
                     <select
                       value={selectedTier}
                       onChange={(e) => setSelectedTier(e.target.value)}
@@ -5966,7 +6461,10 @@ const RoyaltiesPayoutsView = () => {
                       <option value="Inactive">Inactive</option>
                     </select>
                   </div>
-                  <p className="text-xs font-medium text-gray-400 italic">Showing {filteredTalent.length} of {TALENT_DATA.length} talent</p>
+                  <p className="text-xs font-medium text-gray-400 italic">
+                    Showing {filteredTalent.length} of {TALENT_DATA.length}{" "}
+                    talent
+                  </p>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -5974,45 +6472,109 @@ const RoyaltiesPayoutsView = () => {
                     <thead>
                       <tr className="bg-gray-50/50">
                         <th className="px-8 py-5 w-12 text-center">
-                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
                         </th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Talent</th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tier</th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">30D Earnings</th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Rate</th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Custom Rate</th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Changed</th>
-                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Talent
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Tier
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          30D Earnings
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Current Rate
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Custom Rate
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Last Changed
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 font-sans">
                       {filteredTalent.map((talent) => (
-                        <tr key={talent.id} className="hover:bg-gray-50/30 transition-colors group">
+                        <tr
+                          key={talent.id}
+                          className="hover:bg-gray-50/30 transition-colors group"
+                        >
                           <td className="px-8 py-5 text-center">
-                            <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
                           </td>
                           <td className="px-8 py-5">
                             <div className="flex items-center gap-3">
-                              <img src={talent.img} className="w-10 h-10 rounded-lg object-cover shadow-sm bg-gray-100" />
-                              <span className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">{talent.name}</span>
+                              <img
+                                src={talent.img}
+                                className="w-10 h-10 rounded-lg object-cover shadow-sm bg-gray-100"
+                              />
+                              <span className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                {talent.name}
+                              </span>
                             </div>
                           </td>
                           <td className="px-8 py-5">
-                            <Badge className={`px-2 py-0.5 font-bold text-[10px] uppercase shadow-sm ${talent.tier === 'Premium' ? 'bg-purple-50 text-purple-600' : talent.tier === 'Core' ? 'bg-blue-50 text-blue-600' : talent.tier === 'Growth' ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'}`}>{talent.tier}</Badge>
+                            <Badge
+                              className={`px-2 py-0.5 font-bold text-[10px] uppercase shadow-sm ${talent.tier === "Premium" ? "bg-purple-50 text-purple-600" : talent.tier === "Core" ? "bg-blue-50 text-blue-600" : talent.tier === "Growth" ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-500"}`}
+                            >
+                              {talent.tier}
+                            </Badge>
                           </td>
-                          <td className="px-8 py-5 text-sm font-bold text-gray-900">{talent.earnings}</td>
-                          <td className="px-8 py-5 text-sm font-bold text-gray-900">{talent.tier === 'Premium' ? '12%' : talent.tier === 'Core' ? '15%' : talent.tier === 'Growth' ? '18%' : '20%'}</td>
+                          <td className="px-8 py-5 text-sm font-bold text-gray-900">
+                            {talent.earnings}
+                          </td>
+                          <td className="px-8 py-5 text-sm font-bold text-gray-900">
+                            {talent.tier === "Premium"
+                              ? "12%"
+                              : talent.tier === "Core"
+                                ? "15%"
+                                : talent.tier === "Growth"
+                                  ? "18%"
+                                  : "20%"}
+                          </td>
                           <td className="px-8 py-5">
                             <div className="relative w-24">
-                              <input type="text" placeholder={talent.tier === 'Premium' ? '12' : talent.tier === 'Core' ? '15' : talent.tier === 'Growth' ? '18' : '20'} className="w-full h-10 bg-gray-50/50 border border-gray-100 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-400 focus:outline-none focus:bg-white focus:border-indigo-500/30 transition-all" />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">%</span>
+                              <input
+                                type="text"
+                                placeholder={
+                                  talent.tier === "Premium"
+                                    ? "12"
+                                    : talent.tier === "Core"
+                                      ? "15"
+                                      : talent.tier === "Growth"
+                                        ? "18"
+                                        : "20"
+                                }
+                                className="w-full h-10 bg-gray-50/50 border border-gray-100 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-400 focus:outline-none focus:bg-white focus:border-indigo-500/30 transition-all"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">
+                                %
+                              </span>
                             </div>
                           </td>
                           <td className="px-8 py-5">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase italic">Using default</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase italic">
+                              Using default
+                            </span>
                           </td>
                           <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="sm" className="font-medium text-indigo-600 hover:bg-indigo-50 px-4">EDIT</Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="font-medium text-indigo-600 hover:bg-indigo-50 px-4"
+                            >
+                              EDIT
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -6027,9 +6589,15 @@ const RoyaltiesPayoutsView = () => {
                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-indigo-100 shadow-sm text-indigo-600">
                   <Settings className="w-4 h-4" />
                 </div>
-                <p className="text-xs font-medium text-indigo-600">Custom rates override tier-based defaults. Reset to use tier default.</p>
+                <p className="text-xs font-medium text-indigo-600">
+                  Custom rates override tier-based defaults. Reset to use tier
+                  default.
+                </p>
               </div>
-              <Button variant="ghost" className="font-bold text-xs text-gray-500 uppercase tracking-wider gap-2 hover:bg-white/50 border border-gray-200 px-6 h-10 shadow-sm">
+              <Button
+                variant="ghost"
+                className="font-bold text-xs text-gray-500 uppercase tracking-wider gap-2 hover:bg-white/50 border border-gray-200 px-6 h-10 shadow-sm"
+              >
                 <Download className="w-4 h-4" /> Export Settings
               </Button>
             </div>
@@ -6041,32 +6609,116 @@ const RoyaltiesPayoutsView = () => {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">Top Earning Talent (Last 30 Days)</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Top Earning Talent (Last 30 Days)
+              </h3>
             </div>
             <div>
               {[
-                { name: "Carla", campaigns: 13, amount: 6800, talent: 5984, agency: 816, img: TALENT_DATA.find(t => t.id === 'carla')?.img },
-                { name: "Clemence", campaigns: 10, amount: 5400, talent: 4752, agency: 648, img: TALENT_DATA.find(t => t.id === 'clemence')?.img },
-                { name: "Julia", campaigns: 11, amount: 5200, talent: 4576, agency: 624, img: TALENT_DATA.find(t => t.id === 'julia')?.img },
-                { name: "Luisa", campaigns: 8, amount: 4200, talent: 3570, agency: 630, img: TALENT_DATA.find(t => t.id === 'luisa')?.img },
-                { name: "Milan", campaigns: 9, amount: 4100, talent: 3485, agency: 615, img: TALENT_DATA.find(t => t.id === 'milan')?.img },
-                { name: "Matt", campaigns: 6, amount: 3600, talent: 3060, agency: 540, img: TALENT_DATA.find(t => t.id === 'matt')?.img },
-                { name: "Emma", campaigns: 7, amount: 3200, talent: 2720, agency: 480, img: TALENT_DATA.find(t => t.id === 'emma')?.img },
-                { name: "Sergine", campaigns: 5, amount: 2800, talent: 2296, agency: 504, img: TALENT_DATA.find(t => t.id === 'sergine')?.img },
-                { name: "Lina", campaigns: 4, amount: 2400, talent: 1968, agency: 432, img: TALENT_DATA.find(t => t.id === 'lina')?.img },
+                {
+                  name: "Carla",
+                  campaigns: 13,
+                  amount: 6800,
+                  talent: 5984,
+                  agency: 816,
+                  img: TALENT_DATA.find((t) => t.id === "carla")?.img,
+                },
+                {
+                  name: "Clemence",
+                  campaigns: 10,
+                  amount: 5400,
+                  talent: 4752,
+                  agency: 648,
+                  img: TALENT_DATA.find((t) => t.id === "clemence")?.img,
+                },
+                {
+                  name: "Julia",
+                  campaigns: 11,
+                  amount: 5200,
+                  talent: 4576,
+                  agency: 624,
+                  img: TALENT_DATA.find((t) => t.id === "julia")?.img,
+                },
+                {
+                  name: "Luisa",
+                  campaigns: 8,
+                  amount: 4200,
+                  talent: 3570,
+                  agency: 630,
+                  img: TALENT_DATA.find((t) => t.id === "luisa")?.img,
+                },
+                {
+                  name: "Milan",
+                  campaigns: 9,
+                  amount: 4100,
+                  talent: 3485,
+                  agency: 615,
+                  img: TALENT_DATA.find((t) => t.id === "milan")?.img,
+                },
+                {
+                  name: "Matt",
+                  campaigns: 6,
+                  amount: 3600,
+                  talent: 3060,
+                  agency: 540,
+                  img: TALENT_DATA.find((t) => t.id === "matt")?.img,
+                },
+                {
+                  name: "Emma",
+                  campaigns: 7,
+                  amount: 3200,
+                  talent: 2720,
+                  agency: 480,
+                  img: TALENT_DATA.find((t) => t.id === "emma")?.img,
+                },
+                {
+                  name: "Sergine",
+                  campaigns: 5,
+                  amount: 2800,
+                  talent: 2296,
+                  agency: 504,
+                  img: TALENT_DATA.find((t) => t.id === "sergine")?.img,
+                },
+                {
+                  name: "Lina",
+                  campaigns: 4,
+                  amount: 2400,
+                  talent: 1968,
+                  agency: 432,
+                  img: TALENT_DATA.find((t) => t.id === "lina")?.img,
+                },
               ].map((talent, i) => (
-                <div key={i} className="flex items-center justify-between p-6 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-6 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors"
+                >
                   <div className="flex items-center gap-4">
-                    <img src={talent.img} alt={talent.name} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                    <img
+                      src={talent.img}
+                      alt={talent.name}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">{talent.name}</h4>
-                      <p className="text-xs text-gray-500">{talent.campaigns} campaigns</p>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        {talent.name}
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        {talent.campaigns} campaigns
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <h4 className="text-base font-bold text-gray-900">${talent.amount.toLocaleString()}</h4>
+                    <h4 className="text-base font-bold text-gray-900">
+                      ${talent.amount.toLocaleString()}
+                    </h4>
                     <p className="text-[10px] font-bold text-gray-500">
-                      <span className="text-green-600">Talent: ${talent.talent.toLocaleString()}</span> • <span className="text-indigo-600">Agency: ${talent.agency}</span>
+                      <span className="text-green-600">
+                        Talent: ${talent.talent.toLocaleString()}
+                      </span>{" "}
+                      •{" "}
+                      <span className="text-indigo-600">
+                        Agency: ${talent.agency}
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -6079,10 +6731,14 @@ const RoyaltiesPayoutsView = () => {
       {activeTab === "Payout Preferences" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Payout Schedule Settings</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-6">
+              Payout Schedule Settings
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Payout Frequency</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  Payout Frequency
+                </Label>
                 <Select defaultValue="Monthly">
                   <SelectTrigger className="h-12 bg-white border-gray-200">
                     <SelectValue placeholder="Select Frequency" />
@@ -6093,15 +6749,26 @@ const RoyaltiesPayoutsView = () => {
                     <SelectItem value="Monthly">Monthly</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500">How often talent receives payouts</p>
+                <p className="text-xs text-gray-500">
+                  How often talent receives payouts
+                </p>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Minimum Payout Threshold</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  Minimum Payout Threshold
+                </Label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                  <Input defaultValue="50" className="h-12 pl-8 border-gray-200" />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                    $
+                  </span>
+                  <Input
+                    defaultValue="50"
+                    className="h-12 pl-8 border-gray-200"
+                  />
                 </div>
-                <p className="text-xs text-gray-500">Don't pay if balance is under this amount</p>
+                <p className="text-xs text-gray-500">
+                  Don't pay if balance is under this amount
+                </p>
               </div>
             </div>
           </Card>
@@ -6115,19 +6782,29 @@ const RoyaltiesPayoutsView = () => {
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-gray-900">Stripe Connected Account</h4>
-                    <p className="text-sm text-gray-500">Auto-deduct commission, transfer net to talent</p>
+                    <h4 className="text-base font-bold text-gray-900">
+                      Stripe Connected Account
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      Auto-deduct commission, transfer net to talent
+                    </p>
                   </div>
                 </div>
-                <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 text-xs font-bold">Active</Badge>
+                <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 text-xs font-bold">
+                  Active
+                </Badge>
               </div>
 
               <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
-                <h4 className="text-sm font-bold text-blue-900 mb-2">How it works:</h4>
+                <h4 className="text-sm font-bold text-blue-900 mb-2">
+                  How it works:
+                </h4>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>1. Brand pays license fee to agency Stripe account</li>
                   <li>2. Agency commission (14%) auto-deducted</li>
-                  <li>3. Net amount transferred to talent's connected account</li>
+                  <li>
+                    3. Net amount transferred to talent's connected account
+                  </li>
                   <li>4. Automatic payout on schedule (monthly)</li>
                 </ul>
               </div>
@@ -6136,7 +6813,9 @@ const RoyaltiesPayoutsView = () => {
 
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Upcoming Payout Schedule</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-6">
+                Upcoming Payout Schedule
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
                   <div className="flex items-center gap-4">
@@ -6144,13 +6823,17 @@ const RoyaltiesPayoutsView = () => {
                       <Calendar className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Feb 1, 2025</h4>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Feb 1, 2025
+                      </h4>
                       <p className="text-xs text-gray-500">Scheduled payout</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <h4 className="text-sm font-bold text-gray-900">$8,450</h4>
-                    <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">scheduled</Badge>
+                    <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
+                      scheduled
+                    </Badge>
                   </div>
                 </div>
 
@@ -6160,13 +6843,22 @@ const RoyaltiesPayoutsView = () => {
                       <Calendar className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Mar 1, 2025</h4>
-                      <p className="text-xs text-gray-500">Future payout date</p>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Mar 1, 2025
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Future payout date
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <h4 className="text-sm font-bold text-gray-900">$0</h4>
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold">upcoming</Badge>
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
+                    >
+                      upcoming
+                    </Badge>
                   </div>
                 </div>
 
@@ -6176,13 +6868,22 @@ const RoyaltiesPayoutsView = () => {
                       <Calendar className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">Apr 1, 2025</h4>
-                      <p className="text-xs text-gray-500">Future payout date</p>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Apr 1, 2025
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Future payout date
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <h4 className="text-sm font-bold text-gray-900">$0</h4>
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold">upcoming</Badge>
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
+                    >
+                      upcoming
+                    </Badge>
                   </div>
                 </div>
               </div>
@@ -6194,42 +6895,89 @@ const RoyaltiesPayoutsView = () => {
       {activeTab === "Commission Breakdown" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <div className="mb-2">
-            <h3 className="text-lg font-bold text-gray-900">Recent License Deal Breakdowns</h3>
-            <p className="text-sm text-gray-500">Full transparency on how each license deal is split between talent and agency.</p>
+            <h3 className="text-lg font-bold text-gray-900">
+              Recent License Deal Breakdowns
+            </h3>
+            <p className="text-sm text-gray-500">
+              Full transparency on how each license deal is split between talent
+              and agency.
+            </p>
           </div>
 
           {[
-            { talent: "Carla", brand: "Reformation", date: "Jan 25, 2025", total: 3200, talentShare: 2720, agencyShare: 480 },
-            { talent: "Julia", brand: "& Other Stories", date: "Jan 20, 2025", total: 2800, talentShare: 2380, agencyShare: 420 },
-            { talent: "Milan", brand: "Carhartt WIP", date: "Jan 18, 2025", total: 2100, talentShare: 1785, agencyShare: 315 },
+            {
+              talent: "Carla",
+              brand: "Reformation",
+              date: "Jan 25, 2025",
+              total: 3200,
+              talentShare: 2720,
+              agencyShare: 480,
+            },
+            {
+              talent: "Julia",
+              brand: "& Other Stories",
+              date: "Jan 20, 2025",
+              total: 2800,
+              talentShare: 2380,
+              agencyShare: 420,
+            },
+            {
+              talent: "Milan",
+              brand: "Carhartt WIP",
+              date: "Jan 18, 2025",
+              total: 2100,
+              talentShare: 1785,
+              agencyShare: 315,
+            },
           ].map((deal, i) => (
-            <Card key={i} className="p-6 bg-white border border-gray-200 shadow-sm rounded-lg">
+            <Card
+              key={i}
+              className="p-6 bg-white border border-gray-200 shadow-sm rounded-lg"
+            >
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-base font-bold text-gray-900">{deal.talent}</span>
+                    <span className="text-base font-bold text-gray-900">
+                      {deal.talent}
+                    </span>
                     <ArrowRight className="w-4 h-4 text-gray-400" />
-                    <span className="text-base font-medium text-gray-600">{deal.brand}</span>
+                    <span className="text-base font-medium text-gray-600">
+                      {deal.brand}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-400">{deal.date}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold text-gray-900">${deal.total.toLocaleString()}</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    ${deal.total.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-1 mb-2">
                 <div className="p-4 bg-white border border-gray-100 rounded-l-md">
-                  <p className="text-xs font-bold text-gray-500 mb-1">Total Deal Value</p>
-                  <p className="text-lg font-bold text-gray-900">${deal.total.toLocaleString()}</p>
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Total Deal Value
+                  </p>
+                  <p className="text-lg font-bold text-gray-900">
+                    ${deal.total.toLocaleString()}
+                  </p>
                 </div>
                 <div className="p-4 bg-green-50/30 border border-green-100">
-                  <p className="text-xs font-bold text-gray-500 mb-1">Talent Receives (85%)</p>
-                  <p className="text-lg font-bold text-green-600">${deal.talentShare.toLocaleString()}</p>
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Talent Receives (85%)
+                  </p>
+                  <p className="text-lg font-bold text-green-600">
+                    ${deal.talentShare.toLocaleString()}
+                  </p>
                 </div>
                 <div className="p-4 bg-indigo-50/30 border border-indigo-100 rounded-r-md">
-                  <p className="text-xs font-bold text-gray-500 mb-1">Agency Commission (15%)</p>
-                  <p className="text-lg font-bold text-indigo-600">${deal.agencyShare.toLocaleString()}</p>
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Agency Commission (15%)
+                  </p>
+                  <p className="text-lg font-bold text-indigo-600">
+                    ${deal.agencyShare.toLocaleString()}
+                  </p>
                 </div>
               </div>
 
@@ -6245,20 +6993,31 @@ const RoyaltiesPayoutsView = () => {
           ))}
 
           <div className="p-8 bg-blue-50 border border-blue-100 rounded-xl">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Commission Transparency</h3>
-            <p className="text-sm text-gray-600 mb-6">This breakdown is visible to talent in their payment history and exported reports. Full transparency builds trust.</p>
+            <h3 className="text-base font-bold text-gray-900 mb-2">
+              Commission Transparency
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This breakdown is visible to talent in their payment history and
+              exported reports. Full transparency builds trust.
+            </p>
             <div className="flex gap-4">
-              <Button variant="outline" className="bg-white font-bold text-xs gap-2 border-gray-200">
+              <Button
+                variant="outline"
+                className="bg-white font-bold text-xs gap-2 border-gray-200"
+              >
                 <Settings className="w-4 h-4" /> Configure Display
               </Button>
-              <Button variant="outline" className="bg-white font-bold text-xs gap-2 border-gray-200">
+              <Button
+                variant="outline"
+                className="bg-white font-bold text-xs gap-2 border-gray-200"
+              >
                 <Download className="w-4 h-4" /> Export All Breakdowns
               </Button>
             </div>
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 
@@ -6275,23 +7034,29 @@ const AnalyticsDashboardView = () => {
     <div className="space-y-6 pb-20">
       <div className="flex justify-between items-center bg-white p-6 border-b border-gray-100">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Analytics Dashboard
+          </h2>
           <div className="flex bg-gray-100 p-1 rounded-xl mt-6 w-fit">
             {subTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
             ))}
           </div>
         </div>
-        <Button variant="outline" className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all">
+        <Button
+          variant="outline"
+          className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all"
+        >
           <Download className="w-4 h-4" /> Export Report
         </Button>
       </div>
@@ -6309,8 +7074,12 @@ const AnalyticsDashboardView = () => {
                   </div>
                   <TrendingUp className="w-5 h-5 text-green-500" />
                 </div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Total Earnings (30d)</p>
-                <h3 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">$37,700</h3>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
+                  Total Earnings (30d)
+                </p>
+                <h3 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
+                  $37,700
+                </h3>
                 <p className="text-xs font-bold text-green-600 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5" /> +12% vs last period
                 </p>
@@ -6325,8 +7094,12 @@ const AnalyticsDashboardView = () => {
                     <BarChart2 className="w-8 h-8 text-indigo-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Active Campaigns</p>
-                    <h3 className="text-5xl font-black text-gray-900 tracking-tighter">9</h3>
+                    <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                      Active Campaigns
+                    </p>
+                    <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
+                      9
+                    </h3>
                   </div>
                 </div>
                 <TrendingUp className="w-5 h-5 text-indigo-600" />
@@ -6334,24 +7107,34 @@ const AnalyticsDashboardView = () => {
 
               <div className="grid grid-cols-3 gap-4 mb-10">
                 <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Value</p>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Total Value
+                  </p>
                   <p className="text-2xl font-black text-gray-900">$37,700</p>
                 </div>
                 <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Avg Value</p>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Avg Value
+                  </p>
                   <p className="text-2xl font-black text-gray-900">$4,189</p>
                 </div>
                 <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Top Scope</p>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Top Scope
+                  </p>
                   <div className="flex items-center gap-2">
-                    <p className="text-lg font-black text-gray-900 tracking-tight">Social Media</p>
+                    <p className="text-lg font-black text-gray-900 tracking-tight">
+                      Social Media
+                    </p>
                     <span className="text-xs font-bold text-gray-500">42%</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <p className="text-[11px] font-black text-gray-400 uppercase mb-5 tracking-[0.2em]">Campaign Status Breakdown</p>
+                <p className="text-[11px] font-black text-gray-400 uppercase mb-5 tracking-[0.2em]">
+                  Campaign Status Breakdown
+                </p>
                 <div className="space-y-6">
                   {ANALYTICS_CAMPAIGN_STATUS.map((status, i) => (
                     <div key={i} className="space-y-2">
@@ -6362,7 +7145,10 @@ const AnalyticsDashboardView = () => {
                       <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gray-900"
-                          style={{ width: `${(status.value / 15) * 100}%`, backgroundColor: status.color }}
+                          style={{
+                            width: `${(status.value / 15) * 100}%`,
+                            backgroundColor: status.color,
+                          }}
                         />
                       </div>
                     </div>
@@ -6379,8 +7165,12 @@ const AnalyticsDashboardView = () => {
                 <div className="mb-4">
                   <TrendingUp className="w-8 h-8 text-purple-600" />
                 </div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">AI Usages (30d)</p>
-                <h3 className="text-5xl font-black text-gray-900 tracking-tighter">73</h3>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
+                  AI Usages (30d)
+                </p>
+                <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
+                  73
+                </h3>
                 <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5 mt-2">
                   <TrendingUp className="w-3.5 h-3.5" /> +18% vs last period
                 </p>
@@ -6394,9 +7184,15 @@ const AnalyticsDashboardView = () => {
           <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden h-[140px] flex flex-col justify-center">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Avg Campaign Value</p>
-                <h3 className="text-4xl font-black text-gray-900 tracking-tighter">$1,796</h3>
-                <p className="text-xs font-bold text-orange-600 mt-2">0 expiring soon</p>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
+                  Avg Campaign Value
+                </p>
+                <h3 className="text-4xl font-black text-gray-900 tracking-tighter">
+                  $1,796
+                </h3>
+                <p className="text-xs font-bold text-orange-600 mt-2">
+                  0 expiring soon
+                </p>
               </div>
               <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
                 <Target className="w-7 h-7 text-orange-600" />
@@ -6407,32 +7203,54 @@ const AnalyticsDashboardView = () => {
           {/* Monthly Performance Trends */}
           <Card className="p-8 bg-white border border-gray-900 shadow-sm">
             <div className="flex justify-between items-center mb-10">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-[0.15em]">Monthly Performance Trends</h3>
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-[0.15em]">
+                Monthly Performance Trends
+              </h3>
               <TrendingUp className="w-5 h-5 text-indigo-600" />
             </div>
             <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={ANALYTICS_PERFORMANCE_TRENDS} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <LineChart
+                  data={ANALYTICS_PERFORMANCE_TRENDS}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f1f5f9"
+                  />
                   <XAxis
                     dataKey="month"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fontWeight: 'bold', fill: '#94a3b8' }}
+                    tick={{ fontSize: 12, fontWeight: "bold", fill: "#94a3b8" }}
                     dy={10}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fontWeight: 'bold', fill: '#94a3b8' }}
+                    tick={{ fontSize: 12, fontWeight: "bold", fill: "#94a3b8" }}
                   />
                   <RechartsTooltip
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontWeight: 'bold', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                      fontWeight: "bold",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
                   />
                   <Legend
                     iconType="circle"
-                    wrapperStyle={{ paddingTop: '40px', fontWeight: 'bold', fontSize: '12px' }}
-                    formatter={(value) => <span className="text-gray-600 uppercase tracking-widest">{value}</span>}
+                    wrapperStyle={{
+                      paddingTop: "40px",
+                      fontWeight: "bold",
+                      fontSize: "12px",
+                    }}
+                    formatter={(value) => (
+                      <span className="text-gray-600 uppercase tracking-widest">
+                        {value}
+                      </span>
+                    )}
                   />
                   <Line
                     type="monotone"
@@ -6440,7 +7258,12 @@ const AnalyticsDashboardView = () => {
                     name="Earnings ($)"
                     stroke="#10b981"
                     strokeWidth={3}
-                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{
+                      r: 4,
+                      fill: "#10b981",
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                    }}
                     activeDot={{ r: 6 }}
                   />
                   <Line
@@ -6449,7 +7272,12 @@ const AnalyticsDashboardView = () => {
                     name="Campaigns"
                     stroke="#6366f1"
                     strokeWidth={3}
-                    dot={{ r: 4, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{
+                      r: 4,
+                      fill: "#6366f1",
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                    }}
                     activeDot={{ r: 6 }}
                   />
                   <Line
@@ -6458,7 +7286,12 @@ const AnalyticsDashboardView = () => {
                     name="AI Usages"
                     stroke="#a855f7"
                     strokeWidth={3}
-                    dot={{ r: 4, fill: '#a855f7', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{
+                      r: 4,
+                      fill: "#a855f7",
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                    }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
@@ -6469,7 +7302,9 @@ const AnalyticsDashboardView = () => {
           {/* Distribution Pie Charts */}
           <div className="grid grid-cols-2 gap-6 pb-10">
             <Card className="p-8 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">AI Usage Type Distribution</h3>
+              <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
+                AI Usage Type Distribution
+              </h3>
               <div className="flex flex-col items-center">
                 <div className="h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -6493,8 +7328,13 @@ const AnalyticsDashboardView = () => {
                 </div>
                 <div className="w-full mt-8 flex flex-col gap-3">
                   {ANALYTICS_AI_USAGE_TYPE.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">{item.name}: {item.value}%</span>
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">
+                        {item.name}: {item.value}%
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -6502,7 +7342,9 @@ const AnalyticsDashboardView = () => {
             </Card>
 
             <Card className="p-8 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">Consent Status Breakdown</h3>
+              <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
+                Consent Status Breakdown
+              </h3>
               <div className="flex flex-col items-center">
                 <div className="h-[280px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -6526,8 +7368,13 @@ const AnalyticsDashboardView = () => {
                 </div>
                 <div className="w-full mt-8 flex flex-col gap-3 text-right">
                   {ANALYTICS_CONSENT_STATUS.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">{item.name}: {item.value}%</span>
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">
+                        {item.name}: {item.value}%
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -6537,36 +7384,71 @@ const AnalyticsDashboardView = () => {
         </div>
       ) : activeTab === "Roster Insights" ? (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-          <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">Earnings by Talent (Last 30 Days)</h3>
+          <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
+            Earnings by Talent (Last 30 Days)
+          </h3>
           <Card className="p-10 bg-white border border-gray-900 shadow-sm mb-8">
             <div className="h-[500px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ROSTER_INSIGHTS_DATA} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <BarChart
+                  data={ROSTER_INSIGHTS_DATA}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f1f5f9"
+                  />
                   <XAxis
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 13, fontWeight: 'bold', fill: '#64748b' }}
+                    tick={{ fontSize: 13, fontWeight: "bold", fill: "#64748b" }}
                     dy={15}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 13, fontWeight: 'bold', fill: '#94a3b8' }}
+                    tick={{ fontSize: 13, fontWeight: "bold", fill: "#94a3b8" }}
                   />
                   <RechartsTooltip
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontWeight: 'bold' }}
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                      fontWeight: "bold",
+                    }}
                   />
                   <Legend
                     verticalAlign="bottom"
                     align="center"
                     iconType="rect"
-                    wrapperStyle={{ paddingTop: '40px', fontWeight: 'bold', fontSize: '13px' }}
-                    formatter={(value) => <span className="text-gray-700 uppercase tracking-widest px-2">{value === 'earnings' ? '30D Earnings ($)' : 'Projected ($)'}</span>}
+                    wrapperStyle={{
+                      paddingTop: "40px",
+                      fontWeight: "bold",
+                      fontSize: "13px",
+                    }}
+                    formatter={(value) => (
+                      <span className="text-gray-700 uppercase tracking-widest px-2">
+                        {value === "earnings"
+                          ? "30D Earnings ($)"
+                          : "Projected ($)"}
+                      </span>
+                    )}
                   />
-                  <Bar dataKey="earnings" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} name="earnings" />
-                  <Bar dataKey="projected" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} name="projected" />
+                  <Bar
+                    dataKey="earnings"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                    barSize={32}
+                    name="earnings"
+                  />
+                  <Bar
+                    dataKey="projected"
+                    fill="#3b82f6"
+                    radius={[4, 4, 0, 0]}
+                    barSize={32}
+                    name="projected"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -6575,43 +7457,73 @@ const AnalyticsDashboardView = () => {
           {/* Top Talent Summary Cards */}
           <div className="grid grid-cols-3 gap-6 mb-8">
             <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">Top Performer (Earnings)</p>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                Top Performer (Earnings)
+              </p>
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-green-500 p-0.5">
-                  <img src={TALENT_DATA.find(t => t.id === 'carla')?.img} alt="Carla" className="w-full h-full object-cover rounded-lg" />
+                  <img
+                    src={TALENT_DATA.find((t) => t.id === "carla")?.img}
+                    alt="Carla"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
                 <div>
-                  <h4 className="text-xl font-black text-gray-900 tracking-tight">Carla</h4>
+                  <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                    Carla
+                  </h4>
                   <p className="text-2xl font-black text-green-600">$6,800</p>
-                  <p className="text-[11px] font-bold text-gray-500 mt-1">13 campaigns • 7.1% engagement</p>
+                  <p className="text-[11px] font-bold text-gray-500 mt-1">
+                    13 campaigns • 7.1% engagement
+                  </p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">Most Active (Campaigns)</p>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                Most Active (Campaigns)
+              </p>
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-indigo-500 p-0.5">
-                  <img src={TALENT_DATA.find(t => t.id === 'julia')?.img} alt="Julia" className="w-full h-full object-cover rounded-lg" />
+                  <img
+                    src={TALENT_DATA.find((t) => t.id === "julia")?.img}
+                    alt="Julia"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
                 <div>
-                  <h4 className="text-xl font-black text-gray-900 tracking-tight">Julia</h4>
+                  <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                    Julia
+                  </h4>
                   <p className="text-2xl font-black text-indigo-600">11 uses</p>
-                  <p className="text-[11px] font-bold text-gray-500 mt-1">$5,200 earnings • 6.2% engagement</p>
+                  <p className="text-[11px] font-bold text-gray-500 mt-1">
+                    $5,200 earnings • 6.2% engagement
+                  </p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">Highest Engagement</p>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                Highest Engagement
+              </p>
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-purple-500 p-0.5">
-                  <img src={TALENT_DATA.find(t => t.id === 'carla')?.img} alt="Carla" className="w-full h-full object-cover rounded-lg" />
+                  <img
+                    src={TALENT_DATA.find((t) => t.id === "carla")?.img}
+                    alt="Carla"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
                 <div>
-                  <h4 className="text-xl font-black text-gray-900 tracking-tight">Carla</h4>
+                  <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                    Carla
+                  </h4>
                   <p className="text-2xl font-black text-purple-600">7.1%</p>
-                  <p className="text-[11px] font-bold text-gray-500 mt-1">53,400 followers • 13 campaigns</p>
+                  <p className="text-[11px] font-bold text-gray-500 mt-1">
+                    53,400 followers • 13 campaigns
+                  </p>
                 </div>
               </div>
             </Card>
@@ -6620,38 +7532,73 @@ const AnalyticsDashboardView = () => {
           {/* Talent Performance Metrics Table */}
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden mb-8">
             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">Talent Performance Metrics</h3>
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
+                Talent Performance Metrics
+              </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/80">
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Talent</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">30D Earnings</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Campaigns</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Avg Value</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Engagement</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      Talent
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      30D Earnings
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      Campaigns
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      Avg Value
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      Engagement
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {TALENT_DATA.filter(t => t.status === 'active').slice(0, 10).map((talent) => (
-                    <tr key={talent.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-3">
-                          <img src={talent.img} alt={talent.name} className="w-8 h-8 rounded-full object-cover border border-gray-200" />
-                          <span className="text-sm font-bold text-gray-900">{talent.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 text-sm font-black text-gray-900">{talent.earnings}</td>
-                      <td className="px-8 py-5 text-sm font-bold text-gray-600">{Math.floor(Math.random() * 10) + 4}</td>
-                      <td className="px-8 py-5 text-sm font-bold text-gray-600">${Math.floor(Math.random() * 200) + 400}</td>
-                      <td className="px-8 py-5 text-sm font-bold text-gray-600">{(Math.random() * 4 + 3).toFixed(1)}%</td>
-                      <td className="px-8 py-5">
-                        <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] py-0.5">Active</Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {TALENT_DATA.filter((t) => t.status === "active")
+                    .slice(0, 10)
+                    .map((talent) => (
+                      <tr
+                        key={talent.id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={talent.img}
+                              alt={talent.name}
+                              className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                            />
+                            <span className="text-sm font-bold text-gray-900">
+                              {talent.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-sm font-black text-gray-900">
+                          {talent.earnings}
+                        </td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-600">
+                          {Math.floor(Math.random() * 10) + 4}
+                        </td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-600">
+                          ${Math.floor(Math.random() * 200) + 400}
+                        </td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-600">
+                          {(Math.random() * 4 + 3).toFixed(1)}%
+                        </td>
+                        <td className="px-8 py-5">
+                          <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] py-0.5">
+                            Active
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -6662,7 +7609,9 @@ const AnalyticsDashboardView = () => {
           <div className="grid grid-cols-2 gap-6">
             {/* Budget Distribution Pie */}
             <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">Earnings by Client</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
+                Earnings by Client
+              </h3>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -6681,14 +7630,19 @@ const AnalyticsDashboardView = () => {
                       ))}
                     </Pie>
                     <RechartsTooltip
-                      contentStyle={{ borderRadius: '12px', border: 'none', fontWeight: 'bold', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        fontWeight: "bold",
+                        boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                      }}
                     />
                     <Legend
                       verticalAlign="middle"
                       align="right"
                       layout="vertical"
                       iconType="circle"
-                      wrapperStyle={{ paddingLeft: '20px', fontWeight: 'bold' }}
+                      wrapperStyle={{ paddingLeft: "20px", fontWeight: "bold" }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -6697,36 +7651,59 @@ const AnalyticsDashboardView = () => {
 
             {/* Campaign Performance Bar Chart */}
             <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">Geographic Distribution</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
+                Geographic Distribution
+              </h3>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[
-                    { name: 'North America', value: 42, color: '#f59e0b' }, // Amber
-                    { name: 'Europe', value: 18, color: '#6366f1' },       // Indigo
-                    { name: 'Asia-Pacific', value: 8, color: '#8b5cf6' },  // Violet
-                    { name: 'Global', value: 5, color: '#ec4899' },        // Rose
-                  ]} margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#64748b' }} />
+                  <BarChart
+                    data={[
+                      { name: "North America", value: 42, color: "#f59e0b" }, // Amber
+                      { name: "Europe", value: 18, color: "#6366f1" }, // Indigo
+                      { name: "Asia-Pacific", value: 8, color: "#8b5cf6" }, // Violet
+                      { name: "Global", value: 5, color: "#ec4899" }, // Rose
+                    ]}
+                    margin={{ left: 20 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={false}
+                      stroke="#f1f5f9"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{
+                        fontSize: 11,
+                        fontWeight: "bold",
+                        fill: "#64748b",
+                      }}
+                    />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 13, fontWeight: 'bold', fill: '#64748b' }}
+                      tick={{
+                        fontSize: 13,
+                        fontWeight: "bold",
+                        fill: "#64748b",
+                      }}
                     />
                     <RechartsTooltip
-                      contentStyle={{ borderRadius: '12px', border: 'none', fontWeight: 'bold', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        fontWeight: "bold",
+                        boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                      }}
+                      cursor={{ fill: "#f8fafc" }}
                     />
-                    <Bar
-                      dataKey="value"
-                      radius={[4, 4, 0, 0]}
-                      barSize={40}
-                    >
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
                       {[
-                        { name: 'North America', value: 42, color: '#f59e0b' },
-                        { name: 'Europe', value: 18, color: '#6366f1' },
-                        { name: 'Asia-Pacific', value: 8, color: '#8b5cf6' },
-                        { name: 'Global', value: 5, color: '#ec4899' },
+                        { name: "North America", value: 42, color: "#f59e0b" },
+                        { name: "Europe", value: 18, color: "#6366f1" },
+                        { name: "Asia-Pacific", value: 8, color: "#8b5cf6" },
+                        { name: "Global", value: 5, color: "#ec4899" },
                       ].map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -6740,29 +7717,47 @@ const AnalyticsDashboardView = () => {
           {/* Client Performance List Table */}
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900 tracking-tight">Top Clients Performance</h3>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Top Clients Performance
+              </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/80">
-                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">Client</th>
-                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">Action</th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">
+                      Client
+                    </th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {CLIENTS_PERFORMANCE_DATA.map((client) => (
-                    <tr key={client.name} className="hover:bg-gray-50/50 transition-colors">
+                    <tr
+                      key={client.name}
+                      className="hover:bg-gray-50/50 transition-colors"
+                    >
                       <td className="px-8 py-5">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900">{client.name}</span>
-                          <span className="text-[10px] text-gray-500 font-bold">{Math.floor(Math.random() * 5) + 3} campaigns</span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {client.name}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-bold">
+                            {Math.floor(Math.random() * 5) + 3} campaigns
+                          </span>
                         </div>
                       </td>
                       <td className="px-8 py-5 text-right">
                         <div className="flex flex-col items-end">
-                          <span className="text-sm font-bold text-green-600">${client.budget.toLocaleString()}</span>
-                          <span className="text-[10px] text-gray-400 font-bold">{(client.budget / 45000 * 100).toFixed(1)}% of total</span>
+                          <span className="text-sm font-bold text-green-600">
+                            ${client.budget.toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-bold">
+                            {((client.budget / 45000) * 100).toFixed(1)}% of
+                            total
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -6775,23 +7770,42 @@ const AnalyticsDashboardView = () => {
           {/* Summary Cards AT BOTTOM */}
           <div className="grid grid-cols-3 gap-6">
             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-sm font-bold text-gray-500 mb-2">Repeat Client Rate</p>
-              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">78%</h3>
+              <p className="text-sm font-bold text-gray-500 mb-2">
+                Repeat Client Rate
+              </p>
+              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
+                78%
+              </h3>
               <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
-                <div className="h-full bg-gray-900 rounded-full" style={{ width: '78%' }} />
+                <div
+                  className="h-full bg-gray-900 rounded-full"
+                  style={{ width: "78%" }}
+                />
               </div>
             </Card>
 
             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-sm font-bold text-gray-500 mb-2">Avg Campaign Duration</p>
-              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">18 days</h3>
-              <p className="text-xs text-gray-500 mt-2 font-medium">From booking to completion</p>
+              <p className="text-sm font-bold text-gray-500 mb-2">
+                Avg Campaign Duration
+              </p>
+              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
+                18 days
+              </h3>
+              <p className="text-xs text-gray-500 mt-2 font-medium">
+                From booking to completion
+              </p>
             </Card>
 
             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-sm font-bold text-gray-500 mb-2">Client Acquisition</p>
-              <h3 className="text-4xl font-bold text-green-600 tracking-tighter">4</h3>
-              <p className="text-xs text-green-600/70 mt-2 font-bold">New clients this quarter</p>
+              <p className="text-sm font-bold text-gray-500 mb-2">
+                Client Acquisition
+              </p>
+              <h3 className="text-4xl font-bold text-green-600 tracking-tighter">
+                4
+              </h3>
+              <p className="text-xs text-green-600/70 mt-2 font-bold">
+                New clients this quarter
+              </p>
             </Card>
           </div>
         </div>
@@ -6805,15 +7819,24 @@ const AnalyticsDashboardView = () => {
                   <ShieldCheck className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification Rate</p>
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">100%</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Verification Rate
+                  </p>
+                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                    100%
+                  </h3>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-900 rounded-full" style={{ width: '100%' }} />
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: "100%" }}
+                  />
                 </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">All talent verified</p>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  All talent verified
+                </p>
               </div>
             </Card>
 
@@ -6823,15 +7846,24 @@ const AnalyticsDashboardView = () => {
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Consents</p>
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">80%</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Active Consents
+                  </p>
+                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                    80%
+                  </h3>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-400 rounded-full" style={{ width: '80%' }} />
+                  <div
+                    className="h-full bg-gray-400 rounded-full"
+                    style={{ width: "80%" }}
+                  />
                 </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">8 of 10 complete</p>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  8 of 10 complete
+                </p>
               </div>
             </Card>
 
@@ -6841,25 +7873,39 @@ const AnalyticsDashboardView = () => {
                   <AlertCircle className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Expiring Soon</p>
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">0</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Expiring Soon
+                  </p>
+                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                    0
+                  </h3>
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Next 30 days</p>
+                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+                  Next 30 days
+                </p>
               </div>
             </Card>
           </div>
 
           {/* Middle Row: License Expiry Pipeline */}
           <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-            <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">License Expiry Pipeline</h3>
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
+              License Expiry Pipeline
+            </h3>
             <div className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <img src={TALENT_DATA.find(t => t.id === 'julia')?.img} alt="Julia" className="w-12 h-12 rounded-lg object-cover" />
+                <img
+                  src={TALENT_DATA.find((t) => t.id === "julia")?.img}
+                  alt="Julia"
+                  className="w-12 h-12 rounded-lg object-cover"
+                />
                 <div>
                   <p className="text-sm font-black text-gray-900">Julia</p>
-                  <p className="text-xs font-bold text-gray-500">License expires 2/15/2025</p>
+                  <p className="text-xs font-bold text-gray-500">
+                    License expires 2/15/2025
+                  </p>
                 </div>
               </div>
               <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-8 h-10 rounded-lg uppercase tracking-widest gap-2">
@@ -6873,8 +7919,12 @@ const AnalyticsDashboardView = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               {/* Left Column: Consent Status Distribution */}
               <div>
-                <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">Compliance Summary</h3>
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 font-sans">Consent Status Distribution</p>
+                <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
+                  Compliance Summary
+                </h3>
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 font-sans">
+                  Consent Status Distribution
+                </p>
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
@@ -6882,7 +7932,10 @@ const AnalyticsDashboardView = () => {
                       <span className="text-green-600">8 (80%)</span>
                     </div>
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div className="h-full bg-gray-900 rounded-full" style={{ width: '80%' }} />
+                      <div
+                        className="h-full bg-gray-900 rounded-full"
+                        style={{ width: "80%" }}
+                      />
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -6891,7 +7944,10 @@ const AnalyticsDashboardView = () => {
                       <span className="text-orange-600">1 (10%)</span>
                     </div>
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#FB923C]/30 rounded-full shadow-inner" style={{ width: '10%' }} />
+                      <div
+                        className="h-full bg-[#FB923C]/30 rounded-full shadow-inner"
+                        style={{ width: "10%" }}
+                      />
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -6900,7 +7956,10 @@ const AnalyticsDashboardView = () => {
                       <span className="text-red-600">1 (10%)</span>
                     </div>
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#FECACA] rounded-full" style={{ width: '10%' }} />
+                      <div
+                        className="h-full bg-[#FECACA] rounded-full"
+                        style={{ width: "10%" }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -6908,18 +7967,28 @@ const AnalyticsDashboardView = () => {
 
               {/* Right Column: Likeness Protection */}
               <div className="space-y-10">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">Likeness Protection</p>
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">
+                  Likeness Protection
+                </p>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-100 rounded-xl">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">Authorized Uses (30d)</span>
-                    <span className="text-3xl font-black text-green-600">73</span>
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                      Authorized Uses (30d)
+                    </span>
+                    <span className="text-3xl font-black text-green-600">
+                      73
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-6 bg-red-50/50 border border-red-100 rounded-xl">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">Unauthorized Alerts</span>
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                      Unauthorized Alerts
+                    </span>
                     <span className="text-3xl font-black text-red-600">0</span>
                   </div>
                   <div className="flex items-center justify-between p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">Disputes Resolved</span>
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                      Disputes Resolved
+                    </span>
                     <span className="text-3xl font-black text-blue-600">2</span>
                   </div>
                 </div>
@@ -6941,26 +8010,41 @@ const SettingsView = () => {
 
       {/* Agency Information */}
       <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">Agency Information</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+          Agency Information
+        </h3>
         <div className="space-y-6 max-w-2xl">
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Agency Name</Label>
-            <Input defaultValue="CM Models" className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg" />
+            <Label className="text-sm font-bold text-gray-900">
+              Agency Name
+            </Label>
+            <Input
+              defaultValue="CM Models"
+              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
+            />
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-900">Website</Label>
-            <Input defaultValue="https://cmmodels.com/" className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg" />
+            <Input
+              defaultValue="https://cmmodels.com/"
+              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
+            />
           </div>
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-900">Location</Label>
-            <Input defaultValue="U.S." className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg" />
+            <Input
+              defaultValue="U.S."
+              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
+            />
           </div>
         </div>
       </Card>
 
       {/* Integrations */}
       <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">Integrations</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+          Integrations
+        </h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
             <div className="flex items-center gap-4">
@@ -6968,12 +8052,17 @@ const SettingsView = () => {
                 <DollarSign className="w-5 h-5 text-gray-500" />
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900">Stripe Connect</p>
-                <p className="text-xs text-gray-500 font-medium">Payouts & Invoicing</p>
+                <p className="text-sm font-bold text-gray-900">
+                  Stripe Connect
+                </p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Payouts & Invoicing
+                </p>
               </div>
             </div>
             <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
+              Connected
             </Badge>
           </div>
 
@@ -6984,11 +8073,14 @@ const SettingsView = () => {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900">ElevenLabs</p>
-                <p className="text-xs text-gray-500 font-medium">Voice cloning</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Voice cloning
+                </p>
               </div>
             </div>
             <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
+              Connected
             </Badge>
           </div>
         </div>
@@ -7174,14 +8266,16 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -7201,10 +8295,11 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -7263,24 +8358,34 @@ export default function AgencyDashboard() {
                   </div>
                   <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
                     <div className="p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">Julia's license expires in 15 days</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        Julia's license expires in 15 days
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
                     </div>
                     <div className="p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">New licensing request from Byredo</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        New licensing request from Byredo
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">5 hours ago</p>
                     </div>
                     <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">Payment received: $5,200 from & Other Stories</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        Payment received: $5,200 from & Other Stories
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">1 day ago</p>
                     </div>
                     <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">Aaron added to roster (pending verification)</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        Aaron added to roster (pending verification)
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">2 days ago</p>
                     </div>
                   </div>
                   <div className="p-4 border-t border-gray-100 text-center">
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View all notifications</button>
+                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
+                      View all notifications
+                    </button>
                   </div>
                 </div>
               )}
@@ -7330,36 +8435,52 @@ export default function AgencyDashboard() {
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
                       <Building2 className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
-                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Organization Settings</p>
-                        <p className="text-xs text-gray-500">Manage company profile</p>
+                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                          Organization Settings
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Manage company profile
+                        </p>
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
                       <Users className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
-                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Team & Permissions</p>
+                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                          Team & Permissions
+                        </p>
                         <p className="text-xs text-gray-500">10 active users</p>
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
                       <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
-                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Billing & Subscription</p>
+                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                          Billing & Subscription
+                        </p>
                         <p className="text-xs text-gray-500">Agency Pro Plan</p>
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
                       <FileText className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
-                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Legal & Compliance</p>
-                        <p className="text-xs text-gray-500">Contracts, terms, privacy</p>
+                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                          Legal & Compliance
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Contracts, terms, privacy
+                        </p>
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
                       <Link className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
-                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Integrations</p>
-                        <p className="text-xs text-gray-500">Stripe, ElevenLabs connected</p>
+                        <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                          Integrations
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Stripe, ElevenLabs connected
+                        </p>
                       </div>
                     </button>
                   </div>
@@ -7412,12 +8533,12 @@ export default function AgencyDashboard() {
           {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
             <ComplianceHubView />
           )}
-          {activeTab === "analytics" && activeSubTab === "Analytics Dashboard" && (
-            <AnalyticsDashboardView />
-          )}
-          {activeTab === "analytics" && activeSubTab === "Royalties & Payouts" && (
-            <RoyaltiesPayoutsView />
-          )}
+          {activeTab === "analytics" &&
+            activeSubTab === "Analytics Dashboard" && (
+              <AnalyticsDashboardView />
+            )}
+          {activeTab === "analytics" &&
+            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "settings" && <SettingsView />}
         </main>
       </div>
