@@ -1,5 +1,6 @@
 pub mod avatar;
 pub mod config;
+mod creatify;
 pub mod creator_rates;
 pub mod dashboard;
 pub mod email;
