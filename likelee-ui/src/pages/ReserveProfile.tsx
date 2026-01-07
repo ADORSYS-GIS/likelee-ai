@@ -794,10 +794,10 @@ export default function ReserveProfile() {
       }
       const path = `cameo/${owner}/${Date.now()}_${side}_${file.name}`;
       const { error } = await supabase.storage
-        .from("likelee-public")
+        .from("profiles")
         .upload(path, file, { upsert: false });
       if (error) throw error;
-      const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
+      const { data } = supabase.storage.from("profiles").getPublicUrl(path);
       const url = data.publicUrl;
       // Call moderation endpoint
       try {
@@ -1432,13 +1432,13 @@ export default function ReserveProfile() {
       if ((!front || !left || !right) && supabase) {
         const prefix = `faces/${user.id}/reference`;
         const { data: files } = await supabase.storage
-          .from("likelee-public")
+          .from("profiles")
           .list(prefix, { limit: 100 });
         if (files && files.length) {
           files.forEach((f: any) => {
             const name = f.name.toLowerCase();
             const pub = supabase.storage
-              .from("likelee-public")
+              .from("profiles")
               .getPublicUrl(`${prefix}/${f.name}`).data.publicUrl;
             if (!front && name.includes("front")) front = pub;
             if (!left && name.includes("left")) left = pub;

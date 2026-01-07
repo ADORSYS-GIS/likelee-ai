@@ -37,7 +37,7 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::organization_profiles::get_by_user),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
-        // Removed legacy Tavus routes
+        .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::profiles::check_email))
         .route("/api/profile", post(crate::profiles::upsert_profile))
@@ -61,10 +61,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/moderation/image-bytes",
             post(crate::moderation::moderate_image_bytes),
-        )
-        .route(
-            "/api/faces/search",
-            get(crate::profiles::search_faces),
         )
         .route(
             "/api/reference-images/upload",
@@ -112,35 +108,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/brand/voice-assets",
             get(crate::licenses::list_brand_voice_assets),
-        )
-        // Creatify integration
-        .route(
-            "/api/creatify/avatar-from-video",
-            post(crate::creatify::create_avatar_from_video),
-        )
-        .route(
-            "/api/creatify/avatar/status",
-            get(crate::creatify::get_avatar_status),
-        )
-        .route(
-            "/api/creatify/avatar/status/by-id",
-            get(crate::creatify::get_avatar_status_by_id),
-        )
-        .route(
-            "/api/creatify/avatar/set",
-            post(crate::creatify::set_creatify_avatar_id),
-        )
-        .route(
-            "/api/creatify/lipsyncs",
-            post(crate::creatify::start_lipsync),
-        )
-        .route(
-            "/api/creatify/lipsyncs/status",
-            get(crate::creatify::get_lipsync_status),
-        )
-        .route(
-            "/webhooks/creatify",
-            post(crate::creatify::creatify_webhook),
         )
         // Integrations: Core
         .route(
