@@ -95,7 +95,7 @@ const industries = [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
@@ -184,9 +184,9 @@ export default function OrganizationSignup() {
         email: data.email,
         password: data.password,
         organization_name: data.organization_name,
+        organization_type: orgType, // Required field
         contact_name: data.contact_name || undefined,
         contact_title: data.contact_title || undefined,
-        organization_type: orgType || undefined,
         website: data.website || undefined,
         phone_number: data.phone_number || undefined,
       };
@@ -197,8 +197,28 @@ export default function OrganizationSignup() {
       const created = Array.isArray(resp) ? resp[0] : resp;
       const newId = created?.id;
       setProfileId(newId);
-      // Move to Step 2; KYC/Liveness will happen in Step 3
-      setStep(2);
+
+      // Auto-login the user after successful registration
+      try {
+        await login(formData.email, formData.password);
+
+        // Wait a moment for the session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        toast({
+          title: t("organizationSignup.accountCreated"),
+          description: t("organizationSignup.accountCreatedDescription"),
+        });
+        // Move to Step 2
+        setStep(2);
+      } catch (err) {
+        console.error("Auto-login failed:", err);
+        toast({
+          title: "Registration Successful",
+          description: "Please log in to continue.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
@@ -261,6 +281,16 @@ export default function OrganizationSignup() {
   const handleNext = () => {
     // Basic validation for Step 1 before proceeding
     if (step === 1) {
+      // Validate organization type is set
+      if (!orgType) {
+        toast({
+          title: t("error"),
+          description: "Organization type is missing. Please try again from the beginning.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (
         !formData.email ||
         !formData.password ||
@@ -473,6 +503,38 @@ export default function OrganizationSignup() {
               </div>
 
               <div className="space-y-4">
+                {/* NEW: Organization Type Selector */}
+                <div>
+                  <Label
+                    htmlFor="organization_type"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Organization Type *
+                  </Label>
+                  <Select
+                    value={orgType}
+                    onValueChange={(value) => setOrgType(value)}
+                  >
+                    <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                      <SelectValue placeholder="Select your organization type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="brand_company">
+                        Brand / Company
+                      </SelectItem>
+                      <SelectItem value="production_studio">
+                        Production Studio
+                      </SelectItem>
+                      <SelectItem value="marketing_agency">
+                        Marketing Agency
+                      </SelectItem>
+                      <SelectItem value="talent_agency">
+                        Talent Agency
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <Label
                     htmlFor="email"

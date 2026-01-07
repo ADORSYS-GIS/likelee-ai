@@ -54,9 +54,9 @@ pub struct OrganizationRegisterPayload {
     pub email: String,
     pub password: String,
     pub organization_name: String,
+    pub organization_type: String,
     pub contact_name: Option<String>,
     pub contact_title: Option<String>,
-    pub organization_type: Option<String>,
     pub website: Option<String>,
     pub phone_number: Option<String>,
 }
@@ -70,7 +70,8 @@ pub async fn register(
     let create_user_body = serde_json::json!({
         "email": payload.email,
         "password": payload.password,
-        "email_confirm": false
+        "email_confirm": true,
+        "email_confirmed_at": chrono::Utc::now().to_rfc3339()
     });
     let user_resp = client
         .post(&admin_url)
@@ -115,9 +116,9 @@ pub async fn register(
         "owner_user_id": owner_user_id,
         "email": user_json.get("user").and_then(|u| u.get("email")).and_then(|v| v.as_str()).unwrap_or("").to_string(),
         "organization_name": payload.organization_name,
+        "organization_type": payload.organization_type,
         "contact_name": payload.contact_name,
         "contact_title": payload.contact_title,
-        "organization_type": payload.organization_type,
         "website": payload.website,
         "phone_number": payload.phone_number,
         "status": "waitlist"
