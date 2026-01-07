@@ -151,6 +151,15 @@ pub async fn register(
     }
     let v: serde_json::Value = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // 3) Set role in profiles table
+    let _ = state
+        .pg
+        .from("profiles")
+        .update(serde_json::json!({ "role": "brand" }).to_string())
+        .eq("id", &owner_user_id)
+        .execute()
+        .await;
+
     Ok(Json(v))
 }
 

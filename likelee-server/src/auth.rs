@@ -50,7 +50,8 @@ where
 
         // 2. Verify JWT
         let decoding_key = DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
-        let validation = Validation::default();
+        let mut validation = Validation::default();
+        validation.set_audience(&["authenticated"]);
         let token_data = decode::<Claims>(token, &decoding_key, &validation)
             .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)))?;
 

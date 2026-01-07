@@ -80,10 +80,6 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
         .route(
-            "/api/organization-register",
-            post(crate::organization_profiles::register),
-        )
-        .route(
             "/api/organization-profile",
             post(crate::organization_profiles::create),
         )
@@ -111,6 +107,10 @@ pub fn build_router(state: AppState) -> Router {
 
     // Public or Shared routes (Authentication enforced via AuthUser extractor in handlers if needed)
     let common_routes = Router::new()
+        .route(
+            "/api/organization-register",
+            post(crate::organization_profiles::register),
+        )
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::profiles::check_email))
         .route(
