@@ -264,6 +264,7 @@ function PagesContent() {
         <Route path="/ReserveProfile" element={<ReserveProfile />} />
 
         <Route path="/OrganizationSignup" element={<OrganizationSignup />} />
+        <Route path="/organization-signup" element={<OrganizationSignup />} />
 
         <Route path="/ForYou" element={<ForYou />} />
 

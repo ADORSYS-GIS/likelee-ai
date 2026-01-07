@@ -70,8 +70,7 @@ pub async fn register(
     let create_user_body = serde_json::json!({
         "email": payload.email,
         "password": payload.password,
-        "email_confirm": true,
-        "email_confirmed_at": chrono::Utc::now().to_rfc3339()
+        "email_confirm": false
     });
     let user_resp = client
         .post(&admin_url)
@@ -114,14 +113,15 @@ pub async fn register(
 
     let mut org = serde_json::json!({
         "owner_user_id": owner_user_id,
-        "email": user_json.get("user").and_then(|u| u.get("email")).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        "email": payload.email,
         "organization_name": payload.organization_name,
         "organization_type": payload.organization_type,
         "contact_name": payload.contact_name,
         "contact_title": payload.contact_title,
         "website": payload.website,
         "phone_number": payload.phone_number,
-        "status": "waitlist"
+        "status": "waitlist",
+        "onboarding_step": "email_verification"
     });
     if let serde_json::Value::Object(ref mut map) = org {
         if let Some(serde_json::Value::Array(arr)) = map.get("primary_goal").cloned() {
@@ -200,6 +200,7 @@ pub async fn create(
                 .join(", ");
             map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
+        map.insert("onboarding_step".into(), serde_json::Value::String("complete".to_string()));
     }
     let body = v.to_string();
     let resp = state
@@ -283,6 +284,7 @@ pub async fn update(
         for k in null_keys {
             map.remove(&k);
         }
+        map.insert("onboarding_step".into(), serde_json::Value::String("complete".to_string()));
     }
     let body = v.to_string();
     let resp = state

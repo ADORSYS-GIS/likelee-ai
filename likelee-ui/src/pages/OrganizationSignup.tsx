@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
@@ -95,7 +96,7 @@ const industries = [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user, login } = useAuth();
+  const { user, login, resendEmailConfirmation } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
@@ -138,11 +139,57 @@ export default function OrganizationSignup() {
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
+  const [emailVerificationPending, setEmailVerificationPending] = useState(false); // New state for email verification
+  const { profile } = useAuth();
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get("type");
     if (type) setOrgType(type);
   }, []);
+
+  // Check for existing session and onboarding step
+  // Check for existing session and onboarding step
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      if (user) {
+        try {
+          const { data: orgProfile, error } = await supabase
+            .from('organization_profiles')
+            .select('id, organization_type, email, onboarding_step')
+            .eq('owner_user_id', user.id)
+            .maybeSingle();
+
+          if (orgProfile) {
+            if (orgProfile.onboarding_step === 'email_verification') {
+              // User verified email but hasn't completed step 2
+              setProfileId(orgProfile.id);
+              setOrgType(orgProfile.organization_type);
+              setFormData(prev => ({
+                ...prev,
+                email: orgProfile.email || user.email || ""
+              }));
+              setStep(2);
+            } else if (orgProfile.onboarding_step === 'complete') {
+              // Already completed onboarding, redirect to dashboard
+              // We rely on profile for role, so we wait for it
+              if (profile) {
+                if (profile.role === 'brand') {
+                  window.location.href = '/BrandDashboard';
+                } else if (profile.role === 'agency') {
+                  window.location.href = '/AgencyDashboard';
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error checking user status:", e);
+        }
+      }
+    };
+
+    checkUserStatus();
+  }, [user, profile]);
 
   // Color schemes for each organization type
   const getColorScheme = () => {
@@ -198,27 +245,25 @@ export default function OrganizationSignup() {
       const newId = created?.id;
       setProfileId(newId);
 
-      // Auto-login the user after successful registration
+      // Trigger email confirmation from frontend since backend admin API doesn't send it
       try {
-        await login(formData.email, formData.password);
-
-        // Wait a moment for the session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        toast({
-          title: t("organizationSignup.accountCreated"),
-          description: t("organizationSignup.accountCreatedDescription"),
-        });
-        // Move to Step 2
-        setStep(2);
+        if (resendEmailConfirmation) {
+          await resendEmailConfirmation(
+            formData.email,
+            `${window.location.origin}/organization-signup`
+          );
+        }
       } catch (err) {
-        console.error("Auto-login failed:", err);
-        toast({
-          title: "Registration Successful",
-          description: "Please log in to continue.",
-          variant: "destructive",
-        });
+        console.error("Failed to send confirmation email:", err);
+        // Continue anyway to show the UI, user can click "Resend" if we add it later
       }
+
+      // Show email verification UI instead of auto-login
+      setEmailVerificationPending(true);
+      toast({
+        title: "Account Created",
+        description: "Please check your email to verify your account.",
+      });
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
@@ -373,6 +418,38 @@ export default function OrganizationSignup() {
     queryFn: () => getOrganizationKycStatus(profileId!),
     enabled: !!profileId && submitted,
   });
+
+  // Render email verification message
+  if (emailVerificationPending) {
+    return (
+      <div className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}>
+        <Card className="max-w-xl w-full p-12 bg-white border-2 border-black shadow-2xl rounded-none text-center">
+          <div className={`w-20 h-20 bg-gradient-to-r ${colors.primary} border-2 border-black rounded-full flex items-center justify-center mx-auto mb-8`}>
+            <CheckCircle2 className="w-12 h-12 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Check Your Email
+          </h1>
+          <p className="text-lg text-gray-700 mb-6">
+            We've sent a verification link to <strong>{formData.email}</strong>.
+            Please verify your email to continue setting up your organization profile.
+          </p>
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 text-left mb-6">
+            <p className="text-sm text-blue-700">
+              <strong>Note:</strong> After verifying your email, you will be automatically redirected to complete your profile setup.
+            </p>
+          </div>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="border-2 border-black rounded-none"
+          >
+            I've verified my email
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   // Render success message if form was submitted successfully
   if (submitted) {

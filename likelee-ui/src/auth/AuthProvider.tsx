@@ -24,7 +24,7 @@ interface AuthContextValue {
     displayName?: string,
   ) => Promise<{ user: User | null; session: any | null }>;
   refreshToken: () => Promise<void>;
-  resendEmailConfirmation?: (email: string) => Promise<void>;
+  resendEmailConfirmation?: (email: string, redirectTo?: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -34,6 +34,7 @@ export interface Profile {
   full_name?: string;
   profile_photo_url?: string;
   kyc_status?: string;
+  onboarding_step?: string;
   [key: string]: any;
 }
 
@@ -73,7 +74,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (insertError) {
-          console.error("Error creating profile:", insertError);
+          // If 409 Conflict, it means profile already exists, so just fetch it
+          if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
+            const { data: existingProfile } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", userId)
+              .maybeSingle();
+            if (existingProfile) setProfile(existingProfile);
+          } else {
+            console.error("Error creating profile:", insertError);
+          }
         } else if (newProfile) {
           setProfile(newProfile);
         }
@@ -173,14 +184,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return { user: data.user, session: data.session };
       },
-      resendEmailConfirmation: async (email: string) => {
+      resendEmailConfirmation: async (email: string, redirectTo?: string) => {
         if (!supabase) throw new Error("Supabase not configured");
         const emailNormalized = (email || "").trim().toLowerCase();
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: emailNormalized,
           options: {
-            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=1`,
+            emailRedirectTo: redirectTo || `${window.location.origin}/ReserveProfile?step=1`,
           },
         });
         if (error) throw error;
