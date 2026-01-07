@@ -100,6 +100,7 @@ import CommercialRights from "./CommercialRights";
 import CameoUpload from "./CameoUpload";
 import RoyaltyWallet from "./RoyaltyWallet";
 import PublicProfile from "./PublicProfile";
+import BrandDiscoverFaces from "./BrandDiscoverFaces";
 
 import {
   BrowserRouter as Router,
@@ -223,7 +224,7 @@ const PAGES = {
 
   RoyaltyWallet: RoyaltyWallet,
   PublicProfile: PublicProfile,
-  Unauthorized: Unauthorized,
+  BrandDiscoverFaces: BrandDiscoverFaces,
 };
 
 function _getCurrentPage(url) {
@@ -365,7 +366,14 @@ function PagesContent() {
           }
         />
 
-        <Route path="/AddTalent" element={<AddTalent />} />
+        <Route
+          path="/AddTalent"
+          element={
+            <ProtectedRoute>
+              <AddTalent />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/BrandDashboard"
@@ -460,6 +468,8 @@ function PagesContent() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/BrandDiscoverFaces" element={<BrandDiscoverFaces />} />
 
         <Route path="/Login" element={<Login />} />
         <Route path="/login" element={<Login />} />

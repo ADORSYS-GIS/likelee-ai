@@ -777,7 +777,7 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-      <main className="pt-20"> {children}</main>
+      <main className={isDashboardPage ? "" : "pt-20"}> {children}</main>
 
       {/* Footer - Hidden on Dashboard pages */}
       {!isDashboardPage && (

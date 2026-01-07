@@ -246,3 +246,198 @@ pub async fn upload_profile_photo(
         "profile": profile,
     })))
 }
+
+#[derive(Deserialize, Debug)]
+pub struct FaceSearchQuery {
+    pub age_min: Option<i32>,
+    pub age_max: Option<i32>,
+    pub race: Option<String>,
+    pub hair_color: Option<String>,
+    pub hairstyle: Option<String>,
+    pub eye_color: Option<String>,
+    pub height_min_cm: Option<i32>,
+    pub height_max_cm: Option<i32>,
+    pub weight_min_kg: Option<i32>,
+    pub weight_max_kg: Option<i32>,
+    // Comma-separated features (best-effort, applied client-side if present)
+    pub features: Option<String>,
+    pub page: Option<u32>,
+    pub page_size: Option<u32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FaceSummary {
+    pub id: String,
+    pub full_name: Option<String>,
+    pub profile_photo_url: Option<String>,
+    pub age: Option<i32>,
+    pub race: Option<String>,
+    pub hair_color: Option<String>,
+    pub hairstyle: Option<String>,
+    pub eye_color: Option<String>,
+    pub height_cm: Option<i32>,
+    pub weight_kg: Option<i32>,
+    pub facial_features: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+pub struct FaceSearchResponse {
+    pub items: Vec<FaceSummary>,
+    pub page: u32,
+    pub page_size: u32,
+}
+
+/// Basic search for Faces (Talents/Creators) with optional filters
+pub async fn search_faces(
+    State(state): State<AppState>,
+    Query(q): Query<FaceSearchQuery>,
+) -> Result<Json<FaceSearchResponse>, (axum::http::StatusCode, String)> {
+    let mut req = state
+        .pg
+        .from("profiles")
+        .select(
+            "id,full_name,profile_photo_url,age,race,hair_color,hairstyle,eye_color,height_cm,weight_kg,facial_features",
+        )
+        .order("full_name.asc");
+
+    if let Some(min) = q.age_min {
+        req = req.gte("age", min.to_string());
+    }
+    if let Some(max) = q.age_max {
+        req = req.lte("age", max.to_string());
+    }
+    // Multi-select categorical filters (comma-separated lists)
+    if let Some(ref v) = q.race {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            if vals.len() == 1 {
+                req = req.eq("race", vals[0].clone());
+            } else {
+                let cond_inner = vals
+                    .iter()
+                    .map(|s| format!("race.eq.{}", s))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                req = req.or(format!("({})", cond_inner));
+            }
+        }
+    }
+    if let Some(ref v) = q.hair_color {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            if vals.len() == 1 {
+                req = req.eq("hair_color", vals[0].clone());
+            } else {
+                let cond_inner = vals
+                    .iter()
+                    .map(|s| format!("hair_color.eq.{}", s))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                req = req.or(format!("({})", cond_inner));
+            }
+        }
+    }
+    if let Some(ref v) = q.hairstyle {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            if vals.len() == 1 {
+                req = req.eq("hairstyle", vals[0].clone());
+            } else {
+                let cond_inner = vals
+                    .iter()
+                    .map(|s| format!("hairstyle.eq.{}", s))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                req = req.or(format!("({})", cond_inner));
+            }
+        }
+    }
+    if let Some(ref v) = q.eye_color {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            if vals.len() == 1 {
+                req = req.eq("eye_color", vals[0].clone());
+            } else {
+                let cond_inner = vals
+                    .iter()
+                    .map(|s| format!("eye_color.eq.{}", s))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                req = req.or(format!("({})", cond_inner));
+            }
+        }
+    }
+    if let Some(min) = q.height_min_cm {
+        req = req.gte("height_cm", min.to_string());
+    }
+    if let Some(max) = q.height_max_cm {
+        req = req.lte("height_cm", max.to_string());
+    }
+    if let Some(min) = q.weight_min_kg {
+        req = req.gte("weight_kg", min.to_string());
+    }
+    if let Some(max) = q.weight_max_kg {
+        req = req.lte("weight_kg", max.to_string());
+    }
+
+    // Pagination
+    let page = q.page.unwrap_or(1).max(1);
+    let page_size = q.page_size.unwrap_or(24).clamp(1, 100);
+    let from = ((page - 1) * page_size) as usize;
+    let to = (from + page_size as usize) - 1;
+    req = req.range(from, to);
+
+    let resp = req
+        .execute()
+        .await
+        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut items: Vec<FaceSummary> = serde_json::from_str(&text)
+        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Optional features filter (client-side best-effort if provided as comma-separated values)
+    if let Some(features) = q.features.as_ref().filter(|s| !s.trim().is_empty()) {
+        let wanted: Vec<String> = features
+            .split(',')
+            .map(|s| s.trim().to_lowercase())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !wanted.is_empty() {
+            items.retain(|it| {
+                let have = it
+                    .facial_features
+                    .as_ref()
+                    .map(|v| v.iter().map(|s| s.to_lowercase()).collect::<Vec<_>>())
+                    .unwrap_or_default();
+                wanted.iter().any(|w| have.iter().any(|h| h.contains(w)))
+            });
+        }
+    }
+
+    Ok(Json(FaceSearchResponse {
+        items,
+        page,
+        page_size,
+    }))
+}

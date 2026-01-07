@@ -100,16 +100,22 @@ export const updateOrganizationProfile = (
   base44Client.post(`/api/organization-profile/${id}`, data);
 
 // Organization registration (creates user + organization and links ownership)
-export const registerOrganization = (data: {
-  email: string;
-  password: string;
-  organization_name: string;
-  contact_name?: string;
-  contact_title?: string;
-  organization_type?: string;
-  website?: string;
-  phone_number?: string;
-}) => base44Client.post(`/api/organization-register`, data);
+export const registerOrganization = (
+  data: {
+    email: string;
+    password: string;
+    organization_name: string;
+    contact_name?: string;
+    contact_title?: string;
+    organization_type?: string;
+    website?: string;
+    phone_number?: string;
+  },
+  userId?: string,
+) =>
+  base44Client.post(`/api/organization-register`, data, {
+    headers: userId ? { "x-user-id": userId } : {},
+  });
 
 // Dashboard data for the authenticated user
 export const getDashboard = () =>

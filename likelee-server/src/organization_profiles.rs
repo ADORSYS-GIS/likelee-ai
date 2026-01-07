@@ -4,7 +4,9 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 // Accept either a single string or an array of strings for primary_goal
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -65,50 +67,43 @@ pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<OrganizationRegisterPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let admin_url = format!("{}/auth/v1/admin/users", state.supabase_url);
-    let client = reqwest::Client::new();
-    let create_user_body = serde_json::json!({
+    // Create a Supabase user via Admin API (service role) so brand can sign up unauthenticated
+    let client = Client::new();
+    let create_user_url = format!("{}/auth/v1/admin/users", state.supabase_url);
+    let body = json!({
         "email": payload.email,
         "password": payload.password,
         "email_confirm": false
     });
-    let user_resp = client
-        .post(&admin_url)
+    let resp = client
+        .post(&create_user_url)
         .header("apikey", state.supabase_service_key.clone())
         .header(
             "Authorization",
             format!("Bearer {}", state.supabase_service_key),
         )
-        .json(&create_user_body)
+        .json(&body)
         .send()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let status = user_resp.status();
-    let user_text = user_resp
-        .text()
+    if !resp.status().is_success() {
+        let txt = resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "failed to create user".to_string());
+        return Err((StatusCode::BAD_REQUEST, txt));
+    }
+    let created: serde_json::Value = resp
+        .json()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, user_text));
-    }
-    let user_json: serde_json::Value = serde_json::from_str(&user_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let owner_user_id = user_json
-        .get("user")
-        .and_then(|u| u.get("id"))
+    let owner_user_id = created
+        .get("id")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .or_else(|| {
-            user_json
-                .get("id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string())
-        })
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
-            "failed to parse created user id".to_string(),
+            "missing id in create user response".to_string(),
         ))?;
 
     let mut org = serde_json::json!({
@@ -123,7 +118,52 @@ pub async fn register(
         "status": "waitlist",
         "onboarding_step": "email_verification"
     });
+    let link_resp = client
+        .post(&gen_link_url)
+        .header("apikey", state.supabase_service_key.clone())
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .json(&link_body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !link_resp.status().is_success() {
+        let txt = link_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "failed to generate signup confirmation link".to_string());
+        return Err((StatusCode::BAD_REQUEST, txt));
+    }
+    let link_json: serde_json::Value = link_resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let action_link = link_json
+        .get("action_link")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    // Use provided email from payload; user was just created above
+    let email = payload.email.clone();
+    let organization_name = payload.organization_name.clone();
+
+    let mut org =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if let serde_json::Value::Object(ref mut map) = org {
+        map.insert(
+            "owner_user_id".into(),
+            serde_json::Value::String(owner_user_id),
+        );
+        map.insert("email".into(), serde_json::Value::String(email));
+        map.insert(
+            "organization_name".into(),
+            serde_json::Value::String(organization_name),
+        );
+        // Remove auth-only fields that are not part of organization_profiles schema
+        map.remove("password");
         if let Some(serde_json::Value::Array(arr)) = map.get("primary_goal").cloned() {
             let joined = arr
                 .into_iter()
@@ -133,6 +173,7 @@ pub async fn register(
             map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
     }
+
     let body = org.to_string();
     let resp = state
         .pg
@@ -150,7 +191,7 @@ pub async fn register(
         let code = StatusCode::from_u16(st.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, txt));
     }
-    let v: serde_json::Value = serde_json::from_str(&txt)
+    let org_row: serde_json::Value = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // 3) Set role in profiles table based on organization type

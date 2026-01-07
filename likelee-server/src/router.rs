@@ -19,6 +19,9 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
+        // Removed legacy Tavus routes
+        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
+        .route("/api/email/available", get(crate::profiles::check_email))
         .route("/api/profile", post(crate::profiles::upsert_profile))
         .route(
             "/api/profile/photo-upload",
@@ -32,6 +35,25 @@ pub fn build_router(state: AppState) -> Router {
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
         )
+        .route("/api/faces/search", get(crate::face_profiles::search_faces))
+        .route(
+            "/api/moderation/image",
+            post(crate::moderation::moderate_image),
+        )
+        .route(
+            "/api/moderation/image-bytes",
+            post(crate::moderation::moderate_image_bytes),
+        )
+        .route("/api/faces/search", get(crate::profiles::search_faces))
+        .route(
+            "/api/reference-images/upload",
+            post(crate::reference_images::upload_reference_image),
+        )
+        .route(
+            "/api/reference-images",
+            get(crate::reference_images::list_reference_images),
+        )
+        // Voice
         .route(
             "/api/voice/recordings",
             post(crate::voice::upload_voice_recording),
@@ -107,6 +129,36 @@ pub fn build_router(state: AppState) -> Router {
 
     // Public or Shared routes (Authentication enforced via AuthUser extractor in handlers if needed)
     let common_routes = Router::new()
+        // Creatify integration
+        .route(
+            "/api/creatify/avatar-from-video",
+            post(crate::creatify::create_avatar_from_video),
+        )
+        .route(
+            "/api/creatify/avatar/status",
+            get(crate::creatify::get_avatar_status),
+        )
+        .route(
+            "/api/creatify/avatar/status/by-id",
+            get(crate::creatify::get_avatar_status_by_id),
+        )
+        .route(
+            "/api/creatify/avatar/set",
+            post(crate::creatify::set_creatify_avatar_id),
+        )
+        .route(
+            "/api/creatify/lipsyncs",
+            post(crate::creatify::start_lipsync),
+        )
+        .route(
+            "/api/creatify/lipsyncs/status",
+            get(crate::creatify::get_lipsync_status),
+        )
+        .route(
+            "/webhooks/creatify",
+            post(crate::creatify::creatify_webhook),
+        )
+        // Integrations: Core
         .route(
             "/api/organization-register",
             post(crate::organization_profiles::register),
