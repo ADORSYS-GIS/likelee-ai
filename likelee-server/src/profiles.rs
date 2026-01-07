@@ -293,8 +293,12 @@ pub async fn search_faces(
         )
         .order("full_name.asc");
 
-    if let Some(min) = q.age_min { req = req.gte("age", min.to_string()); }
-    if let Some(max) = q.age_max { req = req.lte("age", max.to_string()); }
+    if let Some(min) = q.age_min {
+        req = req.gte("age", min.to_string());
+    }
+    if let Some(max) = q.age_max {
+        req = req.lte("age", max.to_string());
+    }
     // Multi-select categorical filters (comma-separated lists)
     if let Some(ref v) = q.race {
         let vals: Vec<String> = v
@@ -372,10 +376,18 @@ pub async fn search_faces(
             }
         }
     }
-    if let Some(min) = q.height_min_cm { req = req.gte("height_cm", min.to_string()); }
-    if let Some(max) = q.height_max_cm { req = req.lte("height_cm", max.to_string()); }
-    if let Some(min) = q.weight_min_kg { req = req.gte("weight_kg", min.to_string()); }
-    if let Some(max) = q.weight_max_kg { req = req.lte("weight_kg", max.to_string()); }
+    if let Some(min) = q.height_min_cm {
+        req = req.gte("height_cm", min.to_string());
+    }
+    if let Some(max) = q.height_max_cm {
+        req = req.lte("height_cm", max.to_string());
+    }
+    if let Some(min) = q.weight_min_kg {
+        req = req.gte("weight_kg", min.to_string());
+    }
+    if let Some(max) = q.weight_max_kg {
+        req = req.lte("weight_kg", max.to_string());
+    }
 
     // Pagination
     let page = q.page.unwrap_or(1).max(1);
@@ -416,6 +428,9 @@ pub async fn search_faces(
         }
     }
 
-    Ok(Json(FaceSearchResponse { items, page, page_size }))
+    Ok(Json(FaceSearchResponse {
+        items,
+        page,
+        page_size,
+    }))
 }
-

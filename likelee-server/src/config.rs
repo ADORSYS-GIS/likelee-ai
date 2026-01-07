@@ -96,7 +96,7 @@ pub struct ServerConfig {
     #[envconfig(from = "TAVUS_API_KEY", default = "")]
     pub tavus_api_key: String,
 
-    #[envconfig(from = "TAVUS_BASE_URL", default = "https://tavusapi.com")] 
+    #[envconfig(from = "TAVUS_BASE_URL", default = "https://tavusapi.com")]
     pub tavus_base_url: String,
 
     #[envconfig(from = "TAVUS_WEBHOOK_SECRET", default = "")]

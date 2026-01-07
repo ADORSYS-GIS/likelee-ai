@@ -66,17 +66,29 @@ pub async fn generate_avatar(
                 .get("tavus_avatar_id")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            return Ok(Json(GenerateAvatarResponse { tavus_avatar_id: id, status: status.to_string() }));
+            return Ok(Json(GenerateAvatarResponse {
+                tavus_avatar_id: id,
+                status: status.to_string(),
+            }));
         }
     }
 
     let raw_url = req
         .video_url
-        .or_else(|| row.get("cameo_front_url").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .ok_or((StatusCode::BAD_REQUEST, "No training video available".into()))?;
+        .or_else(|| {
+            row.get("cameo_front_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "No training video available".into(),
+        ))?;
 
-    let (bucket, object) = parse_supabase_public_url(&raw_url)
-        .ok_or((StatusCode::BAD_REQUEST, "Unsupported video URL for signing".into()))?;
+    let (bucket, object) = parse_supabase_public_url(&raw_url).ok_or((
+        StatusCode::BAD_REQUEST,
+        "Unsupported video URL for signing".into(),
+    ))?;
 
     let sign_url = format!(
         "{}/storage/v1/object/sign/{}/{}",
@@ -88,13 +100,19 @@ pub async fn generate_avatar(
     let signed = reqwest::Client::new()
         .post(&sign_url)
         .header("apikey", &state.supabase_service_key)
-        .header("Authorization", format!("Bearer {}", &state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", &state.supabase_service_key),
+        )
         .json(&sign_body)
         .send()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !signed.status().is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, signed.text().await.unwrap_or_default()));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            signed.text().await.unwrap_or_default(),
+        ));
     }
     let signed_json: serde_json::Value = signed
         .json()
@@ -121,7 +139,9 @@ pub async fn generate_avatar(
         "replica_name": replica_name,
         "train_video_url": train_video_url,
     });
-    if let Some(cb) = callback_url { payload["callback_url"] = json!(cb); }
+    if let Some(cb) = callback_url {
+        payload["callback_url"] = json!(cb);
+    }
 
     let tavus_url = format!("{}/v2/replicas", state.tavus_base_url.trim_end_matches('/'));
     let tavus_resp = reqwest::Client::new()
@@ -158,11 +178,16 @@ pub async fn generate_avatar(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(GenerateAvatarResponse { tavus_avatar_id: Some(replica_id.to_string()), status: "started".into() }))
+    Ok(Json(GenerateAvatarResponse {
+        tavus_avatar_id: Some(replica_id.to_string()),
+        status: "started".into(),
+    }))
 }
 
 #[derive(Deserialize)]
-pub struct StatusQuery { pub user_id: String }
+pub struct StatusQuery {
+    pub user_id: String,
+}
 
 pub async fn get_avatar_status(
     State(state): State<AppState>,
@@ -187,12 +212,24 @@ pub async fn get_avatar_status(
         return Err((StatusCode::NOT_FOUND, "profile not found".into()));
     }
     let row = rows[0].clone();
-    let replica_id = row.get("tavus_avatar_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let mut status = row.get("tavus_avatar_status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+    let replica_id = row
+        .get("tavus_avatar_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let mut status = row
+        .get("tavus_avatar_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
 
     // If we have a replica_id, query Tavus for fresh status
     if !replica_id.is_empty() && !state.tavus_api_key.is_empty() {
-        let url = format!("{}/v2/replicas/{}", state.tavus_base_url.trim_end_matches('/'), replica_id);
+        let url = format!(
+            "{}/v2/replicas/{}",
+            state.tavus_base_url.trim_end_matches('/'),
+            replica_id
+        );
         if let Ok(resp) = reqwest::Client::new()
             .get(url)
             .header("x-api-key", &state.tavus_api_key)
@@ -201,13 +238,17 @@ pub async fn get_avatar_status(
         {
             if resp.status().is_success() {
                 if let Ok(j) = resp.json::<serde_json::Value>().await {
-                    if let Some(s) = j.get("status").and_then(|v| v.as_str()) { status = s.to_string(); }
+                    if let Some(s) = j.get("status").and_then(|v| v.as_str()) {
+                        status = s.to_string();
+                    }
                     // Persist updated status
-                    let _ = state.pg
+                    let _ = state
+                        .pg
                         .from("profiles")
                         .update(json!({ "tavus_avatar_status": status }).to_string())
                         .eq("tavus_avatar_id", &replica_id)
-                        .execute().await;
+                        .execute()
+                        .await;
                 }
             }
         }

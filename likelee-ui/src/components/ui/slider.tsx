@@ -3,8 +3,9 @@ import * as SliderPrimitive from "@radix-ui/react-slider";
 
 import { cn } from "@/lib/utils";
 
-
-type SliderProps = React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
+type SliderProps = React.ComponentPropsWithoutRef<
+  typeof SliderPrimitive.Root
+> & {
   className?: string;
 };
 
