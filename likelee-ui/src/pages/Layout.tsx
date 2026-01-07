@@ -11,9 +11,11 @@ export default function Layout({ children, currentPageName }) {
   const { authenticated, logout, profile } = useAuth();
 
   // Determine the correct dashboard path based on the user's role.
-  const dashboardPath = profile?.role === 'brand' || profile?.role === 'agency'
+  const dashboardPath = profile?.role === 'brand'
     ? '/BrandDashboard'
-    : '/CreatorDashboard';
+    : profile?.role === 'agency'
+      ? '/AgencyDashboard'
+      : '/CreatorDashboard';
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
