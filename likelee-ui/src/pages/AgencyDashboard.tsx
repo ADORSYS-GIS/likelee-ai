@@ -5318,7 +5318,7 @@ const ComplianceHubView = () => {
 
   return (
     <div className="space-y-6 pb-20 scroll-smooth">
-      <div className="flex justify-between items-center bg-gray-50/80 sticky top-0 z-10 py-2 backdrop-blur-sm">
+      <div className="flex justify-between items-center py-2 mb-2">
         <h2 className="text-2xl font-bold text-gray-900">Compliance Hub</h2>
         <div className="flex gap-3">
           <Button
@@ -6659,35 +6659,10 @@ const AnalyticsDashboardView = () => {
         </div>
       ) : activeTab === "Clients & Campaigns" ? (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-6">
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[200px]">
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 font-black">Total Active Budget</p>
-              <h3 className="text-5xl font-black text-gray-900 tracking-tighter">$101,000</h3>
-              <p className="text-xs font-bold text-indigo-600 flex items-center gap-1.5 mt-4">
-                <TrendingUp className="w-3.5 h-3.5" /> Across 9 campaigns
-              </p>
-            </Card>
-
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[200px]">
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 font-black">Avg ROI Estimate</p>
-              <h3 className="text-5xl font-black text-gray-900 tracking-tighter">3.1x</h3>
-              <p className="text-xs font-bold text-green-600 flex items-center gap-1.5 mt-4">
-                <ShieldCheck className="w-3.5 h-3.5" /> High Confidence
-              </p>
-            </Card>
-
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[200px]">
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 font-black">Top Spending Client</p>
-              <h3 className="text-4xl font-black text-gray-900 tracking-tighter">L'Oreal</h3>
-              <p className="text-xs font-bold text-gray-500 mt-4">$45,000 active budget</p>
-            </Card>
-          </div>
-
           <div className="grid grid-cols-2 gap-6">
             {/* Budget Distribution Pie */}
             <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-12 uppercase tracking-[0.2em]">Budget Distribution</h3>
+              <h3 className="text-xl font-black text-gray-900 mb-12 uppercase tracking-[0.2em]">Earnings by Client</h3>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -6722,15 +6697,18 @@ const AnalyticsDashboardView = () => {
 
             {/* Campaign Performance Bar Chart */}
             <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-12 uppercase tracking-[0.2em]">ROI Performance</h3>
+              <h3 className="text-xl font-black text-gray-900 mb-12 uppercase tracking-[0.2em]">Geographic Distribution</h3>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={CLIENTS_PERFORMANCE_DATA} layout="vertical" margin={{ left: 20 }}>
+                  <BarChart data={[
+                    { name: 'North America', value: 42 },
+                    { name: 'Europe', value: 18 },
+                    { name: 'Asia-Pacific', value: 8 },
+                    { name: 'Global', value: 5 },
+                  ]} margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                    <XAxis type="number" hide />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#64748b' }} />
                     <YAxis
-                      dataKey="name"
-                      type="category"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 13, fontWeight: 'bold', fill: '#64748b' }}
@@ -6740,10 +6718,10 @@ const AnalyticsDashboardView = () => {
                       cursor={{ fill: '#f8fafc' }}
                     />
                     <Bar
-                      dataKey="budget"
-                      fill="#6366f1"
-                      radius={[0, 4, 4, 0]}
-                      barSize={24}
+                      dataKey="value"
+                      fill="#3b82f6"
+                      radius={[4, 4, 0, 0]}
+                      barSize={40}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -6754,19 +6732,13 @@ const AnalyticsDashboardView = () => {
           {/* Client Performance List Table */}
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">Client Performance Overview</h3>
-              <Button variant="outline" className="font-bold gap-2">
-                <Filter className="w-4 h-4" /> Filter Clients
-              </Button>
+              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">Top Clients Performance</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/80">
                     <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Client</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Active Budget</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">ROI Estimate</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Status</th>
                     <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest text-right">Action</th>
                   </tr>
                 </thead>
@@ -6774,15 +6746,16 @@ const AnalyticsDashboardView = () => {
                   {CLIENTS_PERFORMANCE_DATA.map((client) => (
                     <tr key={client.name} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-8 py-5">
-                        <span className="text-sm font-bold text-gray-900">{client.name}</span>
-                      </td>
-                      <td className="px-8 py-5 text-sm font-black text-gray-900">${client.budget.toLocaleString()}</td>
-                      <td className="px-8 py-5 text-sm font-bold text-green-600">{client.roi}</td>
-                      <td className="px-8 py-5">
-                        <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] py-0.5 uppercase">Active</Badge>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-900">{client.name}</span>
+                          <span className="text-[10px] text-gray-500 font-bold">{Math.floor(Math.random() * 5) + 3} campaigns</span>
+                        </div>
                       </td>
                       <td className="px-8 py-5 text-right">
-                        <Button variant="ghost" size="sm" className="font-black text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 tracking-tighter">VIEW FULL ANALYSIS</Button>
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-black text-green-600">${client.budget.toLocaleString()}</span>
+                          <span className="text-[10px] text-gray-400 font-bold">{(client.budget / 45000 * 100).toFixed(1)}% of total</span>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -6790,6 +6763,29 @@ const AnalyticsDashboardView = () => {
               </table>
             </div>
           </Card>
+
+          {/* Summary Cards AT BOTTOM */}
+          <div className="grid grid-cols-3 gap-6">
+            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-black">Repeat Client Rate</p>
+              <h3 className="text-4xl font-black text-gray-900 tracking-tighter">78%</h3>
+              <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
+                <div className="h-full bg-gray-900 rounded-full" style={{ width: '78%' }} />
+              </div>
+            </Card>
+
+            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-black">Avg Campaign Duration</p>
+              <h3 className="text-4xl font-black text-gray-900 tracking-tighter">18 days</h3>
+              <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">From booking to completion</p>
+            </Card>
+
+            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-black">Client Acquisition</p>
+              <h3 className="text-4xl font-black text-gray-900 tracking-tighter text-green-600">4</h3>
+              <p className="text-[10px] font-bold text-green-600/70 mt-2 uppercase tracking-widest font-black">New clients this quarter</p>
+            </Card>
+          </div>
         </div>
       ) : activeTab === "Compliance" ? (
         <div className="space-y-6 animate-in fade-in duration-500">
