@@ -896,6 +896,19 @@ export default function CreatorDashboard() {
     name: profile?.full_name || user?.user_metadata?.full_name || "",
     email: profile?.email || user?.email || "",
     profile_photo: profile?.profile_photo_url || "",
+    location: "",
+    bio: "",
+    instagram_handle: "",
+    tiktok_handle: "",
+    instagram_connected: false,
+    instagram_followers: 0,
+    content_types: [] as string[],
+    industries: [] as string[],
+    content_restrictions: [] as string[],
+    brand_exclusivity: [] as string[],
+    price_per_month: 0,
+    royalty_percentage: 0,
+    accept_negotiations: true,
   });
 
   // Auto-show status and fetch latest once when an avatar exists
@@ -993,24 +1006,6 @@ export default function CreatorDashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [creator, setCreator] = useState<any>({
-    name: profile?.full_name || user?.user_metadata?.full_name || "",
-    email: profile?.email || user?.email || "",
-    profile_photo: profile?.profile_photo_url || "",
-    location: "",
-    bio: "",
-    instagram_handle: "",
-    tiktok_handle: "",
-    instagram_connected: false,
-    instagram_followers: 0,
-    content_types: [] as string[],
-    industries: [] as string[],
-    content_restrictions: [] as string[],
-    brand_exclusivity: [] as string[],
-    price_per_month: 0,
-    royalty_percentage: 0,
-    accept_negotiations: true,
-  });
 
   // Sync creator state when auth profile changes
   useEffect(() => {
