@@ -34,13 +34,14 @@ const Label: any = UILabel;
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login, loginWithProvider, initialized, authenticated } = useAuth();
+  const { login, loginWithProvider, initialized, authenticated, profile, logout } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [userType, setUserType] = React.useState("creator");
+  const [loginAttempted, setLoginAttempted] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -50,17 +51,29 @@ export default function Login() {
   );
 
   React.useEffect(() => {
-    if (initialized && authenticated) {
+    if (initialized && authenticated && profile) {
+      // Enforce role-based login
+      if (profile.role !== userType) {
+        const roleName = profile.role.charAt(0).toUpperCase() + profile.role.slice(1);
+        setError(`This account is registered as a ${roleName}. Please use the ${roleName} tab to sign in.`);
+        logout();
+        return;
+      }
+
       if (creatorType) {
         navigate(
           `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
           { replace: true },
         );
       } else {
-        navigate("/CreatorDashboard", { replace: true });
+        const dashboard =
+          profile.role === 'brand' ? '/BrandDashboard' :
+            profile.role === 'agency' ? '/AgencyDashboard' :
+              '/CreatorDashboard';
+        navigate(dashboard, { replace: true });
       }
     }
-  }, [initialized, authenticated, navigate, creatorType]);
+  }, [initialized, authenticated, profile, navigate, creatorType, userType, logout]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,13 +83,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      if (creatorType) {
-        navigate(
-          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
-        );
-      } else {
-        navigate("/CreatorDashboard");
-      }
+      // Redirection is handled by the useEffect above once profile is loaded
     } catch (err: any) {
       const msg = getFriendlyErrorMessage(err);
       setError(msg);
@@ -106,7 +113,13 @@ export default function Login() {
         <div className="text-center space-y-4">
           <p>You are already signed in.</p>
           <Button
-            onClick={() => navigate("/CreatorDashboard")}
+            onClick={() => {
+              const dashboard =
+                profile?.role === 'brand' ? '/BrandDashboard' :
+                  profile?.role === 'agency' ? '/AgencyDashboard' :
+                    '/CreatorDashboard';
+              navigate(dashboard);
+            }}
             className="w-full h-12 bg-gray-900 hover:bg-black text-white font-bold rounded-xl"
           >
             Go to Dashboard

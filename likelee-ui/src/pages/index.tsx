@@ -365,14 +365,7 @@ function PagesContent() {
           }
         />
 
-        <Route
-          path="/AddTalent"
-          element={
-            <ProtectedRoute allowedRoles={["brand", "agency"]}>
-              <AddTalent />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/AddTalent" element={<AddTalent />} />
 
         <Route
           path="/BrandDashboard"

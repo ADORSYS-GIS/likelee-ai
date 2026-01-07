@@ -618,29 +618,27 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 ) : (
                   <div className="flex items-center gap-3 ml-4">
-                    {currentPageName !== "OrganizationSignup" && currentPageName !== "Unauthorized" && (
-                      <>
-                        <Link
-                          to={
-                            profile?.role === "brand"
-                              ? "/BrandDashboard"
-                              : profile?.role === "agency"
-                                ? "/AgencyDashboard"
-                                : "/CreatorDashboard"
-                          }
-                          className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
-                        >
-                          {t("common.dashboard")}
-                        </Link>
-                        <button
-                          onClick={() => logout()}
-                          className="p-2 text-gray-500 hover:text-red-500 transition-colors"
-                          title={t("common.logout")}
-                        >
-                          <LogOut className="w-5 h-5" />
-                        </button>
-                      </>
+                    {currentPageName !== "OrganizationSignup" && (
+                      <Link
+                        to={
+                          profile?.role === "brand"
+                            ? "/BrandDashboard"
+                            : profile?.role === "agency"
+                              ? "/AgencyDashboard"
+                              : "/CreatorDashboard"
+                        }
+                        className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
+                      >
+                        {t("common.dashboard")}
+                      </Link>
                     )}
+                    <button
+                      onClick={() => logout()}
+                      className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                      title={t("common.logout")}
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
                   </div>
                 )}
               </div>

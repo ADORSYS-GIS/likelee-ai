@@ -23,13 +23,11 @@ export default function ProtectedRoute({
     return <Navigate to="/Unauthorized" replace />;
   }
 
-  // Redirect incomplete organization onboarding to signup
+  // Redirect incomplete onboarding to signup
   if (
     profile &&
-    (profile.role === 'brand' || profile.role === 'agency') &&
-    profile.onboarding_step !== 'complete' &&
-    location.pathname !== '/organization-signup' &&
-    location.pathname !== '/organization-register'
+    profile.onboarding_step === 'email_verification' &&
+    location.pathname !== '/organization-signup'
   ) {
     return <Navigate to="/organization-signup" replace />;
   }

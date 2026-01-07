@@ -6,11 +6,31 @@ import { useAuth } from "@/auth/AuthProvider";
 
 const Unauthorized: React.FC = () => {
     const navigate = useNavigate();
-    const { profile, logout } = useAuth();
+    const { profile } = useAuth();
 
-    const handleGoBack = async () => {
-        await logout();
-        navigate("/Login");
+    const handleGoBack = () => {
+        navigate(-1);
+    };
+
+    const handleGoHome = () => {
+        if (!profile) {
+            navigate("/");
+            return;
+        }
+
+        switch (profile.role) {
+            case "creator":
+                navigate("/CreatorDashboard");
+                break;
+            case "brand":
+                navigate("/BrandDashboard");
+                break;
+            case "agency":
+                navigate("/AgencyDashboard");
+                break;
+            default:
+                navigate("/");
+        }
     };
 
     return (
@@ -28,17 +48,18 @@ const Unauthorized: React.FC = () => {
                     </h1>
                     <p className="text-lg text-gray-600">
                         Oops! You don't have the required permissions to view this page.
-                        This area is restricted to authorized users only.
+                        This area is restricted to {profile?.role === 'creator' ? 'Brands and Agencies' : 'authorized users'} only.
                     </p>
                 </div>
 
-                <div className="flex justify-center pt-4">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                     <Button
+                        variant="outline"
                         onClick={handleGoBack}
-                        className="flex items-center gap-2 bg-[#F7B750] hover:bg-[#e5a640] text-white border-none px-8 py-6 text-lg font-bold"
+                        className="flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-100"
                     >
-                        <ArrowLeft className="w-5 h-5" />
-                        Back to Login
+                        <ArrowLeft className="w-4 h-4" />
+                        Go Back
                     </Button>
                 </div>
 
