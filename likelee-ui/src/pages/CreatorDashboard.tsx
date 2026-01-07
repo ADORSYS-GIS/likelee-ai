@@ -1006,7 +1006,6 @@ export default function CreatorDashboard() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-
   // Sync creator state when auth profile changes
   useEffect(() => {
     if (profile) {

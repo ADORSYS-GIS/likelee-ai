@@ -932,7 +932,7 @@ pub async fn create_avatar_from_video(
                     .unwrap_or(false);
                 name_ok || labels_ok
             };
-            if let Some(first_match) = arr.iter().find(|o| belongs_to_user(*o)) {
+            if let Some(first_match) = arr.iter().find(|o| belongs_to_user(o)) {
                 avatar_id_opt = first_match
                     .get("id")
                     .and_then(|v| v.as_str())
@@ -961,7 +961,7 @@ pub async fn create_avatar_from_video(
                         if let Ok(list_json) = serde_json::from_str::<serde_json::Value>(&list_body)
                         {
                             if let Some(list_arr) = list_json.as_array() {
-                                if let Some(m) = list_arr.iter().find(|o| belongs_to_user(*o)) {
+                                if let Some(m) = list_arr.iter().find(|o| belongs_to_user(o)) {
                                     avatar_id_opt =
                                         m.get("id").and_then(|v| v.as_str()).map(|s| s.to_string());
                                     status_opt = m
@@ -1026,7 +1026,7 @@ pub async fn create_avatar_from_video(
     }
 
     // No fallback: creation must return an id for this user
-    let mut debug_v2_body: Option<String> = None;
+    let debug_v2_body: Option<String> = None;
     let mut debug_v1_body: Option<String> = None;
     let mut debug_v1b_body: Option<String> = None;
     let mut debug_create_status: Option<u16> = None;
