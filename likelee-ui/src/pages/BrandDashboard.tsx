@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,8 @@ import {
   Send,
   Copy,
   CheckSquare,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import {
   Dialog,
@@ -61,6 +63,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import {
   LineChart,
@@ -606,20 +614,109 @@ export default function BrandDashboard() {
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
+  const [creators, setCreators] = useState(mockCreators);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     creator_types: [],
-    skin_tones: [],
+    races: [],
     hair_colors: [],
+    hairstyles: [],
     eye_colors: [],
+    facial_features: [],
     niches: [],
-    height_min: "",
-    height_max: "",
-    weight_min: "",
-    weight_max: "",
+    age_range: [18, 65],
+    height_range: [140, 210],
+    weight_range: [40, 150],
     bust: "",
     waist: "",
     hips: "",
   });
+
+  useEffect(() => {
+    const fetchCreators = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append("query", searchQuery);
+        if (filters.creator_types.length > 0)
+          params.append("creator_types", filters.creator_types.join(","));
+        if (filters.races.length > 0)
+          params.append("races", filters.races.join(","));
+        if (filters.hair_colors.length > 0)
+          params.append("hair_colors", filters.hair_colors.join(","));
+        if (filters.hairstyles.length > 0)
+          params.append("hairstyles", filters.hairstyles.join(","));
+        if (filters.eye_colors.length > 0)
+          params.append("eye_colors", filters.eye_colors.join(","));
+        if (filters.facial_features.length > 0)
+          params.append("facial_features", filters.facial_features.join(","));
+
+        if (filters.age_range[0] > 18)
+          params.append("age_min", filters.age_range[0].toString());
+        if (filters.age_range[1] < 65)
+          params.append("age_max", filters.age_range[1].toString());
+
+        if (filters.height_range[0] > 140)
+          params.append("height_min", filters.height_range[0].toString());
+        if (filters.height_range[1] < 210)
+          params.append("height_max", filters.height_range[1].toString());
+
+        if (filters.weight_range[0] > 40)
+          params.append("weight_min", filters.weight_range[0].toString());
+        if (filters.weight_range[1] < 150)
+          params.append("weight_max", filters.weight_range[1].toString());
+
+        const apiUrl = import.meta.env.VITE_API_BASE_URL;
+        const response = await fetch(
+          `${apiUrl}/api/faces/search?${params.toString()}`,
+        );
+        if (!response.ok) throw new Error("Failed to fetch");
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const mappedData = data.map((creator: any) => ({
+            ...creator,
+            id: creator.id || Math.random().toString(36).substr(2, 9),
+            name: creator.full_name || creator.name || "Unknown Creator",
+            image:
+              creator.profile_photo_url ||
+              creator.image ||
+              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
+            location:
+              creator.location ||
+              (creator.city && creator.state
+                ? `${creator.city}, ${creator.state}`
+                : "Unknown Location"),
+            tagline: creator.tagline || "Professional Creator",
+            followers: creator.followers || 0,
+            engagement: creator.engagement || "0%",
+            price: creator.price || 0,
+            turnaround: creator.turnaround || "N/A",
+            tags: Array.isArray(creator.tags)
+              ? creator.tags
+              : Array.isArray(creator.facial_features)
+                ? creator.facial_features
+                : [],
+            verified:
+              creator.kyc_status === "approved" || creator.verified || false,
+          }));
+          setCreators(mappedData);
+        } else {
+          console.error("API returned non-array data:", data);
+          setCreators(mockCreators);
+        }
+      } catch (error) {
+        console.error("Failed to fetch creators:", error);
+        setCreators((prev) =>
+          Array.isArray(prev) && prev.length > 0 ? prev : mockCreators,
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchCreators, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [filters, searchQuery]);
   const [contractData, setContractData] = useState({
     territory: "us_only",
     duration: "90",
@@ -789,49 +886,26 @@ export default function BrandDashboard() {
   };
 
   const getFilteredCreators = () => {
-    return mockCreators.filter((creator) => {
-      if (
-        filters.creator_types.length > 0 &&
-        !filters.creator_types.includes(creator.creator_type)
-      ) {
-        return false;
-      }
-      if (
-        filters.skin_tones.length > 0 &&
-        !filters.skin_tones.includes(creator.skin_tone)
-      ) {
-        return false;
-      }
-      if (
-        filters.hair_colors.length > 0 &&
-        !filters.hair_colors.includes(creator.hair_color)
-      ) {
-        return false;
-      }
-      if (
-        filters.eye_colors.length > 0 &&
-        !filters.eye_colors.includes(creator.eye_color)
-      ) {
-        return false;
-      }
-      if (filters.niches.length > 0) {
-        const hasNiche = filters.niches.some((n) =>
-          creator.niches?.includes(n),
-        );
-        if (!hasNiche) return false;
-      }
-      return true;
-    });
+    return creators;
   };
 
   const getActiveFilterCount = () => {
-    return (
+    let count =
       filters.creator_types.length +
-      filters.skin_tones.length +
+      filters.races.length +
       filters.hair_colors.length +
+      filters.hairstyles.length +
       filters.eye_colors.length +
-      filters.niches.length
-    );
+      filters.facial_features.length +
+      filters.niches.length;
+
+    if (filters.age_range[0] !== 18 || filters.age_range[1] !== 65) count++;
+    if (filters.height_range[0] !== 140 || filters.height_range[1] !== 210)
+      count++;
+    if (filters.weight_range[0] !== 40 || filters.weight_range[1] !== 150)
+      count++;
+
+    return count;
   };
 
   const renderEscrowDetails = () => (
@@ -1602,6 +1676,49 @@ export default function BrandDashboard() {
     );
   };
 
+  const FilterDropdown = ({ label, category, options }) => (
+    <div className="space-y-2">
+      <Label className="text-sm font-semibold text-gray-900">{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="w-full justify-between border-2 border-gray-300 bg-white hover:bg-gray-50 h-10"
+          >
+            <span className="truncate text-sm">
+              {filters[category].length > 0
+                ? `${filters[category].length} selected`
+                : `Select ${label}`}
+            </span>
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[240px] p-2" align="start">
+          <div className="space-y-1 max-h-[300px] overflow-y-auto">
+            {options.map((option) => (
+              <div
+                key={option}
+                className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleFilter(category, option);
+                }}
+              >
+                <Checkbox
+                  checked={filters[category].includes(option)}
+                  onCheckedChange={() => toggleFilter(category, option)}
+                />
+                <Label className="text-sm text-gray-700 cursor-pointer flex-1 capitalize">
+                  {option}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   const renderMarketplace = () => {
     if (showCreatorProfile) {
       return renderCreatorProfile();
@@ -1649,6 +1766,73 @@ export default function BrandDashboard() {
           </div>
         </Card>
 
+        {/* Active Filter Chips */}
+        {activeFilterCount > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(filters).map(([category, values]) => {
+              if (
+                Array.isArray(values) &&
+                !category.includes("range") &&
+                values.length > 0
+              ) {
+                return values.map((value) => (
+                  <Badge
+                    key={`${category}-${value}`}
+                    variant="secondary"
+                    className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 flex items-center gap-1"
+                  >
+                    <span className="capitalize">{value}</span>
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-blue-900"
+                      onClick={() => toggleFilter(category, value)}
+                    />
+                  </Badge>
+                ));
+              }
+              return null;
+            })}
+            {filters.age_range[0] !== 18 || filters.age_range[1] !== 65 ? (
+              <Badge
+                variant="secondary"
+                className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 flex items-center gap-1"
+              >
+                Age: {filters.age_range[0]}-{filters.age_range[1]}
+                <X
+                  className="w-3 h-3 cursor-pointer hover:text-blue-900"
+                  onClick={() =>
+                    setFilters({ ...filters, age_range: [18, 65] })
+                  }
+                />
+              </Badge>
+            ) : null}
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-7 w-7 rounded-full shadow-sm"
+              title="Clear All Filters"
+              onClick={() =>
+                setFilters({
+                  creator_types: [],
+                  races: [],
+                  hair_colors: [],
+                  hairstyles: [],
+                  eye_colors: [],
+                  facial_features: [],
+                  niches: [],
+                  age_range: [18, 65],
+                  height_range: [140, 210],
+                  weight_range: [40, 150],
+                  bust: "",
+                  waist: "",
+                  hips: "",
+                })
+              }
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Advanced Filters Panel */}
         {showFilters && (
           <Card className="p-6 bg-gray-50 border-2 border-gray-300">
@@ -1661,14 +1845,15 @@ export default function BrandDashboard() {
                 onClick={() =>
                   setFilters({
                     creator_types: [],
-                    skin_tones: [],
+                    races: [],
                     hair_colors: [],
+                    hairstyles: [],
                     eye_colors: [],
+                    facial_features: [],
                     niches: [],
-                    height_min: "",
-                    height_max: "",
-                    weight_min: "",
-                    weight_max: "",
+                    age_range: [18, 65],
+                    height_range: [140, 210],
+                    weight_range: [40, 150],
                     bust: "",
                     waist: "",
                     hips: "",
@@ -1679,242 +1864,195 @@ export default function BrandDashboard() {
               </Button>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Creator Type */}
-              <div>
-                <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                  Creator Type
-                </Label>
-                <div className="space-y-2">
-                  {["influencer", "ugc", "model", "athlete", "actor"].map(
-                    (type) => (
-                      <div key={type} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={filters.creator_types.includes(type)}
-                          onCheckedChange={() =>
-                            toggleFilter("creator_types", type)
-                          }
-                        />
-                        <Label className="text-sm text-gray-700 capitalize cursor-pointer">
-                          {type}
-                        </Label>
-                      </div>
-                    ),
-                  )}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <FilterDropdown
+                label="Creator Type"
+                category="creator_types"
+                options={["influencer", "ugc", "model", "athlete", "actor"]}
+              />
+              <FilterDropdown
+                label="Race"
+                category="races"
+                options={[
+                  "White",
+                  "Black",
+                  "Asian",
+                  "Hispanic",
+                  "Middle Eastern",
+                  "Mixed",
+                  "Other",
+                ]}
+              />
+              <FilterDropdown
+                label="Hair Color"
+                category="hair_colors"
+                options={[
+                  "Blonde",
+                  "Brown",
+                  "Dark Brown",
+                  "Black",
+                  "Red",
+                  "Auburn",
+                  "Gray",
+                  "Other",
+                ]}
+              />
+              <FilterDropdown
+                label="Hairstyle"
+                category="hairstyles"
+                options={[
+                  "Straight",
+                  "Wavy",
+                  "Curly",
+                  "Coily",
+                  "Braids",
+                  "Locs",
+                  "Bald",
+                  "Short",
+                  "Medium",
+                  "Long",
+                ]}
+              />
+              <FilterDropdown
+                label="Eye Color"
+                category="eye_colors"
+                options={["Blue", "Green", "Brown", "Hazel", "Gray", "Amber"]}
+              />
+              <FilterDropdown
+                label="Facial Features"
+                category="facial_features"
+                options={[
+                  "Dimples",
+                  "Freckles",
+                  "Tattoos",
+                  "Piercings",
+                  "Facial Hair",
+                  "Glasses",
+                  "High Cheekbones",
+                  "Strong Jawline",
+                ]}
+              />
+              <FilterDropdown
+                label="Niches"
+                category="niches"
+                options={[
+                  "Fashion",
+                  "Beauty",
+                  "Lifestyle",
+                  "Sports",
+                  "Fitness",
+                  "Sustainable",
+                  "Streetwear",
+                  "Editorial",
+                ]}
+              />
+            </div>
+
+            {/* Range Sliders */}
+            <div className="space-y-8 pt-6 mt-6 border-t border-gray-200">
+              <div className="grid md:grid-cols-3 gap-8">
+                {/* Age Slider */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-gray-900">
+                      Age Range
+                    </Label>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {filters.age_range[0]} - {filters.age_range[1]} years
+                    </span>
+                  </div>
+                  <Slider
+                    defaultValue={[18, 65]}
+                    max={65}
+                    min={18}
+                    step={1}
+                    value={filters.age_range}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, age_range: value })
+                    }
+                    className="py-4"
+                  />
+                </div>
+
+                {/* Height Slider */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-gray-900">
+                      Height Range
+                    </Label>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {filters.height_range[0]} - {filters.height_range[1]} cm
+                    </span>
+                  </div>
+                  <Slider
+                    defaultValue={[140, 210]}
+                    max={210}
+                    min={140}
+                    step={1}
+                    value={filters.height_range}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, height_range: value })
+                    }
+                    className="py-4"
+                  />
+                </div>
+
+                {/* Weight Slider */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold text-gray-900">
+                      Weight Range
+                    </Label>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {filters.weight_range[0]} - {filters.weight_range[1]} kg
+                    </span>
+                  </div>
+                  <Slider
+                    defaultValue={[40, 150]}
+                    max={150}
+                    min={40}
+                    step={1}
+                    value={filters.weight_range}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, weight_range: value })
+                    }
+                    className="py-4"
+                  />
                 </div>
               </div>
 
-              {/* Skin Tone */}
-              <div>
-                <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                  Skin Tone
-                </Label>
-                <div className="space-y-2">
-                  {[
-                    "Fair",
-                    "Light",
-                    "Medium",
-                    "Tan",
-                    "Olive",
-                    "Brown",
-                    "Dark",
-                  ].map((tone) => (
-                    <div key={tone} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={filters.skin_tones.includes(tone)}
-                        onCheckedChange={() => toggleFilter("skin_tones", tone)}
-                      />
-                      <Label className="text-sm text-gray-700 cursor-pointer">
-                        {tone}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Hair Color */}
-              <div>
-                <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                  Hair Color
-                </Label>
-                <div className="space-y-2">
-                  {[
-                    "Blonde",
-                    "Brown",
-                    "Dark Brown",
-                    "Black",
-                    "Red",
-                    "Auburn",
-                    "Gray",
-                    "Other",
-                  ].map((color) => (
-                    <div key={color} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={filters.hair_colors.includes(color)}
-                        onCheckedChange={() =>
-                          toggleFilter("hair_colors", color)
-                        }
-                      />
-                      <Label className="text-sm text-gray-700 cursor-pointer">
-                        {color}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Eye Color */}
-              <div>
-                <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                  Eye Color
-                </Label>
-                <div className="space-y-2">
-                  {["Blue", "Green", "Brown", "Hazel", "Gray", "Amber"].map(
-                    (color) => (
-                      <div key={color} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={filters.eye_colors.includes(color)}
-                          onCheckedChange={() =>
-                            toggleFilter("eye_colors", color)
-                          }
-                        />
-                        <Label className="text-sm text-gray-700 cursor-pointer">
-                          {color}
-                        </Label>
-                      </div>
-                    ),
-                  )}
-                </div>
-              </div>
-
-              {/* Niches */}
-              <div>
-                <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                  Niches
-                </Label>
-                <div className="space-y-2">
-                  {[
-                    "Fashion",
-                    "Beauty",
-                    "Lifestyle",
-                    "Sports",
-                    "Fitness",
-                    "Sustainable",
-                    "Streetwear",
-                    "Editorial",
-                  ].map((niche) => (
-                    <div key={niche} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={filters.niches.includes(niche)}
-                        onCheckedChange={() => toggleFilter("niches", niche)}
-                      />
-                      <Label className="text-sm text-gray-700 cursor-pointer">
-                        {niche}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Model Measurements (only show if model type is selected or no type filter) */}
+              {/* Model Measurements */}
               {(filters.creator_types.length === 0 ||
                 filters.creator_types.includes("model")) && (
-                <div className="md:col-span-2 lg:col-span-3">
+                <div className="pt-4 border-t border-gray-100">
                   <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                    Model Measurements (Optional)
+                    Model Measurements (inches)
                   </Label>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">
-                        Height Range
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Min (e.g., 5ft 6in)"
-                          value={filters.height_min}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              height_min: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                        <Input
-                          placeholder="Max (e.g., 6ft 0in)"
-                          value={filters.height_max}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              height_max: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">
-                        Weight Range (lbs)
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Min"
-                          value={filters.weight_min}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              weight_min: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max"
-                          value={filters.weight_max}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              weight_max: e.target.value,
-                            })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">
-                        Measurements (inches)
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Bust"
-                          value={filters.bust}
-                          onChange={(e) =>
-                            setFilters({ ...filters, bust: e.target.value })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                        <Input
-                          placeholder="Waist"
-                          value={filters.waist}
-                          onChange={(e) =>
-                            setFilters({ ...filters, waist: e.target.value })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                        <Input
-                          placeholder="Hips"
-                          value={filters.hips}
-                          onChange={(e) =>
-                            setFilters({ ...filters, hips: e.target.value })
-                          }
-                          className="border-2 border-gray-300"
-                        />
-                      </div>
-                    </div>
+                  <div className="flex gap-4 max-w-md">
+                    <Input
+                      placeholder="Bust"
+                      value={filters.bust}
+                      onChange={(e) =>
+                        setFilters({ ...filters, bust: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                    <Input
+                      placeholder="Waist"
+                      value={filters.waist}
+                      onChange={(e) =>
+                        setFilters({ ...filters, waist: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                    <Input
+                      placeholder="Hips"
+                      value={filters.hips}
+                      onChange={(e) =>
+                        setFilters({ ...filters, hips: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
                   </div>
                 </div>
               )}
@@ -1937,14 +2075,15 @@ export default function BrandDashboard() {
               onClick={() =>
                 setFilters({
                   creator_types: [],
-                  skin_tones: [],
+                  races: [],
                   hair_colors: [],
+                  hairstyles: [],
                   eye_colors: [],
+                  facial_features: [],
                   niches: [],
-                  height_min: "",
-                  height_max: "",
-                  weight_min: "",
-                  weight_max: "",
+                  age_range: [18, 65],
+                  height_range: [140, 210],
+                  weight_range: [40, 150],
                   bust: "",
                   waist: "",
                   hips: "",
@@ -1958,124 +2097,110 @@ export default function BrandDashboard() {
         </div>
 
         {/* Creator Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {filteredCreators.map((creator) => (
-            <Card
-              key={creator.id}
-              className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-all"
-            >
-              <div className="relative mb-4">
-                <img
-                  src={creator.image}
-                  alt={creator.name}
-                  className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                />
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
-                {creator.name}
-              </h3>
-              <p className="text-sm text-gray-600 mb-1">{creator.location}</p>
-              <p className="text-sm text-gray-700 mb-4">{creator.tagline}</p>
-
-              <div className="flex gap-2 mb-4">
-                {creator.tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    className="bg-gray-100 text-gray-700 border border-gray-300 text-xs"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Followers</p>
-                  <p className="font-bold text-gray-900">
-                    {(creator.followers / 1000).toFixed(1)}K
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Engagement</p>
-                  <p className="font-bold text-gray-900">
-                    {creator.engagement}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Turnaround</p>
-                  <p className="font-bold text-gray-900">
-                    {creator.turnaround}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-600">From</p>
-                  <p className="font-bold text-gray-900">${creator.price}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Button
-                  onClick={() => handleCreatorHire(creator)}
-                  className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white"
-                >
-                  Request Cameo
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-2 border-gray-300"
-                  >
-                    <Play className="w-4 h-4 mr-1" />
-                    Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-2 border-gray-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleViewProfile(creator);
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    Profile
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {filteredCreators.length === 0 && (
-          <Card className="p-12 bg-white border border-gray-200 text-center">
+        {loading ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F7B750] mb-4"></div>
+            <p className="text-gray-600 font-medium">Searching for talent...</p>
+          </div>
+        ) : filteredCreators.length === 0 ? (
+          <div className="col-span-full text-center py-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
             <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No creators match your filters
+              No creators found
             </h3>
-            <p className="text-gray-600 mb-6">
-              Try adjusting your search criteria
+            <p className="text-gray-600 max-w-md mx-auto">
+              We couldn't find any creators matching your current filters. Try
+              adjusting your criteria or clearing all filters.
             </p>
-            <Button
-              onClick={() =>
-                setFilters({
-                  creator_types: [],
-                  skin_tones: [],
-                  hair_colors: [],
-                  eye_colors: [],
-                  niches: [],
-                  height_min: "",
-                  height_max: "",
-                  weight_min: "",
-                  weight_max: "",
-                  bust: "",
-                  waist: "",
-                  hips: "",
-                })
-              }
-            >
-              Clear All Filters
-            </Button>
-          </Card>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {filteredCreators.map((creator) => (
+              <Card
+                key={creator.id}
+                className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-all"
+              >
+                <div className="relative mb-4">
+                  <img
+                    src={creator.image}
+                    alt={creator.name}
+                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                  />
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-1">
+                  {creator.name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-1">{creator.location}</p>
+                <p className="text-sm text-gray-700 mb-4">{creator.tagline}</p>
+
+                <div className="flex gap-2 mb-4">
+                  {creator.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      className="bg-gray-100 text-gray-700 border border-gray-300 text-xs"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Followers</p>
+                    <p className="font-bold text-gray-900">
+                      {(creator.followers / 1000).toFixed(1)}K
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Engagement</p>
+                    <p className="font-bold text-gray-900">
+                      {creator.engagement}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Turnaround</p>
+                    <p className="font-bold text-gray-900">
+                      {creator.turnaround}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">From</p>
+                    <p className="font-bold text-gray-900">${creator.price}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => handleCreatorHire(creator)}
+                    className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white"
+                  >
+                    Request Cameo
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-2 border-gray-300"
+                    >
+                      <Play className="w-4 h-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-2 border-gray-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewProfile(creator);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Profile
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     );
@@ -5916,7 +6041,7 @@ export default function BrandDashboard() {
                       onCheckedChange={(checked) =>
                         setContractData({
                           ...contractData,
-                          add_disclaimer: checked,
+                          add_disclaimer: !!checked,
                         })
                       }
                     />
@@ -5946,7 +6071,7 @@ export default function BrandDashboard() {
                       onCheckedChange={(checked) =>
                         setContractData({
                           ...contractData,
-                          add_restrictions: checked,
+                          add_restrictions: !!checked,
                         })
                       }
                     />
@@ -5967,7 +6092,7 @@ export default function BrandDashboard() {
                                   ...contractData,
                                   restrictions: {
                                     ...contractData.restrictions,
-                                    competitors: checked,
+                                    competitors: !!checked,
                                   },
                                 })
                               }
@@ -5984,7 +6109,7 @@ export default function BrandDashboard() {
                                   ...contractData,
                                   restrictions: {
                                     ...contractData.restrictions,
-                                    controversial: checked,
+                                    controversial: !!checked,
                                   },
                                 })
                               }
@@ -6001,7 +6126,7 @@ export default function BrandDashboard() {
                                   ...contractData,
                                   restrictions: {
                                     ...contractData.restrictions,
-                                    political: checked,
+                                    political: !!checked,
                                   },
                                 })
                               }
@@ -6018,7 +6143,7 @@ export default function BrandDashboard() {
                                   ...contractData,
                                   restrictions: {
                                     ...contractData.restrictions,
-                                    adult: checked,
+                                    adult: !!checked,
                                   },
                                 })
                               }
@@ -6038,7 +6163,7 @@ export default function BrandDashboard() {
                       onCheckedChange={(checked) =>
                         setContractData({
                           ...contractData,
-                          add_liability: checked,
+                          add_liability: !!checked,
                         })
                       }
                     />
@@ -6059,7 +6184,7 @@ export default function BrandDashboard() {
                       onCheckedChange={(checked) =>
                         setContractData({
                           ...contractData,
-                          add_special_terms: checked,
+                          add_special_terms: !!checked,
                         })
                       }
                     />
