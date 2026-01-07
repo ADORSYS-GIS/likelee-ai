@@ -362,7 +362,14 @@ function PagesContent() {
           }
         />
 
-        <Route path="/AddTalent" element={<AddTalent />} />
+        <Route
+          path="/AddTalent"
+          element={
+            <ProtectedRoute>
+              <AddTalent />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/BrandDashboard"
