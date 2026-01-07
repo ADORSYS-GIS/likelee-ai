@@ -144,8 +144,12 @@ export default function OrganizationSignup() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const type = urlParams.get("type");
-    if (type) setOrgType(type);
+    let type = urlParams.get("type");
+    if (type) {
+      if (type === 'brand') type = 'brand_company';
+      if (type === 'agency') type = 'marketing_agency';
+      setOrgType(type);
+    }
   }, []);
 
   // Check for existing session and onboarding step
@@ -164,7 +168,13 @@ export default function OrganizationSignup() {
             if (orgProfile.onboarding_step === 'email_verification') {
               // User verified email but hasn't completed step 2
               setProfileId(orgProfile.id);
-              setOrgType(orgProfile.organization_type);
+
+              // Normalize orgType to match frontend expectations
+              let normalizedType = orgProfile.organization_type;
+              if (normalizedType === 'brand') normalizedType = 'brand_company';
+              if (normalizedType === 'agency') normalizedType = 'marketing_agency';
+
+              setOrgType(normalizedType);
               setFormData(prev => ({
                 ...prev,
                 email: orgProfile.email || user.email || ""
@@ -530,6 +540,22 @@ export default function OrganizationSignup() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               )}
+
+              {/* Added Go to Dashboard button */}
+              <Button
+                onClick={() => {
+                  if (orgType === 'brand' || orgType === 'production_studio') {
+                    window.location.href = '/BrandDashboard';
+                  } else {
+                    window.location.href = '/AgencyDashboard';
+                  }
+                }}
+                variant="outline"
+                className="mt-4 w-full h-12 border-2 border-black rounded-none font-bold hover:bg-gray-100"
+              >
+                Go to Dashboard
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
             </div>
           )}
         </Card>

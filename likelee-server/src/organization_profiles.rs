@@ -152,12 +152,24 @@ pub async fn register(
     }
     let v: serde_json::Value = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    // 3) Set role in profiles table
+
+    // 3) Set role in profiles table based on organization type
+    let role = match payload.organization_type.as_str() {
+        "brand" | "production_studio" => "brand",
+        "marketing_agency" | "talent_agency" | "sports_agency" => "agency",
+        _ => "brand", // Default to brand if unknown
+    };
+
+    // Use upsert to ensure the profile exists and has the correct role
     let _ = state
         .pg
         .from("profiles")
-        .update(serde_json::json!({ "role": "brand" }).to_string())
-        .eq("id", &owner_user_id)
+        .auth(state.supabase_service_key.clone())
+        .upsert(serde_json::json!({ 
+            "id": &owner_user_id, 
+            "role": role,
+            "email": payload.email 
+        }).to_string())
         .execute()
         .await;
 
@@ -290,6 +302,7 @@ pub async fn update(
     let resp = state
         .pg
         .from("organization_profiles")
+        .auth(state.supabase_service_key.clone()) // Use service key
         .eq("id", &id)
         .update(body)
         .execute()
