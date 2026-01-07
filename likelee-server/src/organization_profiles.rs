@@ -4,9 +4,9 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use reqwest::Client;
 
 // Accept either a single string or an array of strings for primary_goal
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -101,7 +101,10 @@ pub async fn register(
         .get("id")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing id in create user response".to_string()))?;
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "missing id in create user response".to_string(),
+        ))?;
 
     // Generate a signup confirmation link so the brand can verify their email
     let gen_link_url = format!("{}/auth/v1/admin/generate_link", state.supabase_url);
@@ -142,8 +145,8 @@ pub async fn register(
     let email = payload.email.clone();
     let organization_name = payload.organization_name.clone();
 
-    let mut org = serde_json::to_value(&payload)
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let mut org =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if let serde_json::Value::Object(ref mut map) = org {
         map.insert(
             "owner_user_id".into(),

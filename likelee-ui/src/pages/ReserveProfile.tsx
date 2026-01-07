@@ -797,7 +797,9 @@ export default function ReserveProfile() {
         .from("likelee-public")
         .upload(path, file, { upsert: false });
       if (error) throw error;
-      const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
+      const { data } = supabase.storage
+        .from("likelee-public")
+        .getPublicUrl(path);
       const url = data.publicUrl;
       // Call moderation endpoint
       try {

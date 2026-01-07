@@ -89,7 +89,10 @@ function FilePicker({
 
 export default function CameoUpload() {
   const { user } = useAuth();
-  const [video, setVideo] = useState<FileState>({ uploading: false, progress: 0 });
+  const [video, setVideo] = useState<FileState>({
+    uploading: false,
+    progress: 0,
+  });
 
   const anyUploading = video.uploading;
 
@@ -113,11 +116,7 @@ export default function CameoUpload() {
           .select("cameo_front_url")
           .eq("id", user.id)
           .maybeSingle();
-        if (
-          !error &&
-          data &&
-          data.cameo_front_url
-        ) {
+        if (!error && data && data.cameo_front_url) {
           setVideo((prev) => ({
             ...prev,
             previewUrl: data.cameo_front_url || prev.previewUrl,
@@ -154,17 +153,30 @@ export default function CameoUpload() {
     if (!user) throw new Error("Not authenticated");
     if (!supabase) throw new Error("Supabase not configured");
     const path = `faces/${user.id}/train/train.mp4`;
-    setVideo((prev) => ({ ...prev, uploading: true, progress: 0, error: undefined }));
+    setVideo((prev) => ({
+      ...prev,
+      uploading: true,
+      progress: 0,
+      error: undefined,
+    }));
     const { error } = await supabase.storage
       .from("likelee-public")
-      .upload(path, file, { upsert: true, contentType: file.type || "video/mp4" });
+      .upload(path, file, {
+        upsert: true,
+        contentType: file.type || "video/mp4",
+      });
     if (error) {
       setVideo((prev) => ({ ...prev, uploading: false, error: error.message }));
       throw error;
     }
     const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
     const url = data.publicUrl;
-    setVideo((prev) => ({ ...prev, uploading: false, downloadUrl: url, progress: 100 }));
+    setVideo((prev) => ({
+      ...prev,
+      uploading: false,
+      downloadUrl: url,
+      progress: 100,
+    }));
     // Persist the training video url back to profiles
     try {
       await supabase
@@ -199,14 +211,17 @@ export default function CameoUpload() {
         <CardHeader>
           <CardTitle>Cameo Images</CardTitle>
           <CardDescription>
-            Upload a short training video of yourself. Ensure good lighting and a clear view of your face. Include the required consent statement at the beginning.
+            Upload a short training video of yourself. Ensure good lighting and
+            a clear view of your face. Include the required consent statement at
+            the beginning.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-10 min-h-96">
             <div className="mb-6 text-center">
               <p className="text-sm text-gray-600">
-                MP4 recommended. 30–120 seconds. Keep a neutral expression, speak the consent statement clearly, and ensure good lighting.
+                MP4 recommended. 30–120 seconds. Keep a neutral expression,
+                speak the consent statement clearly, and ensure good lighting.
               </p>
             </div>
             <div className="grid grid-cols-1 gap-6">
@@ -243,7 +258,8 @@ export default function CameoUpload() {
       </Card>
 
       <div className="mt-6 text-sm text-muted-foreground">
-        Tips: Use good lighting, keep a neutral expression, frame your face clearly, and read the consent statement at the start of the video.
+        Tips: Use good lighting, keep a neutral expression, frame your face
+        clearly, and read the consent statement at the start of the video.
       </div>
     </div>
   );

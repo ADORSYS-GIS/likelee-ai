@@ -771,11 +771,20 @@ export default function CreatorDashboard() {
     const interval = setInterval(async () => {
       attempts += 1;
       try {
-        const r = await fetch(api(`/api/creatify/avatar/status?user_id=${encodeURIComponent(uid)}`));
+        const r = await fetch(
+          api(`/api/creatify/avatar/status?user_id=${encodeURIComponent(uid)}`),
+        );
         if (r.ok) {
           const j = await r.json();
-          setAvatarStatus(j?.status || j?.process_status || (j?.is_active ? "active" : null));
-          if (j?.status === "completed" || j?.status === "error" || j?.process_status === "ready to use" || attempts > 120) {
+          setAvatarStatus(
+            j?.status || j?.process_status || (j?.is_active ? "active" : null),
+          );
+          if (
+            j?.status === "completed" ||
+            j?.status === "error" ||
+            j?.process_status === "ready to use" ||
+            attempts > 120
+          ) {
             clearInterval(interval);
           }
         }
@@ -806,20 +815,39 @@ export default function CreatorDashboard() {
       });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
-      if (json?.debug_request || json?.debug_v2_body || json?.debug_v1_body || json?.debug_v1b_body) {
+      if (
+        json?.debug_request ||
+        json?.debug_v2_body ||
+        json?.debug_v1_body ||
+        json?.debug_v1b_body
+      ) {
         console.group("Creatify Avatar Debug");
-        if (json.debug_request) console.log("payload to Creatify (personas_v2)", json.debug_request);
-        if (json.debug_v2_body) console.log("raw v2 response (/api/personas_v2)", json.debug_v2_body);
-        if (json.debug_v1_body) console.log("raw v1 response (/api/personas)", json.debug_v1_body);
-        if (json.debug_v1b_body) console.log("raw v1 alt response (/api/personas alt)", json.debug_v1b_body);
+        if (json.debug_request)
+          console.log("payload to Creatify (personas_v2)", json.debug_request);
+        if (json.debug_v2_body)
+          console.log("raw v2 response (/api/personas_v2)", json.debug_v2_body);
+        if (json.debug_v1_body)
+          console.log("raw v1 response (/api/personas)", json.debug_v1_body);
+        if (json.debug_v1b_body)
+          console.log(
+            "raw v1 alt response (/api/personas alt)",
+            json.debug_v1b_body,
+          );
         console.groupEnd();
       }
       setAvatarStatus(json?.status || "pending");
       // start polling
       startStatusPolling();
-      toast({ title: "Avatar request sent", description: "Waiting for review (typically 1–2 days)." });
+      toast({
+        title: "Avatar request sent",
+        description: "Waiting for review (typically 1–2 days).",
+      });
     } catch (e: any) {
-      toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to start avatar training" });
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: e?.message || "Failed to start avatar training",
+      });
     } finally {
       setAvatarOpLoading(false);
     }
@@ -829,18 +857,37 @@ export default function CreatorDashboard() {
   const handleRefreshAvatarStatus = async () => {
     if (!user?.id) return;
     try {
-      const r = await fetch(api(`/api/creatify/avatar/status?user_id=${encodeURIComponent(user.id)}`));
+      const r = await fetch(
+        api(
+          `/api/creatify/avatar/status?user_id=${encodeURIComponent(user.id)}`,
+        ),
+      );
       if (!r.ok) throw new Error(await r.text());
       const j = await r.json();
-      const isActive = j?.is_active === true || j?.status === "active" || j?.process_status?.toLowerCase().includes("ready");
-      setAvatarStatus(isActive ? "ready" : (j?.status || j?.process_status || "pending"));
+      const isActive =
+        j?.is_active === true ||
+        j?.status === "active" ||
+        j?.process_status?.toLowerCase().includes("ready");
+      setAvatarStatus(
+        isActive ? "ready" : j?.status || j?.process_status || "pending",
+      );
       if (isActive) {
-        toast({ title: "Avatar ready", description: "You can now create videos." });
+        toast({
+          title: "Avatar ready",
+          description: "You can now create videos.",
+        });
       } else {
-        toast({ title: "Status updated", description: `Avatar status: ${j?.status || j?.process_status || "pending"}` });
+        toast({
+          title: "Status updated",
+          description: `Avatar status: ${j?.status || j?.process_status || "pending"}`,
+        });
       }
     } catch (e: any) {
-      toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to fetch avatar status" });
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: e?.message || "Failed to fetch avatar status",
+      });
     }
   };
 
@@ -862,25 +909,43 @@ export default function CreatorDashboard() {
       handleRefreshAvatarStatus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, (creator as any)?.creatify_avatar_id, (creator as any)?.creatify_avatar_status]);
+  }, [
+    user?.id,
+    (creator as any)?.creatify_avatar_id,
+    (creator as any)?.creatify_avatar_status,
+  ]);
 
   // Creatify: Check avatar status by explicit avatar_id
   const handleCheckAvatarStatusById = async () => {
     try {
       let id: string | undefined = (creator as any)?.creatify_avatar_id;
       if (!id || typeof id !== "string" || !id.trim()) {
-        const entered = window.prompt("Enter your Creatify avatar_id to check status:");
+        const entered = window.prompt(
+          "Enter your Creatify avatar_id to check status:",
+        );
         if (!entered) return;
         id = entered.trim();
       }
-      const r = await fetch(api(`/api/creatify/avatar/status/by-id?avatar_id=${encodeURIComponent(id)}`));
+      const r = await fetch(
+        api(
+          `/api/creatify/avatar/status/by-id?avatar_id=${encodeURIComponent(id)}`,
+        ),
+      );
       if (!r.ok) throw new Error(await r.text());
       const j = await r.json();
-      const status = j?.process_status || j?.status || (j?.is_active ? "active" : "unknown");
+      const status =
+        j?.process_status || j?.status || (j?.is_active ? "active" : "unknown");
       setAvatarStatus(status || "pending");
-      toast({ title: "Avatar lookup", description: `id: ${id}\nstatus: ${status}` });
+      toast({
+        title: "Avatar lookup",
+        description: `id: ${id}\nstatus: ${status}`,
+      });
     } catch (e: any) {
-      toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to check avatar by id" });
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: e?.message || "Failed to check avatar by id",
+      });
     }
   };
 
@@ -888,7 +953,8 @@ export default function CreatorDashboard() {
   const handleCreateVideo = async () => {
     if (!user?.id) return;
     try {
-      const displayName = profile?.full_name || user?.user_metadata?.full_name || "I";
+      const displayName =
+        profile?.full_name || user?.user_metadata?.full_name || "I";
       const script = `Hi, I'm ${displayName}. I'm excited to join Likelee AI. Likelee.ai helps creators and brands produce on-brand video content quickly using safe, consented likeness and voice. This demo was generated by my Likelee avatar.`;
       const r = await fetch(api(`/api/creatify/lipsyncs`), {
         method: "POST",
@@ -897,9 +963,16 @@ export default function CreatorDashboard() {
       });
       if (!r.ok) throw new Error(await r.text());
       const j = await r.json();
-      toast({ title: "Video creation started", description: `Job: ${j?.creatify_job_id || "submitted"}` });
+      toast({
+        title: "Video creation started",
+        description: `Job: ${j?.creatify_job_id || "submitted"}`,
+      });
     } catch (e: any) {
-      toast({ variant: "destructive", title: t("common.error"), description: e?.message || "Failed to start video" });
+      toast({
+        variant: "destructive",
+        title: t("common.error"),
+        description: e?.message || "Failed to start video",
+      });
     }
   };
 
@@ -2138,7 +2211,9 @@ export default function CreatorDashboard() {
 
         if (uploadError) throw uploadError;
 
-        const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
+        const { data } = supabase.storage
+          .from("likelee-public")
+          .getPublicUrl(path);
         const publicUrl = data.publicUrl;
 
         const { error: dbError } = await supabase
@@ -3283,7 +3358,11 @@ export default function CreatorDashboard() {
                   <Upload className="w-4 h-4 mr-2" />
                   {t("creatorDashboard.cameoVideo.actions.reupload")}
                 </Button>
-                <Button variant="outline" className="border-2 border-gray-300" disabled={uploadingPhoto}>
+                <Button
+                  variant="outline"
+                  className="border-2 border-gray-300"
+                  disabled={uploadingPhoto}
+                >
                   <Download className="w-4 h-4 mr-2" />
                   {t("creatorDashboard.cameoVideo.actions.download")}
                 </Button>
@@ -3294,33 +3373,54 @@ export default function CreatorDashboard() {
                 <Button
                   className="mx-auto"
                   onClick={handleGenerateAvatar}
-                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto || Boolean((creator as any)?.creatify_avatar_id)}
+                  disabled={
+                    !creator?.cameo_front_url ||
+                    avatarOpLoading ||
+                    uploadingPhoto ||
+                    Boolean((creator as any)?.creatify_avatar_id)
+                  }
                 >
                   {avatarOpLoading ? t("common.loading") : "Create Avatar"}
                 </Button>
                 {uploadingPhoto && (
-                  <p className="text-xs text-gray-500 mt-3">Uploading video… please wait</p>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Uploading video… please wait
+                  </p>
                 )}
                 {avatarStatus && (
                   <p
                     className={`text-xs mt-3 ${
-                      (avatarStatus === "ready" || avatarStatus === "active")
+                      avatarStatus === "ready" || avatarStatus === "active"
                         ? "text-green-600"
-                        : (["reviewing", "pending", "queued"].includes(String(avatarStatus).toLowerCase()))
-                        ? "text-amber-600"
-                        : (["failed", "rejected", "error"].includes(String(avatarStatus).toLowerCase()))
-                        ? "text-red-600"
-                        : "text-gray-500"
+                        : ["reviewing", "pending", "queued"].includes(
+                              String(avatarStatus).toLowerCase(),
+                            )
+                          ? "text-amber-600"
+                          : ["failed", "rejected", "error"].includes(
+                                String(avatarStatus).toLowerCase(),
+                              )
+                            ? "text-red-600"
+                            : "text-gray-500"
                     }`}
                   >
                     Status: {avatarStatus} · Typically approved in 1–2 days
                   </p>
                 )}
                 <div className="flex items-center justify-center gap-3 mt-4">
-                  <Button variant="outline" onClick={handleRefreshAvatarStatus} disabled={!creator?.cameo_front_url}>
+                  <Button
+                    variant="outline"
+                    onClick={handleRefreshAvatarStatus}
+                    disabled={!creator?.cameo_front_url}
+                  >
                     Check Status
                   </Button>
-                  <Button onClick={handleCreateVideo} disabled={!creator?.cameo_front_url || !((avatarStatus === "ready") || (avatarStatus === "active"))}>
+                  <Button
+                    onClick={handleCreateVideo}
+                    disabled={
+                      !creator?.cameo_front_url ||
+                      !(avatarStatus === "ready" || avatarStatus === "active")
+                    }
+                  >
                     Create Video
                   </Button>
                 </div>
@@ -3331,9 +3431,13 @@ export default function CreatorDashboard() {
               {/* Generate Avatar Action */}
               <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
                 <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-900 mb-2">Create your Digital Avatar</p>
+                <p className="text-lg font-medium text-gray-900 mb-2">
+                  Create your Digital Avatar
+                </p>
                 <p className="text-sm text-gray-600 mb-6">
-                  Upload a short training video in the Cameo section, then start training your avatar. You can keep working while we process it.
+                  Upload a short training video in the Cameo section, then start
+                  training your avatar. You can keep working while we process
+                  it.
                 </p>
                 {/* Inline uploader for camera roll / files */}
                 <input
@@ -3356,33 +3460,54 @@ export default function CreatorDashboard() {
                 <Button
                   className="mx-auto"
                   onClick={handleGenerateAvatar}
-                  disabled={!creator?.cameo_front_url || avatarOpLoading || uploadingPhoto || Boolean((creator as any)?.creatify_avatar_id)}
+                  disabled={
+                    !creator?.cameo_front_url ||
+                    avatarOpLoading ||
+                    uploadingPhoto ||
+                    Boolean((creator as any)?.creatify_avatar_id)
+                  }
                 >
                   {avatarOpLoading ? t("common.loading") : "Create Avatar"}
                 </Button>
                 {uploadingPhoto && (
-                  <p className="text-xs text-gray-500 mt-3">Uploading video… please wait</p>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Uploading video… please wait
+                  </p>
                 )}
                 {avatarStatus && (
                   <p
                     className={`text-xs mt-3 ${
-                      (avatarStatus === "ready" || avatarStatus === "active")
+                      avatarStatus === "ready" || avatarStatus === "active"
                         ? "text-green-600"
-                        : (["reviewing", "pending", "queued"].includes(String(avatarStatus).toLowerCase()))
-                        ? "text-amber-600"
-                        : (["failed", "rejected", "error"].includes(String(avatarStatus).toLowerCase()))
-                        ? "text-red-600"
-                        : "text-gray-500"
+                        : ["reviewing", "pending", "queued"].includes(
+                              String(avatarStatus).toLowerCase(),
+                            )
+                          ? "text-amber-600"
+                          : ["failed", "rejected", "error"].includes(
+                                String(avatarStatus).toLowerCase(),
+                              )
+                            ? "text-red-600"
+                            : "text-gray-500"
                     }`}
                   >
                     Status: {avatarStatus} · Typically approved in 1–2 days
                   </p>
                 )}
                 <div className="flex items-center justify-center gap-3 mt-4">
-                  <Button variant="outline" onClick={handleRefreshAvatarStatus} disabled={!creator?.cameo_front_url}>
+                  <Button
+                    variant="outline"
+                    onClick={handleRefreshAvatarStatus}
+                    disabled={!creator?.cameo_front_url}
+                  >
                     Check Status
                   </Button>
-                  <Button onClick={handleCreateVideo} disabled={!creator?.cameo_front_url || !((avatarStatus === "ready") || (avatarStatus === "active"))}>
+                  <Button
+                    onClick={handleCreateVideo}
+                    disabled={
+                      !creator?.cameo_front_url ||
+                      !(avatarStatus === "ready" || avatarStatus === "active")
+                    }
+                  >
                     Create Video
                   </Button>
                 </div>
