@@ -808,6 +808,11 @@ export default function CreatorDashboard() {
     }
     try {
       setAvatarOpLoading(true);
+      toast({
+        title: "Submitting avatar request",
+        description:
+          "This can take up to a minute. You'll get a notification here once it's ready.",
+      });
       const res = await fetch(api(`/api/creatify/avatar-from-video?debug=1`), {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -3278,36 +3283,6 @@ export default function CreatorDashboard() {
 
           {heroMedia ? (
             <div className="space-y-4">
-              <Card className="p-4 bg-green-50 border border-green-200">
-                <div className="grid md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.uploaded")}
-                    </p>
-                    <p className="font-bold text-gray-900">Nov 12, 2024</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.duration")}
-                    </p>
-                    <p className="font-bold text-gray-900">45 seconds</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.quality")}
-                    </p>
-                    <p className="font-bold text-gray-900">4K</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.status")}
-                    </p>
-                    <Badge className="bg-green-500 text-white">
-                      {t("creatorDashboard.cameoVideo.verified")}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
 
               <div className="relative">
                 {heroMedia.type === "video" ? (
@@ -3335,10 +3310,10 @@ export default function CreatorDashboard() {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
                 <Button
                   variant="outline"
-                  className="flex-1 border-2 border-gray-300"
+                  className="w-full border-2 border-gray-300"
                 >
                   <Play className="w-4 h-4 mr-2" />
                   {t("creatorDashboard.cameoVideo.actions.watchFull")}
@@ -3346,7 +3321,7 @@ export default function CreatorDashboard() {
                 <Button
                   onClick={() => setShowReuploadCameoModal(true)}
                   variant="outline"
-                  className="flex-1 border-2 border-[#32C8D1] text-[#32C8D1]"
+                  className="w-full border-2 border-[#32C8D1] text-[#32C8D1]"
                   disabled={uploadingPhoto}
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -3354,7 +3329,7 @@ export default function CreatorDashboard() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="border-2 border-gray-300"
+                  className="w-full border-2 border-gray-300"
                   disabled={uploadingPhoto}
                 >
                   <Download className="w-4 h-4 mr-2" />
@@ -7267,25 +7242,6 @@ export default function CreatorDashboard() {
           </DialogHeader>
 
           <div className="py-4 space-y-6">
-            <Card className="p-4 bg-gray-50 border border-gray-200">
-              <h4 className="font-bold text-gray-900 mb-3">
-                Your Current Cameo:
-              </h4>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Uploaded:</p>
-                  <p className="font-bold text-gray-900">Nov 12, 2024</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Duration:</p>
-                  <p className="font-bold text-gray-900">45 seconds</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Quality:</p>
-                  <p className="font-bold text-gray-900">4K</p>
-                </div>
-              </div>
-            </Card>
 
             <div>
               <h4 className="font-bold text-gray-900 mb-3">
@@ -7350,6 +7306,7 @@ export default function CreatorDashboard() {
                 type="file"
                 id="reuploadCameo"
                 accept="video/*"
+                capture
                 onChange={handleHeroUpload}
                 className="hidden"
               />
