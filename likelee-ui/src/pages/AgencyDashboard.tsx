@@ -362,10 +362,10 @@ const ROSTER_INSIGHTS_DATA = [
 ];
 
 const CLIENTS_PERFORMANCE_DATA = [
-  { name: "L'Oreal", budget: 45000, color: "#111827", roi: "3.2x" },
-  { name: "Nike", budget: 28500, color: "#4b5563", roi: "2.8x" },
-  { name: "Zara", budget: 15000, color: "#9ca3af", roi: "2.5x" },
-  { name: "Glossier", budget: 12500, color: "#d1d5db", roi: "3.5x" },
+  { name: "L'Oreal", budget: 45000, color: "#6366f1", roi: "3.2x" }, // Indigo
+  { name: "Nike", budget: 28500, color: "#8b5cf6", roi: "2.8x" },  // Violet
+  { name: "Zara", budget: 15000, color: "#f59e0b", roi: "2.5x" },  // Amber
+  { name: "Glossier", budget: 12500, color: "#ec4899", roi: "3.5x" }, // Rose
 ];
 
 // --- View Components ---
@@ -6662,7 +6662,7 @@ const AnalyticsDashboardView = () => {
           <div className="grid grid-cols-2 gap-6">
             {/* Budget Distribution Pie */}
             <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-12 uppercase tracking-[0.2em]">Earnings by Client</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">Earnings by Client</h3>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -6697,14 +6697,14 @@ const AnalyticsDashboardView = () => {
 
             {/* Campaign Performance Bar Chart */}
             <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-12 uppercase tracking-[0.2em]">Geographic Distribution</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">Geographic Distribution</h3>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={[
-                    { name: 'North America', value: 42 },
-                    { name: 'Europe', value: 18 },
-                    { name: 'Asia-Pacific', value: 8 },
-                    { name: 'Global', value: 5 },
+                    { name: 'North America', value: 42, color: '#f59e0b' }, // Amber
+                    { name: 'Europe', value: 18, color: '#6366f1' },       // Indigo
+                    { name: 'Asia-Pacific', value: 8, color: '#8b5cf6' },  // Violet
+                    { name: 'Global', value: 5, color: '#ec4899' },        // Rose
                   ]} margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#64748b' }} />
@@ -6719,10 +6719,18 @@ const AnalyticsDashboardView = () => {
                     />
                     <Bar
                       dataKey="value"
-                      fill="#3b82f6"
                       radius={[4, 4, 0, 0]}
                       barSize={40}
-                    />
+                    >
+                      {[
+                        { name: 'North America', value: 42, color: '#f59e0b' },
+                        { name: 'Europe', value: 18, color: '#6366f1' },
+                        { name: 'Asia-Pacific', value: 8, color: '#8b5cf6' },
+                        { name: 'Global', value: 5, color: '#ec4899' },
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -6732,14 +6740,14 @@ const AnalyticsDashboardView = () => {
           {/* Client Performance List Table */}
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">Top Clients Performance</h3>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">Top Clients Performance</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/80">
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">Client</th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest text-right">Action</th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">Client</th>
+                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -6753,7 +6761,7 @@ const AnalyticsDashboardView = () => {
                       </td>
                       <td className="px-8 py-5 text-right">
                         <div className="flex flex-col items-end">
-                          <span className="text-sm font-black text-green-600">${client.budget.toLocaleString()}</span>
+                          <span className="text-sm font-bold text-green-600">${client.budget.toLocaleString()}</span>
                           <span className="text-[10px] text-gray-400 font-bold">{(client.budget / 45000 * 100).toFixed(1)}% of total</span>
                         </div>
                       </td>
@@ -6767,23 +6775,23 @@ const AnalyticsDashboardView = () => {
           {/* Summary Cards AT BOTTOM */}
           <div className="grid grid-cols-3 gap-6">
             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-black">Repeat Client Rate</p>
-              <h3 className="text-4xl font-black text-gray-900 tracking-tighter">78%</h3>
+              <p className="text-sm font-bold text-gray-500 mb-2">Repeat Client Rate</p>
+              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">78%</h3>
               <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
                 <div className="h-full bg-gray-900 rounded-full" style={{ width: '78%' }} />
               </div>
             </Card>
 
             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-black">Avg Campaign Duration</p>
-              <h3 className="text-4xl font-black text-gray-900 tracking-tighter">18 days</h3>
-              <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">From booking to completion</p>
+              <p className="text-sm font-bold text-gray-500 mb-2">Avg Campaign Duration</p>
+              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">18 days</h3>
+              <p className="text-xs text-gray-500 mt-2 font-medium">From booking to completion</p>
             </Card>
 
             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-black">Client Acquisition</p>
-              <h3 className="text-4xl font-black text-gray-900 tracking-tighter text-green-600">4</h3>
-              <p className="text-[10px] font-bold text-green-600/70 mt-2 uppercase tracking-widest font-black">New clients this quarter</p>
+              <p className="text-sm font-bold text-gray-500 mb-2">Client Acquisition</p>
+              <h3 className="text-4xl font-bold text-green-600 tracking-tighter">4</h3>
+              <p className="text-xs text-green-600/70 mt-2 font-bold">New clients this quarter</p>
             </Card>
           </div>
         </div>
