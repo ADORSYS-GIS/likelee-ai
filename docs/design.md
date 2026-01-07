@@ -153,11 +153,6 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - AWS_REGION (default: us-east-1)
 - ELEVENLABS_API_KEY (optional; required to enable server-side voice cloning)
 
-- CREATIFY_BASE_URL (default: https://creatify.ai)
-- CREATIFY_API_ID (required for Creatify API auth)
-- CREATIFY_API_KEY (required for Creatify API auth)
-- CREATIFY_CALLBACK_URL (optional; public HTTPS URL for Creatify webhooks hitting /webhooks/creatify)
-
 Notes:
 
 - All runtime config is read only via `ServerConfig` (envconfig). Do NOT call `std::env::var` in application code.
