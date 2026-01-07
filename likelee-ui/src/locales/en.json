@@ -626,15 +626,22 @@
     "step": "Step",
     "of": "of",
     "companyInfo": "Company Info",
+    "agencyInfo": "Agency Info",
     "startWithBasics": "Let's start with the basics.",
     "companyEmail": "Company Email",
+    "agencyEmail": "Agency Email",
     "confirmPassword": "Confirm Password",
     "organizationName": "Organization Name",
+    "agencyName": "Agency Name",
     "contactName": "Contact Name",
+    "agentName": "Primary Agent Name",
+    "contactTitle": "Contact Title",
+    "agentTitle": "Agent Title",
     "website": "Website",
     "phoneNumber": "Phone Number",
     "saving": "Saving...",
     "continue": "Continue",
+    "selectAndContinue": "Select and Continue",
     "brandDetails": {
       "title": "Brand Details",
       "subtitle": "Tell us more about your brand goals.",
@@ -655,6 +662,15 @@
       "budgetRangeUnder10k": "Under $10k",
       "budgetRange10k50k": "$10k - $50k",
       "budgetRange50k250k": "$50k - $250k"
+    },
+    "sportsAgency": {
+      "title": "Sports Agency Details",
+      "subtitle": "Tell us about your athlete roster",
+      "athleteCount": "Number of Athletes Represented",
+      "licenseAthletesQuestion": "Do you currently license your athletes' likeness?",
+      "openToAiQuestion": "Are your athletes open to AI recreation or only likeness protection?",
+      "campaignTypesQuestion": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
     },
     "options": {
       "productionTypes": {

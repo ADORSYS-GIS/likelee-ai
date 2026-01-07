@@ -62,12 +62,20 @@ export default function TalentAgency() {
           <p className="text-base md:text-lg text-gray-300 leading-relaxed mb-8">
             {t("talentAgency.hero.description")}
           </p>
-          <Button
-            onClick={() => navigate(createPageUrl("SalesInquiry"))}
-            className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
-          >
-            {t("talentAgency.hero.cta")}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => navigate(createPageUrl("SalesInquiry"))}
+              className="h-12 px-10 text-lg font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all"
+            >
+              {t("talentAgency.hero.cta")}
+            </Button>
+            <Button
+              onClick={() => navigate(`${createPageUrl("OrganizationSignup")}?type=talent_agency`)}
+              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
+            >
+              {t("getStarted")}
+            </Button>
+          </div>
         </div>
       </section>
 

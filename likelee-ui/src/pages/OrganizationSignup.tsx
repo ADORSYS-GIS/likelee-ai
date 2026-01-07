@@ -100,6 +100,7 @@ export default function OrganizationSignup() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
+  const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
   const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
@@ -149,57 +150,71 @@ export default function OrganizationSignup() {
       if (type === 'brand') type = 'brand_company';
       if (type === 'agency') type = 'marketing_agency';
       setOrgType(type);
+      setIsPreSelected(true);
     }
   }, []);
 
+  const flow = React.useMemo(() => {
+    if (['brand_company', 'production_studio'].includes(orgType)) return 'brand';
+    if (['marketing_agency', 'talent_agency', 'sports_agency'].includes(orgType)) return 'agency';
+    return null;
+  }, [orgType]);
+
   // Check for existing session and onboarding step
-  // Check for existing session and onboarding step
+  // This effect handles the user's return after email verification.
+  // When the user clicks the link, Supabase confirms the email, and the AuthProvider
+  // detects the state change, fetching the user's profile.
+  // We react to the presence of the user and their profile to advance the flow.
   useEffect(() => {
-    const checkUserStatus = async () => {
-      if (user) {
-        try {
-          const { data: orgProfile, error } = await supabase
-            .from('organization_profiles')
-            .select('id, organization_type, email, onboarding_step')
-            .eq('owner_user_id', user.id)
-            .maybeSingle();
+    const handleVerifiedUser = async () => {
+      // We need both the user object and their profile to proceed.
+      if (user && profile) {
+        // The user's profile now contains their role, but we need the org profile
+        // to get the onboarding step and other details.
+        const { data: orgProfile, error } = await supabase
+          .from('organization_profiles')
+          .select('id, organization_type, email, onboarding_step, status')
+          .eq('owner_user_id', user.id)
+          .single(); // Use single() as the org profile must exist
 
-          if (orgProfile) {
-            if (orgProfile.onboarding_step === 'email_verification') {
-              // User verified email but hasn't completed step 2
-              setProfileId(orgProfile.id);
+        if (error) {
+          console.error("Error fetching organization profile for verified user:", error);
+          toast({
+            title: "Error",
+            description: "Could not load your organization's profile. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-              // Normalize orgType to match frontend expectations
-              let normalizedType = orgProfile.organization_type;
-              if (normalizedType === 'brand') normalizedType = 'brand_company';
-              if (normalizedType === 'agency') normalizedType = 'marketing_agency';
-
-              setOrgType(normalizedType);
-              setFormData(prev => ({
-                ...prev,
-                email: orgProfile.email || user.email || ""
-              }));
-              setStep(2);
-            } else if (orgProfile.onboarding_step === 'complete') {
-              // Already completed onboarding, redirect to dashboard
-              // We rely on profile for role, so we wait for it
-              if (profile) {
-                if (profile.role === 'brand') {
-                  window.location.href = '/BrandDashboard';
-                } else if (profile.role === 'agency') {
-                  window.location.href = '/AgencyDashboard';
-                }
-              }
+        if (orgProfile) {
+          // If the user has completed the flow, redirect them to the correct dashboard.
+          if (orgProfile.status === 'complete' || orgProfile.onboarding_step === 'complete') {
+            if (profile.role === 'brand') {
+              window.location.href = '/BrandDashboard';
+            } else if (profile.role === 'agency') {
+              window.location.href = '/AgencyDashboard';
             }
+            return;
           }
-        } catch (e) {
-          console.error("Error checking user status:", e);
+
+          // If the user has verified their email, they are on the 'email_verification' step.
+          // We can now safely move them to step 2.
+          if (orgProfile.onboarding_step === 'email_verification') {
+            setProfileId(orgProfile.id);
+            setOrgType(orgProfile.organization_type);
+            setFormData(prev => ({
+              ...prev,
+              email: orgProfile.email || user.email || "",
+            }));
+            setStep(2);
+          }
         }
       }
     };
 
-    checkUserStatus();
-  }, [user, profile]);
+    handleVerifiedUser();
+  }, [user, profile, toast]); // Rerun when user or profile state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
@@ -227,6 +242,12 @@ export default function OrganizationSignup() {
         primary: "from-slate-700 to-gray-800",
         button: "bg-slate-700 hover:bg-slate-800",
         badge: "bg-slate-100 text-slate-700",
+      },
+      sports_agency: {
+        gradient: "from-blue-50 via-indigo-50 to-slate-50",
+        primary: "from-[#0D1B3A] to-[#1E3A8A]",
+        button: "bg-[#0D1B3A] hover:bg-[#1E3A8A]",
+        badge: "bg-blue-100 text-blue-700",
       },
     };
     return schemes[orgType] || schemes.brand_company;
@@ -315,7 +336,6 @@ export default function OrganizationSignup() {
           provide_creators: data.provide_creators,
           status: "waitlist",
         },
-        user?.id,
       );
     },
     onSuccess: () => {
@@ -414,6 +434,7 @@ export default function OrganizationSignup() {
       production_studio: t("organizationSignup.orgType.productionStudio"),
       marketing_agency: t("organizationSignup.orgType.marketingAgency"),
       talent_agency: t("organizationSignup.orgType.talentAgency"),
+      sports_agency: t("sportsAgency"),
     };
     return titles[orgType] || "Organization";
   };
@@ -598,7 +619,7 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {t("organizationSignup.companyInfo")}
+                  {flow === 'agency' ? t("organizationSignup.agencyInfo") : t("organizationSignup.companyInfo")}
                 </h3>
                 <p className="text-gray-600">
                   {t("organizationSignup.startWithBasics")}
@@ -606,37 +627,50 @@ export default function OrganizationSignup() {
               </div>
 
               <div className="space-y-4">
-                {/* NEW: Organization Type Selector */}
-                <div>
-                  <Label
-                    htmlFor="organization_type"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    Organization Type *
-                  </Label>
-                  <Select
-                    value={orgType}
-                    onValueChange={(value) => setOrgType(value)}
-                  >
-                    <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder="Select your organization type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="brand_company">
-                        Brand / Company
-                      </SelectItem>
-                      <SelectItem value="production_studio">
-                        Production Studio
-                      </SelectItem>
-                      <SelectItem value="marketing_agency">
-                        Marketing Agency
-                      </SelectItem>
-                      <SelectItem value="talent_agency">
-                        Talent Agency
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* NEW: Organization Type Selector - Hidden if pre-selected */}
+                {!isPreSelected && (
+                  <div>
+                    <Label
+                      htmlFor="organization_type"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Organization Type *
+                    </Label>
+                    <Select
+                      value={orgType}
+                      onValueChange={(value) => setOrgType(value)}
+                    >
+                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                        <SelectValue placeholder="Select your organization type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(flow === 'brand' || !flow) && (
+                          <>
+                            <SelectItem value="brand_company">
+                              Brand / Company
+                            </SelectItem>
+                            <SelectItem value="production_studio">
+                              Production Studio
+                            </SelectItem>
+                          </>
+                        )}
+                        {(flow === 'agency' || !flow) && (
+                          <>
+                            <SelectItem value="marketing_agency">
+                              Marketing Agency
+                            </SelectItem>
+                            <SelectItem value="talent_agency">
+                              Talent Agency
+                            </SelectItem>
+                            <SelectItem value="sports_agency">
+                              Sports Agency
+                            </SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div>
                   <Label
@@ -731,7 +765,7 @@ export default function OrganizationSignup() {
                     htmlFor="organization_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("organizationSignup.organizationName")}
+                    {flow === 'agency' ? t("organizationSignup.agencyName") : t("organizationSignup.organizationName")} *
                   </Label>
                   <Input
                     id="organization_name"
@@ -743,7 +777,7 @@ export default function OrganizationSignup() {
                       })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("common.companyNamePlaceholder")}
+                    placeholder={flow === 'agency' ? "e.g., Elite Sports Management" : t("common.companyNamePlaceholder")}
                   />
                 </div>
 
@@ -753,7 +787,7 @@ export default function OrganizationSignup() {
                       htmlFor="contact_name"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("organizationSignup.contactName")}
+                      {flow === 'agency' ? t("organizationSignup.agentName") : t("organizationSignup.contactName")} *
                     </Label>
                     <Input
                       id="contact_name"
@@ -774,7 +808,7 @@ export default function OrganizationSignup() {
                       htmlFor="contact_title"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("organizationSignup.contactTitle")}
+                      {flow === 'agency' ? t("organizationSignup.agentTitle") : t("organizationSignup.contactTitle")}
                     </Label>
                     <Input
                       id="contact_title"
@@ -1668,6 +1702,224 @@ export default function OrganizationSignup() {
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
                     Do you want to bulk-onboard your roster to Likelee?
+                  </Label>
+                  <RadioGroup
+                    value={formData.bulk_onboard}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, bulk_onboard: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["Yes", "No", "Maybe later"].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option.toLowerCase()}
+                            id={`bulk_${option}`}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={`bulk_${option}`}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                >
+                  {updateProfileMutation.isPending
+                    ? "Submitting..."
+                    : "Complete Sign Up"}{" "}
+                  {/* Dynamic text */}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+          {/* Step 2: Sports Agency */}
+          {step === 2 && orgType === "sports_agency" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {t("organizationSignup.sportsAgency.title")}
+                </h3>
+                <p className="text-gray-600">
+                  {t("organizationSignup.sportsAgency.subtitle")}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label
+                    htmlFor="talent_count"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    {t("organizationSignup.sportsAgency.athleteCount")}
+                  </Label>
+                  <Input
+                    id="talent_count"
+                    type="number"
+                    value={formData.talent_count}
+                    onChange={(e) =>
+                      setFormData({ ...formData, talent_count: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="e.g., 25"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    {t("organizationSignup.sportsAgency.licenseAthletesQuestion")}
+                  </Label>
+                  <RadioGroup
+                    value={formData.licenses_likeness}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, licenses_likeness: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["Yes", "No"].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option.toLowerCase()}
+                            id={`license_${option}`}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={`license_${option}`}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    {t("organizationSignup.sportsAgency.openToAiQuestion")}
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                        <Checkbox
+                          id="select_all_open_to_ai"
+                          checked={getOpenToAiOptions(t).every((option) =>
+                            formData.open_to_ai.includes(option),
+                          )}
+                          onCheckedChange={() =>
+                            toggleSelectAll("open_to_ai", getOpenToAiOptions(t))
+                          }
+                          className="border-2 border-gray-900"
+                        />
+                        <label
+                          htmlFor="select_all_open_to_ai"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                        >
+                          Select All
+                        </label>
+                      </div>
+                      {getOpenToAiOptions(t).map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={option}
+                            checked={formData.open_to_ai.includes(option)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("open_to_ai", option)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={option}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    {t("organizationSignup.sportsAgency.campaignTypesQuestion")}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <Checkbox
+                        id="select_all_campaign_types"
+                        checked={getCampaignTypes(t).every((type) =>
+                          formData.campaign_types.includes(type),
+                        )}
+                        onCheckedChange={() =>
+                          toggleSelectAll("campaign_types", getCampaignTypes(t))
+                        }
+                        className="border-2 border-gray-900"
+                      />
+                      <label
+                        htmlFor="select_all_campaign_types"
+                        className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                      >
+                        Select All
+                      </label>
+                    </div>
+                    {getCampaignTypes(t).map((type) => (
+                      <div
+                        key={type}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          id={type}
+                          checked={formData.campaign_types.includes(type)}
+                          onCheckedChange={() =>
+                            toggleArrayItem("campaign_types", type)
+                          }
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor={type}
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          {type}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    {t("organizationSignup.sportsAgency.bulkOnboardQuestion")}
                   </Label>
                   <RadioGroup
                     value={formData.bulk_onboard}

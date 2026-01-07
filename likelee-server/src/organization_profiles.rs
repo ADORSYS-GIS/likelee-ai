@@ -155,7 +155,7 @@ pub async fn register(
 
     // 3) Set role in profiles table based on organization type
     let role = match payload.organization_type.as_str() {
-        "brand" | "production_studio" => "brand",
+        "brand" | "brand_company" | "production_studio" => "brand",
         "marketing_agency" | "talent_agency" | "sports_agency" => "agency",
         _ => "brand", // Default to brand if unknown
     };
