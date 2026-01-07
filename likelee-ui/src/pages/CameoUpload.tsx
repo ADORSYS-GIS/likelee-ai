@@ -14,15 +14,6 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Camera, Upload } from "lucide-react";
 
-// Views required for reference avatar creation
-const REQUIRED_VIEWS = [
-  { key: "front", label: "Front" },
-  { key: "left", label: "Left side" },
-  { key: "right", label: "Right side" },
-] as const;
-
-type ViewKey = (typeof REQUIRED_VIEWS)[number]["key"];
-
 type FileState = {
   file?: File;
   previewUrl?: string;
@@ -34,7 +25,7 @@ type FileState = {
 
 function FilePicker({
   label,
-  accept = "image/*",
+  accept = "video/*",
   onChange,
   value,
   previewUrl,
@@ -68,10 +59,10 @@ function FilePicker({
       <label htmlFor={inputId} className="block cursor-pointer">
         <div className="relative w-full h-80 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50 hover:bg-gray-100 transition-colors">
           {previewUrl ? (
-            <img
+            <video
               src={previewUrl}
-              alt={`${label} preview`}
               className="absolute inset-0 w-full h-full object-cover"
+              controls
             />
           ) : (
             <div className="flex flex-col items-center text-center px-4">
@@ -98,33 +89,17 @@ function FilePicker({
 
 export default function CameoUpload() {
   const { user } = useAuth();
+  const [video, setVideo] = useState<FileState>({ uploading: false, progress: 0 });
 
-  const [states, setStates] = useState<Record<ViewKey, FileState>>({
-    front: { uploading: false, progress: 0 },
-    left: { uploading: false, progress: 0 },
-    right: { uploading: false, progress: 0 },
-  });
+  const anyUploading = video.uploading;
 
-  const allSelected = useMemo(
-    () => REQUIRED_VIEWS.every(({ key }) => !!states[key].file),
-    [states],
-  );
-
-  const anyUploading = useMemo(
-    () => REQUIRED_VIEWS.some(({ key }) => states[key].uploading),
-    [states],
-  );
-
-  const handlePick = (key: ViewKey, file?: File) => {
-    const isImage = file ? file.type.startsWith("image/") : true;
-    setStates((prev) => ({
+  const handlePick = (file?: File) => {
+    const isVideo = file ? file.type.startsWith("video/") : true;
+    setVideo((prev) => ({
       ...prev,
-      [key]: {
-        ...prev[key],
-        file,
-        previewUrl: file && isImage ? URL.createObjectURL(file) : undefined,
-        error: file && !isImage ? "Please upload an image file" : undefined,
-      },
+      file,
+      previewUrl: file && isVideo ? URL.createObjectURL(file) : undefined,
+      error: file && !isVideo ? "Please upload a video file" : undefined,
     }));
   };
 
@@ -135,211 +110,66 @@ export default function CameoUpload() {
         if (!user || !supabase) return;
         const { data, error } = await supabase
           .from("profiles")
-          .select("cameo_front_url, cameo_left_url, cameo_right_url")
+          .select("cameo_front_url")
           .eq("id", user.id)
           .maybeSingle();
         if (
           !error &&
           data &&
-          (data.cameo_front_url || data.cameo_left_url || data.cameo_right_url)
+          data.cameo_front_url
         ) {
-          setStates(
-            (prev) =>
-              ({
-                front: {
-                  ...prev.front,
-                  previewUrl: data.cameo_front_url || prev.front.previewUrl,
-                  downloadUrl: data.cameo_front_url || prev.front.downloadUrl,
-                  uploading: false,
-                  progress: data.cameo_front_url ? 100 : prev.front.progress,
-                },
-                left: {
-                  ...prev.left,
-                  previewUrl: data.cameo_left_url || prev.left.previewUrl,
-                  downloadUrl: data.cameo_left_url || prev.left.downloadUrl,
-                  uploading: false,
-                  progress: data.cameo_left_url ? 100 : prev.left.progress,
-                },
-                right: {
-                  ...prev.right,
-                  previewUrl: data.cameo_right_url || prev.right.previewUrl,
-                  downloadUrl: data.cameo_right_url || prev.right.downloadUrl,
-                  uploading: false,
-                  progress: data.cameo_right_url ? 100 : prev.right.progress,
-                },
-              }) as any,
-          );
+          setVideo((prev) => ({
+            ...prev,
+            previewUrl: data.cameo_front_url || prev.previewUrl,
+            downloadUrl: data.cameo_front_url || prev.downloadUrl,
+            uploading: false,
+            progress: data.cameo_front_url ? 100 : prev.progress,
+          }));
           return;
         }
-        // Fallback: read from Storage if DB columns are empty or row missing (no early profile creation)
-        const prefix = `faces/${user.id}/reference`;
+        // Fallback: read from Storage if DB columns are empty or row missing
+        const prefix = `faces/${user.id}/train`;
         const { data: files, error: listErr } = await supabase.storage
-          .from("profiles")
+          .from("likelee-public")
           .list(prefix, { limit: 100 });
         if (listErr || !files) return;
-        const byKey: Record<string, string> = {};
-        files.forEach((f) => {
-          const name = f.name.toLowerCase();
-          let key: ViewKey | null = null;
-          if (name.includes("front")) key = "front";
-          else if (name.includes("left")) key = "left";
-          else if (name.includes("right")) key = "right";
-          if (key) {
-            const { data: pub } = supabase.storage
-              .from("profiles")
-              .getPublicUrl(`${prefix}/${f.name}`);
-            byKey[key] = pub.publicUrl;
-          }
-        });
-        setStates(
-          (prev) =>
-            ({
-              front: {
-                ...prev.front,
-                previewUrl: byKey.front || prev.front.previewUrl,
-                downloadUrl: byKey.front || prev.front.downloadUrl,
-                uploading: false,
-                progress: byKey.front ? 100 : prev.front.progress,
-              },
-              left: {
-                ...prev.left,
-                previewUrl: byKey.left || prev.left.previewUrl,
-                downloadUrl: byKey.left || prev.left.downloadUrl,
-                uploading: false,
-                progress: byKey.left ? 100 : prev.left.progress,
-              },
-              right: {
-                ...prev.right,
-                previewUrl: byKey.right || prev.right.previewUrl,
-                downloadUrl: byKey.right || prev.right.downloadUrl,
-                uploading: false,
-                progress: byKey.right ? 100 : prev.right.progress,
-              },
-            }) as any,
-        );
+        const mp4 = files.find((f) => f.name.toLowerCase().endsWith(".mp4"));
+        if (mp4) {
+          const { data: pub } = supabase.storage
+            .from("likelee-public")
+            .getPublicUrl(`${prefix}/${mp4.name}`);
+          setVideo((prev) => ({
+            ...prev,
+            previewUrl: pub.publicUrl,
+            downloadUrl: pub.publicUrl,
+            uploading: false,
+            progress: 100,
+          }));
+        }
       } catch (_) {}
     })();
   }, [user]);
 
-  const uploadOne = async (key: ViewKey, file: File): Promise<string> => {
+  const uploadVideo = async (file: File): Promise<string> => {
     if (!user) throw new Error("Not authenticated");
     if (!supabase) throw new Error("Supabase not configured");
-    // Pre-scan the raw bytes before storing
-    try {
-      const apiBase =
-        (import.meta as any).env.VITE_API_BASE_URL ||
-        (import.meta as any).env.VITE_API_BASE;
-      const buf = await file.arrayBuffer();
-      const res = await fetch(
-        `${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user.id)}&image_role=${encodeURIComponent(key)}`,
-        {
-          method: "POST",
-          headers: { "content-type": file.type || "image/jpeg" },
-          body: new Uint8Array(buf),
-        },
-      );
-      if (res.ok) {
-        const out = await res.json();
-        if (out?.flagged) {
-          setStates((prev) => ({
-            ...prev,
-            [key]: {
-              ...prev[key],
-              uploading: false,
-              error:
-                "Image was flagged by moderation. Please upload a different photo.",
-            },
-          }));
-          toast.error(
-            `Your ${key} photo was flagged and cannot be used. Please upload a different photo.`,
-          );
-          throw new Error("Image flagged by moderation");
-        }
-      } else {
-        // If the moderation endpoint fails, treat as error to avoid storing unscanned content
-        const msg = await res.text();
-        throw new Error(msg || "Moderation pre-scan failed");
-      }
-    } catch (e: any) {
-      throw e;
-    }
-    const path = `faces/${user.id}/reference/${key}.jpg`;
-    setStates((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], uploading: true, progress: 0, error: undefined },
-    }));
+    const path = `faces/${user.id}/train/train.mp4`;
+    setVideo((prev) => ({ ...prev, uploading: true, progress: 0, error: undefined }));
     const { error } = await supabase.storage
-      .from("profiles")
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type || "image/jpeg",
-      });
+      .from("likelee-public")
+      .upload(path, file, { upsert: true, contentType: file.type || "video/mp4" });
     if (error) {
-      setStates((prev) => ({
-        ...prev,
-        [key]: { ...prev[key], uploading: false, error: error.message },
-      }));
+      setVideo((prev) => ({ ...prev, uploading: false, error: error.message }));
       throw error;
     }
-    const { data } = supabase.storage.from("profiles").getPublicUrl(path);
+    const { data } = supabase.storage.from("likelee-public").getPublicUrl(path);
     const url = data.publicUrl;
-
-    // Call moderation endpoint (best-effort)
+    setVideo((prev) => ({ ...prev, uploading: false, downloadUrl: url, progress: 100 }));
+    // Persist the training video url back to profiles
     try {
-      const apiBase =
-        (import.meta as any).env.VITE_API_BASE_URL ||
-        (import.meta as any).env.VITE_API_BASE;
-      const res = await fetch(`${apiBase}/api/moderation/image`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          image_url: url,
-          user_id: user.id,
-          image_role: key,
-        }),
-      });
-      if (res.ok) {
-        const out = await res.json();
-        if (out?.flagged) {
-          setStates((prev) => ({
-            ...prev,
-            [key]: {
-              ...prev[key],
-              uploading: false,
-              error:
-                "Image was flagged by moderation. Please upload a different photo.",
-            },
-          }));
-          toast.error(
-            `Your ${key} photo was flagged and cannot be used. Please upload a different photo.`,
-          );
-          throw new Error("Image flagged by moderation");
-        }
-      }
-    } catch (_) {
-      // non-blocking
-    }
-
-    setStates((prev) => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        uploading: false,
-        downloadUrl: url,
-        progress: 100,
-      },
-    }));
-    // Persist the single cameo url back to profiles
-    try {
-      const column =
-        key === "front"
-          ? "cameo_front_url"
-          : key === "left"
-            ? "cameo_left_url"
-            : "cameo_right_url";
       await supabase
         .from("profiles")
-        .update({ [column]: url })
+        .update({ cameo_front_url: url })
         .eq("id", user.id);
     } catch (_) {}
     return url;
@@ -347,40 +177,17 @@ export default function CameoUpload() {
 
   const handleUploadAll = async () => {
     if (!user) {
-      toast.error("Please log in to upload reference photos");
+      toast.error("Please log in to upload a training video");
       return;
     }
-    if (!allSelected) {
-      toast.error("Please select all three photos (Front, Left, Right).");
+    if (!video.file) {
+      toast.error("Please select a short training video.");
       return;
     }
 
     try {
-      const urls = await Promise.all(
-        REQUIRED_VIEWS.map(({ key }) => uploadOne(key, states[key].file!)),
-      );
-      toast.success("Reference photos uploaded successfully");
-
-      // Optional: notify backend to create/update face profile (no-op persistence in server now)
-      const apiBase = import.meta.env.VITE_API_BASE;
-      try {
-        await fetch(`${apiBase}/api/face-profiles`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            user_id: user.id,
-            references: {
-              front: states.front.downloadUrl || urls[0],
-              left: states.left.downloadUrl || urls[1],
-              right: states.right.downloadUrl || urls[2],
-            },
-            created_at: new Date().toISOString(),
-          }),
-        });
-      } catch (e) {
-        // Non-blocking
-        console.debug("face-profiles call skipped/failed", e);
-      }
+      await uploadVideo(video.file!);
+      toast.success("Training video uploaded successfully");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed, please try again");
     }
@@ -392,49 +199,43 @@ export default function CameoUpload() {
         <CardHeader>
           <CardTitle>Cameo Images</CardTitle>
           <CardDescription>
-            Provide three clear photos of your face: front, left side, and right
-            side. These will be used to build your avatar reference library.
+            Upload a short training video of yourself. Ensure good lighting and a clear view of your face. Include the required consent statement at the beginning.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 md:p-10 min-h-96">
             <div className="mb-6 text-center">
               <p className="text-sm text-gray-600">
-                PNG or JPG, 1080x1080+ recommended. Keep a neutral expression,
-                good lighting, and frame your face fully.
+                MP4 recommended. 30–120 seconds. Keep a neutral expression, speak the consent statement clearly, and ensure good lighting.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {REQUIRED_VIEWS.map(({ key, label }) => (
-                <div key={key} className="space-y-3">
-                  <FilePicker
-                    label={`${label} photo`}
-                    onChange={(f) => handlePick(key, f)}
-                    value={states[key].file}
-                    previewUrl={states[key].previewUrl}
-                    capture
-                  />
-                  {states[key].uploading && (
-                    <Progress value={states[key].progress} />
-                  )}
-                  {states[key].error && (
-                    <p className="text-sm text-red-500">{states[key].error}</p>
-                  )}
-                </div>
-              ))}
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-3">
+                <FilePicker
+                  label={`Training video`}
+                  onChange={(f) => handlePick(f)}
+                  value={video.file}
+                  previewUrl={video.previewUrl}
+                  capture
+                />
+                {video.uploading && <Progress value={video.progress} />}
+                {video.error && (
+                  <p className="text-sm text-red-500">{video.error}</p>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="mt-6 flex items-center gap-3">
             <Button
               onClick={handleUploadAll}
-              disabled={!allSelected || anyUploading}
+              disabled={!video.file || anyUploading}
             >
-              {anyUploading ? "Uploading…" : "Upload all"}
+              {anyUploading ? "Uploading…" : "Upload video"}
             </Button>
-            {!allSelected && (
+            {!video.file && (
               <span className="text-sm text-muted-foreground">
-                All three photos are required
+                A short training video is required
               </span>
             )}
           </div>
@@ -442,8 +243,7 @@ export default function CameoUpload() {
       </Card>
 
       <div className="mt-6 text-sm text-muted-foreground">
-        Tips: Use good lighting, remove hats/glasses if possible, keep a neutral
-        expression, and frame your face clearly.
+        Tips: Use good lighting, keep a neutral expression, frame your face clearly, and read the consent statement at the start of the video.
       </div>
     </div>
   );
