@@ -619,7 +619,7 @@ export default function AgencyDashboard() {
           </Card>
         )}
       </div>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pt-16">
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-16">
@@ -852,14 +852,6 @@ export default function AgencyDashboard() {
         </nav>
 
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 py-2 px-4 bg-blue-50 border border-blue-300 rounded-none">
-              <div className="text-blue-900 text-sm font-medium">
-                <strong>Demo Mode:</strong> This is a preview of the Agency
-                Dashboard for talent and modeling agencies.
-              </div>
-            </div>
-          </div>
 
           {activeTab === "roster" && (
             <div className="space-y-6">
@@ -1098,19 +1090,19 @@ export default function AgencyDashboard() {
                       {(searchQuery ||
                         statusFilter !== "all" ||
                         consentFilter !== "all") && (
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setSearchQuery("");
-                            setStatusFilter("all");
-                            setConsentFilter("all");
-                          }}
-                          className="text-gray-600"
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          Clear Filters
-                        </Button>
-                      )}
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setSearchQuery("");
+                              setStatusFilter("all");
+                              setConsentFilter("all");
+                            }}
+                            className="text-gray-600"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Clear Filters
+                          </Button>
+                        )}
                     </div>
 
                     <div className="overflow-x-auto">
@@ -1300,8 +1292,8 @@ export default function AgencyDashboard() {
                                   >
                                     {talent.license_expiry !== "—"
                                       ? new Date(
-                                          talent.license_expiry,
-                                        ).toLocaleDateString()
+                                        talent.license_expiry,
+                                      ).toLocaleDateString()
                                       : "—"}
                                   </span>
                                   {isLicenseExpiring(talent.license_expiry) && (
@@ -2411,8 +2403,8 @@ export default function AgencyDashboard() {
                       >
                         {selectedTalent.license_expiry !== "—"
                           ? new Date(
-                              selectedTalent.license_expiry,
-                            ).toLocaleDateString()
+                            selectedTalent.license_expiry,
+                          ).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>
