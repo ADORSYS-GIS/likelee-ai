@@ -573,12 +573,18 @@ export default function AgencyDashboard() {
       const url =
         (session as any)?.session_url || (session as any)?.data?.session_url;
       if (url) {
-        window.location.href = url;
+        toast({
+          title: "Verification Initiated",
+          description: "Redirecting to Veriff identity verification portal...",
+          duration: 3000,
+        });
+        window.open(url, "_blank");
       } else {
         toast({
           title: "Error",
           description: "Unable to start verification. Please try again later.",
           variant: "destructive",
+          duration: 3000,
         });
       }
     } catch (e) {
@@ -619,7 +625,7 @@ export default function AgencyDashboard() {
           </Card>
         )}
       </div>
-      <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="min-h-screen bg-gray-50 pt-20">
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6">
             <div className="flex items-center justify-between h-16">
