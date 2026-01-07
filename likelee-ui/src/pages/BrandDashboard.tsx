@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -636,42 +637,35 @@ export default function BrandDashboard() {
     const fetchCreators = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (searchQuery) params.append("query", searchQuery);
+        const params: any = {};
+        if (searchQuery) params.query = searchQuery;
         if (filters.creator_types.length > 0)
-          params.append("creator_types", filters.creator_types.join(","));
-        if (filters.races.length > 0)
-          params.append("races", filters.races.join(","));
+          params.creator_types = filters.creator_types.join(",");
+        if (filters.races.length > 0) params.races = filters.races.join(",");
         if (filters.hair_colors.length > 0)
-          params.append("hair_colors", filters.hair_colors.join(","));
+          params.hair_colors = filters.hair_colors.join(",");
         if (filters.hairstyles.length > 0)
-          params.append("hairstyles", filters.hairstyles.join(","));
+          params.hairstyles = filters.hairstyles.join(",");
         if (filters.eye_colors.length > 0)
-          params.append("eye_colors", filters.eye_colors.join(","));
+          params.eye_colors = filters.eye_colors.join(",");
         if (filters.facial_features.length > 0)
-          params.append("facial_features", filters.facial_features.join(","));
+          params.facial_features = filters.facial_features.join(",");
+        if (filters.niches.length > 0) params.niches = filters.niches.join(",");
 
-        if (filters.age_range[0] > 18)
-          params.append("age_min", filters.age_range[0].toString());
-        if (filters.age_range[1] < 65)
-          params.append("age_max", filters.age_range[1].toString());
+        if (filters.age_range[0] > 18) params.age_min = filters.age_range[0];
+        if (filters.age_range[1] < 65) params.age_max = filters.age_range[1];
 
         if (filters.height_range[0] > 140)
-          params.append("height_min", filters.height_range[0].toString());
+          params.height_min = filters.height_range[0];
         if (filters.height_range[1] < 210)
-          params.append("height_max", filters.height_range[1].toString());
+          params.height_max = filters.height_range[1];
 
         if (filters.weight_range[0] > 40)
-          params.append("weight_min", filters.weight_range[0].toString());
+          params.weight_min = filters.weight_range[0];
         if (filters.weight_range[1] < 150)
-          params.append("weight_max", filters.weight_range[1].toString());
+          params.weight_max = filters.weight_range[1];
 
-        const apiUrl = import.meta.env.VITE_API_BASE_URL;
-        const response = await fetch(
-          `${apiUrl}/api/faces/search?${params.toString()}`,
-        );
-        if (!response.ok) throw new Error("Failed to fetch");
-        const data = await response.json();
+        const data = await base44.get("faces/search", { params });
         if (Array.isArray(data)) {
           const mappedData = data.map((creator: any) => ({
             ...creator,
