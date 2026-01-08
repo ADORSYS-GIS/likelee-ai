@@ -249,6 +249,7 @@ pub async fn upload_profile_photo(
 
 #[derive(Deserialize, Debug)]
 pub struct FaceSearchQuery {
+    pub query: Option<String>,
     pub age_min: Option<i32>,
     pub age_max: Option<i32>,
     pub race: Option<String>,
@@ -259,6 +260,8 @@ pub struct FaceSearchQuery {
     pub height_max_cm: Option<i32>,
     pub weight_min_kg: Option<i32>,
     pub weight_max_kg: Option<i32>,
+    pub niches: Option<String>,
+    pub creator_types: Option<String>,
     // Comma-separated features (best-effort, applied client-side if present)
     pub features: Option<String>,
     pub page: Option<u32>,
@@ -278,6 +281,8 @@ pub struct FaceSummary {
     pub height_cm: Option<i32>,
     pub weight_kg: Option<i32>,
     pub facial_features: Option<Vec<String>>,
+    pub creator_type: Option<String>,
+    pub brand_categories: Option<Vec<String>>,
 }
 
 #[derive(Serialize)]
@@ -296,9 +301,15 @@ pub async fn search_faces(
         .pg
         .from("profiles")
         .select(
-            "id,full_name,profile_photo_url,age,race,hair_color,hairstyle,eye_color,height_cm,weight_kg,facial_features",
+            "id,full_name,profile_photo_url,age,race,hair_color,hairstyle,eye_color,height_cm,weight_kg,facial_features,creator_type,brand_categories",
         )
         .order("full_name.asc");
+
+    if let Some(ref q_str) = q.query {
+        if !q_str.trim().is_empty() {
+            req = req.ilike("full_name", format!("%{}%", q_str));
+        }
+    }
 
     if let Some(min) = q.age_min {
         req = req.gte("age", min.to_string());
@@ -383,6 +394,40 @@ pub async fn search_faces(
             }
         }
     }
+
+    if let Some(ref v) = q.creator_types {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            if vals.len() == 1 {
+                req = req.eq("creator_type", vals[0].clone());
+            } else {
+                let cond_inner = vals
+                    .iter()
+                    .map(|s| format!("creator_type.eq.{}", s))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                req = req.or(format!("({})", cond_inner));
+            }
+        }
+    }
+
+    if let Some(ref v) = q.niches {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            // brand_categories is text[], so we use overlap operator &&
+            let array_val = format!("{{{}}}", vals.join(","));
+            req = req.ov("brand_categories", array_val);
+        }
+    }
+
     if let Some(min) = q.height_min_cm {
         req = req.gte("height_cm", min.to_string());
     }
@@ -398,7 +443,7 @@ pub async fn search_faces(
 
     // Pagination
     let page = q.page.unwrap_or(1).max(1);
-    let page_size = q.page_size.unwrap_or(24).clamp(1, 100);
+    let page_size = q.page_size.unwrap_or(24).clamp(1, 2147483647); // Effectively no limit
     let from = ((page - 1) * page_size) as usize;
     let to = (from + page_size as usize) - 1;
     req = req.range(from, to);

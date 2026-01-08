@@ -637,35 +637,42 @@ export default function BrandDashboard() {
     const fetchCreators = async () => {
       setLoading(true);
       try {
-        const params: any = {};
+        const params: any = {
+          page_size: 1000000,
+        };
         if (searchQuery) params.query = searchQuery;
         if (filters.creator_types.length > 0)
           params.creator_types = filters.creator_types.join(",");
-        if (filters.races.length > 0) params.races = filters.races.join(",");
+        if (filters.races.length > 0) params.race = filters.races.join(",");
         if (filters.hair_colors.length > 0)
-          params.hair_colors = filters.hair_colors.join(",");
+          params.hair_color = filters.hair_colors.join(",");
         if (filters.hairstyles.length > 0)
-          params.hairstyles = filters.hairstyles.join(",");
+          params.hairstyle = filters.hairstyles.join(",");
         if (filters.eye_colors.length > 0)
-          params.eye_colors = filters.eye_colors.join(",");
+          params.eye_color = filters.eye_colors.join(",");
         if (filters.facial_features.length > 0)
-          params.facial_features = filters.facial_features.join(",");
+          params.features = filters.facial_features.join(",");
         if (filters.niches.length > 0) params.niches = filters.niches.join(",");
 
         if (filters.age_range[0] > 18) params.age_min = filters.age_range[0];
         if (filters.age_range[1] < 65) params.age_max = filters.age_range[1];
 
         if (filters.height_range[0] > 140)
-          params.height_min = filters.height_range[0];
+          params.height_min_cm = filters.height_range[0];
         if (filters.height_range[1] < 210)
-          params.height_max = filters.height_range[1];
+          params.height_max_cm = filters.height_range[1];
 
         if (filters.weight_range[0] > 40)
-          params.weight_min = filters.weight_range[0];
+          params.weight_min_kg = filters.weight_range[0];
         if (filters.weight_range[1] < 150)
-          params.weight_max = filters.weight_range[1];
+          params.weight_max_kg = filters.weight_range[1];
 
-        const data = await base44.get("faces/search", { params });
+        const response = await base44.get("faces/search", { params });
+        // Handle both array (legacy) and object response { items: [...] }
+        const data = Array.isArray(response)
+          ? response
+          : (response as any).items || [];
+
         if (Array.isArray(data)) {
           const mappedData = data.map((creator: any) => ({
             ...creator,
@@ -695,7 +702,7 @@ export default function BrandDashboard() {
           }));
           setCreators(mappedData);
         } else {
-          console.error("API returned non-array data:", data);
+          console.error("API returned non-array data:", response);
           setCreators(mockCreators);
         }
       } catch (error) {

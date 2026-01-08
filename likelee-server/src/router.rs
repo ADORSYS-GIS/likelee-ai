@@ -32,7 +32,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
         )
-        .route("/api/faces/search", get(crate::profiles::search_faces))
         .route(
             "/api/reference-images/upload",
             post(crate::reference_images::upload_reference_image),
@@ -163,9 +162,18 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::email::send_email),
         );
 
+    // Marketplace routes (Creators, Agencies, Brands)
+    let marketplace_routes = Router::new()
+        .route("/api/faces/search", get(crate::profiles::search_faces))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::marketplace_access,
+        ));
+
     Router::new()
         .merge(creator_routes)
         .merge(agency_routes)
+        .merge(marketplace_routes)
         .merge(common_routes)
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit

@@ -149,3 +149,20 @@ pub async fn agency_only(
             .into_response()
     }
 }
+
+pub async fn marketplace_access(
+    user: AuthUser,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    if user.role == "creator" || user.role == "agency" || user.role == "brand" {
+        next.run(request).await
+    } else {
+        (
+            StatusCode::FORBIDDEN,
+            "You do not have permission to access this resource (Marketplace access required)"
+                .to_string(),
+        )
+            .into_response()
+    }
+}
