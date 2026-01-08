@@ -19,6 +19,7 @@ This ER diagram reflects the current schema defined by the Supabase migrations i
 - 20251205160000_add_negotiations_and_restrictions.sql
 - 20251219213500_rename_rates_column.sql
 - 20260101_profiles_physical_attributes.sql
+- 20260107132500_create_face_usage_logs.sql
 
 Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
 
@@ -279,6 +280,15 @@ erDiagram
     timestamptz updated_at "default now()"
   }
 
+  FACE_USAGE_LOGS {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid face_id FK "REFERENCES profiles(id)"
+    uuid brand_id FK "REFERENCES organization_profiles(id)"
+    text usage_type "e.g., image_gen, voice_gen, video_gen"
+    jsonb metadata "details like model, prompt, duration"
+    timestamptz created_at "default now()"
+  }
+
   PROFILES ||--o{ ROYALTY_LEDGER : face_id
   PROFILES ||--o{ MODERATION_EVENTS : user_id
   PROFILES ||--o{ REFERENCE_IMAGES : user_id
@@ -294,6 +304,8 @@ erDiagram
   BRAND_VOICE_FOLDERS ||--o{ BRAND_VOICE_ASSETS : folder_id
   VOICE_RECORDINGS ||--o{ BRAND_VOICE_ASSETS : recording_id
   VOICE_MODELS ||--o{ BRAND_VOICE_ASSETS : model_id
+  PROFILES ||--o{ FACE_USAGE_LOGS : face_id
+  ORGANIZATION_PROFILES ||--o{ FACE_USAGE_LOGS : brand_id
 ```
 
 ## Notes
@@ -359,5 +371,13 @@ erDiagram
   - Members gain read access to the organization’s membership list via RLS.
 
 - Earnings Attribution
-  - Bookings/payments produce `ROYALTY_LEDGER` entries tied to a Face (in `PROFILES`).
   - `V_FACE_PAYOUTS` aggregates for dashboards.
+
+- **PROFILES → FACE_USAGE_LOGS (face_id)**
+  - Audit trail of how a Face (in `PROFILES`) is utilized by brands/agencies.
+  - Cardinality: 1 face can have 0..N usage logs; each log references exactly 1 face.
+
+- **ORGANIZATION_PROFILES → FACE_USAGE_LOGS (brand_id)**
+  - Tracks which Brand or Organization initiated the usage of a Face.
+  - Cardinality: 1 organization can have 0..N usage logs; each log references exactly 1 organization.
+

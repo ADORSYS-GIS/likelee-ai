@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -21,6 +21,7 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Plus,
   Download,
   Filter,
@@ -84,6 +85,286 @@ import {
 } from "recharts";
 import { useAuth } from "../auth/AuthProvider";
 
+
+// Helper for API URLs
+const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
+const API_BASE_ABS = (() => {
+  try {
+    if (!API_BASE) return new URL("/", window.location.origin).toString();
+    if (API_BASE.startsWith("http")) return API_BASE;
+    return new URL(API_BASE, window.location.origin).toString();
+  } catch {
+    return new URL("/", window.location.origin).toString();
+  }
+})();
+const api = (path: string) => new URL(path, API_BASE_ABS).toString();
+
+const UsageActivityView = ({ talentName }: { talentName?: string }) => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState(talentName || "");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch(api("/api/face-usage/logs"));
+        if (res.ok) {
+          const data = await res.json();
+          setLogs(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Error fetching usage logs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "image_gen":
+        return <Eye className="w-4 h-4 text-indigo-600" />;
+      case "voice_clone":
+        return <RefreshCw className="w-4 h-4 text-purple-600" />;
+      case "video_gen":
+        return <ArrowRight className="w-4 h-4 text-blue-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  // Computed Stats
+  const totalUses = logs.length;
+  const activeBrands = new Set(
+    logs.map((l) => l.organization_profiles?.organization_name || "Internal")
+  ).size;
+  // Using active models count instead of session length which is hard to compute without session IDs
+  const activeModels = new Set(logs.map((l) => l.face_id)).size;
+
+  // Filtered Logs
+  const filteredLogs = logs.filter((log) => {
+    const term = searchTerm.toLowerCase();
+    const matchSearch =
+      (log.profiles?.full_name || "").toLowerCase().includes(term) ||
+      (log.organization_profiles?.organization_name || "")
+        .toLowerCase()
+        .includes(term) ||
+      (log.face_id || "").toLowerCase().includes(term);
+
+    const matchType = typeFilter === "all" || log.usage_type === typeFilter;
+
+    return matchSearch && matchType;
+  });
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="p-6 bg-white border border-gray-900 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+            Total Uses (30d)
+          </p>
+          <h3 className="text-3xl font-black text-gray-900">
+            {totalUses.toLocaleString()}
+          </h3>
+          <p className="text-xs font-bold text-green-600 mt-2 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" /> +18.4%
+          </p>
+        </Card>
+        <Card className="p-6 bg-white border border-gray-900 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+            Active Brands
+          </p>
+          <h3 className="text-3xl font-black text-gray-900">{activeBrands}</h3>
+          <p className="text-xs font-bold text-indigo-600 mt-2 flex items-center gap-1">
+            Partner Organizations
+          </p>
+        </Card>
+        <Card className="p-6 bg-white border border-gray-900 shadow-sm">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+            Active Models
+          </p>
+          <h3 className="text-3xl font-black text-gray-900">{activeModels}</h3>
+          <p className="text-xs font-bold text-gray-400 mt-2">
+            Talent utilized
+          </p>
+        </Card>
+      </div>
+
+      <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+            <History className="w-5 h-5 text-indigo-600" /> Recent Usage
+            Activity
+          </h3>
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search talent or brands..."
+                className="pl-9 h-9 w-64 bg-white border-gray-200 text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <select
+              className="h-9 px-3 rounded-md border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="all">All Types</option>
+              <option value="image_gen">Image Gen</option>
+              <option value="voice_clone">Voice Clone</option>
+              <option value="video_gen">Video Gen</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                <th className="px-8 py-4">Talent / Face</th>
+                <th className="px-6 py-4">Brand / Organization</th>
+                <th className="px-6 py-4">Usage Type</th>
+                <th className="px-6 py-4">Metadata</th>
+                <th className="px-6 py-4">Date & Time</th>
+                <th className="px-8 py-4">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+                      <p className="text-sm font-medium text-gray-500">
+                        Fetching usage logs...
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
+                        <History className="w-6 h-6 text-gray-300" />
+                      </div>
+                      <p className="text-sm font-medium text-gray-500">
+                        No usage activity matches your filters
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredLogs.map((log) => (
+                  <tr
+                    key={log.id}
+                    className="hover:bg-gray-50 transition-colors group"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full border border-gray-200 bg-white overflow-hidden p-0.5">
+                          <img
+                            src={
+                              log.profiles?.profile_photo_url ||
+                              "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop"
+                            }
+                            alt={log.profiles?.full_name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">
+                            {log.profiles?.full_name || "Unknown"}
+                          </p>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
+                            ID: {log.face_id?.split("-")[0] || "Unknown"}...
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-bold text-gray-700">
+                          {log.organization_profiles?.organization_name ||
+                            "Internal Brand"}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-medium">
+                          Verified Partner
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-md bg-gray-50">
+                          {getIcon(log.usage_type)}
+                        </div>
+                        <span className="text-sm font-bold text-gray-600 capitalize">
+                          {log.usage_type.replace("_", " ")}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <code className="text-[10px] px-2 py-1 bg-gray-100 rounded text-gray-600 font-medium">
+                        {JSON.stringify(log.metadata).length > 20
+                          ? JSON.stringify(log.metadata).substring(0, 20) +
+                          "..."
+                          : JSON.stringify(log.metadata)}
+                      </code>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <p className="text-sm font-bold text-gray-700">
+                          {new Date(log.created_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-medium">
+                          {new Date(log.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Licensed
+                      </Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex justify-between items-center">
+          <p className="text-xs text-gray-500 font-medium">
+            Showing {filteredLogs.length} of {logs.length} usage events
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-bold border-gray-300"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-bold border-gray-300"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 // --- Mock Data (Based on Reference) ---
 const mockAgency = {
   name: "CM Models",
@@ -108,6 +389,7 @@ const TALENT_DATA = [
     projected: "$0",
     projectedVal: 0,
     img: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/86e331be1_Screenshot2025-10-29at63806PM.png",
+    tier: "Standard",
   },
   {
     id: "carla",
@@ -127,6 +409,7 @@ const TALENT_DATA = [
     projectedVal: 8200,
     isVerified: true,
     img: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
+    tier: "Elite",
   },
   {
     id: "clemence",
@@ -146,6 +429,7 @@ const TALENT_DATA = [
     projectedVal: 6200,
     isVerified: true,
     img: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ee3aae03f_Screenshot2025-10-29at63651PM.png",
+    tier: "Standard",
   },
   {
     id: "emma",
@@ -165,6 +449,7 @@ const TALENT_DATA = [
     projectedVal: 4100,
     isVerified: true,
     img: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
+    tier: "Standard",
   },
   {
     id: "julia",
@@ -184,6 +469,7 @@ const TALENT_DATA = [
     projectedVal: 6500,
     isVerified: true,
     img: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
+    tier: "Elite",
   },
   {
     id: "lina",
@@ -203,6 +489,7 @@ const TALENT_DATA = [
     projectedVal: 3500,
     isVerified: true,
     img: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ac71e274e_Screenshot2025-10-29at63715PM.png",
+    tier: "Standard",
   },
   {
     id: "luisa",
@@ -1126,6 +1413,159 @@ const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
   </div>
 );
 
+const TalentDetailView = ({
+  talent,
+  onBack,
+}: {
+  talent: any;
+  onBack: () => void;
+}) => {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  return (
+    <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button onClick={onBack} variant="ghost" size="sm" className="gap-2">
+          <ChevronLeft className="w-4 h-4" /> Back to Roster
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-6">
+        <div className="w-20 h-20 rounded-full border-2 border-white shadow-lg overflow-hidden">
+          <img
+            src={talent.img}
+            alt={talent.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div>
+          <h1 className="text-3xl font-black text-gray-900">{talent.name}</h1>
+          <p className="text-gray-500 font-medium">{talent.role}</p>
+        </div>
+        <div className="ml-auto flex gap-3">
+          <Button
+            onClick={async () => {
+              try {
+                const res = await fetch(api("/api/face-usage/simulate"), {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    target_name: talent.name,
+                    usage_type: "image_gen",
+                  }),
+                });
+                if (!res.ok) throw new Error("Failed");
+                alert("Simulated usage logged! Check Usage Activity tab.");
+              } catch (e) {
+                alert("Error simulating usage: " + e);
+              }
+            }}
+            variant="outline"
+            className="border-dashed border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+          >
+            Test Usage Logging
+          </Button>
+          <Button variant="outline">Edit Profile</Button>
+          <Button>View Contracts</Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <div className="flex gap-8">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "overview" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("usage")}
+            className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "usage" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            Usage Activity
+          </button>
+          <button
+            onClick={() => setActiveTab("earnings")}
+            className={`pb-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "earnings" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            Earnings
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "overview" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6 bg-white border border-gray-200 shadow-sm col-span-2">
+            <h3 className="font-bold text-gray-900 mb-4">Performance Stats</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold">
+                  Followers
+                </p>
+                <p className="text-2xl font-black text-gray-900">
+                  {talent.followers}
+                </p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold">
+                  Assets
+                </p>
+                <p className="text-2xl font-black text-gray-900">
+                  {talent.assets}
+                </p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold">
+                  Avg. Engagement
+                </p>
+                <p className="text-2xl font-black text-gray-900">4.2%</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+            <h3 className="font-bold text-gray-900 mb-4">Status</h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1">
+                  Consent Status
+                </p>
+                <Badge
+                  variant="outline"
+                  className={
+                    talent.consent === "complete"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }
+                >
+                  {talent.consent.toUpperCase()}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1">
+                  Current Tier
+                </p>
+                <Badge variant="secondary" className="font-bold">
+                  {talent.tier || "Standard"}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === "usage" && <UsageActivityView talentName={talent.name} />}
+
+      {activeTab === "earnings" && (
+        <Card className="p-12 text-center bg-gray-50 border-dashed border-2 border-gray-200">
+          <p className="text-gray-500 font-bold">Earnings view coming soon</p>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 const RosterView = ({
   searchTerm,
   setSearchTerm,
@@ -1147,7 +1587,7 @@ const RosterView = ({
 }) => {
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
-
+  const [selectedTalent, setSelectedTalent] = useState<any>(null);
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
     if (
@@ -1201,12 +1641,15 @@ const RosterView = ({
     return data;
   }, [searchTerm, statusFilter, consentFilter, sortConfig]);
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("All Status");
-    setConsentFilter("All Consent");
-    setSortConfig(null);
-  };
+
+  if (selectedTalent) {
+    return (
+      <TalentDetailView
+        talent={selectedTalent}
+        onBack={() => setSelectedTalent(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -1532,13 +1975,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -1614,7 +2057,8 @@ const RosterView = ({
                   {filteredTalent.map((talent) => (
                     <tr
                       key={talent.id}
-                      className="hover:bg-gray-50/50 transition-colors group"
+                      className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                      onClick={() => setSelectedTalent(talent)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
@@ -1657,16 +2101,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -2507,9 +2950,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -3321,11 +3764,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -5496,7 +5938,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -5659,11 +6101,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -6156,11 +6597,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -7028,6 +7468,7 @@ const AnalyticsDashboardView = () => {
     "Roster Insights",
     "Clients & Campaigns",
     "Compliance",
+    "Usage Activity",
   ];
 
   return (
@@ -7042,11 +7483,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -7060,6 +7500,8 @@ const AnalyticsDashboardView = () => {
           <Download className="w-4 h-4" /> Export Report
         </Button>
       </div>
+
+      {activeTab === "Usage Activity" && <UsageActivityView />}
 
       {activeTab === "Overview" ? (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -8136,6 +8578,9 @@ export default function AgencyDashboard() {
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
 
+
+
+
   const handleKYC = async () => {
     if (!authenticated || !user?.id) {
       toast({
@@ -8266,16 +8711,14 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -8295,11 +8738,10 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (

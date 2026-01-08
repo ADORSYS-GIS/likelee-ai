@@ -251,6 +251,7 @@ pub async fn signed_url_for_recording(
 #[derive(Deserialize)]
 pub struct CreateCloneIn {
     pub user_id: String,
+    pub brand_id: String,
     pub recording_id: String,
     pub voice_name: String,
     #[serde(default)]
@@ -398,6 +399,20 @@ pub async fn create_clone_from_recording(
     if model_row_id.is_empty() {
         return Err((StatusCode::BAD_GATEWAY, "missing inserted id".into()));
     }
+
+    // Log usage
+    let event = crate::usage_logs::UsageEvent {
+        face_id: input.user_id.clone(),
+        brand_id: input.brand_id.clone(),
+        usage_type: "voice_clone".into(),
+        metadata: serde_json::json!({
+            "recording_id": input.recording_id,
+            "voice_name": input.voice_name,
+            "provider": "elevenlabs",
+            "model_row_id": model_row_id,
+        }),
+    };
+    crate::usage_logs::log_usage(&state, event).await;
 
     Ok(Json(CreateCloneOut {
         provider: "elevenlabs".into(),

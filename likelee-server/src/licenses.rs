@@ -1,6 +1,6 @@
 use crate::config::AppState;
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -233,5 +233,63 @@ pub async fn list_brand_voice_assets(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
     let json: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    Ok(Json(json))
+}
+
+#[derive(Deserialize)]
+pub struct ListLicensesQuery {
+    pub user_id: String,
+}
+
+pub async fn list_creator_licenses(
+    State(state): State<AppState>,
+    Query(params): Query<ListLicensesQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brand_licenses")
+        .select("*, organization_profiles(org_name, logo_url)")
+        .eq("face_user_id", &params.user_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((status, text));
+    }
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let json: serde_json::Value =
+        serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+
+    Ok(Json(json))
+}
+
+pub async fn revoke_license(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brand_licenses")
+        .update(
+            serde_json::json!({
+                "status": "revoked",
+                "end_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
+        .eq("id", &id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let text = resp.text().await.unwrap_or_else(|_| "{}".into());
+    let json: serde_json::Value =
+        serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
+
     Ok(Json(json))
 }

@@ -119,6 +119,26 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
         )
+        .route(
+            "/api/face-usage/logs",
+            get(crate::usage_logs::get_usage_logs),
+        )
+        .route(
+            "/api/face-usage/simulate",
+            post(crate::usage_logs::simulate_usage),
+        )
+        .route(
+            "/api/licenses",
+            get(crate::licenses::list_creator_licenses),
+        )
+        .route(
+            "/api/licenses/:id/revoke",
+            post(crate::licenses::revoke_license),
+        )
+        .route(
+            "/api/agency/licenses",
+            get(crate::licenses::list_agency_licenses),
+        )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)
