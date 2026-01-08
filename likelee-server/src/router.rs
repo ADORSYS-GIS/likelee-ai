@@ -19,8 +19,6 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
-        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
-        .route("/api/email/available", get(crate::profiles::check_email))
         .route("/api/profile", post(crate::profiles::upsert_profile))
         .route(
             "/api/profile/photo-upload",
@@ -33,15 +31,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
-        )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
-        .route(
-            "/api/moderation/image",
-            post(crate::moderation::moderate_image),
-        )
-        .route(
-            "/api/moderation/image-bytes",
-            post(crate::moderation::moderate_image_bytes),
         )
         .route("/api/faces/search", get(crate::profiles::search_faces))
         .route(
@@ -79,14 +68,6 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
         )
-        .route(
-            "/api/reference-images/upload",
-            post(crate::reference_images::upload_reference_image),
-        )
-        .route(
-            "/api/reference-images",
-            get(crate::reference_images::list_reference_images),
-        )
         .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
         .layer(middleware::from_fn_with_state(
             state.clone(),
@@ -112,7 +93,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/organization-profile/user",
             get(crate::organization_profiles::get_by_user),
         )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
         .route(
             "/api/brand/voice-folders",
             get(crate::licenses::list_brand_voice_folders),
