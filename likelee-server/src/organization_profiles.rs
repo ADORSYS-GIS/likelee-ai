@@ -169,7 +169,7 @@ pub async fn register(
         .execute()
         .await;
 
-    Ok(Json(v))
+    Ok(Json(org_row))
 }
 
 pub async fn create(

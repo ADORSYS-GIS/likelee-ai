@@ -53,8 +53,6 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::reference_images::list_reference_images),
         )
         // Voice
-=======
->>>>>>> clone-user-house-access
         .route(
             "/api/voice/recordings",
             post(crate::voice::upload_voice_recording),
@@ -177,7 +175,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/licenses/activated",
             post(crate::licenses::activated_stub),
         )
->>>>>>> clone-user-house-access
         .route(
             "/api/integrations/core/send-email",
             post(crate::email::send_email),
