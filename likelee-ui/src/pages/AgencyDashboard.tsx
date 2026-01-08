@@ -45,6 +45,7 @@ import {
   ArrowRight,
   Building2,
   CreditCard,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8591,6 +8592,18 @@ export default function AgencyDashboard() {
     direction: "asc" | "desc";
   } | null>(null);
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
 
@@ -8778,9 +8791,20 @@ export default function AgencyDashboard() {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-slate-800 pt-20">
+    <div className="flex h-screen bg-gray-50 font-sans text-slate-800 pt-20 overflow-hidden">
+      {/* Mobile Backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-20 left-0 h-[calc(100vh-5rem)] z-10 transition-all duration-300">
+      <aside
+        className={`bg-white border-r border-gray-200 flex flex-col fixed top-20 left-0 h-[calc(100vh-5rem)] z-50 transition-all duration-300 w-64 ${isMobile && !sidebarOpen ? "-translate-x-full" : "translate-x-0"
+          }`}
+      >
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -8811,6 +8835,7 @@ export default function AgencyDashboard() {
                     toggleExpanded(item.id);
                   } else {
                     setActiveTab(item.id);
+                    if (isMobile) setSidebarOpen(false);
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
@@ -8839,6 +8864,7 @@ export default function AgencyDashboard() {
                       onClick={() => {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
+                        if (isMobile) setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
                         ? "text-indigo-700 bg-indigo-50 font-bold"
@@ -8871,9 +8897,21 @@ export default function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
+      <div className={`flex-1 flex flex-col transition-all duration-300 overflow-hidden ${isMobile ? "ml-0" : "ml-64"}`}>
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                <Menu className="w-6 h-6" />
+              </Button>
+            )}
+          </div>
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
