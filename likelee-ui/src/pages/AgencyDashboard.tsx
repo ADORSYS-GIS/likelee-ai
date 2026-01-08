@@ -2080,6 +2080,9 @@ const RosterView = ({
                         Projected <ArrowUpDown className="w-3 h-3" />
                       </button>
                     </th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      License Actions
+                    </th>
                     <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
                   </tr>
                 </thead>
@@ -2258,6 +2261,51 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-400 group-hover:text-gray-600 transition-colors">
                         {talent.projected}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {!talent.isRealData ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-[10px] font-bold uppercase opacity-50 cursor-not-allowed"
+                            disabled
+                          >
+                            Sample Mode
+                          </Button>
+                        ) : (
+                          <div className="flex gap-2">
+                            {talent.status === 'pending' ? (
+                              <Button
+                                size="sm"
+                                className="h-8 text-[10px] font-bold uppercase bg-green-600 hover:bg-green-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Find the pending license ID
+                                  const lic = talent.licenses?.find((l: any) => l.status === 'pending');
+                                  if (lic) handleApproveLicense(lic.id);
+                                }}
+                              >
+                                Approve
+                              </Button>
+                            ) : talent.status === 'active' ? (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 text-[10px] font-bold uppercase"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Find the active license ID
+                                  const lic = talent.licenses?.find((l: any) => l.status === 'active');
+                                  if (lic) handleRevokeLicense(lic.id);
+                                }}
+                              >
+                                Revoke
+                              </Button>
+                            ) : (
+                              <span className="text-gray-400 text-[10px] font-bold">REVOKED</span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="p-1.5 rounded-full hover:bg-gray-100 transition-colors inline-block cursor-pointer">
