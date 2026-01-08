@@ -24,7 +24,10 @@ interface AuthContextValue {
     displayName?: string,
   ) => Promise<{ user: User | null; session: any | null }>;
   refreshToken: () => Promise<void>;
-  resendEmailConfirmation?: (email: string, redirectTo?: string) => Promise<void>;
+  resendEmailConfirmation?: (
+    email: string,
+    redirectTo?: string,
+  ) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -75,7 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (insertError) {
           // If 409 Conflict, it means profile already exists, so just fetch it
-          if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
+          if (
+            insertError.code === "23505" ||
+            insertError.message.includes("duplicate key")
+          ) {
             const { data: existingProfile } = await supabase
               .from("profiles")
               .select("*")
@@ -198,7 +204,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           type: "signup",
           email: emailNormalized,
           options: {
-            emailRedirectTo: redirectTo || `${window.location.origin}/ReserveProfile?step=1`,
+            emailRedirectTo:
+              redirectTo || `${window.location.origin}/ReserveProfile?step=1`,
           },
         });
         if (error) throw error;
