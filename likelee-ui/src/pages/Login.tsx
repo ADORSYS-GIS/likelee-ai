@@ -50,15 +50,21 @@ export default function Login() {
     [location.search],
   );
 
+  // Track if we're about to redirect
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
+
   React.useEffect(() => {
     if (initialized && authenticated && profile) {
       // Enforce role-based login
       if (profile.role !== userType) {
         const roleName = profile.role.charAt(0).toUpperCase() + profile.role.slice(1);
-        setError(`This account is registered as a ${roleName}. Please use the ${roleName} tab to sign in.`);
+        setError(`This account is not registered . Check if on the correct tab`);
         logout();
         return;
       }
+
+      // Set redirecting state to hide content during navigation
+      setIsRedirecting(true);
 
       if (creatorType) {
         navigate(
@@ -105,27 +111,27 @@ export default function Login() {
     return "/Register";
   };
 
+  // Show loading state when redirecting or when authenticated
+  if (isRedirecting || (authenticated && profile)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#32C8D1] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+              Loading...
+            </span>
+          </div>
+          <p className="mt-4 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-md mx-auto px-6 py-16">
       <h1 className="text-2xl font-bold mb-4">Sign in</h1>
       {!initialized ? (
         <p>Loading...</p>
-      ) : authenticated ? (
-        <div className="text-center space-y-4">
-          <p>You are already signed in.</p>
-          <Button
-            onClick={() => {
-              const dashboard =
-                profile?.role === 'brand' ? '/BrandDashboard' :
-                  profile?.role === 'agency' ? '/AgencyDashboard' :
-                    '/CreatorDashboard';
-              navigate(dashboard);
-            }}
-            className="w-full h-12 bg-gray-900 hover:bg-black text-white font-bold rounded-xl"
-          >
-            Go to Dashboard
-          </Button>
-        </div>
       ) : (
         <Card className="w-full max-w-md border-2 border-gray-100 shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="space-y-4 text-center pb-8">
