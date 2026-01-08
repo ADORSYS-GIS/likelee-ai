@@ -92,10 +92,7 @@ pub async fn create_session(
     user: AuthUser,
     Json(req): Json<SessionRequest>,
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
-    let profile_id = req
-        .organization_id
-        .as_ref()
-        .unwrap_or(&user.id);
+    let profile_id = req.organization_id.as_ref().unwrap_or(&user.id);
     debug!(%profile_id, "Creating Veriff session");
     let veriff_body = VeriffCreateSessionBody {
         verification: VeriffVerification {
