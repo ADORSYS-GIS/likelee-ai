@@ -3366,19 +3366,18 @@ export default function CreatorDashboard() {
                 )}
                 {avatarStatus && (
                   <p
-                    className={`text-xs mt-3 ${
-                      avatarStatus === "ready" || avatarStatus === "active"
+                    className={`text-xs mt-3 ${avatarStatus === "ready" || avatarStatus === "active"
                         ? "text-green-600"
                         : ["reviewing", "pending", "queued"].includes(
-                              String(avatarStatus).toLowerCase(),
-                            )
+                          String(avatarStatus).toLowerCase(),
+                        )
                           ? "text-amber-600"
                           : ["failed", "rejected", "error"].includes(
-                                String(avatarStatus).toLowerCase(),
-                              )
+                            String(avatarStatus).toLowerCase(),
+                          )
                             ? "text-red-600"
                             : "text-gray-500"
-                    }`}
+                      }`}
                   >
                     Status: {avatarStatus} · Typically approved in 1–2 days
                   </p>
@@ -3453,19 +3452,18 @@ export default function CreatorDashboard() {
                 )}
                 {avatarStatus && (
                   <p
-                    className={`text-xs mt-3 ${
-                      avatarStatus === "ready" || avatarStatus === "active"
+                    className={`text-xs mt-3 ${avatarStatus === "ready" || avatarStatus === "active"
                         ? "text-green-600"
                         : ["reviewing", "pending", "queued"].includes(
-                              String(avatarStatus).toLowerCase(),
-                            )
+                          String(avatarStatus).toLowerCase(),
+                        )
                           ? "text-amber-600"
                           : ["failed", "rejected", "error"].includes(
-                                String(avatarStatus).toLowerCase(),
-                              )
+                            String(avatarStatus).toLowerCase(),
+                          )
                             ? "text-red-600"
                             : "text-gray-500"
-                    }`}
+                      }`}
                   >
                     Status: {avatarStatus} · Typically approved in 1–2 days
                   </p>
@@ -6349,7 +6347,7 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${isSmallScreen
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed top-20 h-[calc(100vh-5rem)] z-40 ${isSmallScreen
           ? sidebarOpen
             ? "w-64"
             : "-translate-x-full w-64"

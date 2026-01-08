@@ -81,6 +81,8 @@ import {
   getOrganizationProfileByUserId,
   getKycStatus as fetchUserKycStatus,
   createKycSession,
+  getOrganizationKycStatus,
+  createOrganizationKycSession,
 } from "../api/functions";
 import { KycStatusResponse } from "../types/kyc";
 import { OrganizationProfile } from "../api/entities";
@@ -555,20 +557,35 @@ export default function AgencyDashboard() {
   };
 
   const { user } = useAuth();
+
+  // Fetch organization profile to get ID
+  const { data: orgProfiles } = useQuery<OrganizationProfile[] | any>({
+    queryKey: ["organizationProfile"],
+    queryFn: () => getOrganizationProfileByUserId(),
+    enabled: !!user?.id,
+  });
+
+  const orgProfile = Array.isArray(orgProfiles) ? orgProfiles[0] : orgProfiles;
+
   const {
     data: ownerKyc,
     isLoading: isOwnerKycLoading,
     refetch: refetchOwnerKyc,
   } = useQuery<KycStatusResponse | any>({
-    queryKey: ["ownerKycStatus"],
-    queryFn: () => fetchUserKycStatus(),
-    enabled: !!user?.id,
+    queryKey: ["ownerKycStatus", orgProfile?.id],
+    queryFn: () => getOrganizationKycStatus(orgProfile.id),
+    enabled: !!orgProfile?.id,
   });
 
   const startOwnerKyc = async () => {
-    if (!user?.id) return;
+    if (!orgProfile?.id) {
+      console.error("No organization profile found");
+      return;
+    }
     try {
-      const session = await createKycSession();
+      const session = await createOrganizationKycSession({
+        organization_id: orgProfile.id,
+      });
       // If base client returns raw axios-like response, handle .session_url accordingly
       const url =
         (session as any)?.session_url || (session as any)?.data?.session_url;
