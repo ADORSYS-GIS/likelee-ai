@@ -428,6 +428,19 @@ pub async fn search_faces(
         }
     }
 
+    if let Some(ref v) = q.features {
+        let vals: Vec<String> = v
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !vals.is_empty() {
+            // facial_features is text[], so we use overlap operator &&
+            let array_val = format!("{{{}}}", vals.join(","));
+            req = req.ov("facial_features", array_val);
+        }
+    }
+
     if let Some(min) = q.height_min_cm {
         req = req.gte("height_cm", min.to_string());
     }

@@ -92,11 +92,38 @@ pub async fn create_session(
     user: AuthUser,
     Json(req): Json<SessionRequest>,
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
-    let profile_id = req.organization_id.as_ref().unwrap_or(&user.id);
-    debug!(%profile_id, "Creating Veriff session");
+    let profile_id = if let Some(org_id) = req.organization_id.as_ref() {
+        // Resolve organization_id to owner_user_id from organization_profiles
+        let resp = state
+            .pg
+            .from("organization_profiles")
+            .select("owner_user_id")
+            .eq("id", org_id)
+            .single()
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let v: serde_json::Value = serde_json::from_str(&text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        v.get("owner_user_id")
+            .and_then(|v| v.as_str())
+            .ok_or((StatusCode::NOT_FOUND, "Organization not found".into()))?
+            .to_string()
+    } else {
+        user.id.clone()
+    };
+
+    debug!(%profile_id, "Creating Veriff session for profile");
     let veriff_body = VeriffCreateSessionBody {
         verification: VeriffVerification {
-            vendor_data: profile_id,
+            vendor_data: &profile_id,
             lang: None,
             features: None,
         },
@@ -184,7 +211,7 @@ pub async fn create_session(
         },
         verified_at: None,
     };
-    update_profile(&state, profile_id, &payload)
+    update_profile(&state, &profile_id, &payload)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
@@ -206,12 +233,39 @@ pub async fn get_status(
     user: AuthUser,
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
+    let profile_id = if let Some(org_id) = q.organization_id.as_ref() {
+        // Resolve organization_id to owner_user_id from organization_profiles
+        let resp = state
+            .pg
+            .from("organization_profiles")
+            .select("owner_user_id")
+            .eq("id", org_id)
+            .single()
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let v: serde_json::Value = serde_json::from_str(&text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        v.get("owner_user_id")
+            .and_then(|v| v.as_str())
+            .ok_or((StatusCode::NOT_FOUND, "Organization not found".into()))?
+            .to_string()
+    } else {
+        user.id.clone()
+    };
+
     let resp = state
         .pg
         .from("profiles")
         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
-        .eq("id", profile_id)
+        .eq("id", &profile_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -293,7 +347,7 @@ pub async fn get_status(
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
-                    let _ = update_profile(&state, profile_id, &payload).await;
+                    let _ = update_profile(&state, &profile_id, &payload).await;
                     let resp2 = state
                         .pg
                         .from("profiles")
@@ -379,6 +433,7 @@ pub async fn veriff_webhook(
         axum::http::StatusCode::BAD_REQUEST,
         "missing vendorData".into(),
     ))?;
+
     let status = parsed
         .decision
         .as_ref()
@@ -392,6 +447,7 @@ pub async fn veriff_webhook(
     } else {
         "pending"
     };
+
     info!(%user_id, %mapped_status, "Received Veriff decision webhook");
 
     let payload = ProfileVerification {
