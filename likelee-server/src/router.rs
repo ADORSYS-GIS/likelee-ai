@@ -136,8 +136,12 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::licenses::revoke_license),
         )
         .route(
-            "/api/agency/licenses",
-            get(crate::licenses::list_agency_licenses),
+            "/api/licenses/:id/approve",
+            post(crate::licenses::approve_license),
+        )
+        .route(
+            "/api/agency/roster",
+            get(crate::licenses::list_agency_roster),
         )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit

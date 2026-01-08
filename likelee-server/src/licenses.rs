@@ -256,9 +256,12 @@ pub async fn list_creator_licenses(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
 
     if !resp.status().is_success() {
-        let status = resp.status();
+        let status_code = resp.status().as_u16();
         let text = resp.text().await.unwrap_or_default();
-        return Err((status, text));
+        return Err((
+            StatusCode::from_u16(status_code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            text,
+        ));
     }
 
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
@@ -272,6 +275,7 @@ pub async fn revoke_license(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Update license status to 'revoked'
     let resp = state
         .pg
         .from("brand_licenses")
@@ -279,6 +283,167 @@ pub async fn revoke_license(
             serde_json::json!({
                 "status": "revoked",
                 "end_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
+        .eq("id", &id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let text = resp.text().await.unwrap_or_else(|_| "{}".into());
+    let json: serde_json::Value =
+        serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
+
+    // 2. Delete brand_voice_assets (via folder cascade)
+    // First get folder IDs for this license
+    let folders_resp = state
+        .pg
+        .from("brand_voice_folders")
+        .select("id")
+        .eq("license_id", &id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let folders_text = folders_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let folders: serde_json::Value =
+        serde_json::from_str(&folders_text).unwrap_or(serde_json::json!([]));
+
+    // Delete assets for each folder
+    if let Some(folder_arr) = folders.as_array() {
+        for folder in folder_arr {
+            if let Some(folder_id) = folder.get("id").and_then(|v| v.as_str()) {
+                let _ = state
+                    .pg
+                    .from("brand_voice_assets")
+                    .delete()
+                    .eq("folder_id", folder_id)
+                    .execute()
+                    .await;
+            }
+        }
+    }
+
+    // 3. Delete brand_voice_folders for this license
+    let _ = state
+        .pg
+        .from("brand_voice_folders")
+        .delete()
+        .eq("license_id", &id)
+        .execute()
+        .await;
+
+    Ok(Json(json))
+}
+
+#[derive(Deserialize)]
+pub struct AgencyRosterQuery {
+    pub agency_id: String,
+}
+
+pub async fn list_agency_roster(
+    State(state): State<AppState>,
+    Query(params): Query<AgencyRosterQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Get all profiles (talent) managed by this agency
+    let resp = state
+        .pg
+        .from("profiles")
+        .select("id,full_name,profile_photo_url,email")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status_code = resp.status().as_u16();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status_code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            text,
+        ));
+    }
+
+    let profiles_text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let mut profiles: serde_json::Value =
+        serde_json::from_str(&profiles_text).unwrap_or(serde_json::json!([]));
+
+    // For each profile, fetch their active licenses
+    if let Some(profiles_arr) = profiles.as_array_mut() {
+        for profile in profiles_arr.iter_mut() {
+            if let Some(profile_id) = profile.get("id").and_then(|v| v.as_str()) {
+                // Check if this profile belongs to the agency
+                let agency_check = state
+                    .pg
+                    .from("agency_users")
+                    .select("id")
+                    .eq("agency_id", &params.agency_id)
+                    .eq("user_id", profile_id)
+                    .limit(1)
+                    .execute()
+                    .await;
+
+                // Skip if not part of this agency
+                if agency_check.is_err() {
+                    continue;
+                }
+
+                let check_text = agency_check
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "[]".into());
+                let check_json: serde_json::Value =
+                    serde_json::from_str(&check_text).unwrap_or(serde_json::json!([]));
+
+                if check_json.as_array().map(|a| a.is_empty()).unwrap_or(true) {
+                    continue;
+                }
+
+                // Fetch active licenses for this profile
+                let licenses_resp = state
+                    .pg
+                    .from("brand_licenses")
+                    .select("id,status,type,start_at,end_at,brand_org_id,organization_profiles(org_name,logo_url)")
+                    .eq("face_user_id", profile_id)
+                    .execute()
+                    .await;
+
+                if let Ok(lic_resp) = licenses_resp {
+                    let lic_text = lic_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let licenses: serde_json::Value =
+                        serde_json::from_str(&lic_text).unwrap_or(serde_json::json!([]));
+                    profile.as_object_mut().unwrap().insert(
+                        "licenses".to_string(),
+                        licenses,
+                    );
+                } else {
+                    profile.as_object_mut().unwrap().insert(
+                        "licenses".to_string(),
+                        serde_json::json!([]),
+                    );
+                }
+            }
+        }
+
+        // Filter out profiles not in this agency
+        profiles_arr.retain(|p| p.get("licenses").is_some());
+    }
+
+    Ok(Json(profiles))
+}
+
+pub async fn approve_license(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brand_licenses")
+        .update(
+            serde_json::json!({
+                "status": "active",
+                "start_at": chrono::Utc::now().to_rfc3339()
             })
             .to_string(),
         )
