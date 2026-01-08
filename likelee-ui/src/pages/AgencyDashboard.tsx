@@ -84,6 +84,7 @@ import {
   Legend,
 } from "recharts";
 import { useAuth } from "../auth/AuthProvider";
+import { licenseService } from "../services/licenseService";
 
 
 // Helper for API URLs
@@ -1575,6 +1576,7 @@ const RosterView = ({
   setConsentFilter,
   sortConfig,
   setSortConfig,
+  realRosterData,
 }: {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
@@ -1584,6 +1586,7 @@ const RosterView = ({
   setConsentFilter: (s: string) => void;
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
+  realRosterData: any[];
 }) => {
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
@@ -1600,8 +1603,34 @@ const RosterView = ({
     setSortConfig({ key, direction });
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("All Status");
+    setConsentFilter("All Consent");
+    setSortConfig(null);
+  };
+
   const filteredTalent = React.useMemo(() => {
-    let data = [...TALENT_DATA];
+    // Merge real data with mock data
+    // Real data takes priority; mock data shown when DB is empty
+    const combinedData = realRosterData.length > 0
+      ? [
+        ...realRosterData.map((t) => ({
+          ...t,
+          id: t.id,
+          name: t.full_name || 'Unknown',
+          img: t.profile_photo_url || '',
+          email: t.email || '',
+          isRealData: true,
+          // Map licenses to expected format
+          brand: t.licenses?.[0]?.organization_profiles?.org_name || '—',
+          status: t.licenses?.some((l: any) => l.status === 'active') ? 'active' : 'pending',
+        })),
+        ...TALENT_DATA.map((t) => ({ ...t, isRealData: false }))
+      ]
+      : TALENT_DATA.map((t) => ({ ...t, isRealData: false }));
+
+    let data = [...combinedData];
 
     // Search
     if (searchTerm) {
@@ -1639,7 +1668,7 @@ const RosterView = ({
     }
 
     return data;
-  }, [searchTerm, statusFilter, consentFilter, sortConfig]);
+  }, [searchTerm, statusFilter, consentFilter, sortConfig, realRosterData]);
 
 
   if (selectedTalent) {
@@ -8565,6 +8594,12 @@ export default function AgencyDashboard() {
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
 
+  // Real roster data from API
+  const [realRosterData, setRealRosterData] = useState<any[]>([]);
+  const [loadingRoster, setLoadingRoster] = useState(true);
+  const [selectedTalentForAction, setSelectedTalentForAction] = useState<any>(null);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
@@ -8626,6 +8661,73 @@ export default function AgencyDashboard() {
       setKycLoading(false);
     }
   };
+
+  // Fetch agency roster with licenses
+  const fetchRoster = async () => {
+    if (!user?.id) {
+      setLoadingRoster(false);
+      return;
+    }
+
+    try {
+      // For now, using user.id as agency_id (adjust based on your auth structure)
+      const data = await licenseService.getAgencyRoster(user.id);
+      setRealRosterData(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch roster:', error);
+      setRealRosterData([]);
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
+
+  // Approve a pending license
+  const handleApproveLicense = async (licenseId: string) => {
+    try {
+      await licenseService.approveLicense(licenseId);
+      toast({
+        title: 'License Approved',
+        description: 'The license has been activated successfully.',
+      });
+      // Refresh roster
+      await fetchRoster();
+      setShowLicenseModal(false);
+    } catch (error) {
+      console.error('Failed to approve license:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to approve license. Please try again.',
+      });
+    }
+  };
+
+  // Revoke an active license
+  const handleRevokeLicense = async (licenseId: string) => {
+    try {
+      await licenseService.revokeLicense(licenseId);
+      toast({
+        title: 'License Revoked',
+        description: 'The license has been revoked and brand access removed.',
+      });
+      // Refresh roster
+      await fetchRoster();
+      setShowLicenseModal(false);
+    } catch (error) {
+      console.error('Failed to revoke license:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to revoke license. Please try again.',
+      });
+    }
+  };
+
+  // Fetch roster on mount
+  useEffect(() => {
+    fetchRoster();
+  }, [user?.id]);
+
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -8955,6 +9057,7 @@ export default function AgencyDashboard() {
               setConsentFilter={setConsentFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
+              realRosterData={realRosterData}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
