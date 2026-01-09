@@ -63,6 +63,7 @@
     "react-i18next": "^16.5.0",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^7.12.0",
+    "recharts": "^2.15.4",
     "sharp": "^0.33.5",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
