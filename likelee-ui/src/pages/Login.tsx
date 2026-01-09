@@ -82,13 +82,8 @@ export default function Login() {
               ? "Agency"
               : "Creator";
         setError(
-          `This account is registered as a ${roleName}. Please switch to the ${roleName} tab to sign in.`,
+          `This account is not registered as a ${userType}. Please try again with the correct tab to sign in.`,
         );
-        toast({
-          title: "Incorrect tab",
-          description: `This account is registered as a ${roleName}.`,
-          variant: "destructive",
-        });
         logout();
         updateLoginAttempted(false);
         return;
