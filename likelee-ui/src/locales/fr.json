@@ -150,6 +150,7 @@
     }
   },
   "organizationSignup": {
+    "selectAll": "Tout sélectionner",
     "missingFieldsTitle": "Champs manquants",
     "missingFieldsDescription": "Veuillez remplir tous les champs obligatoires pour continuer.",
     "passwordMismatchTitle": "Les mots de passe ne correspondent pas",
@@ -187,6 +188,21 @@
     "phoneNumber": "Numéro de téléphone",
     "saving": "Enregistrement...",
     "continue": "Continuer",
+    "back": "Retour",
+    "submitting": "Envoi en cours...",
+    "completeSignUp": "Terminer l'inscription",
+    "industries": {
+      "fashion": "Mode",
+      "beauty": "Beauté",
+      "technology": "Technologie",
+      "automotive": "Automobile",
+      "foodBeverage": "Alimentation et Boissons",
+      "travel": "Voyage",
+      "entertainment": "Divertissement",
+      "healthWellness": "Santé et Bien-être",
+      "finance": "Finance",
+      "other": "Autre"
+    },
     "brandDetails": {
       "title": "Détails de la marque",
       "subtitle": "Dites-nous en plus sur vos objectifs de marque.",
@@ -202,13 +218,61 @@
     },
     "continueToVerification": "Continuer vers la vérification",
     "productionStudio": {
+      "title": "Détails du studio",
+      "subtitle": "Dites-nous en plus sur votre travail de production",
+      "primaryProductionType": "Type de production principal *",
+      "budgetRangeLabel": "Plage de budget de production typique",
       "selectProductionType": "Sélectionnez le type de production",
       "selectBudgetRange": "Sélectionnez le budget mensuel",
       "budgetRangeUnder10k": "Moins de 10 000 $",
       "budgetRange10k50k": "10 000 $ - 50 000 $",
-      "budgetRange50k250k": "50 000 $ - 250 000 $"
+      "budgetRange50k250k": "50 000 $ - 250 000 $",
+      "budgetRange250k1m": "250 000 $ - 1 M$",
+      "budgetRangeOver1m": "Plus de 1 M$",
+      "createsForQuestion": "Créez-vous pour des clients ou votre propre propriété intellectuelle ?",
+      "forClients": "Pour les clients",
+      "ownIp": "Propre PI",
+      "both": "Les deux",
+      "usesAiQuestion": "Utilisez-vous déjà l'IA dans votre flux de production ?",
+      "rolesNeededLabel": "Quels rôles cherchez-vous à pourvoir via Likelee ?"
+    },
+    "marketingAgency": {
+      "title": "Détails de l'agence",
+      "subtitle": "Dites-nous en plus sur votre agence",
+      "clientCountLabel": "Nombre de marques clientes actuellement gérées",
+      "clientCountPlaceholder": "ex: 5",
+      "campaignBudgetLabel": "Budget de campagne typique par marque",
+      "campaignBudgetPlaceholder": "Sélectionnez une plage budgétaire",
+      "budgetUnder5k": "Moins de 5 000 $",
+      "budget5k25k": "5 000 $ - 25 000 $",
+      "budget25k100k": "25 000 $ - 100 000 $",
+      "budget100k500k": "100 000 $ - 500 000 $",
+      "budgetOver500k": "Plus de 500 000 $",
+      "servicesLabel": "Principaux services offerts",
+      "matchCreatorsQuestion": "Souhaitez-vous que Likelee vous mette en relation avec des créateurs ou fournisse simplement des outils de licence ?",
+      "matchWithCreators": "Me mettre en relation avec des créateurs",
+      "justProvideTools": "Fournir uniquement des outils de licence",
+      "handleContractsQuestion": "Gérez-vous les contrats et les redevances pour les clients ou voulez-vous que Likelee automatise cela ?",
+      "weHandleIt": "Nous le gérons",
+      "automateWithLikelee": "Automatiser avec Likelee"
+    },
+    "talentAgency": {
+      "title": "Détails de l'agence",
+      "subtitle": "Dites-nous en plus sur votre roster de talents",
+      "talentCountLabel": "Nombre de modèles ou de talents représentés",
+      "talentCountPlaceholder": "ex: 25",
+      "licenseLikenessQuestion": "Accordez-vous actuellement des licences pour l'image de vos modèles ?",
+      "openToAiQuestion": "Vos talents sont-ils ouverts à la recréation par IA ou uniquement à la protection de leur image ?",
+      "campaignsPursuedLabel": "Quels types de campagnes ou de collaborations poursuivez-vous le plus ?",
+      "bulkOnboardQuestion": "Souhaitez-vous intégrer massivement votre roster sur Likelee ?"
     },
     "options": {
+      "aiUsage": {
+        "yes": "Oui",
+        "no": "Non",
+        "exploring": "En cours d'exploration",
+        "maybeLater": "Peut-être plus tard"
+      },
       "productionTypes": {
         "film": "Film",
         "tv": "Télévision",
@@ -1496,6 +1560,7 @@
     }
   },
   "common": {
+    "organization": "Organisation",
     "signIn": "Se connecter",
     "dashboard": "Tableau de bord",
     "ongoing": "En continu",

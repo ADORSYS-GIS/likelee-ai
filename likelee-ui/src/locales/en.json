@@ -600,6 +600,7 @@
     "assistance": "Need immediate assistance? Email us at"
   },
   "organizationSignup": {
+    "selectAll": "Select All",
     "missingFieldsTitle": "Missing Fields",
     "missingFieldsDescription": "Please fill in all required fields to proceed.",
     "passwordMismatchTitle": "Passwords do not match",
@@ -637,6 +638,21 @@
     "phoneNumber": "Phone Number",
     "saving": "Saving...",
     "continue": "Continue",
+    "back": "Back",
+    "submitting": "Submitting...",
+    "completeSignUp": "Complete Sign Up",
+    "industries": {
+      "fashion": "Fashion",
+      "beauty": "Beauty",
+      "technology": "Technology",
+      "automotive": "Automotive",
+      "foodBeverage": "Food & Beverage",
+      "travel": "Travel",
+      "entertainment": "Entertainment",
+      "healthWellness": "Health & Wellness",
+      "finance": "Finance",
+      "other": "Other"
+    },
     "brandDetails": {
       "title": "Brand Details",
       "subtitle": "Tell us more about your brand goals.",
@@ -652,13 +668,61 @@
     },
     "continueToVerification": "Continue to Verification",
     "productionStudio": {
+      "title": "Studio Details",
+      "subtitle": "Tell us about your production work",
+      "primaryProductionType": "Primary Production Type *",
+      "budgetRangeLabel": "Typical Production Budget Range",
       "selectProductionType": "Select production type",
       "selectBudgetRange": "Select monthly budget",
       "budgetRangeUnder10k": "Under $10k",
       "budgetRange10k50k": "$10k - $50k",
-      "budgetRange50k250k": "$50k - $250k"
+      "budgetRange50k250k": "$50k - $250k",
+      "budgetRange250k1m": "$250k - $1M",
+      "budgetRangeOver1m": "Over $1M",
+      "createsForQuestion": "Do you create for clients or your own IP?",
+      "forClients": "For clients",
+      "ownIp": "Own IP",
+      "both": "Both",
+      "usesAiQuestion": "Do you already use AI in your production workflow?",
+      "rolesNeededLabel": "What roles are you looking to fill through Likelee?"
+    },
+    "marketingAgency": {
+      "title": "Agency Details",
+      "subtitle": "Tell us about your agency",
+      "clientCountLabel": "Number of Client Brands Currently Managed",
+      "clientCountPlaceholder": "e.g., 5",
+      "campaignBudgetLabel": "Typical Campaign Budget Per Brand",
+      "campaignBudgetPlaceholder": "Select budget range",
+      "budgetUnder5k": "Under $5,000",
+      "budget5k25k": "$5,000 - $25,000",
+      "budget25k100k": "$25,000 - $100,000",
+      "budget100k500k": "$100,000 - $500,000",
+      "budgetOver500k": "Over $500,000",
+      "servicesLabel": "Primary Services Offered",
+      "matchCreatorsQuestion": "Would you like Likelee to match you with creators or just provide licensing tools?",
+      "matchWithCreators": "Match me with creators",
+      "justProvideTools": "Just provide licensing tools",
+      "handleContractsQuestion": "Do you handle contracts and royalties for clients or want Likelee to automate that?",
+      "weHandleIt": "We handle it",
+      "automateWithLikelee": "Automate with Likelee"
+    },
+    "talentAgency": {
+      "title": "Agency Details",
+      "subtitle": "Tell us about your talent roster",
+      "talentCountLabel": "Number of Models or Talent Represented",
+      "talentCountPlaceholder": "e.g., 25",
+      "licenseLikenessQuestion": "Do you currently license your models' likeness?",
+      "openToAiQuestion": "Are your talents open to AI recreation or only likeness protection?",
+      "campaignsPursuedLabel": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
     },
     "options": {
+      "aiUsage": {
+        "yes": "Yes",
+        "no": "No",
+        "exploring": "Exploring",
+        "maybeLater": "Maybe later"
+      },
       "productionTypes": {
         "film": "Film",
         "tv": "TV",
@@ -805,6 +869,7 @@
   "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "You approve each reuse",
   "faces.digitalTalentOwner.footer": "You're not a gig worker. You're an owner.",
   "common": {
+    "organization": "Organization",
     "signIn": "Sign In",
     "dashboard": "Dashboard",
     "city": "City",
