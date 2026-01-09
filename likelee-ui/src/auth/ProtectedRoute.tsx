@@ -29,31 +29,6 @@ export default function ProtectedRoute({
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Handle role-based redirect with useEffect to prevent content flash
-  React.useEffect(() => {
-    if (initialized && authenticated && profile) {
-      // Check for role-based access
-      if (allowedRoles && !allowedRoles.includes(profile.role)) {
-        navigate("/Unauthorized", { replace: true });
-        return;
-      }
-
-      // Redirect incomplete onboarding to signup
-      if (
-        profile.onboarding_step === "email_verification" &&
-        location.pathname !== "/organization-signup"
-      ) {
-        navigate("/organization-signup", { replace: true });
-      }
-    }
-  }, [
-    initialized,
-    authenticated,
-    profile,
-    allowedRoles,
-    location.pathname,
-    navigate,
-  ]);
 
   if (!initialized) {
     return <LoadingSpinner />; // Show spinner during initialization
@@ -69,9 +44,15 @@ export default function ProtectedRoute({
     return <LoadingSpinner />;
   }
 
-  // Show loading spinner during role check and redirect
+  // Handle role-based redirect in render to prevent content flash
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
-    return <LoadingSpinner />;
+    const correctDashboard =
+      profile.role === "brand"
+        ? "/BrandDashboard"
+        : profile.role === "agency"
+          ? "/AgencyDashboard"
+          : "/CreatorDashboard";
+    return <Navigate to={correctDashboard} replace />;
   }
 
   // Show loading spinner during onboarding redirect
@@ -79,7 +60,7 @@ export default function ProtectedRoute({
     profile.onboarding_step === "email_verification" &&
     location.pathname !== "/organization-signup"
   ) {
-    return <LoadingSpinner />;
+    return <Navigate to="/organization-signup" replace />;
   }
 
   return <>{children}</>;
