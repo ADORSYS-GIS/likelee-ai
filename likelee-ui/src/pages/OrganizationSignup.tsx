@@ -203,8 +203,8 @@ export default function OrganizationSignup() {
     onError: (error) => {
       console.error("Error creating initial profile:", error);
       toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
+        title: t("common.error"),
+        description: getTranslatedErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -251,12 +251,16 @@ export default function OrganizationSignup() {
       console.error("Error updating profile:", error);
       // Optionally handle error, e.g., show a toast notification
       toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
+        title: t("common.error"),
+        description: getTranslatedErrorMessage(error),
         variant: "destructive",
       });
     },
   });
+
+  const getTranslatedErrorMessage = (error: any) => {
+    return getFriendlyErrorMessage(error, t);
+  };
 
   const handleNext = () => {
     // Basic validation for Step 1 before proceeding
@@ -488,7 +492,7 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="company@example.com"
+                    placeholder={t("organizationSignup.emailPlaceholder")}
                   />
                 </div>
 
@@ -508,7 +512,7 @@ export default function OrganizationSignup() {
                         setFormData({ ...formData, password: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
+                      placeholder={t("organizationSignup.passwordPlaceholder")}
                     />
                     <button
                       type="button"
@@ -543,7 +547,7 @@ export default function OrganizationSignup() {
                         })
                       }
                       className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
+                      placeholder={t("organizationSignup.passwordPlaceholder")}
                     />
                     <button
                       type="button"

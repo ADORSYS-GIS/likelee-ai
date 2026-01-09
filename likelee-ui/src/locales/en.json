@@ -628,6 +628,19 @@
     "of": "of",
     "companyInfo": "Company Info",
     "startWithBasics": "Let's start with the basics.",
+    "emailPlaceholder": "company@example.com",
+    "passwordPlaceholder": "••••••••",
+    "errors": {
+      "not_admin": "You do not have permission to perform this action.",
+      "user_not_allowed": "User not allowed to register this organization.",
+      "duplicate_email": "This email is already associated with an organization.",
+      "generic": "An unexpected error occurred. Please try again.",
+      "invalidCredentials": "Incorrect email or password. Please check your details and try again.",
+      "weakPassword": "Your password is too short. Please use at least 6 characters.",
+      "emailNotConfirmed": "Please verify your email address. Check your inbox for a confirmation link.",
+      "rateLimit": "Too many attempts. Please wait a moment before trying again.",
+      "networkError": "Connection lost. Please check your internet connection."
+    },
     "companyEmail": "Company Email",
     "confirmPassword": "Confirm Password",
     "organizationName": "Organization Name",
@@ -1185,8 +1198,13 @@
       "title": "Create Your Account",
       "subtitle": "Let's start with the basics.",
       "button": "Create Account",
-      "prompt": "Don't have an account?",
-      "link": "Sign Up"
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
     },
     "signIn": {
       "title": "Sign In",
@@ -2617,6 +2635,37 @@
       "selected": "You selected:",
       "signUpAs": "Sign up as",
       "alreadyHaveAccount": "Already have an account? Sign In"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "welcome": "Welcome to Likelee",
+      "signInToContinue": "Sign in to continue",
+      "loading": "Loading...",
+      "alreadySignedIn": "You are already signed in.",
+      "goToDashboard": "Go to Dashboard",
+      "comingSoonTitle": "Coming Soon",
+      "comingSoonMessage": "We're currently onboarding agencies manually. Join the waitlist to get early access.",
+      "learnMore": "Learn More",
+      "googleSignInFailed": "Google sign-in failed",
+      "continueWithGoogle": "Continue with Google",
+      "or": "OR",
+      "emailLabel": "Email",
+      "companyEmailLabel": "Company Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "signingIn": "Signing in...",
+      "signInButton": "Sign in",
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
     }
   }
 }

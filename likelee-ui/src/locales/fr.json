@@ -178,6 +178,19 @@
     "of": "sur",
     "companyInfo": "Informations sur l'entreprise",
     "startWithBasics": "Commençons par l'essentiel.",
+    "emailPlaceholder": "entreprise@exemple.com",
+    "passwordPlaceholder": "••••••••",
+    "errors": {
+      "not_admin": "Vous n'avez pas la permission d'effectuer cette action.",
+      "user_not_allowed": "Utilisateur non autorisé à inscrire cette organisation.",
+      "duplicate_email": "Cet e-mail est déjà associé à une organisation.",
+      "generic": "Une erreur inattendue s'est produite. Veuillez réessayer.",
+      "invalidCredentials": "E-mail ou mot de passe incorrect. Veuillez vérifier vos informations et réessayer.",
+      "weakPassword": "Votre mot de passe est trop court. Veuillez utiliser au moins 6 caractères.",
+      "emailNotConfirmed": "Veuillez vérifier votre adresse e-mail. Consultez votre boîte de réception pour un lien de confirmation.",
+      "rateLimit": "Trop de tentatives. Veuillez patienter un instant avant de réessayer.",
+      "networkError": "Connexion perdue. Veuillez vérifier votre connexion internet."
+    },
     "companyEmail": "E-mail de l'entreprise",
     "confirmPassword": "Confirmer le mot de passe",
     "organizationName": "Nom de l'organisation",
@@ -571,7 +584,7 @@
       "termLength": "Durée du Mandat",
       "estimatedMonthly": "Est. Mensuel",
       "regions": "Régions",
-      "industries": "Industries",
+      "industries": "Secteurs d'activité :",
       "warning": {
         "title": "Avertissement :",
         "message": "Cette demande inclut des droits 'À Perpétuité'. Cela signifie que la marque possède les droits pour toujours."
@@ -605,7 +618,6 @@
       "duration": "Durée :",
       "territory": "Territoire :",
       "usageType": "Type d'utilisation :",
-      "industries": "Secteurs d'activité :",
       "yourRightsAndProtections": "Vos droits & protections",
       "canPause": "Vous pouvez mettre cette licence en pause à tout moment (arrêt temporaire de l'utilisation)",
       "canRevoke": "Vous pouvez la révoquer avec un préavis de 30 jours (arrêt définitif)",
@@ -1237,7 +1249,7 @@
         "city": "Ville",
         "state": "État/Pays"
       },
-      "handle": "Nom d'utilisateur / Handle",
+      "handle": "Identifiant",
       "placeholders": {
         "fullName": "ex: Jean Dupont",
         "stageName": "Votre nom",
@@ -1311,7 +1323,6 @@
       "gender": "Comment vous identifiez-vous ?",
       "raceEthnicity": "Race / Ethnicité (sélectionnez tout ce qui s'applique)",
       "primaryPlatform": "Plateforme principale",
-      "handle": "Identifiant",
       "perMonth": "/mois",
       "save": "Enregistrer et continuer vers la vérification"
     },
@@ -1902,6 +1913,37 @@
       "selected": "Vous avez sélectionné :",
       "signUpAs": "S'inscrire en tant que",
       "alreadyHaveAccount": "Vous avez déjà un compte ? Se connecter"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Se connecter",
+      "welcome": "Bienvenue sur Likelee",
+      "signInToContinue": "Connectez-vous pour continuer",
+      "loading": "Chargement...",
+      "alreadySignedIn": "Vous êtes déjà connecté.",
+      "goToDashboard": "Aller au tableau de bord",
+      "comingSoonTitle": "Bientôt disponible",
+      "comingSoonMessage": "Nous intégrons actuellement les agences manuellement. Rejoignez la liste d'attente pour obtenir un accès anticipé.",
+      "learnMore": "En savoir plus",
+      "googleSignInFailed": "Échec de la connexion Google",
+      "continueWithGoogle": "Continuer avec Google",
+      "or": "OU",
+      "emailLabel": "E-mail",
+      "companyEmailLabel": "E-mail de l'entreprise",
+      "emailPlaceholder": "vous@exemple.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signingIn": "Connexion...",
+      "signInButton": "Se connecter",
+      "needAccount": "Besoin d'un compte ?",
+      "signUp": "S'inscrire",
+      "tabs": {
+        "creator": "Créateur",
+        "brand": "Marque",
+        "agency": "Agence"
+      }
     }
   }
 }
