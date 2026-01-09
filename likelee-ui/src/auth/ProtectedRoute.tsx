@@ -29,7 +29,6 @@ export default function ProtectedRoute({
   const location = useLocation();
   const navigate = useNavigate();
 
-
   if (!initialized) {
     return <LoadingSpinner />; // Show spinner during initialization
   }

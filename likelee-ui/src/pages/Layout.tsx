@@ -537,10 +537,11 @@ export default function Layout({ children, currentPageName }) {
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("BrandCompany")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
                   {t("brands")}
                 </Link>
@@ -549,10 +550,11 @@ export default function Layout({ children, currentPageName }) {
                 <div className="relative group">
                   <Link
                     to={createPageUrl("AgencySelection")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                      location.pathname === createPageUrl("AgencySelection")
+                        ? "text-gray-900 bg-gray-100"
+                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                   >
                     {t("agencies")}
                   </Link>
@@ -599,20 +601,22 @@ export default function Layout({ children, currentPageName }) {
 
                 <Link
                   to={createPageUrl("AboutUs")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("AboutUs")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("AboutUs")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
                   {t("aboutUs")}
                 </Link>
 
                 <Link
                   to={createPageUrl("Contact")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${location.pathname === createPageUrl("Contact")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("Contact")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
                   {t("contact")}
                 </Link>
@@ -629,8 +633,9 @@ export default function Layout({ children, currentPageName }) {
                     {currentPageName !== "OrganizationSignup" && (
                       <Link
                         to={dashboardPath}
-                        className={`px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm flex items-center gap-2 ${!profile ? "opacity-70 cursor-wait" : ""
-                          }`}
+                        className={`px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm flex items-center gap-2 ${
+                          !profile ? "opacity-70 cursor-wait" : ""
+                        }`}
                       >
                         {!profile && (
                           <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -674,10 +679,11 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("BrandCompany")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("BrandCompany")
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("BrandCompany")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 {t("brands")}
               </Link>
@@ -687,10 +693,11 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl("AgencySelection")}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AgencySelection")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                    location.pathname === createPageUrl("AgencySelection")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
                   {t("agencies")}
                 </Link>
@@ -722,10 +729,11 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("AboutUs")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("AboutUs")
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("AboutUs")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 {t("aboutUs")}
               </Link>
@@ -733,10 +741,11 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl("Contact")}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${location.pathname === createPageUrl("Contact")
-                  ? "text-gray-900 bg-gray-100"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("Contact")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 {t("contact")}
               </Link>
@@ -759,8 +768,9 @@ export default function Layout({ children, currentPageName }) {
                     <Link
                       to={dashboardPath}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm ${!profile ? "opacity-70 cursor-wait" : ""
-                        }`}
+                      className={`flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm ${
+                        !profile ? "opacity-70 cursor-wait" : ""
+                      }`}
                     >
                       {!profile && (
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
