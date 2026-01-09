@@ -5,7 +5,9 @@ export const getFriendlyErrorMessage = (
   let message =
     error?.message ||
     error?.error_description ||
-    (t ? t("organizationSignup.errors.generic") : "An unexpected error occurred.");
+    (t
+      ? t("organizationSignup.errors.generic")
+      : "An unexpected error occurred.");
 
   // Try to parse JSON from the message if it looks like a JSON string
   try {
@@ -18,7 +20,10 @@ export const getFriendlyErrorMessage = (
           `organizationSignup.errors.${parsed.error_code}`,
         );
         // If translation returns the key (i18next behavior when missing), fall back
-        if (translatedError && translatedError !== `organizationSignup.errors.${parsed.error_code}`) {
+        if (
+          translatedError &&
+          translatedError !== `organizationSignup.errors.${parsed.error_code}`
+        ) {
           return translatedError;
         }
       }

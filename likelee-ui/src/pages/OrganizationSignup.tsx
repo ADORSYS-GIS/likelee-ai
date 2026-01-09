@@ -35,49 +35,134 @@ import {
 } from "@/api/functions";
 
 const getProductionTypes = (t: any) => [
-  { label: t("organizationSignup.options.productionTypes.film"), value: "film" },
+  {
+    label: t("organizationSignup.options.productionTypes.film"),
+    value: "film",
+  },
   { label: t("organizationSignup.options.productionTypes.tv"), value: "tv" },
-  { label: t("organizationSignup.options.productionTypes.commercial"), value: "commercial" },
-  { label: t("organizationSignup.options.productionTypes.musicVideo"), value: "music_video" },
-  { label: t("organizationSignup.options.productionTypes.animation"), value: "animation" },
-  { label: t("organizationSignup.options.productionTypes.mixedAiLive"), value: "mixed_ai_live" },
+  {
+    label: t("organizationSignup.options.productionTypes.commercial"),
+    value: "commercial",
+  },
+  {
+    label: t("organizationSignup.options.productionTypes.musicVideo"),
+    value: "music_video",
+  },
+  {
+    label: t("organizationSignup.options.productionTypes.animation"),
+    value: "animation",
+  },
+  {
+    label: t("organizationSignup.options.productionTypes.mixedAiLive"),
+    value: "mixed_ai_live",
+  },
 ];
 
 const getServices = (t: any) => [
-  { label: t("organizationSignup.options.services.socialMediaManagement"), value: "social_media_management" },
-  { label: t("organizationSignup.options.services.influencerCampaigns"), value: "influencer_campaigns" },
-  { label: t("organizationSignup.options.services.videoAds"), value: "video_ads" },
-  { label: t("organizationSignup.options.services.ugcProduction"), value: "ugc_production" },
-  { label: t("organizationSignup.options.services.contentCreation"), value: "content_creation" },
-  { label: t("organizationSignup.options.services.brandStrategy"), value: "brand_strategy" },
+  {
+    label: t("organizationSignup.options.services.socialMediaManagement"),
+    value: "social_media_management",
+  },
+  {
+    label: t("organizationSignup.options.services.influencerCampaigns"),
+    value: "influencer_campaigns",
+  },
+  {
+    label: t("organizationSignup.options.services.videoAds"),
+    value: "video_ads",
+  },
+  {
+    label: t("organizationSignup.options.services.ugcProduction"),
+    value: "ugc_production",
+  },
+  {
+    label: t("organizationSignup.options.services.contentCreation"),
+    value: "content_creation",
+  },
+  {
+    label: t("organizationSignup.options.services.brandStrategy"),
+    value: "brand_strategy",
+  },
 ];
 
 const getCampaignTypes = (t: any) => [
-  { label: t("organizationSignup.options.campaignTypes.fashion"), value: "fashion" },
-  { label: t("organizationSignup.options.campaignTypes.music"), value: "music" },
-  { label: t("organizationSignup.options.campaignTypes.fitness"), value: "fitness" },
-  { label: t("organizationSignup.options.campaignTypes.lifestyle"), value: "lifestyle" },
-  { label: t("organizationSignup.options.campaignTypes.beauty"), value: "beauty" },
-  { label: t("organizationSignup.options.campaignTypes.sports"), value: "sports" },
-  { label: t("organizationSignup.options.campaignTypes.entertainment"), value: "entertainment" },
+  {
+    label: t("organizationSignup.options.campaignTypes.fashion"),
+    value: "fashion",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.music"),
+    value: "music",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.fitness"),
+    value: "fitness",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.lifestyle"),
+    value: "lifestyle",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.beauty"),
+    value: "beauty",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.sports"),
+    value: "sports",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.entertainment"),
+    value: "entertainment",
+  },
 ];
 
 const getPrimaryGoals = (t: any) => [
-  { label: t("organizationSignup.options.primaryGoals.runAdCampaigns"), value: "run_ad_campaigns" },
-  { label: t("organizationSignup.options.primaryGoals.findBrandAmbassadors"), value: "find_brand_ambassadors" },
-  { label: t("organizationSignup.options.primaryGoals.licenseAiReadyFaces"), value: "license_ai_ready_faces" },
+  {
+    label: t("organizationSignup.options.primaryGoals.runAdCampaigns"),
+    value: "run_ad_campaigns",
+  },
+  {
+    label: t("organizationSignup.options.primaryGoals.findBrandAmbassadors"),
+    value: "find_brand_ambassadors",
+  },
+  {
+    label: t("organizationSignup.options.primaryGoals.licenseAiReadyFaces"),
+    value: "license_ai_ready_faces",
+  },
 ];
 
 const getRolesNeeded = (t: any) => [
-  { label: t("organizationSignup.options.rolesNeeded.talentFacesVoices"), value: "talent_faces_voices" },
-  { label: t("organizationSignup.options.rolesNeeded.postproductionAiGeneration"), value: "post_production_ai_generation" },
-  { label: t("organizationSignup.options.rolesNeeded.creativeCollaboration"), value: "creative_collaboration" },
+  {
+    label: t("organizationSignup.options.rolesNeeded.talentFacesVoices"),
+    value: "talent_faces_voices",
+  },
+  {
+    label: t(
+      "organizationSignup.options.rolesNeeded.postproductionAiGeneration",
+    ),
+    value: "post_production_ai_generation",
+  },
+  {
+    label: t("organizationSignup.options.rolesNeeded.creativeCollaboration"),
+    value: "creative_collaboration",
+  },
 ];
 
 const getOpenToAiOptions = (t: any) => [
-  { label: t("organizationSignup.options.openToAiOptions.aiRecreation"), value: "ai_recreation" },
-  { label: t("organizationSignup.options.openToAiOptions.likenessProtectionOnly"), value: "likeness_protection_only" },
-  { label: t("organizationSignup.options.openToAiOptions.variesByTalent"), value: "varies_by_talent" },
+  {
+    label: t("organizationSignup.options.openToAiOptions.aiRecreation"),
+    value: "ai_recreation",
+  },
+  {
+    label: t(
+      "organizationSignup.options.openToAiOptions.likenessProtectionOnly",
+    ),
+    value: "likeness_protection_only",
+  },
+  {
+    label: t("organizationSignup.options.openToAiOptions.variesByTalent"),
+    value: "varies_by_talent",
+  },
 ];
 
 const getIndustries = (t: any) => [
@@ -85,10 +170,19 @@ const getIndustries = (t: any) => [
   { label: t("organizationSignup.industries.beauty"), value: "beauty" },
   { label: t("organizationSignup.industries.technology"), value: "technology" },
   { label: t("organizationSignup.industries.automotive"), value: "automotive" },
-  { label: t("organizationSignup.industries.foodBeverage"), value: "food & beverage" },
+  {
+    label: t("organizationSignup.industries.foodBeverage"),
+    value: "food & beverage",
+  },
   { label: t("organizationSignup.industries.travel"), value: "travel" },
-  { label: t("organizationSignup.industries.entertainment"), value: "entertainment" },
-  { label: t("organizationSignup.industries.healthWellness"), value: "health & wellness" },
+  {
+    label: t("organizationSignup.industries.entertainment"),
+    value: "entertainment",
+  },
+  {
+    label: t("organizationSignup.industries.healthWellness"),
+    value: "health & wellness",
+  },
   { label: t("organizationSignup.industries.finance"), value: "finance" },
   { label: t("organizationSignup.industries.other"), value: "other" },
 ];
@@ -717,10 +811,7 @@ export default function OrganizationSignup() {
                     </SelectTrigger>
                     <SelectContent>
                       {getIndustries(t).map((industry) => (
-                        <SelectItem
-                          key={industry.value}
-                          value={industry.value}
-                        >
+                        <SelectItem key={industry.value} value={industry.value}>
                           {industry.label}
                         </SelectItem>
                       ))}
@@ -888,7 +979,9 @@ export default function OrganizationSignup() {
                     htmlFor="production_type"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("organizationSignup.productionStudio.primaryProductionType")}
+                    {t(
+                      "organizationSignup.productionStudio.primaryProductionType",
+                    )}
                   </Label>
                   <Select
                     value={formData.production_type}
@@ -965,7 +1058,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("organizationSignup.productionStudio.createsForQuestion")}
+                    {t(
+                      "organizationSignup.productionStudio.createsForQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.creates_for}
@@ -1029,9 +1124,20 @@ export default function OrganizationSignup() {
                   >
                     <div className="space-y-2">
                       {[
-                        { label: t("organizationSignup.options.aiUsage.yes"), value: "yes" },
-                        { label: t("organizationSignup.options.aiUsage.no"), value: "no" },
-                        { label: t("organizationSignup.options.aiUsage.exploring"), value: "exploring" }
+                        {
+                          label: t("organizationSignup.options.aiUsage.yes"),
+                          value: "yes",
+                        },
+                        {
+                          label: t("organizationSignup.options.aiUsage.no"),
+                          value: "no",
+                        },
+                        {
+                          label: t(
+                            "organizationSignup.options.aiUsage.exploring",
+                          ),
+                          value: "exploring",
+                        },
                       ].map((option) => (
                         <div
                           key={option.value}
@@ -1159,7 +1265,9 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, client_count: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("organizationSignup.marketingAgency.clientCountPlaceholder")}
+                    placeholder={t(
+                      "organizationSignup.marketingAgency.clientCountPlaceholder",
+                    )}
                   />
                 </div>
 
@@ -1168,7 +1276,9 @@ export default function OrganizationSignup() {
                     htmlFor="campaign_budget"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("organizationSignup.marketingAgency.campaignBudgetLabel")}
+                    {t(
+                      "organizationSignup.marketingAgency.campaignBudgetLabel",
+                    )}
                   </Label>
                   <Select
                     value={formData.campaign_budget}
@@ -1177,18 +1287,28 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder={t("organizationSignup.marketingAgency.campaignBudgetPlaceholder")} />
+                      <SelectValue
+                        placeholder={t(
+                          "organizationSignup.marketingAgency.campaignBudgetPlaceholder",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="under_5k">{t("organizationSignup.marketingAgency.budgetUnder5k")}</SelectItem>
-                      <SelectItem value="5k_25k">{t("organizationSignup.marketingAgency.budget5k25k")}</SelectItem>
+                      <SelectItem value="under_5k">
+                        {t("organizationSignup.marketingAgency.budgetUnder5k")}
+                      </SelectItem>
+                      <SelectItem value="5k_25k">
+                        {t("organizationSignup.marketingAgency.budget5k25k")}
+                      </SelectItem>
                       <SelectItem value="25k_100k">
                         {t("organizationSignup.marketingAgency.budget25k100k")}
                       </SelectItem>
                       <SelectItem value="100k_500k">
                         {t("organizationSignup.marketingAgency.budget100k500k")}
                       </SelectItem>
-                      <SelectItem value="over_500k">{t("organizationSignup.marketingAgency.budgetOver500k")}</SelectItem>
+                      <SelectItem value="over_500k">
+                        {t("organizationSignup.marketingAgency.budgetOver500k")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1249,7 +1369,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("organizationSignup.marketingAgency.matchCreatorsQuestion")}
+                    {t(
+                      "organizationSignup.marketingAgency.matchCreatorsQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.provide_creators}
@@ -1268,7 +1390,9 @@ export default function OrganizationSignup() {
                           htmlFor="match"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {t("organizationSignup.marketingAgency.matchWithCreators")}
+                          {t(
+                            "organizationSignup.marketingAgency.matchWithCreators",
+                          )}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -1281,7 +1405,9 @@ export default function OrganizationSignup() {
                           htmlFor="tools"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {t("organizationSignup.marketingAgency.justProvideTools")}
+                          {t(
+                            "organizationSignup.marketingAgency.justProvideTools",
+                          )}
                         </Label>
                       </div>
                     </div>
@@ -1290,7 +1416,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("organizationSignup.marketingAgency.handleContractsQuestion")}
+                    {t(
+                      "organizationSignup.marketingAgency.handleContractsQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.handle_contracts}
@@ -1322,7 +1450,9 @@ export default function OrganizationSignup() {
                           htmlFor="automate"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {t("organizationSignup.marketingAgency.automateWithLikelee")}
+                          {t(
+                            "organizationSignup.marketingAgency.automateWithLikelee",
+                          )}
                         </Label>
                       </div>
                     </div>
@@ -1382,13 +1512,17 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, talent_count: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("organizationSignup.talentAgency.talentCountPlaceholder")}
+                    placeholder={t(
+                      "organizationSignup.talentAgency.talentCountPlaceholder",
+                    )}
                   />
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("organizationSignup.talentAgency.licenseLikenessQuestion")}
+                    {t(
+                      "organizationSignup.talentAgency.licenseLikenessQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.licenses_likeness}
@@ -1398,8 +1532,14 @@ export default function OrganizationSignup() {
                   >
                     <div className="space-y-2">
                       {[
-                        { label: t("organizationSignup.options.aiUsage.yes"), value: "yes" },
-                        { label: t("organizationSignup.options.aiUsage.no"), value: "no" }
+                        {
+                          label: t("organizationSignup.options.aiUsage.yes"),
+                          value: "yes",
+                        },
+                        {
+                          label: t("organizationSignup.options.aiUsage.no"),
+                          value: "no",
+                        },
                       ].map((option) => (
                         <div
                           key={option.value}
@@ -1536,9 +1676,20 @@ export default function OrganizationSignup() {
                   >
                     <div className="space-y-2">
                       {[
-                        { label: t("organizationSignup.options.aiUsage.yes"), value: "yes" },
-                        { label: t("organizationSignup.options.aiUsage.no"), value: "no" },
-                        { label: t("organizationSignup.options.aiUsage.maybeLater"), value: "maybe later" }
+                        {
+                          label: t("organizationSignup.options.aiUsage.yes"),
+                          value: "yes",
+                        },
+                        {
+                          label: t("organizationSignup.options.aiUsage.no"),
+                          value: "no",
+                        },
+                        {
+                          label: t(
+                            "organizationSignup.options.aiUsage.maybeLater",
+                          ),
+                          value: "maybe later",
+                        },
                       ].map((option) => (
                         <div
                           key={option.value}
