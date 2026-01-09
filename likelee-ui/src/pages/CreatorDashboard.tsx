@@ -811,6 +811,25 @@ export default function CreatorDashboard() {
     t("creatorDashboard.restrictions.healthMedicalClaims"),
   ];
 
+  // Mapping functions to translate stored English values to localized display text
+  const translateContentType = (englishType: string): string => {
+    const index = CONTENT_TYPES.indexOf(englishType);
+    if (index === -1) return englishType;
+    return getTranslatedContentTypes()[index];
+  };
+
+  const translateIndustry = (englishIndustry: string): string => {
+    const index = INDUSTRIES.indexOf(englishIndustry);
+    if (index === -1) return englishIndustry;
+    return getTranslatedIndustries()[index];
+  };
+
+  const translateRestriction = (englishRestriction: string): string => {
+    const index = RESTRICTIONS.indexOf(englishRestriction);
+    if (index === -1) return englishRestriction;
+    return getTranslatedRestrictions()[index];
+  };
+
   const startStatusPolling = () => {
     const uid = user?.id;
     if (!uid) return;
@@ -886,14 +905,15 @@ export default function CreatorDashboard() {
       // start polling
       startStatusPolling();
       toast({
-        title: "Avatar request sent",
-        description: "Waiting for review (typically 1–2 days).",
+        title: t("creatorDashboard.toasts.avatarRequestSent"),
+        description: t("creatorDashboard.toasts.avatarRequestSentDesc"),
       });
     } catch (e: any) {
       toast({
         variant: "destructive",
         title: t("common.error"),
-        description: e?.message || "Failed to start avatar training",
+        description:
+          e?.message || t("creatorDashboard.toasts.avatarTrainingFailed"),
       });
     } finally {
       setAvatarOpLoading(false);
@@ -920,13 +940,13 @@ export default function CreatorDashboard() {
       );
       if (isActive) {
         toast({
-          title: "Avatar ready",
-          description: "You can now create videos.",
+          title: t("creatorDashboard.toasts.avatarReady"),
+          description: t("creatorDashboard.toasts.avatarReadyDesc"),
         });
       } else {
         toast({
-          title: "Status updated",
-          description: `Avatar status: ${j?.status || j?.process_status || "pending"}`,
+          title: t("creatorDashboard.toasts.statusUpdated"),
+          description: `${t("creatorDashboard.toasts.avatarStatusPrefix")}: ${j?.status || j?.process_status || t("creatorDashboard.voice.statusPending")}`,
         });
       }
     } catch (e: any) {
@@ -2845,7 +2865,7 @@ export default function CreatorDashboard() {
     const toastTitle =
       typeof customToast === "string"
         ? customToast
-        : "Licensing preferences updated!";
+        : t("creatorDashboard.toasts.profileSaved");
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -6201,7 +6221,7 @@ export default function CreatorDashboard() {
                         } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
-                        {type}
+                        {translateContentType(type)}
                       </Badge>
                     );
                   })}
@@ -6241,7 +6261,7 @@ export default function CreatorDashboard() {
                         } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
-                        {industry}
+                        {translateIndustry(industry)}
                       </Badge>
                     );
                   })}
@@ -6275,7 +6295,7 @@ export default function CreatorDashboard() {
                         className="px-3 py-1.5 text-sm bg-[#F34D4D] text-white border-2 border-[#F34D4D] hover:bg-[#E23C3C] cursor-default font-normal flex items-center gap-2 rounded-lg"
                       >
                         <X className="w-4 h-4" />
-                        {restriction}
+                        {translateRestriction(restriction)}
                       </Badge>
                     ))
                   ) : (
@@ -6411,7 +6431,9 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       setCreator({ ...creator, accept_negotiations: checked });
                       handleSaveRules(
-                        `Negotiation ${checked ? "enabled" : "disabled"}!`,
+                        checked
+                          ? t("creatorDashboard.toasts.negotiationEnabled")
+                          : t("creatorDashboard.toasts.negotiationDisabled"),
                         { accept_negotiations: checked },
                       );
                     }}
@@ -6832,7 +6854,7 @@ export default function CreatorDashboard() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${isSmallScreen ? "mt-16" : sidebarOpen ? "lg:ml-64" : "lg:ml-20"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${isSmallScreen ? "mt-16 pt-4" : sidebarOpen ? "lg:ml-64 pt-4" : "lg:ml-20 pt-4"} transition-all duration-300 overflow-y-auto`}
       >
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection === "dashboard" && renderDashboard()}
@@ -7737,7 +7759,7 @@ export default function CreatorDashboard() {
                       >
                         <div>
                           <Label className="font-medium text-gray-900 text-base block mb-0.5">
-                            {info}
+                            {translateContentType(type)}
                           </Label>
                           <p className="text-xs text-gray-400 font-normal italic">
                             {t(
@@ -7782,14 +7804,14 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRatesModal(null)}
-                className="h-11 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
+                className="h-11 w-full font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
               >
                 {t("creatorDashboard.modals.customizeContentTypeRate.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={savingRates}
-                className="h-11 w-full max-w-[200px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
+                className="h-11 w-full font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
               >
                 {savingRates ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -7864,14 +7886,14 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRatesModal(null)}
-                className="h-11 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
+                className="h-11 w-full font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
               >
                 {t("creatorDashboard.modals.customizeIndustryRate.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={savingRates}
-                className="h-11 w-full max-w-[200px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
+                className="h-11 w-full font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
               >
                 {savingRates ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -7923,7 +7945,7 @@ export default function CreatorDashboard() {
                       key={restriction}
                       className="px-3 py-1.5 text-sm bg-[#F34D4D] text-white border-none hover:bg-[#E23C3C] cursor-default flex items-center gap-2 rounded-lg font-normal"
                     >
-                      <span>{restriction}</span>
+                      <span>{translateRestriction(restriction)}</span>
                       <button
                         onClick={() => {
                           setCreator({
@@ -8139,17 +8161,17 @@ export default function CreatorDashboard() {
               onClick={() => setShowRestrictionsModal(false)}
               className="h-12 w-full max-w-[240px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
             >
-              {"Cancel"}
+              {t("creatorDashboard.modals.contentRestrictions.cancel")}
             </Button>
             <Button
               onClick={() => {
-                handleSaveRules("Restrictions updated successfully!");
+                handleSaveRules(t("creatorDashboard.toasts.restrictionsSaved"));
                 setShowRestrictionsModal(false);
               }}
               className="h-12 w-full max-w-[240px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-5 h-5" />
-              {"Save Changes"}
+              {t("creatorDashboard.modals.contentRestrictions.saveChanges")}
             </Button>
           </div>
         </DialogContent>
