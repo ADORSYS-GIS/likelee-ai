@@ -2582,6 +2582,7 @@ export default function CreatorDashboard() {
             "creatorDashboard.voice.deleteConfirmation.action",
             "Delete",
           )}
+          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
           onClick={async () => {
             setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
             dismiss();
@@ -3216,6 +3217,7 @@ export default function CreatorDashboard() {
       action: (
         <ToastAction
           altText="Delete"
+          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
           onClick={() => {
             setReferenceImages({
               ...referenceImages,
