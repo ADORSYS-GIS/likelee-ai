@@ -2484,6 +2484,77 @@
       "modalTitle": "Upload Reference Image",
       "sectionLabel": "Section:",
       "bestForLabel": "Best For:"
+    },
+    "contentTypes": {
+      "socialMediaAds": "Social media ads",
+      "webBannerCampaigns": "Web & banner campaigns",
+      "tvStreamingCommercials": "TV / streaming commercials",
+      "filmScriptedStreaming": "Film & scripted streaming",
+      "printOutdoorAds": "Print & outdoor ads",
+      "musicVideos": "Music videos",
+      "videoGameVRCharacters": "Video-game / VR characters",
+      "stockPhotoVideoLibraries": "Stock photo / video libraries",
+      "educationalNonprofitSpots": "Educational / nonprofit spots"
+    },
+    "industries": {
+      "fashionBeauty": "Fashion / Beauty",
+      "techElectronics": "Tech / Electronics",
+      "sportsFitness": "Sports / Fitness",
+      "foodBeverage": "Food / Beverage",
+      "filmGamingMusic": "Film / Gaming / Music",
+      "automotive": "Automotive",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Health / Wellness",
+      "luxuryLifestyle": "Luxury & Lifestyle",
+      "travelHospitality": "Travel / Hospitality",
+      "education": "Education",
+      "realEstate": "Real Estate",
+      "entertainment": "Entertainment",
+      "openToAny": "Open to any industry"
+    },
+    "restrictions": {
+      "politicalContent": "Political Content",
+      "controversialTopics": "Controversial Topics",
+      "explicitAdultContent": "Explicit/Adult Content",
+      "pharmaceuticalClaims": "Pharmaceutical Claims",
+      "financialInvestmentAdvice": "Financial/Investment Advice",
+      "tobaccoVapingProducts": "Tobacco/Vaping Products",
+      "gamblingUnlicensed": "Gambling (Unlicensed)",
+      "alcohol": "Alcohol",
+      "byproductsAnimalTesting": "Byproducts/Animal Testing",
+      "weaponsFirearms": "Weapons/Firearms",
+      "cryptocurrencyNFT": "Cryptocurrency/NFT",
+      "mlmMultiLevelMarketing": "MLM/Multi-Level Marketing",
+      "unlicensedFinancialProducts": "Unlicensed Financial Products",
+      "healthMedicalClaims": "Health/Medical Claims"
+    },
+    "modals": {
+      "customizeContentTypeRate": {
+        "title": "Customize Content Type Rate",
+        "description": "Select content types you're open to creating",
+        "customRatesTitle": "Custom Rates",
+        "customRatesDesc": "Set custom rates for specific content types or industries. Your base rate is ${rate}/mo.",
+        "usingBaseRate": "Using base rate: ${rate}/mo",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "customizeIndustryRate": {
+        "title": "Customize Industry Rate",
+        "description": "Select industries you're interested in working with",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "contentRestrictions": {
+        "title": "Content Restrictions",
+        "description": "Specify any content you're not comfortable with",
+        "currentRestrictions": "Current Restrictions",
+        "clickToAdd": "Click to add restrictions",
+        "addCustomRestriction": "Add Custom Restriction",
+        "customPlaceholder": "e.g., No political content",
+        "brandExclusivity": "Brand Exclusivity",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      }
     }
   },
   "imageSections": {

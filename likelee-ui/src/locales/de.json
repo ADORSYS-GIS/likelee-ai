@@ -950,6 +950,77 @@
       "modalTitle": "Referenzbild hochladen",
       "sectionLabel": "Bereich:",
       "bestForLabel": "Geeignet für:"
+    },
+    "contentTypes": {
+      "socialMediaAds": "Social-Media-Anzeigen",
+      "webBannerCampaigns": "Web- und Banner-Kampagnen",
+      "tvStreamingCommercials": "TV-/Streaming-Werbespots",
+      "filmScriptedStreaming": "Film & geskriptetes Streaming",
+      "printOutdoorAds": "Print- und Außenwerbung",
+      "musicVideos": "Musikvideos",
+      "videoGameVRCharacters": "Videospiel-/VR-Charaktere",
+      "stockPhotoVideoLibraries": "Stock-Foto-/Videobibliotheken",
+      "educationalNonprofitSpots": "Bildungs-/gemeinnützige Spots"
+    },
+    "industries": {
+      "fashionBeauty": "Mode / Schönheit",
+      "techElectronics": "Technik / Elektronik",
+      "sportsFitness": "Sport / Fitness",
+      "foodBeverage": "Lebensmittel / Getränke",
+      "filmGamingMusic": "Film / Gaming / Musik",
+      "automotive": "Automobil",
+      "financeFintech": "Finanzen / Fintech",
+      "healthWellness": "Gesundheit / Wellness",
+      "luxuryLifestyle": "Luxus & Lifestyle",
+      "travelHospitality": "Reisen / Gastgewerbe",
+      "education": "Bildung",
+      "realEstate": "Immobilien",
+      "entertainment": "Unterhaltung",
+      "openToAny": "Offen für jede Branche"
+    },
+    "restrictions": {
+      "politicalContent": "Politische Inhalte",
+      "controversialTopics": "Kontroverse Themen",
+      "explicitAdultContent": "Explizite/Erwachseneninhalte",
+      "pharmaceuticalClaims": "Pharmazeutische Behauptungen",
+      "financialInvestmentAdvice": "Finanz-/Anlageberatung",
+      "tobaccoVapingProducts": "Tabak-/Vaping-Produkte",
+      "gamblingUnlicensed": "Glücksspiel (unlizenziert)",
+      "alcohol": "Alkohol",
+      "byproductsAnimalTesting": "Nebenprodukte/Tierversuche",
+      "weaponsFirearms": "Waffen/Schusswaffen",
+      "cryptocurrencyNFT": "Kryptowährung/NFT",
+      "mlmMultiLevelMarketing": "MLM/Multi-Level-Marketing",
+      "unlicensedFinancialProducts": "Unlizenzierte Finanzprodukte",
+      "healthMedicalClaims": "Gesundheits-/medizinische Behauptungen"
+    },
+    "modals": {
+      "customizeContentTypeRate": {
+        "title": "Tarif nach Inhaltstyp anpassen",
+        "description": "Wählen Sie Inhaltstypen aus, die Sie erstellen möchten",
+        "customRatesTitle": "Benutzerdefinierte Tarife",
+        "customRatesDesc": "Legen Sie benutzerdefinierte Tarife für bestimmte Inhaltstypen oder Branchen fest. Ihr Grundpreis beträgt ${rate}/Monat.",
+        "usingBaseRate": "Verwendung des Grundpreises: ${rate}/Monat",
+        "cancel": "Abbrechen",
+        "saveChanges": "Änderungen speichern"
+      },
+      "customizeIndustryRate": {
+        "title": "Tarif nach Branche anpassen",
+        "description": "Wählen Sie Branchen aus, mit denen Sie arbeiten möchten",
+        "cancel": "Abbrechen",
+        "saveChanges": "Änderungen speichern"
+      },
+      "contentRestrictions": {
+        "title": "Inhaltsbeschränkungen",
+        "description": "Geben Sie Inhalte an, mit denen Sie sich nicht wohl fühlen",
+        "currentRestrictions": "Aktuelle Einschränkungen",
+        "clickToAdd": "Klicken Sie, um Einschränkungen hinzuzufügen",
+        "addCustomRestriction": "Benutzerdefinierte Einschränkung hinzufügen",
+        "customPlaceholder": "z.B. Keine politischen Inhalte",
+        "brandExclusivity": "Markenexklusivität",
+        "cancel": "Abbrechen",
+        "saveChanges": "Änderungen speichern"
+      }
     }
   },
   "creators": "Schöpfer",

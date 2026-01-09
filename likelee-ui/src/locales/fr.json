@@ -1013,6 +1013,77 @@
       "modalTitle": "Télécharger une image de référence",
       "sectionLabel": "Section :",
       "bestForLabel": "Idéal pour :"
+    },
+    "contentTypes": {
+      "socialMediaAds": "Publicités sur les réseaux sociaux",
+      "webBannerCampaigns": "Campagnes Web et bannières",
+      "tvStreamingCommercials": "Publicités TV / streaming",
+      "filmScriptedStreaming": "Films et streaming scénarisé",
+      "printOutdoorAds": "Publicités imprimées et extérieures",
+      "musicVideos": "Clips musicaux",
+      "videoGameVRCharacters": "Personnages de jeux vidéo / VR",
+      "stockPhotoVideoLibraries": "Bibliothèques de photos / vidéos",
+      "educationalNonprofitSpots": "Spots éducatifs / à but non lucratif"
+    },
+    "industries": {
+      "fashionBeauty": "Mode / Beauté",
+      "techElectronics": "Technologie / Électronique",
+      "sportsFitness": "Sport / Fitness",
+      "foodBeverage": "Alimentation / Boissons",
+      "filmGamingMusic": "Cinéma / Jeux / Musique",
+      "automotive": "Automobile",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Santé / Bien-être",
+      "luxuryLifestyle": "Luxe et style de vie",
+      "travelHospitality": "Voyage / Hôtellerie",
+      "education": "Éducation",
+      "realEstate": "Immobilier",
+      "entertainment": "Divertissement",
+      "openToAny": "Ouvert à toute industrie"
+    },
+    "restrictions": {
+      "politicalContent": "Contenu politique",
+      "controversialTopics": "Sujets controversés",
+      "explicitAdultContent": "Contenu explicite/adulte",
+      "pharmaceuticalClaims": "Allégations pharmaceutiques",
+      "financialInvestmentAdvice": "Conseils financiers/d'investissement",
+      "tobaccoVapingProducts": "Produits de tabac/vapotage",
+      "gamblingUnlicensed": "Jeux d'argent (non licenciés)",
+      "alcohol": "Alcool",
+      "byproductsAnimalTesting": "Sous-produits/Tests sur animaux",
+      "weaponsFirearms": "Armes à feu",
+      "cryptocurrencyNFT": "Cryptomonnaie/NFT",
+      "mlmMultiLevelMarketing": "Marketing multiniveau",
+      "unlicensedFinancialProducts": "Produits financiers non licenciés",
+      "healthMedicalClaims": "Allégations médicales/santé"
+    },
+    "modals": {
+      "customizeContentTypeRate": {
+        "title": "Personnaliser le tarif par type de contenu",
+        "description": "Sélectionnez les types de contenu que vous acceptez de créer",
+        "customRatesTitle": "Tarifs personnalisés",
+        "customRatesDesc": "Définissez des tarifs personnalisés pour des types de contenu ou industries spécifiques. Votre tarif de base est ${rate}/mois.",
+        "usingBaseRate": "Utilisation du tarif de base : ${rate}/mois",
+        "cancel": "Annuler",
+        "saveChanges": "Enregistrer les modifications"
+      },
+      "customizeIndustryRate": {
+        "title": "Personnaliser le tarif par industrie",
+        "description": "Sélectionnez les industries avec lesquelles vous souhaitez travailler",
+        "cancel": "Annuler",
+        "saveChanges": "Enregistrer les modifications"
+      },
+      "contentRestrictions": {
+        "title": "Restrictions de contenu",
+        "description": "Spécifiez tout contenu avec lequel vous n'êtes pas à l'aise",
+        "currentRestrictions": "Restrictions actuelles",
+        "clickToAdd": "Cliquez pour ajouter des restrictions",
+        "addCustomRestriction": "Ajouter une restriction personnalisée",
+        "customPlaceholder": "ex. Pas de contenu politique",
+        "brandExclusivity": "Exclusivité de marque",
+        "cancel": "Annuler",
+        "saveChanges": "Enregistrer les modifications"
+      }
     }
   },
   "reserveProfile": {
