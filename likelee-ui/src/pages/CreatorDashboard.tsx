@@ -6112,10 +6112,10 @@ export default function CreatorDashboard() {
           <Card className="p-0 overflow-hidden bg-white border border-gray-200">
             <div className="p-6 pb-2">
               <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                {"My Rules"}
+                {t("creatorDashboard.settingsView.rules.title")}
               </h3>
               <p className="text-sm text-gray-600">
-                {"Set your licensing preferences and rates"}
+                {t("creatorDashboard.settingsView.rules.subtitle")}
               </p>
             </div>
 
@@ -6124,7 +6124,7 @@ export default function CreatorDashboard() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {"Content I'm Open To"}
+                    {t("creatorDashboard.settingsView.rules.contentOpenTo")}
                   </h4>
                   <Button
                     variant="outline"
@@ -6136,7 +6136,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {"Edit Rate"}
+                    {t("creatorDashboard.settingsView.rules.editRate")}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -6165,7 +6165,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {"Industries I Work With"}
+                    {t("creatorDashboard.settingsView.rules.industries")}
                   </h4>
                   <Button
                     variant="outline"
@@ -6178,7 +6178,7 @@ export default function CreatorDashboard() {
                   >
                     {/* Button changed to Edit per user request */}
                     <Edit className="w-3.5 h-3.5" />
-                    {"Edit"}
+                    {t("creatorDashboard.settingsView.rules.edit")}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -6205,7 +6205,9 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {"Content I'm NOT Comfortable With"}
+                    {t(
+                      "creatorDashboard.settingsView.rules.notComfortableWith",
+                    )}
                   </h4>
                   <Button
                     variant="outline"
@@ -6214,7 +6216,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {"Edit"}
+                    {t("creatorDashboard.settingsView.rules.edit")}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-6">
@@ -6231,17 +6233,21 @@ export default function CreatorDashboard() {
                     ))
                   ) : (
                     <p className="text-gray-500 italic text-sm font-normal">
-                      No restrictions set
+                      {t("creatorDashboard.settingsView.rules.noRestrictions")}
                     </p>
                   )}
                 </div>
 
                 <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-5">
                   <h5 className="font-semibold text-gray-900 mb-1">
-                    {"Conflicting Campaigns (Brand Exclusivity)"}
+                    {t(
+                      "creatorDashboard.settingsView.rules.conflictingCampaigns",
+                    )}
                   </h5>
                   <p className="text-sm text-gray-600 mb-3 font-normal">
-                    {"Brands you won't work with simultaneously"}
+                    {t(
+                      "creatorDashboard.settingsView.rules.conflictingCampaignsDesc",
+                    )}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {creator.brand_exclusivity &&
@@ -6257,7 +6263,9 @@ export default function CreatorDashboard() {
                       ))
                     ) : (
                       <p className="text-sm text-gray-500 italic font-normal">
-                        {"No brand exclusivity set"}
+                        {t(
+                          "creatorDashboard.settingsView.rules.noBrandExclusivity",
+                        )}
                       </p>
                     )}
                   </div>
@@ -6268,7 +6276,9 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {"Initial Licensing Rate"}
+                    {t(
+                      "creatorDashboard.settingsView.rules.initialLicensingRate",
+                    )}
                   </h4>
                   <div className="flex gap-2">
                     {editingRules ? (
@@ -6279,14 +6289,14 @@ export default function CreatorDashboard() {
                           variant="outline"
                           className="border-2 border-gray-300 font-medium"
                         >
-                          Cancel
+                          {t("creatorDashboard.settingsView.rules.cancel")}
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleSaveRules()}
                           className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white font-medium"
                         >
-                          {"Save"}
+                          {t("creatorDashboard.settingsView.rules.save")}
                         </Button>
                       </>
                     ) : (
@@ -6297,15 +6307,13 @@ export default function CreatorDashboard() {
                         className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        {"Edit"}
+                        {t("creatorDashboard.settingsView.rules.edit")}
                       </Button>
                     )}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-2 font-normal">
-                  {
-                    "This is your base monthly rate for standard social media licensing"
-                  }
+                  {t("creatorDashboard.settingsView.rules.baseRateDesc")}
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -6329,7 +6337,9 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
                     <span className="text-xl">/</span>
-                    <span className="text-base">Month</span>
+                    <span className="text-base">
+                      {t("creatorDashboard.settingsView.rules.month")}
+                    </span>
                   </div>
                 </div>
               </div>

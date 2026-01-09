@@ -1757,14 +1757,20 @@
         "cancel": "Cancel",
         "save": "Save",
         "contentOpenTo": "Content I'm Open To",
+        "editRate": "Edit Rate",
         "industries": "Industries I Work With",
-        "customRatesAlert": "Want different rates for each content type? Click below to customize.",
-        "editInitialRate": "Edit Initial Licensing Rate",
-        "initialRate": "Initial Licensing Rate",
-        "baseRateDesc": "Base rate per week for cameo usage",
-        "perWeek": "/ week",
+        "notComfortableWith": "Content I'm NOT Comfortable With",
+        "noRestrictions": "No restrictions set",
+        "conflictingCampaigns": "Conflicting Campaigns (Brand Exclusivity)",
+        "conflictingCampaignsDesc": "Brands you won't work with simultaneously",
+        "noBrandExclusivity": "No brand exclusivity set",
+        "initialLicensingRate": "Initial Licensing Rate",
+        "baseRateDesc": "This is your base monthly rate for standard social media licensing",
+        "month": "Month",
         "acceptNegotiations": "Accept Negotiations",
-        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate"
+        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate",
+        "negotiationEnabled": "Negotiation enabled!",
+        "negotiationDisabled": "Negotiation disabled!"
       }
     },
     "referenceImageLibrary": {

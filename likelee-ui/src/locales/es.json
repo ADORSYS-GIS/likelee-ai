@@ -265,20 +265,26 @@
         "emailNotificationsDesc": "Recibir actualizaciones sobre campañas y aprobaciones"
       },
       "rules": {
-        "title": "Mis Reglas",
+        "title": "Mis reglas",
         "subtitle": "Establece tus preferencias de licencia y tarifas",
         "edit": "Editar",
         "cancel": "Cancelar",
         "save": "Guardar",
-        "contentOpenTo": "Contenido al que estoy abierto",
+        "contentOpenTo": "Contenido que acepto",
+        "editRate": "Editar tarifa",
         "industries": "Industrias con las que trabajo",
-        "customRatesAlert": "¿Quieres tarifas diferentes para cada tipo de contenido? Haz clic abajo para personalizar.",
-        "editInitialRate": "Editar Tarifa Inicial de Licencia",
-        "initialRate": "Tarifa Inicial de Licencia",
-        "baseRateDesc": "Tarifa base por semana para uso de cameos",
-        "perWeek": "/ semana",
-        "acceptNegotiations": "Aceptar Negociaciones",
-        "acceptNegotiationsDesc": "Permitir que las marcas propongan contraofertas a tu tarifa base"
+        "notComfortableWith": "Contenido con el que NO me siento cómodo",
+        "noRestrictions": "Sin restricciones establecidas",
+        "conflictingCampaigns": "Campañas conflictivas (Exclusividad de marca)",
+        "conflictingCampaignsDesc": "Marcas con las que no trabajarás simultáneamente",
+        "noBrandExclusivity": "Sin exclusividad de marca establecida",
+        "initialLicensingRate": "Tarifa de licencia inicial",
+        "baseRateDesc": "Esta es tu tarifa base mensual para licencias estándar de redes sociales",
+        "month": "Mes",
+        "acceptNegotiations": "Aceptar negociaciones",
+        "acceptNegotiationsDesc": "Permitir a las marcas proponer contraofertas a tu tarifa base",
+        "negotiationEnabled": "¡Negociación habilitada!",
+        "negotiationDisabled": "¡Negociación deshabilitada!"
       }
     },
     "completeness": {

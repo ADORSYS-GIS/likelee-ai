@@ -826,20 +826,26 @@
         "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations"
       },
       "rules": {
-        "title": "Mes Règles",
+        "title": "Mes règles",
         "subtitle": "Définissez vos préférences de licence et vos tarifs",
         "edit": "Modifier",
         "cancel": "Annuler",
         "save": "Enregistrer",
-        "contentOpenTo": "Contenu auquel je suis ouvert(e)",
+        "contentOpenTo": "Contenu que j'accepte",
+        "editRate": "Modifier le tarif",
         "industries": "Industries avec lesquelles je travaille",
-        "customRatesAlert": "Vous souhaitez des tarifs différents pour chaque type de contenu ? Cliquez ci-dessous pour personnaliser.",
-        "editInitialRate": "Modifier le tarif de licence initial",
-        "initialRate": "Tarif de Licence Initial",
-        "baseRateDesc": "Tarif de base par semaine pour l'utilisation de caméos",
-        "perWeek": "/ semaine",
-        "acceptNegotiations": "Accepter les Négociations",
-        "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base"
+        "notComfortableWith": "Contenu avec lequel je ne suis PAS à l'aise",
+        "noRestrictions": "Aucune restriction définie",
+        "conflictingCampaigns": "Campagnes conflictuelles (Exclusivité de marque)",
+        "conflictingCampaignsDesc": "Marques avec lesquelles vous ne travaillerez pas simultanément",
+        "noBrandExclusivity": "Aucune exclusivité de marque définie",
+        "initialLicensingRate": "Tarif de licence initial",
+        "baseRateDesc": "Il s'agit de votre tarif mensuel de base pour les licences de médias sociaux standard",
+        "month": "Mois",
+        "acceptNegotiations": "Accepter les négociations",
+        "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base",
+        "negotiationEnabled": "Négociation activée !",
+        "negotiationDisabled": "Négociation désactivée !"
       }
     },
     "voice": {
