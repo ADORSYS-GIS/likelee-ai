@@ -983,436 +983,340 @@ const PerformanceTiersView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
+const DashboardView = ({
+  onKYC,
+  kycStatus,
+  hasAgency,
+  isCreatingAgency,
+  onCreateAgency
+}: {
+  onKYC: () => void;
+  kycStatus?: string;
+  hasAgency: boolean;
+  isCreatingAgency: boolean;
+  onCreateAgency: () => void;
+}) => (
   <div className="space-y-8">
-    {/* KYC Verification Alert */}
-    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-white rounded-xl shadow-sm">
-          <ShieldAlert className="w-6 h-6 text-indigo-600" />
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      {/* Top 3 Revenue Generators */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Trophy className="w-5 h-5 text-yellow-500" />
+          <h3 className="text-sm font-bold text-gray-900">
+            Top 3 Revenue Generators
           </h3>
-          <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
-          </p>
-        </div>
-      </div>
-      <Button
-        variant="default"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-        onClick={onKYC}
-      >
-        Complete KYC
-      </Button>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {/* Roster Health */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-indigo-500">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-indigo-50 rounded-lg">
-            <Users className="w-5 h-5 text-indigo-600" />
-          </div>
-          <TrendingUp className="w-4 h-4 text-green-500" />
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Roster Health
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">9/10</span>
-        </div>
-        <p className="text-xs text-green-600 font-medium mt-1">90% active</p>
-      </Card>
-
-      {/* Revenue */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-green-500">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-green-50 rounded-lg">
-            <DollarSign className="w-5 h-5 text-green-600" />
-          </div>
-          <TrendingUp className="w-4 h-4 text-green-500" />
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Revenue This Month
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">$37.7K</span>
-        </div>
-        <p className="text-xs text-green-600 font-medium mt-1">
-          +12% vs last month
-        </p>
-      </Card>
-
-      {/* Pending Actions */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-red-500 relative">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-red-50 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-          </div>
-          <Badge
-            variant="default"
-            className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-          >
-            3
-          </Badge>
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Pending Actions
-        </h3>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-600">• 3 licensing requests</p>
-          <p className="text-xs text-gray-600">• 1 expiring license</p>
-          <p className="text-xs text-gray-600">• 1 compliance issue</p>
-        </div>
-      </Card>
-
-      {/* Platform Ranking */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-blue-400">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Trophy className="w-5 h-5 text-blue-600" />
-          </div>
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Platform Ranking
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-blue-600">top 15%</span>
-        </div>
-        <p className="text-xs text-gray-500 font-medium mt-1">Top performer</p>
-      </Card>
-    </div>
-
-    {/* Section 2: Talent Performance Summary (Screenshot 3 Layout) */}
-    <Card className="p-8 rounded-xl border border-gray-200 shadow-sm bg-white">
-      <h2 className="text-xl font-bold text-gray-900 mb-8">
-        Talent Performance Summary
-      </h2>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Top 3 Revenue Generators */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Trophy className="w-5 h-5 text-yellow-500" />
-            <h3 className="text-sm font-bold text-gray-900">
-              Top 3 Revenue Generators
-            </h3>
-          </div>
-
-          {[
-            {
-              rank: "#1",
-              talent: TALENT_DATA.find((t) => t.id === "carla")!,
-              amount: "$6,800",
-              color: "text-green-600",
-            },
-            {
-              rank: "#2",
-              talent: TALENT_DATA.find((t) => t.id === "clemence")!,
-              amount: "$5,400",
-              color: "text-green-600",
-            },
-            {
-              rank: "#3",
-              talent: TALENT_DATA.find((t) => t.id === "julia")!,
-              amount: "$5,200",
-              color: "text-green-600",
-            },
-          ].map((item) => (
-            <div
-              key={item.rank}
-              className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
-            >
-              <span className={`font-bold text-2xl w-10 ${item.color}`}>
-                {item.rank}
-              </span>
-              <img
-                src={item.talent.img}
-                alt={item.talent.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-gray-900 text-sm">
-                  {item.talent.name}
-                </p>
-                <p className="text-xs text-gray-500">{item.amount}</p>
-              </div>
-              <TrendingUp className="w-4 h-4 text-green-500" />
-            </div>
-          ))}
         </div>
 
-        {/* Needs Activation */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className="w-5 h-5 text-orange-500" />
-            <h3 className="text-sm font-bold text-gray-900">
-              Needs Activation (0)
-            </h3>
-          </div>
-          <p className="text-sm text-gray-500 italic">
-            All talent actively earning!
-          </p>
-        </div>
-
-        {/* New Talent Performance */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            <h3 className="text-sm font-bold text-gray-900">
-              New Talent Performance
-            </h3>
-          </div>
-
-          <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Onboarded in last 30 days
-            </p>
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-gray-900 text-sm">Aaron</span>
-              <Badge
-                variant="default"
-                className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
-              >
-                Pending
-              </Badge>
-            </div>
-            <p className="text-xs text-gray-500">
-              Average time to First booking: 12 days
-            </p>
-          </div>
-        </div>
-      </div>
-    </Card>
-
-    {/* Section 3: Revenue Breakdown (Detailed) */}
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
-      </div>
-      <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* By Campaign Type */}
-        <div className="p-6 border border-gray-100 rounded-xl">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-            By Campaign Type
-          </h3>
-          <div className="space-y-4">
-            {[
-              { label: "Social Media", value: "45%" },
-              { label: "E-commerce", value: "35%" },
-              { label: "Traditional", value: "20%" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex justify-between items-center"
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-gray-900">
-                  {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* By Brand Vertical */}
-        <div className="p-6 border border-gray-100 rounded-xl">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-            By Brand Vertical
-          </h3>
-          <div className="space-y-4">
-            {[
-              { label: "Beauty", value: "40%" },
-              { label: "Fashion", value: "35%" },
-              { label: "Lifestyle", value: "25%" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex justify-between items-center"
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-gray-900">
-                  {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* By Region */}
-        <div className="p-6 border border-gray-100 rounded-xl">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-            By Region
-          </h3>
-          <div className="space-y-4">
-            {[
-              { label: "North America", value: "60%" },
-              { label: "Europe", value: "30%" },
-              { label: "Other", value: "10%" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex justify-between items-center"
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-gray-900">
-                  {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Section 4: Licensing Pipeline (Detailed) */}
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">Licensing Pipeline</h2>
-      </div>
-      <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-yellow-400 flex items-center justify-center text-yellow-500 mb-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-medium text-gray-500">
-              Pending Approval
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">3</div>
-          <Button
-            variant="default"
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
-          >
-            Review Now
-          </Button>
-        </Card>
-        <Card className="p-6 bg-white border border-green-200 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-green-400 flex items-center justify-center text-green-500 mb-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-medium text-gray-500">Active</span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">9</div>
-        </Card>
-        <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-orange-400 flex items-center justify-center text-orange-500 mb-2 text-lg">
-              !
-            </div>
-            <span className="text-xs font-medium text-gray-500">
-              Expiring Soon (30d)
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">1</div>
-          <Button
-            variant="outline"
-            className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
-          >
-            Review
-          </Button>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center text-gray-400 mb-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-medium text-gray-500">
-              Total This Month
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">13</div>
-        </Card>
-      </div>
-    </div>
-
-    {/* Section 5: Recent Activity (Detailed) */}
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-      </div>
-      <div className="p-8 space-y-10">
         {[
           {
-            text: "License approved for Emma - Glossier Beauty",
-            time: "2 hours ago",
-            color: "bg-blue-600",
+            rank: "#1",
+            talent: TALENT_DATA.find((t) => t.id === "carla")!,
+            amount: "$6,800",
+            color: "text-green-600",
           },
           {
-            text: "Payment received: $5,200 from & Other Stories",
-            time: "5 hours ago",
-            color: "bg-green-600",
+            rank: "#2",
+            talent: TALENT_DATA.find((t) => t.id === "clemence")!,
+            amount: "$5,400",
+            color: "text-green-600",
           },
           {
-            text: "Aaron added to roster (pending verification)",
-            time: "1 day ago",
-            color: "bg-purple-600",
+            rank: "#3",
+            talent: TALENT_DATA.find((t) => t.id === "julia")!,
+            amount: "$5,200",
+            color: "text-green-600",
           },
-          {
-            text: "License renewed for Milan - Carhartt WIP",
-            time: "2 days ago",
-            color: "bg-blue-600",
-          },
-        ].map((item, i) => (
-          <div key={i} className="flex gap-4">
-            <div
-              className={`mt-1.5 w-2.5 h-2.5 rounded-full ${item.color} flex-shrink-0`}
+        ].map((item) => (
+          <div
+            key={item.rank}
+            className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
+          >
+            <span className={`font-bold text-2xl w-10 ${item.color}`}>
+              {item.rank}
+            </span>
+            <img
+              src={item.talent.img}
+              alt={item.talent.name}
+              className="w-12 h-12 rounded-lg object-cover"
             />
-            <div>
-              <p className="text-sm font-bold text-gray-900">{item.text}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.time}</p>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 text-sm">
+                {item.talent.name}
+              </p>
+              <p className="text-xs text-gray-500">{item.amount}</p>
             </div>
+            <TrendingUp className="w-4 h-4 text-green-500" />
+          </div>
+        ))}
+      </div>
+
+      {/* Needs Activation */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertCircle className="w-5 h-5 text-orange-500" />
+          <h3 className="text-sm font-bold text-gray-900">
+            Needs Activation (0)
+          </h3>
+        </div>
+        <p className="text-sm text-gray-500 italic">
+          All talent actively earning!
+        </p>
+      </div>
+
+      {/* New Talent Performance */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-5 h-5 text-blue-600" />
+          <h3 className="text-sm font-bold text-gray-900">
+            New Talent Performance
+          </h3>
+        </div>
+
+        <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4">
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+            Onboarded in last 30 days
+          </p>
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-gray-900 text-sm">Aaron</span>
+            <Badge
+              variant="default"
+              className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
+            >
+              Pending
+            </Badge>
+          </div>
+          <p className="text-xs text-gray-500">
+            Average time to First booking: 12 days
+          </p>
+        </div>
+      </div>
+    </div>
+  </Card>
+
+    {/* Section 3: Revenue Breakdown (Detailed) */ }
+<div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+  <div className="p-6 border-b border-gray-100">
+    <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
+  </div>
+  <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+    {/* By Campaign Type */}
+    <div className="p-6 border border-gray-100 rounded-xl">
+      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+        By Campaign Type
+      </h3>
+      <div className="space-y-4">
+        {[
+          { label: "Social Media", value: "45%" },
+          { label: "E-commerce", value: "35%" },
+          { label: "Traditional", value: "20%" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex justify-between items-center"
+          >
+            <span className="text-sm font-medium text-gray-600">
+              {item.label}
+            </span>
+            <span className="text-sm font-bold text-gray-900">
+              {item.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+    {/* By Brand Vertical */}
+    <div className="p-6 border border-gray-100 rounded-xl">
+      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+        By Brand Vertical
+      </h3>
+      <div className="space-y-4">
+        {[
+          { label: "Beauty", value: "40%" },
+          { label: "Fashion", value: "35%" },
+          { label: "Lifestyle", value: "25%" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex justify-between items-center"
+          >
+            <span className="text-sm font-medium text-gray-600">
+              {item.label}
+            </span>
+            <span className="text-sm font-bold text-gray-900">
+              {item.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+    {/* By Region */}
+    <div className="p-6 border border-gray-100 rounded-xl">
+      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+        By Region
+      </h3>
+      <div className="space-y-4">
+        {[
+          { label: "North America", value: "60%" },
+          { label: "Europe", value: "30%" },
+          { label: "Other", value: "10%" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex justify-between items-center"
+          >
+            <span className="text-sm font-medium text-gray-600">
+              {item.label}
+            </span>
+            <span className="text-sm font-bold text-gray-900">
+              {item.value}
+            </span>
           </div>
         ))}
       </div>
     </div>
   </div>
+</div>
+
+{/* Section 4: Licensing Pipeline (Detailed) */ }
+<div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+  <div className="p-6 border-b border-gray-100">
+    <h2 className="text-lg font-bold text-gray-900">Licensing Pipeline</h2>
+  </div>
+  <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+    <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
+      <div className="mb-4">
+        <div className="w-8 h-8 rounded-full border border-yellow-400 flex items-center justify-center text-yellow-500 mb-2">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <span className="text-xs font-medium text-gray-500">
+          Pending Approval
+        </span>
+      </div>
+      <div className="text-3xl font-bold text-gray-900 mb-4">3</div>
+      <Button
+        variant="default"
+        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+      >
+        Review Now
+      </Button>
+    </Card>
+    <Card className="p-6 bg-white border border-green-200 shadow-sm rounded-xl">
+      <div className="mb-4">
+        <div className="w-8 h-8 rounded-full border border-green-400 flex items-center justify-center text-green-500 mb-2">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </div>
+        <span className="text-xs font-medium text-gray-500">Active</span>
+      </div>
+      <div className="text-3xl font-bold text-gray-900 mb-4">9</div>
+    </Card>
+    <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
+      <div className="mb-4">
+        <div className="w-8 h-8 rounded-full border border-orange-400 flex items-center justify-center text-orange-500 mb-2 text-lg">
+          !
+        </div>
+        <span className="text-xs font-medium text-gray-500">
+          Expiring Soon (30d)
+        </span>
+      </div>
+      <div className="text-3xl font-bold text-gray-900 mb-4">1</div>
+      <Button
+        variant="outline"
+        className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
+      >
+        Review
+      </Button>
+    </Card>
+    <Card className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
+      <div className="mb-4">
+        <div className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center text-gray-400 mb-2">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <span className="text-xs font-medium text-gray-500">
+          Total This Month
+        </span>
+      </div>
+      <div className="text-3xl font-bold text-gray-900 mb-4">13</div>
+    </Card>
+  </div>
+</div>
+
+{/* Section 5: Recent Activity (Detailed) */ }
+<div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+  <div className="p-6 border-b border-gray-100">
+    <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+  </div>
+  <div className="p-8 space-y-10">
+    {[
+      {
+        text: "License approved for Emma - Glossier Beauty",
+        time: "2 hours ago",
+        color: "bg-blue-600",
+      },
+      {
+        text: "Payment received: $5,200 from & Other Stories",
+        time: "5 hours ago",
+        color: "bg-green-600",
+      },
+      {
+        text: "Aaron added to roster (pending verification)",
+        time: "1 day ago",
+        color: "bg-purple-600",
+      },
+      {
+        text: "License renewed for Milan - Carhartt WIP",
+        time: "2 days ago",
+        color: "bg-blue-600",
+      },
+    ].map((item, i) => (
+      <div key={i} className="flex gap-4">
+        <div
+          className={`mt-1.5 w-2.5 h-2.5 rounded-full ${item.color} flex-shrink-0`}
+        />
+        <div>
+          <p className="text-sm font-bold text-gray-900">{item.text}</p>
+          <p className="text-xs text-gray-500 mt-1">{item.time}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+  </div >
 );
 
 const TalentDetailView = ({
@@ -8622,7 +8526,7 @@ const PlaceholderView = ({ title }: { title: string }) => (
 );
 
 export default function AgencyDashboard() {
-  const { logout, user, authenticated } = useAuth();
+  const { logout, user, authenticated, profile, supabase } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState("All Talent");
@@ -8660,6 +8564,10 @@ export default function AgencyDashboard() {
   const [loadingRoster, setLoadingRoster] = useState(true);
   const [selectedTalentForAction, setSelectedTalentForAction] = useState<any>(null);
   const [showLicenseModal, setShowLicenseModal] = useState(false);
+
+  const [hasAgency, setHasAgency] = useState<boolean>(false);
+  const [loadingAgency, setLoadingAgency] = useState<boolean>(true);
+  const [isCreatingAgency, setIsCreatingAgency] = useState<boolean>(false);
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -8784,9 +8692,63 @@ export default function AgencyDashboard() {
     }
   };
 
+  // Check if agency exists for user
+  const checkAgency = async () => {
+    if (!user?.id || !supabase) return;
+    try {
+      setLoadingAgency(true);
+      const { data, error } = await supabase
+        .from('organization_profiles')
+        .select('id')
+        .eq('owner_user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setHasAgency(!!data);
+    } catch (err) {
+      console.error('Error checking agency status:', err);
+    } finally {
+      setLoadingAgency(false);
+    }
+  };
+
+  const handleCreateAgency = async () => {
+    if (!user?.id || !supabase) return;
+    try {
+      setIsCreatingAgency(true);
+      const { data, error } = await supabase
+        .from('organization_profiles')
+        .insert([{
+          owner_user_id: user.id,
+          email: user.email,
+          organization_name: profile?.full_name ? `${profile.full_name}'s Agency` : 'New Agency',
+          status: 'active'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setHasAgency(true);
+      toast({
+        title: "Agency Created",
+        description: "Your agency has been successfully created!",
+      });
+    } catch (err) {
+      console.error('Error creating agency:', err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create agency. Please try again.",
+      });
+    } finally {
+      setIsCreatingAgency(false);
+    }
+  };
+
   // Fetch roster on mount
   useEffect(() => {
     fetchRoster();
+    checkAgency();
   }, [user?.id]);
 
 
@@ -9132,7 +9094,15 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
-          {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
+          {activeTab === "dashboard" && (
+            <DashboardView
+              onKYC={handleKYC}
+              kycStatus={profile?.kyc_status}
+              hasAgency={hasAgency}
+              isCreatingAgency={isCreatingAgency}
+              onCreateAgency={handleCreateAgency}
+            />
+          )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
               searchTerm={searchTerm}
