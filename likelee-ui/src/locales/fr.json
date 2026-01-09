@@ -149,6 +149,108 @@
       }
     }
   },
+  "organizationSignup": {
+    "missingFieldsTitle": "Champs manquants",
+    "missingFieldsDescription": "Veuillez remplir tous les champs obligatoires pour continuer.",
+    "passwordMismatchTitle": "Les mots de passe ne correspondent pas",
+    "passwordMismatchDescription": "Veuillez vérifier vos champs de mot de passe et de confirmation.",
+    "orgType": {
+      "brandCompany": "Marque / Entreprise",
+      "productionStudio": "Studio de production",
+      "marketingAgency": "Agence de marketing",
+      "talentAgency": "Agence de talents"
+    },
+    "profileNotFoundTitle": "Profil non trouvé",
+    "profileNotFoundDescription": "Impossible de trouver le profil de l'organisation. Veuillez réessayer.",
+    "kycError": "Impossible de démarrer la session KYC. Veuillez contacter le support.",
+    "kycFail": "Échec de l'initiation du KYC de l'organisation.",
+    "kycVerifiedTitle": "Vérification terminée",
+    "onboardingInProgressTitle": "Intégration en cours",
+    "kycVerifiedDescription": "Votre organisation a été vérifiée avec succès. Vous avez maintenant un accès complet à la plateforme Likelee.",
+    "onboardingInProgressDescription": "Merci d'avoir soumis vos coordonnées. Notre équipe examine votre demande.",
+    "whatsNext": "Et après ?",
+    "kycRedirect": "Veuillez compléter votre vérification d'identité pour continuer.",
+    "calendarLink": "Planifiez un appel avec notre équipe d'intégration pour accélérer votre approbation.",
+    "completeKycButton": "Compléter la vérification",
+    "signUpAs": "S'inscrire en tant que",
+    "step": "Étape",
+    "of": "sur",
+    "companyInfo": "Informations sur l'entreprise",
+    "startWithBasics": "Commençons par l'essentiel.",
+    "companyEmail": "E-mail de l'entreprise",
+    "confirmPassword": "Confirmer le mot de passe",
+    "organizationName": "Nom de l'organisation",
+    "contactName": "Nom du contact",
+    "contactTitle": "Titre du contact",
+    "contactTitlePlaceholder": "ex: Responsable marketing",
+    "website": "Site web",
+    "phoneNumber": "Numéro de téléphone",
+    "saving": "Enregistrement...",
+    "continue": "Continuer",
+    "brandDetails": {
+      "title": "Détails de la marque",
+      "subtitle": "Dites-nous en plus sur vos objectifs de marque.",
+      "industry": "Secteur d'activité",
+      "selectIndustry": "Sélectionnez votre secteur",
+      "primaryGoal": "Objectif principal",
+      "selectAll": "Tout sélectionner",
+      "geographicTarget": "Cible géographique",
+      "geographicTargetPlaceholder": "ex: Global, France, Europe",
+      "provideCreatorsQuestion": "Représentez-vous des créateurs ?",
+      "provideCreators": "Oui, nous avons un roster",
+      "uploadOwnAssets": "Non, nous voulons trouver des talents"
+    },
+    "continueToVerification": "Continuer vers la vérification",
+    "productionStudio": {
+      "selectProductionType": "Sélectionnez le type de production",
+      "selectBudgetRange": "Sélectionnez le budget mensuel",
+      "budgetRangeUnder10k": "Moins de 10 000 $",
+      "budgetRange10k50k": "10 000 $ - 50 000 $",
+      "budgetRange50k250k": "50 000 $ - 250 000 $"
+    },
+    "options": {
+      "productionTypes": {
+        "film": "Film",
+        "tv": "Télévision",
+        "commercial": "Publicité",
+        "musicVideo": "Clip musical",
+        "animation": "Animation",
+        "mixedAiLive": "Mélange IA/Live"
+      },
+      "services": {
+        "socialMediaManagement": "Gestion des réseaux sociaux",
+        "influencerCampaigns": "Campagnes d'influence",
+        "videoAds": "Publicités vidéo",
+        "ugcProduction": "Production UGC",
+        "contentCreation": "Création de contenu",
+        "brandStrategy": "Stratégie de marque"
+      },
+      "campaignTypes": {
+        "fashion": "Mode",
+        "music": "Musique",
+        "fitness": "Fitness",
+        "lifestyle": "Lifestyle",
+        "beauty": "Beauté",
+        "sports": "Sports",
+        "entertainment": "Divertissement"
+      },
+      "primaryGoals": {
+        "runAdCampaigns": "Lancer des campagnes publicitaires",
+        "findBrandAmbassadors": "Trouver des ambassadeurs de marque",
+        "licenseAiReadyFaces": "Licencier des visages prêts pour l'IA"
+      },
+      "rolesNeeded": {
+        "talentFacesVoices": "Talents (visages/voix)",
+        "postproductionAiGeneration": "Post-production / Génération IA",
+        "creativeCollaboration": "Collaboration créative"
+      },
+      "openToAiOptions": {
+        "aiRecreation": "Recréation par IA",
+        "likenessProtectionOnly": "Protection de l'image uniquement",
+        "variesByTalent": "Varie selon le talent"
+      }
+    }
+  },
   "commercialRights": "Droits commerciaux",
   "company": "Entreprise",
   "creators": "Créateurs",
