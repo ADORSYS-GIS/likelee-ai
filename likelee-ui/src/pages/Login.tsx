@@ -78,10 +78,10 @@ export default function Login() {
         navigate("/CreatorDashboard");
       }
     } catch (err: any) {
-      const msg = getFriendlyErrorMessage(err);
+      const msg = getFriendlyErrorMessage(err, t);
       setError(msg);
       toast({
-        title: "Sign-in failed",
+        title: t("common.error"),
         description: msg,
         variant: "destructive",
       });
@@ -99,17 +99,17 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
-      <h1 className="text-2xl font-bold mb-4">Sign in</h1>
+      <h1 className="text-2xl font-bold mb-4">{t("auth.login.title")}</h1>
       {!initialized ? (
-        <p>Loading...</p>
+        <p>{t("auth.login.loading")}</p>
       ) : authenticated ? (
         <div className="text-center space-y-4">
-          <p>You are already signed in.</p>
+          <p>{t("auth.login.alreadySignedIn")}</p>
           <Button
             onClick={() => navigate("/CreatorDashboard")}
             className="w-full h-12 bg-gray-900 hover:bg-black text-white font-bold rounded-xl"
           >
-            Go to Dashboard
+            {t("auth.login.goToDashboard")}
           </Button>
         </div>
       ) : (
@@ -126,10 +126,10 @@ export default function Login() {
             </div>
             <div className="space-y-2">
               <CardTitle className="text-3xl font-bold tracking-tight text-gray-900">
-                Welcome to Likelee
+                {t("auth.login.welcome")}
               </CardTitle>
               <CardDescription className="text-gray-500 font-medium">
-                Sign in to continue
+                {t("auth.login.signInToContinue")}
               </CardDescription>
             </div>
           </CardHeader>
@@ -145,19 +145,19 @@ export default function Login() {
                   value="creator"
                   className="rounded-lg data-[state=active]:bg-[#32C8D1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 font-bold"
                 >
-                  Creator
+                  {t("auth.login.tabs.creator", "Creator")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="brand"
                   className="rounded-lg data-[state=active]:bg-[#32C8D1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 font-bold"
                 >
-                  Brand
+                  {t("auth.login.tabs.brand", "Brand")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="agency"
                   className="rounded-lg data-[state=active]:bg-[#32C8D1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 font-bold"
                 >
-                  Agency
+                  {t("auth.login.tabs.agency", "Agency")}
                 </TabsTrigger>
               </TabsList>
 
@@ -168,11 +168,10 @@ export default function Login() {
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-xl font-bold text-gray-900">
-                      Coming Soon
+                      {t("auth.login.comingSoonTitle")}
                     </h3>
                     <p className="text-gray-500 max-w-[240px] mx-auto">
-                      We're currently onboarding agencies manually. Join the
-                      waitlist to get early access.
+                      {t("auth.login.comingSoonMessage")}
                     </p>
                   </div>
                   <Button
@@ -180,7 +179,7 @@ export default function Login() {
                     className="mt-4 border-2 border-black rounded-none"
                     onClick={() => navigate("/TalentAgency")}
                   >
-                    Learn More
+                    {t("auth.login.learnMore")}
                   </Button>
                 </div>
               </TabsContent>
@@ -195,8 +194,8 @@ export default function Login() {
                         await loginWithProvider("google");
                       } catch (err: any) {
                         toast({
-                          title: "Google sign-in failed",
-                          description: getFriendlyErrorMessage(err),
+                          title: t("auth.login.googleSignInFailed"),
+                          description: getFriendlyErrorMessage(err, t),
                           variant: "destructive",
                         });
                       }
@@ -225,7 +224,7 @@ export default function Login() {
                         fill="#EA4335"
                       />
                     </svg>
-                    Continue with Google
+                    {t("auth.login.continueWithGoogle")}
                   </Button>
 
                   <div className="relative">
@@ -234,7 +233,7 @@ export default function Login() {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-white px-4 text-gray-400 font-bold tracking-widest">
-                        OR
+                        {t("auth.login.or")}
                       </span>
                     </div>
                   </div>
@@ -245,14 +244,16 @@ export default function Login() {
                         htmlFor="email"
                         className="text-sm font-bold text-gray-700 ml-1"
                       >
-                        {userType === "brand" ? "Company Email" : "Email"}
+                        {userType === "brand"
+                          ? t("auth.login.companyEmailLabel")
+                          : t("auth.login.emailLabel")}
                       </Label>
                       <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
                           id="email"
                           type="email"
-                          placeholder="you@example.com"
+                          placeholder={t("auth.login.emailPlaceholder")}
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
@@ -267,13 +268,13 @@ export default function Login() {
                           htmlFor="password"
                           className="text-sm font-bold text-gray-700"
                         >
-                          Password
+                          {t("auth.login.passwordLabel")}
                         </Label>
                         <Link
                           to="/forgot-password"
                           className="text-xs font-bold text-[#32C8D1] hover:underline"
                         >
-                          Forgot password?
+                          {t("auth.login.forgotPassword")}
                         </Link>
                       </div>
                       <div className="relative">
@@ -281,7 +282,7 @@ export default function Login() {
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
+                          placeholder={t("auth.login.passwordPlaceholder")}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
@@ -315,10 +316,10 @@ export default function Login() {
                       {loading ? (
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Signing in...
+                          {t("auth.login.signingIn")}
                         </div>
                       ) : (
-                        "Sign in"
+                        t("auth.login.signInButton")
                       )}
                     </Button>
                   </form>
@@ -328,12 +329,12 @@ export default function Login() {
 
             <div className="text-center pt-4">
               <p className="text-sm text-gray-500 font-medium">
-                Need an account?{" "}
+                {t("auth.login.needAccount")}{" "}
                 <Link
                   to={getSignupLink()}
                   className="text-[#32C8D1] font-bold hover:underline"
                 >
-                  Sign up
+                  {t("auth.login.signUp")}
                 </Link>
               </p>
             </div>
