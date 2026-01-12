@@ -8280,9 +8280,9 @@ export default function AgencyDashboard() {
       ];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-slate-800 pt-20">
+    <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-20 left-0 h-[calc(100vh-5rem)] z-10 transition-all duration-300">
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
