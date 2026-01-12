@@ -776,7 +776,7 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-      <main className={isDashboardPage ? "" : "pt-20"}> {children}</main>
+      <main className="pt-20">{children}</main>
 
       {/* Footer - Hidden on Dashboard pages */}
       {!isDashboardPage && (
@@ -852,7 +852,7 @@ export default function Layout({ children, currentPageName }) {
                     to={createPageUrl("PrivacyPolicy")}
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
-                    {t("privacyPolicy")}
+                    {t("privacyPolicy.title")}
                   </Link>
                   <Link
                     to={createPageUrl("CommercialRights")}

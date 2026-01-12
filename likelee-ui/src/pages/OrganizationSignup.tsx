@@ -35,62 +35,156 @@ import {
 } from "@/api/functions";
 
 const getProductionTypes = (t: any) => [
-  t("organizationSignup.options.productionTypes.film"),
-  t("organizationSignup.options.productionTypes.tv"),
-  t("organizationSignup.options.productionTypes.commercial"),
-  t("organizationSignup.options.productionTypes.musicVideo"),
-  t("organizationSignup.options.productionTypes.animation"),
-  t("organizationSignup.options.productionTypes.mixedAiLive"),
+  {
+    label: t("organizationSignup.options.productionTypes.film"),
+    value: "film",
+  },
+  { label: t("organizationSignup.options.productionTypes.tv"), value: "tv" },
+  {
+    label: t("organizationSignup.options.productionTypes.commercial"),
+    value: "commercial",
+  },
+  {
+    label: t("organizationSignup.options.productionTypes.musicVideo"),
+    value: "music_video",
+  },
+  {
+    label: t("organizationSignup.options.productionTypes.animation"),
+    value: "animation",
+  },
+  {
+    label: t("organizationSignup.options.productionTypes.mixedAiLive"),
+    value: "mixed_ai_live",
+  },
 ];
 
 const getServices = (t: any) => [
-  t("organizationSignup.options.services.socialMediaManagement"),
-  t("organizationSignup.options.services.influencerCampaigns"),
-  t("organizationSignup.options.services.videoAds"),
-  t("organizationSignup.options.services.ugcProduction"),
-  t("organizationSignup.options.services.contentCreation"),
-  t("organizationSignup.options.services.brandStrategy"),
+  {
+    label: t("organizationSignup.options.services.socialMediaManagement"),
+    value: "social_media_management",
+  },
+  {
+    label: t("organizationSignup.options.services.influencerCampaigns"),
+    value: "influencer_campaigns",
+  },
+  {
+    label: t("organizationSignup.options.services.videoAds"),
+    value: "video_ads",
+  },
+  {
+    label: t("organizationSignup.options.services.ugcProduction"),
+    value: "ugc_production",
+  },
+  {
+    label: t("organizationSignup.options.services.contentCreation"),
+    value: "content_creation",
+  },
+  {
+    label: t("organizationSignup.options.services.brandStrategy"),
+    value: "brand_strategy",
+  },
 ];
 
 const getCampaignTypes = (t: any) => [
-  t("organizationSignup.options.campaignTypes.fashion"),
-  t("organizationSignup.options.campaignTypes.music"),
-  t("organizationSignup.options.campaignTypes.fitness"),
-  t("organizationSignup.options.campaignTypes.lifestyle"),
-  t("organizationSignup.options.campaignTypes.beauty"),
-  t("organizationSignup.options.campaignTypes.sports"),
-  t("organizationSignup.options.campaignTypes.entertainment"),
+  {
+    label: t("organizationSignup.options.campaignTypes.fashion"),
+    value: "fashion",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.music"),
+    value: "music",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.fitness"),
+    value: "fitness",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.lifestyle"),
+    value: "lifestyle",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.beauty"),
+    value: "beauty",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.sports"),
+    value: "sports",
+  },
+  {
+    label: t("organizationSignup.options.campaignTypes.entertainment"),
+    value: "entertainment",
+  },
 ];
 
 const getPrimaryGoals = (t: any) => [
-  t("organizationSignup.options.primaryGoals.runAdCampaigns"),
-  t("organizationSignup.options.primaryGoals.findBrandAmbassadors"),
-  t("organizationSignup.options.primaryGoals.licenseAiReadyFaces"),
+  {
+    label: t("organizationSignup.options.primaryGoals.runAdCampaigns"),
+    value: "run_ad_campaigns",
+  },
+  {
+    label: t("organizationSignup.options.primaryGoals.findBrandAmbassadors"),
+    value: "find_brand_ambassadors",
+  },
+  {
+    label: t("organizationSignup.options.primaryGoals.licenseAiReadyFaces"),
+    value: "license_ai_ready_faces",
+  },
 ];
 
 const getRolesNeeded = (t: any) => [
-  t("organizationSignup.options.rolesNeeded.talentFacesVoices"),
-  t("organizationSignup.options.rolesNeeded.postproductionAiGeneration"),
-  t("organizationSignup.options.rolesNeeded.creativeCollaboration"),
+  {
+    label: t("organizationSignup.options.rolesNeeded.talentFacesVoices"),
+    value: "talent_faces_voices",
+  },
+  {
+    label: t(
+      "organizationSignup.options.rolesNeeded.postproductionAiGeneration",
+    ),
+    value: "post_production_ai_generation",
+  },
+  {
+    label: t("organizationSignup.options.rolesNeeded.creativeCollaboration"),
+    value: "creative_collaboration",
+  },
 ];
 
 const getOpenToAiOptions = (t: any) => [
-  t("organizationSignup.options.openToAiOptions.aiRecreation"),
-  t("organizationSignup.options.openToAiOptions.likenessProtectionOnly"),
-  t("organizationSignup.options.openToAiOptions.variesByTalent"),
+  {
+    label: t("organizationSignup.options.openToAiOptions.aiRecreation"),
+    value: "ai_recreation",
+  },
+  {
+    label: t(
+      "organizationSignup.options.openToAiOptions.likenessProtectionOnly",
+    ),
+    value: "likeness_protection_only",
+  },
+  {
+    label: t("organizationSignup.options.openToAiOptions.variesByTalent"),
+    value: "varies_by_talent",
+  },
 ];
 
-const industries = [
-  "Fashion",
-  "Beauty",
-  "Technology",
-  "Automotive",
-  "Food & Beverage",
-  "Travel",
-  "Entertainment",
-  "Health & Wellness",
-  "Finance",
-  "Other",
+const getIndustries = (t: any) => [
+  { label: t("organizationSignup.industries.fashion"), value: "fashion" },
+  { label: t("organizationSignup.industries.beauty"), value: "beauty" },
+  { label: t("organizationSignup.industries.technology"), value: "technology" },
+  { label: t("organizationSignup.industries.automotive"), value: "automotive" },
+  {
+    label: t("organizationSignup.industries.foodBeverage"),
+    value: "food & beverage",
+  },
+  { label: t("organizationSignup.industries.travel"), value: "travel" },
+  {
+    label: t("organizationSignup.industries.entertainment"),
+    value: "entertainment",
+  },
+  {
+    label: t("organizationSignup.industries.healthWellness"),
+    value: "health & wellness",
+  },
+  { label: t("organizationSignup.industries.finance"), value: "finance" },
+  { label: t("organizationSignup.industries.other"), value: "other" },
 ];
 
 export default function OrganizationSignup() {
@@ -203,8 +297,8 @@ export default function OrganizationSignup() {
     onError: (error) => {
       console.error("Error creating initial profile:", error);
       toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
+        title: t("common.error"),
+        description: getTranslatedErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -251,12 +345,16 @@ export default function OrganizationSignup() {
       console.error("Error updating profile:", error);
       // Optionally handle error, e.g., show a toast notification
       toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
+        title: t("common.error"),
+        description: getTranslatedErrorMessage(error),
         variant: "destructive",
       });
     },
   });
+
+  const getTranslatedErrorMessage = (error: any) => {
+    return getFriendlyErrorMessage(error, t);
+  };
 
   const handleNext = () => {
     // Basic validation for Step 1 before proceeding
@@ -330,7 +428,7 @@ export default function OrganizationSignup() {
       marketing_agency: t("organizationSignup.orgType.marketingAgency"),
       talent_agency: t("organizationSignup.orgType.talentAgency"),
     };
-    return titles[orgType] || "Organization";
+    return titles[orgType] || t("common.organization");
   };
 
   // Fetch KYC status in Step 3 when profileId is available
@@ -488,7 +586,7 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="company@example.com"
+                    placeholder={t("organizationSignup.emailPlaceholder")}
                   />
                 </div>
 
@@ -508,7 +606,7 @@ export default function OrganizationSignup() {
                         setFormData({ ...formData, password: e.target.value })
                       }
                       className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
+                      placeholder={t("organizationSignup.passwordPlaceholder")}
                     />
                     <button
                       type="button"
@@ -543,7 +641,7 @@ export default function OrganizationSignup() {
                         })
                       }
                       className="border-2 border-gray-300 rounded-none pr-10"
-                      placeholder="••••••••"
+                      placeholder={t("organizationSignup.passwordPlaceholder")}
                     />
                     <button
                       type="button"
@@ -712,12 +810,9 @@ export default function OrganizationSignup() {
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {industries.map((industry) => (
-                        <SelectItem
-                          key={industry}
-                          value={industry.toLowerCase()}
-                        >
-                          {industry}
+                      {getIndustries(t).map((industry) => (
+                        <SelectItem key={industry.value} value={industry.value}>
+                          {industry.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -734,10 +829,13 @@ export default function OrganizationSignup() {
                         <Checkbox
                           id="select_all_goals"
                           checked={getPrimaryGoals(t).every((goal) =>
-                            formData.primary_goal.includes(goal),
+                            formData.primary_goal.includes(goal.value),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("primary_goal", getPrimaryGoals(t))
+                            toggleSelectAll(
+                              "primary_goal",
+                              getPrimaryGoals(t).map((g) => g.value),
+                            )
                           }
                           className="border-2 border-gray-900"
                         />
@@ -750,22 +848,22 @@ export default function OrganizationSignup() {
                       </div>
                       {getPrimaryGoals(t).map((goal) => (
                         <div
-                          key={goal}
+                          key={goal.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={goal}
-                            checked={formData.primary_goal.includes(goal)}
+                            id={goal.value}
+                            checked={formData.primary_goal.includes(goal.value)}
                             onCheckedChange={() =>
-                              toggleArrayItem("primary_goal", goal)
+                              toggleArrayItem("primary_goal", goal.value)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={goal}
+                            htmlFor={goal.value}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {goal}
+                            {goal.label}
                           </label>
                         </div>
                       ))}
@@ -847,7 +945,7 @@ export default function OrganizationSignup() {
                   className="w-1/2 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  {t("common.back")}
+                  {t("organizationSignup.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -855,9 +953,9 @@ export default function OrganizationSignup() {
                   className={`w-1/2 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
-                    ? t("common.submitting")
-                    : t("common.submit")}
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                    ? t("organizationSignup.submitting")
+                    : t("organizationSignup.completeSignUp")}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>
             </div>
@@ -868,10 +966,10 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Studio Details
+                  {t("organizationSignup.productionStudio.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Tell us about your production work
+                  {t("organizationSignup.productionStudio.subtitle")}
                 </p>
               </div>
 
@@ -881,7 +979,9 @@ export default function OrganizationSignup() {
                     htmlFor="production_type"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Primary Production Type *
+                    {t(
+                      "organizationSignup.productionStudio.primaryProductionType",
+                    )}
                   </Label>
                   <Select
                     value={formData.production_type}
@@ -898,8 +998,8 @@ export default function OrganizationSignup() {
                     </SelectTrigger>
                     <SelectContent>
                       {getProductionTypes(t).map((type) => (
-                        <SelectItem key={type} value={type.toLowerCase()}>
-                          {type}
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -911,7 +1011,7 @@ export default function OrganizationSignup() {
                     htmlFor="budget_range"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Typical Production Budget Range
+                    {t("organizationSignup.productionStudio.budgetRangeLabel")}
                   </Label>
                   <Select
                     value={formData.budget_range}
@@ -958,7 +1058,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Do you create for clients or your own IP?
+                    {t(
+                      "organizationSignup.productionStudio.createsForQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.creates_for}
@@ -977,7 +1079,7 @@ export default function OrganizationSignup() {
                           htmlFor="clients"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          For clients
+                          {t("organizationSignup.productionStudio.forClients")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -990,7 +1092,7 @@ export default function OrganizationSignup() {
                           htmlFor="own_ip"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Own IP
+                          {t("organizationSignup.productionStudio.ownIp")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -1003,7 +1105,7 @@ export default function OrganizationSignup() {
                           htmlFor="both"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Both
+                          {t("organizationSignup.productionStudio.both")}
                         </Label>
                       </div>
                     </div>
@@ -1012,7 +1114,7 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Do you already use AI in your production workflow?
+                    {t("organizationSignup.productionStudio.usesAiQuestion")}
                   </Label>
                   <RadioGroup
                     value={formData.uses_ai}
@@ -1021,21 +1123,36 @@ export default function OrganizationSignup() {
                     }
                   >
                     <div className="space-y-2">
-                      {["Yes", "No", "Exploring"].map((option) => (
+                      {[
+                        {
+                          label: t("organizationSignup.options.aiUsage.yes"),
+                          value: "yes",
+                        },
+                        {
+                          label: t("organizationSignup.options.aiUsage.no"),
+                          value: "no",
+                        },
+                        {
+                          label: t(
+                            "organizationSignup.options.aiUsage.exploring",
+                          ),
+                          value: "exploring",
+                        },
+                      ].map((option) => (
                         <div
-                          key={option}
+                          key={option.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <RadioGroupItem
-                            value={option.toLowerCase()}
-                            id={option}
+                            value={option.value}
+                            id={option.value}
                             className="border-2 border-gray-400"
                           />
                           <Label
-                            htmlFor={option}
+                            htmlFor={option.value}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {option}
+                            {option.label}
                           </Label>
                         </div>
                       ))}
@@ -1045,7 +1162,7 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    What roles are you looking to fill through Likelee?
+                    {t("organizationSignup.productionStudio.rolesNeededLabel")}
                   </Label>
                   <div className="space-y-3">
                     <div className="space-y-3">
@@ -1053,10 +1170,13 @@ export default function OrganizationSignup() {
                         <Checkbox
                           id="select_all_roles"
                           checked={getRolesNeeded(t).every((role) =>
-                            formData.roles_needed.includes(role),
+                            formData.roles_needed.includes(role.value),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("roles_needed", getRolesNeeded(t))
+                            toggleSelectAll(
+                              "roles_needed",
+                              getRolesNeeded(t).map((r) => r.value),
+                            )
                           }
                           className="border-2 border-gray-900"
                         />
@@ -1064,27 +1184,27 @@ export default function OrganizationSignup() {
                           htmlFor="select_all_roles"
                           className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("organizationSignup.selectAll")}
                         </label>
                       </div>
                       {getRolesNeeded(t).map((role) => (
                         <div
-                          key={role}
+                          key={role.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={role}
-                            checked={formData.roles_needed.includes(role)}
+                            id={role.value}
+                            checked={formData.roles_needed.includes(role.value)}
                             onCheckedChange={() =>
-                              toggleArrayItem("roles_needed", role)
+                              toggleArrayItem("roles_needed", role.value)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={role}
+                            htmlFor={role.value}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {role}
+                            {role.label}
                           </label>
                         </div>
                       ))}
@@ -1100,7 +1220,7 @@ export default function OrganizationSignup() {
                   className="flex-1 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("organizationSignup.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -1108,8 +1228,8 @@ export default function OrganizationSignup() {
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Complete Sign Up"}{" "}
+                    ? t("organizationSignup.submitting")
+                    : t("organizationSignup.completeSignUp")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
@@ -1122,9 +1242,11 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Agency Details
+                  {t("organizationSignup.marketingAgency.title")}
                 </h3>
-                <p className="text-gray-600">Tell us about your agency</p>
+                <p className="text-gray-600">
+                  {t("organizationSignup.marketingAgency.subtitle")}
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -1133,7 +1255,7 @@ export default function OrganizationSignup() {
                     htmlFor="client_count"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Number of Client Brands Currently Managed
+                    {t("organizationSignup.marketingAgency.clientCountLabel")}
                   </Label>
                   <Input
                     id="client_count"
@@ -1143,7 +1265,9 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, client_count: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="e.g., 5"
+                    placeholder={t(
+                      "organizationSignup.marketingAgency.clientCountPlaceholder",
+                    )}
                   />
                 </div>
 
@@ -1152,7 +1276,9 @@ export default function OrganizationSignup() {
                     htmlFor="campaign_budget"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Typical Campaign Budget Per Brand
+                    {t(
+                      "organizationSignup.marketingAgency.campaignBudgetLabel",
+                    )}
                   </Label>
                   <Select
                     value={formData.campaign_budget}
@@ -1161,25 +1287,35 @@ export default function OrganizationSignup() {
                     }
                   >
                     <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                      <SelectValue placeholder="Select budget range" />
+                      <SelectValue
+                        placeholder={t(
+                          "organizationSignup.marketingAgency.campaignBudgetPlaceholder",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="under_5k">Under $5,000</SelectItem>
-                      <SelectItem value="5k_25k">$5,000 - $25,000</SelectItem>
+                      <SelectItem value="under_5k">
+                        {t("organizationSignup.marketingAgency.budgetUnder5k")}
+                      </SelectItem>
+                      <SelectItem value="5k_25k">
+                        {t("organizationSignup.marketingAgency.budget5k25k")}
+                      </SelectItem>
                       <SelectItem value="25k_100k">
-                        $25,000 - $100,000
+                        {t("organizationSignup.marketingAgency.budget25k100k")}
                       </SelectItem>
                       <SelectItem value="100k_500k">
-                        $100,000 - $500,000
+                        {t("organizationSignup.marketingAgency.budget100k500k")}
                       </SelectItem>
-                      <SelectItem value="over_500k">Over $500,000</SelectItem>
+                      <SelectItem value="over_500k">
+                        {t("organizationSignup.marketingAgency.budgetOver500k")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    Primary Services Offered
+                    {t("organizationSignup.marketingAgency.servicesLabel")}
                   </Label>
                   <div className="space-y-3">
                     <div className="space-y-3">
@@ -1187,10 +1323,13 @@ export default function OrganizationSignup() {
                         <Checkbox
                           id="select_all_services"
                           checked={getServices(t).every((service) =>
-                            formData.services_offered.includes(service),
+                            formData.services_offered.includes(service.value),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("services_offered", getServices(t))
+                            toggleSelectAll(
+                              "services_offered",
+                              getServices(t).map((s) => s.value),
+                            )
                           }
                           className="border-2 border-gray-900"
                         />
@@ -1198,29 +1337,29 @@ export default function OrganizationSignup() {
                           htmlFor="select_all_services"
                           className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("organizationSignup.selectAll")}
                         </label>
                       </div>
                       {getServices(t).map((service) => (
                         <div
-                          key={service}
+                          key={service.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={service}
+                            id={service.value}
                             checked={formData.services_offered.includes(
-                              service,
+                              service.value,
                             )}
                             onCheckedChange={() =>
-                              toggleArrayItem("services_offered", service)
+                              toggleArrayItem("services_offered", service.value)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={service}
+                            htmlFor={service.value}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {service}
+                            {service.label}
                           </label>
                         </div>
                       ))}
@@ -1230,8 +1369,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Would you like Likelee to match you with creators or just
-                    provide licensing tools?
+                    {t(
+                      "organizationSignup.marketingAgency.matchCreatorsQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.provide_creators}
@@ -1250,7 +1390,9 @@ export default function OrganizationSignup() {
                           htmlFor="match"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Match me with creators
+                          {t(
+                            "organizationSignup.marketingAgency.matchWithCreators",
+                          )}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -1263,7 +1405,9 @@ export default function OrganizationSignup() {
                           htmlFor="tools"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Just provide licensing tools
+                          {t(
+                            "organizationSignup.marketingAgency.justProvideTools",
+                          )}
                         </Label>
                       </div>
                     </div>
@@ -1272,8 +1416,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Do you handle contracts and royalties for clients or want
-                    Likelee to automate that?
+                    {t(
+                      "organizationSignup.marketingAgency.handleContractsQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.handle_contracts}
@@ -1292,7 +1437,7 @@ export default function OrganizationSignup() {
                           htmlFor="handle"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          We handle it
+                          {t("organizationSignup.marketingAgency.weHandleIt")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50">
@@ -1305,7 +1450,9 @@ export default function OrganizationSignup() {
                           htmlFor="automate"
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          Automate with Likelee
+                          {t(
+                            "organizationSignup.marketingAgency.automateWithLikelee",
+                          )}
                         </Label>
                       </div>
                     </div>
@@ -1320,7 +1467,7 @@ export default function OrganizationSignup() {
                   className="flex-1 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("organizationSignup.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -1328,8 +1475,8 @@ export default function OrganizationSignup() {
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Complete Sign Up"}{" "}
+                    ? t("organizationSignup.submitting")
+                    : t("organizationSignup.completeSignUp")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
@@ -1342,10 +1489,10 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Agency Details
+                  {t("organizationSignup.talentAgency.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Tell us about your talent roster
+                  {t("organizationSignup.talentAgency.subtitle")}
                 </p>
               </div>
 
@@ -1355,7 +1502,7 @@ export default function OrganizationSignup() {
                     htmlFor="talent_count"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Number of Models or Talent Represented
+                    {t("organizationSignup.talentAgency.talentCountLabel")}
                   </Label>
                   <Input
                     id="talent_count"
@@ -1365,13 +1512,17 @@ export default function OrganizationSignup() {
                       setFormData({ ...formData, talent_count: e.target.value })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder="e.g., 25"
+                    placeholder={t(
+                      "organizationSignup.talentAgency.talentCountPlaceholder",
+                    )}
                   />
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Do you currently license your models' likeness?
+                    {t(
+                      "organizationSignup.talentAgency.licenseLikenessQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.licenses_likeness}
@@ -1380,21 +1531,30 @@ export default function OrganizationSignup() {
                     }
                   >
                     <div className="space-y-2">
-                      {["Yes", "No"].map((option) => (
+                      {[
+                        {
+                          label: t("organizationSignup.options.aiUsage.yes"),
+                          value: "yes",
+                        },
+                        {
+                          label: t("organizationSignup.options.aiUsage.no"),
+                          value: "no",
+                        },
+                      ].map((option) => (
                         <div
-                          key={option}
+                          key={option.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <RadioGroupItem
-                            value={option.toLowerCase()}
-                            id={`license_${option}`}
+                            value={option.value}
+                            id={`license_${option.value}`}
                             className="border-2 border-gray-400"
                           />
                           <Label
-                            htmlFor={`license_${option}`}
+                            htmlFor={`license_${option.value}`}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {option}
+                            {option.label}
                           </Label>
                         </div>
                       ))}
@@ -1404,8 +1564,7 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    Are your talents open to AI recreation or only likeness
-                    protection?
+                    {t("organizationSignup.talentAgency.openToAiQuestion")}
                   </Label>
                   <div className="space-y-3">
                     <div className="space-y-3">
@@ -1413,10 +1572,13 @@ export default function OrganizationSignup() {
                         <Checkbox
                           id="select_all_open_to_ai"
                           checked={getOpenToAiOptions(t).every((option) =>
-                            formData.open_to_ai.includes(option),
+                            formData.open_to_ai.includes(option.value),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("open_to_ai", getOpenToAiOptions(t))
+                            toggleSelectAll(
+                              "open_to_ai",
+                              getOpenToAiOptions(t).map((o) => o.value),
+                            )
                           }
                           className="border-2 border-gray-900"
                         />
@@ -1424,27 +1586,27 @@ export default function OrganizationSignup() {
                           htmlFor="select_all_open_to_ai"
                           className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("organizationSignup.selectAll")}
                         </label>
                       </div>
                       {getOpenToAiOptions(t).map((option) => (
                         <div
-                          key={option}
+                          key={option.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={option}
-                            checked={formData.open_to_ai.includes(option)}
+                            id={option.value}
+                            checked={formData.open_to_ai.includes(option.value)}
                             onCheckedChange={() =>
-                              toggleArrayItem("open_to_ai", option)
+                              toggleArrayItem("open_to_ai", option.value)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={option}
+                            htmlFor={option.value}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {option}
+                            {option.label}
                           </label>
                         </div>
                       ))}
@@ -1454,18 +1616,20 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    What types of campaigns or collaborations do you pursue
-                    most?
+                    {t("organizationSignup.talentAgency.campaignsPursuedLabel")}
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
                       <Checkbox
                         id="select_all_campaign_types"
                         checked={getCampaignTypes(t).every((type) =>
-                          formData.campaign_types.includes(type),
+                          formData.campaign_types.includes(type.value),
                         )}
                         onCheckedChange={() =>
-                          toggleSelectAll("campaign_types", getCampaignTypes(t))
+                          toggleSelectAll(
+                            "campaign_types",
+                            getCampaignTypes(t).map((c) => c.value),
+                          )
                         }
                         className="border-2 border-gray-900"
                       />
@@ -1473,27 +1637,27 @@ export default function OrganizationSignup() {
                         htmlFor="select_all_campaign_types"
                         className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                       >
-                        Select All
+                        {t("organizationSignup.selectAll")}
                       </label>
                     </div>
                     {getCampaignTypes(t).map((type) => (
                       <div
-                        key={type}
+                        key={type.value}
                         className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                       >
                         <Checkbox
-                          id={type}
-                          checked={formData.campaign_types.includes(type)}
+                          id={type.value}
+                          checked={formData.campaign_types.includes(type.value)}
                           onCheckedChange={() =>
-                            toggleArrayItem("campaign_types", type)
+                            toggleArrayItem("campaign_types", type.value)
                           }
                           className="border-2 border-gray-400"
                         />
                         <label
-                          htmlFor={type}
+                          htmlFor={type.value}
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {type}
+                          {type.label}
                         </label>
                       </div>
                     ))}
@@ -1502,7 +1666,7 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Do you want to bulk-onboard your roster to Likelee?
+                    {t("organizationSignup.talentAgency.bulkOnboardQuestion")}
                   </Label>
                   <RadioGroup
                     value={formData.bulk_onboard}
@@ -1511,21 +1675,36 @@ export default function OrganizationSignup() {
                     }
                   >
                     <div className="space-y-2">
-                      {["Yes", "No", "Maybe later"].map((option) => (
+                      {[
+                        {
+                          label: t("organizationSignup.options.aiUsage.yes"),
+                          value: "yes",
+                        },
+                        {
+                          label: t("organizationSignup.options.aiUsage.no"),
+                          value: "no",
+                        },
+                        {
+                          label: t(
+                            "organizationSignup.options.aiUsage.maybeLater",
+                          ),
+                          value: "maybe later",
+                        },
+                      ].map((option) => (
                         <div
-                          key={option}
+                          key={option.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <RadioGroupItem
-                            value={option.toLowerCase()}
-                            id={`bulk_${option}`}
+                            value={option.value}
+                            id={`bulk_${option.value}`}
                             className="border-2 border-gray-400"
                           />
                           <Label
-                            htmlFor={`bulk_${option}`}
+                            htmlFor={`bulk_${option.value}`}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {option}
+                            {option.label}
                           </Label>
                         </div>
                       ))}
@@ -1541,7 +1720,7 @@ export default function OrganizationSignup() {
                   className="flex-1 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("organizationSignup.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -1549,8 +1728,8 @@ export default function OrganizationSignup() {
                   className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
                 >
                   {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Complete Sign Up"}{" "}
+                    ? t("organizationSignup.submitting")
+                    : t("organizationSignup.completeSignUp")}{" "}
                   {/* Dynamic text */}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
