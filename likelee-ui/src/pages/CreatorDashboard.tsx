@@ -764,72 +764,6 @@ export default function CreatorDashboard() {
   const IMAGE_SECTIONS = getImageSections(t);
   const cameoFileRef = useRef<HTMLInputElement | null>(null);
 
-  // Helper functions to get translated arrays
-  const getTranslatedContentTypes = () => [
-    t("creatorDashboard.contentTypes.socialMediaAds"),
-    t("creatorDashboard.contentTypes.webBannerCampaigns"),
-    t("creatorDashboard.contentTypes.tvStreamingCommercials"),
-    t("creatorDashboard.contentTypes.filmScriptedStreaming"),
-    t("creatorDashboard.contentTypes.printOutdoorAds"),
-    t("creatorDashboard.contentTypes.musicVideos"),
-    t("creatorDashboard.contentTypes.videoGameVRCharacters"),
-    t("creatorDashboard.contentTypes.stockPhotoVideoLibraries"),
-    t("creatorDashboard.contentTypes.educationalNonprofitSpots"),
-  ];
-
-  const getTranslatedIndustries = () => [
-    t("creatorDashboard.industries.fashionBeauty"),
-    t("creatorDashboard.industries.techElectronics"),
-    t("creatorDashboard.industries.sportsFitness"),
-    t("creatorDashboard.industries.foodBeverage"),
-    t("creatorDashboard.industries.filmGamingMusic"),
-    t("creatorDashboard.industries.automotive"),
-    t("creatorDashboard.industries.financeFintech"),
-    t("creatorDashboard.industries.healthWellness"),
-    t("creatorDashboard.industries.luxuryLifestyle"),
-    t("creatorDashboard.industries.travelHospitality"),
-    t("creatorDashboard.industries.education"),
-    t("creatorDashboard.industries.realEstate"),
-    t("creatorDashboard.industries.entertainment"),
-    t("creatorDashboard.industries.openToAny"),
-  ];
-
-  const getTranslatedRestrictions = () => [
-    t("creatorDashboard.restrictions.politicalContent"),
-    t("creatorDashboard.restrictions.controversialTopics"),
-    t("creatorDashboard.restrictions.explicitAdultContent"),
-    t("creatorDashboard.restrictions.pharmaceuticalClaims"),
-    t("creatorDashboard.restrictions.financialInvestmentAdvice"),
-    t("creatorDashboard.restrictions.tobaccoVapingProducts"),
-    t("creatorDashboard.restrictions.gamblingUnlicensed"),
-    t("creatorDashboard.restrictions.alcohol"),
-    t("creatorDashboard.restrictions.byproductsAnimalTesting"),
-    t("creatorDashboard.restrictions.weaponsFirearms"),
-    t("creatorDashboard.restrictions.cryptocurrencyNFT"),
-    t("creatorDashboard.restrictions.mlmMultiLevelMarketing"),
-    t("creatorDashboard.restrictions.unlicensedFinancialProducts"),
-    t("creatorDashboard.restrictions.healthMedicalClaims"),
-  ];
-
-  // Mapping functions to translate stored English values to localized display text
-  const translateContentType = (englishType: string): string => {
-    const index = CONTENT_TYPES.indexOf(englishType);
-    if (index === -1) return englishType;
-    return getTranslatedContentTypes()[index];
-  };
-
-  const translateIndustry = (englishIndustry: string): string => {
-    const index = INDUSTRIES.indexOf(englishIndustry);
-    if (index === -1) return englishIndustry;
-    return getTranslatedIndustries()[index];
-  };
-
-  const translateRestriction = (englishRestriction: string): string => {
-    const index = RESTRICTIONS.indexOf(englishRestriction);
-    if (index === -1) return englishRestriction;
-    return getTranslatedRestrictions()[index];
-  };
-
   const startStatusPolling = () => {
     const uid = user?.id;
     if (!uid) return;
@@ -905,15 +839,14 @@ export default function CreatorDashboard() {
       // start polling
       startStatusPolling();
       toast({
-        title: t("creatorDashboard.toasts.avatarRequestSent"),
-        description: t("creatorDashboard.toasts.avatarRequestSentDesc"),
+        title: "Avatar request sent",
+        description: "Waiting for review (typically 1–2 days).",
       });
     } catch (e: any) {
       toast({
         variant: "destructive",
         title: t("common.error"),
-        description:
-          e?.message || t("creatorDashboard.toasts.avatarTrainingFailed"),
+        description: e?.message || "Failed to start avatar training",
       });
     } finally {
       setAvatarOpLoading(false);
@@ -940,13 +873,13 @@ export default function CreatorDashboard() {
       );
       if (isActive) {
         toast({
-          title: t("creatorDashboard.toasts.avatarReady"),
-          description: t("creatorDashboard.toasts.avatarReadyDesc"),
+          title: "Avatar ready",
+          description: "You can now create videos.",
         });
       } else {
         toast({
-          title: t("creatorDashboard.toasts.statusUpdated"),
-          description: `${t("creatorDashboard.toasts.avatarStatusPrefix")}: ${j?.status || j?.process_status || t("creatorDashboard.voice.statusPending")}`,
+          title: "Status updated",
+          description: `Avatar status: ${j?.status || j?.process_status || "pending"}`,
         });
       }
     } catch (e: any) {
@@ -2887,7 +2820,7 @@ export default function CreatorDashboard() {
     const toastTitle =
       typeof customToast === "string"
         ? customToast
-        : t("creatorDashboard.toasts.profileSaved");
+        : "Licensing preferences updated!";
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -5873,15 +5806,12 @@ export default function CreatorDashboard() {
         })
         .eq("id", user.id);
 
-      if (profileStatus.error) {
-        throw new Error(
-          `Profile update failed: ${profileStatus.error.message}`,
-        );
-      }
+      if (profileStatus.error)
+        console.error("Profile category update error:", profileStatus.error);
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Failed to save rates: ${errorText}`);
+        throw new Error(`Failed to save: ${errorText}`);
       }
 
       // Update local state immediately to ensure UI is snappy
@@ -5898,8 +5828,8 @@ export default function CreatorDashboard() {
 
       const successTitle =
         showRatesModal === "content"
-          ? t("creatorDashboard.toasts.contentSaved")
-          : t("creatorDashboard.toasts.industrySaved");
+          ? "Content preferences saved!"
+          : "Industry preferences saved!";
 
       // Also update profiles table fields locally to ensure dashboard syncs
       if (showRatesModal === "content") {
@@ -5917,8 +5847,8 @@ export default function CreatorDashboard() {
       console.error("Save error:", e);
       toast({
         variant: "destructive",
-        title: t("creatorDashboard.toasts.error"),
-        description: `${t("creatorDashboard.toasts.saveFailed")}: ${e?.message || e}`,
+        title: "Save Failed",
+        description: `Failed to save rates: ${e?.message || e}`,
       });
     } finally {
       setSavingRates(false);
@@ -6205,10 +6135,10 @@ export default function CreatorDashboard() {
           <Card className="p-0 overflow-hidden bg-white border border-gray-200">
             <div className="p-6 pb-2">
               <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                {t("creatorDashboard.settingsView.rules.title")}
+                {"My Rules"}
               </h3>
               <p className="text-sm text-gray-600">
-                {t("creatorDashboard.settingsView.rules.subtitle")}
+                {"Set your licensing preferences and rates"}
               </p>
             </div>
 
@@ -6217,7 +6147,7 @@ export default function CreatorDashboard() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t("creatorDashboard.settingsView.rules.contentOpenTo")}
+                    {"Content I'm Open To"}
                   </h4>
                   <Button
                     variant="outline"
@@ -6229,7 +6159,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {t("creatorDashboard.settingsView.rules.editRate")}
+                    {"Edit Rate"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -6247,7 +6177,7 @@ export default function CreatorDashboard() {
                         } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
-                        {translateContentType(type)}
+                        {type}
                       </Badge>
                     );
                   })}
@@ -6258,7 +6188,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t("creatorDashboard.settingsView.rules.industries")}
+                    {"Industries I Work With"}
                   </h4>
                   <Button
                     variant="outline"
@@ -6271,7 +6201,7 @@ export default function CreatorDashboard() {
                   >
                     {/* Button changed to Edit per user request */}
                     <Edit className="w-3.5 h-3.5" />
-                    {t("creatorDashboard.settingsView.rules.edit")}
+                    {"Edit"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -6287,7 +6217,7 @@ export default function CreatorDashboard() {
                         } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
-                        {translateIndustry(industry)}
+                        {industry}
                       </Badge>
                     );
                   })}
@@ -6298,9 +6228,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t(
-                      "creatorDashboard.settingsView.rules.notComfortableWith",
-                    )}
+                    {"Content I'm NOT Comfortable With"}
                   </h4>
                   <Button
                     variant="outline"
@@ -6309,7 +6237,7 @@ export default function CreatorDashboard() {
                     className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                   >
                     <Edit className="w-3.5 h-3.5" />
-                    {t("creatorDashboard.settingsView.rules.edit")}
+                    {"Edit"}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-6">
@@ -6321,26 +6249,22 @@ export default function CreatorDashboard() {
                         className="px-3 py-1.5 text-sm bg-[#F34D4D] text-white border-2 border-[#F34D4D] hover:bg-[#E23C3C] cursor-default font-normal flex items-center gap-2 rounded-lg"
                       >
                         <X className="w-4 h-4" />
-                        {translateRestriction(restriction)}
+                        {restriction}
                       </Badge>
                     ))
                   ) : (
                     <p className="text-gray-500 italic text-sm font-normal">
-                      {t("creatorDashboard.settingsView.rules.noRestrictions")}
+                      No restrictions set
                     </p>
                   )}
                 </div>
 
                 <div className="bg-amber-50/50 border border-amber-200 rounded-lg p-5">
                   <h5 className="font-semibold text-gray-900 mb-1">
-                    {t(
-                      "creatorDashboard.settingsView.rules.conflictingCampaigns",
-                    )}
+                    {"Conflicting Campaigns (Brand Exclusivity)"}
                   </h5>
                   <p className="text-sm text-gray-600 mb-3 font-normal">
-                    {t(
-                      "creatorDashboard.settingsView.rules.conflictingCampaignsDesc",
-                    )}
+                    {"Brands you won't work with simultaneously"}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {creator.brand_exclusivity &&
@@ -6356,9 +6280,7 @@ export default function CreatorDashboard() {
                       ))
                     ) : (
                       <p className="text-sm text-gray-500 italic font-normal">
-                        {t(
-                          "creatorDashboard.settingsView.rules.noBrandExclusivity",
-                        )}
+                        {"No brand exclusivity set"}
                       </p>
                     )}
                   </div>
@@ -6369,9 +6291,7 @@ export default function CreatorDashboard() {
               <div className="pt-8 border-t border-gray-100">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {t(
-                      "creatorDashboard.settingsView.rules.initialLicensingRate",
-                    )}
+                    {"Initial Licensing Rate"}
                   </h4>
                   <div className="flex gap-2">
                     {editingRules ? (
@@ -6382,14 +6302,14 @@ export default function CreatorDashboard() {
                           variant="outline"
                           className="border-2 border-gray-300 font-medium"
                         >
-                          {t("creatorDashboard.settingsView.rules.cancel")}
+                          Cancel
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleSaveRules()}
                           className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white font-medium"
                         >
-                          {t("creatorDashboard.settingsView.rules.save")}
+                          {"Save"}
                         </Button>
                       </>
                     ) : (
@@ -6400,13 +6320,15 @@ export default function CreatorDashboard() {
                         className="border-2 border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium h-8 px-3 rounded-md shadow-sm text-xs"
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        {t("creatorDashboard.settingsView.rules.edit")}
+                        {"Edit"}
                       </Button>
                     )}
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-2 font-normal">
-                  {t("creatorDashboard.settingsView.rules.baseRateDesc")}
+                  {
+                    "This is your base monthly rate for standard social media licensing"
+                  }
                 </p>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -6430,9 +6352,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
                     <span className="text-xl">/</span>
-                    <span className="text-base">
-                      {t("creatorDashboard.settingsView.rules.month")}
-                    </span>
+                    <span className="text-base">Month</span>
                   </div>
                 </div>
               </div>
@@ -6457,9 +6377,7 @@ export default function CreatorDashboard() {
                     onCheckedChange={(checked) => {
                       setCreator({ ...creator, accept_negotiations: checked });
                       handleSaveRules(
-                        checked
-                          ? t("creatorDashboard.toasts.negotiationEnabled")
-                          : t("creatorDashboard.toasts.negotiationDisabled"),
+                        `Negotiation ${checked ? "enabled" : "disabled"}!`,
                         { accept_negotiations: checked },
                       );
                     }}
@@ -6486,14 +6404,14 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${
           isSmallScreen
             ? sidebarOpen
-              ? "w-64 h-screen top-0"
-              : "-translate-x-full w-64 h-screen top-0"
+              ? "w-64"
+              : "-translate-x-full w-64"
             : sidebarOpen
-              ? "w-64 h-[calc(100vh-5rem)] top-20"
-              : "w-20 h-[calc(100vh-5rem)] top-20"
+              ? "w-64"
+              : "w-20"
         }`}
       >
         {/* Mobile Sidebar Header */}
@@ -6591,10 +6509,12 @@ export default function CreatorDashboard() {
                     className="inline-flex items-center justify-center shrink-0"
                     title="Verified"
                   >
-                    <BadgeCheck className="w-4 h-4 text-[#32C8D1]" />
+                    <BadgeCheck
+                      className="w-6 h-6 text-emerald-500 drop-shadow-sm"
+                      aria-label="Verified"
+                    />
                   </span>
                 )}
-                <ChevronRight className="w-4 h-4 text-gray-400 shrink-0 ml-auto" />
               </div>
             </div>
           ) : (
@@ -6787,9 +6707,7 @@ export default function CreatorDashboard() {
       {/* Mobile Header */}
       {isSmallScreen && (
         <>
-          <header
-            className={`fixed ${isSmallScreen ? "top-20" : "top-0"} left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden`}
-          >
+          <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="text-gray-600 hover:text-gray-900 transition-colors"
@@ -6880,7 +6798,7 @@ export default function CreatorDashboard() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${isSmallScreen ? "mt-16 pt-0" : sidebarOpen ? "lg:ml-64 pt-0" : "lg:ml-20 pt-0"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${isSmallScreen ? "mt-16" : sidebarOpen ? "lg:ml-64" : "lg:ml-20"} transition-all duration-300 overflow-y-auto`}
       >
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection === "dashboard" && renderDashboard()}
@@ -7714,12 +7632,10 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t("creatorDashboard.modals.customizeContentTypeRate.title")}
+              {"Customize Content Type Rate"}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              {t(
-                "creatorDashboard.modals.customizeContentTypeRate.description",
-              )}
+              Adjust custom rates for specific content types.
             </DialogDescription>
           </DialogHeader>
 
@@ -7729,24 +7645,23 @@ export default function CreatorDashboard() {
           >
             <div>
               <p className="text-sm text-gray-600 mb-4 font-normal">
-                {t(
-                  "creatorDashboard.modals.customizeContentTypeRate.description",
-                )}
+                {"Select content types you're open to creating"}
               </p>
               <div className="flex flex-wrap gap-2">
-                {getTranslatedContentTypes().map((type, index) => {
-                  const originalType = CONTENT_TYPES[index];
-                  const isSelected = tempContentTypes.includes(originalType);
+                {CONTENT_TYPES.filter(
+                  (type) =>
+                    type !== "Social-medial ads" && type !== "Social-media ads",
+                ).map((type) => {
+                  const isSelected = tempContentTypes.includes(type);
                   return (
                     <button
                       key={type}
                       type="button"
                       onClick={() => {
-                        const originalType = CONTENT_TYPES[index];
                         setTempContentTypes((prev) =>
-                          prev.includes(originalType)
-                            ? prev.filter((t) => t !== originalType)
-                            : [...prev, originalType],
+                          prev.includes(type)
+                            ? prev.filter((t) => t !== type)
+                            : [...prev, type],
                         );
                       }}
                       className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${
@@ -7765,15 +7680,11 @@ export default function CreatorDashboard() {
 
             <div className="pt-6 border-t border-gray-100">
               <h4 className="text-base font-semibold text-gray-900 mb-1">
-                {t(
-                  "creatorDashboard.modals.customizeContentTypeRate.customRatesTitle",
-                )}
+                {"Custom Rates"}
               </h4>
               <p className="text-sm text-gray-600 mb-2 font-normal">
-                {t(
-                  "creatorDashboard.modals.customizeContentTypeRate.customRatesDesc",
-                  { rate: creator.price_per_month || 0 },
-                )}
+                Set custom rates for specific content types or industries. Your
+                base rate is ${creator.price_per_month || 0}/mo.
               </p>
 
               <div className="space-y-3">
@@ -7797,13 +7708,10 @@ export default function CreatorDashboard() {
                       >
                         <div>
                           <Label className="font-medium text-gray-900 text-base block mb-0.5">
-                            {translateContentType(type)}
+                            {info}
                           </Label>
                           <p className="text-xs text-gray-400 font-normal italic">
-                            {t(
-                              "creatorDashboard.modals.customizeContentTypeRate.usingBaseRate",
-                              { rate: creator.price_per_month || 0 },
-                            )}
+                            Using base rate: ${creator.price_per_month || 0}/mo
                           </p>
                         </div>
 
@@ -7842,23 +7750,21 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRatesModal(null)}
-                className="h-11 w-full font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
+                className="h-11 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
               >
-                {t("creatorDashboard.modals.customizeContentTypeRate.cancel")}
+                {"Cancel"}
               </Button>
               <Button
                 type="submit"
                 disabled={savingRates}
-                className="h-11 w-full font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
+                className="h-11 w-full max-w-[200px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
               >
                 {savingRates ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t(
-                      "creatorDashboard.modals.customizeContentTypeRate.saveChanges",
-                    )}
+                    {"Save Changes"}
                   </>
                 )}
               </Button>
@@ -7874,10 +7780,10 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t("creatorDashboard.modals.customizeIndustryRate.title")}
+              {"Customize Industry Rate"}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              {t("creatorDashboard.modals.customizeIndustryRate.description")}
+              Select industries you are open to working with.
             </DialogDescription>
           </DialogHeader>
 
@@ -7887,22 +7793,20 @@ export default function CreatorDashboard() {
           >
             <div>
               <p className="text-sm text-gray-600 mb-2 font-normal">
-                {t("creatorDashboard.modals.customizeIndustryRate.description")}
+                {"Select industries you're interested in working with"}
               </p>
               <div className="flex flex-wrap gap-2">
-                {getTranslatedIndustries().map((industry, index) => {
-                  const originalIndustry = INDUSTRIES[index];
-                  const isSelected = tempIndustries.includes(originalIndustry);
+                {INDUSTRIES.map((industry) => {
+                  const isSelected = tempIndustries.includes(industry);
                   return (
                     <button
                       key={industry}
                       type="button"
                       onClick={() => {
-                        const originalIndustry = INDUSTRIES[index];
                         setTempIndustries((prev) =>
-                          prev.includes(originalIndustry)
-                            ? prev.filter((i) => i !== originalIndustry)
-                            : [...prev, originalIndustry],
+                          prev.includes(industry)
+                            ? prev.filter((i) => i !== industry)
+                            : [...prev, industry],
                         );
                       }}
                       className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${
@@ -7924,23 +7828,21 @@ export default function CreatorDashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowRatesModal(null)}
-                className="h-11 w-full font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
+                className="h-11 w-full max-w-[200px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
               >
-                {t("creatorDashboard.modals.customizeIndustryRate.cancel")}
+                {"Cancel"}
               </Button>
               <Button
                 type="submit"
                 disabled={savingRates}
-                className="h-11 w-full font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
+                className="h-11 w-full max-w-[200px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
               >
                 {savingRates ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t(
-                      "creatorDashboard.modals.customizeIndustryRate.saveChanges",
-                    )}
+                    {"Save Changes"}
                   </>
                 )}
               </Button>
@@ -7956,24 +7858,22 @@ export default function CreatorDashboard() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl rounded-2xl">
           <DialogHeader className="p-6 bg-white border-b border-gray-100 relative">
             <DialogTitle className="text-xl font-semibold text-gray-900">
-              {t("creatorDashboard.modals.contentRestrictions.title")}
+              {"Content Restrictions"}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              {t("creatorDashboard.modals.contentRestrictions.description")}
+              Manage content restrictions and brand exclusivity.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <p className="text-sm text-gray-600 font-normal">
-              {t("creatorDashboard.modals.contentRestrictions.description")}
+              {"Specify any content you're not comfortable with"}
             </p>
 
             {/* Current Restrictions Section */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {t(
-                  "creatorDashboard.modals.contentRestrictions.currentRestrictions",
-                )}
+                {"Current Restrictions"}
               </h4>
               <div className="flex flex-wrap gap-2">
                 {creator.content_restrictions &&
@@ -7983,7 +7883,7 @@ export default function CreatorDashboard() {
                       key={restriction}
                       className="px-3 py-1.5 text-sm bg-[#F34D4D] text-white border-none hover:bg-[#E23C3C] cursor-default flex items-center gap-2 rounded-lg font-normal"
                     >
-                      <span>{translateRestriction(restriction)}</span>
+                      <span>{restriction}</span>
                       <button
                         onClick={() => {
                           setCreator({
@@ -8001,9 +7901,7 @@ export default function CreatorDashboard() {
                   ))
                 ) : (
                   <p className="text-xs text-gray-400 font-normal italic">
-                    {t(
-                      "creatorDashboard.modals.contentRestrictions.currentRestrictions",
-                    )}
+                    {"No restrictions set"}
                   </p>
                 )}
               </div>
@@ -8012,53 +7910,40 @@ export default function CreatorDashboard() {
             {/* Predefined Selection Grid */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {t("creatorDashboard.modals.contentRestrictions.clickToAdd")}
+                {"Click to add restrictions"}
               </h4>
               <div className="flex flex-wrap gap-2">
-                {getTranslatedRestrictions().map((restriction, index) => {
-                  const originalRestriction = RESTRICTIONS[index];
-                  if (
-                    creator.content_restrictions?.includes(originalRestriction)
-                  )
-                    return null;
-                  return (
-                    <button
-                      key={restriction}
-                      onClick={() => {
-                        const originalRestriction = RESTRICTIONS[index];
-                        const current = creator.content_restrictions || [];
-                        if (!current.includes(originalRestriction)) {
-                          setCreator({
-                            ...creator,
-                            content_restrictions: [
-                              ...current,
-                              originalRestriction,
-                            ],
-                          });
-                        }
-                      }}
-                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 rounded-lg flex items-center gap-2 font-normal transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {restriction}
-                    </button>
-                  );
-                })}
+                {RESTRICTIONS.filter(
+                  (r) => !creator.content_restrictions?.includes(r),
+                ).map((restriction) => (
+                  <button
+                    key={restriction}
+                    onClick={() => {
+                      const current = creator.content_restrictions || [];
+                      if (!current.includes(restriction)) {
+                        setCreator({
+                          ...creator,
+                          content_restrictions: [...current, restriction],
+                        });
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 rounded-lg flex items-center gap-2 font-normal transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {restriction}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Custom Restriction Input */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-900">
-                {t(
-                  "creatorDashboard.modals.contentRestrictions.addCustomRestriction",
-                )}
+                {"Add Custom Restriction"}
               </h4>
               <div className="flex gap-2">
                 <Input
-                  placeholder={t(
-                    "creatorDashboard.modals.contentRestrictions.customPlaceholder",
-                  )}
+                  placeholder={"e.g., No political content"}
                   value={newRestriction}
                   onChange={(e) => setNewRestriction(e.target.value)}
                   maxLength={25}
@@ -8108,22 +7993,16 @@ export default function CreatorDashboard() {
             {/* Brand Exclusivity Section */}
             <div className="pt-6 border-t border-gray-100 space-y-4">
               <h4 className="text-base font-semibold text-gray-900">
-                {t(
-                  "creatorDashboard.modals.contentRestrictions.brandExclusivity",
-                )}
+                {"Brand Exclusivity"}
               </h4>
               <p className="text-sm text-gray-600 font-normal">
-                {t(
-                  "creatorDashboard.settingsView.rules.conflictingCampaignsDesc",
-                )}
+                {"Specify brands you won't work with simultaneously"}
               </p>
               <div className="flex flex-wrap gap-2">
                 {!creator.brand_exclusivity ||
                 creator.brand_exclusivity.length === 0 ? (
                   <p className="text-sm text-gray-400 font-normal italic">
-                    {t(
-                      "creatorDashboard.settingsView.rules.noBrandExclusivity",
-                    )}
+                    {"No brand exclusivity set"}
                   </p>
                 ) : (
                   creator.brand_exclusivity.map((brand) => (
@@ -8199,17 +8078,17 @@ export default function CreatorDashboard() {
               onClick={() => setShowRestrictionsModal(false)}
               className="h-12 w-full max-w-[240px] font-medium border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
             >
-              {t("creatorDashboard.modals.contentRestrictions.cancel")}
+              {"Cancel"}
             </Button>
             <Button
               onClick={() => {
-                handleSaveRules(t("creatorDashboard.toasts.restrictionsSaved"));
+                handleSaveRules("Restrictions updated successfully!");
                 setShowRestrictionsModal(false);
               }}
               className="h-12 w-full max-w-[240px] font-semibold bg-[#32C8D1] hover:bg-[#2AB8C1] text-white rounded-xl shadow-lg shadow-[#32C8D1]/20 flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-5 h-5" />
-              {t("creatorDashboard.modals.contentRestrictions.saveChanges")}
+              {"Save Changes"}
             </Button>
           </div>
         </DialogContent>
