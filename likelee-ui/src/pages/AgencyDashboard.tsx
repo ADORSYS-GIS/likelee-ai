@@ -51,6 +51,7 @@ import {
   Globe,
   Video,
   File,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -392,7 +393,7 @@ const ClientProfileModal = ({
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
                         Industry
                       </p>
                       <p className="text-sm font-bold text-gray-900">
@@ -400,7 +401,7 @@ const ClientProfileModal = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
                         Website
                       </p>
                       <p className="text-sm font-bold text-gray-900">
@@ -408,7 +409,7 @@ const ClientProfileModal = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
                         Tags
                       </p>
                       <div className="flex gap-2">
@@ -435,7 +436,7 @@ const ClientProfileModal = ({
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
                         Preferred Talent Types
                       </p>
                       <p className="text-sm font-bold text-gray-900">
@@ -443,7 +444,7 @@ const ClientProfileModal = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
                         Budget Range
                       </p>
                       <p className="text-sm font-bold text-gray-900">
@@ -451,7 +452,7 @@ const ClientProfileModal = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
                         Booking Lead Time
                       </p>
                       <p className="text-sm font-bold text-gray-900">
@@ -526,12 +527,12 @@ const ClientProfileModal = ({
                           </p>
                         </div>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                            <Mail className="w-4 h-4 text-gray-400" />
+                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <Mail className="w-4 h-4 text-gray-500" />
                             {contact.email}
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
-                            <Phone className="w-4 h-4 text-gray-400" />
+                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <Phone className="w-4 h-4 text-gray-500" />
                             {contact.phone}
                           </div>
                         </div>
@@ -598,7 +599,7 @@ const ClientProfileModal = ({
                           <h5 className="font-bold text-gray-900">
                             {comm.subject}
                           </h5>
-                          <p className="text-sm text-gray-500 font-medium">
+                          <p className="text-sm text-gray-600 font-medium">
                             {comm.date} • {comm.participants}
                           </p>
                         </div>
@@ -647,9 +648,9 @@ const ClientProfileModal = ({
                     Upload File
                   </Button>
                 </div>
-                <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/50">
-                  <File className="w-12 h-12 text-gray-200 mb-3" />
-                  <p className="text-gray-400 font-bold">
+                <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                  <File className="w-12 h-12 text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-bold">
                     No files uploaded yet
                   </p>
                 </div>
@@ -697,13 +698,13 @@ const ClientCard = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active Client":
-        return "bg-green-100 text-green-700";
+        return "bg-emerald-50 text-emerald-800 border-emerald-100";
       case "Prospect":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-50 text-blue-800 border-blue-100";
       case "Lead":
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-800 border-gray-100";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-800 border-gray-100";
     }
   };
 
@@ -712,62 +713,64 @@ const ClientCard = ({
       <div className="flex flex-col lg:flex-row justify-between gap-6">
         <div className="flex gap-6">
           <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-gray-400" />
+            <Building2 className="w-10 h-10 text-gray-500" />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-3">
               <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
               <Badge
-                className={`${getStatusColor(client.status)} border-none font-bold text-[10px]`}
+                variant="outline"
+                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
               >
                 {client.status}
               </Badge>
-              <div className="flex gap-1">
+              <div className="flex gap-1.5">
                 {client.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="text-[10px] font-bold text-gray-400 border-gray-100"
+                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
                   >
+                    <Tag className="w-3 h-3 text-gray-900" />
                     {tag}
                   </Badge>
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2 text-base text-gray-400 font-medium">
-              <span className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
+              <span className="flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-gray-400" />
                 {client.industry}
               </span>
-              <span className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
+              <span className="flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-gray-400" />
                 {client.website}
               </span>
-              <span className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
+              <span className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-gray-400" />
                 {client.contacts} contacts
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2 text-base mt-3 font-medium">
-              <span className="text-gray-400">
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
+              <span className="text-gray-500">
                 Total Revenue:{" "}
                 <span className="font-bold text-gray-900">
                   {client.totalRevenue}
                 </span>
               </span>
-              <span className="text-gray-400">
+              <span className="text-gray-500">
                 Bookings:{" "}
                 <span className="font-bold text-gray-900">
                   {client.bookings}
                 </span>
               </span>
-              <span className="text-gray-400">
+              <span className="text-gray-500">
                 Last Booking:{" "}
                 <span className="font-bold text-gray-900">
                   {client.lastBooking}
                 </span>
               </span>
-              <span className="text-gray-400">
+              <span className="text-gray-500">
                 Next Follow-up:{" "}
                 <span className="font-bold text-gray-900">
                   {client.nextFollowUp}
@@ -780,7 +783,7 @@ const ClientCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-100 text-gray-600 font-bold hover:bg-gray-50"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
           >
             <Mail className="w-4 h-4 mr-2" />
             Email
@@ -788,7 +791,7 @@ const ClientCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-100 text-gray-600 font-bold hover:bg-gray-50"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
           >
             <Phone className="w-4 h-4 mr-2" />
             Call
@@ -796,7 +799,7 @@ const ClientCard = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-100 text-gray-600 font-bold hover:bg-gray-50"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
           >
             <Package className="w-4 h-4 mr-2" />
             Send Package
@@ -844,7 +847,7 @@ const ClientCRMView = () => {
           <h1 className="text-2xl font-bold text-gray-900">
             Client Relationship Management
           </h1>
-          <p className="text-gray-500">
+          <p className="text-gray-600 font-medium">
             Manage client relationships, track communications, and monitor
             pipeline
           </p>
