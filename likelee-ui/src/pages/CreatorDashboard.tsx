@@ -1267,6 +1267,8 @@ export default function CreatorDashboard() {
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const VOICE_SCRIPTS = getVoiceScripts(t);
   const [isRecording, setIsRecording] = useState(false);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
   const [generatingVoice, setGeneratingVoice] = useState(false);
@@ -2398,6 +2400,25 @@ export default function CreatorDashboard() {
 
   // Recording functions
   const startRecording = async () => {
+    // Start countdown first
+    setIsCountingDown(true);
+    setCountdown(3);
+
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setIsCountingDown(false);
+          // Actually start the recording logic
+          proceedWithRecording();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const proceedWithRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -2631,6 +2652,7 @@ export default function CreatorDashboard() {
             "creatorDashboard.voice.deleteConfirmation.action",
             "Delete",
           )}
+          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
           onClick={async () => {
             setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
             dismiss();
@@ -3266,6 +3288,7 @@ export default function CreatorDashboard() {
       action: (
         <ToastAction
           altText="Delete"
+          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
           onClick={() => {
             setReferenceImages({
               ...referenceImages,
@@ -7621,7 +7644,19 @@ export default function CreatorDashboard() {
           </DialogHeader>
 
           <div className="py-4">
-            {!isRecording ? (
+            {isCountingDown ? (
+              <div className="text-center py-12 animate-in fade-in zoom-in-95 duration-300">
+                <div className="text-8xl font-black text-[#32C8D1] tabular-nums">
+                  {countdown}
+                </div>
+                <p className="text-xl font-bold text-gray-400 mt-4 uppercase tracking-widest">
+                  Get ready...
+                </p>
+                <div className="mt-8 opacity-40 grayscale pointer-events-none">
+                  {renderScript()}
+                </div>
+              </div>
+            ) : !isRecording ? (
               <div className="text-center py-8">
                 <div className="w-20 h-20 bg-[#32C8D1] rounded-full flex items-center justify-center mx-auto mb-6">
                   <Mic className="w-10 h-10 text-white" />
