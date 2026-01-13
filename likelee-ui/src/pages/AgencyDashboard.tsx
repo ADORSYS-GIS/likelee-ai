@@ -44,6 +44,7 @@ import {
   ArrowRight,
   Building2,
   CreditCard,
+  Folder,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8104,6 +8105,7 @@ const PlaceholderView = ({ title }: { title: string }) => (
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
+  const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState("All Talent");
   const [expandedItems, setExpandedItems] = useState<string[]>([
@@ -8200,40 +8202,92 @@ export default function AgencyDashboard() {
     badges?: Record<string, string | number>;
   }
 
-  const sidebarItems: SidebarItem[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    {
-      id: "roster",
-      label: "Roster",
-      icon: Users,
-      subItems: ["All Talent", "Performance Tiers"],
-    },
-    {
-      id: "licensing",
-      label: "Licensing",
-      icon: FileText,
-      subItems: ["Licensing Requests", "Active Licenses", "License Templates"],
-    },
-    {
-      id: "protection",
-      label: "Protection & Usage",
-      icon: Shield,
-      subItems: ["Protect & Usage", "Compliance Hub"],
-      badges: { "Compliance Hub": "NEW" },
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: BarChart2,
-      subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-    },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+  const sidebarItems: SidebarItem[] =
+    agencyMode === "AI"
+      ? [
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          { id: "settings", label: "Settings", icon: Settings },
+        ]
+      : [
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar and schedule",
+              "Booking request",
+              "Client Database",
+              "Talent availability",
+              "Notifications",
+              "Management and Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "settings", label: "Settings", icon: Settings },
+        ];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-slate-800 pt-20">
+    <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-20 left-0 h-[calc(100vh-5rem)] z-10 transition-all duration-300">
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -8331,6 +8385,15 @@ export default function AgencyDashboard() {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")}
+              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all"
+            >
+              {agencyMode === "AI" ? "AI Mode" : "IRL Mode"}
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -8540,6 +8603,45 @@ export default function AgencyDashboard() {
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "settings" && <SettingsView />}
+          {activeTab === "scouting" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Target className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Scouting</h2>
+              <p className="text-gray-500">Coming Soon</p>
+            </div>
+          )}
+          {activeTab === "client-crm" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Building2 className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Client CRM</h2>
+              <p className="text-gray-500">Coming Soon</p>
+            </div>
+          )}
+          {activeTab === "file-storage" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Folder className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">File Storage</h2>
+              <p className="text-gray-500">Coming Soon</p>
+            </div>
+          )}
+          {activeTab === "bookings" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Bookings</h2>
+              <p className="text-gray-500">{activeSubTab}</p>
+              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
+            </div>
+          )}
+          {activeTab === "accounting" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <CreditCard className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">
+                Accounting & Invoicing
+              </h2>
+              <p className="text-gray-500">{activeSubTab}</p>
+              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
+            </div>
+          )}
         </main>
       </div>
     </div>
