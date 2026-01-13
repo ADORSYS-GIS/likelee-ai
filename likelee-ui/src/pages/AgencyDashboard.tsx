@@ -90,6 +90,7 @@ import { format, addMonths, subMonths } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 const AddProspectModal = ({
   open,
@@ -2634,11 +2635,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -3963,13 +3963,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -4088,16 +4088,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
                               ? "bg-green-50 text-green-600"
                               : talent.consent === "missing"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-orange-50 text-orange-600"
-                          }`}
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -4938,9 +4937,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5752,11 +5751,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
                   ? "border-indigo-600 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -7927,7 +7925,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -8090,11 +8088,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
                   ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
                   : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -8587,11 +8584,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -9473,11 +9469,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -10661,7 +10656,7 @@ const NewBookingModal = ({
                   <SelectItem value="casting">Casting</SelectItem>
                   <SelectItem value="option">Option</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="test">Test shoot</SelectItem>
+                  <SelectItem value="test-shoot">Test shoot</SelectItem>
                   <SelectItem value="fitting">Fitting</SelectItem>
                   <SelectItem value="rehearsal">Rehearsal</SelectItem>
                 </SelectContent>
@@ -10702,44 +10697,42 @@ const NewBookingModal = ({
                 value={talentSearch}
                 onChange={(e) => setTalentSearch(e.target.value)}
               />
-              {talentSearch && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredTalents.map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => handleSelectTalent(t)}
-                      className="flex items-center gap-3 p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
-                    >
-                      <img
-                        src={t.img}
-                        className="w-8 h-8 rounded-full"
-                        alt={t.name}
-                      />
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          {t.name}
-                        </p>
-                        <p className="text-xs text-green-600 font-medium">
-                          • Available
-                        </p>
-                      </div>
-                      {selectedTalents.find((st) => st.id === t.id) && (
-                        <div className="ml-auto text-indigo-600">
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      )}
+            </div>
+
+            <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-white">
+              {filteredTalents.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => handleSelectTalent(t)}
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedTalents.find((st) => st.id === t.id)
+                      ? "bg-indigo-50/50"
+                      : ""
+                    }`}
+                >
+                  <img
+                    src={t.img}
+                    className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                    alt={t.name}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">{t.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <p className="text-xs text-green-600 font-medium lowercase">
+                        available
+                      </p>
                     </div>
-                  ))}
+                  </div>
+                  {selectedTalents.find((st) => st.id === t.id) && (
+                    <div className="text-indigo-600">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {filteredTalents.length === 0 && (
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  No talent found matching "{talentSearch}"
                 </div>
               )}
             </div>
@@ -10971,6 +10964,11 @@ const NewBookingModal = ({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Location Notes</Label>
+            <Input placeholder="e.g., Studio B, 3rd floor" />
+          </div>
+
           <div className="grid grid-cols-3 gap-4 pb-1">
             <div className="space-y-2">
               <Label>Rate/Fee</Label>
@@ -10985,25 +10983,11 @@ const NewBookingModal = ({
                         : "$"}
                 </span>
                 <Input
-                  className="pl-7 pr-10"
+                  className="pl-7 pr-4"
                   type="number"
                   value={rate}
                   onChange={(e) => setRate(Number(e.target.value))}
                 />
-                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col scale-75 border border-gray-100 bg-gray-50 rounded">
-                  <button
-                    onClick={() => setRate((prev) => prev + 1)}
-                    className="px-1 hover:bg-gray-200 border-b border-gray-100"
-                  >
-                    <ChevronUp className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => setRate((prev) => Math.max(0, prev - 1))}
-                    className="px-1 hover:bg-gray-200"
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                </div>
               </div>
             </div>
             <div className="space-y-2">
@@ -11078,24 +11062,38 @@ const NewBookingModal = ({
                     <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 Month</SelectItem>
-                    <SelectItem value="3">3 Months</SelectItem>
-                    <SelectItem value="6">6 Months</SelectItem>
-                    <SelectItem value="12">12 Months (1 Year)</SelectItem>
-                    <SelectItem value="24">24 Months (2 Years)</SelectItem>
-                    <SelectItem value="unlimited">Unlimited</SelectItem>
+                    <SelectItem value="1">1 month</SelectItem>
+                    <SelectItem value="6">6 months</SelectItem>
+                    <SelectItem value="12">1 year</SelectItem>
+                    <SelectItem value="perpetuity">In Perpetuity</SelectItem>
+                    <SelectItem value="tbd">TBD</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center gap-2 mt-6">
-                <input
-                  type="checkbox"
+                <Switch
                   checked={exclusive}
-                  onChange={(e) => setExclusive(e.target.checked)}
-                  className="rounded border-gray-300"
+                  onCheckedChange={setExclusive}
                 />
-                <span className="text-sm">Exclusive rights</span>
+                <span className="text-sm font-medium text-gray-700">Exclusive rights</span>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Attached Files (Call sheets, contracts, references)</Label>
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative group">
+              <Upload className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600 font-medium">Browse...</span>
+              <span className="text-sm text-gray-400">No files selected.</span>
+              <input 
+                type="file" 
+                multiple 
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={(e) => {
+                  console.log(e.target.files);
+                }}
+              />
             </div>
           </div>
 
@@ -11185,14 +11183,16 @@ const NewBookingModal = ({
           </Button>
           <div className="flex gap-2">
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl"
               onClick={() => {
                 // Save logic here
                 onOpenChange(false);
               }}
             >
               Save as{" "}
-              {bookingType.charAt(0).toUpperCase() + bookingType.slice(1)}
+              {bookingType === "test-shoot"
+                ? "Test Shoot"
+                : bookingType.charAt(0).toUpperCase() + bookingType.slice(1)}
             </Button>
           </div>
         </DialogFooter>
@@ -11477,18 +11477,16 @@ const CalendarScheduleTab = () => {
             {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
               <div
                 key={d}
-                className={`p-2 relative group hover:bg-gray-50 transition-colors ${
-                  d === 13
+                className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
                     ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
                     : ""
-                }`}
+                  }`}
               >
                 <span
-                  className={`text-sm font-medium ${
-                    d === 13
+                  className={`text-sm font-medium ${d === 13
                       ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
                       : "text-gray-700"
-                  }`}
+                    }`}
                 >
                   {d}
                 </span>
@@ -12116,11 +12114,10 @@ const NotificationsTab = () => {
             onClick={() =>
               setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
             }
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeSubNav === ["logs", "settings", "preferences", "test"][idx]
                 ? "border-indigo-600 text-indigo-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -12162,11 +12159,10 @@ const NotificationsTab = () => {
             {notifications.map((notif, idx) => (
               <Card
                 key={idx}
-                className={`p-4 border ${
-                  notif.status === "error"
+                className={`p-4 border ${notif.status === "error"
                     ? "border-red-200 bg-red-50"
                     : "border-gray-200 bg-white"
-                } rounded-xl`}
+                  } rounded-xl`}
               >
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
@@ -12195,11 +12191,10 @@ const NotificationsTab = () => {
                       <p className="text-xs text-gray-500">{notif.time}</p>
                       {notif.detail && (
                         <p
-                          className={`text-xs ${
-                            notif.status === "error"
+                          className={`text-xs ${notif.status === "error"
                               ? "text-red-600 font-medium"
                               : "text-blue-600"
-                          }`}
+                            }`}
                         >
                           {notif.detail}
                         </p>
@@ -12797,84 +12792,84 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          { id: "settings", label: "Settings", icon: Settings },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        { id: "settings", label: "Settings", icon: Settings },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "settings", label: "Settings", icon: Settings },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "settings", label: "Settings", icon: Settings },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -12912,16 +12907,14 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -12941,11 +12934,10 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
                           ? "text-indigo-700 bg-indigo-50 font-bold"
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
