@@ -10568,10 +10568,13 @@ const ManageAvailabilityModal = ({
 const NewBookingModal = ({
   open,
   onOpenChange,
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave: (booking: any) => void;
 }) => {
+  const { toast } = useToast();
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
   const [talentSearch, setTalentSearch] = useState("");
@@ -11182,11 +11185,30 @@ const NewBookingModal = ({
           </Button>
           <div className="flex gap-2">
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl"
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${selectedTalents.length === 0 || !selectedClient
+                ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
+                : ""
+                }`}
               onClick={() => {
-                // Save logic here
+                if (selectedTalents.length === 0 || !selectedClient) return;
+
+                const booking = {
+                  talentName: selectedTalents[0].name,
+                  date: date,
+                  type: bookingType,
+                  clientName: selectedClient.company,
+                };
+
+                onSave(booking);
+
+                toast({
+                  title: "Booking Created",
+                  description: `Successfully scheduled ${bookingType} for ${selectedTalents[0].name} on ${date}.`,
+                });
+
                 onOpenChange(false);
               }}
+              disabled={selectedTalents.length === 0 || !selectedClient}
             >
               Save as{" "}
               {bookingType === "test-shoot"
@@ -11200,7 +11222,13 @@ const NewBookingModal = ({
   );
 };
 
-const CalendarScheduleTab = () => {
+const CalendarScheduleTab = ({
+  bookings,
+  onAddBooking
+}: {
+  bookings: any[];
+  onAddBooking: (booking: any) => void;
+}) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 0, 13)); // Jan 13 2026
@@ -11473,29 +11501,51 @@ const CalendarScheduleTab = () => {
               </div>
             ))}
             {/* January 2026 */}
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-              <div
-                key={d}
-                className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
-                  ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
-                  : ""
-                  }`}
-              >
-                <span
-                  className={`text-sm font-medium ${d === 13
-                    ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
-                    : "text-gray-700"
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
+              const dayString = `2026-01-${d.toString().padStart(2, '0')}`;
+              const dayBookings = bookings.filter(b => b.date === dayString);
+
+              const getTypeColor = (type: string) => {
+                switch (type) {
+                  case "casting": return "bg-blue-100 text-blue-800";
+                  case "option": return "bg-yellow-100 text-yellow-800";
+                  case "confirmed": return "bg-green-100 text-green-800";
+                  case "test-shoot": return "bg-orange-100 text-orange-800";
+                  case "fitting": return "bg-yellow-50 text-yellow-700";
+                  case "rehearsal": return "bg-gray-200 text-gray-800";
+                  default: return "bg-indigo-100 text-indigo-800";
+                }
+              };
+
+              return (
+                <div
+                  key={d}
+                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
+                    ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
+                    : ""
                     }`}
                 >
-                  {d}
-                </span>
-                {d === 12 && (
-                  <div className="mt-2 bg-green-100 text-green-800 text-xs p-1 rounded font-bold truncate">
-                    Emma
+                  <span
+                    className={`text-sm font-medium ${d === 13
+                      ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
+                      : "text-gray-700"
+                      }`}
+                  >
+                    {d}
+                  </span>
+                  <div className="mt-1 space-y-1">
+                    {dayBookings.map((b, idx) => (
+                      <div
+                        key={`${b.id}-${idx}`}
+                        className={`${getTypeColor(b.type)} text-[10px] p-1 rounded font-bold truncate border-l-2 border-current`}
+                      >
+                        {b.talentName}
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -11540,7 +11590,11 @@ const CalendarScheduleTab = () => {
       </Card>
 
       <ManageAvailabilityModal open={modalOpen} onOpenChange={setModalOpen} />
-      <NewBookingModal open={newBookingOpen} onOpenChange={setNewBookingOpen} />
+      <NewBookingModal
+        open={newBookingOpen}
+        onOpenChange={setNewBookingOpen}
+        onSave={onAddBooking}
+      />
     </div>
   );
 };
@@ -12004,8 +12058,9 @@ const TalentAvailabilityTab = () => {
 };
 
 const NotificationsTab = () => {
+  const { toast } = useToast();
   const [activeSubNav, setActiveSubNav] = useState("logs");
-  const [testNotificationType, setTestNotificationType] = useState("email");
+  const [testNotificationType, setTestNotificationType] = useState("");
   const [testTargetTalent, setTestTargetTalent] = useState("");
 
   const testTalents = [
@@ -12735,7 +12790,24 @@ const NotificationsTab = () => {
               </p>
             </div>
 
-            <Button className="w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg">
+            <Button
+              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${!testNotificationType || !testTargetTalent
+                  ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
+                  : ""
+                }`}
+              onClick={() => {
+                if (!testNotificationType || !testTargetTalent) return;
+
+                const talentName = testTalents.find(t => t.toLowerCase() === testTargetTalent) || testTargetTalent;
+
+                toast({
+                  title: "Notification Sent",
+                  description: `Test ${testNotificationType} notification sent to ${talentName}!`,
+                  action: <ToastAction altText="OK" onClick={() => { }}>OK</ToastAction>,
+                });
+              }}
+              disabled={!testNotificationType || !testTargetTalent}
+            >
               <Send className="w-5 h-5" />
               Send Test Notification
             </Button>
@@ -12865,8 +12937,16 @@ const NotificationsTab = () => {
   );
 };
 
-const BookingsView = ({ activeSubTab }: { activeSubTab: string }) => {
-  if (activeSubTab === "Calendar & Schedule") return <CalendarScheduleTab />;
+const BookingsView = ({
+  activeSubTab,
+  bookings,
+  onAddBooking
+}: {
+  activeSubTab: string;
+  bookings: any[];
+  onAddBooking: (booking: any) => void;
+}) => {
+  if (activeSubTab === "Calendar & Schedule") return <CalendarScheduleTab bookings={bookings} onAddBooking={onAddBooking} />;
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
   if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
   if (activeSubTab === "Talent Availability") return <TalentAvailabilityTab />;
@@ -12907,6 +12987,10 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+
+  const [bookings, setBookings] = useState([
+    { id: "1", talentName: "Emma", date: "2026-01-12", type: "confirmed" },
+  ]);
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -13392,7 +13476,11 @@ export default function AgencyDashboard() {
           {activeTab === "client-crm" && <ClientCRMView />}
           {activeTab === "file-storage" && <FileStorageView />}
           {activeTab === "bookings" && (
-            <BookingsView activeSubTab={activeSubTab} />
+            <BookingsView
+              activeSubTab={activeSubTab}
+              bookings={bookings}
+              onAddBooking={(b) => setBookings(prev => [...prev, { ...b, id: `b-${Date.now()}` }])}
+            />
           )}
           {activeTab === "accounting" && (
             <div className="flex flex-col items-center justify-center h-full text-center">
