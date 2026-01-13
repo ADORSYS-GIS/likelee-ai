@@ -11330,10 +11330,262 @@ const ClientDatabaseTab = () => {
   );
 };
 
+
+const AddBookOutModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Talent Availability & Book-Outs</DialogTitle>
+          <DialogDescription>Manage when talent is unavailable for bookings</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Reason *</Label>
+            <Select defaultValue="personal">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="medical">Medical</SelectItem>
+                <SelectItem value="vacation">Vacation</SelectItem>
+                <SelectItem value="other_booking">Other Booking</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Talent *</Label>
+            <Select>
+              <SelectTrigger><SelectValue placeholder="Select talent" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="t1">Emma Stone</SelectItem>
+                <SelectItem value="t2">John Doe</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Start Date *</Label>
+              <Input type="date" />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">End Date *</Label>
+              <Input type="date" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Notes</Label>
+            <Textarea placeholder="Additional details..." className="min-h-[80px]" />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="notify" className="rounded" />
+            <Label htmlFor="notify" className="font-normal cursor-pointer">Notify talent via email</Label>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold">Cancel</Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">Save Book-Out</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const TalentAvailabilityTab = () => {
+  const [addBookOutOpen, setAddBookOutOpen] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Talent Availability</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">Manage book-outs and talent unavailability</p>
+        </div>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setAddBookOutOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+        </Button>
+      </div>
+
+      <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
+        <div className="bg-gray-50 p-4 rounded-full mb-4">
+          <Calendar className="w-12 h-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">No book-outs scheduled</h3>
+        <p className="text-gray-500 max-w-md">Add unavailability periods for your talent</p>
+      </div>
+
+      <AddBookOutModal open={addBookOutOpen} onOpenChange={setAddBookOutOpen} />
+    </div>
+  );
+};
+
+const NotificationsTab = () => {
+  const [activeSubNav, setActiveSubNav] = useState("logs");
+
+  const stats = [
+    { label: "Emails Sent", value: "127", subtitle: "100% delivered", icon: Mail, color: "text-blue-600" },
+    { label: "SMS Sent", value: "84", subtitle: "100% delivered", icon: Phone, color: "text-green-600" },
+    { label: "Push Sent", value: "56", subtitle: "65% clicked", icon: Bell, color: "text-purple-600" },
+    { label: "Failed", value: "3", subtitle: "Last 30 days", icon: XCircle, color: "text-red-600" },
+  ];
+
+  const notifications = [
+    {
+      type: "EMAIL",
+      title: "Booking Created",
+      recipient: "Emma (emma@example.com)",
+      message: "New Booking: Glossier Beauty on Jan 15, 2026",
+      time: "Jan 12, 2025 10:35 AM",
+      status: "success",
+      detail: "Opened 10:55 AM"
+    },
+    {
+      type: "SMS",
+      title: "24h Reminder",
+      recipient: "Milan (+1-555-0102)",
+      message: "Reminder: Booking tomorrow with CarNext WIP at 9:00 AM",
+      time: "Jan 11, 2025 9:00 PM",
+      status: "success",
+      detail: "48 chars"
+    },
+    {
+      type: "PUSH",
+      title: "Booking Confirmed",
+      recipient: "Julia",
+      message: "Your booking with Esther Skincare has been confirmed for Jan 20",
+      time: "Jan 10, 2025 2:03 PM",
+      status: "success",
+      detail: "Clicked"
+    },
+    {
+      type: "EMAIL",
+      title: "Booking Updated",
+      recipient: "Carla (carla@example.com)",
+      message: "Booking Updated: Reformation on Jan 25, 2026",
+      time: "Jan 9, 2026 4:15 PM",
+      status: "success",
+      detail: ""
+    },
+    {
+      type: "EMAIL",
+      title: "Booking Cancelled",
+      recipient: "Matt (matt@example.com)",
+      message: "Booking Cancelled: Aesop Skincare on Jan 22, 2026",
+      time: "Jan 8, 2025 11:00 AM",
+      status: "error",
+      detail: "Error: Invalid email address"
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Bell className="w-8 h-8 text-gray-700" />
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Notifications Center</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">Manage booking notifications and delivery logs</p>
+        </div>
+      </div>
+
+      {/* Sub-navigation */}
+      <div className="flex gap-1 border-b border-gray-200">
+        {["Notification Logs", "Settings", "Talent Preferences", "Test Notifications"].map((tab, idx) => (
+          <button
+            key={tab}
+            onClick={() => setActiveSubNav(["logs", "settings", "preferences", "test"][idx])}
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+              ? "border-indigo-600 text-indigo-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {activeSubNav === "logs" && (
+        <>
+          <div className="grid grid-cols-4 gap-4">
+            {stats.map((s) => (
+              <Card key={s.label} className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+                <div className="flex items-center gap-3 mb-2">
+                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                  <p className="text-xs font-bold text-gray-500 uppercase">{s.label}</p>
+                </div>
+                <p className="text-4xl font-extrabold text-gray-900 mb-1">{s.value}</p>
+                <p className="text-xs text-gray-500">{s.subtitle}</p>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-gray-900">Recent Notifications</h3>
+            <Button variant="outline" className="font-bold text-gray-700">
+              <Filter className="w-4 h-4 mr-2" /> Filter
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {notifications.map((notif, idx) => (
+              <Card key={idx} className={`p-4 border ${notif.status === "error" ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"
+                } rounded-xl`}>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    {notif.type === "EMAIL" && <Mail className="w-5 h-5 text-gray-600" />}
+                    {notif.type === "SMS" && <Phone className="w-5 h-5 text-gray-600" />}
+                    {notif.type === "PUSH" && <Bell className="w-5 h-5 text-gray-600" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-gray-900">{notif.title}</h4>
+                      <Badge variant="secondary" className="text-xs font-bold">{notif.type}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-1">To: <span className="font-medium">{notif.recipient}</span></p>
+                    <p className="text-sm text-gray-700">{notif.message}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <p className="text-xs text-gray-500">{notif.time}</p>
+                      {notif.detail && (
+                        <p className={`text-xs ${notif.status === "error" ? "text-red-600 font-medium" : "text-blue-600"
+                          }`}>{notif.detail}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {notif.status === "success" ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeSubNav !== "logs" && (
+        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Coming Soon</h3>
+          <p className="text-gray-500 max-w-md">This section is under development</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BookingsView = ({ activeSubTab }: { activeSubTab: string }) => {
   if (activeSubTab === "Calendar & Schedule") return <CalendarScheduleTab />;
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
   if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
+  if (activeSubTab === "Talent Availability") return <TalentAvailabilityTab />;
+  if (activeSubTab === "Notifications") return <NotificationsTab />;
 
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
