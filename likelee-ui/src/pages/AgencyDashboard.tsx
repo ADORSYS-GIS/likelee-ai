@@ -70,6 +70,8 @@ import {
   Printer,
   Files,
   TrendingDown,
+  MapPin,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
