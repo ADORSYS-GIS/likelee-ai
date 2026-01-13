@@ -65,6 +65,7 @@ import {
   Briefcase,
   Receipt,
   Megaphone,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -525,7 +526,6 @@ const MOCK_COMMUNICATIONS = [
     participants: "Both",
   },
 ];
-
 
 const ClientProfileModal = ({
   client,
@@ -1041,7 +1041,6 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
-
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -1817,7 +1816,6 @@ const FileStorageView = () => {
 
   return (
     <div className="space-y-8">
-
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -2193,6 +2191,25 @@ TALENT_DATA.forEach((t: any) => {
   }
   // All other talent will NOT have a tier assigned to match the 1-3-1-0 count
 });
+
+const CLIENT_DATA = [
+  {
+    id: "acme",
+    company: "Acme Inc.",
+    contact: "John Doe",
+    email: "john@acme.com",
+    phone: "+1 (555) 123-4567",
+    terms: "Net 30",
+  },
+  {
+    id: "globex",
+    company: "Globex Corp",
+    contact: "Jane Smith",
+    email: "jane@globex.com",
+    phone: "+1 (555) 987-6543",
+    terms: "Net 15",
+  },
+];
 
 const ANALYTICS_CAMPAIGN_STATUS = [
   { name: "In Progress", value: 15, color: "#111827" },
@@ -2617,10 +2634,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
           >
             {tab}
           </button>
@@ -3945,13 +3963,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -4070,15 +4088,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -4919,9 +4938,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5733,10 +5752,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -7907,7 +7927,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -8070,10 +8090,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -8566,10 +8587,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -9451,10 +9473,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -10552,221 +10575,631 @@ const NewBookingModal = ({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold">New Booking</DialogTitle>
-        <p className="text-sm text-gray-500">
-          Schedule a booking for your talent
-        </p>
-      </DialogHeader>
-      <div className="space-y-6 py-4">
-        <div className="space-y-2">
-          <Label>Booking Type *</Label>
-          <div className="flex gap-2">
-            <Select defaultValue="confirmed">
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="option">Option</SelectItem>
-                <SelectItem value="casting">Casting</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              className="text-green-600 border-green-200 bg-green-50"
-            >
-              Preview
-            </Button>
-          </div>
-        </div>
+}) => {
+  const [bookingType, setBookingType] = useState("confirmed");
+  const [multiTalent, setMultiTalent] = useState(false);
+  const [talentSearch, setTalentSearch] = useState("");
+  const [selectedTalents, setSelectedTalents] = useState<any[]>([]);
+  const [clientSearch, setClientSearch] = useState("");
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [clients, setClients] = useState(CLIENT_DATA);
+  const [newClient, setNewClient] = useState({
+    company: "",
+    contact: "",
+    email: "",
+    phone: "",
+    terms: "Net 30",
+  });
+  const [date, setDate] = useState("2026-01-12");
+  const [allDay, setAllDay] = useState(false);
+  const [callTime, setCallTime] = useState("09:00");
+  const [wrapTime, setWrapTime] = useState("17:00");
+  const [rate, setRate] = useState(0);
+  const [currency, setCurrency] = useState("USD");
+  const [rateType, setRateType] = useState("day");
+  const [usageTerms, setUsageTerms] = useState("");
+  const [usageDuration, setUsageDuration] = useState("1");
+  const [exclusive, setExclusive] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [notifications, setNotifications] = useState({
+    email: true,
+    sms: false,
+    push: false,
+    calendar: true,
+  });
 
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label>Talent *</Label>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="multi" className="rounded border-gray-300" />
-              <label htmlFor="multi" className="text-sm text-gray-600">
-                Book multiple talent
-              </label>
+  const filteredTalents = TALENT_DATA.filter((t) =>
+    t.name.toLowerCase().includes(talentSearch.toLowerCase()),
+  );
+
+  const filteredClients = clients.filter((c) =>
+    c.company.toLowerCase().includes(clientSearch.toLowerCase()),
+  );
+
+  const handleSelectTalent = (talent: any) => {
+    if (multiTalent) {
+      if (!selectedTalents.find((t) => t.id === talent.id)) {
+        setSelectedTalents([...selectedTalents, talent]);
+      } else {
+        setSelectedTalents(selectedTalents.filter((t) => t.id !== talent.id));
+      }
+    } else {
+      setSelectedTalents([talent]);
+    }
+    setTalentSearch("");
+  };
+
+  const handleAddClient = () => {
+    const client = { id: `client-${Date.now()}`, ...newClient };
+    setClients([...clients, client]);
+    setSelectedClient(client);
+    setShowAddClient(false);
+    setClientSearch("");
+  };
+
+  const commission = rate * 0.2;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">New Booking</DialogTitle>
+          <p className="text-sm text-gray-500">
+            Schedule a booking for your talent
+          </p>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <Label>Booking Type *</Label>
+            <div className="flex gap-2">
+              <Select value={bookingType} onValueChange={setBookingType}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="casting">Casting</SelectItem>
+                  <SelectItem value="option">Option</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="test">Test shoot</SelectItem>
+                  <SelectItem value="fitting">Fitting</SelectItem>
+                  <SelectItem value="rehearsal">Rehearsal</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                className="text-green-600 border-green-200 bg-green-50"
+              >
+                Preview
+              </Button>
             </div>
           </div>
-          <Input placeholder="Search talent by name..." />
-          <div className="space-y-2 mt-2">
-            {/* Mock List */}
-            <div className="flex items-center gap-3 p-2 bg-red-50/50 rounded-lg cursor-pointer border border-red-100">
-              <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
-                <img src="https://ui-avatars.com/api/?name=Emma" alt="Emma" />
+
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label>Talent *</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="multi"
+                  checked={multiTalent}
+                  onChange={(e) => {
+                    setMultiTalent(e.target.checked);
+                    if (!e.target.checked && selectedTalents.length > 1) {
+                      setSelectedTalents([selectedTalents[0]]);
+                    }
+                  }}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor="multi" className="text-sm text-gray-600">
+                  Book multiple talent
+                </label>
               </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">Emma</p>
-                <div className="flex gap-2 text-xs">
-                  <span className="text-red-600 font-bold">• Confirmed/Unavailable</span>
-                  <span className="text-orange-500 font-medium">⚠️ 1 booking(s) on this date</span>
+            </div>
+            <div className="relative">
+              <Input
+                placeholder="Search talent by name..."
+                value={talentSearch}
+                onChange={(e) => setTalentSearch(e.target.value)}
+              />
+              {talentSearch && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredTalents.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => handleSelectTalent(t)}
+                      className="flex items-center gap-3 p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
+                    >
+                      <img
+                        src={t.img}
+                        className="w-8 h-8 rounded-full"
+                        alt={t.name}
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {t.name}
+                        </p>
+                        <p className="text-xs text-green-600 font-medium">
+                          • Available
+                        </p>
+                      </div>
+                      {selectedTalents.find((st) => st.id === t.id) && (
+                        <div className="ml-auto text-indigo-600">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2 mt-2">
+              {selectedTalents.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between p-2 bg-indigo-50 border border-indigo-100 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={t.img}
+                      className="w-8 h-8 rounded-full"
+                      alt={t.name}
+                    />
+                    <p className="text-sm font-bold text-indigo-900">
+                      Selected: {t.name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded leading-none uppercase">
+                      Available
+                    </span>
+                    <button
+                      onClick={() =>
+                        setSelectedTalents(
+                          selectedTalents.filter((st) => st.id !== t.id),
+                        )
+                      }
+                      className="text-indigo-400 hover:text-indigo-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Client *</Label>
+            {showAddClient ? (
+              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                  <Building2 className="w-4 h-4" /> New Client
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Company Name *</Label>
+                    <Input
+                      placeholder="Acme Inc."
+                      value={newClient.company}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, company: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Contact Name *</Label>
+                    <Input
+                      placeholder="John Doe"
+                      value={newClient.contact}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, contact: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Email</Label>
+                    <Input
+                      placeholder="john@acme.com"
+                      value={newClient.email}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, email: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Phone</Label>
+                    <Input
+                      placeholder="+1 (555) 123-4567"
+                      value={newClient.phone}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, phone: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Payment Terms</Label>
+                  <Select
+                    value={newClient.terms}
+                    onValueChange={(v) =>
+                      setNewClient({ ...newClient, terms: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Net 30">Net 30</SelectItem>
+                      <SelectItem value="Net 15">Net 15</SelectItem>
+                      <SelectItem value="On Receipt">On Receipt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold"
+                    onClick={handleAddClient}
+                    disabled={!newClient.company || !newClient.contact}
+                  >
+                    Save Client & Use
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddClient(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <Input
+                    placeholder="Search client by name..."
+                    value={
+                      selectedClient ? selectedClient.company : clientSearch
+                    }
+                    onChange={(e) => {
+                      setClientSearch(e.target.value);
+                      if (selectedClient) setSelectedClient(null);
+                    }}
+                  />
+                  {clientSearch && !selectedClient && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredClients.map((c) => (
+                        <div
+                          key={c.id}
+                          onClick={() => {
+                            setSelectedClient(c);
+                            setClientSearch("");
+                          }}
+                          className="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
+                        >
+                          <p className="text-sm font-bold text-gray-900">
+                            {c.company}
+                          </p>
+                          <p className="text-xs text-gray-500">{c.contact}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {selectedClient && (
+                    <button
+                      onClick={() => setSelectedClient(null)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {!selectedClient && (
+                  <div
+                    onClick={() => setShowAddClient(true)}
+                    className="mt-2 text-indigo-600 text-sm font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Add New Client
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Date *</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  id="allday"
+                  checked={allDay}
+                  onChange={(e) => setAllDay(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor="allday" className="text-xs text-gray-500">
+                  All-day booking
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className={allDay ? "text-gray-300" : ""}>Call Time</Label>
+              <Input
+                type="time"
+                value={callTime}
+                onChange={(e) => setCallTime(e.target.value)}
+                disabled={allDay}
+                className={
+                  allDay ? "opacity-30 cursor-not-allowed bg-gray-50" : ""
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={allDay ? "text-gray-300" : ""}>Wrap Time</Label>
+              <Input
+                type="time"
+                value={wrapTime}
+                onChange={(e) => setWrapTime(e.target.value)}
+                disabled={allDay}
+                className={
+                  allDay ? "opacity-30 cursor-not-allowed bg-gray-50" : ""
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Location *</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input className="pl-9" placeholder="Enter address..." />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 pb-1">
+            <div className="space-y-2">
+              <Label>Rate/Fee</Label>
+              <div className="relative group">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {currency === "USD"
+                    ? "$"
+                    : currency === "EUR"
+                      ? "€"
+                      : currency === "GBP"
+                        ? "£"
+                        : "$"}
+                </span>
+                <Input
+                  className="pl-7 pr-10"
+                  type="number"
+                  value={rate}
+                  onChange={(e) => setRate(Number(e.target.value))}
+                />
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col scale-75 border border-gray-100 bg-gray-50 rounded">
+                  <button
+                    onClick={() => setRate((prev) => prev + 1)}
+                    className="px-1 hover:bg-gray-200 border-b border-gray-100"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => setRate((prev) => Math.max(0, prev - 1))}
+                    className="px-1 hover:bg-gray-200"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
-                <img src="https://ui-avatars.com/api/?name=Sergine" alt="Sergine" />
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="GBP">GBP</SelectItem>
+                  <SelectItem value="CAD">CAD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Rate Type</Label>
+              <Select value={rateType} onValueChange={setRateType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Day Rate</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                  <SelectItem value="flat">Flat Fee</SelectItem>
+                  <SelectItem value="tbd">TBD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {rate > 0 && (
+            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex justify-between items-center -mt-2">
+              <span className="text-sm font-medium text-indigo-900">
+                Agency Commission (20%)
+              </span>
+              <span className="text-sm font-bold text-indigo-900">
+                {currency}{" "}
+                {commission.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Usage Terms</Label>
+              <Select value={usageTerms} onValueChange={setUsageTerms}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select usage terms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="social">Social Media Only</SelectItem>
+                  <SelectItem value="print">Print</SelectItem>
+                  <SelectItem value="digital">Digital</SelectItem>
+                  <SelectItem value="broadcast">Broadcast</SelectItem>
+                  <SelectItem value="ecommerce">E-commerce</SelectItem>
+                  <SelectItem value="unlimited">Unlimited</SelectItem>
+                  <SelectItem value="tbd">TBD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-4 items-center">
+              <div className="flex-1 space-y-2">
+                <Label>Usage Duration</Label>
+                <Select value={usageDuration} onValueChange={setUsageDuration}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 Month</SelectItem>
+                    <SelectItem value="3">3 Months</SelectItem>
+                    <SelectItem value="6">6 Months</SelectItem>
+                    <SelectItem value="12">12 Months (1 Year)</SelectItem>
+                    <SelectItem value="24">24 Months (2 Years)</SelectItem>
+                    <SelectItem value="unlimited">Unlimited</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">Sergine</p>
-                <p className="text-xs text-green-600 font-medium">• Available</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-              <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
-                <img src="https://ui-avatars.com/api/?name=Milan" alt="Milan" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">Milan</p>
-                <p className="text-xs text-green-600 font-medium">• Available</p>
+              <div className="flex items-center gap-2 mt-6">
+                <input
+                  type="checkbox"
+                  checked={exclusive}
+                  onChange={(e) => setExclusive(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Exclusive rights</span>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label>Client *</Label>
-          <Input placeholder="Search client by name..." />
-          <div className="mt-2 text-indigo-600 text-sm font-bold flex items-center gap-1 cursor-pointer">
-            <Plus className="w-4 h-4" /> Add New Client
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label>Date *</Label>
-            <Input type="date" defaultValue="2026-01-12" />
-            <div className="flex items-center gap-2 mt-1">
-              <input type="checkbox" id="allday" className="rounded border-gray-300" />
-              <label htmlFor="allday" className="text-xs text-gray-500">All-day booking</label>
-            </div>
+            <Label>Special Instructions / Notes</Label>
+            <Textarea
+              placeholder="Internal notes, special instructions..."
+              className="h-24"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
-          <div className="space-y-2">
-            <Label>Call Time</Label>
-            <Input type="time" defaultValue="09:00" />
-          </div>
-          <div className="space-y-2">
-            <Label>Wrap Time</Label>
-            <Input type="time" defaultValue="17:00" />
-          </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label>Location *</Label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input className="pl-9" placeholder="Enter address..." />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Location Notes</Label>
-          <Input placeholder="e.g., Studio B, 3rd Floor" />
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Rate/Fee</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-              <Input className="pl-7" placeholder="0.00" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Currency</Label>
-            <Select defaultValue="usd">
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="usd">USD</SelectItem>
-                <SelectItem value="eur">EUR</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Rate Type</Label>
-            <Select defaultValue="day">
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Day Rate</SelectItem>
-                <SelectItem value="hourly">Hourly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Usage Terms</Label>
-          <Select>
-            <SelectTrigger><SelectValue placeholder="Select usage terms" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="standard">Standard</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex gap-4 items-center">
-          <div className="flex-1 space-y-2">
-            <Label>Usage Duration</Label>
-            <Select defaultValue="1">
-              <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 Month</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2 mt-6">
-            <input type="checkbox" className="toggle toggle-primary" />
-            <span className="text-sm">Exclusive rights</span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Attached Files (Call sheets, contracts, references)</Label>
-          <div className="border border-gray-200 rounded-lg p-3 text-sm text-gray-500">
-            <span className="font-bold text-gray-900 mr-2">Browse...</span> No files selected.
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Special Instructions / Notes</Label>
-          <Textarea placeholder="Internal notes, special instructions..." className="h-24" />
-        </div>
-
-        <div className="space-y-3">
-          <Label>Notifications</Label>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked /> <span className="text-sm">Email talent</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" /> <span className="text-sm">SMS talent</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" /> <span className="text-sm">Push notification (mobile app)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked /> <span className="text-sm">Send calendar invite (.ics file)</span>
+          <div className="space-y-3">
+            <Label>Notifications</Label>
+            <div className="space-y-2 border border-gray-100 p-4 rounded-xl bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-email"
+                  checked={notifications.email}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      email: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-email" className="text-sm">
+                  Email talent
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-sms"
+                  checked={notifications.sms}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      sms: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-sms" className="text-sm">
+                  SMS talent
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-push"
+                  checked={notifications.push}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      push: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-push" className="text-sm">
+                  Push notification (mobile app)
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-calendar"
+                  checked={notifications.calendar}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      calendar: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-calendar" className="text-sm">
+                  Send calendar invite (.ics file)
+                </label>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <DialogFooter className="gap-2 sm:gap-0">
-        <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-        <div className="flex gap-2">
-          <Button variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Save as Casting</Button>
-          <Button variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50">Save as Option</Button>
-          <Button className="bg-green-600 hover:bg-green-700 text-white">Save as Confirmed</Button>
-        </div>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
+        <DialogFooter className="gap-2 sm:gap-0 mt-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={() => {
+                // Save logic here
+                onOpenChange(false);
+              }}
+            >
+              Save as{" "}
+              {bookingType.charAt(0).toUpperCase() + bookingType.slice(1)}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const CalendarScheduleTab = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -11044,16 +11477,18 @@ const CalendarScheduleTab = () => {
             {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
               <div
                 key={d}
-                className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
-                  ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
-                  : ""
-                  }`}
+                className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                  d === 13
+                    ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
+                    : ""
+                }`}
               >
                 <span
-                  className={`text-sm font-medium ${d === 13
-                    ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
-                    : "text-gray-700"
-                    }`}
+                  className={`text-sm font-medium ${
+                    d === 13
+                      ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
+                      : "text-gray-700"
+                  }`}
                 >
                   {d}
                 </span>
@@ -11084,8 +11519,7 @@ const CalendarScheduleTab = () => {
             <div className="w-3 h-3 bg-red-100 rounded-sm"></div> Cancelled
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-orange-100 rounded-sm"></div> Test
-            Shoot
+            <div className="w-3 h-3 bg-orange-100 rounded-sm"></div> Test Shoot
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-yellow-50 rounded-sm"></div> Fitting
@@ -11120,7 +11554,9 @@ const BookingRequestsTab = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Booking Requests</h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">Review and manage incoming booking requests</p>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Review and manage incoming booking requests
+          </p>
         </div>
       </div>
 
@@ -11128,24 +11564,40 @@ const BookingRequestsTab = () => {
         <div className="bg-gray-50 p-4 rounded-full mb-4">
           <Calendar className="w-12 h-12 text-gray-400" />
         </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">Booking requests feature coming soon</h3>
-        <p className="text-gray-500 max-w-md">Manage incoming booking requests from clients</p>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          Booking requests feature coming soon
+        </h3>
+        <p className="text-gray-500 max-w-md">
+          Manage incoming booking requests from clients
+        </p>
       </div>
     </div>
   );
 };
 
-const AddClientModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+const AddClientModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Add New Client</DialogTitle>
-          <DialogDescription>Add client information for easier booking management</DialogDescription>
+          <DialogTitle className="text-2xl font-bold">
+            Add New Client
+          </DialogTitle>
+          <DialogDescription>
+            Add client information for easier booking management
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <h3 className="text-lg font-bold border-b pb-2">Company Information</h3>
+          <h3 className="text-lg font-bold border-b pb-2">
+            Company Information
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-bold">Company Name *</Label>
@@ -11163,13 +11615,36 @@ const AddClientModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
           <div className="space-y-3">
             <Label className="font-bold">Industry/Category Tags</Label>
             <div className="flex flex-wrap gap-2">
-              {["Fashion", "Beauty", "Fitness", "Commercial", "Editorial", "E-commerce", "Advertising", "Film/TV", "Events", "Sports", "Luxury", "Tech", "Food & Beverage", "Automotive"].map(tag => (
-                <Badge key={tag} variant="secondary" className="bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer">{tag}</Badge>
+              {[
+                "Fashion",
+                "Beauty",
+                "Fitness",
+                "Commercial",
+                "Editorial",
+                "E-commerce",
+                "Advertising",
+                "Film/TV",
+                "Events",
+                "Sports",
+                "Luxury",
+                "Tech",
+                "Food & Beverage",
+                "Automotive",
+              ].map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                >
+                  {tag}
+                </Badge>
               ))}
             </div>
           </div>
 
-          <h3 className="text-lg font-bold border-b pb-2 pt-2">Primary Contact</h3>
+          <h3 className="text-lg font-bold border-b pb-2 pt-2">
+            Primary Contact
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-bold">Contact Name *</Label>
@@ -11188,7 +11663,9 @@ const AddClientModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
           <div className="space-y-2">
             <Label className="font-bold">Payment Terms</Label>
             <Select defaultValue="net30">
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="due_receipt">Due on Receipt</SelectItem>
                 <SelectItem value="net15">Net 15</SelectItem>
@@ -11200,48 +11677,88 @@ const AddClientModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (
 
           <div className="space-y-2">
             <Label className="font-bold">Notes & Preferences</Label>
-            <Textarea placeholder="Any special notes, preferences, or important information about this client..." className="min-h-[100px]" />
+            <Textarea
+              placeholder="Any special notes, preferences, or important information about this client..."
+              className="min-h-[100px]"
+            />
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold">Cancel</Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">Add Client</Button>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+            Add Client
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
 
-const MergeClientsModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+const MergeClientsModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Merge Duplicate Clients</DialogTitle>
-          <DialogDescription>Select two clients to merge. All bookings from the source will be moved to the target.</DialogDescription>
+          <DialogTitle className="text-2xl font-bold">
+            Merge Duplicate Clients
+          </DialogTitle>
+          <DialogDescription>
+            Select two clients to merge. All bookings from the source will be
+            moved to the target.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label className="font-bold">Source Client (will be deleted)</Label>
             <Select>
-              <SelectTrigger><SelectValue placeholder="Select client to merge from" /></SelectTrigger>
-              <SelectContent><SelectItem value="c1">Client A</SelectItem></SelectContent>
+              <SelectTrigger>
+                <SelectValue placeholder="Select client to merge from" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="c1">Client A</SelectItem>
+              </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Target Client (will keep all data)</Label>
+            <Label className="font-bold">
+              Target Client (will keep all data)
+            </Label>
             <Select>
-              <SelectTrigger><SelectValue placeholder="Select client to merge into" /></SelectTrigger>
-              <SelectContent><SelectItem value="c2">Client B</SelectItem></SelectContent>
+              <SelectTrigger>
+                <SelectValue placeholder="Select client to merge into" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="c2">Client B</SelectItem>
+              </SelectContent>
             </Select>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold">Cancel</Button>
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white font-bold">Merge Clients</Button>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button className="bg-orange-500 hover:bg-orange-600 text-white font-bold">
+            Merge Clients
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -11264,17 +11781,27 @@ const ClientDatabaseTab = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Client Database</h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">Manage your client relationships and booking history</p>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage your client relationships and booking history
+          </p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setAddClientOpen(true)}>
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+          onClick={() => setAddClientOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Client
         </Button>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        {stats.map(s => (
-          <Card key={s.label} className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-            <p className="text-xs font-bold text-gray-500 uppercase mb-2">{s.label}</p>
+        {stats.map((s) => (
+          <Card
+            key={s.label}
+            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
+          >
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">
+              {s.label}
+            </p>
             <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
           </Card>
         ))}
@@ -11287,7 +11814,9 @@ const ClientDatabaseTab = () => {
             <Input placeholder="Search by company name..." className="pl-9" />
           </div>
           <Select defaultValue="all">
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Industries</SelectItem>
               <SelectItem value="fashion">Fashion</SelectItem>
@@ -11301,7 +11830,9 @@ const ClientDatabaseTab = () => {
             </SelectContent>
           </Select>
           <Select defaultValue="name">
-            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="name">Company Name</SelectItem>
               <SelectItem value="bookings">Most Bookings</SelectItem>
@@ -11309,16 +11840,29 @@ const ClientDatabaseTab = () => {
               <SelectItem value="recent">Recent Activity</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="font-bold text-gray-700" onClick={() => setMergeOpen(true)}>Merge Duplicates</Button>
+          <Button
+            variant="outline"
+            className="font-bold text-gray-700"
+            onClick={() => setMergeOpen(true)}
+          >
+            Merge Duplicates
+          </Button>
         </div>
 
         <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
           <div className="bg-gray-50 p-4 rounded-full mb-4">
             <Building2 className="w-12 h-12 text-gray-400" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">No clients yet</h3>
-          <p className="text-gray-500 max-w-md mb-4">Start adding clients to track your business relationships</p>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setAddClientOpen(true)}>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            No clients yet
+          </h3>
+          <p className="text-gray-500 max-w-md mb-4">
+            Start adding clients to track your business relationships
+          </p>
+          <Button
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            onClick={() => setAddClientOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" /> Add First Client
           </Button>
         </div>
@@ -11330,21 +11874,32 @@ const ClientDatabaseTab = () => {
   );
 };
 
-
-const AddBookOutModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+const AddBookOutModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Talent Availability & Book-Outs</DialogTitle>
-          <DialogDescription>Manage when talent is unavailable for bookings</DialogDescription>
+          <DialogTitle className="text-2xl font-bold">
+            Talent Availability & Book-Outs
+          </DialogTitle>
+          <DialogDescription>
+            Manage when talent is unavailable for bookings
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label className="font-bold">Reason *</Label>
             <Select defaultValue="personal">
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="personal">Personal</SelectItem>
                 <SelectItem value="medical">Medical</SelectItem>
@@ -11358,7 +11913,9 @@ const AddBookOutModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: 
           <div className="space-y-2">
             <Label className="font-bold">Talent *</Label>
             <Select>
-              <SelectTrigger><SelectValue placeholder="Select talent" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Select talent" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="t1">Emma Stone</SelectItem>
                 <SelectItem value="t2">John Doe</SelectItem>
@@ -11379,18 +11936,31 @@ const AddBookOutModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: 
 
           <div className="space-y-2">
             <Label className="font-bold">Notes</Label>
-            <Textarea placeholder="Additional details..." className="min-h-[80px]" />
+            <Textarea
+              placeholder="Additional details..."
+              className="min-h-[80px]"
+            />
           </div>
 
           <div className="flex items-center space-x-2">
             <input type="checkbox" id="notify" className="rounded" />
-            <Label htmlFor="notify" className="font-normal cursor-pointer">Notify talent via email</Label>
+            <Label htmlFor="notify" className="font-normal cursor-pointer">
+              Notify talent via email
+            </Label>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold">Cancel</Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">Save Book-Out</Button>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+            Save Book-Out
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -11404,10 +11974,17 @@ const TalentAvailabilityTab = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Talent Availability</h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">Manage book-outs and talent unavailability</p>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Talent Availability
+          </h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage book-outs and talent unavailability
+          </p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setAddBookOutOpen(true)}>
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+          onClick={() => setAddBookOutOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Book-Out
         </Button>
       </div>
@@ -11416,8 +11993,12 @@ const TalentAvailabilityTab = () => {
         <div className="bg-gray-50 p-4 rounded-full mb-4">
           <Calendar className="w-12 h-12 text-gray-400" />
         </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">No book-outs scheduled</h3>
-        <p className="text-gray-500 max-w-md">Add unavailability periods for your talent</p>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          No book-outs scheduled
+        </h3>
+        <p className="text-gray-500 max-w-md">
+          Add unavailability periods for your talent
+        </p>
       </div>
 
       <AddBookOutModal open={addBookOutOpen} onOpenChange={setAddBookOutOpen} />
@@ -11429,10 +12010,34 @@ const NotificationsTab = () => {
   const [activeSubNav, setActiveSubNav] = useState("logs");
 
   const stats = [
-    { label: "Emails Sent", value: "127", subtitle: "100% delivered", icon: Mail, color: "text-blue-600" },
-    { label: "SMS Sent", value: "84", subtitle: "100% delivered", icon: Phone, color: "text-green-600" },
-    { label: "Push Sent", value: "56", subtitle: "65% clicked", icon: Bell, color: "text-purple-600" },
-    { label: "Failed", value: "3", subtitle: "Last 30 days", icon: XCircle, color: "text-red-600" },
+    {
+      label: "Emails Sent",
+      value: "127",
+      subtitle: "100% delivered",
+      icon: Mail,
+      color: "text-blue-600",
+    },
+    {
+      label: "SMS Sent",
+      value: "84",
+      subtitle: "100% delivered",
+      icon: Phone,
+      color: "text-green-600",
+    },
+    {
+      label: "Push Sent",
+      value: "56",
+      subtitle: "65% clicked",
+      icon: Bell,
+      color: "text-purple-600",
+    },
+    {
+      label: "Failed",
+      value: "3",
+      subtitle: "Last 30 days",
+      icon: XCircle,
+      color: "text-red-600",
+    },
   ];
 
   const notifications = [
@@ -11443,7 +12048,7 @@ const NotificationsTab = () => {
       message: "New Booking: Glossier Beauty on Jan 15, 2026",
       time: "Jan 12, 2025 10:35 AM",
       status: "success",
-      detail: "Opened 10:55 AM"
+      detail: "Opened 10:55 AM",
     },
     {
       type: "SMS",
@@ -11452,16 +12057,17 @@ const NotificationsTab = () => {
       message: "Reminder: Booking tomorrow with CarNext WIP at 9:00 AM",
       time: "Jan 11, 2025 9:00 PM",
       status: "success",
-      detail: "48 chars"
+      detail: "48 chars",
     },
     {
       type: "PUSH",
       title: "Booking Confirmed",
       recipient: "Julia",
-      message: "Your booking with Esther Skincare has been confirmed for Jan 20",
+      message:
+        "Your booking with Esther Skincare has been confirmed for Jan 20",
       time: "Jan 10, 2025 2:03 PM",
       status: "success",
-      detail: "Clicked"
+      detail: "Clicked",
     },
     {
       type: "EMAIL",
@@ -11470,7 +12076,7 @@ const NotificationsTab = () => {
       message: "Booking Updated: Reformation on Jan 25, 2026",
       time: "Jan 9, 2026 4:15 PM",
       status: "success",
-      detail: ""
+      detail: "",
     },
     {
       type: "EMAIL",
@@ -11479,7 +12085,7 @@ const NotificationsTab = () => {
       message: "Booking Cancelled: Aesop Skincare on Jan 22, 2026",
       time: "Jan 8, 2025 11:00 AM",
       status: "error",
-      detail: "Error: Invalid email address"
+      detail: "Error: Invalid email address",
     },
   ];
 
@@ -11488,21 +12094,33 @@ const NotificationsTab = () => {
       <div className="flex items-center gap-3">
         <Bell className="w-8 h-8 text-gray-700" />
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Notifications Center</h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">Manage booking notifications and delivery logs</p>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Notifications Center
+          </h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage booking notifications and delivery logs
+          </p>
         </div>
       </div>
 
       {/* Sub-navigation */}
       <div className="flex gap-1 border-b border-gray-200">
-        {["Notification Logs", "Settings", "Talent Preferences", "Test Notifications"].map((tab, idx) => (
+        {[
+          "Notification Logs",
+          "Settings",
+          "Talent Preferences",
+          "Test Notifications",
+        ].map((tab, idx) => (
           <button
             key={tab}
-            onClick={() => setActiveSubNav(["logs", "settings", "preferences", "test"][idx])}
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeSubNav === ["logs", "settings", "preferences", "test"][idx]
-              ? "border-indigo-600 text-indigo-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            onClick={() =>
+              setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
+            }
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {tab}
           </button>
@@ -11513,19 +12131,28 @@ const NotificationsTab = () => {
         <>
           <div className="grid grid-cols-4 gap-4">
             {stats.map((s) => (
-              <Card key={s.label} className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+              <Card
+                key={s.label}
+                className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
+              >
                 <div className="flex items-center gap-3 mb-2">
                   <s.icon className={`w-5 h-5 ${s.color}`} />
-                  <p className="text-xs font-bold text-gray-500 uppercase">{s.label}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase">
+                    {s.label}
+                  </p>
                 </div>
-                <p className="text-4xl font-extrabold text-gray-900 mb-1">{s.value}</p>
+                <p className="text-4xl font-extrabold text-gray-900 mb-1">
+                  {s.value}
+                </p>
                 <p className="text-xs text-gray-500">{s.subtitle}</p>
               </Card>
             ))}
           </div>
 
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-gray-900">Recent Notifications</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Recent Notifications
+            </h3>
             <Button variant="outline" className="font-bold text-gray-700">
               <Filter className="w-4 h-4 mr-2" /> Filter
             </Button>
@@ -11533,26 +12160,49 @@ const NotificationsTab = () => {
 
           <div className="space-y-3">
             {notifications.map((notif, idx) => (
-              <Card key={idx} className={`p-4 border ${notif.status === "error" ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"
-                } rounded-xl`}>
+              <Card
+                key={idx}
+                className={`p-4 border ${
+                  notif.status === "error"
+                    ? "border-red-200 bg-red-50"
+                    : "border-gray-200 bg-white"
+                } rounded-xl`}
+              >
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
-                    {notif.type === "EMAIL" && <Mail className="w-5 h-5 text-gray-600" />}
-                    {notif.type === "SMS" && <Phone className="w-5 h-5 text-gray-600" />}
-                    {notif.type === "PUSH" && <Bell className="w-5 h-5 text-gray-600" />}
+                    {notif.type === "EMAIL" && (
+                      <Mail className="w-5 h-5 text-gray-600" />
+                    )}
+                    {notif.type === "SMS" && (
+                      <Phone className="w-5 h-5 text-gray-600" />
+                    )}
+                    {notif.type === "PUSH" && (
+                      <Bell className="w-5 h-5 text-gray-600" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-bold text-gray-900">{notif.title}</h4>
-                      <Badge variant="secondary" className="text-xs font-bold">{notif.type}</Badge>
+                      <Badge variant="secondary" className="text-xs font-bold">
+                        {notif.type}
+                      </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">To: <span className="font-medium">{notif.recipient}</span></p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      To: <span className="font-medium">{notif.recipient}</span>
+                    </p>
                     <p className="text-sm text-gray-700">{notif.message}</p>
                     <div className="flex items-center gap-3 mt-2">
                       <p className="text-xs text-gray-500">{notif.time}</p>
                       {notif.detail && (
-                        <p className={`text-xs ${notif.status === "error" ? "text-red-600 font-medium" : "text-blue-600"
-                          }`}>{notif.detail}</p>
+                        <p
+                          className={`text-xs ${
+                            notif.status === "error"
+                              ? "text-red-600 font-medium"
+                              : "text-blue-600"
+                          }`}
+                        >
+                          {notif.detail}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -11573,42 +12223,66 @@ const NotificationsTab = () => {
       {activeSubNav === "settings" && (
         <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Event Notification Settings</h3>
-            <p className="text-sm text-gray-500">Configure which channels to use for each event type</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              Event Notification Settings
+            </h3>
+            <p className="text-sm text-gray-500">
+              Configure which channels to use for each event type
+            </p>
           </div>
 
           <div className="space-y-4">
             {/* Booking Created/Confirmed */}
             <div className="pb-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">Booking Created/Confirmed</h4>
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Booking Created/Confirmed
+              </h4>
               <div className="grid grid-cols-3 gap-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">Email</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Email
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">SMS</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      SMS
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-gray-700">Push</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Push
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
@@ -11617,22 +12291,32 @@ const NotificationsTab = () => {
 
             {/* Booking Updated */}
             <div className="pb-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">Booking Updated</h4>
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Booking Updated
+              </h4>
               <div className="grid grid-cols-3 gap-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">Email</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Email
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">SMS</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      SMS
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" />
@@ -11642,10 +12326,16 @@ const NotificationsTab = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-gray-700">Push</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Push
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
@@ -11654,35 +12344,55 @@ const NotificationsTab = () => {
 
             {/* Booking Cancelled */}
             <div className="pb-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">Booking Cancelled</h4>
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Booking Cancelled
+              </h4>
               <div className="grid grid-cols-3 gap-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">Email</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Email
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">SMS</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      SMS
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-gray-700">Push</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Push
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
@@ -11691,39 +12401,61 @@ const NotificationsTab = () => {
 
             {/* Automatic Reminders */}
             <div className="pt-2">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">Automatic Reminders</h4>
-              
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Automatic Reminders
+              </h4>
+
               <div className="space-y-3">
                 <div className="pb-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-blue-600 mb-3">24 Hours Before Booking</p>
+                  <p className="text-sm font-medium text-blue-600 mb-3">
+                    24 Hours Before Booking
+                  </p>
                   <div className="grid grid-cols-3 gap-8">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">Email</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Email
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">SMS</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          SMS
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-700">Push</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Push
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -11731,12 +12463,16 @@ const NotificationsTab = () => {
                 </div>
 
                 <div className="pb-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-blue-600 mb-3">48 Hours Before Booking</p>
+                  <p className="text-sm font-medium text-blue-600 mb-3">
+                    48 Hours Before Booking
+                  </p>
                   <div className="grid grid-cols-3 gap-8">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">Email</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Email
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
@@ -11746,7 +12482,9 @@ const NotificationsTab = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">SMS</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          SMS
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
@@ -11756,7 +12494,9 @@ const NotificationsTab = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-700">Push</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Push
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
@@ -11767,12 +12507,16 @@ const NotificationsTab = () => {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-blue-600 mb-3">1 Week Before Booking</p>
+                  <p className="text-sm font-medium text-blue-600 mb-3">
+                    1 Week Before Booking
+                  </p>
                   <div className="grid grid-cols-3 gap-8">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">Email</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Email
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
@@ -11782,7 +12526,9 @@ const NotificationsTab = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">SMS</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          SMS
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
@@ -11792,7 +12538,9 @@ const NotificationsTab = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-700">Push</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Push
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
@@ -11807,247 +12555,15 @@ const NotificationsTab = () => {
         </Card>
       )}
 
-            {/* Booking Created/Confirmed */}
-            <div className="border-b border-gray-200 pb-6">
-              <h4 className="font-bold text-gray-900 mb-4">Booking Created/Confirmed</h4>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium">Email</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium">SMS</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium">Push</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Booking Updated */}
-            <div className="border-b border-gray-200 pb-6">
-              <h4 className="font-bold text-gray-900 mb-4">Booking Updated</h4>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium">Email</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium">SMS</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium">Push</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Booking Cancelled */}
-            <div className="border-b border-gray-200 pb-6">
-              <h4 className="font-bold text-gray-900 mb-4">Booking Cancelled</h4>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium">Email</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium">SMS</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium">Push</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Automatic Reminders */}
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4">Automatic Reminders</h4>
-
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">24 Hours Before Booking</p>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium">Email</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium">SMS</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-medium">Push</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">48 Hours Before Booking</p>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium">Email</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium">SMS</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-medium">Push</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">1 Week Before Booking</p>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium">Email</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium">SMS</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-medium">Push</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-800">
-              <span className="font-bold">Note:</span> Email notifications include calendar .ics attachments and "View booking" buttons. SMS messages are optimized to 160 characters.
-            </p>
-          </div>
-        </div>
-      )}
-
       {activeSubNav === "preferences" && (
         <div className="space-y-6">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Per-Talent Notification Preferences</h3>
-            <p className="text-sm text-gray-600">Override agency defaults for specific talent</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Per-Talent Notification Preferences
+            </h3>
+            <p className="text-sm text-gray-600">
+              Override agency defaults for specific talent
+            </p>
           </div>
 
           <div className="relative">
@@ -12057,13 +12573,15 @@ const NotificationsTab = () => {
               className="pl-9"
               onChange={(e) => {
                 const searchTerm = e.target.value.toLowerCase();
-                const talentCards = document.querySelectorAll('[data-talent-name]');
+                const talentCards =
+                  document.querySelectorAll("[data-talent-name]");
                 talentCards.forEach((card) => {
-                  const name = card.getAttribute('data-talent-name')?.toLowerCase() || '';
+                  const name =
+                    card.getAttribute("data-talent-name")?.toLowerCase() || "";
                   if (name.includes(searchTerm)) {
-                    (card as HTMLElement).style.display = '';
+                    (card as HTMLElement).style.display = "";
                   } else {
-                    (card as HTMLElement).style.display = 'none';
+                    (card as HTMLElement).style.display = "none";
                   }
                 });
               }}
@@ -12083,7 +12601,11 @@ const NotificationsTab = () => {
               { name: "Lina", email: "lina@example.com" },
               { name: "Aaron", email: "cleo@example.com" },
             ].map((talent, idx) => (
-              <Card key={idx} className="p-4 border border-gray-200 bg-white rounded-xl" data-talent-name={talent.name}>
+              <Card
+                key={idx}
+                className="p-4 border border-gray-200 bg-white rounded-xl"
+                data-talent-name={talent.name}
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                     <User className="w-5 h-5 text-gray-600" />
@@ -12094,23 +12616,41 @@ const NotificationsTab = () => {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">Email</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        Email
+                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">SMS</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        SMS
+                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">Push</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        Push
+                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
                     </div>
@@ -12125,7 +12665,9 @@ const NotificationsTab = () => {
       {activeSubNav === "test" && (
         <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
           <h3 className="text-lg font-bold text-gray-900 mb-2">Coming Soon</h3>
-          <p className="text-gray-500 max-w-md">This section is under development</p>
+          <p className="text-gray-500 max-w-md">
+            This section is under development
+          </p>
         </div>
       )}
     </div>
@@ -12255,84 +12797,84 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        { id: "settings", label: "Settings", icon: Settings },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          { id: "settings", label: "Settings", icon: Settings },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "settings", label: "Settings", icon: Settings },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "settings", label: "Settings", icon: Settings },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -12370,14 +12912,16 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -12397,10 +12941,11 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
