@@ -10515,8 +10515,275 @@ const AnalyticsDashboardView = () => {
   );
 };
 
+const InviteTeamMemberModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            Invite Team Member
+          </DialogTitle>
+          <p className="text-sm text-gray-500 font-medium">
+            Send an email invitation to join your agency team
+          </p>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">
+              Email Address
+            </Label>
+            <Input
+              placeholder="colleague@example.com"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">User Role</Label>
+            <Select defaultValue="booker">
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin - Full access</SelectItem>
+                <SelectItem value="booker">
+                  Booker - Create/edit bookings
+                </SelectItem>
+                <SelectItem value="scout">Scout - Add prospects</SelectItem>
+                <SelectItem value="accountant">
+                  Accountant - Finance only
+                </SelectItem>
+                <SelectItem value="coordinator">
+                  Talent Coordinator - Manage profiles
+                </SelectItem>
+                <SelectItem value="readonly">Read-Only - View only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+              <span className="font-bold">Note:</span> The invited user will
+              receive an email with instructions to set up their account and
+              access the dashboard with the assigned role.
+            </p>
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Send Invitation
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const EditPermissionsModal = ({
+  open,
+  onOpenChange,
+  member,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  member: any;
+}) => {
+  if (!member) return null;
+
+  const sections = [
+    {
+      title: "Bookings & Calendar",
+      permissions: [
+        { label: "Can view bookings", default: true },
+        { label: "Can create bookings", default: false },
+        { label: "Can edit bookings", default: false },
+        { label: "Can delete bookings", default: false },
+      ],
+    },
+    {
+      title: "Finance & Invoicing",
+      permissions: [
+        { label: "Can view finances", default: false },
+        { label: "Can create invoices", default: false },
+      ],
+    },
+    {
+      title: "Talent Roster",
+      permissions: [
+        { label: "Can view roster", default: true },
+        { label: "Can edit talent profiles", default: false },
+        { label: "Can add prospects", default: true },
+      ],
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            Edit Permissions - {member.name}
+          </DialogTitle>
+          <p className="text-sm text-gray-500 font-medium">
+            Role: {member.role}
+          </p>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-8">
+          {sections.map((section) => (
+            <div key={section.title} className="space-y-4">
+              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                {section.title}
+              </h4>
+              <div className="space-y-3">
+                {section.permissions.map((perm) => (
+                  <div
+                    key={perm.label}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                  >
+                    <span className="text-sm font-medium text-gray-700">
+                      {perm.label}
+                    </span>
+                    <Switch defaultChecked={perm.default} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl">
+            Save Permissions
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ActivityLogModal = ({
+  open,
+  onOpenChange,
+  member,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  member: any;
+}) => {
+  if (!member) return null;
+
+  const activities = [
+    {
+      action: "Created booking",
+      details: "Vogue Magazine - Emma Stone",
+      time: "Jan 12, 2024 10:15 AM",
+      icon: Calendar,
+      color: "text-blue-600 bg-blue-50",
+    },
+    {
+      action: "Updated talent profile",
+      details: "Milan Anderson - Added new headshots",
+      time: "Jan 12, 2024 9:45 AM",
+      icon: User,
+      color: "text-purple-600 bg-purple-50",
+    },
+    {
+      action: "Generated invoice",
+      details: "Invoice #2024-089 for Nike",
+      time: "Jan 11, 2024 4:30 PM",
+      icon: FileText,
+      color: "text-green-600 bg-green-50",
+    },
+    {
+      action: "Added prospect",
+      details: "Alex Johnson from Instagram",
+      time: "Jan 11, 2024 2:20 PM",
+      icon: Users,
+      color: "text-orange-600 bg-orange-50",
+    },
+    {
+      action: "Logged in",
+      details: "From Chrome on Windows",
+      time: "Jan 12, 2024 8:00 AM",
+      icon: Globe,
+      color: "text-gray-600 bg-gray-50",
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg rounded-2xl max-h-[80vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            Activity Log - {member.name}
+          </DialogTitle>
+          <p className="text-sm text-gray-500 font-medium">
+            Recent actions and system events
+          </p>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
+          {activities.map((activity, idx) => (
+            <div
+              key={idx}
+              className="flex gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
+            >
+              <div
+                className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
+              >
+                <activity.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">
+                  {activity.action}
+                </p>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  {activity.details}
+                </p>
+                <p className="text-[10px] text-gray-400 font-medium mt-1">
+                  {activity.time}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <DialogFooter className="p-6 border-t border-gray-100">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="w-full font-bold rounded-xl h-11"
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const GeneralSettingsView = () => {
   const [activeTab, setActiveTab] = useState("Profile");
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -10974,7 +11241,7 @@ const GeneralSettingsView = () => {
                     <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Body:
                     </Label>
-                    <div className="p-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium whitespace-pre-line leading-relaxed">
+                    <div className="p-4 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-700 font-medium whitespace-pre-line leading-relaxed">
                       {template.body}
                     </div>
                   </div>
@@ -11399,7 +11666,10 @@ const GeneralSettingsView = () => {
                   </p>
                 </div>
               </div>
-              <Button className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+              <Button
+                onClick={() => setShowInviteModal(true)}
+                className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+              >
                 <Plus className="w-4 h-4" />
                 Invite User
               </Button>
@@ -11578,6 +11848,10 @@ const GeneralSettingsView = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
+                      onClick={() => {
+                        setSelectedMember(member);
+                        setShowPermissionsModal(true);
+                      }}
                       className="h-10 px-4 rounded-lg border-gray-200 text-sm font-bold flex items-center gap-1.5"
                     >
                       <Shield className="w-4 h-4" />
@@ -11585,18 +11859,43 @@ const GeneralSettingsView = () => {
                     </Button>
                     <Button
                       variant="outline"
+                      onClick={() => {
+                        setSelectedMember(member);
+                        setShowActivityModal(true);
+                      }}
                       className="h-10 px-4 rounded-lg border-gray-200 text-sm font-bold flex items-center gap-1.5"
                     >
                       <History className="w-4 h-4" />
                       Activity
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 text-gray-400"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8 text-gray-400"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 rounded-xl p-2"
+                      >
+                        <DropdownMenuItem className="flex items-center gap-2 font-bold text-gray-700 rounded-lg cursor-pointer">
+                          <Edit2 className="w-4 h-4" />
+                          Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2 font-bold text-gray-700 rounded-lg cursor-pointer">
+                          <Mail className="w-4 h-4" />
+                          Resend Invite
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2 font-bold text-red-600 rounded-lg cursor-pointer">
+                          <XCircle className="w-4 h-4" />
+                          Deactivate
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
@@ -11771,6 +12070,21 @@ const GeneralSettingsView = () => {
           </Card>
         </div>
       )}
+
+      <InviteTeamMemberModal
+        open={showInviteModal}
+        onOpenChange={setShowInviteModal}
+      />
+      <EditPermissionsModal
+        open={showPermissionsModal}
+        onOpenChange={setShowPermissionsModal}
+        member={selectedMember}
+      />
+      <ActivityLogModal
+        open={showActivityModal}
+        onOpenChange={setShowActivityModal}
+        member={selectedMember}
+      />
     </div>
   );
 };
