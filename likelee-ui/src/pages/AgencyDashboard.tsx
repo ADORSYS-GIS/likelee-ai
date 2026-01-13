@@ -45,6 +45,12 @@ import {
   Building2,
   CreditCard,
   Folder,
+  MapPin,
+  Mail,
+  Globe,
+  Share2,
+  Megaphone,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,10 +62,176 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+
+const AddProspectModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Add New Prospect</DialogTitle>
+          <p className="text-sm text-gray-500">
+            Track talent before signing them to your roster
+          </p>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input id="name" placeholder="Full name" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" placeholder="email@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" placeholder="+1 (555) 123-4567" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram Handle</Label>
+                <Input id="instagram" placeholder="@username" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
+            <div className="flex flex-wrap gap-2">
+              {["Model", "Actor", "Influencer", "Creator", "Voice", "Athlete"].map(
+                (cat) => (
+                  <Button
+                    key={cat}
+                    variant="secondary"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"
+                  >
+                    {cat}
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Discovery Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Discovery Source</Label>
+                <Select defaultValue="instagram">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="street">Street Scouting</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Discovery Date</Label>
+                <div className="relative">
+                  <Input type="date" defaultValue="2026-01-12" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Discovery Location</Label>
+                <Input placeholder="New York, NY" />
+              </div>
+              <div className="space-y-2">
+                <Label>Referred By</Label>
+                <Input placeholder="Name of referrer" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Status & Assignment</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select defaultValue="new">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New Lead</SelectItem>
+                    <SelectItem value="contacted">Contacted</SelectItem>
+                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Assigned Agent</Label>
+                <Input placeholder="Agent name" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
+            <div className="flex gap-1">
+              {[1, 2, 3].map((i) => (
+                <Star
+                  key={i}
+                  className="w-8 h-8 fill-yellow-400 text-yellow-400"
+                />
+              ))}
+              {[4, 5].map((i) => (
+                <Star key={i} className="w-8 h-8 text-gray-300" />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Internal Notes</Label>
+            <Textarea
+              placeholder="Add notes about this prospect..."
+              className="h-32"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-bold text-gray-900 mb-4">
+              Social Media (Optional)
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Instagram Followers</Label>
+                <Input type="number" defaultValue="10000" />
+              </div>
+              <div className="space-y-2">
+                <Label>Engagement Rate (%)</Label>
+                <Input type="number" defaultValue="4.5" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              Add Prospect
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -691,6 +863,508 @@ const PerformanceTiersView = ({ onBack }: { onBack: () => void }) => {
           );
         })}
       </div>
+    </div>
+  );
+};
+
+const ScoutingHubView = ({
+  activeTab,
+  setActiveTab,
+}: {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}) => {
+  const [isAddProspectOpen, setIsAddProspectOpen] = useState(false);
+
+  const tabs = [
+    "Prospect Pipeline",
+    "Social Discovery",
+    "Marketplace",
+    "Scouting Map",
+    "Submissions",
+    "Open Calls",
+    "Analytics",
+  ];
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Scouting Hub
+          </h1>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Discover, track, and manage talent prospects
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
+            onClick={() => setIsAddProspectOpen(true)}
+          >
+            <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
+          </Button>
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
+          >
+            <MapPin className="w-4 h-4" /> Plan Scouting Trip
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto max-w-full">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        {activeTab === "Prospect Pipeline" && (
+          <ProspectPipelineTab onAddProspect={() => setIsAddProspectOpen(true)} />
+        )}
+        {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
+        {activeTab === "Marketplace" && <MarketplaceTab />}
+        {activeTab === "Scouting Map" && <ScoutingMapTab />}
+        {activeTab === "Submissions" && <SubmissionsTab />}
+        {activeTab === "Open Calls" && <OpenCallsTab />}
+        {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
+      </div>
+      <AddProspectModal
+        open={isAddProspectOpen}
+        onOpenChange={setIsAddProspectOpen}
+      />
+    </div>
+  );
+};
+
+const ProspectPipelineTab = ({
+  onAddProspect,
+}: {
+  onAddProspect: () => void;
+}) => {
+  const stats = [
+    { label: "New Leads", count: 0, color: "border-blue-200 bg-blue-50/30" },
+    { label: "In Contact", count: 0, color: "border-yellow-200 bg-yellow-50/30" },
+    { label: "Test Shoots", count: 0, color: "border-purple-200 bg-purple-50/30" },
+    { label: "Offers Sent", count: 0, color: "border-green-200 bg-green-50/30" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <h2 className="text-xl font-bold text-gray-900">Prospect Pipeline</h2>
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search prospects..."
+                className="pl-10 h-10 border-gray-200 bg-white"
+              />
+            </div>
+            <Select defaultValue="all">
+              <SelectTrigger className="w-[140px] h-10 border-gray-200">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="new">New Lead</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                <SelectItem value="test_shoot">Test Shoot Pending</SelectItem>
+                <SelectItem value="offer_sent">Offer Sent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className={`p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
+            >
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
+                {stat.label}
+              </p>
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {stat.count}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
+          <div className="p-6 bg-gray-50 rounded-full mb-4">
+            <Users className="w-10 h-10 text-gray-300" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            No prospects yet
+          </h3>
+          <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
+            Start building your pipeline by adding discovered talent
+          </p>
+          <Button
+            onClick={onAddProspect}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Add First Prospect
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const SocialDiscoveryTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">
+          Social Media Discovery Tool
+        </h2>
+        <p className="text-sm text-gray-500 font-medium">
+          Find talent on Instagram, TikTok, and other platforms
+        </p>
+      </div>
+      <Button
+        variant="default"
+        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-lg shadow-sm"
+      >
+        <Instagram className="w-4 h-4" /> Connect Instagram
+      </Button>
+    </div>
+
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-2 w-full">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Search by username, hashtag, or location..."
+            className="h-10 border-gray-200 bg-white rounded-lg"
+          />
+        </div>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
+          Search
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
+        >
+          <Instagram className="w-4 h-4" /> Instagram
+        </Button>
+        <Button
+          variant="outline"
+          className="border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
+        >
+          TikTok
+        </Button>
+        <Button
+          variant="outline"
+          className="border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
+        >
+          YouTube
+        </Button>
+      </div>
+
+      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
+        <div className="p-6 bg-gray-50 rounded-full mb-6">
+          <Instagram className="w-12 h-12 text-gray-200" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          Social Media Discovery Coming Soon
+        </h3>
+        <p className="text-gray-500 max-w-sm font-medium mb-8">
+          Search Instagram, TikTok, and YouTube to find potential talent
+        </p>
+
+        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
+          <h4 className="font-bold text-gray-900 mb-4">Features:</h4>
+          <ul className="space-y-3">
+            {[
+              "Search by hashtags, locations, and usernames",
+              "Filter by follower count and engagement rate",
+              "Save profiles directly to prospect pipeline",
+              "Track engagement metrics over time",
+            ].map((feature) => (
+              <li key={feature} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-1.5 flex-shrink-0" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </Card>
+);
+
+const MarketplaceTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Likelee Marketplace</h2>
+        <p className="text-sm text-gray-500 font-medium">
+          Browse verified creators on the Likelee platform
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm"
+      >
+        <Filter className="w-4 h-4 text-gray-400" /> Filters
+      </Button>
+    </div>
+
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-2 w-full">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Search by name, category, or skills..."
+            className="h-10 border-gray-200 bg-white rounded-lg"
+          />
+        </div>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
+          Search
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Select defaultValue="all">
+          <SelectTrigger className="h-11 border-gray-200">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="model">Models</SelectItem>
+            <SelectItem value="actor">Actors</SelectItem>
+            <SelectItem value="influencer">Influencers</SelectItem>
+            <SelectItem value="athlete">Athletes</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="all">
+          <SelectTrigger className="h-11 border-gray-200">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="unsigned">Unsigned</SelectItem>
+            <SelectItem value="signed">Signed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="followers">
+          <SelectTrigger className="h-11 border-gray-200">
+            <SelectValue placeholder="Followers" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="followers">Followers</SelectItem>
+            <SelectItem value="engagement">Engagement</SelectItem>
+            <SelectItem value="recent">Recently Added</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
+        <div className="p-6 bg-gray-50 rounded-full mb-6">
+          <Globe className="w-12 h-12 text-gray-200" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          Marketplace Integration Coming Soon
+        </h3>
+        <p className="text-gray-500 max-w-sm font-medium mb-8">
+          Browse and connect with verified creators from the Likelee network
+        </p>
+
+        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
+          <h4 className="font-bold text-gray-900 mb-4">Benefits:</h4>
+          <ul className="space-y-3">
+            {[
+              "Access verified, vetted talent profiles",
+              "See availability and booking rates",
+              "Send connection requests directly",
+              "Review portfolios and past campaigns",
+            ].map((benefit) => (
+              <li key={benefit} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
+                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-1.5 flex-shrink-0" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </Card>
+);
+
+const ScoutingMapTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <h2 className="text-xl font-bold text-gray-900">Scouting Map</h2>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          className="font-bold text-gray-700 px-6 h-11 rounded-xl shadow-sm border-gray-300"
+        >
+          View Trip History
+        </Button>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 h-11 rounded-xl shadow-sm">
+          Plan New Trip
+        </Button>
+      </div>
+    </div>
+
+    <div className="bg-gray-50 rounded-2xl h-[500px] border border-gray-200 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]" />
+      <div className="relative z-10 p-6 bg-white rounded-full mb-4 shadow-sm">
+        <MapPin className="w-12 h-12 text-gray-200" />
+      </div>
+      <h3 className="relative z-10 text-xl font-bold text-gray-900 mb-2">
+        Interactive Map Coming Soon
+      </h3>
+      <p className="relative z-10 text-gray-500 max-w-sm font-medium">
+        Track discoveries, plan trips, and visualize your scouting activity
+      </p>
+    </div>
+  </Card>
+);
+
+const SubmissionsTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Website Submissions</h2>
+        <p className="text-sm text-gray-500 font-medium">
+          Review talent applications
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge
+          variant="secondary"
+          className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 text-sm rounded-xl h-11 flex items-center gap-2"
+        >
+          18 Pending Review
+        </Badge>
+        <Button
+          variant="outline"
+          className="font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm border-gray-300"
+        >
+          Bulk Actions
+        </Button>
+      </div>
+    </div>
+
+    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
+      <div className="p-8 bg-gray-50 rounded-full mb-6">
+        <Mail className="w-12 h-12 text-gray-200" />
+      </div>
+      <h3 className="text-xl font-bold text-gray-900 mb-2">
+        No new submissions
+      </h3>
+      <p className="text-gray-500 max-w-sm font-medium">
+        Applications from your website will appear here
+      </p>
+    </div>
+  </Card>
+);
+
+const OpenCallsTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">
+          Open Calls & Casting Events
+        </h2>
+      </div>
+      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-lg shadow-sm">
+        <Plus className="w-4 h-4" /> Create Event
+      </Button>
+    </div>
+
+    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
+      <div className="p-8 bg-gray-50 rounded-full mb-6">
+        <Calendar className="w-12 h-12 text-gray-400" />
+      </div>
+      <h3 className="text-xl font-bold text-gray-900 mb-2">
+        No upcoming events
+      </h3>
+      <p className="text-gray-500 max-w-sm font-medium mb-6">
+        Organize open calls and virtual castings
+      </p>
+      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm">
+        <Plus className="w-4 h-4" /> Create First Event
+      </Button>
+    </div>
+  </Card>
+);
+
+const ScoutingAnalyticsTab = () => {
+  const stats = [
+    { label: "TOTAL PROSPECTS", value: "127", sub: "+23 this month", subColor: "text-green-600" },
+    { label: "CONVERSION RATE", value: "18%", sub: "Prospects → Signed", subColor: "text-gray-500" },
+    { label: "AVG. TIME TO SIGN", value: "34d", sub: "From discovery", subColor: "text-gray-500" },
+  ];
+
+  const sources = [
+    { name: "Instagram", value: 42 },
+    { name: "Street Scouting", value: 28 },
+    { name: "Referrals", value: 18 },
+    { name: "Website Submissions", value: 12 },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((stat) => (
+          <Card key={stat.label} className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+              {stat.label}
+            </p>
+            <div className="mb-1">
+              <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                {stat.value}
+              </span>
+            </div>
+            <p className={`text-sm font-medium ${stat.subColor}`}>{stat.sub}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <h3 className="text-sm font-bold text-gray-900 mb-6">Discovery Sources</h3>
+        <div className="space-y-6">
+          {sources.map((source) => (
+            <div key={source.name}>
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-sm font-semibold text-gray-900">
+                  {source.name}
+                </span>
+                <span className="text-xs font-bold text-gray-900">
+                  {source.value}%
+                </span>
+              </div>
+              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gray-900 rounded-full"
+                  style={{ width: `${source.value}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };
@@ -8103,6 +8777,7 @@ export default function AgencyDashboard() {
   const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState("All Talent");
+  const [activeScoutingTab, setActiveScoutingTab] = useState("Prospect Pipeline");
   const [expandedItems, setExpandedItems] = useState<string[]>([
     "roster",
     "licensing",
@@ -8598,11 +9273,10 @@ export default function AgencyDashboard() {
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "settings" && <SettingsView />}
           {activeTab === "scouting" && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Target className="w-16 h-16 text-gray-200 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">Scouting</h2>
-              <p className="text-gray-500">Coming Soon</p>
-            </div>
+            <ScoutingHubView
+              activeTab={activeScoutingTab}
+              setActiveTab={setActiveScoutingTab}
+            />
           )}
           {activeTab === "client-crm" && (
             <div className="flex flex-col items-center justify-center h-full text-center">
