@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -58,13 +58,13 @@ import {
   MoreVertical,
   Share2,
   Upload,
+  MapPin,
+  Star,
   FolderPlus,
   FolderOpen,
   Briefcase,
   Receipt,
   Megaphone,
-  MapPin,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -2721,11 +2721,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -4050,13 +4049,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -4175,16 +4174,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -5025,9 +5023,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5839,11 +5837,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -8014,7 +8011,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -8177,11 +8174,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -8674,11 +8670,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -9560,11 +9555,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -10619,6 +10613,460 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
+const ManageAvailabilityModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-3xl">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold">
+          Talent Availability & Book-Outs
+        </DialogTitle>
+        <p className="text-sm text-gray-500">
+          Manage when talent is unavailable for bookings
+        </p>
+      </DialogHeader>
+      <div className="py-6">
+        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold mb-8 rounded-lg h-10">
+          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+        </Button>
+        <div className="border border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
+          <div className="p-4 bg-gray-50 rounded-full mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="font-bold text-gray-900 mb-1">
+            No book-outs scheduled
+          </h3>
+          <p className="text-sm text-gray-500">
+            Talent will appear available for all dates
+          </p>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
+
+const NewBookingModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold">New Booking</DialogTitle>
+        <p className="text-sm text-gray-500">
+          Schedule a booking for your talent
+        </p>
+      </DialogHeader>
+      <div className="space-y-6 py-4">
+        <div className="space-y-2">
+          <Label>Booking Type *</Label>
+          <div className="flex gap-2">
+            <Select defaultValue="confirmed">
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="option">Option</SelectItem>
+                <SelectItem value="casting">Casting</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              className="text-green-600 border-green-200 bg-green-50"
+            >
+              Preview
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Label>Talent *</Label>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="multi" className="rounded border-gray-300" />
+              <label htmlFor="multi" className="text-sm text-gray-600">
+                Book multiple talent
+              </label>
+            </div>
+          </div>
+          <Input placeholder="Search talent by name..." />
+          <div className="space-y-2 mt-2">
+            {/* Mock List */}
+            <div className="flex items-center gap-3 p-2 bg-red-50/50 rounded-lg cursor-pointer border border-red-100">
+              <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=Emma" alt="Emma" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">Emma</p>
+                <div className="flex gap-2 text-xs">
+                  <span className="text-red-600 font-bold">• Confirmed/Unavailable</span>
+                  <span className="text-orange-500 font-medium">⚠️ 1 booking(s) on this date</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+              <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=Sergine" alt="Sergine" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">Sergine</p>
+                <p className="text-xs text-green-600 font-medium">• Available</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+              <div className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=Milan" alt="Milan" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">Milan</p>
+                <p className="text-xs text-green-600 font-medium">• Available</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Client *</Label>
+          <Input placeholder="Search client by name..." />
+          <div className="mt-2 text-indigo-600 text-sm font-bold flex items-center gap-1 cursor-pointer">
+            <Plus className="w-4 h-4" /> Add New Client
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Date *</Label>
+            <Input type="date" defaultValue="2026-01-12" />
+            <div className="flex items-center gap-2 mt-1">
+              <input type="checkbox" id="allday" className="rounded border-gray-300" />
+              <label htmlFor="allday" className="text-xs text-gray-500">All-day booking</label>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Call Time</Label>
+            <Input type="time" defaultValue="09:00" />
+          </div>
+          <div className="space-y-2">
+            <Label>Wrap Time</Label>
+            <Input type="time" defaultValue="17:00" />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Location *</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input className="pl-9" placeholder="Enter address..." />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Location Notes</Label>
+          <Input placeholder="e.g., Studio B, 3rd Floor" />
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Rate/Fee</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+              <Input className="pl-7" placeholder="0.00" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Currency</Label>
+            <Select defaultValue="usd">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="usd">USD</SelectItem>
+                <SelectItem value="eur">EUR</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Rate Type</Label>
+            <Select defaultValue="day">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Day Rate</SelectItem>
+                <SelectItem value="hourly">Hourly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Usage Terms</Label>
+          <Select>
+            <SelectTrigger><SelectValue placeholder="Select usage terms" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="standard">Standard</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex gap-4 items-center">
+          <div className="flex-1 space-y-2">
+            <Label>Usage Duration</Label>
+            <Select defaultValue="1">
+              <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2 mt-6">
+            <input type="checkbox" className="toggle toggle-primary" />
+            <span className="text-sm">Exclusive rights</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Attached Files (Call sheets, contracts, references)</Label>
+          <div className="border border-gray-200 rounded-lg p-3 text-sm text-gray-500">
+            <span className="font-bold text-gray-900 mr-2">Browse...</span> No files selected.
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Special Instructions / Notes</Label>
+          <Textarea placeholder="Internal notes, special instructions..." className="h-24" />
+        </div>
+
+        <div className="space-y-3">
+          <Label>Notifications</Label>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked /> <span className="text-sm">Email talent</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" /> <span className="text-sm">SMS talent</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" /> <span className="text-sm">Push notification (mobile app)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked /> <span className="text-sm">Send calendar invite (.ics file)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <DialogFooter className="gap-2 sm:gap-0">
+        <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Save as Casting</Button>
+          <Button variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50">Save as Option</Button>
+          <Button className="bg-green-600 hover:bg-green-700 text-white">Save as Confirmed</Button>
+        </div>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+const CalendarScheduleTab = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [newBookingOpen, setNewBookingOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 13)); // Jan 13 2026
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+      switch (e.key.toLowerCase()) {
+        case 'c': setNewBookingOpen(true); break;
+        case 't': setCurrentDate(new Date()); break;
+        case 'escape':
+          setModalOpen(false);
+          setNewBookingOpen(false);
+          break;
+        case 'arrowleft': /* navigate back logic */ break;
+        case 'arrowright': /* navigate fwd logic */ break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const stats = [
+    { label: "Total Bookings", value: "1" },
+    { label: "This Month", value: "1" },
+    { label: "Confirmed", value: "1" },
+    { label: "Pending", value: "0" },
+  ];
+
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Simplified calendar grid for visual matching (Jan 2026)
+  // Jan 1 2026 is Thursday
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Bookings & Schedule</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">Manage your talent's bookings and availability</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="font-bold text-gray-700 bg-white" onClick={() => setModalOpen(true)}>
+            <Calendar className="w-4 h-4 mr-2" /> Manage Availability
+          </Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setNewBookingOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> New Booking
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {stats.map(s => (
+          <Card key={s.label} className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">{s.label}</p>
+            <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <Select defaultValue="january">
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => (
+                  <SelectItem key={m} value={m.toLowerCase()}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select defaultValue="2026">
+              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {['2025', '2026', '2027', '2028', '2029'].map(y => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronDown className="w-4 h-4 rotate-90" /></Button>
+              <Button variant="ghost" className="h-8 px-3 text-sm font-bold bg-white shadow-sm">Today</Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8"><ChevronRight className="w-4 h-4" /></Button>
+            </div>
+
+            {/* Date Picker Trigger (Native Date Input for now) */}
+            <div className="relative">
+              <Button variant="outline" className="w-[140px] justify-start text-left font-normal border-gray-200 relative">
+                <Calendar className="mr-2 h-4 w-4" />
+                <span className="truncate">01/13/2026</span>
+                <Input type="date" className="absolute inset-0 opacity-0 cursor-pointer" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Select defaultValue="month">
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Month</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="team">Team View</SelectItem>
+                <SelectItem value="agenda">Agenda</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="single">
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single">Single View</SelectItem>
+                <SelectItem value="all">All Talent</SelectItem>
+                <SelectItem value="selected">Selected Talent</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setNewBookingOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" /> New Booking
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs text-gray-400 mb-4 px-2">
+          <span className="flex items-center gap-1"><span className="border p-0.5 rounded px-1">←</span> <span className="border p-0.5 rounded px-1">→</span> Navigate</span>
+          <span className="flex items-center gap-1"><span className="border p-0.5 rounded px-1">T</span> Today</span>
+          <span className="flex items-center gap-1"><span className="border p-0.5 rounded px-1">C</span> New Booking</span>
+          <span className="flex items-center gap-1"><span className="border p-0.5 rounded px-1">ESC</span> Close</span>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-7 border-b bg-gray-50/50">
+            {days.map(d => (
+              <div key={d} className="p-3 text-center text-sm font-bold text-gray-600">{d}</div>
+            ))}
+          </div>
+          {/* Minimal Grid - 5 Rows */}
+          <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
+            {/* Previous Month Filler */}
+            {[28, 29, 30, 31].map(d => (
+              <div key={`prev-${d}`} className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20">
+                {d}
+              </div>
+            ))}
+            {/* January 2026 */}
+            {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+              <div key={d} className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13 ? 'bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10' : ''}`}>
+                <span className={`text-sm font-medium ${d === 13 ? 'bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1' : 'text-gray-700'}`}>
+                  {d}
+                </span>
+                {d === 12 && (
+                  <div className="mt-2 bg-green-100 text-green-800 text-xs p-1 rounded font-bold truncate">
+                    Emma
+                  </div>
+                )}
+              </div>
+            ))}
+            {/* Next Month Filler */}
+            {/* 31 days + 4 prev + x next = 35 or 42 slots */}
+            {/* 4 + 31 = 35, exactly 5 rows */}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium text-gray-600">
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-200 rounded-sm"></div> Casting</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-200 rounded-sm"></div> Option</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-green-200 rounded-sm"></div> Confirmed</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-purple-200 rounded-sm"></div> Completed</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-200 rounded-sm"></div> Cancelled</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-orange-200 rounded-sm"></div> Test Shoot</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-yellow-100 rounded-sm"></div> Fitting</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Rehearsal</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-100 rounded-sm flex items-center justify-center text-[8px]">x</div> Unavailable</span>
+          <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-50 rounded-sm flex items-center justify-center text-[8px] text-red-600">!</div> Conflict</span>
+        </div>
+      </Card>
+
+      <ManageAvailabilityModal open={modalOpen} onOpenChange={setModalOpen} />
+      <NewBookingModal open={newBookingOpen} onOpenChange={setNewBookingOpen} />
+    </div>
+  );
+};
+
+const BookingsView = ({ activeSubTab }: { activeSubTab: string }) => {
+  if (activeSubTab === "Calendar & Schedule") return <CalendarScheduleTab />;
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="p-6 bg-gray-100 rounded-full mb-4">
+        <Calendar className="w-12 h-12 text-gray-400" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{activeSubTab}</h2>
+      <p className="text-gray-500">Feature currently under development.</p>
+    </div>
+  );
+};
+
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
@@ -10724,84 +11172,84 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          { id: "settings", label: "Settings", icon: Settings },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        { id: "settings", label: "Settings", icon: Settings },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar and schedule",
-              "Booking request",
-              "Client Database",
-              "Talent availability",
-              "Notifications",
-              "Management and Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "settings", label: "Settings", icon: Settings },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "settings", label: "Settings", icon: Settings },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -10839,16 +11287,14 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -10868,11 +11314,10 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -11131,12 +11576,7 @@ export default function AgencyDashboard() {
           {activeTab === "client-crm" && <ClientCRMView />}
           {activeTab === "file-storage" && <FileStorageView />}
           {activeTab === "bookings" && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Calendar className="w-16 h-16 text-gray-200 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">Bookings</h2>
-              <p className="text-gray-500">{activeSubTab}</p>
-              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
-            </div>
+            <BookingsView activeSubTab={activeSubTab} />
           )}
           {activeTab === "accounting" && (
             <div className="flex flex-col items-center justify-center h-full text-center">
