@@ -529,7 +529,8 @@ const MOCK_TALENT_EARNINGS = [
   {
     id: "1",
     name: "Emma",
-    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+    photo:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
     totalOwed: "$0",
     totalPaidYTD: "$2.4k",
     lastPayment: "No payments",
@@ -538,7 +539,8 @@ const MOCK_TALENT_EARNINGS = [
   {
     id: "2",
     name: "Sergine",
-    photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop",
+    photo:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop",
     totalOwed: "$0",
     totalPaidYTD: "$0",
     lastPayment: "No payments",
@@ -547,7 +549,8 @@ const MOCK_TALENT_EARNINGS = [
   {
     id: "3",
     name: "Milan",
-    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+    photo:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
     totalOwed: "$0",
     totalPaidYTD: "$0",
     lastPayment: "No payments",
@@ -556,7 +559,8 @@ const MOCK_TALENT_EARNINGS = [
   {
     id: "4",
     name: "Julia",
-    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    photo:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
     totalOwed: "$0",
     totalPaidYTD: "$0",
     lastPayment: "No payments",
@@ -624,7 +628,6 @@ const MOCK_INVOICES = [
     status: "draft",
   },
 ];
-
 
 const AddClientModal = ({
   isOpen,
@@ -2359,7 +2362,9 @@ const TalentStatementsView = () => {
               className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-md"
             />
             <div className="space-y-3">
-              <h3 className="text-3xl font-bold text-gray-900">{selectedTalent.name}</h3>
+              <h3 className="text-3xl font-bold text-gray-900">
+                {selectedTalent.name}
+              </h3>
               <Select defaultValue="all-time">
                 <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 font-bold text-gray-700">
                   <SelectValue placeholder="Select period" />
@@ -2383,21 +2388,29 @@ const TalentStatementsView = () => {
               <DollarSign className="w-4 h-4 text-orange-600" />
               <p className="text-sm font-bold text-gray-700">Total Owed</p>
             </div>
-            <p className="text-3xl font-bold text-orange-600 mb-1">{selectedTalent.totalOwed}</p>
+            <p className="text-3xl font-bold text-orange-600 mb-1">
+              {selectedTalent.totalOwed}
+            </p>
             <p className="text-xs text-gray-600 font-medium">0 unpaid jobs</p>
           </Card>
           <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <p className="text-sm font-bold text-gray-700">Total Paid (YTD)</p>
+              <p className="text-sm font-bold text-gray-700">
+                Total Paid (YTD)
+              </p>
             </div>
-            <p className="text-3xl font-bold text-green-600 mb-1">{selectedTalent.totalPaidYTD}</p>
+            <p className="text-3xl font-bold text-green-600 mb-1">
+              {selectedTalent.totalPaidYTD}
+            </p>
             <p className="text-xs text-gray-600 font-medium">1 paid jobs</p>
           </Card>
           <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-purple-600" />
-              <p className="text-sm font-bold text-gray-700">Lifetime Earnings</p>
+              <p className="text-sm font-bold text-gray-700">
+                Lifetime Earnings
+              </p>
             </div>
             <p className="text-3xl font-bold text-purple-600 mb-1">$2.4</p>
             <p className="text-xs text-gray-600 font-medium">Avg: $0/mo</p>
@@ -2407,7 +2420,9 @@ const TalentStatementsView = () => {
               <Calendar className="w-4 h-4 text-blue-600" />
               <p className="text-sm font-bold text-gray-700">Last Payment</p>
             </div>
-            <p className="text-lg font-bold text-blue-600 mb-1">{selectedTalent.lastPayment}</p>
+            <p className="text-lg font-bold text-blue-600 mb-1">
+              {selectedTalent.lastPayment}
+            </p>
           </Card>
         </div>
 
@@ -2451,31 +2466,53 @@ const TalentStatementsView = () => {
                   <td className="px-6 py-4">
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
                   </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">Jan 12, 2026</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">Emma</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">Booking for</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">$3</td>
-                  <td className="px-6 py-4 text-sm font-bold text-red-600">-$0.6</td>
-                  <td className="px-6 py-4 text-sm font-bold text-green-600">$2.4</td>
-                  <td className="px-6 py-4">
-                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">Paid</Badge>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                    Jan 12, 2026
                   </td>
-                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">2026-1000</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
+                    Emma
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                    Booking for
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                    $3
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-red-600">
+                    -$0.6
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-green-600">
+                    $2.4
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">
+                      Paid
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">
+                    2026-1000
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-3">
             <div className="flex justify-between items-center max-w-md ml-auto">
-              <span className="text-sm text-gray-600 font-bold">Total Gross Amount</span>
+              <span className="text-sm text-gray-600 font-bold">
+                Total Gross Amount
+              </span>
               <span className="text-sm font-bold text-gray-900">$3</span>
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto">
-              <span className="text-sm text-gray-600 font-bold">Total Agency Commission (20%)</span>
+              <span className="text-sm text-gray-600 font-bold">
+                Total Agency Commission (20%)
+              </span>
               <span className="text-sm font-bold text-red-600">-$0.6</span>
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
-              <span className="text-lg font-bold text-gray-900">Total Talent Net</span>
+              <span className="text-lg font-bold text-gray-900">
+                Total Talent Net
+              </span>
               <span className="text-lg font-bold text-green-600">$2.4</span>
             </div>
           </div>
@@ -2519,8 +2556,12 @@ const TalentStatementsView = () => {
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="amount-high">Amount Owed (High to Low)</SelectItem>
-            <SelectItem value="amount-low">Amount Owed (Low to High)</SelectItem>
+            <SelectItem value="amount-high">
+              Amount Owed (High to Low)
+            </SelectItem>
+            <SelectItem value="amount-low">
+              Amount Owed (Low to High)
+            </SelectItem>
             <SelectItem value="total-paid">Total Paid (High to Low)</SelectItem>
             <SelectItem value="name-az">Name (A-Z)</SelectItem>
             <SelectItem value="name-za">Name (Z-A)</SelectItem>
@@ -2530,10 +2571,15 @@ const TalentStatementsView = () => {
           <Checkbox
             id="unpaid-earnings"
             checked={hasUnpaidEarnings}
-            onCheckedChange={(checked) => setHasUnpaidEarnings(checked as boolean)}
+            onCheckedChange={(checked) =>
+              setHasUnpaidEarnings(checked as boolean)
+            }
             className="rounded-md w-4 h-4 border-gray-300"
           />
-          <Label htmlFor="unpaid-earnings" className="text-sm font-bold text-gray-700 cursor-pointer">
+          <Label
+            htmlFor="unpaid-earnings"
+            className="text-sm font-bold text-gray-700 cursor-pointer"
+          >
             Has Unpaid Earnings
           </Label>
         </div>
@@ -2570,7 +2616,9 @@ const TalentStatementsView = () => {
                   <p className="text-base font-bold text-orange-600">
                     {talent.totalOwed}
                   </p>
-                  <p className="text-[10px] text-gray-400 font-medium">0 unpaid jobs</p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    0 unpaid jobs
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
@@ -2579,7 +2627,9 @@ const TalentStatementsView = () => {
                   <p className="text-base font-bold text-green-600">
                     {talent.totalPaidYTD}
                   </p>
-                  <p className="text-[10px] text-gray-400 font-medium">1 paid jobs</p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    1 paid jobs
+                  </p>
                 </div>
                 <div className="text-right min-w-[100px]">
                   <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
@@ -2695,7 +2745,9 @@ const PaymentTrackingView = () => {
             </div>
             <Checkbox
               checked={reminder3Days}
-              onCheckedChange={(checked) => setReminder3Days(checked as boolean)}
+              onCheckedChange={(checked) =>
+                setReminder3Days(checked as boolean)
+              }
               className="rounded-md w-6 h-6 border-gray-300"
             />
           </div>
@@ -2710,7 +2762,9 @@ const PaymentTrackingView = () => {
             </div>
             <Checkbox
               checked={reminderDueDate}
-              onCheckedChange={(checked) => setReminderDueDate(checked as boolean)}
+              onCheckedChange={(checked) =>
+                setReminderDueDate(checked as boolean)
+              }
               className="rounded-md w-6 h-6 border-gray-300"
             />
           </div>
@@ -2725,7 +2779,9 @@ const PaymentTrackingView = () => {
             </div>
             <Checkbox
               checked={reminder7Days}
-              onCheckedChange={(checked) => setReminder7Days(checked as boolean)}
+              onCheckedChange={(checked) =>
+                setReminder7Days(checked as boolean)
+              }
               className="rounded-md w-6 h-6 border-gray-300"
             />
           </div>
@@ -2869,10 +2925,11 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
             >
               {tab.label}
             </button>
@@ -2885,7 +2942,9 @@ const FinancialReportsView = () => {
               <Card className="p-5 bg-green-50 border border-green-100 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-green-600" />
-                  <p className="text-xs font-bold text-gray-700">Total Revenue</p>
+                  <p className="text-xs font-bold text-gray-700">
+                    Total Revenue
+                  </p>
                 </div>
                 <p className="text-2xl font-bold text-green-600 mb-1">$3</p>
                 <p className="text-[10px] text-gray-600 font-medium">
@@ -2895,7 +2954,9 @@ const FinancialReportsView = () => {
               <Card className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-blue-600" />
-                  <p className="text-xs font-bold text-gray-700">Pending Revenue</p>
+                  <p className="text-xs font-bold text-gray-700">
+                    Pending Revenue
+                  </p>
                 </div>
                 <p className="text-2xl font-bold text-blue-600 mb-1">$0</p>
                 <p className="text-[10px] text-gray-600 font-medium">
@@ -2908,14 +2969,18 @@ const FinancialReportsView = () => {
                   <p className="text-xs font-bold text-gray-700">Avg Invoice</p>
                 </div>
                 <p className="text-2xl font-bold text-purple-600 mb-1">$3</p>
-                <p className="text-[10px] text-gray-600 font-medium">per invoice</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  per invoice
+                </p>
               </Card>
               <Card className="p-5 bg-orange-50 border border-orange-100 rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-orange-600" />
                   <p className="text-xs font-bold text-gray-700">Growth Rate</p>
                 </div>
-                <p className="text-2xl font-bold text-orange-600 mb-1">+15.3%</p>
+                <p className="text-2xl font-bold text-orange-600 mb-1">
+                  +15.3%
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
                   vs previous period
                 </p>
@@ -2929,7 +2994,9 @@ const FinancialReportsView = () => {
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-1/12"></div>
               </div>
-              <p className="text-xs text-gray-600 font-medium mt-2">Jan 2026: $3</p>
+              <p className="text-xs text-gray-600 font-medium mt-2">
+                Jan 2026: $3
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
@@ -2942,7 +3009,9 @@ const FinancialReportsView = () => {
                     <Building2 className="w-4 h-4 text-indigo-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">Nike Global</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      Nike Global
+                    </p>
                   </div>
                   <span className="text-sm font-bold text-green-600">$3</span>
                 </div>
@@ -2969,7 +3038,9 @@ const FinancialReportsView = () => {
           <div className="space-y-6">
             <Card className="p-8 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-700 mb-2">Total Outstanding Receivables</p>
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Total Outstanding Receivables
+                </p>
                 <p className="text-5xl font-bold text-red-600">$0</p>
               </div>
               <AlertCircle className="w-12 h-12 text-red-600" />
@@ -2983,17 +3054,30 @@ const FinancialReportsView = () => {
                 { label: "61-90 Days Overdue", color: "red" },
                 { label: "90+ Days Overdue", color: "gray" },
               ].map((aging) => (
-                <Card key={aging.label} className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}>
-                  <p className="text-[10px] font-bold text-gray-700 mb-2">{aging.label}</p>
-                  <p className={`text-xl font-bold text-${aging.color}-600`}>$0</p>
-                  <p className="text-[10px] text-gray-500 font-medium">0 invoices</p>
+                <Card
+                  key={aging.label}
+                  className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}
+                >
+                  <p className="text-[10px] font-bold text-gray-700 mb-2">
+                    {aging.label}
+                  </p>
+                  <p className={`text-xl font-bold text-${aging.color}-600`}>
+                    $0
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    0 invoices
+                  </p>
                 </Card>
               ))}
             </div>
 
             <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-              <h4 className="text-base font-bold text-gray-900 mb-4">Largest Outstanding Clients</h4>
-              <div className="text-center py-8 text-gray-400 font-medium">No outstanding receivables</div>
+              <h4 className="text-base font-bold text-gray-900 mb-4">
+                Largest Outstanding Clients
+              </h4>
+              <div className="text-center py-8 text-gray-400 font-medium">
+                No outstanding receivables
+              </div>
             </Card>
           </div>
         )}
@@ -3002,15 +3086,21 @@ const FinancialReportsView = () => {
           <div className="space-y-6">
             <Card className="p-8 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-gray-700 mb-2">Total Owed to All Talent</p>
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Total Owed to All Talent
+                </p>
                 <p className="text-5xl font-bold text-orange-600">$0</p>
               </div>
               <Users className="w-12 h-12 text-orange-600" />
             </Card>
 
             <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-              <h4 className="text-base font-bold text-gray-900 mb-4">Breakdown by Talent</h4>
-              <div className="text-center py-8 text-gray-400 font-medium">No pending talent payables</div>
+              <h4 className="text-base font-bold text-gray-900 mb-4">
+                Breakdown by Talent
+              </h4>
+              <div className="text-center py-8 text-gray-400 font-medium">
+                No pending talent payables
+              </div>
             </Card>
           </div>
         )}
@@ -3021,37 +3111,57 @@ const FinancialReportsView = () => {
               <Card className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <Percent className="w-4 h-4 text-indigo-600" />
-                  <p className="text-sm font-bold text-gray-700">Total Commission Earned</p>
+                  <p className="text-sm font-bold text-gray-700">
+                    Total Commission Earned
+                  </p>
                 </div>
                 <p className="text-3xl font-bold text-indigo-600 mb-1">$0</p>
-                <p className="text-xs text-gray-600 font-medium">20% of revenue</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  20% of revenue
+                </p>
               </Card>
               <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-purple-600" />
-                  <p className="text-sm font-bold text-gray-700">Avg Commission per Deal</p>
+                  <p className="text-sm font-bold text-gray-700">
+                    Avg Commission per Deal
+                  </p>
                 </div>
                 <p className="text-3xl font-bold text-purple-600 mb-1">$0</p>
-                <p className="text-xs text-gray-600 font-medium">Average earned</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Average earned
+                </p>
               </Card>
               <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <BarChart2 className="w-4 h-4 text-blue-600" />
-                  <p className="text-sm font-bold text-gray-700">Commission Rate</p>
+                  <p className="text-sm font-bold text-gray-700">
+                    Commission Rate
+                  </p>
                 </div>
                 <p className="text-3xl font-bold text-blue-600 mb-1">20%</p>
-                <p className="text-xs text-gray-600 font-medium">Consistent across all deals</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Consistent across all deals
+                </p>
               </Card>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="text-base font-bold text-gray-900 mb-4">Commission by Client</h4>
-                <div className="text-center py-8 text-gray-400 font-medium">No commission data available</div>
+                <h4 className="text-base font-bold text-gray-900 mb-4">
+                  Commission by Client
+                </h4>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No commission data available
+                </div>
               </Card>
               <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="text-base font-bold text-gray-900 mb-4">Commission by Talent</h4>
-                <div className="text-center py-8 text-gray-400 font-medium">No commission data available</div>
+                <h4 className="text-base font-bold text-gray-900 mb-4">
+                  Commission by Talent
+                </h4>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No commission data available
+                </div>
               </Card>
             </div>
           </div>
@@ -3060,37 +3170,57 @@ const FinancialReportsView = () => {
         {activeReportTab === "profit" && (
           <div className="space-y-6">
             <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
-              <h4 className="text-xl font-bold text-gray-900 mb-8 text-center">Profit & Loss Statement</h4>
+              <h4 className="text-xl font-bold text-gray-900 mb-8 text-center">
+                Profit & Loss Statement
+              </h4>
               <div className="max-w-2xl mx-auto space-y-4">
                 <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl border border-green-100">
-                  <span className="text-base font-bold text-gray-900">Revenue (Gross from Invoices)</span>
+                  <span className="text-base font-bold text-gray-900">
+                    Revenue (Gross from Invoices)
+                  </span>
                   <span className="text-xl font-bold text-green-600">$0</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
-                  <span className="text-base font-bold text-gray-900">Less: Talent Payments (COGS)</span>
+                  <span className="text-base font-bold text-gray-900">
+                    Less: Talent Payments (COGS)
+                  </span>
                   <span className="text-xl font-bold text-red-600">-$0</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <span className="text-base font-bold text-gray-900">Gross Profit (Agency Commission)</span>
+                  <span className="text-base font-bold text-gray-900">
+                    Gross Profit (Agency Commission)
+                  </span>
                   <span className="text-xl font-bold text-blue-600">$0</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
-                  <span className="text-base font-bold text-gray-900">Less: Operating Expenses</span>
-                  <span className="text-xl font-bold text-orange-600">-$1,095</span>
+                  <span className="text-base font-bold text-gray-900">
+                    Less: Operating Expenses
+                  </span>
+                  <span className="text-xl font-bold text-orange-600">
+                    -$1,095
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
-                  <span className="text-2xl font-bold text-gray-900">Net Profit</span>
-                  <span className="text-4xl font-bold text-green-600">$-1,095</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    Net Profit
+                  </span>
+                  <span className="text-4xl font-bold text-green-600">
+                    $-1,095
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6 mt-12 max-w-2xl mx-auto">
                 <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
-                  <p className="text-xs font-bold text-gray-500 mb-1">Profit Margin</p>
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Profit Margin
+                  </p>
                   <p className="text-2xl font-bold text-gray-900">0%</p>
                 </Card>
                 <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
-                  <p className="text-xs font-bold text-gray-500 mb-1">Expense Ratio</p>
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Expense Ratio
+                  </p>
                   <p className="text-2xl font-bold text-gray-900">0%</p>
                 </Card>
               </div>
@@ -3101,58 +3231,93 @@ const FinancialReportsView = () => {
         {activeReportTab === "tax" && (
           <div className="space-y-6">
             <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-              <h4 className="text-lg font-bold text-gray-900 mb-6">Tax Summary</h4>
+              <h4 className="text-lg font-bold text-gray-900 mb-6">
+                Tax Summary
+              </h4>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">Sales Tax Collected</p>
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    Sales Tax Collected
+                  </p>
                   <p className="text-3xl font-bold text-blue-600 mb-1">$0.00</p>
                   <p className="text-xs text-gray-500 font-medium">By state</p>
                 </Card>
                 <Card className="p-6 bg-purple-50 border border-purple-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">VAT Collected</p>
-                  <p className="text-3xl font-bold text-purple-600 mb-1">$0.00</p>
-                  <p className="text-xs text-gray-500 font-medium">By country</p>
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    VAT Collected
+                  </p>
+                  <p className="text-3xl font-bold text-purple-600 mb-1">
+                    $0.00
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    By country
+                  </p>
                 </Card>
                 <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">1099 Eligible Payments</p>
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    1099 Eligible Payments
+                  </p>
                   <p className="text-3xl font-bold text-orange-600 mb-1">$0</p>
-                  <p className="text-xs text-gray-500 font-medium">US talent payments</p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    US talent payments
+                  </p>
                 </Card>
               </div>
 
               <div className="space-y-3">
-                <Button variant="outline" className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                       <FileText className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-bold text-gray-900">Export Sales Tax Report</p>
-                      <p className="text-xs text-gray-500 font-medium">Breakdown by state/region</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        Export Sales Tax Report
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Breakdown by state/region
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </Button>
-                <Button variant="outline" className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
                       <Receipt className="w-5 h-5 text-purple-600" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-bold text-gray-900">Export VAT Report</p>
-                      <p className="text-xs text-gray-500 font-medium">Breakdown by country</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        Export VAT Report
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Breakdown by country
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </Button>
-                <Button variant="outline" className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
                       <FileText className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-bold text-gray-900">Prepare 1099 Forms</p>
-                      <p className="text-xs text-gray-500 font-medium">US talent with payments &gt; $600</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        Prepare 1099 Forms
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        US talent with payments &gt; $600
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -3171,18 +3336,33 @@ const GenerateInvoiceView = () => {
   const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
   const [commission, setCommission] = useState("20");
   const [taxExempt, setTaxExempt] = useState(false);
-  const [expenses, setExpenses] = useState<{ id: string; description: string; amount: string }[]>([]);
+  const [expenses, setExpenses] = useState<
+    { id: string; description: string; amount: string }[]
+  >([]);
 
   const addExpense = () => {
-    setExpenses([...expenses, { id: Math.random().toString(36).substr(2, 9), description: "", amount: "0" }]);
+    setExpenses([
+      ...expenses,
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        description: "",
+        amount: "0",
+      },
+    ]);
   };
 
   const removeExpense = (id: string) => {
     setExpenses(expenses.filter((e) => e.id !== id));
   };
 
-  const updateExpense = (id: string, field: "description" | "amount", value: string) => {
-    setExpenses(expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)));
+  const updateExpense = (
+    id: string,
+    field: "description" | "amount",
+    value: string,
+  ) => {
+    setExpenses(
+      expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
+    );
   };
 
   return (
@@ -3223,10 +3403,11 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3234,10 +3415,11 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -3306,7 +3488,9 @@ const GenerateInvoiceView = () => {
                     <SelectItem value="net15">Net 15</SelectItem>
                     <SelectItem value="net30">Net 30</SelectItem>
                     <SelectItem value="net60">Net 60</SelectItem>
-                    <SelectItem value="due-on-receipt">Due on Receipt</SelectItem>
+                    <SelectItem value="due-on-receipt">
+                      Due on Receipt
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -3315,7 +3499,8 @@ const GenerateInvoiceView = () => {
 
           <div>
             <Label className="text-sm font-bold text-gray-700 mb-2 block">
-              Bill To (Client Information) <span className="text-red-500">*</span>
+              Bill To (Client Information){" "}
+              <span className="text-red-500">*</span>
             </Label>
             <Select>
               <SelectTrigger className="h-12 rounded-xl border-gray-200">
@@ -3470,14 +3655,18 @@ const GenerateInvoiceView = () => {
                     <Input
                       placeholder="Expense description"
                       value={expense.description}
-                      onChange={(e) => updateExpense(expense.id, "description", e.target.value)}
+                      onChange={(e) =>
+                        updateExpense(expense.id, "description", e.target.value)
+                      }
                       className="h-10 rounded-xl border-gray-200 flex-1 text-sm"
                     />
                     <Input
                       type="number"
                       placeholder="0"
                       value={expense.amount}
-                      onChange={(e) => updateExpense(expense.id, "amount", e.target.value)}
+                      onChange={(e) =>
+                        updateExpense(expense.id, "amount", e.target.value)
+                      }
                       className="h-10 rounded-xl border-gray-200 w-24 text-sm"
                     />
                     <Button
@@ -3539,7 +3728,9 @@ const GenerateInvoiceView = () => {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={taxExempt}
-                      onCheckedChange={(checked) => setTaxExempt(checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        setTaxExempt(checked as boolean)
+                      }
                       className="rounded-md w-4 h-4 border-gray-300"
                     />
                     <span className="text-xs text-gray-600 font-medium">
@@ -3603,7 +3794,9 @@ const GenerateInvoiceView = () => {
                   <span className="text-sm text-gray-700 font-medium">
                     Talent Net Amount
                   </span>
-                  <span className="text-sm font-bold text-green-600">$0.00</span>
+                  <span className="text-sm font-bold text-green-600">
+                    $0.00
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-lg font-bold text-gray-900">
@@ -3780,10 +3973,11 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -3810,7 +4004,9 @@ const InvoiceManagementView = ({
           >
             <Filter className="w-4 h-4" />
             Filters
-            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
+            />
           </Button>
         </div>
       </div>
@@ -3876,16 +4072,39 @@ const InvoiceManagementView = ({
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="newest" className="font-bold text-gray-700">Newest First</SelectItem>
-            <SelectItem value="oldest" className="font-bold text-gray-700">Oldest First</SelectItem>
-            <SelectItem value="due-soonest" className="font-bold text-gray-700">Due Date (Soonest)</SelectItem>
-            <SelectItem value="due-latest" className="font-bold text-gray-700">Due Date (Latest)</SelectItem>
-            <SelectItem value="amount-high" className="font-bold text-gray-700">Amount (High to Low)</SelectItem>
-            <SelectItem value="amount-low" className="font-bold text-gray-700">Amount (Low to High)</SelectItem>
-            <SelectItem value="client-az" className="font-bold text-gray-700">Client (A-Z)</SelectItem>
-            <SelectItem value="client-za" className="font-bold text-gray-700">Client (Z-A)</SelectItem>
-            <SelectItem value="invoice-asc" className="font-bold text-gray-700">Invoice # (Asc)</SelectItem>
-            <SelectItem value="invoice-desc" className="font-bold text-gray-700">Invoice # (Desc)</SelectItem>
+            <SelectItem value="newest" className="font-bold text-gray-700">
+              Newest First
+            </SelectItem>
+            <SelectItem value="oldest" className="font-bold text-gray-700">
+              Oldest First
+            </SelectItem>
+            <SelectItem value="due-soonest" className="font-bold text-gray-700">
+              Due Date (Soonest)
+            </SelectItem>
+            <SelectItem value="due-latest" className="font-bold text-gray-700">
+              Due Date (Latest)
+            </SelectItem>
+            <SelectItem value="amount-high" className="font-bold text-gray-700">
+              Amount (High to Low)
+            </SelectItem>
+            <SelectItem value="amount-low" className="font-bold text-gray-700">
+              Amount (Low to High)
+            </SelectItem>
+            <SelectItem value="client-az" className="font-bold text-gray-700">
+              Client (A-Z)
+            </SelectItem>
+            <SelectItem value="client-za" className="font-bold text-gray-700">
+              Client (Z-A)
+            </SelectItem>
+            <SelectItem value="invoice-asc" className="font-bold text-gray-700">
+              Invoice # (Asc)
+            </SelectItem>
+            <SelectItem
+              value="invoice-desc"
+              className="font-bold text-gray-700"
+            >
+              Invoice # (Desc)
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -3946,7 +4165,9 @@ const InvoiceManagementView = ({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={showOverdueOnly}
-                  onCheckedChange={(checked) => setShowOverdueOnly(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setShowOverdueOnly(checked as boolean)
+                  }
                   className="rounded-md w-4 h-4 border-gray-300"
                 />
                 <Label className="text-sm font-bold text-gray-700">
@@ -4132,22 +4353,30 @@ const InvoiceManagementView = ({
             {/* Summary Cards */}
             <div className="grid grid-cols-3 gap-4">
               <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs font-bold text-gray-700 mb-1">Invoice Total</p>
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Invoice Total
+                </p>
                 <p className="text-2xl font-bold text-blue-600">$3</p>
               </Card>
               <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
-                <p className="text-xs font-bold text-gray-700 mb-1">Total Paid</p>
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Total Paid
+                </p>
                 <p className="text-2xl font-bold text-green-600">$3</p>
               </Card>
               <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                <p className="text-xs font-bold text-gray-700 mb-1">Remaining Balance</p>
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Remaining Balance
+                </p>
                 <p className="text-2xl font-bold text-orange-600">$0</p>
               </Card>
             </div>
 
             {/* Payment Transactions */}
             <div>
-              <h4 className="text-sm font-bold text-gray-900 mb-3">Payment Transactions</h4>
+              <h4 className="text-sm font-bold text-gray-900 mb-3">
+                Payment Transactions
+              </h4>
               <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -4156,12 +4385,20 @@ const InvoiceManagementView = ({
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-1">
                       <div>
-                        <p className="text-sm font-bold text-gray-900">Payment #1</p>
-                        <p className="text-xs text-gray-600 font-medium">January 27, 2026 • Wire</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          Payment #1
+                        </p>
+                        <p className="text-xs text-gray-600 font-medium">
+                          January 27, 2026 • Wire
+                        </p>
                       </div>
-                      <span className="text-lg font-bold text-green-600">$3</span>
+                      <span className="text-lg font-bold text-green-600">
+                        $3
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-600 font-medium">Full payment received</p>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Full payment received
+                    </p>
                   </div>
                   <Button
                     size="icon"
@@ -4195,8 +4432,6 @@ const InvoiceManagementView = ({
     </div>
   );
 };
-
-
 
 const TALENT_DATA = [
   {
@@ -4854,10 +5089,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
           >
             {tab}
           </button>
@@ -6182,13 +6418,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -6307,15 +6543,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -7156,9 +7393,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -7970,10 +8207,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -10144,7 +10382,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -10307,10 +10545,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -10803,10 +11042,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -11688,10 +11928,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -12851,84 +13092,84 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        { id: "settings", label: "Settings", icon: Settings },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          { id: "settings", label: "Settings", icon: Settings },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar and schedule",
-            "Booking request",
-            "Client Database",
-            "Talent availability",
-            "Notifications",
-            "Management and Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "settings", label: "Settings", icon: Settings },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar and schedule",
+              "Booking request",
+              "Client Database",
+              "Talent availability",
+              "Notifications",
+              "Management and Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "settings", label: "Settings", icon: Settings },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -12966,14 +13207,16 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -12993,10 +13236,11 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -13274,7 +13518,6 @@ export default function AgencyDashboard() {
               {activeSubTab === "Expense Tracking" && <ExpenseTrackingView />}
             </div>
           )}
-
         </main>
       </div>
     </div>
