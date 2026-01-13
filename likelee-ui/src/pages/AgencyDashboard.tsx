@@ -63,6 +63,7 @@ import {
   Briefcase,
   Receipt,
   Megaphone,
+  Edit2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -80,6 +81,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 const AddProspectModal = ({
   open,
@@ -2719,11 +2721,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -4048,13 +4049,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -4173,16 +4174,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -5023,9 +5023,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5837,11 +5837,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -8012,7 +8011,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -8175,11 +8174,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -8672,11 +8670,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -9558,11 +9555,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -10519,88 +10515,1258 @@ const AnalyticsDashboardView = () => {
   );
 };
 
-const SettingsView = () => {
+const GeneralSettingsView = () => {
+  const [activeTab, setActiveTab] = useState("Profile");
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Agency Settings</h2>
+        <p className="text-gray-600 font-medium">
+          Configure your agency profile and preferences
+        </p>
+      </div>
 
-      {/* Agency Information */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Agency Information
-        </h3>
-        <div className="space-y-6 max-w-2xl">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">
-              Agency Name
-            </Label>
-            <Input
-              defaultValue="CM Models"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Website</Label>
-            <Input
-              defaultValue="https://cmmodels.com/"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Location</Label>
-            <Input
-              defaultValue="U.S."
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
+      <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-fit">
+        {[
+          "Profile",
+          "Commissions",
+          "Email Templates",
+          "Notifications",
+          "Tax & Currency",
+          "Divisions",
+          "Team",
+          "File Storage",
+          "Integrations",
+        ].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "Profile" && (
+        <div className="space-y-6">
+          {/* Agency Information */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Agency Information
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Agency Name *
+                </Label>
+                <Input
+                  defaultValue="CM Models"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Legal Entity Name
+                </Label>
+                <Input
+                  defaultValue="CM Models LLC"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label className="text-sm font-bold text-gray-900">Address</Label>
+                <Input
+                  defaultValue="123 Fashion Ave"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">City</Label>
+                <Input
+                  defaultValue="New York"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    State/Province
+                  </Label>
+                  <Input
+                    defaultValue="NY"
+                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    ZIP/Postal Code
+                  </Label>
+                  <Input
+                    defaultValue="10001"
+                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">Country</Label>
+                <Select defaultValue="us">
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="us">United States</SelectItem>
+                    <SelectItem value="uk">United Kingdom</SelectItem>
+                    <SelectItem value="de">Germany</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">Time Zone</Label>
+                <Select defaultValue="est">
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="est">Eastern Time (EST)</SelectItem>
+                    <SelectItem value="pst">Pacific Time (PST)</SelectItem>
+                    <SelectItem value="cet">Central European Time (CET)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">Phone</Label>
+                <Input
+                  defaultValue="+1 (212) 555-0123"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">Email</Label>
+                <Input
+                  defaultValue="info@cmmodels.com"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label className="text-sm font-bold text-gray-900">Website</Label>
+                <Input
+                  defaultValue="https://cmmodels.com/"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Tax ID / VAT Number
+                </Label>
+                <Input
+                  defaultValue="12-3456789"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Branding */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+              Branding
+            </h3>
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <Label className="text-sm font-bold text-gray-900">
+                  Agency Logo
+                </Label>
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
+                    <img
+                      src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/a37a561a8_Screenshot2025-10-29at70538PM.png"
+                      alt="Logo"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload New Logo
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Primary Brand Color
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-600 border border-gray-200 shadow-sm" />
+                    <Input
+                      defaultValue="#4F46E5"
+                      className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Secondary Brand Color
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500 border border-gray-200 shadow-sm" />
+                    <Input
+                      defaultValue="#10B981"
+                      className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Email Signature
+                </Label>
+                <Textarea
+                  defaultValue={`Best regards,\nCM Models\nhttps://cmmodels.com/\n+1 (212) 555-0123`}
+                  className="bg-white border-gray-200 min-h-[120px] text-gray-900 font-medium rounded-xl resize-none"
+                />
+              </div>
+            </div>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              Save Profile Settings
+            </Button>
           </div>
         </div>
-      </Card>
+      )}
 
-      {/* Integrations */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Integrations
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <DollarSign className="w-5 h-5 text-gray-500" />
+      {activeTab === "Commissions" && (
+        <div className="space-y-6">
+          {/* Default Commission Rate */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-green-600" />
               </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  Stripe Connect
-                </p>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Default Commission Rate
+              </h3>
+            </div>
+            <div className="space-y-4 max-w-md">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Agency Commission (%)
+                </Label>
+                <Input
+                  defaultValue="20"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
                 <p className="text-xs text-gray-500 font-medium">
-                  Payouts & Invoicing
+                  Applied to all bookings unless overridden
                 </p>
               </div>
             </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
+          </Card>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <Link className="w-5 h-5 text-gray-500" />
+          {/* Division Commissions */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Division Commissions
+              </h3>
+              <Button
+                variant="outline"
+                className="h-9 px-4 rounded-lg border-gray-200 font-bold text-xs flex items-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Division
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {[
+                { name: "Women", count: 45, rate: 20 },
+                { name: "Men", count: 32, rate: 20 },
+                { name: "Kids", count: 18, rate: 15 },
+                { name: "Curve", count: 12, rate: 20 },
+              ].map((division) => (
+                <div
+                  key={division.name}
+                  className="flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      {division.name}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {division.count} talent
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        defaultValue={division.rate}
+                        className="w-16 h-9 bg-white border-gray-200 text-center font-bold text-sm rounded-lg"
+                      />
+                      <span className="text-sm font-bold text-gray-500">%</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 text-gray-400 hover:text-indigo-600"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Per-Talent Custom Commissions */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
+              Per-Talent Custom Commissions
+            </h3>
+            <p className="text-sm text-gray-500 font-medium mb-8">
+              Override commission rates for specific talent (edit from talent
+              profile)
+            </p>
+            <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-sm font-bold text-gray-500">
+                No custom commission rates set
+              </p>
+            </div>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              Save Commission Settings
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Email Templates" && (
+        <div className="space-y-6">
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                    Email Templates
+                  </h3>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Customize automated email messages
+                  </p>
+                </div>
+              </div>
+              <Button className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                New Template
+              </Button>
+            </div>
+
+            <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl mb-8">
+              <h4 className="text-sm font-bold text-blue-900 mb-4">
+                Available Variables:
+              </h4>
+              <div className="grid grid-cols-3 gap-y-3 gap-x-8">
+                {[
+                  "{talent_name}",
+                  "{client_name}",
+                  "{booking_date}",
+                  "{call_time}",
+                  "{location}",
+                  "{rate}",
+                  "{invoice_number}",
+                  "{invoice_total}",
+                  "{payment_terms}",
+                  "{due_date}",
+                  "{agency_name}",
+                ].map((variable) => (
+                  <code
+                    key={variable}
+                    className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded border border-blue-100 w-fit"
+                  >
+                    {variable}
+                  </code>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {[
+                {
+                  title: "Booking Confirmation",
+                  subject: "Booking Confirmed - {client_name}",
+                  body: "Hi {talent_name},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}",
+                },
+                {
+                  title: "Invoice Email",
+                  subject: "Invoice {invoice_number} from {agency_name}",
+                  body: "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
+                },
+                {
+                  title: "Payment Reminder",
+                  subject: "Payment Reminder - Invoice {invoice_number}",
+                  body: "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
+                },
+              ].map((template) => (
+                <div
+                  key={template.title}
+                  className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-base font-bold text-gray-900">
+                        {template.title}
+                      </h4>
+                      <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5">
+                        Active
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-8 h-8 rounded-lg border-gray-200"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-gray-500" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-8 h-8 rounded-lg border-gray-200"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-gray-500" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Subject:
+                    </Label>
+                    <p className="text-sm font-bold text-gray-900">
+                      {template.subject}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Body:
+                    </Label>
+                    <div className="p-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium whitespace-pre-line leading-relaxed">
+                      {template.body}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              Save Email Templates
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Notifications" && (
+        <div className="space-y-6">
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                <Bell className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900">ElevenLabs</p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Voice cloning
+                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                  Notification Preferences
+                </h3>
+                <p className="text-sm text-gray-500 font-medium">
+                  Choose how you want to be notified about important events
                 </p>
               </div>
             </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
+
+            <div className="space-y-4">
+              {[
+                {
+                  title: "Booking Created",
+                  desc: "When a new booking is created",
+                },
+                {
+                  title: "Booking Confirmed",
+                  desc: "When a booking status changes to confirmed",
+                },
+                {
+                  title: "Payment Received",
+                  desc: "When payment is received from a client",
+                },
+                {
+                  title: "Invoice Sent",
+                  desc: "When an invoice is sent to a client",
+                },
+                {
+                  title: "Talent Book Out",
+                  desc: "When talent marks themselves unavailable",
+                },
+                {
+                  title: "License Expiring",
+                  desc: "When a talent license is about to expire",
+                },
+              ].map((pref) => (
+                <div
+                  key={pref.title}
+                  className="flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      {pref.title}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {pref.desc}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-2">
+                      <Switch defaultChecked />
+                      <span className="text-xs font-bold text-gray-600">
+                        Email
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch />
+                      <span className="text-xs font-bold text-gray-600">
+                        SMS
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch defaultChecked />
+                      <span className="text-xs font-bold text-gray-600">
+                        Push
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-8 tracking-tight">
+              Notification Recipients
+            </h3>
+            <div className="space-y-6 max-w-2xl">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Primary Notification Email
+                </Label>
+                <Input
+                  defaultValue="bookings@cmmodels.com"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  SMS Notification Number
+                </Label>
+                <Input
+                  defaultValue="+1 (212) 555-0123"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Additional Recipients (comma-separated)
+                </Label>
+                <Input
+                  defaultValue="agent1@cmmodels.com, agent2@cmmodels.com"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+            </div>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              Save Notification Settings
+            </Button>
           </div>
         </div>
-      </Card>
+      )}
+
+      {activeTab === "Tax & Currency" && (
+        <div className="space-y-6">
+          {/* Currency Settings */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-green-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Currency Settings
+              </h3>
+            </div>
+            <div className="space-y-6 max-w-2xl">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Default Currency
+                </Label>
+                <Select defaultValue="usd">
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="usd">USD - US Dollar</SelectItem>
+                    <SelectItem value="eur">EUR - Euro</SelectItem>
+                    <SelectItem value="gbp">GBP - British Pound</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Currency Display Format
+                </Label>
+                <Select defaultValue="format1">
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="format1">$1,234.56</SelectItem>
+                    <SelectItem value="format2">1.234,56 $</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Card>
+
+          {/* Tax Rates */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-8 tracking-tight">
+              Tax Rates
+            </h3>
+            <div className="space-y-6 max-w-2xl">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Default Tax Rate (%)
+                </Label>
+                <Input
+                  defaultValue="8.875"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+                <p className="text-xs text-gray-500 font-medium">
+                  Applied to invoices (e.g., sales tax, VAT)
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Tax Display Name
+                </Label>
+                <Input
+                  defaultValue="Sales Tax"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch />
+                <Label className="text-sm font-bold text-gray-900">
+                  Include tax in displayed prices
+                </Label>
+              </div>
+            </div>
+          </Card>
+
+          {/* Payment Terms */}
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-8 tracking-tight">
+              Payment Terms
+            </h3>
+            <div className="space-y-6 max-w-2xl">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Default Payment Terms
+                </Label>
+                <Select defaultValue="net30">
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Select terms" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="due">Due on Receipt</SelectItem>
+                    <SelectItem value="net15">Net 15</SelectItem>
+                    <SelectItem value="net30">Net 30</SelectItem>
+                    <SelectItem value="net60">Net 60</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Late Payment Fee (%)
+                </Label>
+                <Input
+                  defaultValue="1.5"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+                <p className="text-xs text-gray-500 font-medium">
+                  Monthly interest on overdue invoices
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Invoice Prefix
+                </Label>
+                <Input
+                  defaultValue="INV-"
+                  className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                />
+                <p className="text-xs text-gray-500 font-medium">
+                  Example: INV-00001, INV-00002
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              Save Tax & Currency Settings
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Divisions" && (
+        <div className="space-y-6">
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                    Divisions / Boards
+                  </h3>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Organize your talent into divisions
+                  </p>
+                </div>
+              </div>
+              <Button className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Create Division
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { name: "Women", count: 45, rate: 20 },
+                { name: "Men", count: 32, rate: 20 },
+                { name: "Kids", count: 18, rate: 15 },
+                { name: "Curve", count: 12, rate: 20 },
+              ].map((division) => (
+                <div
+                  key={division.name}
+                  className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-900">
+                        {division.name}
+                      </h4>
+                      <p className="text-sm text-gray-500 font-medium">
+                        {division.count} talent assigned
+                      </p>
+                    </div>
+                    <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-xs h-6 px-2">
+                      Active
+                    </Badge>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                        Commission Rate
+                      </p>
+                      <p className="text-3xl font-black text-gray-900">
+                        {division.rate}%
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-8 h-8 rounded-lg border-gray-200"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-gray-500" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-8 h-8 rounded-lg border-gray-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-gray-500" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-8 tracking-tight">
+              Bulk Assignment
+            </h3>
+            <div className="space-y-6 max-w-2xl">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Select Talent
+                </Label>
+                <Select>
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Choose talent to assign..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="t1">Sarah Johnson</SelectItem>
+                    <SelectItem value="t2">Michael Chen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Assign to Division
+                </Label>
+                <Select>
+                  <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                    <SelectValue placeholder="Choose division..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="women">Women</SelectItem>
+                    <SelectItem value="men">Men</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="h-11 px-6 bg-white border border-gray-200 text-gray-900 font-bold rounded-xl hover:bg-gray-50">
+                Assign Talent
+              </Button>
+            </div>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              Save Division Settings
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Team" && (
+        <div className="space-y-6">
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                    Team Management
+                  </h3>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Manage team members, roles, and permissions
+                  </p>
+                </div>
+              </div>
+              <Button className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Invite User
+              </Button>
+            </div>
+
+            <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-bold text-blue-900">
+                    Team Seats
+                  </span>
+                </div>
+                <span className="text-sm font-bold text-blue-900">
+                  6 of 10 seats used
+                </span>
+              </div>
+              <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden mb-2">
+                <div className="w-[60%] h-full bg-blue-600 rounded-full" />
+              </div>
+              <p className="text-xs text-blue-600 font-medium">
+                4 seats remaining • Professional Plan
+              </p>
+            </div>
+
+            <div className="relative mb-8">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search team members by name or email..."
+                className="pl-11 h-11 bg-white border-gray-200 rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-6">
+              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                User Roles
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  {
+                    role: "Admin",
+                    color: "bg-purple-50 text-purple-600 border-purple-100",
+                    desc: "Full access, billing, settings",
+                  },
+                  {
+                    role: "Booker",
+                    color: "bg-blue-50 text-blue-600 border-blue-100",
+                    desc: "Create/edit bookings, view earnings",
+                  },
+                  {
+                    role: "Scout",
+                    color: "bg-green-50 text-green-600 border-green-100",
+                    desc: "Add prospects, view scouting pipeline",
+                  },
+                  {
+                    role: "Accountant",
+                    color: "bg-yellow-50 text-yellow-600 border-yellow-100",
+                    desc: "View/issue invoices, reports, no booking access",
+                  },
+                  {
+                    role: "Talent Coordinator",
+                    color: "bg-indigo-50 text-indigo-600 border-indigo-100",
+                    desc: "Manage talent profiles, portfolios",
+                  },
+                  {
+                    role: "Read-Only",
+                    color: "bg-gray-50 text-gray-600 border-gray-100",
+                    desc: "View everything, edit nothing",
+                  },
+                ].map((role) => (
+                  <div
+                    key={role.role}
+                    className={`p-4 rounded-xl border ${role.color.split(" ").slice(0, 2).join(" ")} ${role.color.split(" ").slice(2).join(" ")}`}
+                  >
+                    <p className="text-sm font-bold mb-1">{role.role}</p>
+                    <p className="text-sm font-medium opacity-80">
+                      {role.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Team Members (6)
+              </h3>
+            </div>
+            <div className="space-y-4">
+              {[
+                {
+                  name: "Sarah Johnson",
+                  email: "sarah@agency.com",
+                  role: "Admin",
+                  status: "Active",
+                  joined: "Jun 15, 2023",
+                  lastActive: "Jan 12, 2024 10:30 AM",
+                },
+                {
+                  name: "Michael Chen",
+                  email: "michael@agency.com",
+                  role: "Booker",
+                  status: "Active",
+                  joined: "Aug 22, 2023",
+                  lastActive: "Jan 12, 2024 9:15 AM",
+                },
+                {
+                  name: "Emily Rodriguez",
+                  email: "emily@agency.com",
+                  role: "Scout",
+                  status: "Active",
+                  joined: "Sep 10, 2023",
+                  lastActive: "Jan 11, 2024 4:45 PM",
+                },
+                {
+                  name: "David Kim",
+                  email: "david@agency.com",
+                  role: "Accountant",
+                  status: "Active",
+                  joined: "Jul 1, 2023",
+                  lastActive: "Jan 12, 2024 8:00 AM",
+                },
+                {
+                  name: "Jessica Martinez",
+                  email: "jessica@agency.com",
+                  role: "Talent Coordinator",
+                  status: "Active",
+                  joined: "Oct 5, 2023",
+                  lastActive: "Jan 12, 2024 11:20 AM",
+                },
+                {
+                  name: "Robert Taylor",
+                  email: "robert@agency.com",
+                  role: "Read-Only",
+                  status: "Inactive",
+                  joined: "Nov 12, 2023",
+                  lastActive: "Dec 20, 2023 2:15 PM",
+                },
+              ].map((member) => (
+                <div
+                  key={member.email}
+                  className="flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                      {member.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-gray-900">
+                          {member.name}
+                        </p>
+                        <Badge className="bg-purple-50 text-purple-600 border-purple-100 font-bold text-sm h-7 px-3">
+                          {member.role}
+                        </Badge>
+                        <Badge
+                          className={`${member.status === "Active" ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-500 border-gray-200"} font-bold text-sm h-7 px-3`}
+                        >
+                          {member.status}
+                        </Badge>
+                      </div>
+                      <p className="text-base text-gray-500 font-medium">
+                        {member.email}
+                      </p>
+                      <p className="text-sm text-gray-400 font-medium mt-1">
+                        Last active: {member.lastActive} • Joined:{" "}
+                        {member.joined}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-10 px-4 rounded-lg border-gray-200 text-sm font-bold flex items-center gap-1.5"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Permissions
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-10 px-4 rounded-lg border-gray-200 text-sm font-bold flex items-center gap-1.5"
+                    >
+                      <History className="w-4 h-4" />
+                      Activity
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 text-gray-400"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === "Integrations" && (
+        <div className="space-y-6">
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                <Link className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                  Connected Accounts
+                </h3>
+                <p className="text-sm text-gray-500 font-medium">
+                  Manage your third-party service integrations
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                {
+                  name: "Stripe",
+                  desc: "Payment processing & invoicing",
+                  icon: CreditCard,
+                  connected: true,
+                  color: "text-purple-600 bg-purple-50",
+                },
+                {
+                  name: "QuickBooks",
+                  desc: "Accounting & bookkeeping",
+                  icon: Receipt,
+                  connected: false,
+                  color: "text-green-600 bg-green-50",
+                },
+                {
+                  name: "Xero",
+                  desc: "Accounting software",
+                  icon: BarChart2,
+                  connected: false,
+                  color: "text-blue-600 bg-blue-50",
+                },
+                {
+                  name: "Google Calendar",
+                  desc: "Sync bookings to calendar",
+                  icon: Calendar,
+                  connected: false,
+                  color: "text-red-600 bg-red-50",
+                },
+                {
+                  name: "ElevenLabs",
+                  desc: "Voice cloning for talent",
+                  icon: Video,
+                  connected: true,
+                  color: "text-orange-600 bg-orange-50",
+                },
+              ].map((integration) => (
+                <div
+                  key={integration.name}
+                  className="flex items-center justify-between p-6 bg-gray-50/50 border border-gray-100 rounded-2xl"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-12 h-12 rounded-xl ${integration.color} flex items-center justify-center`}
+                    >
+                      <integration.icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-gray-900">
+                        {integration.name}
+                      </p>
+                      <p className="text-sm text-gray-500 font-medium">
+                        {integration.desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {integration.connected ? (
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-lg">
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <span className="text-xs font-bold text-green-600">
+                          Connected
+                        </span>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="h-9 px-4 rounded-lg border-gray-200 font-bold text-xs"
+                      >
+                        Connect
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 text-gray-400"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
+              API Keys
+            </h3>
+            <p className="text-sm text-gray-500 font-medium mb-8">
+              Manage API keys for custom integrations
+            </p>
+
+            <div className="space-y-6 max-w-2xl">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Production API Key
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    type="password"
+                    value="sk_live_51MzY..."
+                    className="bg-gray-50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl border-gray-200"
+                  >
+                    <Copy className="w-4 h-4 text-gray-500" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-900">
+                  Test API Key
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    type="password"
+                    value="sk_test_51MzY..."
+                    className="bg-gray-50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl border-gray-200"
+                  >
+                    <Copy className="w-4 h-4 text-gray-500" />
+                  </Button>
+                </div>
+              </div>
+              <Button
+                variant="destructive"
+                className="h-11 px-6 rounded-xl font-bold"
+              >
+                Regenerate API Keys
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
@@ -10722,84 +11888,94 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          { id: "settings", label: "Settings", icon: Settings },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar and schedule",
-              "Booking request",
-              "Client Database",
-              "Talent availability",
-              "Notifications",
-              "Management and Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "settings", label: "Settings", icon: Settings },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar and schedule",
+            "Booking request",
+            "Client Database",
+            "Talent availability",
+            "Notifications",
+            "Management and Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -10833,20 +12009,22 @@ export default function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
+                    if (item.id === "settings") {
+                      setActiveTab("settings");
+                      setActiveSubTab("General Settings");
+                    }
                   } else {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -10866,11 +12044,10 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -11119,7 +12296,12 @@ export default function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "settings" && <SettingsView />}
+          {activeTab === "settings" && activeSubTab === "General Settings" && (
+            <GeneralSettingsView />
+          )}
+          {activeTab === "settings" && activeSubTab === "File Storage" && (
+            <FileStorageView />
+          )}
           {activeTab === "scouting" && (
             <ScoutingHubView
               activeTab={activeScoutingTab}
