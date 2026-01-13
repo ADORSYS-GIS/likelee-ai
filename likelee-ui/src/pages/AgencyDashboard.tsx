@@ -103,12 +103,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -215,7 +210,8 @@ const MOCK_FILES: FileItem[] = [
     folder: "Talent Files",
     uploadedBy: "John Doe",
     uploadedAt: "Jan 10, 2024",
-    thumbnailUrl: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
   },
   {
     id: "2",
@@ -225,7 +221,8 @@ const MOCK_FILES: FileItem[] = [
     folder: "Booking Documents",
     uploadedBy: "Jane Smith",
     uploadedAt: "Jan 9, 2024",
-    thumbnailUrl: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&h=300&fit=crop",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&h=300&fit=crop",
   },
   {
     id: "3",
@@ -235,7 +232,8 @@ const MOCK_FILES: FileItem[] = [
     folder: "Talent Files",
     uploadedBy: "John Doe",
     uploadedAt: "Jan 8, 2024",
-    thumbnailUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop",
   },
   {
     id: "4",
@@ -245,7 +243,8 @@ const MOCK_FILES: FileItem[] = [
     folder: "Client Contracts",
     uploadedBy: "Sarah Wilson",
     uploadedAt: "Jan 7, 2024",
-    thumbnailUrl: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
   },
 ];
 
@@ -372,7 +371,9 @@ const AddClientModal = ({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Industry</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                Industry
+              </Label>
               <Input
                 placeholder="Fashion, Tech, etc."
                 className="h-11 bg-gray-50 border-gray-200 rounded-xl"
@@ -957,7 +958,8 @@ const ClientCRMView = () => {
       {/* Demo Mode Alert */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
         <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of the Agency Dashboard for talent and modeling agencies.
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
         </p>
       </div>
 
@@ -1118,38 +1120,60 @@ const StorageUsageCard = () => (
 const FolderCard = ({ folder }: { folder: FolderItem }) => {
   const getFolderColor = (type: string) => {
     switch (type) {
-      case "talent": return "text-indigo-500";
-      case "client": return "text-emerald-500";
-      case "booking": return "text-blue-500";
-      case "expense": return "text-orange-500";
-      case "marketing": return "text-purple-500";
-      default: return "text-gray-500";
+      case "talent":
+        return "text-indigo-500";
+      case "client":
+        return "text-emerald-500";
+      case "booking":
+        return "text-blue-500";
+      case "expense":
+        return "text-orange-500";
+      case "marketing":
+        return "text-purple-500";
+      default:
+        return "text-gray-500";
     }
   };
 
   const getFolderBg = (type: string) => {
     switch (type) {
-      case "talent": return "bg-indigo-50/50";
-      case "client": return "bg-emerald-50/50";
-      case "booking": return "bg-blue-50/50";
-      case "expense": return "bg-orange-50/50";
-      case "marketing": return "bg-purple-50/50";
-      default: return "bg-gray-50/50";
+      case "talent":
+        return "bg-indigo-50/50";
+      case "client":
+        return "bg-emerald-50/50";
+      case "booking":
+        return "bg-blue-50/50";
+      case "expense":
+        return "bg-orange-50/50";
+      case "marketing":
+        return "bg-purple-50/50";
+      default:
+        return "bg-gray-50/50";
     }
   };
 
   return (
     <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
       <div className="flex justify-between items-start mb-6 relative z-10">
-        <div className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}>
+        <div
+          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
+        >
           <div className="relative">
-            <Folder className={`w-8 h-8 ${getFolderColor(folder.type)} fill-current opacity-20`} />
-            <Folder className={`absolute inset-0 w-8 h-8 ${getFolderColor(folder.type)}`} />
+            <Folder
+              className={`w-8 h-8 ${getFolderColor(folder.type)} fill-current opacity-20`}
+            />
+            <Folder
+              className={`absolute inset-0 w-8 h-8 ${getFolderColor(folder.type)}`}
+            />
           </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
+            >
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -1168,11 +1192,17 @@ const FolderCard = ({ folder }: { folder: FolderItem }) => {
       </div>
 
       <div className="relative z-10">
-        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">{folder.name}</h4>
+        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
+          {folder.name}
+        </h4>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 font-bold">{folder.fileCount} files</span>
+          <span className="text-xs text-gray-600 font-bold">
+            {folder.fileCount} files
+          </span>
           <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-500 font-bold">{folder.totalSize}</span>
+          <span className="text-xs text-gray-500 font-bold">
+            {folder.totalSize}
+          </span>
         </div>
       </div>
     </Card>
@@ -1182,7 +1212,7 @@ const FolderCard = ({ folder }: { folder: FolderItem }) => {
 const FileCard = ({
   file,
   onPreview,
-  onShare
+  onShare,
 }: {
   file: FileItem;
   onPreview: (file: FileItem) => void;
@@ -1199,7 +1229,9 @@ const FileCard = ({
       ) : (
         <div className="flex flex-col items-center gap-2">
           {file.type === "pdf" && <FileText className="w-8 h-8 text-red-500" />}
-          {file.type === "docx" && <FileText className="w-8 h-8 text-blue-500" />}
+          {file.type === "docx" && (
+            <FileText className="w-8 h-8 text-blue-500" />
+          )}
           {file.type === "jpg" && <File className="w-8 h-8 text-emerald-500" />}
           <span className="text-[10px] font-black uppercase text-gray-400">
             {file.type}
@@ -1209,18 +1241,28 @@ const FileCard = ({
       <div className="absolute top-2 right-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="secondary" className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              size="icon"
+              variant="secondary"
+              className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            >
               <MoreVertical className="w-3.5 h-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem onClick={() => onPreview(file)} className="font-bold text-gray-700 cursor-pointer">
+            <DropdownMenuItem
+              onClick={() => onPreview(file)}
+              className="font-bold text-gray-700 cursor-pointer"
+            >
               <Eye className="w-4 h-4 mr-2" /> Preview
             </DropdownMenuItem>
             <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
               <Download className="w-4 h-4 mr-2" /> Download
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onShare(file)} className="font-bold text-gray-700 cursor-pointer">
+            <DropdownMenuItem
+              onClick={() => onShare(file)}
+              className="font-bold text-gray-700 cursor-pointer"
+            >
               <Share2 className="w-4 h-4 mr-2" /> Share Link
             </DropdownMenuItem>
             <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
@@ -1236,10 +1278,17 @@ const FileCard = ({
       </h5>
       <div className="flex justify-between items-center">
         <div className="flex flex-col">
-          <span className="text-[10px] text-gray-600 font-bold">{file.size}</span>
-          <span className="text-[10px] text-gray-500 font-bold">{file.uploadedAt}</span>
+          <span className="text-[10px] text-gray-600 font-bold">
+            {file.size}
+          </span>
+          <span className="text-[10px] text-gray-500 font-bold">
+            {file.uploadedAt}
+          </span>
         </div>
-        <Badge variant="outline" className="text-[9px] font-bold text-gray-700 border-gray-200 px-1.5 py-0 bg-gray-50/50">
+        <Badge
+          variant="outline"
+          className="text-[9px] font-bold text-gray-700 border-gray-200 px-1.5 py-0 bg-gray-50/50"
+        >
           {file.folder}
         </Badge>
       </div>
@@ -1250,7 +1299,7 @@ const FileCard = ({
 const FileRow = ({
   file,
   onPreview,
-  onShare
+  onShare,
 }: {
   file: FileItem;
   onPreview: (file: FileItem) => void;
@@ -1264,9 +1313,13 @@ const FileRow = ({
         {file.type === "jpg" && <File className="w-5 h-5 text-emerald-500" />}
       </div>
       <div className="flex-1 min-w-0">
-        <h5 className="text-sm font-bold text-gray-900 truncate">{file.name}</h5>
+        <h5 className="text-sm font-bold text-gray-900 truncate">
+          {file.name}
+        </h5>
         <p className="text-xs text-gray-600 font-bold">
-          {file.size} • <span className="text-indigo-600">{file.folder}</span> • Uploaded by <span className="text-gray-900">{file.uploadedBy}</span> on {file.uploadedAt}
+          {file.size} • <span className="text-indigo-600">{file.folder}</span> •
+          Uploaded by <span className="text-gray-900">{file.uploadedBy}</span>{" "}
+          on {file.uploadedAt}
         </p>
       </div>
     </div>
@@ -1279,7 +1332,11 @@ const FileRow = ({
       >
         <Eye className="w-4 h-4" />
       </Button>
-      <Button size="icon" variant="ghost" className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg">
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+      >
         <Download className="w-4 h-4" />
       </Button>
       <Button
@@ -1290,18 +1347,30 @@ const FileRow = ({
       >
         <Share2 className="w-4 h-4" />
       </Button>
-      <Button size="icon" variant="ghost" className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+      >
         <Trash2 className="w-4 h-4" />
       </Button>
     </div>
   </div>
 );
 
-const NewFolderModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
+const NewFolderModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
     <DialogContent className="sm:max-w-[425px] rounded-2xl">
       <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-gray-900">Create New Folder</DialogTitle>
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Create New Folder
+        </DialogTitle>
         <DialogDescription className="text-gray-500 font-medium">
           Organize your files into folders
         </DialogDescription>
@@ -1309,7 +1378,10 @@ const NewFolderModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       <div className="space-y-4 py-4">
         <div className="space-y-2">
           <Label className="text-sm font-bold text-gray-700">Folder Name</Label>
-          <Input placeholder="e.g., Q1 2024 Campaigns" className="h-11 rounded-xl border-gray-200" />
+          <Input
+            placeholder="e.g., Q1 2024 Campaigns"
+            className="h-11 rounded-xl border-gray-200"
+          />
         </div>
         <div className="space-y-2">
           <Label className="text-sm font-bold text-gray-700">Folder Type</Label>
@@ -1329,7 +1401,11 @@ const NewFolderModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         </div>
       </div>
       <DialogFooter className="gap-2">
-        <Button variant="outline" onClick={onClose} className="h-11 px-6 rounded-xl border-gray-200 font-bold">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
           Cancel
         </Button>
         <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
@@ -1340,11 +1416,19 @@ const NewFolderModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   </Dialog>
 );
 
-const UploadFilesModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
+const UploadFilesModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
     <DialogContent className="sm:max-w-[500px] rounded-2xl">
       <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-gray-900">Upload Files</DialogTitle>
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Upload Files
+        </DialogTitle>
         <DialogDescription className="text-gray-500 font-medium">
           Upload documents, images, or other files to your storage
         </DialogDescription>
@@ -1354,25 +1438,37 @@ const UploadFilesModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Upload className="w-6 h-6 text-indigo-600" />
           </div>
-          <p className="text-sm font-bold text-gray-900 mb-1">Click to upload or drag and drop</p>
-          <p className="text-xs text-gray-500 font-medium">PDF, DOC, JPG, PNG up to 50MB</p>
+          <p className="text-sm font-bold text-gray-900 mb-1">
+            Click to upload or drag and drop
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            PDF, DOC, JPG, PNG up to 50MB
+          </p>
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">Save to folder</Label>
+          <Label className="text-sm font-bold text-gray-700">
+            Save to folder
+          </Label>
           <Select>
             <SelectTrigger className="h-11 rounded-xl border-gray-200">
               <SelectValue placeholder="Select a folder..." />
             </SelectTrigger>
             <SelectContent>
-              {MOCK_FOLDERS.map(folder => (
-                <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+              {MOCK_FOLDERS.map((folder) => (
+                <SelectItem key={folder.id} value={folder.id}>
+                  {folder.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
       <DialogFooter className="gap-2">
-        <Button variant="outline" onClick={onClose} className="h-11 px-6 rounded-xl border-gray-200 font-bold">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
           Cancel
         </Button>
         <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
@@ -1386,7 +1482,7 @@ const UploadFilesModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 const FilePreviewModal = ({
   file,
   isOpen,
-  onClose
+  onClose,
 }: {
   file: FileItem | null;
   isOpen: boolean;
@@ -1399,18 +1495,31 @@ const FilePreviewModal = ({
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-              {file.type === "pdf" && <FileText className="w-6 h-6 text-red-500" />}
-              {file.type === "docx" && <FileText className="w-6 h-6 text-blue-500" />}
-              {file.type === "jpg" && <File className="w-6 h-6 text-emerald-500" />}
+              {file.type === "pdf" && (
+                <FileText className="w-6 h-6 text-red-500" />
+              )}
+              {file.type === "docx" && (
+                <FileText className="w-6 h-6 text-blue-500" />
+              )}
+              {file.type === "jpg" && (
+                <File className="w-6 h-6 text-emerald-500" />
+              )}
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold text-gray-900">{file.name}</DialogTitle>
+              <DialogTitle className="text-lg font-bold text-gray-900">
+                {file.name}
+              </DialogTitle>
               <p className="text-sm text-gray-500 font-medium">
                 {file.size} • Uploaded by {file.uploadedBy} on {file.uploadedAt}
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl hover:bg-gray-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-xl hover:bg-gray-50"
+          >
             <X className="w-5 h-5 text-gray-400" />
           </Button>
         </div>
@@ -1427,12 +1536,20 @@ const FilePreviewModal = ({
           ) : (
             <div className="flex flex-col items-center gap-6 p-12 bg-white rounded-3xl shadow-sm border border-gray-100">
               <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center">
-                {file.type === "pdf" && <FileText className="w-10 h-10 text-red-500" />}
-                {file.type === "docx" && <FileText className="w-10 h-10 text-blue-500" />}
+                {file.type === "pdf" && (
+                  <FileText className="w-10 h-10 text-red-500" />
+                )}
+                {file.type === "docx" && (
+                  <FileText className="w-10 h-10 text-blue-500" />
+                )}
               </div>
               <div className="text-center">
-                <p className="text-gray-900 font-bold text-lg mb-1">Preview not available</p>
-                <p className="text-gray-500 text-sm font-medium">Please download the file to view its content</p>
+                <p className="text-gray-900 font-bold text-lg mb-1">
+                  Preview not available
+                </p>
+                <p className="text-gray-500 text-sm font-medium">
+                  Please download the file to view its content
+                </p>
               </div>
               <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-8">
                 Download Now
@@ -1442,12 +1559,19 @@ const FilePreviewModal = ({
         </div>
         <div className="p-6 border-t border-gray-100 flex justify-between items-center bg-white">
           <div className="flex gap-2">
-            <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 font-bold px-3 py-1 rounded-lg">
+            <Badge
+              variant="outline"
+              className="bg-gray-50 text-gray-600 border-gray-200 font-bold px-3 py-1 rounded-lg"
+            >
               {file.folder}
             </Badge>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
+            >
               Close Preview
             </Button>
             <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
@@ -1464,7 +1588,7 @@ const FilePreviewModal = ({
 const ShareFileModal = ({
   file,
   isOpen,
-  onClose
+  onClose,
 }: {
   file: FileItem | null;
   isOpen: boolean;
@@ -1476,19 +1600,29 @@ const ShareFileModal = ({
       <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
         <div className="p-6 border-b border-gray-100 bg-white">
           <div className="flex justify-between items-start mb-1">
-            <DialogTitle className="text-xl font-bold text-gray-900">Share File</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl -mr-2 -mt-2">
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Share File
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-xl -mr-2 -mt-2"
+            >
               <X className="w-5 h-5 text-gray-400" />
             </Button>
           </div>
           <DialogDescription className="text-gray-500 font-medium">
-            Generate a secure shareable link for <span className="text-gray-900 font-bold">{file.name}</span>
+            Generate a secure shareable link for{" "}
+            <span className="text-gray-900 font-bold">{file.name}</span>
           </DialogDescription>
         </div>
 
         <div className="p-6 space-y-6 bg-gray-50/30">
           <div className="space-y-2.5">
-            <Label className="text-sm font-bold text-gray-700 ml-1">Share Link</Label>
+            <Label className="text-sm font-bold text-gray-700 ml-1">
+              Share Link
+            </Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
@@ -1507,28 +1641,44 @@ const ShareFileModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2.5">
-              <Label className="text-sm font-bold text-gray-700 ml-1">Link Expiration</Label>
+              <Label className="text-sm font-bold text-gray-700 ml-1">
+                Link Expiration
+              </Label>
               <Select defaultValue="7-days">
                 <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
                   <SelectValue placeholder="Select expiration..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="24-hours" className="font-medium">24 Hours</SelectItem>
-                  <SelectItem value="7-days" className="font-medium">7 Days</SelectItem>
-                  <SelectItem value="30-days" className="font-medium">30 Days</SelectItem>
-                  <SelectItem value="never" className="font-medium">Never</SelectItem>
+                  <SelectItem value="24-hours" className="font-medium">
+                    24 Hours
+                  </SelectItem>
+                  <SelectItem value="7-days" className="font-medium">
+                    7 Days
+                  </SelectItem>
+                  <SelectItem value="30-days" className="font-medium">
+                    30 Days
+                  </SelectItem>
+                  <SelectItem value="never" className="font-medium">
+                    Never
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2.5">
-              <Label className="text-sm font-bold text-gray-700 ml-1">Access Level</Label>
+              <Label className="text-sm font-bold text-gray-700 ml-1">
+                Access Level
+              </Label>
               <Select defaultValue="view">
                 <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
                   <SelectValue placeholder="Select access..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="view" className="font-medium">View Only</SelectItem>
-                  <SelectItem value="download" className="font-medium">Can Download</SelectItem>
+                  <SelectItem value="view" className="font-medium">
+                    View Only
+                  </SelectItem>
+                  <SelectItem value="download" className="font-medium">
+                    Can Download
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1540,18 +1690,30 @@ const ShareFileModal = ({
                 <ShieldCheck className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <Label className="text-sm font-bold text-gray-700 cursor-pointer" htmlFor="require-password">
+                <Label
+                  className="text-sm font-bold text-gray-700 cursor-pointer"
+                  htmlFor="require-password"
+                >
                   Require password
                 </Label>
-                <p className="text-[11px] text-gray-500 font-medium">Add an extra layer of security</p>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Add an extra layer of security
+                </p>
               </div>
             </div>
-            <Checkbox id="require-password" className="rounded-md w-5 h-5 border-gray-300" />
+            <Checkbox
+              id="require-password"
+              className="rounded-md w-5 h-5 border-gray-300"
+            />
           </div>
         </div>
 
         <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-white">
-          <Button variant="outline" onClick={onClose} className="h-12 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="h-12 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
+          >
             Cancel
           </Button>
           <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
@@ -1569,15 +1731,18 @@ const FileStorageView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFileForPreview, setSelectedFileForPreview] = useState<FileItem | null>(null);
-  const [selectedFileForShare, setSelectedFileForShare] = useState<FileItem | null>(null);
+  const [selectedFileForPreview, setSelectedFileForPreview] =
+    useState<FileItem | null>(null);
+  const [selectedFileForShare, setSelectedFileForShare] =
+    useState<FileItem | null>(null);
 
   return (
     <div className="space-y-8">
       {/* Demo Mode Alert */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
         <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of the Agency Dashboard for talent and modeling agencies.
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
         </p>
       </div>
 
@@ -1672,7 +1837,9 @@ const FileStorageView = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
-          <span className="text-sm text-gray-500 font-medium">{MOCK_FILES.length} files</span>
+          <span className="text-sm text-gray-500 font-medium">
+            {MOCK_FILES.length} files
+          </span>
         </div>
 
         {viewMode === "grid" ? (
@@ -1700,8 +1867,14 @@ const FileStorageView = () => {
         )}
       </div>
 
-      <NewFolderModal isOpen={isNewFolderModalOpen} onClose={() => setIsNewFolderModalOpen(false)} />
-      <UploadFilesModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
+      <NewFolderModal
+        isOpen={isNewFolderModalOpen}
+        onClose={() => setIsNewFolderModalOpen(false)}
+      />
+      <UploadFilesModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
       <FilePreviewModal
         file={selectedFileForPreview}
         isOpen={!!selectedFileForPreview}
@@ -3158,13 +3331,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -3283,15 +3456,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -4132,9 +4306,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -4946,10 +5120,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -7120,7 +7295,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -7283,10 +7458,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -7779,10 +7955,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -8664,10 +8841,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -9825,84 +10003,84 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        { id: "settings", label: "Settings", icon: Settings },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          { id: "settings", label: "Settings", icon: Settings },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar and schedule",
-            "Booking request",
-            "Client Database",
-            "Talent availability",
-            "Notifications",
-            "Management and Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "settings", label: "Settings", icon: Settings },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar and schedule",
+              "Booking request",
+              "Client Database",
+              "Talent availability",
+              "Notifications",
+              "Management and Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "settings", label: "Settings", icon: Settings },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -9940,14 +10118,16 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -9967,10 +10147,11 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -10005,9 +10186,7 @@ export default function AgencyDashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")
-              }
+              onClick={() => setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")}
               className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all"
             >
               {agencyMode === "AI" ? "AI Mode" : "IRL Mode"}
