@@ -11605,6 +11605,10 @@ const GeneralSettingsView = () => {
         </div>
       )}
 
+      {activeTab === "File Storage" && (
+        <FileStorageView />
+      )}
+
       {activeTab === "Integrations" && (
         <div className="space-y-6">
           <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
