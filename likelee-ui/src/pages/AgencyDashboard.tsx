@@ -526,103 +526,6 @@ const MOCK_COMMUNICATIONS = [
   },
 ];
 
-const AddClientModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
-        <div className="p-8 space-y-6">
-          <div className="flex justify-between items-center">
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Add New Client
-            </DialogTitle>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Company Name *
-              </Label>
-              <Input
-                placeholder="Company Inc."
-                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Industry
-              </Label>
-              <Input
-                placeholder="Fashion, Tech, etc."
-                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-700">Website</Label>
-            <Input
-              placeholder="company.com"
-              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-700">
-              Pipeline Stage
-            </Label>
-            <Select defaultValue="lead">
-              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                <SelectValue placeholder="Select stage" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lead">Lead</SelectItem>
-                <SelectItem value="prospect">Prospect</SelectItem>
-                <SelectItem value="active">Active Client</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-700">
-              Tags (comma-separated)
-            </Label>
-            <Input
-              placeholder="Fashion, Commercial, High-Budget"
-              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-700">Notes</Label>
-            <Textarea
-              placeholder="Add notes about this client..."
-              className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="h-11 px-8 rounded-xl border-gray-200 font-bold"
-            >
-              Cancel
-            </Button>
-            <Button className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
-              Add Client
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const ClientProfileModal = ({
   client,
@@ -1138,13 +1041,6 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
 
       <div className="flex justify-between items-center">
         <div>
@@ -1921,13 +1817,6 @@ const FileStorageView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
 
       <div className="flex justify-between items-center">
         <div>
@@ -11156,14 +11045,14 @@ const CalendarScheduleTab = () => {
               <div
                 key={d}
                 className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
-                    ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
-                    : ""
+                  ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
+                  : ""
                   }`}
               >
                 <span
                   className={`text-sm font-medium ${d === 13
-                      ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
-                      : "text-gray-700"
+                    ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
+                    : "text-gray-700"
                     }`}
                 >
                   {d}
@@ -11224,8 +11113,227 @@ const CalendarScheduleTab = () => {
     </div>
   );
 };
+
+const BookingRequestsTab = () => {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Booking Requests</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">Review and manage incoming booking requests</p>
+        </div>
+      </div>
+
+      <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
+        <div className="bg-gray-50 p-4 rounded-full mb-4">
+          <Calendar className="w-12 h-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Booking requests feature coming soon</h3>
+        <p className="text-gray-500 max-w-md">Manage incoming booking requests from clients</p>
+      </div>
+    </div>
+  );
+};
+
+const AddClientModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Add New Client</DialogTitle>
+          <DialogDescription>Add client information for easier booking management</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <h3 className="text-lg font-bold border-b pb-2">Company Information</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Company Name *</Label>
+              <Input placeholder="Acme Inc." />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Website</Label>
+              <Input placeholder="https://example.com" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Address</Label>
+            <Input placeholder="123 Main St, New York, NY 10001" />
+          </div>
+          <div className="space-y-3">
+            <Label className="font-bold">Industry/Category Tags</Label>
+            <div className="flex flex-wrap gap-2">
+              {["Fashion", "Beauty", "Fitness", "Commercial", "Editorial", "E-commerce", "Advertising", "Film/TV", "Events", "Sports", "Luxury", "Tech", "Food & Beverage", "Automotive"].map(tag => (
+                <Badge key={tag} variant="secondary" className="bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer">{tag}</Badge>
+              ))}
+            </div>
+          </div>
+
+          <h3 className="text-lg font-bold border-b pb-2 pt-2">Primary Contact</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Contact Name *</Label>
+              <Input placeholder="John Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Email</Label>
+              <Input placeholder="john@example.com" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Phone</Label>
+            <Input placeholder="+1 (555) 123-4567" />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Payment Terms</Label>
+            <Select defaultValue="net30">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="due_receipt">Due on Receipt</SelectItem>
+                <SelectItem value="net15">Net 15</SelectItem>
+                <SelectItem value="net30">Net 30</SelectItem>
+                <SelectItem value="net60">Net 60</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Notes & Preferences</Label>
+            <Textarea placeholder="Any special notes, preferences, or important information about this client..." className="min-h-[100px]" />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold">Cancel</Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">Add Client</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const MergeClientsModal = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Merge Duplicate Clients</DialogTitle>
+          <DialogDescription>Select two clients to merge. All bookings from the source will be moved to the target.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Source Client (will be deleted)</Label>
+            <Select>
+              <SelectTrigger><SelectValue placeholder="Select client to merge from" /></SelectTrigger>
+              <SelectContent><SelectItem value="c1">Client A</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Target Client (will keep all data)</Label>
+            <Select>
+              <SelectTrigger><SelectValue placeholder="Select client to merge into" /></SelectTrigger>
+              <SelectContent><SelectItem value="c2">Client B</SelectItem></SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold">Cancel</Button>
+          <Button className="bg-orange-500 hover:bg-orange-600 text-white font-bold">Merge Clients</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ClientDatabaseTab = () => {
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+
+  const stats = [
+    { label: "Total Clients", value: "0" },
+    { label: "Active This Month", value: "1" },
+    { label: "Total Revenue", value: "$3" },
+    { label: "Avg. Booking Value", value: "$3" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Client Database</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">Manage your client relationships and booking history</p>
+        </div>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setAddClientOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Add Client
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {stats.map(s => (
+          <Card key={s.label} className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">{s.label}</p>
+            <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl space-y-6">
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input placeholder="Search by company name..." className="pl-9" />
+          </div>
+          <Select defaultValue="all">
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Industries</SelectItem>
+              <SelectItem value="fashion">Fashion</SelectItem>
+              <SelectItem value="beauty">Beauty</SelectItem>
+              <SelectItem value="fitness">Fitness</SelectItem>
+              <SelectItem value="commercial">Commercial</SelectItem>
+              <SelectItem value="editorial">Editorial</SelectItem>
+              <SelectItem value="ecommerce">E-commerce</SelectItem>
+              <SelectItem value="advertising">Advertising</SelectItem>
+              <SelectItem value="filmtv">Film/TV</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select defaultValue="name">
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Company Name</SelectItem>
+              <SelectItem value="bookings">Most Bookings</SelectItem>
+              <SelectItem value="revenue">Highest Revenue</SelectItem>
+              <SelectItem value="recent">Recent Activity</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" className="font-bold text-gray-700" onClick={() => setMergeOpen(true)}>Merge Duplicates</Button>
+        </div>
+
+        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
+          <div className="bg-gray-50 p-4 rounded-full mb-4">
+            <Building2 className="w-12 h-12 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">No clients yet</h3>
+          <p className="text-gray-500 max-w-md mb-4">Start adding clients to track your business relationships</p>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={() => setAddClientOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Add First Client
+          </Button>
+        </div>
+      </Card>
+
+      <AddClientModal open={addClientOpen} onOpenChange={setAddClientOpen} />
+      <MergeClientsModal open={mergeOpen} onOpenChange={setMergeOpen} />
+    </div>
+  );
+};
+
 const BookingsView = ({ activeSubTab }: { activeSubTab: string }) => {
   if (activeSubTab === "Calendar & Schedule") return <CalendarScheduleTab />;
+  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
+  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
 
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
