@@ -66,6 +66,7 @@ import {
   Receipt,
   Megaphone,
   ChevronUp,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12004,6 +12005,21 @@ const TalentAvailabilityTab = () => {
 
 const NotificationsTab = () => {
   const [activeSubNav, setActiveSubNav] = useState("logs");
+  const [testNotificationType, setTestNotificationType] = useState("email");
+  const [testTargetTalent, setTestTargetTalent] = useState("");
+
+  const testTalents = [
+    "Emma",
+    "Sergine",
+    "Milan",
+    "Julia",
+    "Matt",
+    "Carla",
+    "Luisa",
+    "Clemence",
+    "Lina",
+    "Aaron",
+  ];
 
   const stats = [
     {
@@ -12656,12 +12672,194 @@ const NotificationsTab = () => {
       )}
 
       {activeSubNav === "test" && (
-        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Coming Soon</h3>
-          <p className="text-gray-500 max-w-md">
-            This section is under development
-          </p>
-        </div>
+        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Test Notification Delivery
+            </h3>
+            <p className="text-sm text-gray-500 font-medium">
+              Send a test notification to verify delivery and formatting
+            </p>
+          </div>
+
+          <div className="space-y-6 max-w-full">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Notification Type
+              </Label>
+              <Select
+                value={testNotificationType}
+                onValueChange={setTestNotificationType}
+              >
+                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
+                  <SelectValue placeholder="Select notification type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">
+                    Email (with .ics attachment)
+                  </SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="push">Push notification</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Select Talent
+              </Label>
+              <Select
+                value={testTargetTalent}
+                onValueChange={setTestTargetTalent}
+              >
+                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
+                  <SelectValue placeholder="Choose talent to notify" />
+                </SelectTrigger>
+                <SelectContent>
+                  {testTalents.map((name) => (
+                    <SelectItem key={name} value={name.toLowerCase()}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+              <div className="p-2 bg-white rounded-full text-amber-500 shadow-sm">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <p className="text-sm text-amber-800 font-medium">
+                Test notifications will be sent with "[TEST]" prefix and won't
+                count toward billing.
+              </p>
+            </div>
+
+            <Button className="w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg">
+              <Send className="w-5 h-5" />
+              Send Test Notification
+            </Button>
+
+            <div className="pt-8">
+              <h4 className="text-lg font-bold text-gray-900 mb-6 uppercase tracking-wider">
+                Preview Templates
+              </h4>
+
+              <Card className="border border-gray-200 rounded-2xl bg-gray-50/50 p-6 overflow-hidden">
+                {testNotificationType === "email" && (
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                        Subject:
+                      </p>
+                      <p className="text-base font-bold text-gray-900">
+                        [TEST] New Booking: Glossier Beauty on Jan 15, 2026
+                      </p>
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-xl p-8 shadow-sm">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
+                        Body Preview:
+                      </p>
+                      <div className="space-y-4 text-[15px] text-gray-700 leading-relaxed">
+                        <p className="font-medium text-gray-900">Hi Emma,</p>
+                        <p className="font-medium text-gray-600">
+                          You have a new confirmed booking:
+                        </p>
+                        <div className="space-y-2 pt-2">
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Client:
+                            </span>{" "}
+                            Glossier Beauty
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Date:
+                            </span>{" "}
+                            Wednesday, January 15, 2026
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Call Time:
+                            </span>{" "}
+                            9:00 AM
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Wrap Time:
+                            </span>{" "}
+                            5:00 PM
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Location:
+                            </span>{" "}
+                            123 Main St, New York, NY
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Rate:
+                            </span>{" "}
+                            $1,200 Day Rate
+                          </p>
+                        </div>
+                        <p className="text-sm font-medium text-gray-400 mt-6 border-t border-gray-50 pt-4 italic">
+                          Calendar invite (.ics) attached
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {testNotificationType === "sms" && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Message Preview (160 chars max):
+                    </p>
+                    <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm min-h-[80px] flex items-center">
+                      <p className="text-sm text-gray-900 font-medium leading-relaxed">
+                        [TEST] You're booked for Glossier on Jan 15 at 9:00 AM.
+                        Location: 123 Main St, NY. Call time 9AM.
+                      </p>
+                    </div>
+                    <p className="text-[11px] font-bold text-gray-400">
+                      Character count: 98/160
+                    </p>
+                  </div>
+                )}
+
+                {testNotificationType === "push" && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Notification Preview:
+                    </p>
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xl max-w-sm flex gap-4 items-center animate-in slide-in-from-top-4 duration-500">
+                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 transform scale-95">
+                        <Bell className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <p className="text-sm font-bold text-gray-900 truncate">
+                            Likelee Agency
+                          </p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase">
+                            now
+                          </p>
+                        </div>
+                        <p className="text-[13px] font-bold text-indigo-600 mb-0.5">
+                          [TEST] New Booking
+                        </p>
+                        <p className="text-[12px] font-medium text-gray-600 leading-tight">
+                          Glossier Beauty on Jan 15 at 9:00 AM
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        </Card>
       )}
     </div>
   );
