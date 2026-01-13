@@ -13,3 +13,4 @@ pub mod profiles;
 pub mod reference_images;
 pub mod router;
 pub mod voice;
+pub mod payouts;

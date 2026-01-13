@@ -99,6 +99,24 @@ async fn main() {
         smtp_password: cfg.smtp_password.clone(),
         email_from: cfg.email_from.clone(),
         email_contact_to: cfg.email_contact_to.clone(),
+        // Stripe / Payouts
+        stripe_secret_key: cfg.stripe_secret_key.clone(),
+        stripe_webhook_secret: cfg.stripe_webhook_secret.clone(),
+        stripe_connect_client_id: cfg.stripe_connect_client_id.clone(),
+        stripe_onboarding_return_url: cfg.stripe_onboarding_return_url.clone(),
+        stripe_onboarding_refresh_url: cfg.stripe_onboarding_refresh_url.clone(),
+        payouts_enabled: cfg.payouts_enabled != "0",
+        min_payout_amount_cents: cfg.min_payout_amount_cents,
+        payout_auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
+        payout_fee_bps: cfg.payout_fee_bps,
+        payout_currency: cfg.payout_currency.clone(),
+        payout_allowed_currencies: cfg
+            .payout_allowed_currencies
+            .split(',')
+            .map(|s| s.trim().to_uppercase())
+            .filter(|s| !s.is_empty())
+            .collect(),
+        instant_payouts_enabled: cfg.instant_payouts_enabled != "0",
     };
 
     let app = likelee_server::router::build_router(state);

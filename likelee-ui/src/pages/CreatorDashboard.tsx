@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
+import { createPayoutsOnboardingLink } from "@/api/functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
@@ -5505,7 +5506,21 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Button
-            onClick={() => setShowConnectBankAccount(true)}
+            onClick={async () => {
+              try {
+                const profileId = user?.id;
+                if (!profileId) throw new Error("Not authenticated");
+                const res = await createPayoutsOnboardingLink(profileId);
+                if (res?.url) {
+                  window.location.href = res.url;
+                } else {
+                  setShowConnectBankAccount(true);
+                }
+              } catch (e) {
+                console.error(e);
+                setShowConnectBankAccount(true);
+              }
+            }}
             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
           >
             <DollarSign className="w-4 h-4" />

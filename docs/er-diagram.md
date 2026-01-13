@@ -108,6 +108,11 @@ erDiagram
     text tavus_avatar_status
     text tavus_last_error
 
+    %% Stripe Payouts
+    text stripe_connect_account_id
+    boolean payouts_enabled "default false"
+    text last_payout_error
+
     %% pricing (USD-only)
     integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
     text currency_code "check = 'USD'"
@@ -284,6 +289,44 @@ erDiagram
     timestamptz updated_at "default now()"
   }
 
+  %% Escrow & Payouts (new)
+  LEDGER_ENTRIES {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid profile_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+    text entry_type "enum('credit','debit')"
+    integer amount_cents
+    text currency "default 'EUR'"
+    text reference_type
+    text reference_id
+    jsonb metadata
+    timestamptz created_at "default now()"
+  }
+
+  PAYOUT_REQUESTS {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    uuid profile_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+    integer amount_cents
+    integer fee_cents "platform 8%"
+    integer instant_fee_cents "Stripe instant payout fee"
+    text payout_method "enum('standard','instant') default 'standard'"
+    text currency "default 'EUR'"
+    text status "enum('pending','approved','processing','paid','failed','canceled') default 'pending'"
+    text stripe_transfer_id
+    text stripe_payout_id
+    text failure_reason
+    timestamptz created_at "default now()"
+    uuid approved_by
+    timestamptz approved_at
+  }
+
+  WEBHOOK_EVENTS {
+    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+    text provider
+    text event_type
+    jsonb payload
+    timestamptz created_at "default now()"
+  }
+
   PROFILES ||--o{ ROYALTY_LEDGER : face_id
   PROFILES ||--o{ MODERATION_EVENTS : user_id
   PROFILES ||--o{ REFERENCE_IMAGES : user_id
@@ -299,6 +342,9 @@ erDiagram
   BRAND_VOICE_FOLDERS ||--o{ BRAND_VOICE_ASSETS : folder_id
   VOICE_RECORDINGS ||--o{ BRAND_VOICE_ASSETS : recording_id
   VOICE_MODELS ||--o{ BRAND_VOICE_ASSETS : model_id
+  %% Escrow & Payouts relationships
+  PROFILES ||--o{ LEDGER_ENTRIES : profile_id
+  PROFILES ||--o{ PAYOUT_REQUESTS : profile_id
 ```
 
 ## Notes

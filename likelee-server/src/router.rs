@@ -53,7 +53,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
         )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
         .route(
             "/api/moderation/image",
             post(crate::moderation::moderate_image),
@@ -138,6 +137,31 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/webhooks/creatify",
             post(crate::creatify::creatify_webhook),
+        )
+        // Payouts
+        .route(
+            "/api/payouts/onboarding_link",
+            post(crate::payouts::create_onboarding_link),
+        )
+        .route(
+            "/api/payouts/account_status",
+            get(crate::payouts::get_account_status),
+        )
+        .route(
+            "/api/payouts/balance",
+            get(crate::payouts::get_balance),
+        )
+        .route(
+            "/api/payouts/request",
+            post(crate::payouts::request_payout),
+        )
+        .route(
+            "/api/payouts/history",
+            get(crate::payouts::get_history),
+        )
+        .route(
+            "/webhooks/stripe",
+            post(crate::payouts::stripe_webhook),
         )
         // Integrations: Core
         .route(
