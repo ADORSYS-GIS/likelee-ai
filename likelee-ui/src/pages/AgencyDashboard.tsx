@@ -2777,6 +2777,19 @@ const GenerateInvoiceView = () => {
   const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
   const [commission, setCommission] = useState("20");
   const [taxExempt, setTaxExempt] = useState(false);
+  const [expenses, setExpenses] = useState<{ id: string; description: string; amount: string }[]>([]);
+
+  const addExpense = () => {
+    setExpenses([...expenses, { id: Math.random().toString(36).substr(2, 9), description: "", amount: "0" }]);
+  };
+
+  const removeExpense = (id: string) => {
+    setExpenses(expenses.filter((e) => e.id !== id));
+  };
+
+  const updateExpense = (id: string, field: "description" | "amount", value: string) => {
+    setExpenses(expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)));
+  };
 
   return (
     <div className="space-y-6">
@@ -3041,18 +3054,51 @@ const GenerateInvoiceView = () => {
             </Card>
           </div>
 
-          <div>
-            <Button
-              variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Expense
-            </Button>
-            <p className="text-xs text-gray-500 font-medium mt-2">
-              Expenses (Optional)
-            </p>
-          </div>
+          <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <Label className="text-sm font-bold text-gray-900">
+                Expenses (Optional)
+              </Label>
+              <Button
+                variant="outline"
+                onClick={addExpense}
+                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </Button>
+            </div>
+
+            {expenses.length > 0 && (
+              <div className="space-y-3">
+                {expenses.map((expense) => (
+                  <div key={expense.id} className="flex gap-3 items-center">
+                    <Input
+                      placeholder="Expense description"
+                      value={expense.description}
+                      onChange={(e) => updateExpense(expense.id, "description", e.target.value)}
+                      className="h-10 rounded-xl border-gray-200 flex-1 text-sm"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={expense.amount}
+                      onChange={(e) => updateExpense(expense.id, "amount", e.target.value)}
+                      className="h-10 rounded-xl border-gray-200 w-24 text-sm"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeExpense(expense.id)}
+                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
