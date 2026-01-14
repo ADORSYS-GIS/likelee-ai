@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -63,6 +63,8 @@ import {
   Briefcase,
   Receipt,
   Megaphone,
+  Edit2,
+  Menu,
   MapPin,
   Star,
 } from "lucide-react";
@@ -82,6 +84,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
+import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
 const AddProspectModal = ({
   open,
@@ -320,110 +325,6 @@ interface Client {
   };
 }
 
-interface FileItem {
-  id: string;
-  name: string;
-  type: "pdf" | "docx" | "jpg" | "png";
-  size: string;
-  folder: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  thumbnailUrl?: string;
-}
-
-interface FolderItem {
-  id: string;
-  name: string;
-  fileCount: number;
-  totalSize: string;
-  type: string;
-}
-
-const MOCK_FOLDERS: FolderItem[] = [
-  {
-    id: "1",
-    name: "Talent Files",
-    fileCount: 124,
-    totalSize: "4.2 GB",
-    type: "talent",
-  },
-  {
-    id: "2",
-    name: "Client Contracts",
-    fileCount: 45,
-    totalSize: "1.8 GB",
-    type: "client",
-  },
-  {
-    id: "3",
-    name: "Booking Documents",
-    fileCount: 89,
-    totalSize: "3.1 GB",
-    type: "booking",
-  },
-  {
-    id: "4",
-    name: "Receipts & Expenses",
-    fileCount: 156,
-    totalSize: "2.1 GB",
-    type: "expense",
-  },
-  {
-    id: "5",
-    name: "Marketing Materials",
-    fileCount: 67,
-    totalSize: "1.2 GB",
-    type: "marketing",
-  },
-];
-
-const MOCK_FILES: FileItem[] = [
-  {
-    id: "1",
-    name: "Emma_Contract_2024.pdf",
-    type: "pdf",
-    size: "245 KB",
-    folder: "Talent Files",
-    uploadedBy: "John Doe",
-    uploadedAt: "Jan 10, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
-  },
-  {
-    id: "2",
-    name: "Vogue_Shoot_Callsheet.pdf",
-    type: "pdf",
-    size: "186 KB",
-    folder: "Booking Documents",
-    uploadedBy: "Jane Smith",
-    uploadedAt: "Jan 9, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&h=300&fit=crop",
-  },
-  {
-    id: "3",
-    name: "Milan_Headshot_2024.jpg",
-    type: "jpg",
-    size: "3.2 MB",
-    folder: "Talent Files",
-    uploadedBy: "John Doe",
-    uploadedAt: "Jan 8, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop",
-  },
-  {
-    id: "4",
-    name: "Client_Brief_Nike.docx",
-    type: "docx",
-    size: "124 KB",
-    folder: "Client Contracts",
-    uploadedBy: "Sarah Wilson",
-    uploadedAt: "Jan 7, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
-  },
-];
-
 const MOCK_CLIENTS: Client[] = [
   {
     id: "nike",
@@ -628,24 +529,25 @@ const ClientProfileModal = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
-        <div className="p-8 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-gray-400" />
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] h-[85vh] p-0 rounded-2xl border-none flex flex-col overflow-hidden">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+          {/* Fixed Header Area */}
+          <div className="p-4 sm:p-8 pb-0 shrink-0 space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold text-gray-900">
+                  {client.name}
+                </DialogTitle>
+                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                  {client.status}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                {client.name}
-              </DialogTitle>
-              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
-                {client.status}
-              </Badge>
-            </div>
-          </div>
 
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 overflow-x-auto no-scrollbar shrink-0">
               <TabsTrigger
                 value="overview"
                 className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
@@ -677,9 +579,12 @@ const ClientProfileModal = ({
                 Files & Notes
               </TabsTrigger>
             </TabsList>
+          </div>
 
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-6">
             <TabsContent value="overview" className="space-y-6 mt-0">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Building2 className="w-5 h-5 text-gray-400" />
@@ -761,7 +666,7 @@ const ClientProfileModal = ({
 
               <div className="space-y-4">
                 <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
                     <span className="text-2xl font-bold text-purple-600 block">
                       {client.metrics?.revenue || "—"}
@@ -801,8 +706,8 @@ const ClientProfileModal = ({
             <TabsContent value="contacts" className="space-y-6 mt-0">
               <div className="flex justify-between items-center">
                 <h4 className="font-bold text-gray-900">Contact List</h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
                   Add Contact
                 </Button>
               </div>
@@ -810,10 +715,10 @@ const ClientProfileModal = ({
                 {MOCK_CONTACTS.map((contact, idx) => (
                   <Card
                     key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 space-y-3">
                         <div>
                           <h5 className="font-bold text-gray-900 text-lg">
                             {contact.name}
@@ -833,27 +738,27 @@ const ClientProfileModal = ({
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Mail className="w-4 h-4 text-gray-500" />
+                          <Mail className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Phone className="w-4 h-4 text-gray-500" />
+                          <Phone className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Edit className="w-4 h-4 text-gray-500" />
+                          <Edit className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                       </div>
                     </div>
@@ -867,19 +772,19 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">
                   Communication History
                 </h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
-                  Log Communication
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
+                  Log
                 </Button>
               </div>
               <div className="space-y-4">
                 {MOCK_COMMUNICATIONS.map((comm, idx) => (
                   <Card
                     key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 flex items-center gap-4">
                         <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
                           {comm.type === "email" && (
                             <Mail className="w-5 h-5 text-indigo-600" />
@@ -892,17 +797,17 @@ const ClientProfileModal = ({
                           )}
                         </div>
                         <div>
-                          <h5 className="font-bold text-gray-900">
+                          <h5 className="font-bold text-gray-900 text-sm">
                             {comm.subject}
                           </h5>
-                          <p className="text-sm text-gray-600 font-medium">
+                          <p className="text-xs text-gray-600 font-medium">
                             {comm.date} • {comm.participants}
                           </p>
                         </div>
                       </div>
                       <Badge
                         variant="outline"
-                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
+                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-2 py-0.5 text-[10px]"
                       >
                         {comm.type}
                       </Badge>
@@ -929,18 +834,20 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">Notes</h4>
                 <Textarea
                   defaultValue="Prefers diverse talent, always books for multi-day shoots."
-                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium text-gray-400 italic"
                 />
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
-                  Save Notes
-                </Button>
+                <div className="flex justify-end">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-lg text-xs">
+                    Save Notes
+                  </Button>
+                </div>
               </Card>
 
               <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
                 <div className="flex justify-between items-center">
                   <h4 className="font-bold text-gray-900">Files & Documents</h4>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                    <Plus className="w-4 h-4" />
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                    <Plus className="w-3.5 h-3.5" />
                     Upload File
                   </Button>
                 </div>
@@ -952,33 +859,34 @@ const ClientProfileModal = ({
                 </div>
               </Card>
             </TabsContent>
-          </Tabs>
+          </div>
 
-          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+          {/* Fixed Footer Area */}
+          <div className="p-4 sm:p-8 border-t border-gray-100 shrink-0 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-white">
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-600 font-bold text-sm"
               >
-                <Edit className="w-4 h-4 mr-2" />
+                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Edit Client
               </Button>
               <Button
                 variant="outline"
-                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold text-sm"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Delete Client
               </Button>
             </div>
             <Button
               onClick={onClose}
-              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+              className="w-full sm:w-auto h-9 sm:h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-sm"
             >
               Close
             </Button>
           </div>
-        </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -1005,27 +913,29 @@ const ClientCard = ({
   };
 
   return (
-    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
       <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex gap-6">
-          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-gray-500" />
+        <div className="flex flex-row gap-4 sm:gap-6">
+          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
+            <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                {client.name}
+              </h3>
               <Badge
                 variant="outline"
-                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
+                className={`${getStatusColor(client.status)} font-bold text-[10px] sm:text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-sm shrink-0`}
               >
                 {client.status}
               </Badge>
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {client.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                    className="text-[10px] sm:text-[11px] font-bold text-gray-900 border-gray-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
                   >
                     <Tag className="w-3 h-3 text-gray-900" />
                     {tag}
@@ -1033,21 +943,21 @@ const ClientCard = ({
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
+            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm text-gray-600 font-medium">
               <span className="flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-gray-400" />
+                <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.industry}
               </span>
               <span className="flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-gray-400" />
+                <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.website}
               </span>
               <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-gray-400" />
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.contacts} contacts
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
+            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm mt-2.5 font-medium">
               <span className="text-gray-500">
                 Total Revenue:{" "}
                 <span className="font-bold text-gray-900">
@@ -1075,34 +985,34 @@ const ClientCard = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full lg:w-auto">
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
           >
-            <Mail className="w-4 h-4 mr-2" />
+            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Email
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
           >
-            <Phone className="w-4 h-4 mr-2" />
+            <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Call
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto col-span-2 sm:col-span-1"
           >
-            <Package className="w-4 h-4 mr-2" />
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Send Package
           </Button>
           <Button
             onClick={onViewProfile}
-            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            className="h-9 sm:h-10 px-4 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl w-full sm:w-auto col-span-2 sm:col-span-1"
           >
             View Profile
           </Button>
@@ -1139,9 +1049,9 @@ const ClientCRMView = () => {
         </p>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
             Client Relationship Management
           </h1>
           <p className="text-gray-600 font-medium">
@@ -1151,7 +1061,7 @@ const ClientCRMView = () => {
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Add Client
@@ -1159,53 +1069,53 @@ const ClientCRMView = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="p-4 sm:p-6 bg-green-50/50 border-green-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-base font-bold text-green-800">
+            <span className="text-sm sm:text-base font-bold text-green-800">
               Active Clients
             </span>
           </div>
-          <span className="text-3xl font-bold text-green-900">1</span>
+          <span className="text-2xl sm:text-3xl font-bold text-green-900">1</span>
         </Card>
-        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-base font-bold text-blue-800">Prospects</span>
+            <span className="text-sm sm:text-base font-bold text-blue-800">Prospects</span>
           </div>
-          <span className="text-3xl font-bold text-blue-900">1</span>
+          <span className="text-2xl sm:text-3xl font-bold text-blue-900">1</span>
         </Card>
-        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
-            <span className="text-base font-bold text-purple-800">
+            <span className="text-sm sm:text-base font-bold text-purple-800">
               Total Revenue
             </span>
           </div>
-          <span className="text-3xl font-bold text-purple-900">$495K</span>
+          <span className="text-2xl sm:text-3xl font-bold text-purple-900">$495K</span>
         </Card>
-        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-base font-bold text-orange-800">
+            <span className="text-sm sm:text-base font-bold text-orange-800">
               Follow-ups Due
             </span>
           </div>
-          <span className="text-3xl font-bold text-orange-900">0</span>
+          <span className="text-2xl sm:text-3xl font-bold text-orange-900">0</span>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
@@ -1215,28 +1125,30 @@ const ClientCRMView = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="All Stages" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            <SelectItem value="leads">Leads</SelectItem>
-            <SelectItem value="prospects">Prospects</SelectItem>
-            <SelectItem value="active">Active Clients</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="Last Booking" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="last-booking">Last Booking</SelectItem>
-            <SelectItem value="revenue">Total Revenue</SelectItem>
-            <SelectItem value="name">Company Name</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 md:flex gap-4 sm:gap-6">
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+              <SelectValue placeholder="All Stages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              <SelectItem value="leads">Leads</SelectItem>
+              <SelectItem value="prospects">Prospects</SelectItem>
+              <SelectItem value="active">Active Clients</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+              <SelectValue placeholder="Last Booking" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="last-booking">Last Booking</SelectItem>
+              <SelectItem value="revenue">Total Revenue</SelectItem>
+              <SelectItem value="name">Company Name</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Client List */}
@@ -1265,805 +1177,6 @@ const ClientCRMView = () => {
   );
 };
 
-const StorageUsageCard = () => (
-  <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-    <div className="flex justify-between items-center mb-4">
-      <div className="flex items-center gap-2">
-        <HardDrive className="w-5 h-5 text-indigo-600" />
-        <span className="text-base font-bold text-gray-900">Storage Usage</span>
-      </div>
-      <span className="text-sm font-bold text-gray-900">
-        <span className="text-indigo-600">12.4 GB</span> of 50 GB used
-      </span>
-    </div>
-    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-      <div
-        className="h-full bg-indigo-600 rounded-full"
-        style={{ width: "24.8%" }}
-      />
-    </div>
-    <div className="flex justify-between items-center">
-      <p className="text-sm text-gray-500 font-medium">
-        37.6 GB remaining • Professional Plan
-      </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-        Upgrade Plan
-      </Button>
-    </div>
-  </Card>
-);
-
-const FolderCard = ({ folder }: { folder: FolderItem }) => {
-  const getFolderColor = (type: string) => {
-    switch (type) {
-      case "talent":
-        return "text-indigo-500";
-      case "client":
-        return "text-emerald-500";
-      case "booking":
-        return "text-blue-500";
-      case "expense":
-        return "text-orange-500";
-      case "marketing":
-        return "text-purple-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getFolderBg = (type: string) => {
-    switch (type) {
-      case "talent":
-        return "bg-indigo-50/50";
-      case "client":
-        return "bg-emerald-50/50";
-      case "booking":
-        return "bg-blue-50/50";
-      case "expense":
-        return "bg-orange-50/50";
-      case "marketing":
-        return "bg-purple-50/50";
-      default:
-        return "bg-gray-50/50";
-    }
-  };
-
-  return (
-    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
-      <div className="flex justify-between items-start mb-6 relative z-10">
-        <div
-          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
-        >
-          <div className="relative">
-            <Folder
-              className={`w-8 h-8 ${getFolderColor(folder.type)} fill-current opacity-20`}
-            />
-            <Folder
-              className={`absolute inset-0 w-8 h-8 ${getFolderColor(folder.type)}`}
-            />
-          </div>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-              <FolderOpen className="w-4 h-4 mr-2" /> Open
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-              <Edit className="w-4 h-4 mr-2" /> Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="relative z-10">
-        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
-          {folder.name}
-        </h4>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 font-bold">
-            {folder.fileCount} files
-          </span>
-          <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-500 font-bold">
-            {folder.totalSize}
-          </span>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-const FileCard = ({
-  file,
-  onPreview,
-  onShare,
-}: {
-  file: FileItem;
-  onPreview: (file: FileItem) => void;
-  onShare: (file: FileItem) => void;
-}) => (
-  <Card className="overflow-hidden bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow group max-w-[280px]">
-    <div className="aspect-video bg-gray-50 flex items-center justify-center relative">
-      {file.thumbnailUrl ? (
-        <img
-          src={file.thumbnailUrl}
-          alt={file.name}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="flex flex-col items-center gap-2">
-          {file.type === "pdf" && <FileText className="w-8 h-8 text-red-500" />}
-          {file.type === "docx" && (
-            <FileText className="w-8 h-8 text-blue-500" />
-          )}
-          {file.type === "jpg" && <File className="w-8 h-8 text-emerald-500" />}
-          <span className="text-[10px] font-black uppercase text-gray-400">
-            {file.type}
-          </span>
-        </div>
-      )}
-      <div className="absolute top-2 right-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreVertical className="w-3.5 h-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem
-              onClick={() => onPreview(file)}
-              className="font-bold text-gray-700 cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" /> Preview
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-              <Download className="w-4 h-4 mr-2" /> Download
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onShare(file)}
-              className="font-bold text-gray-700 cursor-pointer"
-            >
-              <Share2 className="w-4 h-4 mr-2" /> Share Link
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-    <div className="p-2.5">
-      <h5 className="text-[13px] font-bold text-gray-900 truncate mb-1">
-        {file.name}
-      </h5>
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col">
-          <span className="text-[10px] text-gray-600 font-bold">
-            {file.size}
-          </span>
-          <span className="text-[10px] text-gray-500 font-bold">
-            {file.uploadedAt}
-          </span>
-        </div>
-        <Badge
-          variant="outline"
-          className="text-[9px] font-bold text-gray-700 border-gray-200 px-1.5 py-0 bg-gray-50/50"
-        >
-          {file.folder}
-        </Badge>
-      </div>
-    </div>
-  </Card>
-);
-
-const FileRow = ({
-  file,
-  onPreview,
-  onShare,
-}: {
-  file: FileItem;
-  onPreview: (file: FileItem) => void;
-  onShare: (file: FileItem) => void;
-}) => (
-  <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow group">
-    <div className="flex items-center gap-4 flex-1">
-      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
-        {file.type === "pdf" && <FileText className="w-5 h-5 text-red-500" />}
-        {file.type === "docx" && <FileText className="w-5 h-5 text-blue-500" />}
-        {file.type === "jpg" && <File className="w-5 h-5 text-emerald-500" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h5 className="text-sm font-bold text-gray-900 truncate">
-          {file.name}
-        </h5>
-        <p className="text-xs text-gray-600 font-bold">
-          {file.size} • <span className="text-indigo-600">{file.folder}</span> •
-          Uploaded by <span className="text-gray-900">{file.uploadedBy}</span>{" "}
-          on {file.uploadedAt}
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
-        onClick={() => onPreview(file)}
-      >
-        <Eye className="w-4 h-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
-      >
-        <Download className="w-4 h-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-        onClick={() => onShare(file)}
-      >
-        <Share2 className="w-4 h-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
-    </div>
-  </div>
-);
-
-const NewFolderModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => (
-  <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="sm:max-w-[425px] rounded-2xl">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-gray-900">
-          Create New Folder
-        </DialogTitle>
-        <DialogDescription className="text-gray-500 font-medium">
-          Organize your files into folders
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-4 py-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">Folder Name</Label>
-          <Input
-            placeholder="e.g., Q1 2024 Campaigns"
-            className="h-11 rounded-xl border-gray-200"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">Folder Type</Label>
-          <Select>
-            <SelectTrigger className="h-11 rounded-xl border-gray-200">
-              <SelectValue placeholder="Select type..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="talent">Talent Files</SelectItem>
-              <SelectItem value="client">Client Files</SelectItem>
-              <SelectItem value="booking">Booking Files</SelectItem>
-              <SelectItem value="expense">Expense Files</SelectItem>
-              <SelectItem value="marketing">Marketing Files</SelectItem>
-              <SelectItem value="others">others</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter className="gap-2">
-        <Button
-          variant="outline"
-          onClick={onClose}
-          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
-        >
-          Cancel
-        </Button>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
-          Create Folder
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
-const UploadFilesModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => (
-  <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="sm:max-w-[500px] rounded-2xl">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-gray-900">
-          Upload Files
-        </DialogTitle>
-        <DialogDescription className="text-gray-500 font-medium">
-          Upload documents, images, or other files to your storage
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-6 py-4">
-        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
-          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Upload className="w-6 h-6 text-indigo-600" />
-          </div>
-          <p className="text-sm font-bold text-gray-900 mb-1">
-            Click to upload or drag and drop
-          </p>
-          <p className="text-xs text-gray-500 font-medium">
-            PDF, DOC, JPG, PNG up to 50MB
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">
-            Save to folder
-          </Label>
-          <Select>
-            <SelectTrigger className="h-11 rounded-xl border-gray-200">
-              <SelectValue placeholder="Select a folder..." />
-            </SelectTrigger>
-            <SelectContent>
-              {MOCK_FOLDERS.map((folder) => (
-                <SelectItem key={folder.id} value={folder.id}>
-                  {folder.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter className="gap-2">
-        <Button
-          variant="outline"
-          onClick={onClose}
-          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
-        >
-          Cancel
-        </Button>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
-          Upload Files
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
-const FilePreviewModal = ({
-  file,
-  isOpen,
-  onClose,
-}: {
-  file: FileItem | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!file) return null;
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-              {file.type === "pdf" && (
-                <FileText className="w-6 h-6 text-red-500" />
-              )}
-              {file.type === "docx" && (
-                <FileText className="w-6 h-6 text-blue-500" />
-              )}
-              {file.type === "jpg" && (
-                <File className="w-6 h-6 text-emerald-500" />
-              )}
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-gray-900">
-                {file.name}
-              </DialogTitle>
-              <p className="text-sm text-gray-500 font-medium">
-                {file.size} • Uploaded by {file.uploadedBy} on {file.uploadedAt}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-xl hover:bg-gray-50"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </Button>
-        </div>
-        <div className="p-10 bg-gray-50/50 flex items-center justify-center min-h-[500px] relative group">
-          {file.thumbnailUrl ? (
-            <div className="relative">
-              <img
-                src={file.thumbnailUrl}
-                alt={file.name}
-                className="max-w-full max-h-[600px] rounded-2xl shadow-2xl border-4 border-white transition-transform group-hover:scale-[1.01]"
-              />
-              <div className="absolute inset-0 rounded-2xl shadow-inner pointer-events-none" />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-6 p-12 bg-white rounded-3xl shadow-sm border border-gray-100">
-              <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center">
-                {file.type === "pdf" && (
-                  <FileText className="w-10 h-10 text-red-500" />
-                )}
-                {file.type === "docx" && (
-                  <FileText className="w-10 h-10 text-blue-500" />
-                )}
-              </div>
-              <div className="text-center">
-                <p className="text-gray-900 font-bold text-lg mb-1">
-                  Preview not available
-                </p>
-                <p className="text-gray-500 text-sm font-medium">
-                  Please download the file to view its content
-                </p>
-              </div>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-8">
-                Download Now
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="p-6 border-t border-gray-100 flex justify-between items-center bg-white">
-          <div className="flex gap-2">
-            <Badge
-              variant="outline"
-              className="bg-gray-50 text-gray-600 border-gray-200 font-bold px-3 py-1 rounded-lg"
-            >
-              {file.folder}
-            </Badge>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
-            >
-              Close Preview
-            </Button>
-            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
-              <Download className="w-4 h-4" />
-              Download File
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const ShareFileModal = ({
-  file,
-  isOpen,
-  onClose,
-}: {
-  file: FileItem | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!file) return null;
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-        <div className="p-6 border-b border-gray-100 bg-white">
-          <div className="flex justify-between items-start mb-1">
-            <DialogTitle className="text-xl font-bold text-gray-900">
-              Share File
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="rounded-xl -mr-2 -mt-2"
-            >
-              <X className="w-5 h-5 text-gray-400" />
-            </Button>
-          </div>
-          <DialogDescription className="text-gray-500 font-medium">
-            Generate a secure shareable link for{" "}
-            <span className="text-gray-900 font-bold">{file.name}</span>
-          </DialogDescription>
-        </div>
-
-        <div className="p-6 space-y-6 bg-gray-50/30">
-          <div className="space-y-2.5">
-            <Label className="text-sm font-bold text-gray-700 ml-1">
-              Share Link
-            </Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  readOnly
-                  value={`https://agency.likelee.ai/share/${file.id}`}
-                  className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
-                />
-                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              </div>
-              <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
-                <Copy className="w-4 h-4" />
-                Copy
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2.5">
-              <Label className="text-sm font-bold text-gray-700 ml-1">
-                Link Expiration
-              </Label>
-              <Select defaultValue="7-days">
-                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
-                  <SelectValue placeholder="Select expiration..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="24-hours" className="font-medium">
-                    24 Hours
-                  </SelectItem>
-                  <SelectItem value="7-days" className="font-medium">
-                    7 Days
-                  </SelectItem>
-                  <SelectItem value="30-days" className="font-medium">
-                    30 Days
-                  </SelectItem>
-                  <SelectItem value="never" className="font-medium">
-                    Never
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2.5">
-              <Label className="text-sm font-bold text-gray-700 ml-1">
-                Access Level
-              </Label>
-              <Select defaultValue="view">
-                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
-                  <SelectValue placeholder="Select access..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="view" className="font-medium">
-                    View Only
-                  </SelectItem>
-                  <SelectItem value="download" className="font-medium">
-                    Can Download
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <Label
-                  className="text-sm font-bold text-gray-700 cursor-pointer"
-                  htmlFor="require-password"
-                >
-                  Require password
-                </Label>
-                <p className="text-[11px] text-gray-500 font-medium">
-                  Add an extra layer of security
-                </p>
-              </div>
-            </div>
-            <Checkbox
-              id="require-password"
-              className="rounded-md w-5 h-5 border-gray-300"
-            />
-          </div>
-        </div>
-
-        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-white">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="h-12 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </Button>
-          <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
-            <Share2 className="w-4 h-4" />
-            Create Share Link
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const FileStorageView = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFileForPreview, setSelectedFileForPreview] =
-    useState<FileItem | null>(null);
-  const [selectedFileForShare, setSelectedFileForShare] =
-    useState<FileItem | null>(null);
-
-  return (
-    <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Folder className="w-8 h-8 text-indigo-600" />
-            File Storage
-          </h1>
-          <p className="text-gray-600 font-medium">
-            Organize and manage your agency files
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setIsNewFolderModalOpen(true)}
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <FolderPlus className="w-5 h-5" />
-            New Folder
-          </Button>
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-          >
-            <Upload className="w-5 h-5" />
-            Upload Files
-          </Button>
-        </div>
-      </div>
-
-      <StorageUsageCard />
-
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              placeholder="Search files by name..."
-              className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <Select defaultValue="name-asc">
-              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                <SelectItem value="date-desc">Date (Newest)</SelectItem>
-                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
-                <SelectItem value="size-desc">Size (Largest)</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex bg-gray-100 p-1 rounded-xl">
-              <Button
-                variant={viewMode === "grid" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4 mr-2" />
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4 mr-2" />
-                List
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {MOCK_FOLDERS.map((folder) => (
-            <FolderCard key={folder.id} folder={folder} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
-          <span className="text-sm text-gray-500 font-medium">
-            {MOCK_FILES.length} files
-          </span>
-        </div>
-
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {MOCK_FILES.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {MOCK_FILES.map((file) => (
-              <FileRow
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <NewFolderModal
-        isOpen={isNewFolderModalOpen}
-        onClose={() => setIsNewFolderModalOpen(false)}
-      />
-      <UploadFilesModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-      />
-      <FilePreviewModal
-        file={selectedFileForPreview}
-        isOpen={!!selectedFileForPreview}
-        onClose={() => setSelectedFileForPreview(null)}
-      />
-      <ShareFileModal
-        file={selectedFileForShare}
-        isOpen={!!selectedFileForShare}
-        onClose={() => setSelectedFileForShare(null)}
-      />
-    </div>
-  );
-};
 
 const TALENT_DATA = [
   {
@@ -2721,11 +1834,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -4050,13 +3162,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -4175,16 +3287,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -5025,9 +4136,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5839,11 +4950,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -8014,7 +7124,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -8177,11 +7287,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -8674,11 +7783,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -9560,11 +8668,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -10521,91 +9628,6 @@ const AnalyticsDashboardView = () => {
   );
 };
 
-const SettingsView = () => {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-
-      {/* Agency Information */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Agency Information
-        </h3>
-        <div className="space-y-6 max-w-2xl">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">
-              Agency Name
-            </Label>
-            <Input
-              defaultValue="CM Models"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Website</Label>
-            <Input
-              defaultValue="https://cmmodels.com/"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Location</Label>
-            <Input
-              defaultValue="U.S."
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Integrations */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Integrations
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <DollarSign className="w-5 h-5 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  Stripe Connect
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Payouts & Invoicing
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <Link className="w-5 h-5 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">ElevenLabs</p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Voice cloning
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-};
 
 const PlaceholderView = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center h-full py-20 text-center">
@@ -10705,6 +9727,32 @@ export default function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -10724,89 +9772,107 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          { id: "settings", label: "Settings", icon: Settings },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar and schedule",
-              "Booking request",
-              "Client Database",
-              "Talent availability",
-              "Notifications",
-              "Management and Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "settings", label: "Settings", icon: Settings },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar and schedule",
+            "Booking request",
+            "Client Database",
+            "Talent availability",
+            "Notifications",
+            "Management and Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
+      <aside className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -10835,20 +9901,22 @@ export default function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
+                    if (item.id === "settings") {
+                      setActiveTab("settings");
+                      setActiveSubTab("General Settings");
+                    }
                   } else {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -10868,11 +9936,10 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -10900,10 +9967,19 @@ export default function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-gray-500 hover:text-gray-900"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+
+          <div className="flex items-center gap-4 ml-auto">
             <Button
               variant="outline"
               size="sm"
@@ -10922,7 +9998,7 @@ export default function AgencyDashboard() {
             </Button>
 
             {/* Notifications Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={notificationRef}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -10934,7 +10010,7 @@ export default function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-x-4 top-20 mt-0 w-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80 md:inset-x-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
@@ -10982,7 +10058,7 @@ export default function AgencyDashboard() {
             </Button>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -11083,7 +10159,7 @@ export default function AgencyDashboard() {
         </header>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
+        <main className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-8 bg-gray-50">
           {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
@@ -11121,7 +10197,12 @@ export default function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "settings" && <SettingsView />}
+          {activeTab === "settings" && activeSubTab === "General Settings" && (
+            <GeneralSettingsView />
+          )}
+          {activeTab === "settings" && activeSubTab === "File Storage" && (
+            <FileStorageView />
+          )}
           {activeTab === "scouting" && (
             <ScoutingHubView
               activeTab={activeScoutingTab}
