@@ -12909,72 +12909,79 @@ const NotificationsTab = () => {
             ))}
           </div>
 
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-gray-900">
-              Recent Notifications
-            </h3>
-            <Button variant="outline" className="font-bold text-gray-700">
-              <Filter className="w-4 h-4 mr-2" /> Filter
-            </Button>
-          </div>
+          <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                Recent Notifications
+              </h3>
+              <Button variant="outline" className="font-bold text-gray-700">
+                <Filter className="w-4 h-4 mr-2" /> Filter
+              </Button>
+            </div>
 
-          <div className="space-y-3">
-            {notifications.map((notif, idx) => (
-              <Card
-                key={idx}
-                className={`p-4 border ${notif.status === "error"
-                  ? "border-red-200 bg-red-50"
-                  : "border-gray-200 bg-white"
-                  } rounded-xl`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    {notif.type === "EMAIL" && (
-                      <Mail className="w-5 h-5 text-gray-600" />
-                    )}
-                    {notif.type === "SMS" && (
-                      <Phone className="w-5 h-5 text-gray-600" />
-                    )}
-                    {notif.type === "PUSH" && (
-                      <Bell className="w-5 h-5 text-gray-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-gray-900">{notif.title}</h4>
-                      <Badge variant="secondary" className="text-xs font-bold">
-                        {notif.type}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      To: <span className="font-medium">{notif.recipient}</span>
-                    </p>
-                    <p className="text-sm text-gray-700">{notif.message}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <p className="text-xs text-gray-500">{notif.time}</p>
-                      {notif.detail && (
-                        <p
-                          className={`text-xs ${notif.status === "error"
-                            ? "text-red-600 font-medium"
-                            : "text-blue-600"
-                            }`}
-                        >
-                          {notif.detail}
+            <div className="space-y-3">
+              {notifications.map((notif, idx) => (
+                <Card
+                  key={idx}
+                  className={`p-4 border ${notif.status === "error"
+                      ? "border-red-200 bg-red-50"
+                      : "border-gray-100 hover:border-indigo-200 transition-colors"
+                    }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`p-2 rounded-lg ${notif.type === "EMAIL"
+                            ? "bg-blue-100 text-blue-600"
+                            : notif.type === "SMS"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-purple-100 text-purple-600"
+                          }`}
+                      >
+                        {notif.type === "EMAIL" && <Mail className="w-5 h-5" />}
+                        {notif.type === "SMS" && <Phone className="w-5 h-5" />}
+                        {notif.type === "PUSH" && <Bell className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-gray-900">
+                            {notif.title}
+                          </h4>
+                          <span className="text-xs font-medium text-gray-500">
+                            • {notif.type}
+                          </span>
+                          {notif.status === "error" && (
+                            <Badge variant="destructive" className="h-5 px-1.5">
+                              Failed
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-900 font-medium mt-0.5">
+                          {notif.message}
                         </p>
-                      )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          To: <span className="font-bold">{notif.recipient}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-gray-500">
+                        {notif.time}
+                      </p>
+                      <p
+                        className={`text-xs font-bold mt-1 ${notif.status === "success"
+                            ? "text-green-600"
+                            : "text-red-600"
+                          }`}
+                      >
+                        {notif.detail}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex-shrink-0">
-                    {notif.status === "success" ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-600" />
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          </Card>
         </>
       )}
 
