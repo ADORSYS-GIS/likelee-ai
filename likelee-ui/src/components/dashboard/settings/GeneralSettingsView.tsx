@@ -325,7 +325,7 @@ const GeneralSettingsView = () => {
     const secondaryColorInputRef = useRef<HTMLInputElement>(null);
 
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-full mx-auto">
             <div className="space-y-6 animate-in fade-in duration-500">
                 <div>
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Agency Settings</h2>
@@ -365,7 +365,7 @@ const GeneralSettingsView = () => {
                     <div className="space-y-6">
                         {/* Agency Information */}
                         {/* Agency Information */}
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
                                     <Building2 className="w-5 h-5 text-indigo-600" />
@@ -375,7 +375,7 @@ const GeneralSettingsView = () => {
                                 </h3>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold text-gray-900">
                                         Agency Name *
@@ -490,7 +490,7 @@ const GeneralSettingsView = () => {
 
                         {/* Branding */}
                         {/* Branding */}
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
                                 Branding
                             </h3>
@@ -609,7 +609,7 @@ const GeneralSettingsView = () => {
                     <div className="space-y-6">
                         {/* Default Commission Rate */}
                         {/* Default Commission Rate */}
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
                                     <DollarSign className="w-5 h-5 text-green-600" />
@@ -618,7 +618,7 @@ const GeneralSettingsView = () => {
                                     Default Commission Rate
                                 </h3>
                             </div>
-                            <div className="space-y-4 max-w-md">
+                            <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold text-gray-900">
                                         Agency Commission (%)
@@ -636,7 +636,7 @@ const GeneralSettingsView = () => {
 
                         {/* Division Commissions */}
                         {/* Division Commissions */}
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
                                     Division Commissions
@@ -691,7 +691,7 @@ const GeneralSettingsView = () => {
 
                         {/* Per-Talent Custom Commissions */}
                         {/* Per-Talent Custom Commissions */}
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
                                 Per-Talent Custom Commissions
                             </h3>
@@ -720,7 +720,7 @@ const GeneralSettingsView = () => {
 
                 {activeTab === "Email Templates" && (
                     <div className="space-y-6">
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
@@ -745,7 +745,7 @@ const GeneralSettingsView = () => {
                                 <h4 className="text-sm font-bold text-blue-900 mb-4">
                                     Available Variables:
                                 </h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-8">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-y-3 gap-x-8">
                                     {[
                                         "{talent_name}",
                                         "{client_name}",
@@ -789,7 +789,7 @@ const GeneralSettingsView = () => {
                                 ].map((template) => (
                                     <div
                                         key={template.title}
-                                        className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
+                                        className="p-4 sm:p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
                                     >
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
@@ -829,7 +829,7 @@ const GeneralSettingsView = () => {
                                             <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                                 Body:
                                             </Label>
-                                            <div className="p-4 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-700 font-medium whitespace-pre-line leading-relaxed">
+                                            <div className="p-6 bg-gray-100 border border-gray-200 rounded-xl text-base text-gray-700 font-medium whitespace-pre-line leading-relaxed min-h-[150px]">
                                                 {template.body}
                                             </div>
                                         </div>
@@ -849,7 +849,7 @@ const GeneralSettingsView = () => {
 
                 {activeTab === "Notifications" && (
                     <div className="space-y-6">
-                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                                     <Bell className="w-5 h-5 text-purple-600" />
@@ -864,7 +864,7 @@ const GeneralSettingsView = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {[
                                     {
                                         title: "Booking Created",
@@ -930,7 +930,7 @@ const GeneralSettingsView = () => {
                 {
                     activeTab === "Tax & Currency" && (
                         <div className="space-y-6">
-                            <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                                 <div className="flex items-center gap-3 mb-8">
                                     <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
                                         <DollarSign className="w-5 h-5 text-orange-600" />
@@ -1013,7 +1013,7 @@ const GeneralSettingsView = () => {
                                 </Button>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {[
                                     { name: "Women", count: 45, color: "bg-pink-50 text-pink-600" },
                                     { name: "Men", count: 32, color: "bg-blue-50 text-blue-600" },
@@ -1095,7 +1095,7 @@ const GeneralSettingsView = () => {
 
                             <div className="space-y-4">
                                 <h4 className="text-base font-bold text-gray-900 uppercase tracking-wider">User Roles</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {[
                                         {
                                             role: "Admin",
