@@ -527,24 +527,25 @@ const ClientProfileModal = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] max-h-[85vh] overflow-y-auto p-0 rounded-2xl border-none">
-        <div className="p-4 sm:p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-gray-400" />
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] h-[85vh] p-0 rounded-2xl border-none flex flex-col overflow-hidden">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+          {/* Fixed Header Area */}
+          <div className="p-4 sm:p-8 pb-0 shrink-0 space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold text-gray-900">
+                  {client.name}
+                </DialogTitle>
+                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                  {client.status}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                {client.name}
-              </DialogTitle>
-              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
-                {client.status}
-              </Badge>
-            </div>
-          </div>
 
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6 overflow-x-auto no-scrollbar">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 overflow-x-auto no-scrollbar shrink-0">
               <TabsTrigger
                 value="overview"
                 className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
@@ -576,7 +577,10 @@ const ClientProfileModal = ({
                 Files & Notes
               </TabsTrigger>
             </TabsList>
+          </div>
 
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-6">
             <TabsContent value="overview" className="space-y-6 mt-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
@@ -851,9 +855,10 @@ const ClientProfileModal = ({
                 </div>
               </Card>
             </TabsContent>
-          </Tabs>
+          </div>
 
-          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+          {/* Fixed Footer Area */}
+          <div className="p-4 sm:p-8 border-t border-gray-100 shrink-0 flex justify-between items-center bg-white">
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -877,7 +882,7 @@ const ClientProfileModal = ({
               Close
             </Button>
           </div>
-        </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
