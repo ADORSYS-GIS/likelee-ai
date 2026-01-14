@@ -88,7 +88,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format, addMonths, subMonths } from "date-fns";
+import {
+  format,
+  addMonths,
+  subMonths,
+  getDaysInMonth,
+  startOfMonth,
+  subDays,
+  addDays,
+} from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -11260,11 +11268,16 @@ const CalendarScheduleTab = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 0, 13)); // Jan 13 2026
+  // Ensure currentDate starts at today, resolving 13th vs 14th issue
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
+  const handlePrevDay = () => setCurrentDate((prev) => subDays(prev, 1));
+  const handleNextDay = () => setCurrentDate((prev) => addDays(prev, 1));
+  const handleToday = () => setCurrentDate(new Date());
+
+  // Month Navigation for the stats/dropdowns logic if we want to change view
   const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
-  const handleToday = () => setCurrentDate(new Date());
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -11286,10 +11299,10 @@ const CalendarScheduleTab = ({
           setNewBookingOpen(false);
           break;
         case "arrowleft":
-          handlePrevMonth();
+          handlePrevDay(); // Shortcut navigates on calendar (days)
           break;
         case "arrowright":
-          handleNextMonth();
+          handleNextDay(); // Shortcut navigates on calendar (days)
           break;
       }
     };
@@ -11305,6 +11318,16 @@ const CalendarScheduleTab = ({
   ];
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  // Dynamic Calendar Calculation
+  const daysInMonth = getDaysInMonth(currentDate);
+  const firstDayOfMonth = startOfMonth(currentDate).getDay(); // 0 for Sunday
+  const previousMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => {
+    const date = subDays(startOfMonth(currentDate), firstDayOfMonth - i);
+    return date.getDate();
+  });
+
+  const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
     <div className="space-y-6">
@@ -11354,8 +11377,7 @@ const CalendarScheduleTab = ({
             <Select
               value={format(currentDate, "MMMM").toLowerCase()}
               onValueChange={(val) => {
-                // Approximate set month logic if needed, but keeping simple for now
-                // Ideally this would parse month and set currentDate
+                // Approximate set month logic if needed
               }}
             >
               <SelectTrigger className="w-32">
@@ -11403,6 +11425,7 @@ const CalendarScheduleTab = ({
               </SelectContent>
             </Select>
             <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+              {/* UI Arrows still control Month as is standard behaviour */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -11515,13 +11538,10 @@ const CalendarScheduleTab = ({
               </div>
             ))}
           </div>
-          {/* Static Grid for Demo (assuming Jan 2026 for visual consistency if selected, 
-              but in dynamic mode we would generate this. 
-              Keeping static mock for the requested specific UI match unless logic required) 
-          */}
+
           <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
             {/* Previous Month Filler */}
-            {[28, 29, 30, 31].map((d) => (
+            {previousMonthDays.map((d) => (
               <div
                 key={`prev-${d}`}
                 className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
@@ -11529,9 +11549,11 @@ const CalendarScheduleTab = ({
                 {d}
               </div>
             ))}
-            {/* January 2026 */}
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
-              const dayString = `2026-01-${d.toString().padStart(2, "0")}`;
+            {/* Current Month Days */}
+            {currentMonthDays.map((d) => {
+              const year = currentDate.getFullYear();
+              const month = currentDate.getMonth() + 1;
+              const dayString = `${year}-${month.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
               const dayBookings = bookings.filter((b) => b.date === dayString);
 
               const getTypeColor = (type: string) => {
@@ -11553,16 +11575,23 @@ const CalendarScheduleTab = ({
                 }
               };
 
+              const isSelected = d === currentDate.getDate();
+
               return (
                 <div
                   key={d}
-                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
+                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${isSelected
                     ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
                     : ""
                     }`}
+                  onClick={() => {
+                    const newDate = new Date(currentDate);
+                    newDate.setDate(d);
+                    setCurrentDate(newDate);
+                  }}
                 >
                   <span
-                    className={`text-sm font-medium ${d === 13
+                    className={`text-sm font-medium ${isSelected
                       ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
                       : "text-gray-700"
                       }`}
@@ -12498,6 +12527,8 @@ const AddBookOutModal = ({
     setNotes("");
   };
 
+  const isValid = reason && talentId && startDate && endDate;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -12589,8 +12620,10 @@ const AddBookOutModal = ({
             Cancel
           </Button>
           <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${!isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
+              }`}
             onClick={handleSave}
+            disabled={!isValid}
           >
             Save Book-Out
           </Button>
@@ -12610,7 +12643,7 @@ const TalentAvailabilityTab = ({
   onRemoveBookOut: (id: string) => void;
 }) => {
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
 
   // Helper to find talent name
   const getTalentName = (id: string) =>
@@ -12689,7 +12722,10 @@ const TalentAvailabilityTab = ({
                       action: (
                         <ToastAction
                           altText="Delete"
-                          onClick={() => onRemoveBookOut(bo.id)}
+                          onClick={() => {
+                            onRemoveBookOut(bo.id);
+                            dismiss();
+                          }}
                           className="font-bold bg-red-600 text-white hover:bg-red-700 hover:text-white border-none"
                         >
                           Delete
