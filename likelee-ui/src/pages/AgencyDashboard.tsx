@@ -12037,7 +12037,7 @@ const CalendarScheduleTab = ({
                   <div className="mt-1 space-y-1">
                     {dayBookings.map((b, idx) => (
                       <div
-                        key={`${b.id}-${idx}`}
+                        key={`${b.id} - ${idx}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedBooking(b);
@@ -14902,7 +14902,7 @@ const BookingsView = ({
   );
 };
 
-export default function AgencyDashboard() {
+function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
   const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
@@ -15465,3 +15465,5 @@ export default function AgencyDashboard() {
     </div>
   );
 }
+
+export default AgencyDashboard;
