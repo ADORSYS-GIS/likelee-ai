@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -74,6 +74,8 @@ import {
   Printer,
   Files,
   TrendingDown,
+  Edit2,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -120,6 +122,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
+import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
 const AddProspectModal = ({
   open,
@@ -357,110 +361,6 @@ interface Client {
     lastBookingDate: string;
   };
 }
-
-interface FileItem {
-  id: string;
-  name: string;
-  type: "pdf" | "docx" | "jpg" | "png";
-  size: string;
-  folder: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  thumbnailUrl?: string;
-}
-
-interface FolderItem {
-  id: string;
-  name: string;
-  fileCount: number;
-  totalSize: string;
-  type: string;
-}
-
-const MOCK_FOLDERS: FolderItem[] = [
-  {
-    id: "1",
-    name: "Talent Files",
-    fileCount: 124,
-    totalSize: "4.2 GB",
-    type: "talent",
-  },
-  {
-    id: "2",
-    name: "Client Contracts",
-    fileCount: 45,
-    totalSize: "1.8 GB",
-    type: "client",
-  },
-  {
-    id: "3",
-    name: "Booking Documents",
-    fileCount: 89,
-    totalSize: "3.1 GB",
-    type: "booking",
-  },
-  {
-    id: "4",
-    name: "Receipts & Expenses",
-    fileCount: 156,
-    totalSize: "2.1 GB",
-    type: "expense",
-  },
-  {
-    id: "5",
-    name: "Marketing Materials",
-    fileCount: 67,
-    totalSize: "1.2 GB",
-    type: "marketing",
-  },
-];
-
-const MOCK_FILES: FileItem[] = [
-  {
-    id: "1",
-    name: "Emma_Contract_2024.pdf",
-    type: "pdf",
-    size: "245 KB",
-    folder: "Talent Files",
-    uploadedBy: "John Doe",
-    uploadedAt: "Jan 10, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
-  },
-  {
-    id: "2",
-    name: "Vogue_Shoot_Callsheet.pdf",
-    type: "pdf",
-    size: "186 KB",
-    folder: "Booking Documents",
-    uploadedBy: "Jane Smith",
-    uploadedAt: "Jan 9, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&h=300&fit=crop",
-  },
-  {
-    id: "3",
-    name: "Milan_Headshot_2024.jpg",
-    type: "jpg",
-    size: "3.2 MB",
-    folder: "Talent Files",
-    uploadedBy: "John Doe",
-    uploadedAt: "Jan 8, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop",
-  },
-  {
-    id: "4",
-    name: "Client_Brief_Nike.docx",
-    type: "docx",
-    size: "124 KB",
-    folder: "Client Contracts",
-    uploadedBy: "Sarah Wilson",
-    uploadedAt: "Jan 7, 2024",
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
-  },
-];
 
 const MOCK_CLIENTS: Client[] = [
   {
@@ -771,24 +671,25 @@ const ClientProfileModal = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
-        <div className="p-8 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-gray-400" />
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] h-[85vh] p-0 rounded-2xl border-none flex flex-col overflow-hidden">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+          {/* Fixed Header Area */}
+          <div className="p-4 sm:p-8 pb-0 shrink-0 space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold text-gray-900">
+                  {client.name}
+                </DialogTitle>
+                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                  {client.status}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                {client.name}
-              </DialogTitle>
-              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
-                {client.status}
-              </Badge>
-            </div>
-          </div>
 
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 overflow-x-auto no-scrollbar shrink-0">
               <TabsTrigger
                 value="overview"
                 className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
@@ -820,9 +721,12 @@ const ClientProfileModal = ({
                 Files & Notes
               </TabsTrigger>
             </TabsList>
+          </div>
 
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-6">
             <TabsContent value="overview" className="space-y-6 mt-0">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Building2 className="w-5 h-5 text-gray-400" />
@@ -904,7 +808,7 @@ const ClientProfileModal = ({
 
               <div className="space-y-4">
                 <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
                     <span className="text-2xl font-bold text-purple-600 block">
                       {client.metrics?.revenue || "—"}
@@ -944,8 +848,8 @@ const ClientProfileModal = ({
             <TabsContent value="contacts" className="space-y-6 mt-0">
               <div className="flex justify-between items-center">
                 <h4 className="font-bold text-gray-900">Contact List</h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
                   Add Contact
                 </Button>
               </div>
@@ -953,10 +857,10 @@ const ClientProfileModal = ({
                 {MOCK_CONTACTS.map((contact, idx) => (
                   <Card
                     key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 space-y-3">
                         <div>
                           <h5 className="font-bold text-gray-900 text-lg">
                             {contact.name}
@@ -976,27 +880,27 @@ const ClientProfileModal = ({
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Mail className="w-4 h-4 text-gray-500" />
+                          <Mail className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Phone className="w-4 h-4 text-gray-500" />
+                          <Phone className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Edit className="w-4 h-4 text-gray-500" />
+                          <Edit className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                       </div>
                     </div>
@@ -1010,19 +914,19 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">
                   Communication History
                 </h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
-                  Log Communication
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
+                  Log
                 </Button>
               </div>
               <div className="space-y-4">
                 {MOCK_COMMUNICATIONS.map((comm, idx) => (
                   <Card
                     key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 flex items-center gap-4">
                         <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
                           {comm.type === "email" && (
                             <Mail className="w-5 h-5 text-indigo-600" />
@@ -1035,17 +939,17 @@ const ClientProfileModal = ({
                           )}
                         </div>
                         <div>
-                          <h5 className="font-bold text-gray-900">
+                          <h5 className="font-bold text-gray-900 text-sm">
                             {comm.subject}
                           </h5>
-                          <p className="text-sm text-gray-600 font-medium">
+                          <p className="text-xs text-gray-600 font-medium">
                             {comm.date} • {comm.participants}
                           </p>
                         </div>
                       </div>
                       <Badge
                         variant="outline"
-                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
+                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-2 py-0.5 text-[10px]"
                       >
                         {comm.type}
                       </Badge>
@@ -1072,18 +976,20 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">Notes</h4>
                 <Textarea
                   defaultValue="Prefers diverse talent, always books for multi-day shoots."
-                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium text-gray-400 italic"
                 />
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
-                  Save Notes
-                </Button>
+                <div className="flex justify-end">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-lg text-xs">
+                    Save Notes
+                  </Button>
+                </div>
               </Card>
 
               <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
                 <div className="flex justify-between items-center">
                   <h4 className="font-bold text-gray-900">Files & Documents</h4>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                    <Plus className="w-4 h-4" />
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                    <Plus className="w-3.5 h-3.5" />
                     Upload File
                   </Button>
                 </div>
@@ -1095,33 +1001,34 @@ const ClientProfileModal = ({
                 </div>
               </Card>
             </TabsContent>
-          </Tabs>
+          </div>
 
-          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+          {/* Fixed Footer Area */}
+          <div className="p-4 sm:p-8 border-t border-gray-100 shrink-0 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-white">
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-600 font-bold text-sm"
               >
-                <Edit className="w-4 h-4 mr-2" />
+                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Edit Client
               </Button>
               <Button
                 variant="outline"
-                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold text-sm"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Delete Client
               </Button>
             </div>
             <Button
               onClick={onClose}
-              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+              className="w-full sm:w-auto h-9 sm:h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-sm"
             >
               Close
             </Button>
           </div>
-        </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -1148,27 +1055,29 @@ const ClientCard = ({
   };
 
   return (
-    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
       <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex gap-6">
-          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-gray-500" />
+        <div className="flex flex-row gap-4 sm:gap-6">
+          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
+            <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                {client.name}
+              </h3>
               <Badge
                 variant="outline"
-                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
+                className={`${getStatusColor(client.status)} font-bold text-[10px] sm:text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-sm shrink-0`}
               >
                 {client.status}
               </Badge>
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {client.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                    className="text-[10px] sm:text-[11px] font-bold text-gray-900 border-gray-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
                   >
                     <Tag className="w-3 h-3 text-gray-900" />
                     {tag}
@@ -1176,21 +1085,21 @@ const ClientCard = ({
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
+            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm text-gray-600 font-medium">
               <span className="flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-gray-400" />
+                <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.industry}
               </span>
               <span className="flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-gray-400" />
+                <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.website}
               </span>
               <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-gray-400" />
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.contacts} contacts
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
+            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm mt-2.5 font-medium">
               <span className="text-gray-500">
                 Total Revenue:{" "}
                 <span className="font-bold text-gray-900">
@@ -1218,34 +1127,34 @@ const ClientCard = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full lg:w-auto">
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
           >
-            <Mail className="w-4 h-4 mr-2" />
+            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Email
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
           >
-            <Phone className="w-4 h-4 mr-2" />
+            <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Call
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto col-span-2 sm:col-span-1"
           >
-            <Package className="w-4 h-4 mr-2" />
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Send Package
           </Button>
           <Button
             onClick={onViewProfile}
-            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            className="h-9 sm:h-10 px-4 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl w-full sm:w-auto col-span-2 sm:col-span-1"
           >
             View Profile
           </Button>
@@ -1274,9 +1183,17 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
             Client Relationship Management
           </h1>
           <p className="text-gray-600 font-medium">
@@ -1286,7 +1203,7 @@ const ClientCRMView = () => {
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Add Client
@@ -1294,53 +1211,63 @@ const ClientCRMView = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="p-4 sm:p-6 bg-green-50/50 border-green-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-base font-bold text-green-800">
+            <span className="text-sm sm:text-base font-bold text-green-800">
               Active Clients
             </span>
           </div>
-          <span className="text-3xl font-bold text-green-900">1</span>
+          <span className="text-2xl sm:text-3xl font-bold text-green-900">
+            1
+          </span>
         </Card>
-        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-base font-bold text-blue-800">Prospects</span>
+            <span className="text-sm sm:text-base font-bold text-blue-800">
+              Prospects
+            </span>
           </div>
-          <span className="text-3xl font-bold text-blue-900">1</span>
+          <span className="text-2xl sm:text-3xl font-bold text-blue-900">
+            1
+          </span>
         </Card>
-        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
-            <span className="text-base font-bold text-purple-800">
+            <span className="text-sm sm:text-base font-bold text-purple-800">
               Total Revenue
             </span>
           </div>
-          <span className="text-3xl font-bold text-purple-900">$495K</span>
+          <span className="text-2xl sm:text-3xl font-bold text-purple-900">
+            $495K
+          </span>
         </Card>
-        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-base font-bold text-orange-800">
+            <span className="text-sm sm:text-base font-bold text-orange-800">
               Follow-ups Due
             </span>
           </div>
-          <span className="text-3xl font-bold text-orange-900">0</span>
+          <span className="text-2xl sm:text-3xl font-bold text-orange-900">
+            0
+          </span>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
@@ -1350,28 +1277,30 @@ const ClientCRMView = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="All Stages" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            <SelectItem value="leads">Leads</SelectItem>
-            <SelectItem value="prospects">Prospects</SelectItem>
-            <SelectItem value="active">Active Clients</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="Last Booking" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="last-booking">Last Booking</SelectItem>
-            <SelectItem value="revenue">Total Revenue</SelectItem>
-            <SelectItem value="name">Company Name</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 md:flex gap-4 sm:gap-6">
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+              <SelectValue placeholder="All Stages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              <SelectItem value="leads">Leads</SelectItem>
+              <SelectItem value="prospects">Prospects</SelectItem>
+              <SelectItem value="active">Active Clients</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+              <SelectValue placeholder="Last Booking" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="last-booking">Last Booking</SelectItem>
+              <SelectItem value="revenue">Total Revenue</SelectItem>
+              <SelectItem value="name">Company Name</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Client List */}
@@ -1396,3056 +1325,6 @@ const ClientCRMView = () => {
           onClose={() => setSelectedClient(null)}
         />
       )}
-    </div>
-  );
-};
-
-const StorageUsageCard = () => (
-  <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-    <div className="flex justify-between items-center mb-4">
-      <div className="flex items-center gap-2">
-        <HardDrive className="w-5 h-5 text-indigo-600" />
-        <span className="text-base font-bold text-gray-900">Storage Usage</span>
-      </div>
-      <span className="text-sm font-bold text-gray-900">
-        <span className="text-indigo-600">12.4 GB</span> of 50 GB used
-      </span>
-    </div>
-    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-      <div
-        className="h-full bg-indigo-600 rounded-full"
-        style={{ width: "24.8%" }}
-      />
-    </div>
-    <div className="flex justify-between items-center">
-      <p className="text-sm text-gray-500 font-medium">
-        37.6 GB remaining • Professional Plan
-      </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-        Upgrade Plan
-      </Button>
-    </div>
-  </Card>
-);
-
-const FolderCard = ({ folder }: { folder: FolderItem }) => {
-  const getFolderColor = (type: string) => {
-    switch (type) {
-      case "talent":
-        return "text-indigo-500";
-      case "client":
-        return "text-emerald-500";
-      case "booking":
-        return "text-blue-500";
-      case "expense":
-        return "text-orange-500";
-      case "marketing":
-        return "text-purple-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
-  const getFolderBg = (type: string) => {
-    switch (type) {
-      case "talent":
-        return "bg-indigo-50/50";
-      case "client":
-        return "bg-emerald-50/50";
-      case "booking":
-        return "bg-blue-50/50";
-      case "expense":
-        return "bg-orange-50/50";
-      case "marketing":
-        return "bg-purple-50/50";
-      default:
-        return "bg-gray-50/50";
-    }
-  };
-
-  return (
-    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
-      <div className="flex justify-between items-start mb-6 relative z-10">
-        <div
-          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
-        >
-          <div className="relative">
-            <Folder
-              className={`w-8 h-8 ${getFolderColor(folder.type)} fill-current opacity-20`}
-            />
-            <Folder
-              className={`absolute inset-0 w-8 h-8 ${getFolderColor(folder.type)}`}
-            />
-          </div>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-              <FolderOpen className="w-4 h-4 mr-2" /> Open
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-              <Edit className="w-4 h-4 mr-2" /> Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="relative z-10">
-        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
-          {folder.name}
-        </h4>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 font-bold">
-            {folder.fileCount} files
-          </span>
-          <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-500 font-bold">
-            {folder.totalSize}
-          </span>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-const FileCard = ({
-  file,
-  onPreview,
-  onShare,
-}: {
-  file: FileItem;
-  onPreview: (file: FileItem) => void;
-  onShare: (file: FileItem) => void;
-}) => (
-  <Card className="overflow-hidden bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow group max-w-[280px]">
-    <div className="aspect-video bg-gray-50 flex items-center justify-center relative">
-      {file.thumbnailUrl ? (
-        <img
-          src={file.thumbnailUrl}
-          alt={file.name}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="flex flex-col items-center gap-2">
-          {file.type === "pdf" && <FileText className="w-8 h-8 text-red-500" />}
-          {file.type === "docx" && (
-            <FileText className="w-8 h-8 text-blue-500" />
-          )}
-          {file.type === "jpg" && <File className="w-8 h-8 text-emerald-500" />}
-          <span className="text-[10px] font-black uppercase text-gray-400">
-            {file.type}
-          </span>
-        </div>
-      )}
-      <div className="absolute top-2 right-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreVertical className="w-3.5 h-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 rounded-xl">
-            <DropdownMenuItem
-              onClick={() => onPreview(file)}
-              className="font-bold text-gray-700 cursor-pointer"
-            >
-              <Eye className="w-4 h-4 mr-2" /> Preview
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-              <Download className="w-4 h-4 mr-2" /> Download
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onShare(file)}
-              className="font-bold text-gray-700 cursor-pointer"
-            >
-              <Share2 className="w-4 h-4 mr-2" /> Share Link
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
-              <Trash2 className="w-4 h-4 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-    <div className="p-2.5">
-      <h5 className="text-[13px] font-bold text-gray-900 truncate mb-1">
-        {file.name}
-      </h5>
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col">
-          <span className="text-[10px] text-gray-600 font-bold">
-            {file.size}
-          </span>
-          <span className="text-[10px] text-gray-500 font-bold">
-            {file.uploadedAt}
-          </span>
-        </div>
-        <Badge
-          variant="outline"
-          className="text-[9px] font-bold text-gray-700 border-gray-200 px-1.5 py-0 bg-gray-50/50"
-        >
-          {file.folder}
-        </Badge>
-      </div>
-    </div>
-  </Card>
-);
-
-const FileRow = ({
-  file,
-  onPreview,
-  onShare,
-}: {
-  file: FileItem;
-  onPreview: (file: FileItem) => void;
-  onShare: (file: FileItem) => void;
-}) => (
-  <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow group">
-    <div className="flex items-center gap-4 flex-1">
-      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
-        {file.type === "pdf" && <FileText className="w-5 h-5 text-red-500" />}
-        {file.type === "docx" && <FileText className="w-5 h-5 text-blue-500" />}
-        {file.type === "jpg" && <File className="w-5 h-5 text-emerald-500" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <h5 className="text-sm font-bold text-gray-900 truncate">
-          {file.name}
-        </h5>
-        <p className="text-xs text-gray-600 font-bold">
-          {file.size} • <span className="text-indigo-600">{file.folder}</span> •
-          Uploaded by <span className="text-gray-900">{file.uploadedBy}</span>{" "}
-          on {file.uploadedAt}
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
-        onClick={() => onPreview(file)}
-      >
-        <Eye className="w-4 h-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
-      >
-        <Download className="w-4 h-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-        onClick={() => onShare(file)}
-      >
-        <Share2 className="w-4 h-4" />
-      </Button>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
-    </div>
-  </div>
-);
-
-const NewFolderModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => (
-  <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="sm:max-w-[425px] rounded-2xl">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-gray-900">
-          Create New Folder
-        </DialogTitle>
-        <DialogDescription className="text-gray-500 font-medium">
-          Organize your files into folders
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-4 py-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">Folder Name</Label>
-          <Input
-            placeholder="e.g., Q1 2024 Campaigns"
-            className="h-11 rounded-xl border-gray-200"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">Folder Type</Label>
-          <Select>
-            <SelectTrigger className="h-11 rounded-xl border-gray-200">
-              <SelectValue placeholder="Select type..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="talent">Talent Files</SelectItem>
-              <SelectItem value="client">Client Files</SelectItem>
-              <SelectItem value="booking">Booking Files</SelectItem>
-              <SelectItem value="expense">Expense Files</SelectItem>
-              <SelectItem value="marketing">Marketing Files</SelectItem>
-              <SelectItem value="others">others</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter className="gap-2">
-        <Button
-          variant="outline"
-          onClick={onClose}
-          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
-        >
-          Cancel
-        </Button>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
-          Create Folder
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
-const UploadFilesModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => (
-  <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="sm:max-w-[500px] rounded-2xl">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-gray-900">
-          Upload Files
-        </DialogTitle>
-        <DialogDescription className="text-gray-500 font-medium">
-          Upload documents, images, or other files to your storage
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-6 py-4">
-        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
-          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Upload className="w-6 h-6 text-indigo-600" />
-          </div>
-          <p className="text-sm font-bold text-gray-900 mb-1">
-            Click to upload or drag and drop
-          </p>
-          <p className="text-xs text-gray-500 font-medium">
-            PDF, DOC, JPG, PNG up to 50MB
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-bold text-gray-700">
-            Save to folder
-          </Label>
-          <Select>
-            <SelectTrigger className="h-11 rounded-xl border-gray-200">
-              <SelectValue placeholder="Select a folder..." />
-            </SelectTrigger>
-            <SelectContent>
-              {MOCK_FOLDERS.map((folder) => (
-                <SelectItem key={folder.id} value={folder.id}>
-                  {folder.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter className="gap-2">
-        <Button
-          variant="outline"
-          onClick={onClose}
-          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
-        >
-          Cancel
-        </Button>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
-          Upload Files
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
-const FilePreviewModal = ({
-  file,
-  isOpen,
-  onClose,
-}: {
-  file: FileItem | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!file) return null;
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-              {file.type === "pdf" && (
-                <FileText className="w-6 h-6 text-red-500" />
-              )}
-              {file.type === "docx" && (
-                <FileText className="w-6 h-6 text-blue-500" />
-              )}
-              {file.type === "jpg" && (
-                <File className="w-6 h-6 text-emerald-500" />
-              )}
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-gray-900">
-                {file.name}
-              </DialogTitle>
-              <p className="text-sm text-gray-500 font-medium">
-                {file.size} • Uploaded by {file.uploadedBy} on {file.uploadedAt}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-xl hover:bg-gray-50"
-          >
-            <X className="w-5 h-5 text-gray-400" />
-          </Button>
-        </div>
-        <div className="p-10 bg-gray-50/50 flex items-center justify-center min-h-[500px] relative group">
-          {file.thumbnailUrl ? (
-            <div className="relative">
-              <img
-                src={file.thumbnailUrl}
-                alt={file.name}
-                className="max-w-full max-h-[600px] rounded-2xl shadow-2xl border-4 border-white transition-transform group-hover:scale-[1.01]"
-              />
-              <div className="absolute inset-0 rounded-2xl shadow-inner pointer-events-none" />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-6 p-12 bg-white rounded-3xl shadow-sm border border-gray-100">
-              <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center">
-                {file.type === "pdf" && (
-                  <FileText className="w-10 h-10 text-red-500" />
-                )}
-                {file.type === "docx" && (
-                  <FileText className="w-10 h-10 text-blue-500" />
-                )}
-              </div>
-              <div className="text-center">
-                <p className="text-gray-900 font-bold text-lg mb-1">
-                  Preview not available
-                </p>
-                <p className="text-gray-500 text-sm font-medium">
-                  Please download the file to view its content
-                </p>
-              </div>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-8">
-                Download Now
-              </Button>
-            </div>
-          )}
-        </div>
-        <div className="p-6 border-t border-gray-100 flex justify-between items-center bg-white">
-          <div className="flex gap-2">
-            <Badge
-              variant="outline"
-              className="bg-gray-50 text-gray-600 border-gray-200 font-bold px-3 py-1 rounded-lg"
-            >
-              {file.folder}
-            </Badge>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
-            >
-              Close Preview
-            </Button>
-            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
-              <Download className="w-4 h-4" />
-              Download File
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const ShareFileModal = ({
-  file,
-  isOpen,
-  onClose,
-}: {
-  file: FileItem | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!file) return null;
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-        <div className="p-6 border-b border-gray-100 bg-white">
-          <div className="flex justify-between items-start mb-1">
-            <DialogTitle className="text-xl font-bold text-gray-900">
-              Share File
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="rounded-xl -mr-2 -mt-2"
-            >
-              <X className="w-5 h-5 text-gray-400" />
-            </Button>
-          </div>
-          <DialogDescription className="text-gray-500 font-medium">
-            Generate a secure shareable link for{" "}
-            <span className="text-gray-900 font-bold">{file.name}</span>
-          </DialogDescription>
-        </div>
-
-        <div className="p-6 space-y-6 bg-gray-50/30">
-          <div className="space-y-2.5">
-            <Label className="text-sm font-bold text-gray-700 ml-1">
-              Share Link
-            </Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  readOnly
-                  value={`https://agency.likelee.ai/share/${file.id}`}
-                  className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
-                />
-                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              </div>
-              <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
-                <Copy className="w-4 h-4" />
-                Copy
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2.5">
-              <Label className="text-sm font-bold text-gray-700 ml-1">
-                Link Expiration
-              </Label>
-              <Select defaultValue="7-days">
-                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
-                  <SelectValue placeholder="Select expiration..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="24-hours" className="font-medium">
-                    24 Hours
-                  </SelectItem>
-                  <SelectItem value="7-days" className="font-medium">
-                    7 Days
-                  </SelectItem>
-                  <SelectItem value="30-days" className="font-medium">
-                    30 Days
-                  </SelectItem>
-                  <SelectItem value="never" className="font-medium">
-                    Never
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2.5">
-              <Label className="text-sm font-bold text-gray-700 ml-1">
-                Access Level
-              </Label>
-              <Select defaultValue="view">
-                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
-                  <SelectValue placeholder="Select access..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="view" className="font-medium">
-                    View Only
-                  </SelectItem>
-                  <SelectItem value="download" className="font-medium">
-                    Can Download
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                <ShieldCheck className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <Label
-                  className="text-sm font-bold text-gray-700 cursor-pointer"
-                  htmlFor="require-password"
-                >
-                  Require password
-                </Label>
-                <p className="text-[11px] text-gray-500 font-medium">
-                  Add an extra layer of security
-                </p>
-              </div>
-            </div>
-            <Checkbox
-              id="require-password"
-              className="rounded-md w-5 h-5 border-gray-300"
-            />
-          </div>
-        </div>
-
-        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-white">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="h-12 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </Button>
-          <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
-            <Share2 className="w-4 h-4" />
-            Create Share Link
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const FileStorageView = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFileForPreview, setSelectedFileForPreview] =
-    useState<FileItem | null>(null);
-  const [selectedFileForShare, setSelectedFileForShare] =
-    useState<FileItem | null>(null);
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Folder className="w-8 h-8 text-indigo-600" />
-            File Storage
-          </h1>
-          <p className="text-gray-600 font-medium">
-            Organize and manage your agency files
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setIsNewFolderModalOpen(true)}
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <FolderPlus className="w-5 h-5" />
-            New Folder
-          </Button>
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-          >
-            <Upload className="w-5 h-5" />
-            Upload Files
-          </Button>
-        </div>
-      </div>
-
-      <StorageUsageCard />
-
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              placeholder="Search files by name..."
-              className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <Select defaultValue="name-asc">
-              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                <SelectItem value="date-desc">Date (Newest)</SelectItem>
-                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
-                <SelectItem value="size-desc">Size (Largest)</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex bg-gray-100 p-1 rounded-xl">
-              <Button
-                variant={viewMode === "grid" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4 mr-2" />
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4 mr-2" />
-                List
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {MOCK_FOLDERS.map((folder) => (
-            <FolderCard key={folder.id} folder={folder} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
-          <span className="text-sm text-gray-500 font-medium">
-            {MOCK_FILES.length} files
-          </span>
-        </div>
-
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {MOCK_FILES.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {MOCK_FILES.map((file) => (
-              <FileRow
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <NewFolderModal
-        isOpen={isNewFolderModalOpen}
-        onClose={() => setIsNewFolderModalOpen(false)}
-      />
-      <UploadFilesModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-      />
-      <FilePreviewModal
-        file={selectedFileForPreview}
-        isOpen={!!selectedFileForPreview}
-        onClose={() => setSelectedFileForPreview(null)}
-      />
-      <ShareFileModal
-        file={selectedFileForShare}
-        isOpen={!!selectedFileForShare}
-        onClose={() => setSelectedFileForShare(null)}
-      />
-    </div>
-  );
-};
-
-// --- Accounting & Invoicing Views ---
-
-const ExpenseTrackingView = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "pending":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "rejected":
-        return "bg-red-50 text-red-700 border-red-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Travel":
-        return <Calendar className="w-5 h-5 text-orange-600" />;
-      case "Equipment":
-        return <Package className="w-5 h-5 text-blue-600" />;
-      case "Marketing":
-        return <Megaphone className="w-5 h-5 text-purple-600" />;
-      default:
-        return <Receipt className="w-5 h-5 text-gray-600" />;
-    }
-  };
-
-  const totalExpenses = MOCK_EXPENSES.reduce((sum, expense) => {
-    const amount = parseFloat(expense.amount.replace("$", ""));
-    return sum + amount;
-  }, 0);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Expense Tracking</h2>
-          <p className="text-gray-600 font-medium">
-            Track and manage agency expenses
-          </p>
-        </div>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          Add Expense
-        </Button>
-      </div>
-
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            placeholder="Search expenses..."
-            className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-64 h-12 bg-white border-gray-100 rounded-xl">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="travel">Travel</SelectItem>
-            <SelectItem value="equipment">Equipment</SelectItem>
-            <SelectItem value="marketing">Marketing</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-3">
-        {MOCK_EXPENSES.map((expense) => (
-          <Card
-            key={expense.id}
-            className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1">
-                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
-                  {getCategoryIcon(expense.category)}
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-bold text-gray-900">
-                    {expense.name}
-                  </h4>
-                  <p className="text-sm text-gray-600 font-bold">
-                    {expense.category} • {expense.date}
-                    {expense.submitter && ` • ${expense.submitter}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
-                >
-                  {expense.status}
-                </Badge>
-                <span className="text-lg font-bold text-gray-900">
-                  {expense.amount}
-                </span>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="p-6 bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-2xl">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm font-bold text-gray-700 mb-1">
-              Total Expenses
-            </p>
-            <p className="text-3xl font-bold text-orange-600">
-              ${totalExpenses.toFixed(2)}
-            </p>
-          </div>
-          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center">
-            <Receipt className="w-8 h-8 text-orange-600" />
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const TalentStatementsView = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("amount-high");
-  const [hasUnpaidEarnings, setHasUnpaidEarnings] = useState(false);
-  const [selectedTalent, setSelectedTalent] = useState<any>(null);
-
-  if (selectedTalent) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setSelectedTalent(null)}
-              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to All Talent
-            </Button>
-            <h2 className="text-2xl font-bold text-gray-900">
-              Talent Statement - {selectedTalent.name}
-            </h2>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Mail className="w-4 h-4" />
-              Email Statement
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Printer className="w-4 h-4" />
-              Print
-            </Button>
-          </div>
-        </div>
-
-        <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-          <div className="flex items-center gap-6">
-            <img
-              src={selectedTalent.photo}
-              alt={selectedTalent.name}
-              className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-md"
-            />
-            <div className="space-y-3">
-              <h3 className="text-3xl font-bold text-gray-900">
-                {selectedTalent.name}
-              </h3>
-              <Select defaultValue="all-time">
-                <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 font-bold text-gray-700">
-                  <SelectValue placeholder="Select period" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="all-time">All Time</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="this-quarter">This Quarter</SelectItem>
-                  <SelectItem value="this-year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-4 gap-6">
-          <Card className="p-6 bg-orange-50 border border-orange-100 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="w-4 h-4 text-orange-600" />
-              <p className="text-sm font-bold text-gray-700">Total Owed</p>
-            </div>
-            <p className="text-3xl font-bold text-orange-600 mb-1">
-              {selectedTalent.totalOwed}
-            </p>
-            <p className="text-xs text-gray-600 font-medium">0 unpaid jobs</p>
-          </Card>
-          <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <p className="text-sm font-bold text-gray-700">
-                Total Paid (YTD)
-              </p>
-            </div>
-            <p className="text-3xl font-bold text-green-600 mb-1">
-              {selectedTalent.totalPaidYTD}
-            </p>
-            <p className="text-xs text-gray-600 font-medium">1 paid jobs</p>
-          </Card>
-          <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-purple-600" />
-              <p className="text-sm font-bold text-gray-700">
-                Lifetime Earnings
-              </p>
-            </div>
-            <p className="text-3xl font-bold text-purple-600 mb-1">$2.4</p>
-            <p className="text-xs text-gray-600 font-medium">Avg: $0/mo</p>
-          </Card>
-          <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-bold text-gray-700">Last Payment</p>
-            </div>
-            <p className="text-lg font-bold text-blue-600 mb-1">
-              {selectedTalent.lastPayment}
-            </p>
-          </Card>
-        </div>
-
-        <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h4 className="text-lg font-bold text-gray-900">Earnings Detail</h4>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-3 text-left w-12"></th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Job Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Client
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Gross
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Commission
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Net
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Invoice
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                <tr className="bg-green-50/30">
-                  <td className="px-6 py-4">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                    Jan 12, 2026
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
-                    Emma
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                    Booking for
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                    $3
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-red-600">
-                    -$0.6
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-green-600">
-                    $2.4
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">
-                      Paid
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">
-                    2026-1000
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-3">
-            <div className="flex justify-between items-center max-w-md ml-auto">
-              <span className="text-sm text-gray-600 font-bold">
-                Total Gross Amount
-              </span>
-              <span className="text-sm font-bold text-gray-900">$3</span>
-            </div>
-            <div className="flex justify-between items-center max-w-md ml-auto">
-              <span className="text-sm text-gray-600 font-bold">
-                Total Agency Commission (20%)
-              </span>
-              <span className="text-sm font-bold text-red-600">-$0.6</span>
-            </div>
-            <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
-              <span className="text-lg font-bold text-gray-900">
-                Total Talent Net
-              </span>
-              <span className="text-lg font-bold text-green-600">$2.4</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Talent Earnings Statements
-          </h2>
-          <p className="text-gray-600 font-medium">
-            View and manage talent payment statements
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-        >
-          <Download className="w-5 h-5" />
-          Export All
-        </Button>
-      </div>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search by talent name..."
-            className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="Sort by..." />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="amount-high">
-              Amount Owed (High to Low)
-            </SelectItem>
-            <SelectItem value="amount-low">
-              Amount Owed (Low to High)
-            </SelectItem>
-            <SelectItem value="total-paid">Total Paid (High to Low)</SelectItem>
-            <SelectItem value="name-az">Name (A-Z)</SelectItem>
-            <SelectItem value="name-za">Name (Z-A)</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl">
-          <Checkbox
-            id="unpaid-earnings"
-            checked={hasUnpaidEarnings}
-            onCheckedChange={(checked) =>
-              setHasUnpaidEarnings(checked as boolean)
-            }
-            className="rounded-md w-4 h-4 border-gray-300"
-          />
-          <Label
-            htmlFor="unpaid-earnings"
-            className="text-sm font-bold text-gray-700 cursor-pointer"
-          >
-            Has Unpaid Earnings
-          </Label>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {MOCK_TALENT_EARNINGS.map((talent) => (
-          <Card
-            key={talent.id}
-            className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
-                <img
-                  src={talent.photo}
-                  alt={talent.name}
-                  className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
-                />
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-gray-900">
-                    {talent.name}
-                  </h4>
-                  <p className="text-xs text-gray-600 font-bold">
-                    {talent.totalJobs} total jobs
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Total Owed
-                  </p>
-                  <p className="text-base font-bold text-orange-600">
-                    {talent.totalOwed}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    0 unpaid jobs
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Total Paid (YTD)
-                  </p>
-                  <p className="text-base font-bold text-green-600">
-                    {talent.totalPaidYTD}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    1 paid jobs
-                  </p>
-                </div>
-                <div className="text-right min-w-[100px]">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Last Payment
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {talent.lastPayment}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setSelectedTalent(talent)}
-                  className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  View Statement
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const PaymentTrackingView = () => {
-  const [reminder3Days, setReminder3Days] = useState(true);
-  const [reminderDueDate, setReminderDueDate] = useState(true);
-  const [reminder7Days, setReminder7Days] = useState(true);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Payment Tracking</h2>
-        <p className="text-gray-600 font-medium">
-          Monitor payments and manage reminders
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Paid This Month
-          </p>
-          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
-          <p className="text-xs text-gray-600 font-medium">1 invoices</p>
-        </Card>
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Pending Payment
-          </p>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
-        </Card>
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Partial Payments
-          </p>
-          <p className="text-3xl font-bold text-blue-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
-        </Card>
-        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
-          <p className="text-3xl font-bold text-red-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
-        </Card>
-      </div>
-
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Recent Payments
-        </h3>
-        <div className="space-y-3">
-          {MOCK_PAYMENTS.map((payment) => (
-            <div
-              key={payment.id}
-              className="flex items-center justify-between p-4 bg-green-50 border border-green-100 rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">
-                    Invoice {payment.invoiceNumber} • {payment.client}
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {payment.date}
-                  </p>
-                </div>
-              </div>
-              <span className="text-lg font-bold text-green-600">
-                {payment.amount}
-              </span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Payment Reminder Settings
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
-            <div>
-              <p className="text-sm font-bold text-gray-900">
-                Auto-send reminder 3 days before due date
-              </p>
-              <p className="text-xs text-gray-600 font-medium">
-                Polite reminder template
-              </p>
-            </div>
-            <Checkbox
-              checked={reminder3Days}
-              onCheckedChange={(checked) =>
-                setReminder3Days(checked as boolean)
-              }
-              className="rounded-md w-6 h-6 border-gray-300"
-            />
-          </div>
-          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
-            <div>
-              <p className="text-sm font-bold text-gray-900">
-                Auto-send reminder on due date
-              </p>
-              <p className="text-xs text-gray-600 font-medium">
-                Payment due today template
-              </p>
-            </div>
-            <Checkbox
-              checked={reminderDueDate}
-              onCheckedChange={(checked) =>
-                setReminderDueDate(checked as boolean)
-              }
-              className="rounded-md w-6 h-6 border-gray-300"
-            />
-          </div>
-          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
-            <div>
-              <p className="text-sm font-bold text-gray-900">
-                Auto-send reminder 7 days after due date
-              </p>
-              <p className="text-xs text-gray-600 font-medium">
-                Firm reminder template
-              </p>
-            </div>
-            <Checkbox
-              checked={reminder7Days}
-              onCheckedChange={(checked) =>
-                setReminder7Days(checked as boolean)
-              }
-              className="rounded-md w-6 h-6 border-gray-300"
-            />
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const FinancialReportsView = () => {
-  const [reportPeriod, setReportPeriod] = useState("this-year");
-  const [clientFilter, setClientFilter] = useState("all");
-  const [talentFilter, setTalentFilter] = useState("all");
-  const [activeReportTab, setActiveReportTab] = useState("revenue");
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Financial Reports</h2>
-        <p className="text-gray-600 font-medium">
-          Comprehensive financial analytics and insights
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            <p className="text-sm font-bold text-gray-700">Total Revenue</p>
-          </div>
-          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
-          <p className="text-xs text-gray-600 font-medium">1 paid invoices</p>
-        </Card>
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-5 h-5 text-yellow-600" />
-            <p className="text-sm font-bold text-gray-700">Pending</p>
-          </div>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
-        </Card>
-        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingDown className="w-5 h-5 text-red-600" />
-            <p className="text-sm font-bold text-gray-700">Expenses</p>
-          </div>
-          <p className="text-3xl font-bold text-red-600 mb-1">$775</p>
-          <p className="text-xs text-gray-600 font-medium">4 expenses</p>
-        </Card>
-        <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-indigo-600" />
-            <p className="text-sm font-bold text-gray-700">Net Income</p>
-          </div>
-          <p className="text-3xl font-bold text-indigo-600 mb-1">-$772</p>
-          <p className="text-xs text-gray-600 font-medium">past month</p>
-        </Card>
-      </div>
-
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold text-gray-900">Financial Reports</h3>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <FileDown className="w-4 h-4" />
-              Export to PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Export to Excel
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div>
-            <Label className="text-sm font-bold text-gray-700 mb-2 block">
-              Report Period
-            </Label>
-            <Select value={reportPeriod} onValueChange={setReportPeriod}>
-              <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="this-year">This Year</SelectItem>
-                <SelectItem value="last-year">Last Year</SelectItem>
-                <SelectItem value="this-quarter">This Quarter</SelectItem>
-                <SelectItem value="last-quarter">Last Quarter</SelectItem>
-                <SelectItem value="this-month">This Month</SelectItem>
-                <SelectItem value="last-month">Last Month</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-sm font-bold text-gray-700 mb-2 block">
-              Filter by Client
-            </Label>
-            <Select value={clientFilter} onValueChange={setClientFilter}>
-              <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all">All Clients</SelectItem>
-                <SelectItem value="nike">Nike Global</SelectItem>
-                <SelectItem value="adidas">Adidas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-sm font-bold text-gray-700 mb-2 block">
-              Filter by Talent
-            </Label>
-            <Select value={talentFilter} onValueChange={setTalentFilter}>
-              <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all">All Talent</SelectItem>
-                <SelectItem value="emma">Emma</SelectItem>
-                <SelectItem value="milan">Milan</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-6 border-b border-gray-100">
-          {[
-            { id: "revenue", label: "Revenue Report" },
-            { id: "receivables", label: "Outstanding Receivables" },
-            { id: "payables", label: "Talent Payables" },
-            { id: "commission", label: "Commission Report" },
-            { id: "profit", label: "Profit & Loss" },
-            { id: "tax", label: "Tax Reports" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {activeReportTab === "revenue" && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-              <Card className="p-5 bg-green-50 border border-green-100 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  <p className="text-xs font-bold text-gray-700">
-                    Total Revenue
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-green-600 mb-1">$3</p>
-                <p className="text-[10px] text-gray-600 font-medium">
-                  1 paid invoices
-                </p>
-              </Card>
-              <Card className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-blue-600" />
-                  <p className="text-xs font-bold text-gray-700">
-                    Pending Revenue
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-blue-600 mb-1">$0</p>
-                <p className="text-[10px] text-gray-600 font-medium">
-                  0 outstanding invoices
-                </p>
-              </Card>
-              <Card className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <Receipt className="w-4 h-4 text-purple-600" />
-                  <p className="text-xs font-bold text-gray-700">Avg Invoice</p>
-                </div>
-                <p className="text-2xl font-bold text-purple-600 mb-1">$3</p>
-                <p className="text-[10px] text-gray-600 font-medium">
-                  per invoice
-                </p>
-              </Card>
-              <Card className="p-5 bg-orange-50 border border-orange-100 rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-orange-600" />
-                  <p className="text-xs font-bold text-gray-700">Growth Rate</p>
-                </div>
-                <p className="text-2xl font-bold text-orange-600 mb-1">
-                  +15.3%
-                </p>
-                <p className="text-[10px] text-gray-600 font-medium">
-                  vs previous period
-                </p>
-              </Card>
-            </div>
-
-            <div className="mb-6">
-              <h4 className="text-sm font-bold text-gray-900 mb-3">
-                Revenue by Month
-              </h4>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-1/12"></div>
-              </div>
-              <p className="text-xs text-gray-600 font-medium mt-2">
-                Jan 2026: $3
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="text-sm font-bold text-gray-900 mb-4">
-                  Top Clients by Revenue
-                </h4>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-indigo-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">
-                      Nike Global
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-green-600">$3</span>
-                </div>
-              </Card>
-              <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="text-sm font-bold text-gray-900 mb-4">
-                  Top Talent by Revenue
-                </h4>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <User className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">Emma</p>
-                  </div>
-                  <span className="text-sm font-bold text-green-600">$3</span>
-                </div>
-              </Card>
-            </div>
-          </>
-        )}
-
-        {activeReportTab === "receivables" && (
-          <div className="space-y-6">
-            <Card className="p-8 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-gray-700 mb-2">
-                  Total Outstanding Receivables
-                </p>
-                <p className="text-5xl font-bold text-red-600">$0</p>
-              </div>
-              <AlertCircle className="w-12 h-12 text-red-600" />
-            </Card>
-
-            <div className="grid grid-cols-5 gap-4">
-              {[
-                { label: "Current (Not Due)", color: "green" },
-                { label: "1-30 Days Overdue", color: "yellow" },
-                { label: "31-60 Days Overdue", color: "orange" },
-                { label: "61-90 Days Overdue", color: "red" },
-                { label: "90+ Days Overdue", color: "gray" },
-              ].map((aging) => (
-                <Card
-                  key={aging.label}
-                  className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}
-                >
-                  <p className="text-[10px] font-bold text-gray-700 mb-2">
-                    {aging.label}
-                  </p>
-                  <p className={`text-xl font-bold text-${aging.color}-600`}>
-                    $0
-                  </p>
-                  <p className="text-[10px] text-gray-500 font-medium">
-                    0 invoices
-                  </p>
-                </Card>
-              ))}
-            </div>
-
-            <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-              <h4 className="text-base font-bold text-gray-900 mb-4">
-                Largest Outstanding Clients
-              </h4>
-              <div className="text-center py-8 text-gray-400 font-medium">
-                No outstanding receivables
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {activeReportTab === "payables" && (
-          <div className="space-y-6">
-            <Card className="p-8 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-gray-700 mb-2">
-                  Total Owed to All Talent
-                </p>
-                <p className="text-5xl font-bold text-orange-600">$0</p>
-              </div>
-              <Users className="w-12 h-12 text-orange-600" />
-            </Card>
-
-            <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-              <h4 className="text-base font-bold text-gray-900 mb-4">
-                Breakdown by Talent
-              </h4>
-              <div className="text-center py-8 text-gray-400 font-medium">
-                No pending talent payables
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {activeReportTab === "commission" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-6">
-              <Card className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <Percent className="w-4 h-4 text-indigo-600" />
-                  <p className="text-sm font-bold text-gray-700">
-                    Total Commission Earned
-                  </p>
-                </div>
-                <p className="text-3xl font-bold text-indigo-600 mb-1">$0</p>
-                <p className="text-xs text-gray-600 font-medium">
-                  20% of revenue
-                </p>
-              </Card>
-              <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-purple-600" />
-                  <p className="text-sm font-bold text-gray-700">
-                    Avg Commission per Deal
-                  </p>
-                </div>
-                <p className="text-3xl font-bold text-purple-600 mb-1">$0</p>
-                <p className="text-xs text-gray-600 font-medium">
-                  Average earned
-                </p>
-              </Card>
-              <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <BarChart2 className="w-4 h-4 text-blue-600" />
-                  <p className="text-sm font-bold text-gray-700">
-                    Commission Rate
-                  </p>
-                </div>
-                <p className="text-3xl font-bold text-blue-600 mb-1">20%</p>
-                <p className="text-xs text-gray-600 font-medium">
-                  Consistent across all deals
-                </p>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="text-base font-bold text-gray-900 mb-4">
-                  Commission by Client
-                </h4>
-                <div className="text-center py-8 text-gray-400 font-medium">
-                  No commission data available
-                </div>
-              </Card>
-              <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="text-base font-bold text-gray-900 mb-4">
-                  Commission by Talent
-                </h4>
-                <div className="text-center py-8 text-gray-400 font-medium">
-                  No commission data available
-                </div>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {activeReportTab === "profit" && (
-          <div className="space-y-6">
-            <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
-              <h4 className="text-xl font-bold text-gray-900 mb-8 text-center">
-                Profit & Loss Statement
-              </h4>
-              <div className="max-w-2xl mx-auto space-y-4">
-                <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl border border-green-100">
-                  <span className="text-base font-bold text-gray-900">
-                    Revenue (Gross from Invoices)
-                  </span>
-                  <span className="text-xl font-bold text-green-600">$0</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
-                  <span className="text-base font-bold text-gray-900">
-                    Less: Talent Payments (COGS)
-                  </span>
-                  <span className="text-xl font-bold text-red-600">-$0</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <span className="text-base font-bold text-gray-900">
-                    Gross Profit (Agency Commission)
-                  </span>
-                  <span className="text-xl font-bold text-blue-600">$0</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
-                  <span className="text-base font-bold text-gray-900">
-                    Less: Operating Expenses
-                  </span>
-                  <span className="text-xl font-bold text-orange-600">
-                    -$1,095
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
-                  <span className="text-2xl font-bold text-gray-900">
-                    Net Profit
-                  </span>
-                  <span className="text-4xl font-bold text-green-600">
-                    $-1,095
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6 mt-12 max-w-2xl mx-auto">
-                <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
-                  <p className="text-xs font-bold text-gray-500 mb-1">
-                    Profit Margin
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">0%</p>
-                </Card>
-                <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
-                  <p className="text-xs font-bold text-gray-500 mb-1">
-                    Expense Ratio
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">0%</p>
-                </Card>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {activeReportTab === "tax" && (
-          <div className="space-y-6">
-            <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-              <h4 className="text-lg font-bold text-gray-900 mb-6">
-                Tax Summary
-              </h4>
-              <div className="grid grid-cols-3 gap-6 mb-8">
-                <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">
-                    Sales Tax Collected
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600 mb-1">$0.00</p>
-                  <p className="text-xs text-gray-500 font-medium">By state</p>
-                </Card>
-                <Card className="p-6 bg-purple-50 border border-purple-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">
-                    VAT Collected
-                  </p>
-                  <p className="text-3xl font-bold text-purple-600 mb-1">
-                    $0.00
-                  </p>
-                  <p className="text-xs text-gray-500 font-medium">
-                    By country
-                  </p>
-                </Card>
-                <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">
-                    1099 Eligible Payments
-                  </p>
-                  <p className="text-3xl font-bold text-orange-600 mb-1">$0</p>
-                  <p className="text-xs text-gray-500 font-medium">
-                    US talent payments
-                  </p>
-                </Card>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-gray-900">
-                        Export Sales Tax Report
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        Breakdown by state/region
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                      <Receipt className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-gray-900">
-                        Export VAT Report
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        Breakdown by country
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
-                      <FileText className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-gray-900">
-                        Prepare 1099 Forms
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        US talent with payments &gt; $600
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Button>
-              </div>
-            </Card>
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-};
-
-const GenerateInvoiceView = () => {
-  const [createFrom, setCreateFrom] = useState("booking");
-  const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
-  const [commission, setCommission] = useState("20");
-  const [taxExempt, setTaxExempt] = useState(false);
-  const [expenses, setExpenses] = useState<
-    { id: string; description: string; amount: string }[]
-  >([]);
-
-  const addExpense = () => {
-    setExpenses([
-      ...expenses,
-      {
-        id: Math.random().toString(36).substr(2, 9),
-        description: "",
-        amount: "0",
-      },
-    ]);
-  };
-
-  const removeExpense = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id));
-  };
-
-  const updateExpense = (
-    id: string,
-    field: "description" | "amount",
-    value: string,
-  ) => {
-    setExpenses(
-      expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Invoice Generation
-          </h2>
-          <p className="text-gray-600 font-medium">
-            Create and manage client invoices
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <Download className="w-5 h-5" />
-            Load Template
-          </Button>
-          <Button
-            variant="outline"
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <Eye className="w-5 h-5" />
-            Preview
-          </Button>
-        </div>
-      </div>
-
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-        <div className="space-y-6">
-          <div>
-            <Label className="text-sm font-bold text-gray-700 mb-3 block">
-              Create Invoice From
-            </Label>
-            <div className="flex gap-3">
-              <Button
-                variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
-                onClick={() => setCreateFrom("booking")}
-              >
-                <Calendar className="w-5 h-5" />
-                Existing Booking
-              </Button>
-              <Button
-                variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
-                onClick={() => setCreateFrom("manual")}
-              >
-                <FileText className="w-5 h-5" />
-                Manual Entry
-              </Button>
-            </div>
-          </div>
-
-          {createFrom === "booking" && (
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Select Booking to Invoice
-              </Label>
-              <Select>
-                <SelectTrigger className="h-12 rounded-xl border-gray-200">
-                  <SelectValue placeholder="Choose a completed or confirmed booking" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="booking1">
-                    Booking #2026-001 - Nike Campaign
-                  </SelectItem>
-                  <SelectItem value="booking2">
-                    Booking #2026-002 - Adidas Shoot
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Invoice Number <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                className="h-12 rounded-xl border-gray-200"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Invoice Date <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                type="date"
-                defaultValue="2026-01-13"
-                className="h-12 rounded-xl border-gray-200"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Due Date <span className="text-red-500">*</span>
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  defaultValue="2026-02-13"
-                  className="h-12 rounded-xl border-gray-200 flex-1"
-                />
-                <Select defaultValue="net30">
-                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="net15">Net 15</SelectItem>
-                    <SelectItem value="net30">Net 30</SelectItem>
-                    <SelectItem value="net60">Net 60</SelectItem>
-                    <SelectItem value="due-on-receipt">
-                      Due on Receipt
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-sm font-bold text-gray-700 mb-2 block">
-              Bill To (Client Information){" "}
-              <span className="text-red-500">*</span>
-            </Label>
-            <Select>
-              <SelectTrigger className="h-12 rounded-xl border-gray-200">
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="nike">Nike Global</SelectItem>
-                <SelectItem value="adidas">Adidas</SelectItem>
-                <SelectItem value="apple">Apple Inc.</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                PO Number (Optional)
-              </Label>
-              <Input
-                placeholder="Client purchase order number"
-                className="h-12 rounded-xl border-gray-200"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Job/Project Reference (Optional)
-              </Label>
-              <Input
-                placeholder="Project name or reference"
-                className="h-12 rounded-xl border-gray-200"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <Label className="text-sm font-bold text-gray-700">
-                Invoice Items <span className="text-red-500">*</span>
-              </Label>
-              <Button
-                variant="outline"
-                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Line Item
-              </Button>
-            </div>
-            <Card className="p-5 bg-gray-50 border border-gray-200 rounded-xl">
-              <p className="text-sm font-bold text-gray-900 mb-4">Item #1</p>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                    Description
-                  </Label>
-                  <Textarea
-                    placeholder="e.g., Model services for brand photoshoot"
-                    className="min-h-[80px] rounded-xl border-gray-200 resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Talent
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                        <SelectValue placeholder="Select talent" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="emma">Emma</SelectItem>
-                        <SelectItem value="milan">Milan</SelectItem>
-                        <SelectItem value="julia">Julia</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Date of Service
-                    </Label>
-                    <Input
-                      type="date"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Rate Type
-                    </Label>
-                    <Select defaultValue="day">
-                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="day">Day Rate</SelectItem>
-                        <SelectItem value="hourly">Hourly Rate</SelectItem>
-                        <SelectItem value="project">Project Rate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Quantity/Hours
-                    </Label>
-                    <Input
-                      type="number"
-                      defaultValue="1"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Unit Price ($)
-                    </Label>
-                    <Input
-                      type="number"
-                      defaultValue="0"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                  <span className="text-sm font-bold text-gray-700">
-                    Line Total:
-                  </span>
-                  <span className="text-lg font-bold text-gray-900">$0.00</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <Label className="text-sm font-bold text-gray-900">
-                Expenses (Optional)
-              </Label>
-              <Button
-                variant="outline"
-                onClick={addExpense}
-                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Expense
-              </Button>
-            </div>
-
-            {expenses.length > 0 && (
-              <div className="space-y-3">
-                {expenses.map((expense) => (
-                  <div key={expense.id} className="flex gap-3 items-center">
-                    <Input
-                      placeholder="Expense description"
-                      value={expense.description}
-                      onChange={(e) =>
-                        updateExpense(expense.id, "description", e.target.value)
-                      }
-                      className="h-10 rounded-xl border-gray-200 flex-1 text-sm"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={expense.amount}
-                      onChange={(e) =>
-                        updateExpense(expense.id, "amount", e.target.value)
-                      }
-                      className="h-10 rounded-xl border-gray-200 w-24 text-sm"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeExpense(expense.id)}
-                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold text-gray-900">
-                Financial Settings
-              </h4>
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                  Agency Commission (%)
-                </Label>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    type="number"
-                    value={commission}
-                    onChange={(e) => setCommission(e.target.value)}
-                    className="h-11 rounded-xl border-gray-200 flex-1"
-                  />
-                  <span className="text-sm font-bold text-gray-600">%</span>
-                </div>
-                <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  Agency fee: $0.00 | Talent net: $0.00
-                </p>
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                  Currency
-                </Label>
-                <Select defaultValue="usd">
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="usd">$ US Dollar (USD)</SelectItem>
-                    <SelectItem value="eur">€ Euro (EUR)</SelectItem>
-                    <SelectItem value="gbp">£ British Pound (GBP)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-xs font-bold text-gray-700">
-                    Tax Rate (%)
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={taxExempt}
-                      onCheckedChange={(checked) =>
-                        setTaxExempt(checked as boolean)
-                      }
-                      className="rounded-md w-4 h-4 border-gray-300"
-                    />
-                    <span className="text-xs text-gray-600 font-medium">
-                      Tax Exempt
-                    </span>
-                  </div>
-                </div>
-                <Select defaultValue="0" disabled={taxExempt}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="0">0% - No Tax</SelectItem>
-                    <SelectItem value="5">5%</SelectItem>
-                    <SelectItem value="10">10%</SelectItem>
-                    <SelectItem value="15">15%</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                  Discount
-                </Label>
-                <div className="flex gap-2">
-                  <Select defaultValue="dollar">
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="dollar">$</SelectItem>
-                      <SelectItem value="percent">%</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number"
-                    defaultValue="0"
-                    className="h-11 rounded-xl border-gray-200 flex-1"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
-              <h4 className="text-sm font-bold text-gray-900 mb-4">
-                Invoice Summary
-              </h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700 font-medium">
-                    Subtotal (1 items)
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">$0.00</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700 font-medium">
-                    Agency Commission (20%)
-                  </span>
-                  <span className="text-sm font-bold text-red-600">-$0.00</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-indigo-200">
-                  <span className="text-sm text-gray-700 font-medium">
-                    Talent Net Amount
-                  </span>
-                  <span className="text-sm font-bold text-green-600">
-                    $0.00
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-lg font-bold text-gray-900">
-                    Grand Total
-                  </span>
-                  <span className="text-2xl font-bold text-indigo-600">
-                    $0.00
-                  </span>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                Additional Notes (Optional)
-              </Label>
-              <Textarea
-                placeholder="Internal notes, special terms, or additional details..."
-                className="min-h-[100px] rounded-xl border-gray-200 resize-none"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                Payment Instructions
-              </Label>
-              <Textarea
-                defaultValue="Payment due within 30 days. Please reference invoice number on payment."
-                className="min-h-[100px] rounded-xl border-gray-200 resize-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-xs font-bold text-gray-700 mb-2 block">
-              Invoice Footer Text
-            </Label>
-            <Input
-              defaultValue="Thank you for your business!"
-              className="h-11 rounded-xl border-gray-200"
-            />
-          </div>
-
-          <div>
-            <Label className="text-xs font-bold text-gray-700 mb-2 block">
-              Attached Files (Optional)
-            </Label>
-            <p className="text-xs text-gray-500 font-medium mb-3">
-              Attach contracts, usage agreements, or supporting documents
-            </p>
-            <Button
-              variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Upload className="w-4 h-4" />
-              Upload File
-            </Button>
-          </div>
-
-          <div className="flex gap-3 pt-6 border-t border-gray-200">
-            <Button
-              variant="outline"
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Save className="w-4 h-4" />
-              Save as Draft
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Mark as Sent
-            </Button>
-            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-              <Send className="w-4 h-4" />
-              Email to Client
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Printer className="w-4 h-4" />
-              Print
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Files className="w-4 h-4" />
-              Duplicate
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const InvoiceManagementView = ({
-  setActiveSubTab,
-}: {
-  setActiveSubTab: (tab: string) => void;
-}) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("newest");
-  const [showFilters, setShowFilters] = useState(false);
-  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-
-  // Filter states
-  const [issueDateFrom, setIssueDateFrom] = useState("");
-  const [issueDateTo, setIssueDateTo] = useState("");
-  const [minAmount, setMinAmount] = useState("");
-  const [maxAmount, setMaxAmount] = useState("10000");
-  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
-  const [currencyFilter, setCurrencyFilter] = useState("all");
-
-  const clearAllFilters = () => {
-    setIssueDateFrom("");
-    setIssueDateTo("");
-    setMinAmount("");
-    setMaxAmount("10000");
-    setShowOverdueOnly(false);
-    setCurrencyFilter("all");
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "draft":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "sent":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "paid":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "overdue":
-        return "bg-red-50 text-red-700 border-red-200";
-      case "partial":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "cancelled":
-        return "bg-gray-50 text-gray-700 border-gray-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
-  const accountingTabs = [
-    { id: "Invoice Management", label: "Invoice Management", icon: FileText },
-    { id: "Invoice Generation", label: "Generate Invoice", icon: Plus },
-    { id: "Payment Tracking", label: "Payment Tracking", icon: DollarSign },
-    { id: "Talent Statements", label: "Talent Statements", icon: Receipt },
-    { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
-    { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Horizontal Tab Navigation */}
-      <Card className="p-2 bg-white border border-gray-100 rounded-2xl">
-        <div className="flex items-center gap-2">
-          {accountingTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = tab.id === "Invoice Management";
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </Card>
-
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Invoice Management
-          </h2>
-          <p className="text-gray-600 font-medium">
-            View and manage all client invoices
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
-            />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search by invoice #, client, or talent name..."
-            className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="all" className="font-bold text-gray-700">
-              All Status
-            </SelectItem>
-            <SelectItem value="draft" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
-                <span className="text-gray-900">Draft</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="sent" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-sm"></div>
-                <span className="text-gray-900">Sent</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="paid" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-                <span className="text-gray-900">Paid</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="overdue" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
-                <span className="text-gray-900">Overdue</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="partial" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                <span className="text-gray-900">Partial</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="cancelled" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
-                <span className="text-gray-900">Cancelled</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="Sort by..." />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="newest" className="font-bold text-gray-700">
-              Newest First
-            </SelectItem>
-            <SelectItem value="oldest" className="font-bold text-gray-700">
-              Oldest First
-            </SelectItem>
-            <SelectItem value="due-soonest" className="font-bold text-gray-700">
-              Due Date (Soonest)
-            </SelectItem>
-            <SelectItem value="due-latest" className="font-bold text-gray-700">
-              Due Date (Latest)
-            </SelectItem>
-            <SelectItem value="amount-high" className="font-bold text-gray-700">
-              Amount (High to Low)
-            </SelectItem>
-            <SelectItem value="amount-low" className="font-bold text-gray-700">
-              Amount (Low to High)
-            </SelectItem>
-            <SelectItem value="client-az" className="font-bold text-gray-700">
-              Client (A-Z)
-            </SelectItem>
-            <SelectItem value="client-za" className="font-bold text-gray-700">
-              Client (Z-A)
-            </SelectItem>
-            <SelectItem value="invoice-asc" className="font-bold text-gray-700">
-              Invoice # (Asc)
-            </SelectItem>
-            <SelectItem
-              value="invoice-desc"
-              className="font-bold text-gray-700"
-            >
-              Invoice # (Desc)
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Advanced Filters Panel */}
-      {showFilters && (
-        <Card className="p-5 bg-white border border-gray-200 rounded-2xl">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Issue Date From
-              </Label>
-              <Input
-                type="date"
-                value={issueDateFrom}
-                onChange={(e) => setIssueDateFrom(e.target.value)}
-                className="h-10 rounded-xl border-gray-200 text-sm"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Issue Date To
-              </Label>
-              <Input
-                type="date"
-                value={issueDateTo}
-                onChange={(e) => setIssueDateTo(e.target.value)}
-                className="h-10 rounded-xl border-gray-200 text-sm"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Min Amount
-              </Label>
-              <Input
-                type="number"
-                placeholder="0"
-                value={minAmount}
-                onChange={(e) => setMinAmount(e.target.value)}
-                className="h-10 rounded-xl border-gray-200 text-sm"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Max Amount
-              </Label>
-              <Input
-                type="number"
-                placeholder="10000"
-                value={maxAmount}
-                onChange={(e) => setMaxAmount(e.target.value)}
-                className="h-10 rounded-xl border-gray-200 text-sm"
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={showOverdueOnly}
-                  onCheckedChange={(checked) =>
-                    setShowOverdueOnly(checked as boolean)
-                  }
-                  className="rounded-md w-4 h-4 border-gray-300"
-                />
-                <Label className="text-sm font-bold text-gray-700">
-                  Show Overdue Only
-                </Label>
-              </div>
-              <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
-                <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 text-sm">
-                  <SelectValue placeholder="All Currencies" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="all">All Currencies</SelectItem>
-                  <SelectItem value="usd">USD</SelectItem>
-                  <SelectItem value="eur">EUR</SelectItem>
-                  <SelectItem value="gbp">GBP</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={clearAllFilters}
-              className="h-10 px-4 rounded-xl font-bold text-gray-700 flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Clear All Filters
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      <div className="text-sm text-gray-700 font-bold">
-        Showing <span className="font-bold text-gray-900">1 of 1</span> invoices
-      </div>
-
-      <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Invoice #
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Client Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Issue Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Due Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {MOCK_INVOICES.map((invoice) => (
-                <tr
-                  key={invoice.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-3">
-                    <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className="text-sm font-bold text-gray-900">
-                      {invoice.invoiceNumber}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className="text-sm font-bold text-indigo-600">
-                      {invoice.clientName}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className="text-sm text-gray-700 font-bold">
-                      {invoice.issueDate}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className="text-sm text-gray-700 font-bold">
-                      {invoice.dueDate}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className="text-sm font-bold text-gray-900">
-                      {invoice.amount}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    <Badge
-                      variant="outline"
-                      className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(invoice.status)}`}
-                    >
-                      {invoice.status}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                        title="View Invoice"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
-                        title="Edit Invoice"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
-                        title="Download PDF"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedInvoice(invoice);
-                              setShowPaymentHistory(true);
-                            }}
-                            className="font-bold text-gray-700 cursor-pointer"
-                          >
-                            <History className="w-4 h-4 mr-2" />
-                            Payment History
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
-                            <Printer className="w-4 h-4 mr-2" />
-                            Print
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Payment History Modal */}
-      <Dialog open={showPaymentHistory} onOpenChange={setShowPaymentHistory}>
-        <DialogContent className="max-w-2xl rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Payment History
-            </DialogTitle>
-            <p className="text-sm text-gray-600 font-medium">
-              Invoice #{selectedInvoice?.invoiceNumber}
-            </p>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-4">
-              <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs font-bold text-gray-700 mb-1">
-                  Invoice Total
-                </p>
-                <p className="text-2xl font-bold text-blue-600">$3</p>
-              </Card>
-              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
-                <p className="text-xs font-bold text-gray-700 mb-1">
-                  Total Paid
-                </p>
-                <p className="text-2xl font-bold text-green-600">$3</p>
-              </Card>
-              <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                <p className="text-xs font-bold text-gray-700 mb-1">
-                  Remaining Balance
-                </p>
-                <p className="text-2xl font-bold text-orange-600">$0</p>
-              </Card>
-            </div>
-
-            {/* Payment Transactions */}
-            <div>
-              <h4 className="text-sm font-bold text-gray-900 mb-3">
-                Payment Transactions
-              </h4>
-              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          Payment #1
-                        </p>
-                        <p className="text-xs text-gray-600 font-medium">
-                          January 27, 2026 • Wire
-                        </p>
-                      </div>
-                      <span className="text-lg font-bold text-green-600">
-                        $3
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      Full payment received
-                    </p>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Export History
-            </Button>
-            <Button
-              onClick={() => setShowPaymentHistory(false)}
-              className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
@@ -5142,11 +2021,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -6471,13 +3349,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -6596,16 +3474,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
                               ? "bg-green-50 text-green-600"
                               : talent.consent === "missing"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-orange-50 text-orange-600"
-                          }`}
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -7446,9 +4323,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -8260,11 +5137,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
                   ? "border-indigo-600 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -10435,7 +7311,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -10598,11 +7474,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
                   ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
                   : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -11095,11 +7970,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -11981,11 +8855,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -12942,92 +9815,6 @@ const AnalyticsDashboardView = () => {
   );
 };
 
-const SettingsView = () => {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-
-      {/* Agency Information */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Agency Information
-        </h3>
-        <div className="space-y-6 max-w-2xl">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">
-              Agency Name
-            </Label>
-            <Input
-              defaultValue="CM Models"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Website</Label>
-            <Input
-              defaultValue="https://cmmodels.com/"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Location</Label>
-            <Input
-              defaultValue="U.S."
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Integrations */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Integrations
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <DollarSign className="w-5 h-5 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  Stripe Connect
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Payouts & Invoicing
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <Link className="w-5 h-5 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">ElevenLabs</p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Voice cloning
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
 const PlaceholderView = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center h-full py-20 text-center">
     <div className="bg-gray-100 p-6 rounded-full mb-4">
@@ -13254,11 +10041,10 @@ const NewBookingModal = ({
                 <div
                   key={t.id}
                   onClick={() => handleSelectTalent(t)}
-                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
-                    selectedTalents.find((st) => st.id === t.id)
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedTalents.find((st) => st.id === t.id)
                       ? "bg-indigo-50/50"
                       : ""
-                  }`}
+                    }`}
                 >
                   <img
                     src={t.img}
@@ -13430,9 +10216,8 @@ const NewBookingModal = ({
                         setSelectedClient(c);
                         setClientSearch("");
                       }}
-                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
-                        selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
-                      }`}
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
+                        }`}
                     >
                       <Building2 className="w-8 h-8 text-gray-400" />
                       <div className="flex-1">
@@ -13740,11 +10525,10 @@ const NewBookingModal = ({
           </Button>
           <div className="flex gap-2">
             <Button
-              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${
-                selectedTalents.length === 0 || !selectedClient
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${selectedTalents.length === 0 || !selectedClient
                   ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
                   : ""
-              }`}
+                }`}
               onClick={() => {
                 if (selectedTalents.length === 0 || !selectedClient) return;
 
@@ -13767,11 +10551,10 @@ const NewBookingModal = ({
                 toast({
                   title:
                     mode === "edit" ? "Booking Updated" : "Booking Created",
-                  description: `Successfully ${
-                    mode === "edit" ? "updated" : "scheduled"
-                  } ${bookingType} for ${selectedTalents
-                    .map((t) => t.name)
-                    .join(", ")} on ${date}.`,
+                  description: `Successfully ${mode === "edit" ? "updated" : "scheduled"
+                    } ${bookingType} for ${selectedTalents
+                      .map((t) => t.name)
+                      .join(", ")} on ${date}.`,
                 });
 
                 onOpenChange(false);
@@ -13780,12 +10563,11 @@ const NewBookingModal = ({
             >
               {mode === "edit"
                 ? "Update Booking"
-                : `Save as ${
-                    bookingType === "test-shoot"
-                      ? "Test Shoot"
-                      : bookingType.charAt(0).toUpperCase() +
-                        bookingType.slice(1)
-                  }`}
+                : `Save as ${bookingType === "test-shoot"
+                  ? "Test Shoot"
+                  : bookingType.charAt(0).toUpperCase() +
+                  bookingType.slice(1)
+                }`}
             </Button>
           </div>
         </DialogFooter>
@@ -14481,11 +11263,10 @@ const CalendarScheduleTab = ({
               return (
                 <div
                   key={d}
-                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${
-                    isSelected
+                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${isSelected
                       ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
                       : ""
-                  }`}
+                    }`}
                   onClick={() => {
                     const newDate = new Date(currentDate);
                     newDate.setDate(d);
@@ -14493,11 +11274,10 @@ const CalendarScheduleTab = ({
                   }}
                 >
                   <span
-                    className={`text-sm font-medium ${
-                      isSelected
+                    className={`text-sm font-medium ${isSelected
                         ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
                         : "text-gray-700"
-                    }`}
+                      }`}
                   >
                     {d}
                   </span>
@@ -14767,11 +11547,10 @@ const AddClientModal = ({
                 <Badge
                   key={tag}
                   variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                  className={`${
-                    selectedTags.includes(tag)
+                  className={`${selectedTags.includes(tag)
                       ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold"
-                  } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
+                    } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
                   onClick={() => toggleTag(tag)}
                 >
                   {tag}
@@ -15554,9 +12333,8 @@ const AddBookOutModal = ({
             Cancel
           </Button>
           <Button
-            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${
-              !isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
-            }`}
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${!isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
+              }`}
             onClick={handleSave}
             disabled={!isValid}
           >
@@ -15812,11 +12590,10 @@ const NotificationsTab = () => {
             onClick={() =>
               setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
             }
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeSubNav === ["logs", "settings", "preferences", "test"][idx]
                 ? "border-indigo-600 text-indigo-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -15859,22 +12636,20 @@ const NotificationsTab = () => {
               {notifications.map((notif, idx) => (
                 <Card
                   key={idx}
-                  className={`p-4 border ${
-                    notif.status === "error"
+                  className={`p-4 border ${notif.status === "error"
                       ? "border-red-200 bg-red-50"
                       : "border-gray-100 hover:border-indigo-200 transition-colors"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
                       <div
-                        className={`p-2 rounded-lg ${
-                          notif.type === "EMAIL"
+                        className={`p-2 rounded-lg ${notif.type === "EMAIL"
                             ? "bg-blue-100 text-blue-600"
                             : notif.type === "SMS"
                               ? "bg-green-100 text-green-600"
                               : "bg-purple-100 text-purple-600"
-                        }`}
+                          }`}
                       >
                         {notif.type === "EMAIL" && <Mail className="w-5 h-5" />}
                         {notif.type === "SMS" && <Phone className="w-5 h-5" />}
@@ -15908,11 +12683,10 @@ const NotificationsTab = () => {
                         {notif.time}
                       </p>
                       <p
-                        className={`text-xs font-bold mt-1 ${
-                          notif.status === "success"
+                        className={`text-xs font-bold mt-1 ${notif.status === "success"
                             ? "text-green-600"
                             : "text-red-600"
-                        }`}
+                          }`}
                       >
                         {notif.detail}
                       </p>
@@ -16476,11 +13250,10 @@ const NotificationsTab = () => {
             </div>
 
             <Button
-              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${
-                !testNotificationType || !testTargetTalent
+              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${!testNotificationType || !testTargetTalent
                   ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
                   : ""
-              }`}
+                }`}
               onClick={() => {
                 if (!testNotificationType || !testTargetTalent) return;
 
@@ -16493,7 +13266,7 @@ const NotificationsTab = () => {
                   title: "Notification Sent",
                   description: `Test ${testNotificationType} notification sent to ${talentName}!`,
                   action: (
-                    <ToastAction altText="OK" onClick={() => {}}>
+                    <ToastAction altText="OK" onClick={() => { }}>
                       OK
                     </ToastAction>
                   ),
@@ -16651,11 +13424,10 @@ const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${
-                activeTab === tab
+              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === tab
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -16786,13 +13558,12 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
                   <div className="flex items-center gap-4 flex-1 mx-4">
                     <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${
-                          type === "confirmed"
+                        className={`h-full rounded-full ${type === "confirmed"
                             ? "bg-green-500"
                             : type === "cancelled"
                               ? "bg-red-500"
                               : "bg-indigo-600"
-                        }`}
+                          }`}
                         style={{ width: `${(count / totalBookings) * 100}%` }}
                       />
                     </div>
@@ -17480,6 +14251,32 @@ function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -17499,89 +14296,109 @@ function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          { id: "settings", label: "Settings", icon: Settings },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "settings", label: "Settings", icon: Settings },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        { id: "file-storage", label: "File Storage", icon: Folder },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
+      <aside
+        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+      >
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -17610,20 +14427,22 @@ function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
+                    if (item.id === "settings") {
+                      setActiveTab("settings");
+                      setActiveSubTab("General Settings");
+                    }
                   } else {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -17643,11 +14462,10 @@ function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
                           ? "text-indigo-700 bg-indigo-50 font-bold"
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -17675,10 +14493,19 @@ function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-gray-500 hover:text-gray-900"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+
+          <div className="flex items-center gap-4 ml-auto">
             <Button
               variant="outline"
               size="sm"
@@ -17697,7 +14524,7 @@ function AgencyDashboard() {
             </Button>
 
             {/* Notifications Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={notificationRef}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -17709,7 +14536,7 @@ function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-x-4 top-20 mt-0 w-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80 md:inset-x-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
@@ -17757,7 +14584,7 @@ function AgencyDashboard() {
             </Button>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -17858,7 +14685,7 @@ function AgencyDashboard() {
         </header>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
+        <main className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-8 bg-gray-50">
           {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
@@ -17896,7 +14723,12 @@ function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "settings" && <SettingsView />}
+          {activeTab === "settings" && activeSubTab === "General Settings" && (
+            <GeneralSettingsView />
+          )}
+          {activeTab === "settings" && activeSubTab === "File Storage" && (
+            <FileStorageView />
+          )}
           {activeTab === "scouting" && (
             <ScoutingHubView
               activeTab={activeScoutingTab}
