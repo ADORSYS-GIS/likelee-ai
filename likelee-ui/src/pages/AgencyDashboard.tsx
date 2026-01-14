@@ -10120,7 +10120,7 @@ export default function AgencyDashboard() {
         </header>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 overflow-auto px-4 sm:px-8 md:px-12 py-8 bg-gray-50">
+        <main className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-8 bg-gray-50">
           {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView

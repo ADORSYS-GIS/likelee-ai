@@ -325,659 +325,272 @@ const GeneralSettingsView = () => {
     const secondaryColorInputRef = useRef<HTMLInputElement>(null);
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Agency Settings</h2>
-                <p className="text-sm sm:text-base text-gray-600 font-medium">
-                    Configure your agency profile and preferences
-                </p>
-            </div>
-
-            <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar sm:w-fit">
-                {[
-                    "Profile",
-                    "Commissions",
-                    "Email Templates",
-                    "Notifications",
-                    "Tax & Currency",
-                    "Divisions",
-                    "Team",
-                    "File Storage",
-                    "Integrations",
-                ].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-                            }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
-
-            {activeTab === "Profile" && (
-                <div className="space-y-6">
-                    {/* Agency Information */}
-                    {/* Agency Information */}
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                                <Building2 className="w-5 h-5 text-indigo-600" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                Agency Information
-                            </h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Agency Name *
-                                </Label>
-                                <Input
-                                    defaultValue="CM Models"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Legal Entity Name
-                                </Label>
-                                <Input
-                                    defaultValue="CM Models LLC"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="md:col-span-2 space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">Address</Label>
-                                <Input
-                                    defaultValue="123 Fashion Ave"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">City</Label>
-                                <Input
-                                    defaultValue="New York"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-bold text-gray-900">
-                                        State/Province
-                                    </Label>
-                                    <Input
-                                        defaultValue="NY"
-                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-bold text-gray-900">
-                                        ZIP/Postal Code
-                                    </Label>
-                                    <Input
-                                        defaultValue="10001"
-                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">Country</Label>
-                                <Select defaultValue="us">
-                                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
-                                        <SelectValue placeholder="Select country" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="us">United States</SelectItem>
-                                        <SelectItem value="uk">United Kingdom</SelectItem>
-                                        <SelectItem value="ca">Canada</SelectItem>
-                                        <SelectItem value="de">Germany</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">Time Zone</Label>
-                                <Select defaultValue="est">
-                                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
-                                        <SelectValue placeholder="Select timezone" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="est">Eastern Time (EST)</SelectItem>
-                                        <SelectItem value="cst">Central Time (CST)</SelectItem>
-                                        <SelectItem value="pst">Pacific Time (PST)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">Phone</Label>
-                                <Input
-                                    defaultValue="+1 (212) 555-0123"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">Email</Label>
-                                <Input
-                                    defaultValue="info@cmmodels.com"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="md:col-span-2 space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">Website</Label>
-                                <Input
-                                    defaultValue="https://cmmodels.com/"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                            <div className="md:col-span-2 space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Tax ID / EIN
-                                </Label>
-                                <Input
-                                    defaultValue="12-3456789"
-                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
-                                />
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* Branding */}
-                    {/* Branding */}
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                            Branding
-                        </h3>
-                        <div className="space-y-8">
-                            <div className="space-y-4">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Agency Logo
-                                </Label>
-                                <div className="flex items-center gap-6">
-                                    <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
-                                        <img
-                                            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/a37a561a8_Screenshot2025-10-29at70538PM.png"
-                                            alt="Logo"
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                        Upload New Logo
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 sm:gap-8">
-                                <div className="space-y-3 sm:space-y-4">
-                                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
-                                        Primary Brand Color
-                                    </Label>
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
-                                            <input
-                                                type="color"
-                                                value={primaryColor}
-                                                onChange={(e) => setPrimaryColor(e.target.value)}
-                                                className="absolute inset-0 w-full h-full cursor-pointer"
-                                                style={{
-                                                    opacity: 0,
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%'
-                                                }}
-                                            />
-                                            <div
-                                                className="absolute inset-0 pointer-events-none"
-                                                style={{ backgroundColor: primaryColor }}
-                                            />
-                                        </div>
-                                        <Input
-                                            value={primaryColor}
-                                            onChange={(e) => setPrimaryColor(e.target.value)}
-                                            className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-3 sm:space-y-4">
-                                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
-                                        Secondary Brand Color
-                                    </Label>
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
-                                            <input
-                                                type="color"
-                                                value={secondaryColor}
-                                                onChange={(e) => setSecondaryColor(e.target.value)}
-                                                className="absolute inset-0 w-full h-full cursor-pointer"
-                                                style={{
-                                                    opacity: 0,
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%'
-                                                }}
-                                            />
-                                            <div
-                                                className="absolute inset-0 pointer-events-none"
-                                                style={{ backgroundColor: secondaryColor }}
-                                            />
-                                        </div>
-                                        <Input
-                                            value={secondaryColor}
-                                            onChange={(e) => setSecondaryColor(e.target.value)}
-                                            className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Email Signature
-                                </Label>
-                                <Textarea
-                                    defaultValue={`Best regards,\nCM Models\nhttps://cmmodels.com/\n+1 (212) 555-0123`}
-                                    className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-500 font-medium rounded-xl resize-none"
-                                />
-                            </div>
-                        </div>
-                    </Card>
-
-                    <div className="flex justify-end">
-                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-                            <Save className="w-5 h-5" />
-                            Save Profile Settings
-                        </Button>
-                    </div>
+        <div className="max-w-7xl mx-auto">
+            <div className="space-y-6 animate-in fade-in duration-500">
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Agency Settings</h2>
+                    <p className="text-sm sm:text-base text-gray-600 font-medium">
+                        Configure your agency profile and preferences
+                    </p>
                 </div>
-            )}
 
-            {activeTab === "Commissions" && (
-                <div className="space-y-6">
-                    {/* Default Commission Rate */}
-                    {/* Default Commission Rate */}
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                                <DollarSign className="w-5 h-5 text-green-600" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                Default Commission Rate
-                            </h3>
-                        </div>
-                        <div className="space-y-4 max-w-md">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Agency Commission (%)
-                                </Label>
-                                <Input
-                                    defaultValue="20"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
-                                />
-                                <p className="text-xs text-gray-500 font-medium">
-                                    Applied to all bookings unless overridden
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
 
-                    {/* Division Commissions */}
-                    {/* Division Commissions */}
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                Division Commissions
-                            </h3>
-                            <Button
-                                variant="outline"
-                                className="h-8 px-3 sm:h-9 sm:px-4 rounded-lg border-gray-200 font-bold text-xs flex items-center gap-2"
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                Add Division
-                            </Button>
-                        </div>
-                        <div className="space-y-4">
-                            {[
-                                { name: "Women", count: 45, rate: 20 },
-                                { name: "Men", count: 32, rate: 20 },
-                                { name: "Kids", count: 18, rate: 15 },
-                                { name: "Curve", count: 12, rate: 20 },
-                            ].map((division) => (
-                                <div
-                                    key={division.name}
-                                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
-                                >
-                                    <div>
-                                        <p className="text-sm font-bold text-gray-900">
-                                            {division.name}
-                                        </p>
-                                        <p className="text-xs text-gray-500 font-medium">
-                                            {division.count} talent
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2 sm:gap-4">
-                                        <div className="flex items-center gap-1.5 sm:gap-2">
-                                            <Input
-                                                defaultValue={division.rate}
-                                                className="w-10 h-7 sm:w-12 sm:h-8 bg-white border-gray-200 text-center font-bold text-xs rounded-lg"
-                                            />
-                                            <span className="text-xs font-bold text-gray-500">%</span>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="w-7 h-7 text-gray-400 hover:text-indigo-600"
-                                        >
-                                            <Edit2 className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    {/* Per-Talent Custom Commissions */}
-                    {/* Per-Talent Custom Commissions */}
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
-                            Per-Talent Custom Commissions
-                        </h3>
-                        <p className="text-sm text-gray-500 font-medium mb-8">
-                            Override commission rates for specific talent (edit from talent
-                            profile)
-                        </p>
-                        <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl">
-                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                                <Users className="w-6 h-6 text-gray-400" />
-                            </div>
-                            <p className="text-sm font-bold text-gray-500">
-                                No custom commission rates set
-                            </p>
-                        </div>
-                    </Card>
-
-                    <div className="flex justify-end">
-                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-                            <Save className="w-5 h-5" />
-                            Save Commission Settings
-                        </Button>
-                    </div>
+                <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
+                    {[
+                        "Profile",
+                        "Commissions",
+                        "Email Templates",
+                        "Notifications",
+                        "Tax & Currency",
+                        "Divisions",
+                        "Team",
+                        "File Storage",
+                        "Integrations",
+                    ].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                                }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
                 </div>
-            )}
 
-            {activeTab === "Email Templates" && (
-                <div className="space-y-6">
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                                    <Mail className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                        Email Templates
-                                    </h3>
-                                    <p className="text-sm text-gray-500 font-medium">
-                                        Customize automated email messages
-                                    </p>
-                                </div>
-                            </div>
-                            <Button className="h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg flex items-center gap-2">
-                                <Plus className="w-3 h-3" />
-                                New Template
-                            </Button>
-                        </div>
 
-                        <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl mb-8">
-                            <h4 className="text-sm font-bold text-blue-900 mb-4">
-                                Available Variables:
-                            </h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-8">
-                                {[
-                                    "{talent_name}",
-                                    "{client_name}",
-                                    "{booking_date}",
-                                    "{call_time}",
-                                    "{location}",
-                                    "{rate}",
-                                    "{invoice_number}",
-                                    "{invoice_total}",
-                                    "{payment_terms}",
-                                    "{due_date}",
-                                    "{agency_name}",
-                                ].map((variable) => (
-                                    <code
-                                        key={variable}
-                                        className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded border border-blue-100 w-fit"
-                                    >
-                                        {variable}
-                                    </code>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            {[
-                                {
-                                    title: "Booking Confirmation",
-                                    subject: "Booking Confirmed - {client_name}",
-                                    body: "Hi {talent_name},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}",
-                                },
-                                {
-                                    title: "Invoice Email",
-                                    subject: "Invoice {invoice_number} from {agency_name}",
-                                    body: "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
-                                },
-                                {
-                                    title: "Payment Reminder",
-                                    subject: "Payment Reminder - Invoice {invoice_number}",
-                                    body: "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
-                                },
-                            ].map((template) => (
-                                <div
-                                    key={template.title}
-                                    className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
-                                >
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
-                                                {template.title}
-                                            </h4>
-                                            <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5 shrink-0">
-                                                Active
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="w-7 h-7 rounded-lg border-gray-200"
-                                            >
-                                                <Edit2 className="w-3 h-3 text-gray-500" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="w-7 h-7 rounded-lg border-gray-200"
-                                            >
-                                                <Copy className="w-3 h-3 text-gray-500" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            Subject:
-                                        </Label>
-                                        <p className="text-sm font-bold text-gray-900">
-                                            {template.subject}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            Body:
-                                        </Label>
-                                        <div className="p-4 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-700 font-medium whitespace-pre-line leading-relaxed">
-                                            {template.body}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    <div className="flex justify-end">
-                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-                            <Save className="w-5 h-5" />
-                            Save Email Templates
-                        </Button>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === "Notifications" && (
-                <div className="space-y-6">
-                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                                <Bell className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                    Notification Preferences
-                                </h3>
-                                <p className="text-sm text-gray-500 font-medium">
-                                    Choose how you want to be notified about important events
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            {[
-                                {
-                                    title: "Booking Created",
-                                    desc: "When a new booking is created",
-                                },
-                                {
-                                    title: "Booking Confirmed",
-                                    desc: "When a booking status changes to confirmed",
-                                },
-                                {
-                                    title: "Payment Received",
-                                    desc: "When payment is received from a client",
-                                },
-                                {
-                                    title: "Invoice Sent",
-                                    desc: "When an invoice is sent to a client",
-                                },
-                                {
-                                    title: "Talent Book Out",
-                                    desc: "When talent marks themselves unavailable",
-                                },
-                                {
-                                    title: "License Expiring",
-                                    desc: "When a talent license is about to expire",
-                                },
-                            ].map((pref) => (
-                                <div
-                                    key={pref.title}
-                                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
-                                >
-                                    <div className="flex-1 pr-4">
-                                        <p className="text-sm font-bold text-gray-900">
-                                            {pref.title}
-                                        </p>
-                                        <p className="text-xs text-gray-500 font-medium">
-                                            {pref.desc}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <Switch defaultChecked className="scale-75 origin-right" />
-                                            <span className="text-[10px] font-bold text-gray-400">Email</span>
-                                        </div>
-                                        <div className="flex flex-col items-center gap-1">
-                                            <Switch defaultChecked className="scale-75 origin-right" />
-                                            <span className="text-[10px] font-bold text-gray-400">Push</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    <div className="flex justify-end">
-                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-                            <Save className="w-5 h-5" />
-                            Save Preferences
-                        </Button>
-                    </div>
-                </div >
-            )}
-
-            {
-                activeTab === "Tax & Currency" && (
+                {activeTab === "Profile" && (
                     <div className="space-y-6">
+                        {/* Agency Information */}
+                        {/* Agency Information */}
                         <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                             <div className="flex items-center gap-3 mb-8">
-                                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                                    <DollarSign className="w-5 h-5 text-orange-600" />
+                                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                                    <Building2 className="w-5 h-5 text-indigo-600" />
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                    Tax & Currency
+                                    Agency Information
                                 </h3>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold text-gray-900">
-                                        Default Currency
+                                        Agency Name *
                                     </Label>
-                                    <Select defaultValue="usd">
-                                        <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                                            <SelectValue placeholder="Select currency" />
+                                    <Input
+                                        defaultValue="CM Models"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Legal Entity Name
+                                    </Label>
+                                    <Input
+                                        defaultValue="CM Models LLC"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                    />
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">Address</Label>
+                                    <Input
+                                        defaultValue="123 Fashion Ave"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">City</Label>
+                                    <Input
+                                        defaultValue="New York"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-gray-900">
+                                            State/Province
+                                        </Label>
+                                        <Input
+                                            defaultValue="NY"
+                                            className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-gray-900">
+                                            ZIP/Postal Code
+                                        </Label>
+                                        <Input
+                                            defaultValue="10001"
+                                            className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">Country</Label>
+                                    <Select defaultValue="us">
+                                        <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
+                                            <SelectValue placeholder="Select country" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl">
-                                            <SelectItem value="usd">USD ($)</SelectItem>
-                                            <SelectItem value="eur">EUR (€)</SelectItem>
-                                            <SelectItem value="gbp">GBP (£)</SelectItem>
+                                            <SelectItem value="us">United States</SelectItem>
+                                            <SelectItem value="uk">United Kingdom</SelectItem>
+                                            <SelectItem value="ca">Canada</SelectItem>
+                                            <SelectItem value="de">Germany</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-bold text-gray-900">
-                                        Tax Rate (%)
-                                    </Label>
+                                    <Label className="text-sm font-bold text-gray-900">Time Zone</Label>
+                                    <Select defaultValue="est">
+                                        <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
+                                            <SelectValue placeholder="Select timezone" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem value="est">Eastern Time (EST)</SelectItem>
+                                            <SelectItem value="cst">Central Time (CST)</SelectItem>
+                                            <SelectItem value="pst">Pacific Time (PST)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">Phone</Label>
                                     <Input
-                                        defaultValue="8.875"
-                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        defaultValue="+1 (212) 555-0123"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-bold text-gray-900">
-                                        Tax Name
-                                    </Label>
+                                    <Label className="text-sm font-bold text-gray-900">Email</Label>
                                     <Input
-                                        defaultValue="Sales Tax"
-                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        defaultValue="info@cmmodels.com"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="md:col-span-2 space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">Website</Label>
+                                    <Input
+                                        defaultValue="https://cmmodels.com/"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                    />
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
                                     <Label className="text-sm font-bold text-gray-900">
-                                        Tax ID
+                                        Tax ID / EIN
                                     </Label>
                                     <Input
                                         defaultValue="12-3456789"
-                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                                    />
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* Branding */}
+                        {/* Branding */}
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+                                Branding
+                            </h3>
+                            <div className="space-y-8">
+                                <div className="space-y-4">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Agency Logo
+                                    </Label>
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
+                                            <img
+                                                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/a37a561a8_Screenshot2025-10-29at70538PM.png"
+                                                alt="Logo"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                            Upload New Logo
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                                    <div className="space-y-3 sm:space-y-4">
+                                        <Label className="text-xs sm:text-sm font-bold text-gray-900">
+                                            Primary Brand Color
+                                        </Label>
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
+                                                <input
+                                                    type="color"
+                                                    value={primaryColor}
+                                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                                    className="absolute inset-0 w-full h-full cursor-pointer"
+                                                    style={{
+                                                        opacity: 0,
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        width: '100%',
+                                                        height: '100%'
+                                                    }}
+                                                />
+                                                <div
+                                                    className="absolute inset-0 pointer-events-none"
+                                                    style={{ backgroundColor: primaryColor }}
+                                                />
+                                            </div>
+                                            <Input
+                                                value={primaryColor}
+                                                onChange={(e) => setPrimaryColor(e.target.value)}
+                                                className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3 sm:space-y-4">
+                                        <Label className="text-xs sm:text-sm font-bold text-gray-900">
+                                            Secondary Brand Color
+                                        </Label>
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
+                                                <input
+                                                    type="color"
+                                                    value={secondaryColor}
+                                                    onChange={(e) => setSecondaryColor(e.target.value)}
+                                                    className="absolute inset-0 w-full h-full cursor-pointer"
+                                                    style={{
+                                                        opacity: 0,
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        width: '100%',
+                                                        height: '100%'
+                                                    }}
+                                                />
+                                                <div
+                                                    className="absolute inset-0 pointer-events-none"
+                                                    style={{ backgroundColor: secondaryColor }}
+                                                />
+                                            </div>
+                                            <Input
+                                                value={secondaryColor}
+                                                onChange={(e) => setSecondaryColor(e.target.value)}
+                                                className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Email Signature
+                                    </Label>
+                                    <Textarea
+                                        defaultValue={`Best regards,\nCM Models\nhttps://cmmodels.com/\n+1 (212) 555-0123`}
+                                        className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-500 font-medium rounded-xl resize-none"
                                     />
                                 </div>
                             </div>
@@ -986,425 +599,816 @@ const GeneralSettingsView = () => {
                         <div className="flex justify-end">
                             <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                                 <Save className="w-5 h-5" />
-                                Save Tax & Currency
+                                Save Profile Settings
                             </Button>
                         </div>
                     </div>
                 )}
 
-            {
-                activeTab === "Divisions" && (
+                {activeTab === "Commissions" && (
                     <div className="space-y-6">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900">
-                                    Agency Divisions
-                                </h3>
-                                <p className="text-sm text-gray-500 font-medium">
-                                    Manage talent categories and divisions
-                                </p>
-                            </div>
-                            <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                Add Division
-                            </Button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[
-                                { name: "Women", count: 45, color: "bg-pink-50 text-pink-600" },
-                                { name: "Men", count: 32, color: "bg-blue-50 text-blue-600" },
-                                { name: "Kids", count: 18, color: "bg-yellow-50 text-yellow-600" },
-                                { name: "Curve", count: 12, color: "bg-purple-50 text-purple-600" },
-                                {
-                                    name: "Influencers",
-                                    count: 24,
-                                    color: "bg-orange-50 text-orange-600",
-                                },
-                                { name: "Voice", count: 8, color: "bg-green-50 text-green-600" },
-                            ].map((division) => (
-                                <Card
-                                    key={division.name}
-                                    className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl hover:border-indigo-200 transition-colors cursor-pointer group"
-                                >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div
-                                            className={`w-10 h-10 rounded-xl ${division.color} flex items-center justify-center`}
-                                        >
-                                            <Users className="w-5 h-5" />
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="w-8 h-8 text-gray-400 hover:text-indigo-600"
-                                        >
-                                            <MoreVertical className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                    <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
-                                        {division.name}
-                                    </h4>
-                                    <p className="text-sm text-gray-500 font-medium">
-                                        {division.count} Active Talent
-                                    </p>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-
-
-            {
-                activeTab === "Team" && (
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-900">Team Management</h3>
-                                <p className="text-sm text-gray-500 font-medium hidden sm:block">
-                                    Manage team members, roles, and permissions
-                                </p>
-                            </div>
-                            <Button
-                                onClick={() => setShowInviteModal(true)}
-                                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shrink-0"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Invite User
-                            </Button>
-                        </div>
-
-                        <div className="p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-indigo-600" />
-                                    <span className="font-bold text-gray-900">Team Seats</span>
+                        {/* Default Commission Rate */}
+                        {/* Default Commission Rate */}
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+                                    <DollarSign className="w-5 h-5 text-green-600" />
                                 </div>
-                                <span className="text-sm font-bold text-gray-600">6 of 10 seats used</span>
+                                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                    Default Commission Rate
+                                </h3>
                             </div>
-                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div className="h-full bg-indigo-600 rounded-full" style={{ width: '60%' }} />
+                            <div className="space-y-4 max-w-md">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Agency Commission (%)
+                                    </Label>
+                                    <Input
+                                        defaultValue="20"
+                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    />
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        Applied to all bookings unless overridden
+                                    </p>
+                                </div>
                             </div>
-                            <p className="text-xs text-gray-500 font-medium mt-3">
-                                4 seats remaining • Professional Plan
-                            </p>
-                        </div>
+                        </Card>
 
-                        <div className="space-y-4">
-                            <h4 className="text-base font-bold text-gray-900 uppercase tracking-wider">User Roles</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Division Commissions */}
+                        {/* Division Commissions */}
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                    Division Commissions
+                                </h3>
+                                <Button
+                                    variant="outline"
+                                    className="h-8 px-3 sm:h-9 sm:px-4 rounded-lg border-gray-200 font-bold text-xs flex items-center gap-2"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    Add Division
+                                </Button>
+                            </div>
+                            <div className="space-y-4">
                                 {[
-                                    {
-                                        role: "Admin",
-                                        desc: "Full access, billing, settings",
-                                        color: "bg-purple-50 text-purple-700 border-purple-100",
-                                    },
-                                    {
-                                        role: "Booker",
-                                        desc: "Create/edit bookings, view earnings",
-                                        color: "bg-blue-50 text-blue-700 border-blue-100",
-                                    },
-                                    {
-                                        role: "Scout",
-                                        desc: "Add prospects, view scouting pipeline",
-                                        color: "bg-green-50 text-green-700 border-green-100",
-                                    },
-                                    {
-                                        role: "Accountant",
-                                        desc: "View/create invoices, reports, no booking access",
-                                        color: "bg-yellow-50 text-yellow-700 border-yellow-100",
-                                    },
-                                    {
-                                        role: "Talent Coordinator",
-                                        desc: "Manage talent profiles, portfolios",
-                                        color: "bg-indigo-50 text-indigo-700 border-indigo-100",
-                                    },
-                                    {
-                                        role: "Read-Only",
-                                        desc: "View everything, edit nothing",
-                                        color: "bg-gray-50 text-gray-700 border-gray-100",
-                                    },
-                                ].map((role) => (
+                                    { name: "Women", count: 45, rate: 20 },
+                                    { name: "Men", count: 32, rate: 20 },
+                                    { name: "Kids", count: 18, rate: 15 },
+                                    { name: "Curve", count: 12, rate: 20 },
+                                ].map((division) => (
                                     <div
-                                        key={role.role}
-                                        className={`p-5 rounded-xl border ${role.color} flex flex-col shadow-sm`}
+                                        key={division.name}
+                                        className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
                                     >
-                                        <span className="text-base font-bold mb-1.5">
-                                            {role.role}
-                                        </span>
-                                        <span className="text-sm font-medium opacity-90">
-                                            {role.desc}
-                                        </span>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {division.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500 font-medium">
+                                                {division.count} talent
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 sm:gap-4">
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                                <Input
+                                                    defaultValue={division.rate}
+                                                    className="w-10 h-7 sm:w-12 sm:h-8 bg-white border-gray-200 text-center font-bold text-xs rounded-lg"
+                                                />
+                                                <span className="text-xs font-bold text-gray-500">%</span>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="w-7 h-7 text-gray-400 hover:text-indigo-600"
+                                            >
+                                                <Edit2 className="w-3 h-3" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </Card>
 
-                        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-6 border-b border-gray-100 bg-gray-50/50">
-                                <h4 className="text-lg font-bold text-gray-900">
-                                    Team Members (6)
+                        {/* Per-Talent Custom Commissions */}
+                        {/* Per-Talent Custom Commissions */}
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
+                                Per-Talent Custom Commissions
+                            </h3>
+                            <p className="text-sm text-gray-500 font-medium mb-8">
+                                Override commission rates for specific talent (edit from talent
+                                profile)
+                            </p>
+                            <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl">
+                                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                    <Users className="w-6 h-6 text-gray-400" />
+                                </div>
+                                <p className="text-sm font-bold text-gray-500">
+                                    No custom commission rates set
+                                </p>
+                            </div>
+                        </Card>
+
+                        <div className="flex justify-end">
+                            <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                                <Save className="w-5 h-5" />
+                                Save Commission Settings
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "Email Templates" && (
+                    <div className="space-y-6">
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                                        <Mail className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                            Email Templates
+                                        </h3>
+                                        <p className="text-sm text-gray-500 font-medium">
+                                            Customize automated email messages
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button className="h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg flex items-center gap-2">
+                                    <Plus className="w-3 h-3" />
+                                    New Template
+                                </Button>
+                            </div>
+
+                            <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl mb-8">
+                                <h4 className="text-sm font-bold text-blue-900 mb-4">
+                                    Available Variables:
                                 </h4>
-                                <div className="relative w-full sm:w-80">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <Input
-                                        placeholder="Search team members by name or email..."
-                                        className="pl-9 h-10 bg-white border-gray-200 rounded-xl text-sm"
-                                    />
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-8">
+                                    {[
+                                        "{talent_name}",
+                                        "{client_name}",
+                                        "{booking_date}",
+                                        "{call_time}",
+                                        "{location}",
+                                        "{rate}",
+                                        "{invoice_number}",
+                                        "{invoice_total}",
+                                        "{payment_terms}",
+                                        "{due_date}",
+                                        "{agency_name}",
+                                    ].map((variable) => (
+                                        <code
+                                            key={variable}
+                                            className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded border border-blue-100 w-fit"
+                                        >
+                                            {variable}
+                                        </code>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="divide-y divide-gray-100">
+
+                            <div className="space-y-6">
                                 {[
                                     {
-                                        name: "Sarah Johnson",
-                                        email: "sarah@agency.com",
-                                        role: "Admin",
-                                        status: "Active",
-                                        lastActive: "Jan 12, 2026 10:30 AM",
-                                        joined: "Jun 15, 2023",
-                                        avatar: "SJ",
+                                        title: "Booking Confirmation",
+                                        subject: "Booking Confirmed - {client_name}",
+                                        body: "Hi {talent_name},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}",
                                     },
                                     {
-                                        name: "Michael Chen",
-                                        email: "michael@agency.com",
-                                        role: "Booker",
-                                        status: "Active",
-                                        lastActive: "Jan 12, 2026 9:15 AM",
-                                        joined: "Aug 22, 2023",
-                                        avatar: "MC",
+                                        title: "Invoice Email",
+                                        subject: "Invoice {invoice_number} from {agency_name}",
+                                        body: "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
                                     },
                                     {
-                                        name: "Emily Rodriguez",
-                                        email: "emily@agency.com",
-                                        role: "Scout",
-                                        status: "Away",
-                                        lastActive: "Jan 11, 2026 4:30 PM",
-                                        joined: "Sep 10, 2023",
-                                        avatar: "ER",
+                                        title: "Payment Reminder",
+                                        subject: "Payment Reminder - Invoice {invoice_number}",
+                                        body: "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
                                     },
-                                    {
-                                        name: "David Kim",
-                                        email: "david@agency.com",
-                                        role: "Accountant",
-                                        status: "Active",
-                                        lastActive: "Jan 12, 2026 8:00 AM",
-                                        joined: "Jul 1, 2023",
-                                        avatar: "DK",
-                                    },
-                                ].map((user) => (
+                                ].map((template) => (
                                     <div
-                                        key={user.email}
-                                        className="flex flex-col px-2 py-4 sm:p-6 hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0"
+                                        key={template.title}
+                                        className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
                                     >
-                                        <div className="flex items-center gap-2 sm:gap-4 w-full">
-                                            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm sm:text-lg shrink-0">
-                                                {user.avatar}
-                                            </div>
-                                            <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
-                                                <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
-                                                    {user.name}
-                                                </p>
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="bg-purple-50 text-purple-700 font-bold text-[10px] sm:text-xs h-5 sm:h-6 px-1 sm:px-2 shrink-0"
-                                                >
-                                                    {user.role}
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                                                    {template.title}
+                                                </h4>
+                                                <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5 shrink-0">
+                                                    Active
                                                 </Badge>
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                    <div
-                                                        className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
-                                                            ? "bg-green-500"
-                                                            : "bg-yellow-500"
-                                                            }`}
-                                                    />
-                                                    <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
-                                                        {user.status}
-                                                    </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="w-7 h-7 rounded-lg border-gray-200"
+                                                >
+                                                    <Edit2 className="w-3 h-3 text-gray-500" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="w-7 h-7 rounded-lg border-gray-200"
+                                                >
+                                                    <Copy className="w-3 h-3 text-gray-500" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                                Subject:
+                                            </Label>
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {template.subject}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                                Body:
+                                            </Label>
+                                            <div className="p-4 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-700 font-medium whitespace-pre-line leading-relaxed">
+                                                {template.body}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+
+                        <div className="flex justify-end">
+                            <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                                <Save className="w-5 h-5" />
+                                Save Email Templates
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "Notifications" && (
+                    <div className="space-y-6">
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                                    <Bell className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                        Notification Preferences
+                                    </h3>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        Choose how you want to be notified about important events
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {[
+                                    {
+                                        title: "Booking Created",
+                                        desc: "When a new booking is created",
+                                    },
+                                    {
+                                        title: "Booking Confirmed",
+                                        desc: "When a booking status changes to confirmed",
+                                    },
+                                    {
+                                        title: "Payment Received",
+                                        desc: "When payment is received from a client",
+                                    },
+                                    {
+                                        title: "Invoice Sent",
+                                        desc: "When an invoice is sent to a client",
+                                    },
+                                    {
+                                        title: "Talent Book Out",
+                                        desc: "When talent marks themselves unavailable",
+                                    },
+                                    {
+                                        title: "License Expiring",
+                                        desc: "When a talent license is about to expire",
+                                    },
+                                ].map((pref) => (
+                                    <div
+                                        key={pref.title}
+                                        className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
+                                    >
+                                        <div className="flex-1 pr-4">
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {pref.title}
+                                            </p>
+                                            <p className="text-xs text-gray-500 font-medium">
+                                                {pref.desc}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <Switch defaultChecked className="scale-75 origin-right" />
+                                                <span className="text-[10px] font-bold text-gray-400">Email</span>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <Switch defaultChecked className="scale-75 origin-right" />
+                                                <span className="text-[10px] font-bold text-gray-400">Push</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+
+                        <div className="flex justify-end">
+                            <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                                <Save className="w-5 h-5" />
+                                Save Preferences
+                            </Button>
+                        </div>
+                    </div >
+                )}
+
+                {
+                    activeTab === "Tax & Currency" && (
+                        <div className="space-y-6">
+                            <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                                        <DollarSign className="w-5 h-5 text-orange-600" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                        Tax & Currency
+                                    </h3>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-gray-900">
+                                            Default Currency
+                                        </Label>
+                                        <Select defaultValue="usd">
+                                            <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                                                <SelectValue placeholder="Select currency" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl">
+                                                <SelectItem value="usd">USD ($)</SelectItem>
+                                                <SelectItem value="eur">EUR (€)</SelectItem>
+                                                <SelectItem value="gbp">GBP (£)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-gray-900">
+                                            Tax Rate (%)
+                                        </Label>
+                                        <Input
+                                            defaultValue="8.875"
+                                            className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-gray-900">
+                                            Tax Name
+                                        </Label>
+                                        <Input
+                                            defaultValue="Sales Tax"
+                                            className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-gray-900">
+                                            Tax ID
+                                        </Label>
+                                        <Input
+                                            defaultValue="12-3456789"
+                                            className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <div className="flex justify-end">
+                                <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                                    <Save className="w-5 h-5" />
+                                    Save Tax & Currency
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                {
+                    activeTab === "Divisions" && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">
+                                        Agency Divisions
+                                    </h3>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        Manage talent categories and divisions
+                                    </p>
+                                </div>
+                                <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    Add Division
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[
+                                    { name: "Women", count: 45, color: "bg-pink-50 text-pink-600" },
+                                    { name: "Men", count: 32, color: "bg-blue-50 text-blue-600" },
+                                    { name: "Kids", count: 18, color: "bg-yellow-50 text-yellow-600" },
+                                    { name: "Curve", count: 12, color: "bg-purple-50 text-purple-600" },
+                                    {
+                                        name: "Influencers",
+                                        count: 24,
+                                        color: "bg-orange-50 text-orange-600",
+                                    },
+                                    { name: "Voice", count: 8, color: "bg-green-50 text-green-600" },
+                                ].map((division) => (
+                                    <Card
+                                        key={division.name}
+                                        className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl hover:border-indigo-200 transition-colors cursor-pointer group"
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div
+                                                className={`w-10 h-10 rounded-xl ${division.color} flex items-center justify-center`}
+                                            >
+                                                <Users className="w-5 h-5" />
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="w-8 h-8 text-gray-400 hover:text-indigo-600"
+                                            >
+                                                <MoreVertical className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                                            {division.name}
+                                        </h4>
+                                        <p className="text-sm text-gray-500 font-medium">
+                                            {division.count} Active Talent
+                                        </p>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+
+
+                {
+                    activeTab === "Team" && (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">Team Management</h3>
+                                    <p className="text-sm text-gray-500 font-medium hidden sm:block">
+                                        Manage team members, roles, and permissions
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={() => setShowInviteModal(true)}
+                                    className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shrink-0"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Invite User
+                                </Button>
+                            </div>
+
+                            <div className="p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="w-5 h-5 text-indigo-600" />
+                                        <span className="font-bold text-gray-900">Team Seats</span>
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-600">6 of 10 seats used</span>
+                                </div>
+                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-600 rounded-full" style={{ width: '60%' }} />
+                                </div>
+                                <p className="text-xs text-gray-500 font-medium mt-3">
+                                    4 seats remaining • Professional Plan
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-base font-bold text-gray-900 uppercase tracking-wider">User Roles</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {[
+                                        {
+                                            role: "Admin",
+                                            desc: "Full access, billing, settings",
+                                            color: "bg-purple-50 text-purple-700 border-purple-100",
+                                        },
+                                        {
+                                            role: "Booker",
+                                            desc: "Create/edit bookings, view earnings",
+                                            color: "bg-blue-50 text-blue-700 border-blue-100",
+                                        },
+                                        {
+                                            role: "Scout",
+                                            desc: "Add prospects, view scouting pipeline",
+                                            color: "bg-green-50 text-green-700 border-green-100",
+                                        },
+                                        {
+                                            role: "Accountant",
+                                            desc: "View/create invoices, reports, no booking access",
+                                            color: "bg-yellow-50 text-yellow-700 border-yellow-100",
+                                        },
+                                        {
+                                            role: "Talent Coordinator",
+                                            desc: "Manage talent profiles, portfolios",
+                                            color: "bg-indigo-50 text-indigo-700 border-indigo-100",
+                                        },
+                                        {
+                                            role: "Read-Only",
+                                            desc: "View everything, edit nothing",
+                                            color: "bg-gray-50 text-gray-700 border-gray-100",
+                                        },
+                                    ].map((role) => (
+                                        <div
+                                            key={role.role}
+                                            className={`p-5 rounded-xl border ${role.color} flex flex-col shadow-sm`}
+                                        >
+                                            <span className="text-base font-bold mb-1.5">
+                                                {role.role}
+                                            </span>
+                                            <span className="text-sm font-medium opacity-90">
+                                                {role.desc}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-6 border-b border-gray-100 bg-gray-50/50">
+                                    <h4 className="text-lg font-bold text-gray-900">
+                                        Team Members (6)
+                                    </h4>
+                                    <div className="relative w-full sm:w-80">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <Input
+                                            placeholder="Search team members by name or email..."
+                                            className="pl-9 h-10 bg-white border-gray-200 rounded-xl text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="divide-y divide-gray-100">
+                                    {[
+                                        {
+                                            name: "Sarah Johnson",
+                                            email: "sarah@agency.com",
+                                            role: "Admin",
+                                            status: "Active",
+                                            lastActive: "Jan 12, 2026 10:30 AM",
+                                            joined: "Jun 15, 2023",
+                                            avatar: "SJ",
+                                        },
+                                        {
+                                            name: "Michael Chen",
+                                            email: "michael@agency.com",
+                                            role: "Booker",
+                                            status: "Active",
+                                            lastActive: "Jan 12, 2026 9:15 AM",
+                                            joined: "Aug 22, 2023",
+                                            avatar: "MC",
+                                        },
+                                        {
+                                            name: "Emily Rodriguez",
+                                            email: "emily@agency.com",
+                                            role: "Scout",
+                                            status: "Away",
+                                            lastActive: "Jan 11, 2026 4:30 PM",
+                                            joined: "Sep 10, 2023",
+                                            avatar: "ER",
+                                        },
+                                        {
+                                            name: "David Kim",
+                                            email: "david@agency.com",
+                                            role: "Accountant",
+                                            status: "Active",
+                                            lastActive: "Jan 12, 2026 8:00 AM",
+                                            joined: "Jul 1, 2023",
+                                            avatar: "DK",
+                                        },
+                                    ].map((user) => (
+                                        <div
+                                            key={user.email}
+                                            className="flex flex-col px-2 py-4 sm:p-6 hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0"
+                                        >
+                                            <div className="flex items-center gap-2 sm:gap-4 w-full">
+                                                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm sm:text-lg shrink-0">
+                                                    {user.avatar}
+                                                </div>
+                                                <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
+                                                    <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                                                        {user.name}
+                                                    </p>
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="bg-purple-50 text-purple-700 font-bold text-[10px] sm:text-xs h-5 sm:h-6 px-1 sm:px-2 shrink-0"
+                                                    >
+                                                        {user.role}
+                                                    </Badge>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <div
+                                                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
+                                                                ? "bg-green-500"
+                                                                : "bg-yellow-500"
+                                                                }`}
+                                                        />
+                                                        <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
+                                                            {user.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedMember(user);
+                                                            setShowPermissionsModal(true);
+                                                        }}
+                                                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-4 text-xs sm:text-sm font-bold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 rounded-lg sm:rounded-xl"
+                                                        title="Permissions"
+                                                    >
+                                                        <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        <span className="hidden sm:inline">Permissions</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedMember(user);
+                                                            setShowActivityModal(true);
+                                                        }}
+                                                        className="h-8 w-8 sm:h-9 sm:w-auto sm:px-4 text-xs sm:text-sm font-bold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 rounded-lg sm:rounded-xl"
+                                                        title="Activity"
+                                                    >
+                                                        <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                        <span className="hidden sm:inline">Activity</span>
+                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg sm:rounded-xl"
+                                                            >
+                                                                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+                                                            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer py-2.5 rounded-lg">
+                                                                <Edit2 className="w-4 h-4 mr-3" /> Edit User
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer py-2.5 rounded-lg">
+                                                                <Mail className="w-4 h-4 mr-3" /> Resend Invite
+                                                            </DropdownMenuItem>
+                                                            <div className="h-px bg-gray-100 my-1" />
+                                                            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer py-2.5 rounded-lg">
+                                                                <XCircle className="w-4 h-4 mr-3" /> Deactivate
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer py-2.5 rounded-lg">
+                                                                <Trash2 className="w-4 h-4 mr-3" /> Remove User
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedMember(user);
-                                                        setShowPermissionsModal(true);
-                                                    }}
-                                                    className="h-8 w-8 sm:h-9 sm:w-auto sm:px-4 text-xs sm:text-sm font-bold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 rounded-lg sm:rounded-xl"
-                                                    title="Permissions"
-                                                >
-                                                    <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                                    <span className="hidden sm:inline">Permissions</span>
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setSelectedMember(user);
-                                                        setShowActivityModal(true);
-                                                    }}
-                                                    className="h-8 w-8 sm:h-9 sm:w-auto sm:px-4 text-xs sm:text-sm font-bold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 rounded-lg sm:rounded-xl"
-                                                    title="Activity"
-                                                >
-                                                    <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                                    <span className="hidden sm:inline">Activity</span>
-                                                </Button>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg sm:rounded-xl"
-                                                        >
-                                                            <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
-                                                        <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer py-2.5 rounded-lg">
-                                                            <Edit2 className="w-4 h-4 mr-3" /> Edit User
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer py-2.5 rounded-lg">
-                                                            <Mail className="w-4 h-4 mr-3" /> Resend Invite
-                                                        </DropdownMenuItem>
-                                                        <div className="h-px bg-gray-100 my-1" />
-                                                        <DropdownMenuItem className="font-bold text-red-600 cursor-pointer py-2.5 rounded-lg">
-                                                            <XCircle className="w-4 h-4 mr-3" /> Deactivate
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="font-bold text-red-600 cursor-pointer py-2.5 rounded-lg">
-                                                            <Trash2 className="w-4 h-4 mr-3" /> Remove User
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                            <div className="mt-1.5 sm:mt-1 ml-[48px] sm:ml-[72px] flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                                <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">
+                                                    {user.email}
+                                                </p>
+                                                <div className="flex items-center gap-3">
+                                                    <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                                                        <span className="text-gray-400">Last active:</span> {user.lastActive}
+                                                    </p>
+                                                    <span className="hidden sm:inline text-gray-300">•</span>
+                                                    <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                                                        <span className="text-gray-400">Joined:</span> {user.joined}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="mt-1.5 sm:mt-1 ml-[48px] sm:ml-[72px] flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                            <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">
-                                                {user.email}
-                                            </p>
-                                            <div className="flex items-center gap-3">
-                                                <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
-                                                    <span className="text-gray-400">Last active:</span> {user.lastActive}
-                                                </p>
-                                                <span className="hidden sm:inline text-gray-300">•</span>
-                                                <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
-                                                    <span className="text-gray-400">Joined:</span> {user.joined}
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+
+                {activeTab === "File Storage" && <FileStorageView />}
+
+                {
+                    activeTab === "Integrations" && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">Integrations</h3>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        Connect your agency with other tools
+                                    </p>
+                                </div>
+                                <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    Add Integration
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                {[
+                                    {
+                                        name: "QuickBooks Online",
+                                        desc: "Sync invoices and payments automatically",
+                                        status: "Connected",
+                                        icon: "https://cdn.iconscout.com/icon/free/png-256/free-quickbooks-3521664-2945108.png",
+                                    },
+                                    {
+                                        name: "Stripe",
+                                        desc: "Process credit card payments for bookings",
+                                        status: "Connected",
+                                        icon: "https://cdn.iconscout.com/icon/free/png-256/free-stripe-2-498440.png",
+                                    },
+                                    {
+                                        name: "Slack",
+                                        desc: "Get notifications in your team channel",
+                                        status: "Not Connected",
+                                        icon: "https://cdn.iconscout.com/icon/free/png-256/free-slack-logo-icon-download-in-svg-png-gif-file-formats--technology-social-media-vol-6-pack-logos-icons-3030226.png",
+                                    },
+                                    {
+                                        name: "Google Calendar",
+                                        desc: "Sync bookings with your agency calendar",
+                                        status: "Connected",
+                                        icon: "https://cdn.iconscout.com/icon/free/png-256/free-google-calendar-268-721979.png",
+                                    },
+                                    {
+                                        name: "DocuSign",
+                                        desc: "Send contracts for digital signature",
+                                        status: "Not Connected",
+                                        icon: "https://cdn.iconscout.com/icon/free/png-256/free-docusign-3521408-2944852.png",
+                                    },
+                                ].map((integration) => (
+                                    <div
+                                        key={integration.name}
+                                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-gray-50/50 border border-gray-100 rounded-2xl gap-4 sm:gap-0"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm p-2 flex items-center justify-center">
+                                                <img
+                                                    src={integration.icon}
+                                                    alt={integration.name}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-base font-bold text-gray-900">
+                                                    {integration.name}
+                                                </h4>
+                                                <p className="text-sm text-gray-500 font-medium">
+                                                    {integration.desc}
                                                 </p>
                                             </div>
+                                        </div>
+                                        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                                            <Badge
+                                                className={`${integration.status === "Connected"
+                                                    ? "bg-green-100 text-green-700 border-green-200"
+                                                    : "bg-gray-100 text-gray-600 border-gray-200"
+                                                    } font-bold`}
+                                            >
+                                                {integration.status}
+                                            </Badge>
+                                            <Switch checked={integration.status === "Connected"} />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
 
-            {activeTab === "File Storage" && <FileStorageView />}
-
-            {
-                activeTab === "Integrations" && (
-                    <div className="space-y-6">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900">Integrations</h3>
-                                <p className="text-sm text-gray-500 font-medium">
-                                    Connect your agency with other tools
-                                </p>
-                            </div>
-                            <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                Add Integration
-                            </Button>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4">
-                            {[
-                                {
-                                    name: "QuickBooks Online",
-                                    desc: "Sync invoices and payments automatically",
-                                    status: "Connected",
-                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-quickbooks-3521664-2945108.png",
-                                },
-                                {
-                                    name: "Stripe",
-                                    desc: "Process credit card payments for bookings",
-                                    status: "Connected",
-                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-stripe-2-498440.png",
-                                },
-                                {
-                                    name: "Slack",
-                                    desc: "Get notifications in your team channel",
-                                    status: "Not Connected",
-                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-slack-logo-icon-download-in-svg-png-gif-file-formats--technology-social-media-vol-6-pack-logos-icons-3030226.png",
-                                },
-                                {
-                                    name: "Google Calendar",
-                                    desc: "Sync bookings with your agency calendar",
-                                    status: "Connected",
-                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-google-calendar-268-721979.png",
-                                },
-                                {
-                                    name: "DocuSign",
-                                    desc: "Send contracts for digital signature",
-                                    status: "Not Connected",
-                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-docusign-3521408-2944852.png",
-                                },
-                            ].map((integration) => (
-                                <div
-                                    key={integration.name}
-                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-gray-50/50 border border-gray-100 rounded-2xl gap-4 sm:gap-0"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm p-2 flex items-center justify-center">
-                                            <img
-                                                src={integration.icon}
-                                                alt={integration.name}
-                                                className="w-full h-full object-contain"
-                                            />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-base font-bold text-gray-900">
-                                                {integration.name}
-                                            </h4>
-                                            <p className="text-sm text-gray-500 font-medium">
-                                                {integration.desc}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                                        <Badge
-                                            className={`${integration.status === "Connected"
-                                                ? "bg-green-100 text-green-700 border-green-200"
-                                                : "bg-gray-100 text-gray-600 border-gray-200"
-                                                } font-bold`}
-                                        >
-                                            {integration.status}
-                                        </Badge>
-                                        <Switch checked={integration.status === "Connected"} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )
-            }
-
-
-            <InviteTeamMemberModal
-                open={showInviteModal}
-                onOpenChange={setShowInviteModal}
-            />
-            <EditPermissionsModal
-                open={showPermissionsModal}
-                onOpenChange={setShowPermissionsModal}
-                member={selectedMember}
-            />
-            <ActivityLogModal
-                open={showActivityModal}
-                onOpenChange={setShowActivityModal}
-                member={selectedMember}
-            />
-        </div >
+                <InviteTeamMemberModal
+                    open={showInviteModal}
+                    onOpenChange={setShowInviteModal}
+                />
+                <EditPermissionsModal
+                    open={showPermissionsModal}
+                    onOpenChange={setShowPermissionsModal}
+                    member={selectedMember}
+                />
+                <ActivityLogModal
+                    open={showActivityModal}
+                    onOpenChange={setShowActivityModal}
+                    member={selectedMember}
+                />
+            </div>
+        </div>
     );
 };
 
