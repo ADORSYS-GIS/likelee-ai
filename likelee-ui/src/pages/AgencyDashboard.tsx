@@ -64,6 +64,7 @@ import {
   Receipt,
   Megaphone,
   Edit2,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9713,6 +9714,7 @@ export default function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -9823,8 +9825,16 @@ export default function AgencyDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
+      <aside className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -9919,10 +9929,18 @@ export default function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden text-gray-500 hover:text-gray-900"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -10102,7 +10120,7 @@ export default function AgencyDashboard() {
         </header>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
+        <main className="flex-1 overflow-auto px-4 sm:px-8 md:px-12 py-8 bg-gray-50">
           {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
