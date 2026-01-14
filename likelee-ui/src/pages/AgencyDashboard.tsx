@@ -67,6 +67,7 @@ import {
   Megaphone,
   ChevronUp,
   Send,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -92,6 +93,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const AddProspectModal = ({
   open,
@@ -2197,19 +2205,36 @@ TALENT_DATA.forEach((t: any) => {
 const CLIENT_DATA = [
   {
     id: "acme",
-    company: "Acme Inc.",
+    company: "Company",
     contact: "John Doe",
     email: "john@acme.com",
     phone: "+1 (555) 123-4567",
-    terms: "Net 30",
+    terms: "Net 15",
+    industryTags: ["Fashion", "Beauty"],
+    revenue: 0,
+    bookings_count: 0,
   },
   {
     id: "globex",
-    company: "Globex Corp",
-    contact: "Jane Smith",
+    company: "Company",
+    contact: "John Doe",
     email: "jane@globex.com",
     phone: "+1 (555) 987-6543",
     terms: "Net 15",
+    industryTags: ["Fashion", "Beauty"],
+    revenue: 0,
+    bookings_count: 0,
+  },
+  {
+    id: "apple",
+    company: "name",
+    contact: "names",
+    email: "apple@example.com",
+    phone: "+1 (555) 000-0000",
+    terms: "Net 15",
+    industryTags: [],
+    revenue: 0,
+    bookings_count: 0,
   },
 ];
 
@@ -2636,10 +2661,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-              }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
           >
             {tab}
           </button>
@@ -3964,13 +3990,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -4089,15 +4115,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -4938,9 +4965,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5752,10 +5779,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -7926,7 +7954,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -8089,10 +8117,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -8585,10 +8614,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -9470,10 +9500,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -10708,10 +10739,11 @@ const NewBookingModal = ({
                 <div
                   key={t.id}
                   onClick={() => handleSelectTalent(t)}
-                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedTalents.find((st) => st.id === t.id)
-                    ? "bg-indigo-50/50"
-                    : ""
-                    }`}
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
+                    selectedTalents.find((st) => st.id === t.id)
+                      ? "bg-indigo-50/50"
+                      : ""
+                  }`}
                 >
                   <img
                     src={t.img}
@@ -10927,7 +10959,10 @@ const NewBookingModal = ({
                   checked={allDay}
                   onCheckedChange={setAllDay}
                 />
-                <Label htmlFor="allday" className="text-xs text-gray-500 cursor-pointer">
+                <Label
+                  htmlFor="allday"
+                  className="text-xs text-gray-500 cursor-pointer"
+                >
                   All-day booking
                 </Label>
               </div>
@@ -11073,11 +11108,10 @@ const NewBookingModal = ({
                 </Select>
               </div>
               <div className="flex items-center gap-2 mt-6">
-                <Switch
-                  checked={exclusive}
-                  onCheckedChange={setExclusive}
-                />
-                <span className="text-sm font-medium text-gray-700">Exclusive rights</span>
+                <Switch checked={exclusive} onCheckedChange={setExclusive} />
+                <span className="text-sm font-medium text-gray-700">
+                  Exclusive rights
+                </span>
               </div>
             </div>
           </div>
@@ -11086,7 +11120,9 @@ const NewBookingModal = ({
             <Label>Attached Files (Call sheets, contracts, references)</Label>
             <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative group">
               <Upload className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600 font-medium">Browse...</span>
+              <span className="text-sm text-gray-600 font-medium">
+                Browse...
+              </span>
               <span className="text-sm text-gray-400">No files selected.</span>
               <input
                 type="file"
@@ -11185,10 +11221,11 @@ const NewBookingModal = ({
           </Button>
           <div className="flex gap-2">
             <Button
-              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${selectedTalents.length === 0 || !selectedClient
-                ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
-                : ""
-                }`}
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${
+                selectedTalents.length === 0 || !selectedClient
+                  ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
+                  : ""
+              }`}
               onClick={() => {
                 if (selectedTalents.length === 0 || !selectedClient) return;
 
@@ -11224,7 +11261,7 @@ const NewBookingModal = ({
 
 const CalendarScheduleTab = ({
   bookings,
-  onAddBooking
+  onAddBooking,
 }: {
   bookings: any[];
   onAddBooking: (booking: any) => void;
@@ -11502,34 +11539,43 @@ const CalendarScheduleTab = ({
             ))}
             {/* January 2026 */}
             {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
-              const dayString = `2026-01-${d.toString().padStart(2, '0')}`;
-              const dayBookings = bookings.filter(b => b.date === dayString);
+              const dayString = `2026-01-${d.toString().padStart(2, "0")}`;
+              const dayBookings = bookings.filter((b) => b.date === dayString);
 
               const getTypeColor = (type: string) => {
                 switch (type) {
-                  case "casting": return "bg-blue-100 text-blue-800";
-                  case "option": return "bg-yellow-100 text-yellow-800";
-                  case "confirmed": return "bg-green-100 text-green-800";
-                  case "test-shoot": return "bg-orange-100 text-orange-800";
-                  case "fitting": return "bg-yellow-50 text-yellow-700";
-                  case "rehearsal": return "bg-gray-200 text-gray-800";
-                  default: return "bg-indigo-100 text-indigo-800";
+                  case "casting":
+                    return "bg-blue-100 text-blue-800";
+                  case "option":
+                    return "bg-yellow-100 text-yellow-800";
+                  case "confirmed":
+                    return "bg-green-100 text-green-800";
+                  case "test-shoot":
+                    return "bg-orange-100 text-orange-800";
+                  case "fitting":
+                    return "bg-yellow-50 text-yellow-700";
+                  case "rehearsal":
+                    return "bg-gray-200 text-gray-800";
+                  default:
+                    return "bg-indigo-100 text-indigo-800";
                 }
               };
 
               return (
                 <div
                   key={d}
-                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${d === 13
-                    ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
-                    : ""
-                    }`}
+                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                    d === 13
+                      ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
+                      : ""
+                  }`}
                 >
                   <span
-                    className={`text-sm font-medium ${d === 13
-                      ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
-                      : "text-gray-700"
-                      }`}
+                    className={`text-sm font-medium ${
+                      d === 13
+                        ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
+                        : "text-gray-700"
+                    }`}
                   >
                     {d}
                   </span>
@@ -11629,19 +11675,83 @@ const BookingRequestsTab = () => {
 const AddClientModal = ({
   open,
   onOpenChange,
+  onAdd,
+  initialData,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAdd: (client: any) => void;
+  initialData?: any;
 }) => {
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const [formData, setFormData] = useState({
+    company: "",
+    website: "",
+    address: "",
+    contact: "",
+    email: "",
+    phone: "",
+    terms: "net15",
+    notes: "",
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        company: initialData.company || "",
+        website: initialData.website || "",
+        address: initialData.address || "",
+        contact: initialData.contact || "",
+        email: initialData.email || "",
+        phone: initialData.phone || "",
+        terms: initialData.terms || "net15",
+        notes: initialData.notes || "",
+      });
+      setSelectedTags(initialData.industryTags || []);
+    } else {
+      setFormData({
+        company: "",
+        website: "",
+        address: "",
+        contact: "",
+        email: "",
+        phone: "",
+        terms: "net15",
+        notes: "",
+      });
+      setSelectedTags([]);
+    }
+  }, [initialData, open]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  const handleSave = () => {
+    onAdd({
+      id: initialData?.id || `client-${Date.now()}`,
+      ...formData,
+      industryTags: selectedTags,
+      revenue: initialData?.revenue || 0,
+      bookings_count: initialData?.bookings_count || 0,
+    });
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Add New Client
+            {initialData ? "Edit Client" : "Add New Client"}
           </DialogTitle>
           <DialogDescription>
-            Add client information for easier booking management
+            {initialData
+              ? "Update client information"
+              : "Add client information for easier booking management"}
           </DialogDescription>
         </DialogHeader>
 
@@ -11652,16 +11762,34 @@ const AddClientModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-bold">Company Name *</Label>
-              <Input placeholder="Acme Inc." />
+              <Input
+                placeholder="Acme Inc."
+                value={formData.company}
+                onChange={(e) =>
+                  setFormData({ ...formData, company: e.target.value })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label className="font-bold">Website</Label>
-              <Input placeholder="https://example.com" />
+              <Input
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={(e) =>
+                  setFormData({ ...formData, website: e.target.value })
+                }
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label className="font-bold">Address</Label>
-            <Input placeholder="123 Main St, New York, NY 10001" />
+            <Input
+              placeholder="123 Main St, New York, NY 10001"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
           </div>
           <div className="space-y-3">
             <Label className="font-bold">Industry/Category Tags</Label>
@@ -11684,10 +11812,16 @@ const AddClientModal = ({
               ].map((tag) => (
                 <Badge
                   key={tag}
-                  variant="secondary"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
+                  variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                  className={`${
+                    selectedTags.includes(tag)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold"
+                  } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
+                  onClick={() => toggleTag(tag)}
                 >
                   {tag}
+                  {selectedTags.includes(tag) && <X className="w-3 h-3 ml-1" />}
                 </Badge>
               ))}
             </div>
@@ -11699,29 +11833,54 @@ const AddClientModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-bold">Contact Name *</Label>
-              <Input placeholder="John Doe" />
+              <Input
+                placeholder="John Doe"
+                value={formData.contact}
+                onChange={(e) =>
+                  setFormData({ ...formData, contact: e.target.value })
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label className="font-bold">Email</Label>
-              <Input placeholder="john@example.com" />
+              <Input
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label className="font-bold">Phone</Label>
-            <Input placeholder="+1 (555) 123-4567" />
+            <Input
+              placeholder="+1 (555) 123-4567"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+            />
           </div>
 
           <div className="space-y-2">
             <Label className="font-bold">Payment Terms</Label>
-            <Select defaultValue="net30">
+            <Select
+              value={formData.terms}
+              onValueChange={(v) => setFormData({ ...formData, terms: v })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="due_receipt">Due on Receipt</SelectItem>
                 <SelectItem value="net15">Net 15</SelectItem>
                 <SelectItem value="net30">Net 30</SelectItem>
                 <SelectItem value="net60">Net 60</SelectItem>
+                <SelectItem value="net90">Net 90</SelectItem>
+                <SelectItem value="upon_completion">Upon Completion</SelectItem>
+                <SelectItem value="split_deposit">
+                  50% Deposit / 50% Upon Completion
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -11731,6 +11890,10 @@ const AddClientModal = ({
             <Textarea
               placeholder="Any special notes, preferences, or important information about this client..."
               className="min-h-[100px]"
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
             />
           </div>
         </div>
@@ -11743,7 +11906,11 @@ const AddClientModal = ({
           >
             Cancel
           </Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+          <Button
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            onClick={handleSave}
+            disabled={!formData.company || !formData.contact}
+          >
             Add Client
           </Button>
         </DialogFooter>
@@ -11755,10 +11922,21 @@ const AddClientModal = ({
 const MergeClientsModal = ({
   open,
   onOpenChange,
+  clients,
+  onMerge,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  clients: any[];
+  onMerge: (sourceId: string, targetId: string) => void;
 }) => {
+  const { toast } = useToast();
+  const [sourceId, setSourceId] = useState("");
+  const [targetId, setTargetId] = useState("");
+
+  const sourceClient = clients.find((c) => c.id === sourceId);
+  const targetClient = clients.find((c) => c.id === targetId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -11775,12 +11953,16 @@ const MergeClientsModal = ({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label className="font-bold">Source Client (will be deleted)</Label>
-            <Select>
+            <Select value={sourceId} onValueChange={setSourceId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select client to merge from" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="c1">Client A</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.company} ({c.bookings_count || 0} bookings)
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -11788,15 +11970,33 @@ const MergeClientsModal = ({
             <Label className="font-bold">
               Target Client (will keep all data)
             </Label>
-            <Select>
+            <Select value={targetId} onValueChange={setTargetId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select client to merge into" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="c2">Client B</SelectItem>
+                {clients
+                  .filter((c) => c.id !== sourceId)
+                  .map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.company} ({c.bookings_count || 0} bookings)
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
+
+          {sourceId && targetId && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 mt-4">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                <span className="font-bold">Warning:</span> This will move{" "}
+                {sourceClient?.bookings_count || 0} booking(s) from "
+                {sourceClient?.company}" to "{targetClient?.company}" and delete
+                the source client. This action cannot be undone.
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
@@ -11807,7 +12007,19 @@ const MergeClientsModal = ({
           >
             Cancel
           </Button>
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white font-bold">
+          <Button
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold"
+            disabled={!sourceId || !targetId}
+            onClick={() => {
+              onMerge(sourceId, targetId);
+              toast({
+                title: "Clients Merged",
+                description: `Merge ${sourceClient?.company} into ${targetClient?.company}`,
+                action: <ToastAction altText="OK">OK</ToastAction>,
+              });
+              onOpenChange(false);
+            }}
+          >
             Merge Clients
           </Button>
         </DialogFooter>
@@ -11817,15 +12029,28 @@ const MergeClientsModal = ({
 };
 
 const ClientDatabaseTab = () => {
+  const [clients, setClients] = useState(CLIENT_DATA);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedClientForEdit, setSelectedClientForEdit] = useState<any>(null);
 
   const stats = [
-    { label: "Total Clients", value: "0" },
+    { label: "Total Clients", value: clients.length.toString() },
     { label: "Active This Month", value: "1" },
-    { label: "Total Revenue", value: "$3" },
-    { label: "Avg. Booking Value", value: "$3" },
+    {
+      label: "Total Revenue",
+      value: `$${clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3}`,
+    },
+    {
+      label: "Avg. Booking Value",
+      value: `$${(clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3) / (clients.length || 1)}`,
+    },
   ];
+
+  const handleMerge = (sourceId: string, targetId: string) => {
+    setClients((prev) => prev.filter((c) => c.id !== sourceId));
+  };
 
   return (
     <div className="space-y-6">
@@ -11900,28 +12125,346 @@ const ClientDatabaseTab = () => {
           </Button>
         </div>
 
-        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
-          <div className="bg-gray-50 p-4 rounded-full mb-4">
-            <Building2 className="w-12 h-12 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No clients yet
-          </h3>
-          <p className="text-gray-500 max-w-md mb-4">
-            Start adding clients to track your business relationships
-          </p>
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-            onClick={() => setAddClientOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" /> Add First Client
-          </Button>
+        <div className="overflow-hidden">
+          {clients.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Industries
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Bookings
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Revenue
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {clients.map((client) => (
+                    <tr
+                      key={client.id}
+                      className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                      onClick={() => setSelectedClient(client)}
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="font-bold text-gray-900">
+                          {client.company}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {client.email}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-700">
+                          {client.contact}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex gap-1">
+                          {(client.industryTags || [])
+                            .slice(0, 2)
+                            .map((t: string) => (
+                              <Badge
+                                key={t}
+                                variant="secondary"
+                                className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                              >
+                                {t}
+                              </Badge>
+                            ))}
+                          {(client.industryTags || []).length > 2 && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
+                            >
+                              +{(client.industryTags || []).length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">
+                          {client.bookings_count || 0}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-extrabold text-green-600">
+                          ${(client.revenue || 0).toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right">
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
+              <div className="bg-gray-50 p-4 rounded-full mb-4">
+                <Building2 className="w-12 h-12 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                No clients yet
+              </h3>
+              <p className="text-gray-500 max-w-md mb-4">
+                Start adding clients to track your business relationships
+              </p>
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                onClick={() => setAddClientOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add First Client
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 
-      <AddClientModal open={addClientOpen} onOpenChange={setAddClientOpen} />
-      <MergeClientsModal open={mergeOpen} onOpenChange={setMergeOpen} />
+      <AddClientModal
+        open={addClientOpen}
+        onOpenChange={(open) => {
+          setAddClientOpen(open);
+          if (!open) setSelectedClientForEdit(null);
+        }}
+        onAdd={(newClient) => {
+          setClients((prev) => {
+            const exists = prev.find((c) => c.id === newClient.id);
+            if (exists) {
+              return prev.map((c) => (c.id === newClient.id ? newClient : c));
+            }
+            return [...prev, newClient];
+          });
+          if (selectedClient && selectedClient.id === newClient.id) {
+            setSelectedClient(newClient);
+          }
+        }}
+        initialData={selectedClientForEdit}
+      />
+      <MergeClientsModal
+        open={mergeOpen}
+        onOpenChange={setMergeOpen}
+        clients={clients}
+        onMerge={handleMerge}
+      />
+
+      {selectedClient && (
+        <ClientProfileDrawer
+          client={selectedClient}
+          open={!!selectedClient}
+          onOpenChange={(open) => !open && setSelectedClient(null)}
+          onEdit={(client) => {
+            setSelectedClientForEdit(client);
+            setAddClientOpen(true);
+          }}
+          onDelete={(id) => {
+            setClients((prev) => prev.filter((c) => c.id !== id));
+            setSelectedClient(null);
+          }}
+        />
+      )}
     </div>
+  );
+};
+
+const ClientProfileDrawer = ({
+  client,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: {
+  client: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEdit: (client: any) => void;
+  onDelete: (id: string) => void;
+}) => {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-xl overflow-y-auto">
+        <SheetHeader className="border-b pb-6 mb-6">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <Building2 className="w-8 h-8 text-gray-900" />
+              </div>
+              <div>
+                <SheetTitle className="text-2xl font-black text-gray-900">
+                  {client.company}
+                </SheetTitle>
+                <div className="flex gap-2 mt-1">
+                  {(client.industryTags || []).map((t: string) => (
+                    <Badge
+                      key={t}
+                      className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none font-bold text-[10px]"
+                    >
+                      {t}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onEdit(client)}
+              >
+                <Edit className="w-4 h-4 text-gray-600" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 border-red-200 hover:bg-red-50"
+                onClick={() => onDelete(client.id)}
+              >
+                <Trash2 className="w-4 h-4 text-red-600" />
+              </Button>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div className="space-y-8">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Total Revenue
+              </p>
+              <p className="text-2xl font-black text-green-600">
+                ${(client.revenue || 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Total Bookings
+              </p>
+              <p className="text-2xl font-black text-gray-900">
+                {client.bookings_count || 0}
+              </p>
+            </div>
+          </div>
+
+          {/* Contact Details */}
+          <div className="space-y-4">
+            <h4 className="font-bold text-gray-900 border-b pb-2">
+              Primary Contact
+            </h4>
+            <div className="grid grid-cols-2 gap-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <User className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Name
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.contact}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <Mail className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Email
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.email || "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <Phone className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Phone
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.phone || "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <CreditCard className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Terms
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.terms || "Net 15"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Address & Links */}
+          <div className="space-y-4">
+            <h4 className="font-bold text-gray-900 border-b pb-2">
+              Location & Links
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                <p className="text-sm text-gray-600">
+                  {client.address || "No address provided"}
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Globe className="w-4 h-4 text-gray-400 mt-0.5" />
+                <p className="text-sm text-indigo-600 font-medium hover:underline cursor-pointer">
+                  {client.website || "No website provided"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Bookings Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h4 className="font-bold text-gray-900">Recent Bookings</h4>
+              <Button
+                variant="ghost"
+                className="text-xs h-6 font-bold text-indigo-600"
+              >
+                View All
+              </Button>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-8 flex flex-col items-center justify-center text-center">
+              <Calendar className="w-8 h-8 text-gray-300 mb-2" />
+              <p className="text-sm text-gray-500">No booking history yet</p>
+            </div>
+          </div>
+
+          <div className="pt-4 sticky bottom-0 bg-white pb-6">
+            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl text-lg shadow-lg">
+              Create New Booking
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 
@@ -12183,10 +12726,11 @@ const NotificationsTab = () => {
             onClick={() =>
               setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
             }
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeSubNav === ["logs", "settings", "preferences", "test"][idx]
-              ? "border-indigo-600 text-indigo-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {tab}
           </button>
@@ -12228,10 +12772,11 @@ const NotificationsTab = () => {
             {notifications.map((notif, idx) => (
               <Card
                 key={idx}
-                className={`p-4 border ${notif.status === "error"
-                  ? "border-red-200 bg-red-50"
-                  : "border-gray-200 bg-white"
-                  } rounded-xl`}
+                className={`p-4 border ${
+                  notif.status === "error"
+                    ? "border-red-200 bg-red-50"
+                    : "border-gray-200 bg-white"
+                } rounded-xl`}
               >
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
@@ -12260,10 +12805,11 @@ const NotificationsTab = () => {
                       <p className="text-xs text-gray-500">{notif.time}</p>
                       {notif.detail && (
                         <p
-                          className={`text-xs ${notif.status === "error"
-                            ? "text-red-600 font-medium"
-                            : "text-blue-600"
-                            }`}
+                          className={`text-xs ${
+                            notif.status === "error"
+                              ? "text-red-600 font-medium"
+                              : "text-blue-600"
+                          }`}
                         >
                           {notif.detail}
                         </p>
@@ -12791,19 +13337,27 @@ const NotificationsTab = () => {
             </div>
 
             <Button
-              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${!testNotificationType || !testTargetTalent
+              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${
+                !testNotificationType || !testTargetTalent
                   ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
                   : ""
-                }`}
+              }`}
               onClick={() => {
                 if (!testNotificationType || !testTargetTalent) return;
 
-                const talentName = testTalents.find(t => t.toLowerCase() === testTargetTalent) || testTargetTalent;
+                const talentName =
+                  testTalents.find(
+                    (t) => t.toLowerCase() === testTargetTalent,
+                  ) || testTargetTalent;
 
                 toast({
                   title: "Notification Sent",
                   description: `Test ${testNotificationType} notification sent to ${talentName}!`,
-                  action: <ToastAction altText="OK" onClick={() => { }}>OK</ToastAction>,
+                  action: (
+                    <ToastAction altText="OK" onClick={() => {}}>
+                      OK
+                    </ToastAction>
+                  ),
                 });
               }}
               disabled={!testNotificationType || !testTargetTalent}
@@ -12940,13 +13494,16 @@ const NotificationsTab = () => {
 const BookingsView = ({
   activeSubTab,
   bookings,
-  onAddBooking
+  onAddBooking,
 }: {
   activeSubTab: string;
   bookings: any[];
   onAddBooking: (booking: any) => void;
 }) => {
-  if (activeSubTab === "Calendar & Schedule") return <CalendarScheduleTab bookings={bookings} onAddBooking={onAddBooking} />;
+  if (activeSubTab === "Calendar & Schedule")
+    return (
+      <CalendarScheduleTab bookings={bookings} onAddBooking={onAddBooking} />
+    );
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
   if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
   if (activeSubTab === "Talent Availability") return <TalentAvailabilityTab />;
@@ -13072,84 +13629,84 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        { id: "settings", label: "Settings", icon: Settings },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          { id: "settings", label: "Settings", icon: Settings },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "settings", label: "Settings", icon: Settings },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "settings", label: "Settings", icon: Settings },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -13187,14 +13744,16 @@ export default function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -13214,10 +13773,11 @@ export default function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -13479,7 +14039,12 @@ export default function AgencyDashboard() {
             <BookingsView
               activeSubTab={activeSubTab}
               bookings={bookings}
-              onAddBooking={(b) => setBookings(prev => [...prev, { ...b, id: `b-${Date.now()}` }])}
+              onAddBooking={(b) =>
+                setBookings((prev) => [
+                  ...prev,
+                  { ...b, id: `b-${Date.now()}` },
+                ])
+              }
             />
           )}
           {activeTab === "accounting" && (
