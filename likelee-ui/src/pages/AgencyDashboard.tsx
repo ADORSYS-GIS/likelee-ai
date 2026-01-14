@@ -9972,7 +9972,7 @@ export default function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-x-4 top-20 mt-0 w-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80 md:inset-x-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
