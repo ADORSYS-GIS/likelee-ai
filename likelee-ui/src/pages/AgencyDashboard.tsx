@@ -14156,6 +14156,42 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
 };
 
 const ReportsExportTab = () => {
+  const { toast } = useToast();
+
+  const handleExport = (format: string) => {
+    const { dismiss } = toast({
+      title: `Exporting 1 bookings as ${format}...`,
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            dismiss();
+          }}
+        >
+          OK
+        </Button>
+      ),
+    });
+  };
+
+  const handleScheduleReports = () => {
+    const { dismiss } = toast({
+      title: "Scheduled weekly reports via email!",
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            dismiss();
+          }}
+        >
+          OK
+        </Button>
+      ),
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-6 border shadow-sm">
@@ -14165,15 +14201,27 @@ const ReportsExportTab = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <Button variant="outline" className="h-24 flex flex-col gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all group">
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all group"
+            onClick={() => handleExport("CSV")}
+          >
             <FileText className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-green-700">Export to CSV</span>
           </Button>
-          <Button variant="outline" className="h-24 flex flex-col gap-2 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all group">
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col gap-2 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all group"
+            onClick={() => handleExport("PDF")}
+          >
             <FileText className="w-6 h-6 text-red-600 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-red-700">Export to PDF</span>
           </Button>
-          <Button variant="outline" className="h-24 flex flex-col gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all group">
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all group"
+            onClick={() => handleExport("EXCEL")}
+          >
             <FileText className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-blue-700">Export to Excel</span>
           </Button>
@@ -14210,9 +14258,9 @@ const ReportsExportTab = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Daily (8 AM)</SelectItem>
+                <SelectItem value="daily">Daily (every morning at 8 AM)</SelectItem>
                 <SelectItem value="weekly">Weekly (every Monday at 8 AM)</SelectItem>
-                <SelectItem value="monthly">Monthly (1st of month)</SelectItem>
+                <SelectItem value="monthly">Monthly (1st of each month)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -14222,7 +14270,10 @@ const ReportsExportTab = () => {
             <Input defaultValue="agent@agency.com" />
           </div>
 
-          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 mt-2">
+          <Button
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 mt-2"
+            onClick={handleScheduleReports}
+          >
             <Mail className="w-4 h-4 mr-2" /> Schedule Weekly Reports
           </Button>
         </div>
