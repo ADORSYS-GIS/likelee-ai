@@ -13234,7 +13234,7 @@ const NotificationsTab = () => {
                 </div>
 
                 <div className="pb-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-blue-600 mb-3">
+                  <p className="text-sm font-medium text-gray-900 mb-3">
                     48 Hours Before Booking
                   </p>
                   <div className="grid grid-cols-3 gap-8">
@@ -13278,7 +13278,7 @@ const NotificationsTab = () => {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-blue-600 mb-3">
+                  <p className="text-sm font-medium text-gray-900 mb-3">
                     1 Week Before Booking
                   </p>
                   <div className="grid grid-cols-3 gap-8">
@@ -13725,7 +13725,7 @@ const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
       </div>
 
       {activeTab === "Analytics" && <ManagementAnalyticsTab bookings={bookings} />}
-      {activeTab === "Manage Bookings" && <ManageBookingsTab />}
+      {activeTab === "Manage Bookings" && <ManageBookingsTab bookings={bookings} />}
       {activeTab === "Reports & Export" && <ReportsExportTab />}
     </div>
   );
@@ -13887,7 +13887,88 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
   );
 };
 
-const ManageBookingsTab = () => {
+const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
+  const [rateMin, setRateMin] = useState("");
+  const [rateMax, setRateMax] = useState("");
+  const [sortKey, setSortKey] = useState("bookingDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  // Helper to parse currency
+  const parseCurrency = (str: string) => {
+    if (!str) return 0;
+    return Number(str.replace(/[^0-9.-]+/g, ""));
+  };
+
+  // Filter and sort bookings
+  const filteredAndSortedBookings = bookings
+    .filter((b) => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTalent = (b.talentName || "").toLowerCase().includes(query);
+        const matchesClient = (b.clientName || b.client || "").toLowerCase().includes(query);
+        const matchesLocation = (b.location || "").toLowerCase().includes(query);
+        const matchesNotes = (b.notes || "").toLowerCase().includes(query);
+        if (!matchesTalent && !matchesClient && !matchesLocation && !matchesNotes) {
+          return false;
+        }
+      }
+
+      // Date range filter
+      if (dateStart && b.date) {
+        if (new Date(b.date) < new Date(dateStart)) return false;
+      }
+      if (dateEnd && b.date) {
+        if (new Date(b.date) > new Date(dateEnd)) return false;
+      }
+
+      // Rate range filter
+      const rate = parseCurrency(b.rate || b.fee || "0");
+      if (rateMin && rate < Number(rateMin)) return false;
+      if (rateMax && rate > Number(rateMax)) return false;
+
+      return true;
+    })
+    .sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      switch (sortKey) {
+        case "bookingDate":
+          aVal = new Date(a.date || 0).getTime();
+          bVal = new Date(b.date || 0).getTime();
+          break;
+        case "talentName":
+          aVal = (a.talentName || "").toLowerCase();
+          bVal = (b.talentName || "").toLowerCase();
+          break;
+        case "clientName":
+          aVal = (a.clientName || a.client || "").toLowerCase();
+          bVal = (b.clientName || b.client || "").toLowerCase();
+          break;
+        case "rateAmount":
+          aVal = parseCurrency(a.rate || a.fee || "0");
+          bVal = parseCurrency(b.rate || b.fee || "0");
+          break;
+        case "createdDate":
+          aVal = new Date(a.createdAt || a.date || 0).getTime();
+          bVal = new Date(b.createdAt || b.date || 0).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+  };
+
   return (
     <div className="space-y-6">
       <div className="relative">
@@ -13895,6 +13976,8 @@ const ManageBookingsTab = () => {
         <Input
           placeholder="Search by talent, client, location, or notes..."
           className="pl-10 h-10 bg-white"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
@@ -13904,9 +13987,9 @@ const ManageBookingsTab = () => {
           <h3 className="font-bold text-gray-900">Filters</h3>
         </div>
 
-        <div className="grid grid-cols-4 gap-8">
-          <div className="space-y-3">
-            <Label className="font-bold text-xs uppercase text-gray-500">
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
               Talent
             </Label>
             <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
@@ -13919,8 +14002,8 @@ const ManageBookingsTab = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label className="font-bold text-xs uppercase text-gray-500">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
               Client
             </Label>
             <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
@@ -13933,8 +14016,8 @@ const ManageBookingsTab = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label className="font-bold text-xs uppercase text-gray-500">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
               Booking Type
             </Label>
             <div className="space-y-2">
@@ -13947,8 +14030,8 @@ const ManageBookingsTab = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label className="font-bold text-xs uppercase text-gray-500">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
               Status
             </Label>
             <div className="space-y-2">
@@ -13962,69 +14045,111 @@ const ManageBookingsTab = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-8 mt-6 pt-6 border-t border-gray-100">
-          <div className="space-y-3">
-            <Label className="font-bold text-xs uppercase text-gray-500">Date Range</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">Date Range</Label>
             <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <Input placeholder="mm / dd / yyyy" className="pr-8" />
-                <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
-              </div>
-              <div className="relative">
-                <Input placeholder="mm / dd / yyyy" className="pr-8" />
-                <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
-              </div>
+              <Input
+                type="date"
+                value={dateStart}
+                onChange={(e) => setDateStart(e.target.value)}
+                placeholder="Start Date"
+              />
+              <Input
+                type="date"
+                value={dateEnd}
+                onChange={(e) => setDateEnd(e.target.value)}
+                placeholder="End Date"
+              />
             </div>
           </div>
-          <div className="space-y-3">
-            <Label className="font-bold text-xs uppercase text-gray-500">Rate Range ($)</Label>
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">Rate Range ($)</Label>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Min" type="number" />
-              <Input placeholder="Max" type="number" />
+              <Input
+                placeholder="Min"
+                type="number"
+                value={rateMin}
+                onChange={(e) => setRateMin(e.target.value)}
+              />
+              <Input
+                placeholder="Max"
+                type="number"
+                value={rateMax}
+                onChange={(e) => setRateMax(e.target.value)}
+              />
             </div>
           </div>
         </div>
       </Card>
 
-      <div className="flex items-center justify-between mt-8">
+      <Card className="p-4 border shadow-sm">
         <div className="flex items-center gap-2">
           <ArrowUpDown className="w-4 h-4 text-gray-500" />
           <span className="text-sm font-bold text-gray-700">Sort by:</span>
-          <Select defaultValue="bookingDate">
+          <Select value={sortKey} onValueChange={setSortKey}>
             <SelectTrigger className="w-[180px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="bookingDate">Booking Date</SelectItem>
+              <SelectItem value="talentName">Talent Name</SelectItem>
+              <SelectItem value="clientName">Client Name</SelectItem>
+              <SelectItem value="rateAmount">Rate Amount</SelectItem>
               <SelectItem value="createdDate">Created Date</SelectItem>
-              <SelectItem value="rateHighLow">Rate (High-Low)</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" className="h-9 w-9">
-            <ArrowUpDown className="w-4 h-4" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={toggleSortDirection}
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`}
+            />
           </Button>
         </div>
-      </div>
+      </Card>
 
       <div className="space-y-4">
-        <h4 className="font-bold text-gray-900">Results (1)</h4>
-        <div className="bg-white border rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">E</div>
-            <div>
-              <h4 className="font-bold text-gray-900">Emma</h4>
-              <p className="text-xs text-gray-500">Confirmed • Casting</p>
+        <h4 className="font-bold text-gray-900">Results ({filteredAndSortedBookings.length})</h4>
+        {filteredAndSortedBookings.length > 0 ? (
+          filteredAndSortedBookings.map((booking) => (
+            <div
+              key={booking.id}
+              className="bg-white border rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
+                  {(booking.talentName || "?")[0].toUpperCase()}
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-900">{booking.talentName || "Unknown"}</h4>
+                  <p className="text-xs text-gray-500">
+                    {booking.status || booking.type || "Pending"} • {booking.bookingType || "Booking"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-xs font-bold text-gray-500">
+                    {booking.date ? format(parseISO(booking.date), "MMM dd, yyyy") : "No date"}
+                  </p>
+                  <p className="text-xs text-gray-400">{booking.callTime || "--:--"}</p>
+                </div>
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">
+                  {booking.status || booking.type || "Pending"}
+                </Badge>
+                <p className="font-bold text-gray-900">{booking.rate || booking.fee || "$0"}</p>
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            <p>No bookings found matching your filters.</p>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-xs font-bold text-gray-500">Jan 12, 2026</p>
-              <p className="text-xs text-gray-400">09:00</p>
-            </div>
-            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">Confirmed</Badge>
-            <p className="font-bold text-gray-900">$3</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
