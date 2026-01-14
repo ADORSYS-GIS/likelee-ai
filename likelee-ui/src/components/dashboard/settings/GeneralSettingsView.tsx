@@ -357,11 +357,10 @@ const GeneralSettingsView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                }`}
             >
               {tab}
             </button>
@@ -874,8 +873,8 @@ const GeneralSettingsView = () => {
           <div className="space-y-6">
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-gray-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 tracking-tight">
@@ -887,38 +886,56 @@ const GeneralSettingsView = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 {[
                   {
                     title: "Booking Created",
                     desc: "When a new booking is created",
+                    email: true,
+                    sms: false,
+                    push: true,
                   },
                   {
                     title: "Booking Confirmed",
                     desc: "When a booking status changes to confirmed",
+                    email: true,
+                    sms: true,
+                    push: true,
                   },
                   {
                     title: "Payment Received",
                     desc: "When payment is received from a client",
+                    email: true,
+                    sms: false,
+                    push: true,
                   },
                   {
                     title: "Invoice Sent",
                     desc: "When an invoice is sent to a client",
+                    email: true,
+                    sms: false,
+                    push: false,
                   },
                   {
                     title: "Talent Book Out",
                     desc: "When talent marks themselves unavailable",
+                    email: true,
+                    sms: true,
+                    push: true,
                   },
                   {
                     title: "License Expiring",
                     desc: "When a talent license is about to expire",
+                    email: true,
+                    sms: false,
+                    push: true,
                   },
                 ].map((pref) => (
                   <div
                     key={pref.title}
-                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
                   >
-                    <div className="flex-1 pr-4">
+                    <div className="flex-1">
                       <p className="text-sm font-bold text-gray-900">
                         {pref.title}
                       </p>
@@ -926,22 +943,22 @@ const GeneralSettingsView = () => {
                         {pref.desc}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="flex flex-col items-center gap-1">
-                        <Switch
-                          defaultChecked
-                          className="scale-75 origin-right"
-                        />
-                        <span className="text-[10px] font-bold text-gray-400">
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-2">
+                        <Switch defaultChecked={pref.email} />
+                        <span className="text-xs font-bold text-gray-900">
                           Email
                         </span>
                       </div>
-                      <div className="flex flex-col items-center gap-1">
-                        <Switch
-                          defaultChecked
-                          className="scale-75 origin-right"
-                        />
-                        <span className="text-[10px] font-bold text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <Switch defaultChecked={pref.sms} />
+                        <span className="text-xs font-bold text-gray-900">
+                          SMS
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch defaultChecked={pref.push} />
+                        <span className="text-xs font-bold text-gray-900">
                           Push
                         </span>
                       </div>
@@ -951,10 +968,45 @@ const GeneralSettingsView = () => {
               </div>
             </Card>
 
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+                Notification Recipients
+              </h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Primary Notification Email
+                  </Label>
+                  <Input
+                    defaultValue="bookings@cmmodels.com"
+                    className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    SMS Notification Number
+                  </Label>
+                  <Input
+                    defaultValue="+1 (212) 555-0123"
+                    className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Additional Recipients (comma-separated)
+                  </Label>
+                  <Input
+                    defaultValue="agent1@cmmodels.com, agent2@cmmodels.com"
+                    className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
+                  />
+                </div>
+              </div>
+            </Card>
+
             <div className="flex justify-end">
               <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                 <Save className="w-5 h-5" />
-                Save Preferences
+                Save Notification Settings
               </Button>
             </div>
           </div>
@@ -963,16 +1015,16 @@ const GeneralSettingsView = () => {
         {activeTab === "Tax & Currency" && (
           <div className="space-y-6">
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-orange-600" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-gray-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Tax & Currency
+                  Currency Settings
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
                     Default Currency
@@ -982,38 +1034,110 @@ const GeneralSettingsView = () => {
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="usd">USD ($)</SelectItem>
-                      <SelectItem value="eur">EUR (€)</SelectItem>
-                      <SelectItem value="gbp">GBP (£)</SelectItem>
+                      <SelectItem value="usd">USD - US Dollar</SelectItem>
+                      <SelectItem value="eur">EUR - Euro</SelectItem>
+                      <SelectItem value="gbp">GBP - British Pound</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Tax Rate (%)
+                    Currency Display Format
+                  </Label>
+                  <Select defaultValue="1234.56">
+                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="1234.56">$1,234.56</SelectItem>
+                      <SelectItem value="1234,56">$1.234,56</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+                Tax Rates
+              </h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Default Tax Rate (%)
                   </Label>
                   <Input
                     defaultValue="8.875"
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />
+                  <p className="text-xs text-gray-500 font-medium">
+                    Applied to invoices (e.g., sales tax, VAT)
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Tax Name
+                    Tax Display Name
                   </Label>
                   <Input
                     defaultValue="Sales Tax"
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />
                 </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Switch defaultChecked />
+                    <span className="text-sm font-bold text-gray-900">
+                      Include tax in displayed prices
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+                Payment Terms
+              </h3>
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Tax ID
+                    Default Payment Terms
+                  </Label>
+                  <Select defaultValue="net30">
+                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                      <SelectValue placeholder="Select terms" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="due">Due on Receipt</SelectItem>
+                      <SelectItem value="net15">Net 15</SelectItem>
+                      <SelectItem value="net30">Net 30</SelectItem>
+                      <SelectItem value="net60">Net 60</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Late Payment Fee (%)
                   </Label>
                   <Input
-                    defaultValue="12-3456789"
+                    defaultValue="1.5"
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />
+                  <p className="text-xs text-gray-500 font-medium">
+                    Monthly interest on overdue invoices
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Invoice Prefix
+                  </Label>
+                  <Input
+                    defaultValue="INV-"
+                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                  />
+                  <p className="text-xs text-gray-500 font-medium">
+                    Example: INV-00001, INV-00002
+                  </p>
                 </div>
               </div>
             </Card>
@@ -1021,7 +1145,7 @@ const GeneralSettingsView = () => {
             <div className="flex justify-end">
               <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                 <Save className="w-5 h-5" />
-                Save Tax & Currency
+                Save Tax & Currency Settings
               </Button>
             </div>
           </div>
@@ -1029,72 +1153,127 @@ const GeneralSettingsView = () => {
 
         {activeTab === "Divisions" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  Agency Divisions
-                </h3>
-                <p className="text-sm text-gray-500 font-medium">
-                  Manage talent categories and divisions
-                </p>
-              </div>
-              <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Add Division
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[
-                { name: "Women", count: 45, color: "bg-pink-50 text-pink-600" },
-                { name: "Men", count: 32, color: "bg-blue-50 text-blue-600" },
-                {
-                  name: "Kids",
-                  count: 18,
-                  color: "bg-yellow-50 text-yellow-600",
-                },
-                {
-                  name: "Curve",
-                  count: 12,
-                  color: "bg-purple-50 text-purple-600",
-                },
-                {
-                  name: "Influencers",
-                  count: 24,
-                  color: "bg-orange-50 text-orange-600",
-                },
-                {
-                  name: "Voice",
-                  count: 8,
-                  color: "bg-green-50 text-green-600",
-                },
-              ].map((division) => (
-                <Card
-                  key={division.name}
-                  className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl hover:border-indigo-200 transition-colors cursor-pointer group"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div
-                      className={`w-10 h-10 rounded-xl ${division.color} flex items-center justify-center`}
-                    >
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 text-gray-400 hover:text-indigo-600"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-gray-600" />
                   </div>
-                  <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
-                    {division.name}
-                  </h4>
-                  <p className="text-sm text-gray-500 font-medium">
-                    {division.count} Active Talent
-                  </p>
-                </Card>
-              ))}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                      Divisions / Boards
+                    </h3>
+                    <p className="text-sm text-gray-500 font-medium">
+                      Organize your talent into divisions
+                    </p>
+                  </div>
+                </div>
+                <Button className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create Division
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {[
+                  { name: "Women", count: 45, rate: 20 },
+                  { name: "Men", count: 32, rate: 20 },
+                  { name: "Kids", count: 18, rate: 15 },
+                  { name: "Curve", count: 12, rate: 20 },
+                ].map((division) => (
+                  <div
+                    key={division.name}
+                    className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-bold text-gray-900">
+                        {division.name}
+                      </h4>
+                      <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5">
+                        Active
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-500 font-medium">
+                      {division.count} talent assigned
+                    </p>
+                    <div className="flex items-end justify-between pt-2">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Commission Rate
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {division.rate}%
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-9 h-9 rounded-xl border-gray-200"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-500" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-9 h-9 rounded-xl border-red-100 bg-red-50 hover:bg-red-100"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+                Bulk Assignment
+              </h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Select Talent
+                  </Label>
+                  <Select>
+                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl">
+                      <SelectValue placeholder="Choose talent to assign..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="t1">Talent 1</SelectItem>
+                      <SelectItem value="t2">Talent 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Assign to Division
+                  </Label>
+                  <Select>
+                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl">
+                      <SelectValue placeholder="Choose division..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="women">Women</SelectItem>
+                      <SelectItem value="men">Men</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  className="font-bold rounded-xl h-10 px-6 border-gray-200"
+                >
+                  Assign Talent
+                </Button>
+              </div>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                <Save className="w-5 h-5" />
+                Save Division Settings
+              </Button>
             </div>
           </div>
         )}
@@ -1264,11 +1443,10 @@ const GeneralSettingsView = () => {
                         </Badge>
                         <div className="flex items-center gap-1 shrink-0">
                           <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              user.status === "Active"
-                                ? "bg-green-500"
-                                : "bg-yellow-500"
-                            }`}
+                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
+                              ? "bg-green-500"
+                              : "bg-yellow-500"
+                              }`}
                           />
                           <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
                             {user.status}
@@ -1433,11 +1611,10 @@ const GeneralSettingsView = () => {
                   </div>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                     <Badge
-                      className={`${
-                        integration.status === "Connected"
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : "bg-gray-100 text-gray-600 border-gray-200"
-                      } font-bold`}
+                      className={`${integration.status === "Connected"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : "bg-gray-100 text-gray-600 border-gray-200"
+                        } font-bold`}
                     >
                       {integration.status}
                     </Badge>
@@ -1446,6 +1623,61 @@ const GeneralSettingsView = () => {
                 </div>
               ))}
             </div>
+
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl mt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-1 tracking-tight">
+                API Keys
+              </h3>
+              <p className="text-sm text-gray-500 font-medium mb-6">
+                Manage API keys for custom integrations
+              </p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Production API Key
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value="••••••••••••••••••••••••••••"
+                      readOnly
+                      className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-11 w-11 rounded-xl border-gray-200 shrink-0"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-gray-900">
+                    Test API Key
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value="••••••••••••••••••••••••••••"
+                      readOnly
+                      className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-11 w-11 rounded-xl border-gray-200 shrink-0"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="text-red-600 border-red-200 hover:bg-red-50 font-bold rounded-xl h-10 px-4 mt-2"
+                >
+                  Regenerate API Keys
+                </Button>
+              </div>
+            </Card>
           </div>
         )}
 
