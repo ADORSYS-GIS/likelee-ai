@@ -10879,7 +10879,10 @@ const NewBookingModal = ({
                     <SelectContent>
                       <SelectItem value="Net 30">Net 30</SelectItem>
                       <SelectItem value="Net 15">Net 15</SelectItem>
-                      <SelectItem value="On Receipt">On Receipt</SelectItem>
+                      <SelectItem value="Net 30">Net 30</SelectItem>
+                      <SelectItem value="Net 60">Net 60</SelectItem>
+                      <SelectItem value="Da">Da</SelectItem>
+                      <SelectItem value="Upon Completion">Upon Completion</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -10904,50 +10907,48 @@ const NewBookingModal = ({
                 <div className="relative">
                   <Input
                     placeholder="Search client by name..."
-                    value={
-                      selectedClient ? selectedClient.company : clientSearch
-                    }
-                    onChange={(e) => {
-                      setClientSearch(e.target.value);
-                      if (selectedClient) setSelectedClient(null);
-                    }}
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
                   />
-                  {clientSearch && !selectedClient && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {filteredClients.map((c) => (
-                        <div
-                          key={c.id}
-                          onClick={() => {
-                            setSelectedClient(c);
-                            setClientSearch("");
-                          }}
-                          className="p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
-                        >
-                          <p className="text-sm font-bold text-gray-900">
-                            {c.company}
-                          </p>
-                          <p className="text-xs text-gray-500">{c.contact}</p>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg max-h-[200px] overflow-y-auto">
+                  {filteredClients.map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedClient(c);
+                        setClientSearch("");
+                      }}
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
+                        }`}
+                    >
+                      <Building2 className="w-8 h-8 text-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-900">
+                          {c.company}
+                        </p>
+                        <p className="text-xs text-gray-500">{c.contact}</p>
+                      </div>
+                      {selectedClient?.id === c.id && (
+                        <div className="text-indigo-600">
+                          <CheckCircle2 className="w-5 h-5" />
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  ))}
+                  {filteredClients.length === 0 && (
+                    <div className="p-8 text-center text-gray-500 text-sm">
+                      No clients found matching "{clientSearch}"
                     </div>
                   )}
-                  {selectedClient && (
-                    <button
-                      onClick={() => setSelectedClient(null)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                {!selectedClient && (
                   <div
                     onClick={() => setShowAddClient(true)}
-                    className="mt-2 text-indigo-600 text-sm font-bold flex items-center gap-1 cursor-pointer"
+                    className="flex items-center gap-2 p-3 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-200 font-bold text-sm"
                   >
                     <Plus className="w-4 h-4" /> Add New Client
                   </div>
-                )}
+                </div>
               </>
             )}
           </div>
