@@ -820,20 +820,20 @@ const FileStorageView = () => {
                         Organize and manage your agency files
                     </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                     <Button
                         variant="outline"
                         onClick={() => setIsNewFolderModalOpen(true)}
-                        className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+                        className="h-9 px-3 sm:h-11 sm:px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2 text-xs sm:text-sm"
                     >
-                        <FolderPlus className="w-5 h-5" />
+                        <FolderPlus className="w-4 h-4 sm:w-5 sm:h-5" />
                         New Folder
                     </Button>
                     <Button
                         onClick={() => setIsUploadModalOpen(true)}
-                        className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+                        className="h-9 px-3 sm:h-11 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 text-xs sm:text-sm"
                     >
-                        <Upload className="w-5 h-5" />
+                        <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
                         Upload Files
                     </Button>
                 </div>
@@ -891,7 +891,7 @@ const FileStorageView = () => {
 
             <div className="space-y-6">
                 <h3 className="text-lg font-bold text-gray-900">Folders</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
                     {MOCK_FOLDERS.map((folder) => (
                         <FolderCard key={folder.id} folder={folder} />
                     ))}
@@ -907,7 +907,7 @@ const FileStorageView = () => {
                 </div>
 
                 {viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
                         {MOCK_FILES.map((file) => (
                             <FileCard
                                 key={file.id}
