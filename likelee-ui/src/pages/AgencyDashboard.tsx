@@ -529,7 +529,7 @@ const ClientProfileModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
         <div className="p-8 space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
               <Building2 className="w-6 h-6 text-gray-400" />
             </div>
@@ -544,7 +544,7 @@ const ClientProfileModal = ({
           </div>
 
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6 overflow-x-auto no-scrollbar">
               <TabsTrigger
                 value="overview"
                 className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
@@ -578,7 +578,7 @@ const ClientProfileModal = ({
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 mt-0">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Building2 className="w-5 h-5 text-gray-400" />
@@ -660,7 +660,7 @@ const ClientProfileModal = ({
 
               <div className="space-y-4">
                 <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
                     <span className="text-2xl font-bold text-purple-600 block">
                       {client.metrics?.revenue || "—"}
@@ -906,7 +906,7 @@ const ClientCard = ({
   return (
     <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
       <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+        <div className="flex flex-row gap-4 sm:gap-6">
           <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
             <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
           </div>
@@ -1042,7 +1042,7 @@ const ClientCRMView = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
             Client Relationship Management
           </h1>
           <p className="text-gray-600 font-medium">
@@ -1060,7 +1060,7 @@ const ClientCRMView = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card className="p-4 sm:p-6 bg-green-50/50 border-green-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
