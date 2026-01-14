@@ -14,6 +14,7 @@ import {
   Search,
   Instagram,
   ArrowUpDown,
+  ArrowLeft,
   X,
   Trophy,
   DollarSign,
@@ -63,6 +64,12 @@ import {
   Briefcase,
   Receipt,
   Megaphone,
+  Calculator,
+  FileDown,
+  Send,
+  Printer,
+  Files,
+  TrendingDown,
   MapPin,
   Star,
 } from "lucide-react";
@@ -516,6 +523,111 @@ const MOCK_COMMUNICATIONS = [
     date: "December 10, 2025",
     type: "meeting",
     participants: "Both",
+  },
+];
+
+// --- Accounting Mock Data ---
+const MOCK_TALENT_EARNINGS = [
+  {
+    id: "1",
+    name: "Emma",
+    photo:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
+    totalOwed: "$0",
+    totalPaidYTD: "$2.4k",
+    lastPayment: "No payments",
+    totalJobs: 3,
+  },
+  {
+    id: "2",
+    name: "Sergine",
+    photo:
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop",
+    totalOwed: "$0",
+    totalPaidYTD: "$0",
+    lastPayment: "No payments",
+    totalJobs: 0,
+  },
+  {
+    id: "3",
+    name: "Milan",
+    photo:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+    totalOwed: "$0",
+    totalPaidYTD: "$0",
+    lastPayment: "No payments",
+    totalJobs: 0,
+  },
+  {
+    id: "4",
+    name: "Julia",
+    photo:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    totalOwed: "$0",
+    totalPaidYTD: "$0",
+    lastPayment: "No payments",
+    totalJobs: 0,
+  },
+];
+
+const MOCK_EXPENSES = [
+  {
+    id: "1",
+    name: "Client meeting - Uber",
+    category: "Travel",
+    date: "Jan 10, 2026",
+    submitter: "Emma",
+    status: "approved",
+    amount: "$45",
+  },
+  {
+    id: "2",
+    name: "Camera rental",
+    category: "Equipment",
+    date: "Jan 8, 2026",
+    submitter: "Milan",
+    status: "pending",
+    amount: "$320",
+  },
+  {
+    id: "3",
+    name: "Instagram ads",
+    category: "Marketing",
+    date: "Jan 5, 2026",
+    status: "approved",
+    submitter: "",
+    amount: "$250",
+  },
+  {
+    id: "4",
+    name: "Flight to LA casting",
+    category: "Travel",
+    date: "Jan 3, 2026",
+    submitter: "Carla",
+    status: "approved",
+    amount: "$480",
+  },
+];
+
+const MOCK_PAYMENTS = [
+  {
+    id: "1",
+    invoiceNumber: "#2026-1000",
+    client: "WRE-5678",
+    amount: "$3",
+    date: "Jan 27, 2026",
+  },
+];
+
+const MOCK_INVOICES = [
+  {
+    id: "1",
+    invoiceNumber: "2026-1000",
+    clientName: "Emma",
+    issueDate: "Jan 12, 2026",
+    dueDate: "Feb 11, 2026",
+    amount: "$3",
+    status: "draft",
   },
 ];
 
@@ -2061,6 +2173,2264 @@ const FileStorageView = () => {
         isOpen={!!selectedFileForShare}
         onClose={() => setSelectedFileForShare(null)}
       />
+    </div>
+  );
+};
+
+// --- Accounting & Invoicing Views ---
+
+const ExpenseTrackingView = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "pending":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "rejected":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "Travel":
+        return <Calendar className="w-5 h-5 text-orange-600" />;
+      case "Equipment":
+        return <Package className="w-5 h-5 text-blue-600" />;
+      case "Marketing":
+        return <Megaphone className="w-5 h-5 text-purple-600" />;
+      default:
+        return <Receipt className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const totalExpenses = MOCK_EXPENSES.reduce((sum, expense) => {
+    const amount = parseFloat(expense.amount.replace("$", ""));
+    return sum + amount;
+  }, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Expense Tracking</h2>
+          <p className="text-gray-600 font-medium">
+            Track and manage agency expenses
+          </p>
+        </div>
+        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Add Expense
+        </Button>
+      </div>
+
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            placeholder="Search expenses..."
+            className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-64 h-12 bg-white border-gray-100 rounded-xl">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="travel">Travel</SelectItem>
+            <SelectItem value="equipment">Equipment</SelectItem>
+            <SelectItem value="marketing">Marketing</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3">
+        {MOCK_EXPENSES.map((expense) => (
+          <Card
+            key={expense.id}
+            className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
+                  {getCategoryIcon(expense.category)}
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-base font-bold text-gray-900">
+                    {expense.name}
+                  </h4>
+                  <p className="text-sm text-gray-600 font-bold">
+                    {expense.category} • {expense.date}
+                    {expense.submitter && ` • ${expense.submitter}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
+                >
+                  {expense.status}
+                </Badge>
+                <span className="text-lg font-bold text-gray-900">
+                  {expense.amount}
+                </span>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-6 bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-2xl">
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-sm font-bold text-gray-700 mb-1">
+              Total Expenses
+            </p>
+            <p className="text-3xl font-bold text-orange-600">
+              ${totalExpenses.toFixed(2)}
+            </p>
+          </div>
+          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center">
+            <Receipt className="w-8 h-8 text-orange-600" />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const TalentStatementsView = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("amount-high");
+  const [hasUnpaidEarnings, setHasUnpaidEarnings] = useState(false);
+  const [selectedTalent, setSelectedTalent] = useState<any>(null);
+
+  if (selectedTalent) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedTalent(null)}
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to All Talent
+            </Button>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Talent Statement - {selectedTalent.name}
+            </h2>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              Email Statement
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </Button>
+          </div>
+        </div>
+
+        <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+          <div className="flex items-center gap-6">
+            <img
+              src={selectedTalent.photo}
+              alt={selectedTalent.name}
+              className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-md"
+            />
+            <div className="space-y-3">
+              <h3 className="text-3xl font-bold text-gray-900">
+                {selectedTalent.name}
+              </h3>
+              <Select defaultValue="all-time">
+                <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 font-bold text-gray-700">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all-time">All Time</SelectItem>
+                  <SelectItem value="this-month">This Month</SelectItem>
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="this-quarter">This Quarter</SelectItem>
+                  <SelectItem value="this-year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-4 gap-6">
+          <Card className="p-6 bg-orange-50 border border-orange-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-4 h-4 text-orange-600" />
+              <p className="text-sm font-bold text-gray-700">Total Owed</p>
+            </div>
+            <p className="text-3xl font-bold text-orange-600 mb-1">
+              {selectedTalent.totalOwed}
+            </p>
+            <p className="text-xs text-gray-600 font-medium">0 unpaid jobs</p>
+          </Card>
+          <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <p className="text-sm font-bold text-gray-700">
+                Total Paid (YTD)
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-green-600 mb-1">
+              {selectedTalent.totalPaidYTD}
+            </p>
+            <p className="text-xs text-gray-600 font-medium">1 paid jobs</p>
+          </Card>
+          <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-purple-600" />
+              <p className="text-sm font-bold text-gray-700">
+                Lifetime Earnings
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-purple-600 mb-1">$2.4</p>
+            <p className="text-xs text-gray-600 font-medium">Avg: $0/mo</p>
+          </Card>
+          <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-bold text-gray-700">Last Payment</p>
+            </div>
+            <p className="text-lg font-bold text-blue-600 mb-1">
+              {selectedTalent.lastPayment}
+            </p>
+          </Card>
+        </div>
+
+        <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h4 className="text-lg font-bold text-gray-900">Earnings Detail</h4>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left w-12"></th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Job Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Client
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Gross
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Commission
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Net
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Invoice
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                <tr className="bg-green-50/30">
+                  <td className="px-6 py-4">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                    Jan 12, 2026
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
+                    Emma
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                    Booking for
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                    $3
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-red-600">
+                    -$0.6
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-green-600">
+                    $2.4
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">
+                      Paid
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">
+                    2026-1000
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-3">
+            <div className="flex justify-between items-center max-w-md ml-auto">
+              <span className="text-sm text-gray-600 font-bold">
+                Total Gross Amount
+              </span>
+              <span className="text-sm font-bold text-gray-900">$3</span>
+            </div>
+            <div className="flex justify-between items-center max-w-md ml-auto">
+              <span className="text-sm text-gray-600 font-bold">
+                Total Agency Commission (20%)
+              </span>
+              <span className="text-sm font-bold text-red-600">-$0.6</span>
+            </div>
+            <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
+              <span className="text-lg font-bold text-gray-900">
+                Total Talent Net
+              </span>
+              <span className="text-lg font-bold text-green-600">$2.4</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Talent Earnings Statements
+          </h2>
+          <p className="text-gray-600 font-medium">
+            View and manage talent payment statements
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+        >
+          <Download className="w-5 h-5" />
+          Export All
+        </Button>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="Search by talent name..."
+            className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="amount-high">
+              Amount Owed (High to Low)
+            </SelectItem>
+            <SelectItem value="amount-low">
+              Amount Owed (Low to High)
+            </SelectItem>
+            <SelectItem value="total-paid">Total Paid (High to Low)</SelectItem>
+            <SelectItem value="name-az">Name (A-Z)</SelectItem>
+            <SelectItem value="name-za">Name (Z-A)</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl">
+          <Checkbox
+            id="unpaid-earnings"
+            checked={hasUnpaidEarnings}
+            onCheckedChange={(checked) =>
+              setHasUnpaidEarnings(checked as boolean)
+            }
+            className="rounded-md w-4 h-4 border-gray-300"
+          />
+          <Label
+            htmlFor="unpaid-earnings"
+            className="text-sm font-bold text-gray-700 cursor-pointer"
+          >
+            Has Unpaid Earnings
+          </Label>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {MOCK_TALENT_EARNINGS.map((talent) => (
+          <Card
+            key={talent.id}
+            className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                <img
+                  src={talent.photo}
+                  alt={talent.name}
+                  className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                />
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold text-gray-900">
+                    {talent.name}
+                  </h4>
+                  <p className="text-xs text-gray-600 font-bold">
+                    {talent.totalJobs} total jobs
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                    Total Owed
+                  </p>
+                  <p className="text-base font-bold text-orange-600">
+                    {talent.totalOwed}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    0 unpaid jobs
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                    Total Paid (YTD)
+                  </p>
+                  <p className="text-base font-bold text-green-600">
+                    {talent.totalPaidYTD}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    1 paid jobs
+                  </p>
+                </div>
+                <div className="text-right min-w-[100px]">
+                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                    Last Payment
+                  </p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    {talent.lastPayment}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setSelectedTalent(talent)}
+                  className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  View Statement
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PaymentTrackingView = () => {
+  const [reminder3Days, setReminder3Days] = useState(true);
+  const [reminderDueDate, setReminderDueDate] = useState(true);
+  const [reminder7Days, setReminder7Days] = useState(true);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Payment Tracking</h2>
+        <p className="text-gray-600 font-medium">
+          Monitor payments and manage reminders
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">
+            Paid This Month
+          </p>
+          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
+          <p className="text-xs text-gray-600 font-medium">1 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">
+            Pending Payment
+          </p>
+          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">
+            Partial Payments
+          </p>
+          <p className="text-3xl font-bold text-blue-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
+          <p className="text-3xl font-bold text-red-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Recent Payments
+        </h3>
+        <div className="space-y-3">
+          {MOCK_PAYMENTS.map((payment) => (
+            <div
+              key={payment.id}
+              className="flex items-center justify-between p-4 bg-green-50 border border-green-100 rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    Invoice {payment.invoiceNumber} • {payment.client}
+                  </p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    {payment.date}
+                  </p>
+                </div>
+              </div>
+              <span className="text-lg font-bold text-green-600">
+                {payment.amount}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Payment Reminder Settings
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Auto-send reminder 3 days before due date
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                Polite reminder template
+              </p>
+            </div>
+            <Checkbox
+              checked={reminder3Days}
+              onCheckedChange={(checked) =>
+                setReminder3Days(checked as boolean)
+              }
+              className="rounded-md w-6 h-6 border-gray-300"
+            />
+          </div>
+          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Auto-send reminder on due date
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                Payment due today template
+              </p>
+            </div>
+            <Checkbox
+              checked={reminderDueDate}
+              onCheckedChange={(checked) =>
+                setReminderDueDate(checked as boolean)
+              }
+              className="rounded-md w-6 h-6 border-gray-300"
+            />
+          </div>
+          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Auto-send reminder 7 days after due date
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                Firm reminder template
+              </p>
+            </div>
+            <Checkbox
+              checked={reminder7Days}
+              onCheckedChange={(checked) =>
+                setReminder7Days(checked as boolean)
+              }
+              className="rounded-md w-6 h-6 border-gray-300"
+            />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const FinancialReportsView = () => {
+  const [reportPeriod, setReportPeriod] = useState("this-year");
+  const [clientFilter, setClientFilter] = useState("all");
+  const [talentFilter, setTalentFilter] = useState("all");
+  const [activeReportTab, setActiveReportTab] = useState("revenue");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Financial Reports</h2>
+        <p className="text-gray-600 font-medium">
+          Comprehensive financial analytics and insights
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign className="w-5 h-5 text-green-600" />
+            <p className="text-sm font-bold text-gray-700">Total Revenue</p>
+          </div>
+          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
+          <p className="text-xs text-gray-600 font-medium">1 paid invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-5 h-5 text-yellow-600" />
+            <p className="text-sm font-bold text-gray-700">Pending</p>
+          </div>
+          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingDown className="w-5 h-5 text-red-600" />
+            <p className="text-sm font-bold text-gray-700">Expenses</p>
+          </div>
+          <p className="text-3xl font-bold text-red-600 mb-1">$775</p>
+          <p className="text-xs text-gray-600 font-medium">4 expenses</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-5 h-5 text-indigo-600" />
+            <p className="text-sm font-bold text-gray-700">Net Income</p>
+          </div>
+          <p className="text-3xl font-bold text-indigo-600 mb-1">-$772</p>
+          <p className="text-xs text-gray-600 font-medium">past month</p>
+        </Card>
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-gray-900">Financial Reports</h3>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <FileDown className="w-4 h-4" />
+              Export to PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export to Excel
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Report Period
+            </Label>
+            <Select value={reportPeriod} onValueChange={setReportPeriod}>
+              <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="this-year">This Year</SelectItem>
+                <SelectItem value="last-year">Last Year</SelectItem>
+                <SelectItem value="this-quarter">This Quarter</SelectItem>
+                <SelectItem value="last-quarter">Last Quarter</SelectItem>
+                <SelectItem value="this-month">This Month</SelectItem>
+                <SelectItem value="last-month">Last Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Filter by Client
+            </Label>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">All Clients</SelectItem>
+                <SelectItem value="nike">Nike Global</SelectItem>
+                <SelectItem value="adidas">Adidas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Filter by Talent
+            </Label>
+            <Select value={talentFilter} onValueChange={setTalentFilter}>
+              <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">All Talent</SelectItem>
+                <SelectItem value="emma">Emma</SelectItem>
+                <SelectItem value="milan">Milan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-6 border-b border-gray-100">
+          {[
+            { id: "revenue", label: "Revenue Report" },
+            { id: "receivables", label: "Outstanding Receivables" },
+            { id: "payables", label: "Talent Payables" },
+            { id: "commission", label: "Commission Report" },
+            { id: "profit", label: "Profit & Loss" },
+            { id: "tax", label: "Tax Reports" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveReportTab(tab.id)}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeReportTab === "revenue" && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <Card className="p-5 bg-green-50 border border-green-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <p className="text-xs font-bold text-gray-700">
+                    Total Revenue
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-green-600 mb-1">$3</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  1 paid invoices
+                </p>
+              </Card>
+              <Card className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <p className="text-xs font-bold text-gray-700">
+                    Pending Revenue
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-blue-600 mb-1">$0</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  0 outstanding invoices
+                </p>
+              </Card>
+              <Card className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Receipt className="w-4 h-4 text-purple-600" />
+                  <p className="text-xs font-bold text-gray-700">Avg Invoice</p>
+                </div>
+                <p className="text-2xl font-bold text-purple-600 mb-1">$3</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  per invoice
+                </p>
+              </Card>
+              <Card className="p-5 bg-orange-50 border border-orange-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <p className="text-xs font-bold text-gray-700">Growth Rate</p>
+                </div>
+                <p className="text-2xl font-bold text-orange-600 mb-1">
+                  +15.3%
+                </p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  vs previous period
+                </p>
+              </Card>
+            </div>
+
+            <div className="mb-6">
+              <h4 className="text-sm font-bold text-gray-900 mb-3">
+                Revenue by Month
+              </h4>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-1/12"></div>
+              </div>
+              <p className="text-xs text-gray-600 font-medium mt-2">
+                Jan 2026: $3
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-sm font-bold text-gray-900 mb-4">
+                  Top Clients by Revenue
+                </h4>
+                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">
+                      Nike Global
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-green-600">$3</span>
+                </div>
+              </Card>
+              <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-sm font-bold text-gray-900 mb-4">
+                  Top Talent by Revenue
+                </h4>
+                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <User className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">Emma</p>
+                  </div>
+                  <span className="text-sm font-bold text-green-600">$3</span>
+                </div>
+              </Card>
+            </div>
+          </>
+        )}
+
+        {activeReportTab === "receivables" && (
+          <div className="space-y-6">
+            <Card className="p-8 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Total Outstanding Receivables
+                </p>
+                <p className="text-5xl font-bold text-red-600">$0</p>
+              </div>
+              <AlertCircle className="w-12 h-12 text-red-600" />
+            </Card>
+
+            <div className="grid grid-cols-5 gap-4">
+              {[
+                { label: "Current (Not Due)", color: "green" },
+                { label: "1-30 Days Overdue", color: "yellow" },
+                { label: "31-60 Days Overdue", color: "orange" },
+                { label: "61-90 Days Overdue", color: "red" },
+                { label: "90+ Days Overdue", color: "gray" },
+              ].map((aging) => (
+                <Card
+                  key={aging.label}
+                  className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}
+                >
+                  <p className="text-[10px] font-bold text-gray-700 mb-2">
+                    {aging.label}
+                  </p>
+                  <p className={`text-xl font-bold text-${aging.color}-600`}>
+                    $0
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    0 invoices
+                  </p>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+              <h4 className="text-base font-bold text-gray-900 mb-4">
+                Largest Outstanding Clients
+              </h4>
+              <div className="text-center py-8 text-gray-400 font-medium">
+                No outstanding receivables
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeReportTab === "payables" && (
+          <div className="space-y-6">
+            <Card className="p-8 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Total Owed to All Talent
+                </p>
+                <p className="text-5xl font-bold text-orange-600">$0</p>
+              </div>
+              <Users className="w-12 h-12 text-orange-600" />
+            </Card>
+
+            <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+              <h4 className="text-base font-bold text-gray-900 mb-4">
+                Breakdown by Talent
+              </h4>
+              <div className="text-center py-8 text-gray-400 font-medium">
+                No pending talent payables
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeReportTab === "commission" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-6">
+              <Card className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Percent className="w-4 h-4 text-indigo-600" />
+                  <p className="text-sm font-bold text-gray-700">
+                    Total Commission Earned
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-indigo-600 mb-1">$0</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  20% of revenue
+                </p>
+              </Card>
+              <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-purple-600" />
+                  <p className="text-sm font-bold text-gray-700">
+                    Avg Commission per Deal
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-purple-600 mb-1">$0</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Average earned
+                </p>
+              </Card>
+              <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart2 className="w-4 h-4 text-blue-600" />
+                  <p className="text-sm font-bold text-gray-700">
+                    Commission Rate
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-blue-600 mb-1">20%</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Consistent across all deals
+                </p>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-base font-bold text-gray-900 mb-4">
+                  Commission by Client
+                </h4>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No commission data available
+                </div>
+              </Card>
+              <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-base font-bold text-gray-900 mb-4">
+                  Commission by Talent
+                </h4>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No commission data available
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeReportTab === "profit" && (
+          <div className="space-y-6">
+            <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+              <h4 className="text-xl font-bold text-gray-900 mb-8 text-center">
+                Profit & Loss Statement
+              </h4>
+              <div className="max-w-2xl mx-auto space-y-4">
+                <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl border border-green-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Revenue (Gross from Invoices)
+                  </span>
+                  <span className="text-xl font-bold text-green-600">$0</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Less: Talent Payments (COGS)
+                  </span>
+                  <span className="text-xl font-bold text-red-600">-$0</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Gross Profit (Agency Commission)
+                  </span>
+                  <span className="text-xl font-bold text-blue-600">$0</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Less: Operating Expenses
+                  </span>
+                  <span className="text-xl font-bold text-orange-600">
+                    -$1,095
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
+                  <span className="text-2xl font-bold text-gray-900">
+                    Net Profit
+                  </span>
+                  <span className="text-4xl font-bold text-green-600">
+                    $-1,095
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 mt-12 max-w-2xl mx-auto">
+                <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Profit Margin
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                </Card>
+                <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Expense Ratio
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                </Card>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeReportTab === "tax" && (
+          <div className="space-y-6">
+            <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+              <h4 className="text-lg font-bold text-gray-900 mb-6">
+                Tax Summary
+              </h4>
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    Sales Tax Collected
+                  </p>
+                  <p className="text-3xl font-bold text-blue-600 mb-1">$0.00</p>
+                  <p className="text-xs text-gray-500 font-medium">By state</p>
+                </Card>
+                <Card className="p-6 bg-purple-50 border border-purple-100 rounded-xl">
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    VAT Collected
+                  </p>
+                  <p className="text-3xl font-bold text-purple-600 mb-1">
+                    $0.00
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    By country
+                  </p>
+                </Card>
+                <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    1099 Eligible Payments
+                  </p>
+                  <p className="text-3xl font-bold text-orange-600 mb-1">$0</p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    US talent payments
+                  </p>
+                </Card>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900">
+                        Export Sales Tax Report
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Breakdown by state/region
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                      <Receipt className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900">
+                        Export VAT Report
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Breakdown by country
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                      <FileText className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900">
+                        Prepare 1099 Forms
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        US talent with payments &gt; $600
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
+
+const GenerateInvoiceView = () => {
+  const [createFrom, setCreateFrom] = useState("booking");
+  const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
+  const [commission, setCommission] = useState("20");
+  const [taxExempt, setTaxExempt] = useState(false);
+  const [expenses, setExpenses] = useState<
+    { id: string; description: string; amount: string }[]
+  >([]);
+
+  const addExpense = () => {
+    setExpenses([
+      ...expenses,
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        description: "",
+        amount: "0",
+      },
+    ]);
+  };
+
+  const removeExpense = (id: string) => {
+    setExpenses(expenses.filter((e) => e.id !== id));
+  };
+
+  const updateExpense = (
+    id: string,
+    field: "description" | "amount",
+    value: string,
+  ) => {
+    setExpenses(
+      expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Invoice Generation
+          </h2>
+          <p className="text-gray-600 font-medium">
+            Create and manage client invoices
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <Download className="w-5 h-5" />
+            Load Template
+          </Button>
+          <Button
+            variant="outline"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <Eye className="w-5 h-5" />
+            Preview
+          </Button>
+        </div>
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <div className="space-y-6">
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-3 block">
+              Create Invoice From
+            </Label>
+            <div className="flex gap-3">
+              <Button
+                variant={createFrom === "booking" ? "default" : "outline"}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
+                onClick={() => setCreateFrom("booking")}
+              >
+                <Calendar className="w-5 h-5" />
+                Existing Booking
+              </Button>
+              <Button
+                variant={createFrom === "manual" ? "default" : "outline"}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
+                onClick={() => setCreateFrom("manual")}
+              >
+                <FileText className="w-5 h-5" />
+                Manual Entry
+              </Button>
+            </div>
+          </div>
+
+          {createFrom === "booking" && (
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Select Booking to Invoice
+              </Label>
+              <Select>
+                <SelectTrigger className="h-12 rounded-xl border-gray-200">
+                  <SelectValue placeholder="Choose a completed or confirmed booking" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="booking1">
+                    Booking #2026-001 - Nike Campaign
+                  </SelectItem>
+                  <SelectItem value="booking2">
+                    Booking #2026-002 - Adidas Shoot
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Invoice Number <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Invoice Date <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="date"
+                defaultValue="2026-01-13"
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Due Date <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  defaultValue="2026-02-13"
+                  className="h-12 rounded-xl border-gray-200 flex-1"
+                />
+                <Select defaultValue="net30">
+                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="net15">Net 15</SelectItem>
+                    <SelectItem value="net30">Net 30</SelectItem>
+                    <SelectItem value="net60">Net 60</SelectItem>
+                    <SelectItem value="due-on-receipt">
+                      Due on Receipt
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Bill To (Client Information){" "}
+              <span className="text-red-500">*</span>
+            </Label>
+            <Select>
+              <SelectTrigger className="h-12 rounded-xl border-gray-200">
+                <SelectValue placeholder="Select client" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="nike">Nike Global</SelectItem>
+                <SelectItem value="adidas">Adidas</SelectItem>
+                <SelectItem value="apple">Apple Inc.</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                PO Number (Optional)
+              </Label>
+              <Input
+                placeholder="Client purchase order number"
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Job/Project Reference (Optional)
+              </Label>
+              <Input
+                placeholder="Project name or reference"
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <Label className="text-sm font-bold text-gray-700">
+                Invoice Items <span className="text-red-500">*</span>
+              </Label>
+              <Button
+                variant="outline"
+                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Line Item
+              </Button>
+            </div>
+            <Card className="p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <p className="text-sm font-bold text-gray-900 mb-4">Item #1</p>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                    Description
+                  </Label>
+                  <Textarea
+                    placeholder="e.g., Model services for brand photoshoot"
+                    className="min-h-[80px] rounded-xl border-gray-200 resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Talent
+                    </Label>
+                    <Select>
+                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                        <SelectValue placeholder="Select talent" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="emma">Emma</SelectItem>
+                        <SelectItem value="milan">Milan</SelectItem>
+                        <SelectItem value="julia">Julia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Date of Service
+                    </Label>
+                    <Input
+                      type="date"
+                      className="h-11 rounded-xl border-gray-200"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Rate Type
+                    </Label>
+                    <Select defaultValue="day">
+                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="day">Day Rate</SelectItem>
+                        <SelectItem value="hourly">Hourly Rate</SelectItem>
+                        <SelectItem value="project">Project Rate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Quantity/Hours
+                    </Label>
+                    <Input
+                      type="number"
+                      defaultValue="1"
+                      className="h-11 rounded-xl border-gray-200"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Unit Price ($)
+                    </Label>
+                    <Input
+                      type="number"
+                      defaultValue="0"
+                      className="h-11 rounded-xl border-gray-200"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                  <span className="text-sm font-bold text-gray-700">
+                    Line Total:
+                  </span>
+                  <span className="text-lg font-bold text-gray-900">$0.00</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <Label className="text-sm font-bold text-gray-900">
+                Expenses (Optional)
+              </Label>
+              <Button
+                variant="outline"
+                onClick={addExpense}
+                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </Button>
+            </div>
+
+            {expenses.length > 0 && (
+              <div className="space-y-3">
+                {expenses.map((expense) => (
+                  <div key={expense.id} className="flex gap-3 items-center">
+                    <Input
+                      placeholder="Expense description"
+                      value={expense.description}
+                      onChange={(e) =>
+                        updateExpense(expense.id, "description", e.target.value)
+                      }
+                      className="h-10 rounded-xl border-gray-200 flex-1 text-sm"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={expense.amount}
+                      onChange={(e) =>
+                        updateExpense(expense.id, "amount", e.target.value)
+                      }
+                      className="h-10 rounded-xl border-gray-200 w-24 text-sm"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeExpense(expense.id)}
+                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold text-gray-900">
+                Financial Settings
+              </h4>
+              <div>
+                <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                  Agency Commission (%)
+                </Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    value={commission}
+                    onChange={(e) => setCommission(e.target.value)}
+                    className="h-11 rounded-xl border-gray-200 flex-1"
+                  />
+                  <span className="text-sm font-bold text-gray-600">%</span>
+                </div>
+                <p className="text-[10px] text-gray-500 font-medium mt-1">
+                  Agency fee: $0.00 | Talent net: $0.00
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                  Currency
+                </Label>
+                <Select defaultValue="usd">
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="usd">$ US Dollar (USD)</SelectItem>
+                    <SelectItem value="eur">€ Euro (EUR)</SelectItem>
+                    <SelectItem value="gbp">£ British Pound (GBP)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-xs font-bold text-gray-700">
+                    Tax Rate (%)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={taxExempt}
+                      onCheckedChange={(checked) =>
+                        setTaxExempt(checked as boolean)
+                      }
+                      className="rounded-md w-4 h-4 border-gray-300"
+                    />
+                    <span className="text-xs text-gray-600 font-medium">
+                      Tax Exempt
+                    </span>
+                  </div>
+                </div>
+                <Select defaultValue="0" disabled={taxExempt}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="0">0% - No Tax</SelectItem>
+                    <SelectItem value="5">5%</SelectItem>
+                    <SelectItem value="10">10%</SelectItem>
+                    <SelectItem value="15">15%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                  Discount
+                </Label>
+                <div className="flex gap-2">
+                  <Select defaultValue="dollar">
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="dollar">$</SelectItem>
+                      <SelectItem value="percent">%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    defaultValue="0"
+                    className="h-11 rounded-xl border-gray-200 flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
+              <h4 className="text-sm font-bold text-gray-900 mb-4">
+                Invoice Summary
+              </h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700 font-medium">
+                    Subtotal (1 items)
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">$0.00</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700 font-medium">
+                    Agency Commission (20%)
+                  </span>
+                  <span className="text-sm font-bold text-red-600">-$0.00</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-indigo-200">
+                  <span className="text-sm text-gray-700 font-medium">
+                    Talent Net Amount
+                  </span>
+                  <span className="text-sm font-bold text-green-600">
+                    $0.00
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    Grand Total
+                  </span>
+                  <span className="text-2xl font-bold text-indigo-600">
+                    $0.00
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                Additional Notes (Optional)
+              </Label>
+              <Textarea
+                placeholder="Internal notes, special terms, or additional details..."
+                className="min-h-[100px] rounded-xl border-gray-200 resize-none"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                Payment Instructions
+              </Label>
+              <Textarea
+                defaultValue="Payment due within 30 days. Please reference invoice number on payment."
+                className="min-h-[100px] rounded-xl border-gray-200 resize-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-2 block">
+              Invoice Footer Text
+            </Label>
+            <Input
+              defaultValue="Thank you for your business!"
+              className="h-11 rounded-xl border-gray-200"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-2 block">
+              Attached Files (Optional)
+            </Label>
+            <p className="text-xs text-gray-500 font-medium mb-3">
+              Attach contracts, usage agreements, or supporting documents
+            </p>
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Upload File
+            </Button>
+          </div>
+
+          <div className="flex gap-3 pt-6 border-t border-gray-200">
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Save as Draft
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Mark as Sent
+            </Button>
+            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+              <Send className="w-4 h-4" />
+              Email to Client
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Files className="w-4 h-4" />
+              Duplicate
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const InvoiceManagementView = ({
+  setActiveSubTab,
+}: {
+  setActiveSubTab: (tab: string) => void;
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+
+  // Filter states
+  const [issueDateFrom, setIssueDateFrom] = useState("");
+  const [issueDateTo, setIssueDateTo] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("10000");
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+
+  const clearAllFilters = () => {
+    setIssueDateFrom("");
+    setIssueDateTo("");
+    setMinAmount("");
+    setMaxAmount("10000");
+    setShowOverdueOnly(false);
+    setCurrencyFilter("all");
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "sent":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "paid":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "overdue":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "partial":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "cancelled":
+        return "bg-gray-50 text-gray-700 border-gray-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const accountingTabs = [
+    { id: "Invoice Management", label: "Invoice Management", icon: FileText },
+    { id: "Invoice Generation", label: "Generate Invoice", icon: Plus },
+    { id: "Payment Tracking", label: "Payment Tracking", icon: DollarSign },
+    { id: "Talent Statements", label: "Talent Statements", icon: Receipt },
+    { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
+    { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Horizontal Tab Navigation */}
+      <Card className="p-2 bg-white border border-gray-100 rounded-2xl">
+        <div className="flex items-center gap-2">
+          {accountingTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = tab.id === "Invoice Management";
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Invoice Management
+          </h2>
+          <p className="text-gray-600 font-medium">
+            View and manage all client invoices
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="Search by invoice #, client, or talent name..."
+            className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="all" className="font-bold text-gray-700">
+              All Status
+            </SelectItem>
+            <SelectItem value="draft" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
+                <span className="text-gray-900">Draft</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="sent" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-yellow-500 rounded-sm"></div>
+                <span className="text-gray-900">Sent</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="paid" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                <span className="text-gray-900">Paid</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="overdue" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                <span className="text-gray-900">Overdue</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="partial" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
+                <span className="text-gray-900">Partial</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="cancelled" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
+                <span className="text-gray-900">Cancelled</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="newest" className="font-bold text-gray-700">
+              Newest First
+            </SelectItem>
+            <SelectItem value="oldest" className="font-bold text-gray-700">
+              Oldest First
+            </SelectItem>
+            <SelectItem value="due-soonest" className="font-bold text-gray-700">
+              Due Date (Soonest)
+            </SelectItem>
+            <SelectItem value="due-latest" className="font-bold text-gray-700">
+              Due Date (Latest)
+            </SelectItem>
+            <SelectItem value="amount-high" className="font-bold text-gray-700">
+              Amount (High to Low)
+            </SelectItem>
+            <SelectItem value="amount-low" className="font-bold text-gray-700">
+              Amount (Low to High)
+            </SelectItem>
+            <SelectItem value="client-az" className="font-bold text-gray-700">
+              Client (A-Z)
+            </SelectItem>
+            <SelectItem value="client-za" className="font-bold text-gray-700">
+              Client (Z-A)
+            </SelectItem>
+            <SelectItem value="invoice-asc" className="font-bold text-gray-700">
+              Invoice # (Asc)
+            </SelectItem>
+            <SelectItem
+              value="invoice-desc"
+              className="font-bold text-gray-700"
+            >
+              Invoice # (Desc)
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <Card className="p-5 bg-white border border-gray-200 rounded-2xl">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Issue Date From
+              </Label>
+              <Input
+                type="date"
+                value={issueDateFrom}
+                onChange={(e) => setIssueDateFrom(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Issue Date To
+              </Label>
+              <Input
+                type="date"
+                value={issueDateTo}
+                onChange={(e) => setIssueDateTo(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Min Amount
+              </Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Max Amount
+              </Label>
+              <Input
+                type="number"
+                placeholder="10000"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={showOverdueOnly}
+                  onCheckedChange={(checked) =>
+                    setShowOverdueOnly(checked as boolean)
+                  }
+                  className="rounded-md w-4 h-4 border-gray-300"
+                />
+                <Label className="text-sm font-bold text-gray-700">
+                  Show Overdue Only
+                </Label>
+              </div>
+              <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+                <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 text-sm">
+                  <SelectValue placeholder="All Currencies" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all">All Currencies</SelectItem>
+                  <SelectItem value="usd">USD</SelectItem>
+                  <SelectItem value="eur">EUR</SelectItem>
+                  <SelectItem value="gbp">GBP</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={clearAllFilters}
+              className="h-10 px-4 rounded-xl font-bold text-gray-700 flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              Clear All Filters
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      <div className="text-sm text-gray-700 font-bold">
+        Showing <span className="font-bold text-gray-900">1 of 1</span> invoices
+      </div>
+
+      <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Invoice #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Client Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Issue Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Due Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {MOCK_INVOICES.map((invoice) => (
+                <tr
+                  key={invoice.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-3">
+                    <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-bold text-gray-900">
+                      {invoice.invoiceNumber}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-bold text-indigo-600">
+                      {invoice.clientName}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm text-gray-700 font-bold">
+                      {invoice.issueDate}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm text-gray-700 font-bold">
+                      {invoice.dueDate}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-bold text-gray-900">
+                      {invoice.amount}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(invoice.status)}`}
+                    >
+                      {invoice.status}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                        title="View Invoice"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                        title="Edit Invoice"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                        title="Download PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedInvoice(invoice);
+                              setShowPaymentHistory(true);
+                            }}
+                            className="font-bold text-gray-700 cursor-pointer"
+                          >
+                            <History className="w-4 h-4 mr-2" />
+                            Payment History
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+                            <Printer className="w-4 h-4 mr-2" />
+                            Print
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Payment History Modal */}
+      <Dialog open={showPaymentHistory} onOpenChange={setShowPaymentHistory}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Payment History
+            </DialogTitle>
+            <p className="text-sm text-gray-600 font-medium">
+              Invoice #{selectedInvoice?.invoiceNumber}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Invoice Total
+                </p>
+                <p className="text-2xl font-bold text-blue-600">$3</p>
+              </Card>
+              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Total Paid
+                </p>
+                <p className="text-2xl font-bold text-green-600">$3</p>
+              </Card>
+              <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Remaining Balance
+                </p>
+                <p className="text-2xl font-bold text-orange-600">$0</p>
+              </Card>
+            </div>
+
+            {/* Payment Transactions */}
+            <div>
+              <h4 className="text-sm font-bold text-gray-900 mb-3">
+                Payment Transactions
+              </h4>
+              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          Payment #1
+                        </p>
+                        <p className="text-xs text-gray-600 font-medium">
+                          January 27, 2026 • Wire
+                        </p>
+                      </div>
+                      <span className="text-lg font-bold text-green-600">
+                        $3
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Full payment received
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export History
+            </Button>
+            <Button
+              onClick={() => setShowPaymentHistory(false)}
+              className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -11139,13 +13509,15 @@ export default function AgencyDashboard() {
             </div>
           )}
           {activeTab === "accounting" && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <CreditCard className="w-16 h-16 text-gray-200 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">
-                Accounting & Invoicing
-              </h2>
-              <p className="text-gray-500">{activeSubTab}</p>
-              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
+            <div>
+              {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
+              {activeSubTab === "Invoice Management" && (
+                <InvoiceManagementView setActiveSubTab={setActiveSubTab} />
+              )}
+              {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
+              {activeSubTab === "Talent Statements" && <TalentStatementsView />}
+              {activeSubTab === "Financial Reports" && <FinancialReportsView />}
+              {activeSubTab === "Expense Tracking" && <ExpenseTrackingView />}
             </div>
           )}
         </main>
