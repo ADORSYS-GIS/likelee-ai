@@ -13637,6 +13637,383 @@ const NotificationsTab = () => {
     </div>
   );
 };
+const ManagementAnalyticsView = () => {
+  const [activeTab, setActiveTab] = useState("Analytics");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-6 h-6 text-indigo-600" />
+            <h2 className="text-2xl font-bold text-gray-900">
+              Management & Analytics
+            </h2>
+          </div>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Filter, search, and analyze your bookings
+          </p>
+        </div>
+        <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
+          {[
+            "Analytics",
+            "Manage Bookings",
+            "Reports & Export",
+          ].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900"
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeTab === "Analytics" && <ManagementAnalyticsTab />}
+      {activeTab === "Manage Bookings" && <ManageBookingsTab />}
+      {activeTab === "Reports & Export" && <ReportsExportTab />}
+    </div>
+  );
+};
+
+const ManagementAnalyticsTab = () => {
+  const stats = [
+    {
+      label: "This Month",
+      value: "1",
+      subtext: "Total bookings",
+      icon: Calendar,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "This Week",
+      value: "1",
+      subtext: "Total bookings",
+      icon: Calendar,
+      color: "text-green-600",
+      bg: "bg-green-50",
+    },
+    {
+      label: "Revenue",
+      value: "$3",
+      subtext: "This month",
+      icon: DollarSign,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+    },
+    {
+      label: "Conversion",
+      value: "0%",
+      subtext: "Castings → Confirmed",
+      icon: TrendingUp,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-4 gap-4">
+        {stats.map((s, i) => (
+          <Card key={i} className="p-6 border shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg ${s.bg}`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500">{s.label}</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">
+                  {s.value}
+                </h3>
+                <p className="text-xs text-gray-400 mt-1 font-medium">
+                  {s.subtext}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <Card className="p-6 border shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">
+            Bookings by Type
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">
+                Confirmed
+              </span>
+              <div className="flex items-center gap-4 flex-1 mx-4">
+                <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 rounded-full"
+                    style={{ width: "100%" }}
+                  />
+                </div>
+                <span className="text-sm font-bold text-gray-900">1</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 border shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-900">
+              Top Booked Talent
+            </h3>
+          </div>
+          <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-gray-400">#1</span>
+              <span className="text-sm font-bold text-gray-900">Emma</span>
+            </div>
+            <Badge variant="secondary" className="font-bold">
+              1 bookings
+            </Badge>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-6 border shadow-sm min-h-[200px]">
+        <h3 className="text-lg font-bold text-gray-900 mb-6">
+          Most Active Clients
+        </h3>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <h4 className="text-2xl font-bold text-indigo-600 mb-1">1</h4>
+            <p className="text-xs font-semibold text-gray-500">bookings</p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const ManageBookingsTab = () => {
+  return (
+    <div className="space-y-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          placeholder="Search by talent, client, location, or notes..."
+          className="pl-10 h-10 bg-white"
+        />
+      </div>
+
+      <Card className="p-6 border shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-gray-900" />
+          <h3 className="font-bold text-gray-900">Filters</h3>
+        </div>
+
+        <div className="grid grid-cols-4 gap-8">
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase text-gray-500">
+              Talent
+            </Label>
+            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+              {["Emma", "Sergine", "Milan", "Julia", "Matt"].map((t) => (
+                <div key={t} className="flex items-center gap-2">
+                  <input type="checkbox" id={`t-${t}`} className="rounded border-gray-300" />
+                  <label htmlFor={`t-${t}`} className="text-sm font-medium text-gray-700 cursor-pointer">{t}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase text-gray-500">
+              Client
+            </Label>
+            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+              {["Company", "Company", "name"].map((c, i) => (
+                <div key={`${c}-${i}`} className="flex items-center gap-2">
+                  <input type="checkbox" id={`c-${i}`} className="rounded border-gray-300" />
+                  <label htmlFor={`c-${i}`} className="text-sm font-medium text-gray-700 cursor-pointer">{c}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase text-gray-500">
+              Booking Type
+            </Label>
+            <div className="space-y-2">
+              {["Casting", "Option", "Confirmed", "Completed", "Cancelled"].map((t) => (
+                <div key={t} className="flex items-center gap-2">
+                  <input type="checkbox" id={`bt-${t}`} className="rounded border-gray-300" />
+                  <label htmlFor={`bt-${t}`} className="text-sm font-medium text-gray-700 cursor-pointer">{t}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase text-gray-500">
+              Status
+            </Label>
+            <div className="space-y-2">
+              {["Pending Confirmation", "Confirmed", "Completed", "Cancelled"].map((s) => (
+                <div key={s} className="flex items-center gap-2">
+                  <input type="checkbox" id={`s-${s}`} className="rounded border-gray-300" />
+                  <label htmlFor={`s-${s}`} className="text-sm font-medium text-gray-700 cursor-pointer">{s}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8 mt-6 pt-6 border-t border-gray-100">
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase text-gray-500">Date Range</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <Input placeholder="mm / dd / yyyy" className="pr-8" />
+                <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              </div>
+              <div className="relative">
+                <Input placeholder="mm / dd / yyyy" className="pr-8" />
+                <Calendar className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <Label className="font-bold text-xs uppercase text-gray-500">Rate Range ($)</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Min" type="number" />
+              <Input placeholder="Max" type="number" />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="flex items-center justify-between mt-8">
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-4 h-4 text-gray-500" />
+          <span className="text-sm font-bold text-gray-700">Sort by:</span>
+          <Select defaultValue="bookingDate">
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bookingDate">Booking Date</SelectItem>
+              <SelectItem value="createdDate">Created Date</SelectItem>
+              <SelectItem value="rateHighLow">Rate (High-Low)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="icon" className="h-9 w-9">
+            <ArrowUpDown className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="font-bold text-gray-900">Results (1)</h4>
+        <div className="bg-white border rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">E</div>
+            <div>
+              <h4 className="font-bold text-gray-900">Emma</h4>
+              <p className="text-xs text-gray-500">Confirmed • Casting</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-xs font-bold text-gray-500">Jan 12, 2026</p>
+              <p className="text-xs text-gray-400">09:00</p>
+            </div>
+            <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">Confirmed</Badge>
+            <p className="font-bold text-gray-900">$3</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ReportsExportTab = () => {
+  return (
+    <div className="space-y-6">
+      <Card className="p-6 border shadow-sm">
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-gray-900">Export Bookings</h3>
+          <p className="text-gray-500 font-medium text-sm mt-1">Export 1 filtered bookings to your preferred format</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <Button variant="outline" className="h-24 flex flex-col gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all group">
+            <FileText className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-green-700">Export to CSV</span>
+          </Button>
+          <Button variant="outline" className="h-24 flex flex-col gap-2 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all group">
+            <FileText className="w-6 h-6 text-red-600 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-red-700">Export to PDF</span>
+          </Button>
+          <Button variant="outline" className="h-24 flex flex-col gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all group">
+            <FileText className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-blue-700">Export to Excel</span>
+          </Button>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <h4 className="font-bold text-gray-900 mb-4">Included Columns:</h4>
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              "Talent Name", "Client Name", "Booking Date", "Call Time",
+              "Wrap Time", "Location", "Rate", "Type",
+              "Status", "Notes", "Created Date", "Updated Date"
+            ].map(col => (
+              <div key={col} className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-orange-500 fill-orange-500" />
+                <span className="text-sm font-medium text-gray-700">{col}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 border shadow-sm">
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-gray-900">Schedule Automated Reports</h3>
+          <p className="text-gray-500 font-medium text-sm mt-1">Receive booking reports automatically via email</p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Report Frequency</Label>
+            <Select defaultValue="weekly">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily (8 AM)</SelectItem>
+                <SelectItem value="weekly">Weekly (every Monday at 8 AM)</SelectItem>
+                <SelectItem value="monthly">Monthly (1st of month)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Email Recipients</Label>
+            <Input defaultValue="agent@agency.com" />
+          </div>
+
+          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 mt-2">
+            <Mail className="w-4 h-4 mr-2" /> Schedule Weekly Reports
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 const BookingsView = ({
   activeSubTab,
@@ -13669,7 +14046,7 @@ const BookingsView = ({
     );
   if (activeSubTab === "Notifications") return <NotificationsTab />;
   if (activeSubTab === "Management & Analytics")
-    return <AnalyticsDashboardView />;
+    return <ManagementAnalyticsView />;
 
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
