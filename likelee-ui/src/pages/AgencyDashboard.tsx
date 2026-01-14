@@ -904,27 +904,29 @@ const ClientCard = ({
   };
 
   return (
-    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
       <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex gap-6">
-          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-gray-500" />
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
+            <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                {client.name}
+              </h3>
               <Badge
                 variant="outline"
-                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
+                className={`${getStatusColor(client.status)} font-bold text-[10px] sm:text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-sm shrink-0`}
               >
                 {client.status}
               </Badge>
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {client.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                    className="text-[10px] sm:text-[11px] font-bold text-gray-900 border-gray-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
                   >
                     <Tag className="w-3 h-3 text-gray-900" />
                     {tag}
@@ -932,21 +934,21 @@ const ClientCard = ({
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
+            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm text-gray-600 font-medium">
               <span className="flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-gray-400" />
+                <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.industry}
               </span>
               <span className="flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-gray-400" />
+                <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.website}
               </span>
               <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-gray-400" />
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 {client.contacts} contacts
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
+            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm mt-2.5 font-medium">
               <span className="text-gray-500">
                 Total Revenue:{" "}
                 <span className="font-bold text-gray-900">
@@ -974,34 +976,34 @@ const ClientCard = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full lg:w-auto">
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
           >
-            <Mail className="w-4 h-4 mr-2" />
+            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Email
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
           >
-            <Phone className="w-4 h-4 mr-2" />
+            <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Call
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto col-span-2 sm:col-span-1"
           >
-            <Package className="w-4 h-4 mr-2" />
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
             Send Package
           </Button>
           <Button
             onClick={onViewProfile}
-            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            className="h-9 sm:h-10 px-4 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl w-full sm:w-auto col-span-2 sm:col-span-1"
           >
             View Profile
           </Button>
@@ -1038,7 +1040,7 @@ const ClientCRMView = () => {
         </p>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             Client Relationship Management
@@ -1050,7 +1052,7 @@ const ClientCRMView = () => {
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Add Client
@@ -1058,53 +1060,53 @@ const ClientCRMView = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="p-4 sm:p-6 bg-green-50/50 border-green-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-base font-bold text-green-800">
+            <span className="text-sm sm:text-base font-bold text-green-800">
               Active Clients
             </span>
           </div>
-          <span className="text-3xl font-bold text-green-900">1</span>
+          <span className="text-2xl sm:text-3xl font-bold text-green-900">1</span>
         </Card>
-        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-base font-bold text-blue-800">Prospects</span>
+            <span className="text-sm sm:text-base font-bold text-blue-800">Prospects</span>
           </div>
-          <span className="text-3xl font-bold text-blue-900">1</span>
+          <span className="text-2xl sm:text-3xl font-bold text-blue-900">1</span>
         </Card>
-        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
-            <span className="text-base font-bold text-purple-800">
+            <span className="text-sm sm:text-base font-bold text-purple-800">
               Total Revenue
             </span>
           </div>
-          <span className="text-3xl font-bold text-purple-900">$495K</span>
+          <span className="text-2xl sm:text-3xl font-bold text-purple-900">$495K</span>
         </Card>
-        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
+        <Card className="p-4 sm:p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-base font-bold text-orange-800">
+            <span className="text-sm sm:text-base font-bold text-orange-800">
               Follow-ups Due
             </span>
           </div>
-          <span className="text-3xl font-bold text-orange-900">0</span>
+          <span className="text-2xl sm:text-3xl font-bold text-orange-900">0</span>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
@@ -1114,28 +1116,30 @@ const ClientCRMView = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="All Stages" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            <SelectItem value="leads">Leads</SelectItem>
-            <SelectItem value="prospects">Prospects</SelectItem>
-            <SelectItem value="active">Active Clients</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="Last Booking" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="last-booking">Last Booking</SelectItem>
-            <SelectItem value="revenue">Total Revenue</SelectItem>
-            <SelectItem value="name">Company Name</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 md:flex gap-4 sm:gap-6">
+          <Select value={stageFilter} onValueChange={setStageFilter}>
+            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+              <SelectValue placeholder="All Stages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stages</SelectItem>
+              <SelectItem value="leads">Leads</SelectItem>
+              <SelectItem value="prospects">Prospects</SelectItem>
+              <SelectItem value="active">Active Clients</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+              <SelectValue placeholder="Last Booking" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="last-booking">Last Booking</SelectItem>
+              <SelectItem value="revenue">Total Revenue</SelectItem>
+              <SelectItem value="name">Company Name</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Client List */}
