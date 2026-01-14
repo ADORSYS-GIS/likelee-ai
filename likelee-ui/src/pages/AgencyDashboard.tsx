@@ -704,8 +704,8 @@ const ClientProfileModal = ({
             <TabsContent value="contacts" className="space-y-6 mt-0">
               <div className="flex justify-between items-center">
                 <h4 className="font-bold text-gray-900">Contact List</h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
                   Add Contact
                 </Button>
               </div>
@@ -713,10 +713,10 @@ const ClientProfileModal = ({
                 {MOCK_CONTACTS.map((contact, idx) => (
                   <Card
                     key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 space-y-3">
                         <div>
                           <h5 className="font-bold text-gray-900 text-lg">
                             {contact.name}
@@ -736,27 +736,27 @@ const ClientProfileModal = ({
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Mail className="w-4 h-4 text-gray-500" />
+                          <Mail className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Phone className="w-4 h-4 text-gray-500" />
+                          <Phone className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+                          className="w-8 h-8 rounded-lg border-gray-100"
                         >
-                          <Edit className="w-4 h-4 text-gray-500" />
+                          <Edit className="w-3.5 h-3.5 text-gray-500" />
                         </Button>
                       </div>
                     </div>
@@ -770,19 +770,19 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">
                   Communication History
                 </h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
-                  Log Communication
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
+                  Log
                 </Button>
               </div>
               <div className="space-y-4">
                 {MOCK_COMMUNICATIONS.map((comm, idx) => (
                   <Card
                     key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 flex items-center gap-4">
                         <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
                           {comm.type === "email" && (
                             <Mail className="w-5 h-5 text-indigo-600" />
@@ -805,7 +805,7 @@ const ClientProfileModal = ({
                       </div>
                       <Badge
                         variant="outline"
-                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
+                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-2 py-0.5 text-[10px]"
                       >
                         {comm.type}
                       </Badge>
@@ -842,8 +842,8 @@ const ClientProfileModal = ({
               <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
                 <div className="flex justify-between items-center">
                   <h4 className="font-bold text-gray-900">Files & Documents</h4>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                    <Plus className="w-4 h-4" />
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
+                    <Plus className="w-3.5 h-3.5" />
                     Upload File
                   </Button>
                 </div>
@@ -858,26 +858,26 @@ const ClientProfileModal = ({
           </div>
 
           {/* Fixed Footer Area */}
-          <div className="p-4 sm:p-8 border-t border-gray-100 shrink-0 flex justify-between items-center bg-white">
+          <div className="p-4 sm:p-8 border-t border-gray-100 shrink-0 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-white">
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-600 font-bold text-sm"
               >
-                <Edit className="w-4 h-4 mr-2" />
+                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Edit Client
               </Button>
               <Button
                 variant="outline"
-                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold text-sm"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
                 Delete Client
               </Button>
             </div>
             <Button
               onClick={onClose}
-              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+              className="w-full sm:w-auto h-9 sm:h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-sm"
             >
               Close
             </Button>
