@@ -20,6 +20,8 @@ import {
   History,
   Trash2,
   XCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -329,6 +331,10 @@ const GeneralSettingsView = () => {
   const [secondaryColor, setSecondaryColor] = useState("#10B981");
   const primaryColorInputRef = useRef<HTMLInputElement>(null);
   const secondaryColorInputRef = useRef<HTMLInputElement>(null);
+  const [prodKey, setProdKey] = useState("pk_live_51P2x8S2e3f4g5h6i7j8k9l0m");
+  const [testKey, setTestKey] = useState("pk_test_51P2x8S2e3f4g5h6i7j8k9l0m");
+  const [showProdKey, setShowProdKey] = useState(false);
+  const [showTestKey, setShowTestKey] = useState(false);
 
   return (
     <div className="max-w-full mx-auto">
@@ -357,11 +363,10 @@ const GeneralSettingsView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                }`}
             >
               {tab}
             </button>
@@ -1444,11 +1449,10 @@ const GeneralSettingsView = () => {
                         </Badge>
                         <div className="flex items-center gap-1 shrink-0">
                           <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              user.status === "Active"
-                                ? "bg-green-500"
-                                : "bg-yellow-500"
-                            }`}
+                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
+                              ? "bg-green-500"
+                              : "bg-yellow-500"
+                              }`}
                           />
                           <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
                             {user.status}
@@ -1613,11 +1617,10 @@ const GeneralSettingsView = () => {
                   </div>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                     <Badge
-                      className={`${
-                        integration.status === "Connected"
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : "bg-gray-100 text-gray-600 border-gray-200"
-                      } font-bold`}
+                      className={`${integration.status === "Connected"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : "bg-gray-100 text-gray-600 border-gray-200"
+                        } font-bold`}
                     >
                       {integration.status}
                     </Badge>
@@ -1640,15 +1643,33 @@ const GeneralSettingsView = () => {
                     Production API Key
                   </Label>
                   <div className="flex gap-2">
-                    <Input
-                      value="••••••••••••••••••••••••••••"
-                      readOnly
-                      className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
-                    />
+                    <div className="relative flex-1">
+                      <Input
+                        type={showProdKey ? "text" : "password"}
+                        value={prodKey}
+                        onChange={(e) => setProdKey(e.target.value)}
+                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-12"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowProdKey(!showProdKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600"
+                      >
+                        {showProdKey ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 rounded-xl border-gray-200 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(prodKey);
+                      }}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
@@ -1659,15 +1680,33 @@ const GeneralSettingsView = () => {
                     Test API Key
                   </Label>
                   <div className="flex gap-2">
-                    <Input
-                      value="••••••••••••••••••••••••••••"
-                      readOnly
-                      className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
-                    />
+                    <div className="relative flex-1">
+                      <Input
+                        type={showTestKey ? "text" : "password"}
+                        value={testKey}
+                        onChange={(e) => setTestKey(e.target.value)}
+                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-12"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowTestKey(!showTestKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600"
+                      >
+                        {showTestKey ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 rounded-xl border-gray-200 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(testKey);
+                      }}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
