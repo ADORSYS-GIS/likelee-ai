@@ -363,10 +363,11 @@ const GeneralSettingsView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-                }`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
+                activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
             >
               {tab}
             </button>
@@ -1449,10 +1450,11 @@ const GeneralSettingsView = () => {
                         </Badge>
                         <div className="flex items-center gap-1 shrink-0">
                           <div
-                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
-                              ? "bg-green-500"
-                              : "bg-yellow-500"
-                              }`}
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              user.status === "Active"
+                                ? "bg-green-500"
+                                : "bg-yellow-500"
+                            }`}
                           />
                           <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
                             {user.status}
@@ -1617,10 +1619,11 @@ const GeneralSettingsView = () => {
                   </div>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                     <Badge
-                      className={`${integration.status === "Connected"
-                        ? "bg-green-100 text-green-700 border-green-200"
-                        : "bg-gray-100 text-gray-600 border-gray-200"
-                        } font-bold`}
+                      className={`${
+                        integration.status === "Connected"
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-gray-100 text-gray-600 border-gray-200"
+                      } font-bold`}
                     >
                       {integration.status}
                     </Badge>
