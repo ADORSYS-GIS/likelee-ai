@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -9716,6 +9716,31 @@ export default function AgencyDashboard() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
+        setShowProfileMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
@@ -9960,7 +9985,7 @@ export default function AgencyDashboard() {
             </Button>
 
             {/* Notifications Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={notificationRef}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -10020,7 +10045,7 @@ export default function AgencyDashboard() {
             </Button>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <Button
                 variant="ghost"
                 size="icon"
