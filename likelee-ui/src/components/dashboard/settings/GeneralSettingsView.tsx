@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     Building2,
     Upload,
@@ -15,6 +15,11 @@ import {
     Globe,
     Calendar,
     MoreVertical,
+    Search,
+    Shield,
+    History,
+    Trash2,
+    XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -80,18 +85,18 @@ const InviteTeamMemberModal = ({
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="admin">Admin - Full access</SelectItem>
+                                <SelectItem value="admin">Admin - Full access, billing, settings</SelectItem>
                                 <SelectItem value="booker">
-                                    Booker - Create/edit bookings
+                                    Booker - Create/edit bookings, view earnings
                                 </SelectItem>
-                                <SelectItem value="scout">Scout - Add prospects</SelectItem>
+                                <SelectItem value="scout">Scout - Add prospects, view scouting pipeline</SelectItem>
                                 <SelectItem value="accountant">
-                                    Accountant - Finance only
+                                    Accountant - View/create invoices, reports
                                 </SelectItem>
                                 <SelectItem value="coordinator">
-                                    Talent Coordinator - Manage profiles
+                                    Talent Coordinator - Manage talent profiles
                                 </SelectItem>
-                                <SelectItem value="readonly">Read-Only - View only</SelectItem>
+                                <SelectItem value="readonly">Read-Only - View everything</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -314,12 +319,16 @@ const GeneralSettingsView = () => {
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [showActivityModal, setShowActivityModal] = useState(false);
     const [selectedMember, setSelectedMember] = useState<any>(null);
+    const [primaryColor, setPrimaryColor] = useState("#4F46E5");
+    const [secondaryColor, setSecondaryColor] = useState("#10B981");
+    const primaryColorInputRef = useRef<HTMLInputElement>(null);
+    const secondaryColorInputRef = useRef<HTMLInputElement>(null);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900">Agency Settings</h2>
-                <p className="text-gray-600 font-medium">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Agency Settings</h2>
+                <p className="text-sm sm:text-base text-gray-600 font-medium">
                     Configure your agency profile and preferences
                 </p>
             </div>
@@ -352,7 +361,8 @@ const GeneralSettingsView = () => {
             {activeTab === "Profile" && (
                 <div className="space-y-6">
                     {/* Agency Information */}
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    {/* Agency Information */}
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
                                 <Building2 className="w-5 h-5 text-indigo-600" />
@@ -362,14 +372,14 @@ const GeneralSettingsView = () => {
                             </h3>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             <div className="space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">
                                     Agency Name *
                                 </Label>
                                 <Input
                                     defaultValue="CM Models"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -378,31 +388,31 @@ const GeneralSettingsView = () => {
                                 </Label>
                                 <Input
                                     defaultValue="CM Models LLC"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
-                            <div className="col-span-2 space-y-2">
+                            <div className="md:col-span-2 space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">Address</Label>
                                 <Input
                                     defaultValue="123 Fashion Ave"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">City</Label>
                                 <Input
                                     defaultValue="New York"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold text-gray-900">
                                         State/Province
                                     </Label>
                                     <Input
                                         defaultValue="NY"
-                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -411,19 +421,20 @@ const GeneralSettingsView = () => {
                                     </Label>
                                     <Input
                                         defaultValue="10001"
-                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                        className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">Country</Label>
                                 <Select defaultValue="us">
-                                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
                                         <SelectValue placeholder="Select country" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl">
                                         <SelectItem value="us">United States</SelectItem>
                                         <SelectItem value="uk">United Kingdom</SelectItem>
+                                        <SelectItem value="ca">Canada</SelectItem>
                                         <SelectItem value="de">Germany</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -431,13 +442,13 @@ const GeneralSettingsView = () => {
                             <div className="space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">Time Zone</Label>
                                 <Select defaultValue="est">
-                                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
                                         <SelectValue placeholder="Select timezone" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl">
                                         <SelectItem value="est">Eastern Time (EST)</SelectItem>
+                                        <SelectItem value="cst">Central Time (CST)</SelectItem>
                                         <SelectItem value="pst">Pacific Time (PST)</SelectItem>
-                                        <SelectItem value="cet">Central European Time (CET)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -445,37 +456,38 @@ const GeneralSettingsView = () => {
                                 <Label className="text-sm font-bold text-gray-900">Phone</Label>
                                 <Input
                                     defaultValue="+1 (212) 555-0123"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">Email</Label>
                                 <Input
                                     defaultValue="info@cmmodels.com"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
-                            <div className="col-span-2 space-y-2">
+                            <div className="md:col-span-2 space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">Website</Label>
                                 <Input
                                     defaultValue="https://cmmodels.com/"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
-                            <div className="col-span-2 space-y-2">
+                            <div className="md:col-span-2 space-y-2">
                                 <Label className="text-sm font-bold text-gray-900">
-                                    Tax ID / VAT Number
+                                    Tax ID / EIN
                                 </Label>
                                 <Input
                                     defaultValue="12-3456789"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
                                 />
                             </div>
                         </div>
                     </Card>
 
                     {/* Branding */}
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    {/* Branding */}
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
                             Branding
                         </h3>
@@ -502,28 +514,68 @@ const GeneralSettingsView = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <Label className="text-sm font-bold text-gray-900">
+                            <div className="grid grid-cols-2 gap-4 sm:gap-8">
+                                <div className="space-y-3 sm:space-y-4">
+                                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
                                         Primary Brand Color
                                     </Label>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-indigo-600 border border-gray-200 shadow-sm" />
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
+                                            <input
+                                                type="color"
+                                                value={primaryColor}
+                                                onChange={(e) => setPrimaryColor(e.target.value)}
+                                                className="absolute inset-0 w-full h-full cursor-pointer"
+                                                style={{
+                                                    opacity: 0,
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%'
+                                                }}
+                                            />
+                                            <div
+                                                className="absolute inset-0 pointer-events-none"
+                                                style={{ backgroundColor: primaryColor }}
+                                            />
+                                        </div>
                                         <Input
-                                            defaultValue="#4F46E5"
-                                            className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl flex-1"
+                                            value={primaryColor}
+                                            onChange={(e) => setPrimaryColor(e.target.value)}
+                                            className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-4">
-                                    <Label className="text-sm font-bold text-gray-900">
+                                <div className="space-y-3 sm:space-y-4">
+                                    <Label className="text-xs sm:text-sm font-bold text-gray-900">
                                         Secondary Brand Color
                                     </Label>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-emerald-500 border border-gray-200 shadow-sm" />
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
+                                            <input
+                                                type="color"
+                                                value={secondaryColor}
+                                                onChange={(e) => setSecondaryColor(e.target.value)}
+                                                className="absolute inset-0 w-full h-full cursor-pointer"
+                                                style={{
+                                                    opacity: 0,
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%'
+                                                }}
+                                            />
+                                            <div
+                                                className="absolute inset-0 pointer-events-none"
+                                                style={{ backgroundColor: secondaryColor }}
+                                            />
+                                        </div>
                                         <Input
-                                            defaultValue="#10B981"
-                                            className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl flex-1"
+                                            value={secondaryColor}
+                                            onChange={(e) => setSecondaryColor(e.target.value)}
+                                            className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl flex-1 text-xs sm:text-sm"
                                         />
                                     </div>
                                 </div>
@@ -535,14 +587,14 @@ const GeneralSettingsView = () => {
                                 </Label>
                                 <Textarea
                                     defaultValue={`Best regards,\nCM Models\nhttps://cmmodels.com/\n+1 (212) 555-0123`}
-                                    className="bg-white border-gray-200 min-h-[120px] text-gray-900 font-medium rounded-xl resize-none"
+                                    className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-500 font-medium rounded-xl resize-none"
                                 />
                             </div>
                         </div>
                     </Card>
 
                     <div className="flex justify-end">
-                        <Button className="h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                             <Save className="w-5 h-5" />
                             Save Profile Settings
                         </Button>
@@ -553,7 +605,8 @@ const GeneralSettingsView = () => {
             {activeTab === "Commissions" && (
                 <div className="space-y-6">
                     {/* Default Commission Rate */}
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    {/* Default Commission Rate */}
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
                                 <DollarSign className="w-5 h-5 text-green-600" />
@@ -579,7 +632,8 @@ const GeneralSettingsView = () => {
                     </Card>
 
                     {/* Division Commissions */}
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    {/* Division Commissions */}
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-lg font-bold text-gray-900 tracking-tight">
                                 Division Commissions
@@ -601,7 +655,7 @@ const GeneralSettingsView = () => {
                             ].map((division) => (
                                 <div
                                     key={division.name}
-                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
+                                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
                                 >
                                     <div>
                                         <p className="text-sm font-bold text-gray-900">
@@ -611,20 +665,20 @@ const GeneralSettingsView = () => {
                                             {division.count} talent
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 sm:gap-4">
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
                                             <Input
                                                 defaultValue={division.rate}
-                                                className="w-16 h-9 bg-white border-gray-200 text-center font-bold text-sm rounded-lg"
+                                                className="w-10 h-7 sm:w-12 sm:h-8 bg-white border-gray-200 text-center font-bold text-xs rounded-lg"
                                             />
-                                            <span className="text-sm font-bold text-gray-500">%</span>
+                                            <span className="text-xs font-bold text-gray-500">%</span>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="w-8 h-8 text-gray-400 hover:text-indigo-600"
+                                            className="w-7 h-7 text-gray-400 hover:text-indigo-600"
                                         >
-                                            <Edit2 className="w-4 h-4" />
+                                            <Edit2 className="w-3 h-3" />
                                         </Button>
                                     </div>
                                 </div>
@@ -633,7 +687,8 @@ const GeneralSettingsView = () => {
                     </Card>
 
                     {/* Per-Talent Custom Commissions */}
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    {/* Per-Talent Custom Commissions */}
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
                             Per-Talent Custom Commissions
                         </h3>
@@ -652,7 +707,7 @@ const GeneralSettingsView = () => {
                     </Card>
 
                     <div className="flex justify-end">
-                        <Button className="h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                             <Save className="w-5 h-5" />
                             Save Commission Settings
                         </Button>
@@ -662,7 +717,7 @@ const GeneralSettingsView = () => {
 
             {activeTab === "Email Templates" && (
                 <div className="space-y-6">
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
@@ -677,8 +732,8 @@ const GeneralSettingsView = () => {
                                     </p>
                                 </div>
                             </div>
-                            <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
+                            <Button className="h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg flex items-center gap-2">
+                                <Plus className="w-3 h-3" />
                                 New Template
                             </Button>
                         </div>
@@ -733,29 +788,29 @@ const GeneralSettingsView = () => {
                                     key={template.title}
                                     className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl space-y-4"
                                 >
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                                        <div className="flex items-center gap-3">
-                                            <h4 className="text-base font-bold text-gray-900">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
                                                 {template.title}
                                             </h4>
-                                            <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5">
+                                            <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] h-5 shrink-0">
                                                 Active
                                             </Badge>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 shrink-0">
                                             <Button
                                                 variant="outline"
                                                 size="icon"
-                                                className="w-8 h-8 rounded-lg border-gray-200"
+                                                className="w-7 h-7 rounded-lg border-gray-200"
                                             >
-                                                <Edit2 className="w-3.5 h-3.5 text-gray-500" />
+                                                <Edit2 className="w-3 h-3 text-gray-500" />
                                             </Button>
                                             <Button
                                                 variant="outline"
                                                 size="icon"
-                                                className="w-8 h-8 rounded-lg border-gray-200"
+                                                className="w-7 h-7 rounded-lg border-gray-200"
                                             >
-                                                <Copy className="w-3.5 h-3.5 text-gray-500" />
+                                                <Copy className="w-3 h-3 text-gray-500" />
                                             </Button>
                                         </div>
                                     </div>
@@ -781,7 +836,7 @@ const GeneralSettingsView = () => {
                     </Card>
 
                     <div className="flex justify-end">
-                        <Button className="h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                             <Save className="w-5 h-5" />
                             Save Email Templates
                         </Button>
@@ -791,7 +846,7 @@ const GeneralSettingsView = () => {
 
             {activeTab === "Notifications" && (
                 <div className="space-y-6">
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                                 <Bell className="w-5 h-5 text-purple-600" />
@@ -835,9 +890,9 @@ const GeneralSettingsView = () => {
                             ].map((pref) => (
                                 <div
                                     key={pref.title}
-                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
+                                    className="flex items-center justify-between gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-xl"
                                 >
-                                    <div>
+                                    <div className="flex-1 pr-4">
                                         <p className="text-sm font-bold text-gray-900">
                                             {pref.title}
                                         </p>
@@ -845,18 +900,14 @@ const GeneralSettingsView = () => {
                                             {pref.desc}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-6">
-                                        <div className="flex items-center gap-2">
-                                            <Switch defaultChecked />
-                                            <Label className="text-sm font-medium text-gray-700">
-                                                Email
-                                            </Label>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <Switch defaultChecked className="scale-75 origin-right" />
+                                            <span className="text-[10px] font-bold text-gray-400">Email</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Switch defaultChecked />
-                                            <Label className="text-sm font-medium text-gray-700">
-                                                Push
-                                            </Label>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <Switch defaultChecked className="scale-75 origin-right" />
+                                            <span className="text-[10px] font-bold text-gray-400">Push</span>
                                         </div>
                                     </div>
                                 </div>
@@ -865,423 +916,479 @@ const GeneralSettingsView = () => {
                     </Card>
 
                     <div className="flex justify-end">
-                        <Button className="h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
+                        <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
                             <Save className="w-5 h-5" />
                             Save Preferences
                         </Button>
                     </div>
-                </div>
+                </div >
             )}
 
-            {activeTab === "Tax & Currency" && (
-                <div className="space-y-6">
-                    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                                <DollarSign className="w-5 h-5 text-orange-600" />
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                                Tax & Currency
-                            </h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Default Currency
-                                </Label>
-                                <Select defaultValue="usd">
-                                    <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                                        <SelectValue placeholder="Select currency" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="usd">USD ($)</SelectItem>
-                                        <SelectItem value="eur">EUR (€)</SelectItem>
-                                        <SelectItem value="gbp">GBP (£)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Tax Rate (%)
-                                </Label>
-                                <Input
-                                    defaultValue="8.875"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Tax Name
-                                </Label>
-                                <Input
-                                    defaultValue="Sales Tax"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-bold text-gray-900">
-                                    Tax ID
-                                </Label>
-                                <Input
-                                    defaultValue="12-3456789"
-                                    className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
-                                />
-                            </div>
-                        </div>
-                    </Card>
-
-                    <div className="flex justify-end">
-                        <Button className="h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2">
-                            <Save className="w-5 h-5" />
-                            Save Tax Settings
-                        </Button>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === "Divisions" && (
-                <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">
-                                Agency Divisions
-                            </h3>
-                            <p className="text-sm text-gray-500 font-medium">
-                                Manage talent categories and divisions
-                            </p>
-                        </div>
-                        <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-                            <Plus className="w-4 h-4" />
-                            Add Division
-                        </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[
-                            { name: "Women", count: 45, color: "bg-pink-50 text-pink-600" },
-                            { name: "Men", count: 32, color: "bg-blue-50 text-blue-600" },
-                            { name: "Kids", count: 18, color: "bg-yellow-50 text-yellow-600" },
-                            { name: "Curve", count: 12, color: "bg-purple-50 text-purple-600" },
-                            {
-                                name: "Influencers",
-                                count: 24,
-                                color: "bg-orange-50 text-orange-600",
-                            },
-                            { name: "Voice", count: 8, color: "bg-green-50 text-green-600" },
-                        ].map((division) => (
-                            <Card
-                                key={division.name}
-                                className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl hover:border-indigo-200 transition-colors cursor-pointer group"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div
-                                        className={`w-10 h-10 rounded-xl ${division.color} flex items-center justify-center`}
-                                    >
-                                        <Users className="w-5 h-5" />
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="w-8 h-8 text-gray-400 hover:text-indigo-600"
-                                    >
-                                        <MoreVertical className="w-4 h-4" />
-                                    </Button>
+            {
+                activeTab === "Tax & Currency" && (
+                    <div className="space-y-6">
+                        <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                                    <DollarSign className="w-5 h-5 text-orange-600" />
                                 </div>
-                                <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
-                                    {division.name}
-                                </h4>
-                                <p className="text-sm text-gray-500 font-medium">
-                                    {division.count} Active Talent
-                                </p>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            )}
+                                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                                    Tax & Currency
+                                </h3>
+                            </div>
 
-            {activeTab === "Team" && (
-                <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">Team Members</h3>
-                            <p className="text-sm text-gray-500 font-medium">
-                                Manage access and permissions for your staff
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Default Currency
+                                    </Label>
+                                    <Select defaultValue="usd">
+                                        <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
+                                            <SelectValue placeholder="Select currency" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem value="usd">USD ($)</SelectItem>
+                                            <SelectItem value="eur">EUR (€)</SelectItem>
+                                            <SelectItem value="gbp">GBP (£)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Tax Rate (%)
+                                    </Label>
+                                    <Input
+                                        defaultValue="8.875"
+                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Tax Name
+                                    </Label>
+                                    <Input
+                                        defaultValue="Sales Tax"
+                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-900">
+                                        Tax ID
+                                    </Label>
+                                    <Input
+                                        defaultValue="12-3456789"
+                                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
+                                    />
+                                </div>
+                            </div>
+                        </Card>
+
+                        <div className="flex justify-end">
+                            <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                                <Save className="w-5 h-5" />
+                                Save Tax & Currency
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+            {
+                activeTab === "Divisions" && (
+                    <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    Agency Divisions
+                                </h3>
+                                <p className="text-sm text-gray-500 font-medium">
+                                    Manage talent categories and divisions
+                                </p>
+                            </div>
+                            <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                                <Plus className="w-4 h-4" />
+                                Add Division
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[
+                                { name: "Women", count: 45, color: "bg-pink-50 text-pink-600" },
+                                { name: "Men", count: 32, color: "bg-blue-50 text-blue-600" },
+                                { name: "Kids", count: 18, color: "bg-yellow-50 text-yellow-600" },
+                                { name: "Curve", count: 12, color: "bg-purple-50 text-purple-600" },
+                                {
+                                    name: "Influencers",
+                                    count: 24,
+                                    color: "bg-orange-50 text-orange-600",
+                                },
+                                { name: "Voice", count: 8, color: "bg-green-50 text-green-600" },
+                            ].map((division) => (
+                                <Card
+                                    key={division.name}
+                                    className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl hover:border-indigo-200 transition-colors cursor-pointer group"
+                                >
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div
+                                            className={`w-10 h-10 rounded-xl ${division.color} flex items-center justify-center`}
+                                        >
+                                            <Users className="w-5 h-5" />
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="w-8 h-8 text-gray-400 hover:text-indigo-600"
+                                        >
+                                            <MoreVertical className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                    <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                                        {division.name}
+                                    </h4>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        {division.count} Active Talent
+                                    </p>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+
+
+            {
+                activeTab === "Team" && (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between gap-4">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900">Team Management</h3>
+                                <p className="text-sm text-gray-500 font-medium hidden sm:block">
+                                    Manage team members, roles, and permissions
+                                </p>
+                            </div>
+                            <Button
+                                onClick={() => setShowInviteModal(true)}
+                                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shrink-0"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Invite User
+                            </Button>
+                        </div>
+
+                        <div className="p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-indigo-600" />
+                                    <span className="font-bold text-gray-900">Team Seats</span>
+                                </div>
+                                <span className="text-sm font-bold text-gray-600">6 of 10 seats used</span>
+                            </div>
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div className="h-full bg-indigo-600 rounded-full" style={{ width: '60%' }} />
+                            </div>
+                            <p className="text-xs text-gray-500 font-medium mt-3">
+                                4 seats remaining • Professional Plan
                             </p>
                         </div>
-                        <Button
-                            onClick={() => setShowInviteModal(true)}
-                            className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Invite User
-                        </Button>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {[
-                            {
-                                role: "Admin",
-                                count: 2,
-                                desc: "Full access",
-                                color: "bg-purple-50 text-purple-700 border-purple-100",
-                            },
-                            {
-                                role: "Booker",
-                                count: 5,
-                                desc: "Manage bookings",
-                                color: "bg-blue-50 text-blue-700 border-blue-100",
-                            },
-                            {
-                                role: "Scout",
-                                count: 3,
-                                desc: "Add prospects",
-                                color: "bg-green-50 text-green-700 border-green-100",
-                            },
-                            {
-                                role: "Accountant",
-                                count: 1,
-                                desc: "Finance only",
-                                color: "bg-orange-50 text-orange-700 border-orange-100",
-                            },
-                        ].map((role) => (
-                            <div
-                                key={role.role}
-                                className={`p-4 rounded-xl border ${role.color} flex flex-col`}
-                            >
-                                <span className="text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
-                                    {role.role}
-                                </span>
-                                <span className="text-2xl font-black mb-1">{role.count}</span>
-                                <span className="text-xs font-medium opacity-80">
-                                    {role.desc}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-6 border-b border-gray-100 bg-gray-50/50">
-                            <h4 className="text-base font-bold text-gray-900">
-                                Active Users
-                            </h4>
-                            <div className="relative w-full sm:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <Input
-                                    placeholder="Search users..."
-                                    className="pl-9 h-9 bg-white border-gray-200 rounded-lg text-sm"
-                                />
+                        <div className="space-y-4">
+                            <h4 className="text-base font-bold text-gray-900 uppercase tracking-wider">User Roles</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {[
+                                    {
+                                        role: "Admin",
+                                        desc: "Full access, billing, settings",
+                                        color: "bg-purple-50 text-purple-700 border-purple-100",
+                                    },
+                                    {
+                                        role: "Booker",
+                                        desc: "Create/edit bookings, view earnings",
+                                        color: "bg-blue-50 text-blue-700 border-blue-100",
+                                    },
+                                    {
+                                        role: "Scout",
+                                        desc: "Add prospects, view scouting pipeline",
+                                        color: "bg-green-50 text-green-700 border-green-100",
+                                    },
+                                    {
+                                        role: "Accountant",
+                                        desc: "View/create invoices, reports, no booking access",
+                                        color: "bg-yellow-50 text-yellow-700 border-yellow-100",
+                                    },
+                                    {
+                                        role: "Talent Coordinator",
+                                        desc: "Manage talent profiles, portfolios",
+                                        color: "bg-indigo-50 text-indigo-700 border-indigo-100",
+                                    },
+                                    {
+                                        role: "Read-Only",
+                                        desc: "View everything, edit nothing",
+                                        color: "bg-gray-50 text-gray-700 border-gray-100",
+                                    },
+                                ].map((role) => (
+                                    <div
+                                        key={role.role}
+                                        className={`p-5 rounded-xl border ${role.color} flex flex-col shadow-sm`}
+                                    >
+                                        <span className="text-base font-bold mb-1.5">
+                                            {role.role}
+                                        </span>
+                                        <span className="text-sm font-medium opacity-90">
+                                            {role.desc}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div className="divide-y divide-gray-100">
-                            {[
-                                {
-                                    name: "Sarah Jenkins",
-                                    email: "sarah@cmmodels.com",
-                                    role: "Admin",
-                                    status: "Active",
-                                    lastActive: "Now",
-                                    avatar: "SJ",
-                                },
-                                {
-                                    name: "Mike Ross",
-                                    email: "mike@cmmodels.com",
-                                    role: "Booker",
-                                    status: "Active",
-                                    lastActive: "2h ago",
-                                    avatar: "MR",
-                                },
-                                {
-                                    name: "Jessica Pearson",
-                                    email: "jessica@cmmodels.com",
-                                    role: "Admin",
-                                    status: "Active",
-                                    lastActive: "5h ago",
-                                    avatar: "JP",
-                                },
-                                {
-                                    name: "Rachel Zane",
-                                    email: "rachel@cmmodels.com",
-                                    role: "Scout",
-                                    status: "Away",
-                                    lastActive: "1d ago",
-                                    avatar: "RZ",
-                                },
-                                {
-                                    name: "Louis Litt",
-                                    email: "louis@cmmodels.com",
-                                    role: "Accountant",
-                                    status: "Active",
-                                    lastActive: "3h ago",
-                                    avatar: "LL",
-                                },
-                            ].map((user) => (
-                                <div
-                                    key={user.email}
-                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-4 hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
-                                            {user.avatar}
+
+                        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 p-6 border-b border-gray-100 bg-gray-50/50">
+                                <h4 className="text-lg font-bold text-gray-900">
+                                    Team Members (6)
+                                </h4>
+                                <div className="relative w-full sm:w-80">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Input
+                                        placeholder="Search team members by name or email..."
+                                        className="pl-9 h-10 bg-white border-gray-200 rounded-xl text-sm"
+                                    />
+                                </div>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                                {[
+                                    {
+                                        name: "Sarah Johnson",
+                                        email: "sarah@agency.com",
+                                        role: "Admin",
+                                        status: "Active",
+                                        lastActive: "Jan 12, 2026 10:30 AM",
+                                        joined: "Jun 15, 2023",
+                                        avatar: "SJ",
+                                    },
+                                    {
+                                        name: "Michael Chen",
+                                        email: "michael@agency.com",
+                                        role: "Booker",
+                                        status: "Active",
+                                        lastActive: "Jan 12, 2026 9:15 AM",
+                                        joined: "Aug 22, 2023",
+                                        avatar: "MC",
+                                    },
+                                    {
+                                        name: "Emily Rodriguez",
+                                        email: "emily@agency.com",
+                                        role: "Scout",
+                                        status: "Away",
+                                        lastActive: "Jan 11, 2026 4:30 PM",
+                                        joined: "Sep 10, 2023",
+                                        avatar: "ER",
+                                    },
+                                    {
+                                        name: "David Kim",
+                                        email: "david@agency.com",
+                                        role: "Accountant",
+                                        status: "Active",
+                                        lastActive: "Jan 12, 2026 8:00 AM",
+                                        joined: "Jul 1, 2023",
+                                        avatar: "DK",
+                                    },
+                                ].map((user) => (
+                                    <div
+                                        key={user.email}
+                                        className="flex flex-col px-2 py-4 sm:p-6 hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0"
+                                    >
+                                        <div className="flex items-center gap-2 sm:gap-4 w-full">
+                                            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm sm:text-lg shrink-0">
+                                                {user.avatar}
+                                            </div>
+                                            <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2">
+                                                <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                                                    {user.name}
+                                                </p>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="bg-purple-50 text-purple-700 font-bold text-[10px] sm:text-xs h-5 sm:h-6 px-1 sm:px-2 shrink-0"
+                                                >
+                                                    {user.role}
+                                                </Badge>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <div
+                                                        className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
+                                                            ? "bg-green-500"
+                                                            : "bg-yellow-500"
+                                                            }`}
+                                                    />
+                                                    <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
+                                                        {user.status}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedMember(user);
+                                                        setShowPermissionsModal(true);
+                                                    }}
+                                                    className="h-8 w-8 sm:h-9 sm:w-auto sm:px-4 text-xs sm:text-sm font-bold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 rounded-lg sm:rounded-xl"
+                                                    title="Permissions"
+                                                >
+                                                    <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    <span className="hidden sm:inline">Permissions</span>
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setSelectedMember(user);
+                                                        setShowActivityModal(true);
+                                                    }}
+                                                    className="h-8 w-8 sm:h-9 sm:w-auto sm:px-4 text-xs sm:text-sm font-bold text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 rounded-lg sm:rounded-xl"
+                                                    title="Activity"
+                                                >
+                                                    <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    <span className="hidden sm:inline">Activity</span>
+                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg sm:rounded-xl"
+                                                        >
+                                                            <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+                                                        <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer py-2.5 rounded-lg">
+                                                            <Edit2 className="w-4 h-4 mr-3" /> Edit User
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer py-2.5 rounded-lg">
+                                                            <Mail className="w-4 h-4 mr-3" /> Resend Invite
+                                                        </DropdownMenuItem>
+                                                        <div className="h-px bg-gray-100 my-1" />
+                                                        <DropdownMenuItem className="font-bold text-red-600 cursor-pointer py-2.5 rounded-lg">
+                                                            <XCircle className="w-4 h-4 mr-3" /> Deactivate
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="font-bold text-red-600 cursor-pointer py-2.5 rounded-lg">
+                                                            <Trash2 className="w-4 h-4 mr-3" /> Remove User
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-900">
-                                                {user.name}
-                                            </p>
-                                            <p className="text-xs text-gray-500 font-medium">
+                                        <div className="mt-1.5 sm:mt-1 ml-[48px] sm:ml-[72px] flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">
                                                 {user.email}
                                             </p>
+                                            <div className="flex items-center gap-3">
+                                                <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                                                    <span className="text-gray-400">Last active:</span> {user.lastActive}
+                                                </p>
+                                                <span className="hidden sm:inline text-gray-300">•</span>
+                                                <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                                                    <span className="text-gray-400">Joined:</span> {user.joined}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 sm:gap-8 w-full sm:w-auto justify-between sm:justify-end">
-                                        <Badge
-                                            variant="secondary"
-                                            className="bg-gray-100 text-gray-700 font-bold"
-                                        >
-                                            {user.role}
-                                        </Badge>
-                                        <div className="flex items-center gap-2">
-                                            <div
-                                                className={`w-2 h-2 rounded-full ${user.status === "Active"
-                                                    ? "bg-green-500"
-                                                    : "bg-yellow-500"
-                                                    }`}
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+            {activeTab === "File Storage" && <FileStorageView />}
+
+            {
+                activeTab === "Integrations" && (
+                    <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Integrations</h3>
+                                <p className="text-sm text-gray-500 font-medium">
+                                    Connect your agency with other tools
+                                </p>
+                            </div>
+                            <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+                                <Plus className="w-4 h-4" />
+                                Add Integration
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            {[
+                                {
+                                    name: "QuickBooks Online",
+                                    desc: "Sync invoices and payments automatically",
+                                    status: "Connected",
+                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-quickbooks-3521664-2945108.png",
+                                },
+                                {
+                                    name: "Stripe",
+                                    desc: "Process credit card payments for bookings",
+                                    status: "Connected",
+                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-stripe-2-498440.png",
+                                },
+                                {
+                                    name: "Slack",
+                                    desc: "Get notifications in your team channel",
+                                    status: "Not Connected",
+                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-slack-logo-icon-download-in-svg-png-gif-file-formats--technology-social-media-vol-6-pack-logos-icons-3030226.png",
+                                },
+                                {
+                                    name: "Google Calendar",
+                                    desc: "Sync bookings with your agency calendar",
+                                    status: "Connected",
+                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-google-calendar-268-721979.png",
+                                },
+                                {
+                                    name: "DocuSign",
+                                    desc: "Send contracts for digital signature",
+                                    status: "Not Connected",
+                                    icon: "https://cdn.iconscout.com/icon/free/png-256/free-docusign-3521408-2944852.png",
+                                },
+                            ].map((integration) => (
+                                <div
+                                    key={integration.name}
+                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-gray-50/50 border border-gray-100 rounded-2xl gap-4 sm:gap-0"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm p-2 flex items-center justify-center">
+                                            <img
+                                                src={integration.icon}
+                                                alt={integration.name}
+                                                className="w-full h-full object-contain"
                                             />
-                                            <span className="text-xs text-gray-500 font-medium">
-                                                {user.lastActive}
-                                            </span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="w-8 h-8 text-gray-400 hover:text-gray-600"
-                                                    >
-                                                        <MoreVertical className="w-4 h-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                                                    <DropdownMenuItem
-                                                        onClick={() => {
-                                                            setSelectedMember(user);
-                                                            setShowPermissionsModal(true);
-                                                        }}
-                                                        className="font-bold text-gray-700 cursor-pointer"
-                                                    >
-                                                        <Shield className="w-4 h-4 mr-2" /> Permissions
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => {
-                                                            setSelectedMember(user);
-                                                            setShowActivityModal(true);
-                                                        }}
-                                                        className="font-bold text-gray-700 cursor-pointer"
-                                                    >
-                                                        <History className="w-4 h-4 mr-2" /> Activity Log
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
-                                                        <Trash2 className="w-4 h-4 mr-2" /> Remove User
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                        <div>
+                                            <h4 className="text-base font-bold text-gray-900">
+                                                {integration.name}
+                                            </h4>
+                                            <p className="text-sm text-gray-500 font-medium">
+                                                {integration.desc}
+                                            </p>
                                         </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                                        <Badge
+                                            className={`${integration.status === "Connected"
+                                                ? "bg-green-100 text-green-700 border-green-200"
+                                                : "bg-gray-100 text-gray-600 border-gray-200"
+                                                } font-bold`}
+                                        >
+                                            {integration.status}
+                                        </Badge>
+                                        <Switch checked={integration.status === "Connected"} />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {activeTab === "File Storage" && <FileStorageView />}
-
-            {activeTab === "Integrations" && (
-                <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">Integrations</h3>
-                            <p className="text-sm text-gray-500 font-medium">
-                                Connect your agency with other tools
-                            </p>
-                        </div>
-                        <Button className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
-                            <Plus className="w-4 h-4" />
-                            Add Integration
-                        </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                        {[
-                            {
-                                name: "QuickBooks Online",
-                                desc: "Sync invoices and payments automatically",
-                                status: "Connected",
-                                icon: "https://cdn.iconscout.com/icon/free/png-256/free-quickbooks-3521664-2945108.png",
-                            },
-                            {
-                                name: "Stripe",
-                                desc: "Process credit card payments for bookings",
-                                status: "Connected",
-                                icon: "https://cdn.iconscout.com/icon/free/png-256/free-stripe-2-498440.png",
-                            },
-                            {
-                                name: "Slack",
-                                desc: "Get notifications in your team channel",
-                                status: "Not Connected",
-                                icon: "https://cdn.iconscout.com/icon/free/png-256/free-slack-logo-icon-download-in-svg-png-gif-file-formats--technology-social-media-vol-6-pack-logos-icons-3030226.png",
-                            },
-                            {
-                                name: "Google Calendar",
-                                desc: "Sync bookings with your agency calendar",
-                                status: "Connected",
-                                icon: "https://cdn.iconscout.com/icon/free/png-256/free-google-calendar-268-721979.png",
-                            },
-                            {
-                                name: "DocuSign",
-                                desc: "Send contracts for digital signature",
-                                status: "Not Connected",
-                                icon: "https://cdn.iconscout.com/icon/free/png-256/free-docusign-3521408-2944852.png",
-                            },
-                        ].map((integration) => (
-                            <div
-                                key={integration.name}
-                                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-gray-50/50 border border-gray-100 rounded-2xl gap-4 sm:gap-0"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm p-2 flex items-center justify-center">
-                                        <img
-                                            src={integration.icon}
-                                            alt={integration.name}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-base font-bold text-gray-900">
-                                            {integration.name}
-                                        </h4>
-                                        <p className="text-sm text-gray-500 font-medium">
-                                            {integration.desc}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                                    <Badge
-                                        className={`${integration.status === "Connected"
-                                            ? "bg-green-100 text-green-700 border-green-200"
-                                            : "bg-gray-100 text-gray-600 border-gray-200"
-                                            } font-bold`}
-                                    >
-                                        {integration.status}
-                                    </Badge>
-                                    <Switch checked={integration.status === "Connected"} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             <InviteTeamMemberModal
                 open={showInviteModal}
@@ -1297,7 +1404,7 @@ const GeneralSettingsView = () => {
                 onOpenChange={setShowActivityModal}
                 member={selectedMember}
             />
-        </div>
+        </div >
     );
 };
 
