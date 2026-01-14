@@ -12471,10 +12471,44 @@ const ClientProfileDrawer = ({
 const AddBookOutModal = ({
   open,
   onOpenChange,
+  onAdd,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAdd: (bookOut: any) => void;
 }) => {
+  const [reason, setReason] = useState("personal");
+  const [talentId, setTalentId] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const handleSave = () => {
+    if (!talentId || !startDate || !endDate) {
+      // Basic validation
+      return;
+    }
+
+    const newBookOut = {
+      id: `bo-${Date.now()}`,
+      talentId,
+      reason,
+      startDate,
+      endDate,
+      notes,
+    };
+
+    onAdd(newBookOut);
+    onOpenChange(false);
+
+    // Reset form
+    setReason("personal");
+    setTalentId("");
+    setStartDate("");
+    setEndDate("");
+    setNotes("");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -12490,7 +12524,7 @@ const AddBookOutModal = ({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label className="font-bold">Reason *</Label>
-            <Select defaultValue="personal">
+            <Select value={reason} onValueChange={setReason}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -12506,13 +12540,16 @@ const AddBookOutModal = ({
 
           <div className="space-y-2">
             <Label className="font-bold">Talent *</Label>
-            <Select>
+            <Select value={talentId} onValueChange={setTalentId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select talent" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="t1">Emma Stone</SelectItem>
-                <SelectItem value="t2">John Doe</SelectItem>
+                {TALENT_DATA.map((talent) => (
+                  <SelectItem key={talent.id} value={talent.id}>
+                    {talent.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -12520,11 +12557,19 @@ const AddBookOutModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-bold">Start Date *</Label>
-              <Input type="date" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label className="font-bold">End Date *</Label>
-              <Input type="date" />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
 
@@ -12533,6 +12578,8 @@ const AddBookOutModal = ({
             <Textarea
               placeholder="Additional details..."
               className="min-h-[80px]"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
@@ -12552,7 +12599,10 @@ const AddBookOutModal = ({
           >
             Cancel
           </Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+          <Button
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            onClick={handleSave}
+          >
             Save Book-Out
           </Button>
         </DialogFooter>
@@ -12561,8 +12611,18 @@ const AddBookOutModal = ({
   );
 };
 
-const TalentAvailabilityTab = () => {
+const TalentAvailabilityTab = ({
+  bookOuts = [],
+  onAddBookOut,
+}: {
+  bookOuts?: any[];
+  onAddBookOut: (bookOut: any) => void;
+}) => {
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
+
+  // Helper to find talent name
+  const getTalentName = (id: string) =>
+    TALENT_DATA.find((t) => t.id === id)?.name || "Unknown Talent";
 
   return (
     <div className="space-y-6">
@@ -12583,19 +12643,59 @@ const TalentAvailabilityTab = () => {
         </Button>
       </div>
 
-      <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
-        <div className="bg-gray-50 p-4 rounded-full mb-4">
-          <Calendar className="w-12 h-12 text-gray-400" />
+      {bookOuts.length === 0 ? (
+        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
+          <div className="bg-gray-50 p-4 rounded-full mb-4">
+            <Calendar className="w-12 h-12 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            No book-outs scheduled
+          </h3>
+          <p className="text-gray-500 max-w-md">
+            Add unavailability periods for your talent
+          </p>
         </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
-          No book-outs scheduled
-        </h3>
-        <p className="text-gray-500 max-w-md">
-          Add unavailability periods for your talent
-        </p>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          {bookOuts.map((bo) => (
+            <Card
+              key={bo.id}
+              className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-900">
+                    {getTalentName(bo.talentId)}
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    {bo.reason} • {new Date(bo.startDate).toLocaleDateString()}{" "}
+                    - {new Date(bo.endDate).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Placeholder for actions */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      <AddBookOutModal open={addBookOutOpen} onOpenChange={setAddBookOutOpen} />
+      <AddBookOutModal
+        open={addBookOutOpen}
+        onOpenChange={setAddBookOutOpen}
+        onAdd={onAddBookOut}
+      />
     </div>
   );
 };
@@ -13495,10 +13595,14 @@ const BookingsView = ({
   activeSubTab,
   bookings,
   onAddBooking,
+  bookOuts = [],
+  onAddBookOut,
 }: {
   activeSubTab: string;
   bookings: any[];
   onAddBooking: (booking: any) => void;
+  bookOuts: any[];
+  onAddBookOut: (bookOut: any) => void;
 }) => {
   if (activeSubTab === "Calendar & Schedule")
     return (
@@ -13506,7 +13610,10 @@ const BookingsView = ({
     );
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
   if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
-  if (activeSubTab === "Talent Availability") return <TalentAvailabilityTab />;
+  if (activeSubTab === "Talent Availability")
+    return (
+      <TalentAvailabilityTab bookOuts={bookOuts} onAddBookOut={onAddBookOut} />
+    );
   if (activeSubTab === "Notifications") return <NotificationsTab />;
 
   return (
@@ -13533,6 +13640,7 @@ export default function AgencyDashboard() {
     "licensing",
     "protection",
     "analytics",
+    "bookings",
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -13548,6 +13656,8 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState([
     { id: "1", talentName: "Emma", date: "2026-01-12", type: "confirmed" },
   ]);
+
+  const [bookOuts, setBookOuts] = useState<any[]>([]);
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -14045,6 +14155,8 @@ export default function AgencyDashboard() {
                   { ...b, id: `b-${Date.now()}` },
                 ])
               }
+              bookOuts={bookOuts}
+              onAddBookOut={(bo) => setBookOuts((prev) => [...prev, bo])}
             />
           )}
           {activeTab === "accounting" && (
