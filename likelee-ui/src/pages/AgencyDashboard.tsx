@@ -2021,10 +2021,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+              activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-              }`}
+            }`}
           >
             {tab}
           </button>
@@ -3349,13 +3350,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -3474,15 +3475,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
                               ? "bg-green-50 text-green-600"
                               : talent.consent === "missing"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-orange-50 text-orange-600"
-                            }`}
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -4323,9 +4325,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -5137,10 +5139,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
                   ? "border-indigo-600 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              }`}
             >
               {tab}
             </button>
@@ -7311,7 +7314,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -7474,10 +7477,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
                   ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
                   : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -7970,10 +7974,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            }`}
           >
             {tab}
           </button>
@@ -8855,10 +8860,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                }`}
               >
                 {tab}
               </button>
@@ -10041,10 +10047,11 @@ const NewBookingModal = ({
                 <div
                   key={t.id}
                   onClick={() => handleSelectTalent(t)}
-                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedTalents.find((st) => st.id === t.id)
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
+                    selectedTalents.find((st) => st.id === t.id)
                       ? "bg-indigo-50/50"
                       : ""
-                    }`}
+                  }`}
                 >
                   <img
                     src={t.img}
@@ -10216,8 +10223,9 @@ const NewBookingModal = ({
                         setSelectedClient(c);
                         setClientSearch("");
                       }}
-                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
-                        }`}
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
+                        selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
+                      }`}
                     >
                       <Building2 className="w-8 h-8 text-gray-400" />
                       <div className="flex-1">
@@ -10525,10 +10533,11 @@ const NewBookingModal = ({
           </Button>
           <div className="flex gap-2">
             <Button
-              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${selectedTalents.length === 0 || !selectedClient
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${
+                selectedTalents.length === 0 || !selectedClient
                   ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
                   : ""
-                }`}
+              }`}
               onClick={() => {
                 if (selectedTalents.length === 0 || !selectedClient) return;
 
@@ -10551,10 +10560,11 @@ const NewBookingModal = ({
                 toast({
                   title:
                     mode === "edit" ? "Booking Updated" : "Booking Created",
-                  description: `Successfully ${mode === "edit" ? "updated" : "scheduled"
-                    } ${bookingType} for ${selectedTalents
-                      .map((t) => t.name)
-                      .join(", ")} on ${date}.`,
+                  description: `Successfully ${
+                    mode === "edit" ? "updated" : "scheduled"
+                  } ${bookingType} for ${selectedTalents
+                    .map((t) => t.name)
+                    .join(", ")} on ${date}.`,
                 });
 
                 onOpenChange(false);
@@ -10563,11 +10573,12 @@ const NewBookingModal = ({
             >
               {mode === "edit"
                 ? "Update Booking"
-                : `Save as ${bookingType === "test-shoot"
-                  ? "Test Shoot"
-                  : bookingType.charAt(0).toUpperCase() +
-                  bookingType.slice(1)
-                }`}
+                : `Save as ${
+                    bookingType === "test-shoot"
+                      ? "Test Shoot"
+                      : bookingType.charAt(0).toUpperCase() +
+                        bookingType.slice(1)
+                  }`}
             </Button>
           </div>
         </DialogFooter>
@@ -11263,10 +11274,11 @@ const CalendarScheduleTab = ({
               return (
                 <div
                   key={d}
-                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${isSelected
+                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                    isSelected
                       ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
                       : ""
-                    }`}
+                  }`}
                   onClick={() => {
                     const newDate = new Date(currentDate);
                     newDate.setDate(d);
@@ -11274,10 +11286,11 @@ const CalendarScheduleTab = ({
                   }}
                 >
                   <span
-                    className={`text-sm font-medium ${isSelected
+                    className={`text-sm font-medium ${
+                      isSelected
                         ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
                         : "text-gray-700"
-                      }`}
+                    }`}
                   >
                     {d}
                   </span>
@@ -11547,10 +11560,11 @@ const AddClientModal = ({
                 <Badge
                   key={tag}
                   variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                  className={`${selectedTags.includes(tag)
+                  className={`${
+                    selectedTags.includes(tag)
                       ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold"
-                    } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
+                  } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
                   onClick={() => toggleTag(tag)}
                 >
                   {tag}
@@ -12333,8 +12347,9 @@ const AddBookOutModal = ({
             Cancel
           </Button>
           <Button
-            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${!isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
-              }`}
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${
+              !isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
+            }`}
             onClick={handleSave}
             disabled={!isValid}
           >
@@ -12590,10 +12605,11 @@ const NotificationsTab = () => {
             onClick={() =>
               setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
             }
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
                 ? "border-indigo-600 text-indigo-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             {tab}
           </button>
@@ -12636,20 +12652,22 @@ const NotificationsTab = () => {
               {notifications.map((notif, idx) => (
                 <Card
                   key={idx}
-                  className={`p-4 border ${notif.status === "error"
+                  className={`p-4 border ${
+                    notif.status === "error"
                       ? "border-red-200 bg-red-50"
                       : "border-gray-100 hover:border-indigo-200 transition-colors"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
                       <div
-                        className={`p-2 rounded-lg ${notif.type === "EMAIL"
+                        className={`p-2 rounded-lg ${
+                          notif.type === "EMAIL"
                             ? "bg-blue-100 text-blue-600"
                             : notif.type === "SMS"
                               ? "bg-green-100 text-green-600"
                               : "bg-purple-100 text-purple-600"
-                          }`}
+                        }`}
                       >
                         {notif.type === "EMAIL" && <Mail className="w-5 h-5" />}
                         {notif.type === "SMS" && <Phone className="w-5 h-5" />}
@@ -12683,10 +12701,11 @@ const NotificationsTab = () => {
                         {notif.time}
                       </p>
                       <p
-                        className={`text-xs font-bold mt-1 ${notif.status === "success"
+                        className={`text-xs font-bold mt-1 ${
+                          notif.status === "success"
                             ? "text-green-600"
                             : "text-red-600"
-                          }`}
+                        }`}
                       >
                         {notif.detail}
                       </p>
@@ -13250,10 +13269,11 @@ const NotificationsTab = () => {
             </div>
 
             <Button
-              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${!testNotificationType || !testTargetTalent
+              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${
+                !testNotificationType || !testTargetTalent
                   ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
                   : ""
-                }`}
+              }`}
               onClick={() => {
                 if (!testNotificationType || !testTargetTalent) return;
 
@@ -13266,7 +13286,7 @@ const NotificationsTab = () => {
                   title: "Notification Sent",
                   description: `Test ${testNotificationType} notification sent to ${talentName}!`,
                   action: (
-                    <ToastAction altText="OK" onClick={() => { }}>
+                    <ToastAction altText="OK" onClick={() => {}}>
                       OK
                     </ToastAction>
                   ),
@@ -13424,10 +13444,11 @@ const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === tab
+              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${
+                activeTab === tab
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
-                }`}
+              }`}
             >
               {tab}
             </button>
@@ -13558,12 +13579,13 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
                   <div className="flex items-center gap-4 flex-1 mx-4">
                     <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${type === "confirmed"
+                        className={`h-full rounded-full ${
+                          type === "confirmed"
                             ? "bg-green-500"
                             : type === "cancelled"
                               ? "bg-red-500"
                               : "bg-indigo-600"
-                          }`}
+                        }`}
                         style={{ width: `${(count / totalBookings) * 100}%` }}
                       />
                     </div>
@@ -14296,94 +14318,94 @@ function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14435,14 +14457,16 @@ function AgencyDashboard() {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14462,10 +14486,11 @@ function AgencyDashboard() {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
                           ? "text-indigo-700 bg-indigo-50 font-bold"
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
