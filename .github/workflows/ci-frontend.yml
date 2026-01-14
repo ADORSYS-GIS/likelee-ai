@@ -1,0 +1,48 @@
+# This workflow runs ALL checks for the 'likelee-ui' (frontend) code.
+name: CI - Frontend (likelee-ui)
+
+on:
+  pull_request:
+    branches: [main, develop] # Run on PRs to main or develop
+    # Only run this pipeline if changes were made in the 'likelee-ui' folder
+    paths:
+      - "likelee-ui/**"
+
+jobs:
+  check-frontend:
+    runs-on: ubuntu-latest
+
+    # Set the working-directory for all steps to 'likelee-ui'
+    defaults:
+      run:
+        working-directory: ./likelee-ui
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "likelee-ui/package-lock.json"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check Formatting
+        # This runs the "format:check" script from your package.json
+        run: npx prettier --check .
+      - name: Run Lint
+        run: npm run lint
+
+      - name: Run Build
+        run: npm run build
+
+      - name: Run Tests
+        # This runs the "test" script from your package.json
+        run: npm run test
+
+      - name: Run Security Audit
+        run: npm audit

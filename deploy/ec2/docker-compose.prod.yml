@@ -1,0 +1,16 @@
+# Production override: use prebuilt images from registry
+# Environment variables expected (set by CI or provided via an env file on EC2):
+#   REGISTRY_IMAGE_SERVER  e.g., ghcr.io/ORG/REPO/likelee-server
+#   REGISTRY_IMAGE_UI      e.g., ghcr.io/ORG/REPO/likelee-ui
+#   IMAGE_TAG              e.g., github SHA (short or full)
+
+services:
+  server:
+    image: ${REGISTRY_IMAGE_SERVER}:${IMAGE_TAG}
+    env_file:
+      - ./.env
+
+  ui:
+    image: ${REGISTRY_IMAGE_UI}:${IMAGE_TAG}
+    env_file:
+      - ./.env

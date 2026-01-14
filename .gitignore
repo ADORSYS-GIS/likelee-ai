@@ -1,4 +1,4 @@
-# Logs
+        # Logs
 logs
 *.log
 npm-debug.log*
@@ -9,8 +9,10 @@ lerna-debug.log*
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+likelee-server/target
+likelee-server/Cargo.lock
 
-# Runtime data
+# Runtime dataw
 pids
 *.pid
 *.seed
@@ -107,7 +109,6 @@ __sapper__
 build
 
 # Remix build output
-.cache/
 build/
 public/build/
 
@@ -116,9 +117,7 @@ public/build/
 .vuepress/public
 
 # Vite build output
-dist
 .vite-cache
-build
 
 # Other
 /dist
@@ -132,3 +131,11 @@ build
 # OS files
 .DS_Store
 Thumbs.db
+docs/BASE44_INTEGRATION_GUIDE.md
+docs/MIGRATION_GUIDE.md
+supabase/scripts/profiles_to_import_temp.csv
+supabase/scripts/profiles_to_import.csv
+supabase/scripts/remove_columns.py
+supabase/scripts/transform_csv.py
+supabase/scripts/transform_csv.ts
+supabase/scripts/transformed_import.sql

@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  duix-avatar:
+    image: ghcr.io/duixcom/duix-avatar:latest
+    # The lite image or runtime path is documented in the repo; fallback to latest.
+    # If a specific lite tag exists, replace with that tag for CPU-only.
+    container_name: duix-avatar
+    restart: unless-stopped
+    environment:
+      - TZ=UTC
+      # You can set an auth token that our backend will pass via Authorization: Bearer
+      - DUIX_AUTH_TOKEN=${DUIX_AUTH_TOKEN:-change-me}
+    ports:
+      - "7860:7860" # HTTP API/UI
+    volumes:
+      - duix-models:/opt/duix/models # large download (~70GB)
+      - duix-data:/opt/duix/data
+    # CPU-only: do not pass through NVIDIA runtime
+    # If you later have GPU, add:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: ["gpu"]
+volumes:
+  duix-models:
+  duix-data:

@@ -1,0 +1,2749 @@
+{
+  "greeting": "Hello, Welcome!",
+  "brands": "Brands",
+  "agencies": "Agencies",
+  "marketingAgency": "Marketing Agency",
+  "marketingAgencySub": "Advertising & creative services",
+  "talentAgencyLabel": "Talent / Modeling Agency",
+  "talentAgencySub": "Talent representation",
+  "sportsAgency": "Sports Agency",
+  "sportsAgencySub": "NIL & athlete representation",
+  "aboutUs": "About Us",
+  "contact": "Contact",
+  "footerSlogan": "The Verified Talent Ecosystem for AI-powered Media.",
+  "resources": "Resources",
+  "blog": "Blog",
+  "impact": "Impact",
+  "support": "Support",
+  "contactUs": "Contact Us",
+  "legalAndCompliance": "Legal & Compliance",
+  "sagAftraAlignment": "SAG-AFTRA Alignment",
+  "privacyPolicy": {
+    "title": "Likelee Privacy Policy",
+    "lastUpdated": "Last updated: October 2025",
+    "intro": "Likelee (\"Likelee,\" \"we,\" \"us\") helps talent, creators, and brands manage licensed, consented use of likeness in AI. This Privacy Policy explains what we collect, how we use it, and your choices.",
+    "sections": {
+      "1": {
+        "title": "1) Information we collect",
+        "accountData": {
+          "label": "Account & profile data:",
+          "content": "name, email, password (hashed), city/state, date of birth, style tags, preferences, links/handles."
+        },
+        "likenessMedia": {
+          "label": "Likeness & media:",
+          "content": "photos you upload, metadata, and settings you choose for visibility/usage. Note: We only use likeness/media according to the controls you set (e.g., public/private, allowed uses)."
+        },
+        "usageData": {
+          "label": "Usage data:",
+          "content": "device/browser, IP address, pages viewed, clicks, referring pages."
+        },
+        "communications": {
+          "label": "Communications:",
+          "content": "messages and emails you send to us."
+        },
+        "thirdParties": {
+          "label": "From third parties (optional):",
+          "content": "social links or brand/agency info you choose to connect."
+        }
+      },
+      "2": {
+        "title": "2) How we use information",
+        "list": [
+          "Provide and secure the service (accounts, onboarding, approvals, payouts).",
+          "Enforce your usage rules and create an audit trail.",
+          "Communicate with you (service emails, cohort invites, policy updates).",
+          "Improve features, safety, and performance (analytics and debugging).",
+          "Comply with legal obligations and prevent fraud/abuse."
+        ]
+      },
+      "3": {
+        "title": "3) AI & likeness use",
+        "consentFirst": {
+          "label": "Consent-first:",
+          "content": "Your likeness/media is processed only as you direct (e.g., to detect/track use, enable licensed requests)."
+        },
+        "training": {
+          "label": "Training:",
+          "content": "We do not use your likeness/media to train public, third-party models. If we fine-tune internal detection or safety systems, we do so under your selected permissions and access controls."
+        },
+        "takedowns": {
+          "label": "Takedowns:",
+          "content": "If you report unlicensed use, we may process the reported content to investigate and act."
+        }
+      },
+      "4": {
+        "title": "4) Legal bases (EEA/UK)",
+        "content": "We process personal data based on: contract (to provide the service), legitimate interests (security, improvement), and consent (where required, e.g., marketing)."
+      },
+      "5": {
+        "title": "5) Sharing",
+        "p1": "We do not sell personal information in the traditional sense. We may license or make available de-identified and/or aggregated information to vetted partners (including analytics and AI technology providers) for research, safety, and product development. We require recipients to use it only for approved purposes and to avoid re-identification.",
+        "p2": "We also share information with:",
+        "list": [
+          "Service providers (hosting, storage, analytics, email) under contract.",
+          "Counterparties you approve (e.g., brands/agencies for licensed requests you accept).",
+          "Legal/Compliance when required by law or to protect rights, safety, and integrity."
+        ]
+      },
+      "6": {
+        "title": "6) Retention",
+        "content": "We keep data while your account is active and as needed for the purposes above. You can request deletion; some records (e.g., payments, contracts, safety logs) may be kept as required by law."
+      },
+      "7": {
+        "title": "7) Security",
+        "content": "We use industry-standard safeguards (encryption in transit, access controls). No method is 100% secure; report issues to"
+      },
+      "8": {
+        "title": "8) Your choices & rights",
+        "list": {
+          "0": "Access, correct, download, or delete your data (subject to legal limits).",
+          "1": "Opt out of marketing at any time.",
+          "2": "Control profile visibility and permitted uses for your likeness/media.",
+          "3": {
+            "label": "Do Not Sell/Share (where applicable):",
+            "content": "You may opt out of our licensing of de-identified/aggregated information by using the \"Do Not Sell or Share My Personal Information\" link or emailing",
+            "suffix": "with the subject \"Do Not Sell/Share.\""
+          },
+          "4": "For EEA/UK/Swiss residents: you may object/restrict processing and lodge a complaint with your local authority."
+        },
+        "requests": "Requests:"
+      },
+      "9": {
+        "title": "9) Cookies & analytics",
+        "content": "We use cookies and similar tech for sign-in, preferences, and analytics. You can control cookies in your browser; some features may not work without them."
+      },
+      "10": {
+        "title": "10) Children",
+        "content": "Likelee is not intended for children under 16 (or the age required by your region). We do not knowingly collect data from children."
+      },
+      "11": {
+        "title": "11) International transfers",
+        "content": "If data is transferred internationally, we use appropriate safeguards (e.g., SCCs)."
+      },
+      "12": {
+        "title": "12) Changes",
+        "content": "We may update this Policy. We'll post the new date above. If changes are material, we'll notify you (e.g., email or in-app notice)."
+      },
+      "13": {
+        "title": "13) Contact",
+        "company": "Likelee, Inc."
+      }
+    }
+  },
+  "commercialRights": "Commercial Rights",
+  "company": "Company",
+  "creators": "Creators",
+  "copyright": "© 2025 Likelee. All rights reserved.",
+  "followUs": "Follow us on Instagram",
+  "javascriptRequired": "JavaScript Required",
+  "javascriptRequiredMessage": "Likelee requires JavaScript to display content and provide full functionality.",
+  "aboutPageName": "About Likelee",
+  "aboutPageDescription": "In the age of AI, human identity should be an asset, not a liability. Likelee builds the infrastructure for creators to own, control, and profit from their digital likeness.",
+  "aboutLikelee": "About Likelee:",
+  "forCreators": "For Creators",
+  "forCreatorsMessage": "License your digital likeness, set your rates, and earn royalties automatically",
+  "forAiArtists": "For AI Artists",
+  "forAiArtistsMessage": "Build your portfolio and connect with studios for campaigns and projects",
+  "forBusinesses": "For Businesses",
+  "forBusinessesMessage": "Access verified creator likenesses with transparent licensing and fast turnaround",
+  "protectionAndRights": "Protection & Rights",
+  "protectionAndRightsMessage": "Every usage is tracked, consented, and compensated through smart contracts",
+  "enableJavascript": "Please enable JavaScript in your browser to access the full platform.",
+  "viewSimplifiedVersion": "View simplified version",
+  "javascriptRequiredFullExperience": "JavaScript Required for Full Experience",
+  "interactivePlatformMessage": "Likelee is an interactive platform that requires JavaScript.",
+  "platformFeatures": "Likelee Platform Features:",
+  "forCreatorsAndAthletes": "👤 For Creators & Athletes",
+  "forCreatorsAndAthletesMessage1": "License your digital likeness and earn passive income",
+  "forCreatorsAndAthletesMessage2": "Set your own rates and approval parameters",
+  "forCreatorsAndAthletesMessage3": "Track every usage with automated royalty payments",
+  "forCreatorsAndAthletesMessage4": "Full control over who uses your image and where",
+  "forAiArtistsAndFilmmakers": "🎨 For AI Artists & Filmmakers",
+  "forAiArtistsAndFilmmakersMessage1": "Build professional portfolio showcasing AI creative work",
+  "forAiArtistsAndFilmmakersMessage2": "Connect directly with brands and studios",
+  "forAiArtistsAndFilmmakersMessage3": "Access exclusive AI filmmaking opportunities",
+  "forAiArtistsAndFilmmakersMessage4": "Browse curated job board for AI creative roles",
+  "forBusinessesMessage1": "Launch campaigns with verified, consented creators",
+  "forBusinessesMessage2": "Get brand-safe content in under 48 hours",
+  "forBusinessesMessage3": "Smart contracts with watermarked assets",
+  "forBusinessesMessage4": "Transparent licensing and usage tracking",
+  "ethicalAiStandards": "🔒 <strong>Ethical AI Standards:</strong> SAG-AFTRA aligned, GDPR/CCPA compliant, with automated consent tracking and fair compensation for all creators.",
+  "toAccessPlatform": "To access the full interactive platform:",
+  "enableJavascriptInBrowser": "Enable JavaScript in your browser settings",
+  "refreshPage": "Refresh this page",
+  "orViewOur": "Or view our",
+  "simplifiedTextVersion": "simplified text version",
+  "questionsContactUs": "Questions? Contact us:",
+  "landingHeadline": "Fishing for Something Real in the AI Era?",
+  "readyToUse": "Ready to Use",
+  "verifiedProtection": "Verified Protection",
+  "licensedFaces": "Licensed Faces",
+  "heroTitle": "Build Real Athlete Partnerships That Pay Year-Round",
+  "heroSubtitle": "One retainer, consistent presence. Athletes earn, you win.",
+  "forBrands": "For Brands",
+  "forAgencies": "For Agencies",
+  "transformTalentTitle": "Transform How You Work with Talent",
+  "transformTalentSubtitle": "From months of vetting to minutes of browsing.",
+  "userTrustTitle": "Don't Lose User Trust using Fake Avatars",
+  "userTrustSubtitle": "Real creators bring genuine belief, and your audiences feel it instantly.",
+  "scaleCatalogTitle": "Scale Your Catalog Without Scaling Costs",
+  "scaleCatalogSubtitle": "Same influencer. Infinite product variations. Launch in hours.",
+  "premiumTalentTitle": "Premium Talent with Zero Production Headaches",
+  "premiumTalentSubtitle": "Skip shoot day and access verified models from top agencies. All with premium results.",
+  "allSizesTitle": "Built for Brands of All Sizes",
+  "allSizesSubtitle": "From ecom startups to enterprises—build high-touch campaigns with verified talent for every budget.",
+  "mission": "Mission",
+  "missionSubtitle": "In the age of AI, human identity should be an asset, not a liability.",
+  "missionMessage": "Likelee builds the infrastructure for creators, athletes, and talent to own, control, and profit from their digital likeness. We're creating a new economy where consent is law, every use is tracked, and creators earn forever—not just once.",
+  "guidingPrinciples": "Guiding Principles",
+  "consentIsEverything": "Consent is Everything",
+  "consentIsEverythingMessage": "If you don't explicitly approve it, it doesn't happen.",
+  "compensationIsAutomatic": "Compensation is Automatic",
+  "compensationIsAutomaticMessage": "No chasing payments. Earnings route instantly.",
+  "transparencyOverSecrecy": "Transparency Over Secrecy",
+  "transparencyOverSecrecyMessage": "You see every use, every time, in real-time.",
+  "humanFirstTechnologySecond": "Human First, Technology Second",
+  "humanFirstTechnologySecondMessage": "We build what solves today's problems, not tomorrow's.",
+  "theProblemIsReal": "The Problem Is Real (And It's Happening Now)",
+  "theProblemIsRealMessage1": "Your face can be replicated in seconds. Your voice can be synthesized. Your likeness can be used in ads, films, games—anywhere—without you knowing. And you won't see a dime.",
+  "theProblemIsRealMessage2": "Traditional contracts were built for on-set work. They don't account for perpetual, software-driven reuse. Talent reps can't police every brand activation or data scrape. Creators rarely see the value that synthetic versions of themselves generate.",
+  "theProblemIsRealMessage3": "The AI era created a new problem: How do you prove consent at scale? How do you track infinite reuses? How do you ensure talent gets paid?",
+  "likeleeSolvesAllThree": "Likelee solves all three.",
+  "whyLikeleeWhyNow": "Why Likelee, Why Now?",
+  "whyLikeleeWhyNowMessage1": "AI didn't create the problem of people's likenesses being used without consent—but it made it infinitely scalable. Deepfakes, synthetic media, digital twins: these aren't future threats. They're here.",
+  "whyLikeleeWhyNowMessage2": "Traditional licensing works for one-time uses. It breaks for perpetual, software-driven reuse. Consent tracking is manual. Payments are sporadic. Nobody wins.",
+  "whyLikeleeWhyNowMessage3": "Likelee is built for the AI era—where one likeness can generate infinite value, and tracking that value requires transparent infrastructure, not spreadsheets.",
+  "whyLikeleeWhyNowMessage4": "We're not trying to stop AI. We're ensuring that when it uses your face, your voice, your likeness—you know about it, you approve it, and you get paid for it.",
+  "howItWorks": "How It Works: From Capture to Earnings",
+  "identityVerification": "Identity Verification",
+  "identityVerificationMessage": "You record a 60-second guided video. We verify your identity against your government ID and confirm facial motion (liveness check). This stops imposters before they enter the system.",
+  "avatarCreation": "Avatar Creation",
+  "avatarCreationMessage": "Your cameo is converted into a secure, encrypted digital double. You get a ready-to-license asset. Your raw biometric data stays private.",
+  "youSetTheRules": "You Set the Rules",
+  "youSetTheRulesMessage": "Define scope (social ads? TV commercials? Films?), territory (US only? Global?), term (1 month? 1 year?), and price. No legal jargon. Plain language.",
+  "brandsRequestYouApprove": "Brands Request. You Approve.",
+  "brandsRequestYouApproveMessage": "Studios and brands browse your profile, submit their brief, and wait for your approval. Reject or accept in one click.",
+  "youEarnAutomatically": "You Earn. Automatically.",
+  "youEarnAutomaticallyMessage": "Every use is logged on a shared ledger you can see in real-time. Payments route instantly. No invoicing. No spreadsheet hell.",
+  "youStayInControl": "You Stay in Control",
+  "youStayInControlMessage": "Rights expire automatically. Brands can't renew without asking. You can revoke, pause, or adjust terms anytime.",
+  "whoUsesLikelee": "Who Uses Likelee",
+  "creatorsAndAthletesProfile": "Creators & Athletes",
+  "creatorsAndAthletesProfileMessage": "Earn recurring income from their likeness while keeping total control. One dashboard for all approvals and earnings.",
+  "talentAgenciesAndUnionsProfile": "Talent Agencies & Unions",
+  "talentAgenciesAndUnionsProfileMessage": "Scale NIL and digital-replica deals across entire rosters. Bulk onboarding, unified compliance tracking, instant payouts.",
+  "studiosAndBrandsProfile": "Studios & Brands",
+  "studiosAndBrandsProfileMessage": "Access verified, cleared avatars for ads, games, and campaigns—without months of legal negotiation or consent risk.",
+  "howWeOperate": "How We Operate",
+  "verificationFirst": "Verification First",
+  "verificationFirstMessage": "Every creator passes identity checks before their avatar goes live. Bad actors don't get a platform.",
+  "contractsYouActuallyUnderstand": "Contracts You Actually Understand",
+  "contractsYouActuallyUnderstandMessage": "No legal mumbo-jumbo. Plain language agreements with automatic expiry dates and sunset clauses baked in.",
+  "sharedLedgerFullTransparency": "Shared Ledger, Full Transparency",
+  "sharedLedgerFullTransparencyMessage": "Both you and the brand see the same real-time record of every use, every payment, every expiration date.",
+  "securityByDesign": "Security by Design",
+  "securityByDesignMessage": "Biometric files encrypted at rest. No third-party data sales. No scraping. Your data is yours.",
+  "builtWithUsersNotForUsers": "Built With Users, Not For Users",
+  "builtWithUsersNotForUsersMessage": "We only release features when creators, agencies, and studios confirm real-world need. No feature bloat.",
+  "thankYou": "Thank You!",
+  "thankYouMessage": "We've received your message and will be in touch within 24 hours.",
+  "seeLikeleeInAction": "See Likelee in Action",
+  "seeLikeleeInActionMessage": "We'd love to show you a product demo with expert Q&A.",
+  "businessEmail": "Business Email",
+  "fullName": "Full Name",
+  "phone": "Phone",
+  "continue": "Continue",
+  "talentModelingAgency": "Talent / Modeling Agency",
+  "talentModelingAgencyMessage": "Represent actors, models, and influencers",
+  "sportsAgencyMessage": "Manage athletes and sports talent",
+  "marketingAgencyMessage": "Create campaigns and manage brand partnerships",
+  "whatTypeOfAgencyAreYou": "What Type of Agency Are You?",
+  "whatTypeOfAgencyAreYouMessage": "Select your agency type to learn more about how Likelee can help you",
+  "learnMore": "Learn More",
+  "brandCampaignSolutions": "Brand & Company Campaign Solutions",
+  "brandCampaignSolutionsDescription": "Launch verified talent campaigns. Project-based. Transparent pricing. No hidden costs. Access verified creators and AI filmmakers.",
+  "brandMarketingLicensing": "Brand Marketing & Creator Licensing",
+  "worldwide": "Worldwide",
+  "brandAudiences": "Brands, Companies, Marketing Teams",
+  "dontLoseBrandTrust": "Don't Lose Brand Trust Using False Avatars",
+  "licenseRealTalent": "License real athletes, influencers, and creator likenesses with Likelee.",
+  "browseMarketplace": "Browse Marketplace",
+  "scheduleDemo": "Schedule Demo",
+  "faq": "Frequently Asked Questions",
+  "faqVerifiedCreatorVsAiFilmmakerTitle": "What's the difference between a Verified Creator and an AI Filmmaker?",
+  "faqVerifiedCreatorVsAiFilmmakerDescription": "Verified Creators are real people who've licensed their likeness (influencers, athletes, actors, models). AI Filmmakers create content using AI tools (Sora, Runway, Pika, etc.). Both are available on Likelee.",
+  "faqMultipleCampaignsTitle": "Can I hire the same talent for multiple campaigns?",
+  "faqMultipleCampaignsDescription": "Yes. If a creator's contract allows renewal, you can re-book them at the same rates (or renegotiate). Most creators prefer repeat work.",
+  "faqRevisionsTitle": "What if I need revisions?",
+  "faqRevisionsDescription": "Revisions are project-to-project based on what's agreed upfront. Minor tweaks are usually included. Major scope changes = new project with new pricing.",
+  "faqApprovalTimeTitle": "How long does approval take?",
+  "faqApprovalTimeDescription": "Most creators respond within 24 hours. Some respond within hours. Urgency is factored into pricing (faster turnaround = higher price, usually).",
+  "faqGuaranteedDeliverablesTitle": "Can you guarantee deliverables?",
+  "faqGuaranteedDeliverablesDescription": "Talent is incentivized to deliver (they don't get paid the 50% on completion if they don't). If they fail to deliver, we help you find replacement talent or issue a refund.",
+  "faqFormatsTitle": "What formats do you deliver?",
+  "faqFormatsDescription": "Whatever you request: MP4, MOV, ProRes, social-optimized cuts, etc. Specify in the brief.",
+  "faqExceedLicensedTimeframeTitle": "What if I exceed the licensed timeframe?",
+  "faqExceedLicensedTimeframeDescription": "You can renew the license by re-contracting with the talent. Renewal is usually 20–30% of original project cost.",
+  "faqVerifiedConsentTitle": "Is this verified consent?",
+  "faqVerifiedConsentDescription": "Yes. Every talent on Likelee has verified their likeness rights. Contracts are SAG-AFTRA-aligned. You're protected.",
+  "faqUnauthorizedUseTitle": "What if someone uses my asset without permission?",
+  "faqUnauthorizedUseDescription": "Watermarks + automated DMCA takedowns. We scan the web and issue takedowns automatically.",
+  "faqNegotiatePricingTitle": "Can we negotiate pricing?",
+  "faqNegotiatePricingDescription": "Yes. Post your budget. Talent quotes back. You can counter-offer. It's project-based, so there's flexibility.",
+  "faqWorkWithOwnAgencyTitle": "Can I work with my own agency on Likelee?",
+  "faqWorkWithOwnAgencyDescription": "Yes. Invite them to manage projects. They source talent, submit briefs, you approve. Same transparent pricing applies.",
+  "faqAgenciesOnLikeleeTitle": "Are there agencies I can work with on Likelee?",
+  "faqAgenciesOnLikeleeDescription": "Yes. Browse Partner Agencies on Likelee. They specialize in different industries and can handle the entire project from sourcing to delivery.",
+  "marketingAgencySolutions": "Marketing Agency Solutions",
+  "marketingAgencySolutionsDescription": "One platform for AI-powered creator campaigns. Verified creator licensing, production workflows, compliance, and brand exposure.",
+  "marketingAgencyCreatorPlatform": "Marketing Agency Creator Platform",
+  "marketingCreativeAgencies": "Marketing Agencies, Creative Agencies",
+  "onePlatformForAICampaigns": "One Platform For AI-Powered Creator Campaigns",
+  "bookDemo": "Book Demo",
+  "seeHowItWorks": "See How It Works",
+  "theProblemWeSolve": "The Problem We Solve",
+  "theProblemWeSolveDescription": "Your clients are moving to AI-powered creator content. Your team is juggling multiple vendors and platforms to source, manage, and deliver these campaigns. Likelee consolidates everything— verified creator licensing, production workflows, compliance, and brand exposure—into one streamlined platform so you deliver AI campaigns faster without building infrastructure.",
+  "threeThingsLikeleeDoes": "Three Things Likelee Does",
+  "verifiedCreatorLicensingMarketplace": "Verified Creator Licensing Marketplace",
+  "verifiedCreatorLicensingMarketplaceDescription": "Browse pre-verified creators already cleared for AI-powered commercial campaigns. License their likeness for AI content production. No hunting. No vetting. Everything's pre-cleared. Your sourcing goes from weeks to minutes.",
+  "streamlinedAICampaignWorkflow": "Streamlined AI Campaign Workflow",
+  "streamlinedAICampaignWorkflowDescription": "Brief → License creators → Manage AI production → Approve deliverables → Client handoff. Same workflow your team knows. 3-5 day turnaround. All creator licensing embedded in final assets.",
+  "directBrandExposure": "Direct Brand Exposure",
+  "directBrandExposureDescription": "Brands discover your agency on Likelee when searching for AI campaign partners. Inbound pipeline. New business finds you because you're positioned as AI-campaign ready.",
+  "theMath": "The Math",
+  "challenge": "Challenge",
+  "before": "Before",
+  "after": "After",
+  "licensingComplianceTime": "Creator licensing + compliance time",
+  "licensingComplianceTimeBefore": "8 hours",
+  "licensingComplianceTimeAfter": "2 hours",
+  "campaignsPerTeamPerMonth": "AI campaigns per team per month",
+  "campaignsPerTeamPerMonthBefore": "4",
+  "campaignsPerTeamPerMonthAfter": "12",
+  "timeToDeliverAICampaign": "Time to deliver AI campaign",
+  "timeToDeliverAICampaignBefore": "2-3 weeks",
+  "timeToDeliverAICampaignAfter": "3-5 days",
+  "sameTeam": "Same team.",
+  "moreCampaignsBetterMargins": "3x more AI campaigns. Better margins.",
+  "howItWorksMarketing": "How It Works",
+  "howItWorksStep1": "Client briefs you on their AI campaign needs with brand assets and timeline.",
+  "howItWorksStep2": "You license verified creators and manage production all in one dashboard. Select creators, license their likenesses, manage AI production workflows, approve deliverables, track all creator licensing centrally.",
+  "howItWorksStep3": "Deliverables go to client with verified creator licensing fully embedded and documented. Done.",
+  "whyMarketingAgenciesWin": "Why Marketing Agencies Win",
+  "operationalSimplicity": "Operational Simplicity for AI Campaigns",
+  "operationalSimplicityDescription": "One dashboard replaces five tools for managing creator-licensed content. Your team doesn't learn new systems. No more spreadsheets tracking who licensed what. No more vendor coordination across compliance, licensing, and production.",
+  "fasterAICampaignDelivery": "Faster AI Campaign Delivery",
+  "fasterAICampaignDeliveryDescription": "2-3 weeks becomes 3-5 days because everything's in one place. Creator licensing is pre-cleared. Compliance is built in. No back-and-forth delays. Your clients see you as fast and capable of executing AI campaigns reliably.",
+  "newBusinessFromBrands": "New Business From Brands Moving to AI",
+  "newBusinessFromBrandsDescription": "Brands actively search Likelee for agencies that can execute verified creator AI campaigns. You get inbound leads just by being on the platform. Less cold calling. More inbound from brands shifting to AI- powered creator content.",
+  "leadAICampaigns": "Lead AI-Powered Creator Campaigns",
+  "leadAICampaignsDescription": "Likelee gives you one platform for licensing verified creators, managing AI production, compliance, and brand exposure. Your team focuses on creative strategy. Your clients get faster AI-powered campaigns. You operate with less overhead while positioning as an AI-forward agency.",
+  "bookADemo": "Book a Demo",
+  "seePlatformLive": "See Platform Live",
+  "sportsAgencyHowItWorksStep3Title": "Activate your Clone",
+  "sportsAgencyHowItWorksStep3Description": "Deploy your AI clone across platforms to engage with fans, create content, and secure brand deals.",
+  "sportsAgencyCTA": "Ready to unlock your digital potential?",
+  "sportsAgencyCTADescription": "Join the waitlist and be the first to experience the future of athlete branding.",
+  "sportsAgencyJoinWaitlist": "Join the Waitlist",
+  "sportsAgencyNILPlatform": "Sports Agency NIL Platform",
+  "sportsAgenciesAthleteReps": "Sports Agencies, Athlete Representatives",
+  "turnAthletesYearRoundEarners": "Turn Your Athletes Into Year-Round Earners",
+  "nilLicensingGrows": "NIL licensing that grows while booking slows",
+  "traditionalEndorsementsPayOnce": "Traditional endorsements pay once. Likelee licensing pays monthly, forever. Your athletes earn recurring revenue from their name, image, and likeness while you manage contracts in one place and collect commission on every renewal.",
+  "endorsementDealsNotEnough": "Endorsement Deals Aren't Enough Anymore",
+  "endorsementDealsNotEnoughDescription": "Your athletes are looking for stable income beyond traditional sponsorships. Endorsement opportunities are unpredictable and one-time. Likelee creates additional revenue streams where athletes earn recurring money from brands using their likeness for marketing, social content, and digital campaigns without requiring new contracts each time.",
+  "twoNILRevenueStreams": "Two NIL Revenue Streams",
+  "fixedTermNILLicensing": "Fixed-Term NIL Licensing",
+  "fixedTermNILLicensingDescription1": "Brand licenses athlete's image for a specific campaign duration like 6 months, pays <1>$5K upfront</1>, and can renew the agreement when it expires.",
+  "fixedTermNILLicensingDescription2": "Your athlete earns $5K per renewal cycle. Over three years, that's <1>$15K from the same likeness</1> versus a single $5K traditional endorsement deal.",
+  "recurringMonthlyNIL": "Recurring Monthly NIL",
+  "recurringMonthlyNILDescription1": "Brand uses athlete's image on their website or in ongoing marketing and pays <1>$1K every month</1> while those assets remain active.",
+  "recurringMonthlyNILDescription2": "Your athlete controls the arrangement and can revoke access anytime they want. Over three years, that same athlete earns <1>$36K versus a one-time $5K endorsement payment</1>.",
+  "theMathSports": "The Math",
+  "scenario": "Scenario",
+  "traditional": "Traditional",
+  "likelee": "Likelee",
+  "sportsDrinkEndorsement": "Sports drink endorsement (1 year)",
+  "sportsDrinkEndorsementBefore": "$5K",
+  "sportsDrinkEndorsementAfter": "$5K + renewals",
+  "recurringBrandPartnership": "Recurring brand partnership (ongoing)",
+  "recurringBrandPartnershipBefore": "$5K",
+  "recurringBrandPartnershipAfter": "$1K/mo = $36K/3yrs",
+  "apparelBrandNILLicensing": "Apparel brand NIL licensing (6 mo)",
+  "apparelBrandNILLicensingBefore": "$3K",
+  "apparelBrandNILLicensingAfter": "$5K + renewals",
+  "sameAthleteMultipleStreams": "Same athlete. Multiple income streams.",
+  "moreEarningPotential": "2-7x more earning potential.",
+  "howItWorksSports": "How It Works",
+  "howItWorksSportsStep1": "Add your athletes to Likelee so brands can discover their verified likeness rights, review past sponsorships, and submit licensing requests directly.",
+  "howItWorksSportsStep2": "Brands request NIL licenses by specifying their intended use, campaign duration, territories, and proposed compensation through the platform.",
+  "howItWorksSportsStep3": "You review and approve terms, set the final compensation amount, and the brand pays into escrow so the transaction is protected.",
+  "howItWorksSportsStep4": "Money releases after 48 hours of no disputes straight to your agency account, where you decide how to split earnings with your athlete.",
+  "whySportsAgenciesWin": "Why Sports Agencies Win",
+  "diversifiedAthleteIncome": "Diversified Athlete Income",
+  "diversifiedAthleteIncomeDescription1": "Traditional endorsements are volatile and unpredictable. NIL licensing creates stable monthly income that compounds over time.",
+  "diversifiedAthleteIncomeDescription2": "Year one brings in $60K from athlete licensing. Year two you're at $180K. Year three breaks $360K. Same roster. Same team. No additional negotiation burden.",
+  "athletesStayProtected": "Athletes Stay Because They're Protected",
+  "athletesStayProtectedDescription": "Recurring NIL income replaces the uncertainty of endorsement deals, so your athletes don't chase other representation or feel financially vulnerable. They know they're earning predictable money with you while you manage every licensing agreement legally.",
+  "fullComplianceControl": "Full Compliance and Control",
+  "fullComplianceControlDescription": "Every NIL license is verified with smart contracts that specify exactly what the brand can do, for how long, and in which regions. Everything aligns with NCAA regulations, state NIL laws, and player union standards so you're never exposing your athletes to legal risk.",
+  "verifiedAthleteAccess": "Verified Athlete Access",
+  "whatYouGet": "What You Get:",
+  "verifiedIdentity": "Verified identity (government ID matched)",
+  "confirmedNILOwnership": "Confirmed NIL ownership (athlete controls their likeness)",
+  "preClearedLicensing": "Pre-cleared licensing (smart contracts ready)",
+  "oneClickLicensing": "One-click licensing (SAG-AFTRA aligned agreements)",
+  "repeatableUsage": "Repeatable usage (license the same athlete across multiple brand campaigns)",
+  "whyItMatters": "Why It Matters:",
+  "whyItMattersDescription": "Your compliance team spends hours on NIL contracts and verification. Likelee eliminates that friction and puts verified athletes in front of brands actively looking to license NIL rights.",
+  "adaptOrWatch": "Adapt or Watch Opportunities Pass",
+  "adaptOrWatchDescription": "Athletes today expect diversified income streams, not just one-time endorsements. The agencies capturing market share are the ones that offer stable recurring NIL revenue alongside traditional sponsorships. Likelee gives you the infrastructure to deliver both at scale.",
+  "exploreAthleteMarketplace": "Explore Athlete Marketplace",
+  "forYou": {
+    "hero": {
+      "title": "The Future Belongs to",
+      "highlight": "Real Creators"
+    },
+    "intro": {
+      "p1": "AI video generation is transforming every corner of the entertainment and advertising world. Soon, the majority of content — campaigns, ads, short films, social media — will be AI-assisted or fully AI-generated.",
+      "whyBold": "Why?",
+      "whyText": "Because it's faster, cheaper, and infinitely scalable.",
+      "reality": "But here's the reality: no matter how advanced the tech gets, people still connect with people. Brands know this. Audiences crave authenticity. They want to see real faces, real energy, real emotion — even in AI-driven content.",
+      "punchline": "That's where you come in.",
+      "bullets": {
+        "1": "Your likeness gives AI content its humanity.",
+        "2": "Your face makes it relatable.",
+        "3": "Your presence makes it real."
+      },
+      "closing": "Companies don't need more AI—they need you, represented ethically and compensated fairly."
+    },
+    "algorithms": {
+      "title": "You Don't Have to Chase Algorithms to Be Seen",
+      "oldSystem": "The old system was built on gatekeeping:",
+      "list": {
+        "1": "Algorithms decided who gets reach.",
+        "2": "Agencies decided who gets representation.",
+        "3": "Geography decided who gets a shot."
+      },
+      "fading": "That world is fading fast.",
+      "newEconomy": "With Likelee, you become part of a new creative economy—where visibility isn't earned through followers or luck, but through verified ownership of your likeness.",
+      "closing": "Whether you're an influencer, model, actor, or UGC creator, your face can work for you — safely, transparently, and at scale."
+    },
+    "offer": {
+      "title": "What Likelee Offers",
+      "items": {
+        "match": {
+          "title": "Work With Brands That Match Your Identity",
+          "description": "Partner with companies you believe in. Appear in digital campaigns, films, or branded content that align with your image, style, and values."
+        },
+        "earn": {
+          "title": "Earn Royalties From Your Likeness",
+          "description": "Every time your face appears in content, you earn. No hidden rates, no confusion — transparent licensing and verifiable payouts, tracked through Likelee."
+        },
+        "reach": {
+          "title": "Expand Your Reach Without Constant Posting",
+          "description": "You don't need to be online 24/7 to grow your presence. Once your likeness is verified, brands and studios can license it for campaigns worldwide."
+        },
+        "control": {
+          "title": "Stay Fully in Control",
+          "description": "You decide who can license your likeness, what for, and for how long. You're in control of where your face appears — down to the category, brand, and medium."
+        }
+      }
+    },
+    "security": {
+      "title": "Security Is Non-Negotiable",
+      "p1": "We've seen what happens when creators aren't protected — unauthorized deepfakes, brand misuse, and faces appearing in content they never approved.",
+      "p2": "Likelee is built to prevent that.",
+      "features": {
+        "consent": {
+          "title": "Explicit Consent Only",
+          "description": "Your likeness can't appear anywhere you haven't approved."
+        },
+        "monitoring": {
+          "title": "Usage Monitoring",
+          "description": "Track every authorized and unauthorized appearance of your face across the web."
+        },
+        "protection": {
+          "title": "Active Protection",
+          "description": "If your likeness is misused, our rights team intervenes — fast."
+        }
+      },
+      "closing": "We're not just a platform. We're the infrastructure protecting your digital identity."
+    },
+    "nextPhase": {
+      "title": "This Is the Next Phase of the Creator Economy",
+      "p1": "Brands are waking up. They know AI content without human connection doesn't perform. The future belongs to creators who understand their worth — and protect it.",
+      "p2": "With Likelee, you're not just another face in a feed. You're a verified identity in a new creative economy — one where likeness itself becomes an asset.",
+      "bullets": {
+        "1": "You don't need millions of followers.",
+        "2": "You don't need to fit a mold.",
+        "3": "You just need to own your presence."
+      },
+      "closing": "Because now, your face is your platform."
+    },
+    "ready": {
+      "title": "Ready to License Your Likeness?",
+      "p1": "Join Likelee and take control of how your image moves through the world.",
+      "p2": "Protect it. License it. Earn from it — ethically and transparently.",
+      "p3": "Reserve Your Profile and be part of the first generation of creators defining the future."
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "description": "Reserve your profile and join the first cohort of creators defining the future.",
+      "button": "Reserve Your Profile"
+    }
+  },
+  "talentAgency": {
+    "hero": {
+      "title": "Your Talent Could Earn 10x More",
+      "subtitle": "Turn one-time shoots into recurring revenue",
+      "description": "Traditional bookings pay $1.5K once and you're done. Likelee licensing pays monthly, forever, and your roster earns consistently.",
+      "cta": "Book Demo"
+    },
+    "bookingsDropping": {
+      "title": "Bookings are dropping, licensing is rising.",
+      "description": "Brands are shifting budgets toward AI experiments, but they still need real verified talent for authentic campaigns. Likelee creates recurring income streams for your talent while booking frequency fluctuates. You earn recurring commission every month they stay licensed."
+    },
+    "twoWays": {
+      "title": "Two Ways to Earn",
+      "recurring": {
+        "title": "Recurring Monthly Licensing",
+        "description": "Brand uses your talent's likeness on their website indefinitely and pays",
+        "highlight": "$400 every month",
+        "suffix": "while those photos remain live."
+      },
+      "fixed": {
+        "title": "Fixed-Term Licensing",
+        "description": "Brand licenses your talent's face for a specific campaign duration like 6 months, pays",
+        "highlight": "$2.5K upfront",
+        "suffix": ", and renews at the end of the term.",
+        "example": "Your talent earns $2.5K per renewal cycle. Over three years, that's",
+        "exampleHighlight": "$7.5K from the same talent",
+        "exampleSuffix": "versus $1.5K with traditional booking."
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": "Add your talent to Likelee so they can review licensing requests and watch their earnings accumulate in real time.",
+      "step2": "Brands discover and request licenses by submitting their proposed use, territory, duration, and payment amount directly through the platform.",
+      "step3": "You review and approve terms, set the final payment amount, and the brand pays into escrow so the transaction is protected.",
+      "step4": "Money releases after 48 hours of no disputes straight to your agency account, where you decide how to split earnings with your talent."
+    },
+    "whyAgenciesWin": {
+      "title": "Why Agencies Win",
+      "revenue": {
+        "title": "Recurring Revenue That Scales",
+        "description": "Year one brings in $50K from licensing. Year two you're at $150K. Year three breaks $300K. You're using the same team, the same talent roster, and conducting zero additional shoots to reach that growth."
+      },
+      "retention": {
+        "title": "Talent Stays Because They Feel Secure",
+        "description": "Licensing income replaces the volatility of booking cycles, so your talent doesn't panic when bookings slow down or jump to competing agencies. They know they're earning predictable money with you."
+      },
+      "protection": {
+        "title": "Legal Protection Built In",
+        "description": "Every license is verified and tracked with smart contracts that spell out exactly what the brand can do, for how long, and in which regions. Everything aligns with SAG-AFTRA standards and GDPR compliance so you're never exposing your talent legally."
+      }
+    },
+    "cta": {
+      "title": "Adapt Now or Shrink Later",
+      "description": "The agencies thriving right now are the ones that own both the traditional booking pipeline and the emerging AI landscape simultaneously. Likelee gives you the infrastructure to build and manage both at scale, turning your existing roster into a recurring revenue engine.",
+      "bookDemo": "Book a Demo",
+      "howItWorks": "See How It Works"
+    }
+  },
+  "salesInquiry": {
+    "title": "Talk to Sales",
+    "subtitle": "Let's discuss how Likelee can help scale your creative production",
+    "contactInfo": {
+      "companyName": "Company Name",
+      "yourName": "Your Name",
+      "workEmail": "Work Email",
+      "phone": "Phone Number",
+      "companySize": "Company Size",
+      "monthlyBudget": "Monthly Budget Range",
+      "primaryUseCase": "Primary Use Case",
+      "tellUsMore": "Tell us about your needs"
+    },
+    "placeholders": {
+      "companyName": "Your Company",
+      "yourName": "John Doe",
+      "workEmail": "you@company.com",
+      "phone": "+1 (555) 123-4567",
+      "selectSize": "Select size",
+      "selectRange": "Select range",
+      "selectUseCase": "Select use case",
+      "message": "What are you looking to achieve with AI-powered creator content?"
+    },
+    "options": {
+      "employees_1_10": "1-10 employees",
+      "employees_11_50": "11-50 employees",
+      "employees_51_200": "51-200 employees",
+      "employees_201_500": "201-500 employees",
+      "employees_501_plus": "501+ employees",
+      "budget_under_5k": "Less than $5K",
+      "budget_5k_15k": "$5K - $15K",
+      "budget_15k_50k": "$15K - $50K",
+      "budget_50k_100k": "$50K - $100K",
+      "budget_100k_plus": "$100K+",
+      "useCase_ecommerce": "E-commerce Product Photos",
+      "useCase_advertising": "Advertising Campaigns",
+      "useCase_social": "Social Media Content",
+      "useCase_video": "Video Production",
+      "useCase_other": "Other"
+    },
+    "submit": "Submit Inquiry",
+    "submitting": "Submitting...",
+    "success": {
+      "title": "Thank You!",
+      "message": "We've received your inquiry and will be in touch within 24 hours to discuss how Likelee can help your brand create amazing AI-powered campaigns.",
+      "whatsNextTitle": "What's next?",
+      "whatsNextMessage": "Our team will review your inquiry and schedule a personalized demo to show you exactly how our platform can work for your campaigns."
+    },
+    "assistance": "Need immediate assistance? Email us at"
+  },
+  "organizationSignup": {
+    "selectAll": "Select All",
+    "missingFieldsTitle": "Missing Fields",
+    "missingFieldsDescription": "Please fill in all required fields to proceed.",
+    "passwordMismatchTitle": "Passwords do not match",
+    "passwordMismatchDescription": "Please check your password and confirm password fields.",
+    "orgType": {
+      "brandCompany": "Brand / Company",
+      "productionStudio": "Production Studio",
+      "marketingAgency": "Marketing Agency",
+      "talentAgency": "Talent Agency"
+    },
+    "profileNotFoundTitle": "Profile Not Found",
+    "profileNotFoundDescription": "Could not find the organization profile. Please try again.",
+    "kycError": "Could not start KYC session. Please contact support.",
+    "kycFail": "Failed to initiate organization KYC.",
+    "kycVerifiedTitle": "Verification Complete",
+    "onboardingInProgressTitle": "Onboarding in Progress",
+    "kycVerifiedDescription": "Your organization has been successfully verified. You now have full access to the Likelee platform.",
+    "onboardingInProgressDescription": "Thank you for submitting your details. Our team is reviewing your application.",
+    "whatsNext": "What's Next?",
+    "kycRedirect": "Please complete your identity verification to proceed.",
+    "calendarLink": "Schedule a call with our onboarding team to fast-track your approval.",
+    "completeKycButton": "Complete Verification",
+    "signUpAs": "Sign up as",
+    "step": "Step",
+    "of": "of",
+    "companyInfo": "Company Info",
+    "startWithBasics": "Let's start with the basics.",
+    "emailPlaceholder": "company@example.com",
+    "passwordPlaceholder": "••••••••",
+    "errors": {
+      "not_admin": "You do not have permission to perform this action.",
+      "user_not_allowed": "User not allowed to register this organization.",
+      "duplicate_email": "This email is already associated with an organization.",
+      "generic": "An unexpected error occurred. Please try again.",
+      "invalidCredentials": "Incorrect email or password. Please check your details and try again.",
+      "weakPassword": "Your password is too short. Please use at least 6 characters.",
+      "emailNotConfirmed": "Please verify your email address. Check your inbox for a confirmation link.",
+      "rateLimit": "Too many attempts. Please wait a moment before trying again.",
+      "networkError": "Connection lost. Please check your internet connection."
+    },
+    "companyEmail": "Company Email",
+    "confirmPassword": "Confirm Password",
+    "organizationName": "Organization Name",
+    "contactName": "Contact Name",
+    "contactTitle": "Contact Title",
+    "contactTitlePlaceholder": "e.g. Marketing Manager",
+    "website": "Website",
+    "phoneNumber": "Phone Number",
+    "saving": "Saving...",
+    "continue": "Continue",
+    "back": "Back",
+    "submitting": "Submitting...",
+    "completeSignUp": "Complete Sign Up",
+    "industries": {
+      "fashion": "Fashion",
+      "beauty": "Beauty",
+      "technology": "Technology",
+      "automotive": "Automotive",
+      "foodBeverage": "Food & Beverage",
+      "travel": "Travel",
+      "entertainment": "Entertainment",
+      "healthWellness": "Health & Wellness",
+      "finance": "Finance",
+      "other": "Other"
+    },
+    "brandDetails": {
+      "title": "Brand Details",
+      "subtitle": "Tell us more about your brand goals.",
+      "industry": "Industry",
+      "selectIndustry": "Select your industry",
+      "primaryGoal": "Primary Goal",
+      "selectAll": "Select All",
+      "geographicTarget": "Geographic Target",
+      "geographicTargetPlaceholder": "e.g. Global, US, Europe",
+      "provideCreatorsQuestion": "Do you represent creators?",
+      "provideCreators": "Yes, we have a roster",
+      "uploadOwnAssets": "No, we want to find talent"
+    },
+    "continueToVerification": "Continue to Verification",
+    "productionStudio": {
+      "title": "Studio Details",
+      "subtitle": "Tell us about your production work",
+      "primaryProductionType": "Primary Production Type *",
+      "budgetRangeLabel": "Typical Production Budget Range",
+      "selectProductionType": "Select production type",
+      "selectBudgetRange": "Select monthly budget",
+      "budgetRangeUnder10k": "Under $10k",
+      "budgetRange10k50k": "$10k - $50k",
+      "budgetRange50k250k": "$50k - $250k",
+      "budgetRange250k1m": "$250k - $1M",
+      "budgetRangeOver1m": "Over $1M",
+      "createsForQuestion": "Do you create for clients or your own IP?",
+      "forClients": "For clients",
+      "ownIp": "Own IP",
+      "both": "Both",
+      "usesAiQuestion": "Do you already use AI in your production workflow?",
+      "rolesNeededLabel": "What roles are you looking to fill through Likelee?"
+    },
+    "marketingAgency": {
+      "title": "Agency Details",
+      "subtitle": "Tell us about your agency",
+      "clientCountLabel": "Number of Client Brands Currently Managed",
+      "clientCountPlaceholder": "e.g., 5",
+      "campaignBudgetLabel": "Typical Campaign Budget Per Brand",
+      "campaignBudgetPlaceholder": "Select budget range",
+      "budgetUnder5k": "Under $5,000",
+      "budget5k25k": "$5,000 - $25,000",
+      "budget25k100k": "$25,000 - $100,000",
+      "budget100k500k": "$100,000 - $500,000",
+      "budgetOver500k": "Over $500,000",
+      "servicesLabel": "Primary Services Offered",
+      "matchCreatorsQuestion": "Would you like Likelee to match you with creators or just provide licensing tools?",
+      "matchWithCreators": "Match me with creators",
+      "justProvideTools": "Just provide licensing tools",
+      "handleContractsQuestion": "Do you handle contracts and royalties for clients or want Likelee to automate that?",
+      "weHandleIt": "We handle it",
+      "automateWithLikelee": "Automate with Likelee"
+    },
+    "talentAgency": {
+      "title": "Agency Details",
+      "subtitle": "Tell us about your talent roster",
+      "talentCountLabel": "Number of Models or Talent Represented",
+      "talentCountPlaceholder": "e.g., 25",
+      "licenseLikenessQuestion": "Do you currently license your models' likeness?",
+      "openToAiQuestion": "Are your talents open to AI recreation or only likeness protection?",
+      "campaignsPursuedLabel": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
+    },
+    "options": {
+      "aiUsage": {
+        "yes": "Yes",
+        "no": "No",
+        "exploring": "Exploring",
+        "maybeLater": "Maybe later"
+      },
+      "productionTypes": {
+        "film": "Film",
+        "tv": "TV",
+        "commercial": "Commercial",
+        "musicVideo": "Music Video",
+        "animation": "Animation",
+        "mixedAiLive": "Mixed AI/Live"
+      },
+      "services": {
+        "socialMediaManagement": "Social media management",
+        "influencerCampaigns": "Influencer campaigns",
+        "videoAds": "Video ads",
+        "ugcProduction": "UGC production",
+        "contentCreation": "Content creation",
+        "brandStrategy": "Brand strategy"
+      },
+      "campaignTypes": {
+        "fashion": "Fashion",
+        "music": "Music",
+        "fitness": "Fitness",
+        "lifestyle": "Lifestyle",
+        "beauty": "Beauty",
+        "sports": "Sports",
+        "entertainment": "Entertainment"
+      },
+      "primaryGoals": {
+        "runAdCampaigns": "Run ad campaigns",
+        "findBrandAmbassadors": "Find brand ambassadors",
+        "licenseAiReadyFaces": "License AI-ready faces"
+      },
+      "rolesNeeded": {
+        "talentFacesVoices": "Talent (faces/voices)",
+        "postproductionAiGeneration": "Postproduction / AI generation",
+        "creativeCollaboration": "Creative collaboration"
+      },
+      "openToAiOptions": {
+        "aiRecreation": "AI recreation",
+        "likenessProtectionOnly": "Likeness protection only",
+        "variesByTalent": "Varies by talent"
+      }
+    }
+  },
+  "creatorSignup": {
+    "options": {
+      "contentTypes": {
+        "aiGeneratedFilms": "AI-generated films",
+        "aiDrivenCommercials": "AI-driven commercials",
+        "aiArtInstallations": "AI art installations",
+        "virtualRealityExperiences": "Virtual-reality experiences",
+        "interactiveMedia": "Interactive media",
+        "digitalFashion": "Digital fashion",
+        "musicVideos": "Music videos",
+        "other": "Other"
+      },
+      "aiTools": {
+        "adobeFirefly": "Adobe Firefly",
+        "dallE4": "DALL·E 4",
+        "googleVeo": "Google Veo",
+        "hailouMinimax": "Hailou Minimax",
+        "inVideoAi": "InVideo AI",
+        "klingAi": "Kling AI",
+        "lumaDreamMachine": "Luma Dream Machine",
+        "metaMovieGen": "Meta Movie Gen",
+        "midjourney": "Midjourney",
+        "openAiSora": "OpenAI Sora",
+        "pikaLabs": "Pika Labs",
+        "runwayGen4": "Runway Gen-4",
+        "stableDiffusionXl": "Stable Diffusion XL",
+        "stableVideoDiffusion": "Stable Video Diffusion",
+        "synthesia": "Synthesia",
+        "vidu": "Vidu",
+        "other": "Other"
+      }
+    }
+  },
+  "creatorSignupOptions.main.title": "What type of creator are you?",
+  "creatorSignupOptions.main.subtitle": "Choose the option that best describes you to get started with the right profile setup.",
+  "creatorSignupOptions.influencer.title": "Influencer / UGC Creator",
+  "creatorSignupOptions.influencer.description": "You create content, have an audience, or collaborate with brands.",
+  "creatorSignupOptions.model_actor.title": "Independent Model or Actor",
+  "creatorSignupOptions.model_actor.description": "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
+  "creatorSignupOptions.athlete.title": "Athlete (NIL & Pro)",
+  "creatorSignupOptions.athlete.description": "You're a college or pro athlete managing your own name, image, and likeness dealings.",
+  "creatorSignupOptions.selectButton": "Select",
+  "creatorSignupOptions.authModal.title": "Get started",
+  "creatorSignupOptions.authModal.selected": "Selected:",
+  "creatorSignupOptions.authModal.signUpAs": "Sign up as",
+  "creatorSignupOptions.authModal.alreadyHaveAccount": "I already have an account",
+  "faces.hero.flipper.0.line1": "Your Likeness",
+  "faces.hero.flipper.0.line2": "Unlimited Earnings",
+  "faces.hero.flipper.1.line1": "Your Consent",
+  "faces.hero.flipper.1.line2": "Complete Control",
+  "faces.hero.flipper.2.line1": "Your Terms",
+  "faces.hero.flipper.2.line2": "Recurring Revenue",
+  "faces.meta.title": "Creators - Monetize Your Likeness",
+  "faces.meta.description": "Athletes, influencers, actors, and models - earn retainers from your digital twin. Set your own rates, approve usage, and track royalties.",
+  "faces.meta.serviceType": "Digital Likeness Management",
+  "faces.meta.audienceType": "Creators, Athletes, Influencers, Models, Actors",
+  "faces.hero.alert": "Earn recurring royalties from your likeness. Not one-time payments. Join the first cohort of verified creators, athletes, and talent licensing their image on their terms.",
+  "faces.hero.subtitle": "License your likeness to brands, studios, and agencies. Set your rates. Keep full control. Earn every month it's in use.",
+  "faces.hero.signUpButton": "Sign Up",
+  "faces.hero.forYouButton": "For You",
+  "faces.whyChoose.title": "Why Creators, Athletes, and Talent Choose Likelee",
+  "faces.whyChoose.subtitle1": "The fastest way to offer brand-safe AI cameos and earn royalties on every use.",
+  "faces.whyChoose.subtitle2": "Every creator on Likelee licenses their likeness under clear, time-limited rights and keeps the ability to modify, pause, or withdraw permissions at any time.",
+  "faces.whyChoose.cards.0.title": "Recurring Revenue, Not One-Time Gigs",
+  "faces.whyChoose.cards.0.description": "Set your rates. Earn a monthly retainer for every active campaign using your likeness. One $500 shoot used to be it. Now it pays month after month.",
+  "faces.whyChoose.cards.1.title": "Complete Control",
+  "faces.whyChoose.cards.1.description": "You approve every use. Pause campaigns anytime. Revoke rights with one click. Your likeness, your rules.",
+  "faces.whyChoose.cards.2.title": "Full Transparency",
+  "faces.whyChoose.cards.2.description": "See exactly who's using your image, for how long, in which regions, and how much you've earned. Every campaign tracked, every payment verified.",
+  "faces.whyChoose.cards.3.title": "Usage Rights Dashboard",
+  "faces.whyChoose.cards.3.description": "See who's using your likeness, when rights expire, and how much you've earned. Revoke or renew in one click.",
+  "faces.featuredCreator.title": "Featured Creator",
+  "faces.featuredCreator.royaltiesEarned": "Royalties Earned",
+  "faces.featuredCreator.royaltiesDescription": "From licensing to 5 brands",
+  "faces.featuredCreator.usageRequests": "Usage Requests",
+  "faces.featuredCreator.controlSettings": "Control Settings",
+  "faces.featuredCreator.allowCommercialUse": "Allow Commercial Use",
+  "faces.featuredCreator.allowFilmUse": "Allow Film Use",
+  "faces.featuredCreator.viewUsageReportButton": "View Usage Report",
+  "faces.featuredCreator.updateSettingsButton": "Update Settings",
+  "faces.howItWorks.title": "Start Earning in 3 Simple Steps",
+  "faces.howItWorks.subtitle": "From upload to earning - it's that simple.",
+  "faces.howItWorks.steps.0.title": "Upload Your Photos",
+  "faces.howItWorks.steps.0.description": "Create your verified digital identity with high-quality photos.",
+  "faces.howItWorks.steps.1.title": "Set Your Parameters",
+  "faces.howItWorks.steps.1.description": "Define usage rights, pricing, and approval requirements.",
+  "faces.howItWorks.steps.2.title": "Start Earning",
+  "faces.howItWorks.steps.2.description": "Approve requests. Earn monthly retainers. Scale with multiple concurrent campaigns.",
+  "faces.digitalTalentOwner.title": "From Creator → Digital Talent Owner",
+  "faces.digitalTalentOwner.subtitle": "You've already built your image — now make it work for you.",
+  "faces.digitalTalentOwner.mainContent": "Licensing your likeness isn't selling out; it's scaling up. While you're filming your next project, your digital twin can be earning in ten more.",
+  "faces.digitalTalentOwner.comparison.title": "Traditional Model vs. Likelee Likeness Model",
+  "faces.digitalTalentOwner.comparison.traditionalPath": "Traditional Path",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription1": "You perform or shoot manually",
+  "faces.digitalTalentOwner.comparison.likeleeModel": "Likelee Model",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription1": "You scale automatically",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription2": "You get paid once per project",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription2": "You earn monthly retainers as long as brands use your likeness",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription3": "You often lose IP",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription3": "You retain IP",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription4": "You can't reuse or repurpose",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "You approve each reuse",
+  "faces.digitalTalentOwner.footer": "You're not a gig worker. You're an owner.",
+  "common": {
+    "organization": "Organization",
+    "signIn": "Sign In",
+    "dashboard": "Dashboard",
+    "city": "City",
+    "state": "State",
+    "logout": "Logout",
+    "password": "Password",
+    "passwordRequired": "Password *",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordRequired": "Confirm Password *",
+    "fullNameRequired": "Full Name *",
+    "ongoing": "Ongoing",
+    "emailRequired": "Email Address *",
+    "cityRequired": "City *",
+    "stateCountryRequired": "State / Country *",
+    "experienceRequired": "Years of AI creative experience *",
+    "portfolioUrl": "Portfolio URL",
+    "socialMediaUrl": "Social Media URL",
+    "profilePhotoOptional": "Profile Photo (optional)",
+    "agencyOptional": "Agency (if applicable)",
+    "johnDoe": "John Doe",
+    "companyNamePlaceholder": "Your Company Name",
+    "websitePlaceholder": "https://yourcompany.com",
+    "phonePlaceholder": "+1 (555) 123-4567",
+    "emailPlaceholder": "you@example.com",
+    "instagramPlaceholder": "@yourusername",
+    "youtubePlaceholder": "@yourchannel",
+    "agencyNamePlaceholder": "Your agency name",
+    "contentTypePlaceholder": "Please specify your content type...",
+    "aiToolPlaceholder": "Please specify your AI tools...",
+    "cityPlaceholder": "Los Angeles",
+    "statePlaceholder": "CA / USA",
+    "portfolioPlaceholder": "https://yourportfolio.com",
+    "socialProfilePlaceholder": "https://instagram.com/yourprofile",
+    "saving": "Saving...",
+    "submitting": "Submitting...",
+    "submit": "Submit",
+    "checking": "Checking...",
+    "back": "Back",
+    "goBack": "Go Back",
+    "continue": "Continue",
+    "loading": "Loading...",
+    "raceEthnicity": {
+      "options": {
+        "Asian": "Asian",
+        "Black / African American": "Black / African American",
+        "Hispanic / Latino": "Hispanic / Latino",
+        "Middle Eastern / North African": "Middle Eastern / North African",
+        "Native American / Indigenous": "Native American / Indigenous",
+        "Pacific Islander": "Pacific Islander",
+        "White / Caucasian": "White / Caucasian",
+        "Mixed / Multiracial": "Mixed / Multiracial",
+        "Prefer not to say": "Prefer not to say"
+      }
+    },
+    "genderOptions": {
+      "female": "Female",
+      "male": "Male",
+      "nonbinary": "Nonbinary",
+      "genderFluid": "Gender fluid",
+      "preferNotToSay": "Prefer not to say"
+    },
+    "vibes": {
+      "Streetwear": "Streetwear",
+      "Glam": "Glam",
+      "Natural": "Natural",
+      "Classic": "Classic",
+      "Edgy": "Edgy",
+      "Athletic": "Athletic",
+      "Runway": "Runway",
+      "Editorial": "Editorial",
+      "Commercial": "Commercial",
+      "Casual": "Casual"
+    },
+    "contentTypes": {
+      "Social-media ads": "Social-media ads",
+      "Web & banner campaigns": "Web & banner campaigns",
+      "TV / streaming commercials": "TV / streaming commercials",
+      "Film & scripted streaming": "Film & scripted streaming",
+      "Print & outdoor ads": "Print & outdoor ads",
+      "Music videos": "Music videos",
+      "Video-game / VR characters": "Video-game / VR characters",
+      "Stock photo / video libraries": "Stock photo / video libraries",
+      "Educational / nonprofit spots": "Educational / nonprofit spots",
+      "Fashion & Beauty": "Fashion & Beauty",
+      "Product Reviews": "Product Reviews",
+      "Testimonials": "Testimonials",
+      "Social Media Content": "Social Media Content",
+      "Educational Content": "Educational Content",
+      "Fitness/Wellness": "Fitness/Wellness",
+      "Lifestyle Content": "Lifestyle Content",
+      "Political Content": "Political Content",
+      "Controversial Topics": "Controversial Topics",
+      "Explicit/Adult Content": "Explicit/Adult Content",
+      "Pharmaceutical Claims": "Pharmaceutical Claims",
+      "Financial/Investment Advice": "Financial/Investment Advice",
+      "Other": "Other",
+      "socialMediaAds": "Social-media ads",
+      "webBanner": "Web & banner campaigns",
+      "tvStreaming": "TV / streaming commercials",
+      "filmScripted": "Film & scripted streaming",
+      "printOutdoor": "Print & outdoor ads",
+      "musicVideos": "Music videos",
+      "videoGameVR": "Video-game / VR characters",
+      "stockLibraries": "Stock photo / video libraries",
+      "educationalNonprofit": "Educational / nonprofit spots"
+    },
+    "industries": {
+      "Fashion / Beauty": "Fashion / Beauty",
+      "Tech / Electronics": "Tech / Electronics",
+      "Sports / Fitness": "Sports / Fitness",
+      "Food / Beverage": "Food / Beverage",
+      "Film / Gaming / Music": "Film / Gaming / Music",
+      "Automotive": "Automotive",
+      "Finance / Fintech": "Finance / Fintech",
+      "Health / Wellness": "Health / Wellness",
+      "Luxury & Lifestyle": "Luxury & Lifestyle",
+      "Travel / Hospitality": "Travel / Hospitality",
+      "Education": "Education",
+      "Real Estate": "Real Estate",
+      "Entertainment": "Entertainment",
+      "Open to any industry": "Open to any industry",
+      "sportsFitness": "Sports / Fitness",
+      "foodBeverage": "Food / Beverage",
+      "tech": "Tech",
+      "fashionBeauty": "Fashion / Beauty",
+      "techElectronics": "Tech / Electronics",
+      "filmGamingMusic": "Film / Gaming / Music",
+      "automotive": "Automotive",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Health / Wellness",
+      "luxuryLifestyle": "Luxury & Lifestyle",
+      "travelHospitality": "Travel / Hospitality"
+    },
+    "sports": {
+      "Football": "Football",
+      "Basketball": "Basketball",
+      "Baseball": "Baseball",
+      "Soccer": "Soccer",
+      "Tennis": "Tennis",
+      "Golf": "Golf",
+      "Track & Field": "Track & Field",
+      "Swimming": "Swimming",
+      "Gymnastics": "Gymnastics",
+      "Volleyball": "Volleyball",
+      "Wrestling": "Wrestling",
+      "Boxing": "Boxing",
+      "MMA": "MMA",
+      "Hockey": "Hockey",
+      "Lacrosse": "Lacrosse",
+      "Softball": "Softball",
+      "Cheerleading": "Cheerleading",
+      "Dance": "Dance",
+      "Esports": "Esports",
+      "Other": "Other"
+    },
+    "workTypes": {
+      "Print / Editorial": "Print / Editorial",
+      "Runway / Fashion Shows": "Runway / Fashion Shows",
+      "Commercial / Lifestyle": "Commercial / Lifestyle",
+      "Film / TV": "Film / TV",
+      "Digital / Social": "Digital / Social",
+      "Fitness / Athletic": "Fitness / Athletic",
+      "Beauty / Cosmetics": "Beauty / Cosmetics",
+      "Luxury / High Fashion": "Luxury / High Fashion",
+      "Street Style / Urban": "Street Style / Urban",
+      "E-commerce / Catalog": "E-commerce / Catalog",
+      "Trade Shows / Events": "Trade Shows / Events",
+      "Parts Modeling (hands, feet)": "Parts Modeling (hands, feet)",
+      "Plus Size": "Plus Size",
+      "Mature / Senior": "Mature / Senior",
+      "Petite": "Petite",
+      "Other": "Other"
+    },
+    "brandCategories": {
+      "Sportswear / Athletic Apparel": "Sportswear / Athletic Apparel",
+      "Footwear": "Footwear",
+      "Sports Equipment": "Sports Equipment",
+      "Health / Nutrition / Supplements": "Health / Nutrition / Supplements",
+      "Tech / Wearables": "Tech / Wearables",
+      "Energy Drinks / Beverages": "Energy Drinks / Beverages",
+      "Gaming / Esports": "Gaming / Esports",
+      "Automotive": "Automotive",
+      "Finance / Fintech": "Finance / Fintech",
+      "Education / Training": "Education / Training",
+      "Open to any brand": "Open to any brand"
+    },
+    "platforms": {
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "youtube": "YouTube",
+      "twitter": "Twitter/X",
+      "other": "Other"
+    },
+    "regions": {
+      "northAmerica": "North America",
+      "europe": "Europe",
+      "asia": "Asia",
+      "global": "Global"
+    },
+    "usageTypes": {
+      "socialMedia": "Social Media",
+      "socialMediaCampaign": "Social Media Campaign",
+      "productLaunch": "Product Launch",
+      "tvDigital": "TV & Digital",
+      "summerCampaign": "Summer Campaign"
+    },
+    "error": "Error",
+    "success": "Success",
+    "errors": {
+      "uploadFailed": "Upload failed. Please try again.",
+      "uploadFailedSupport": "Upload failed. Please contact support if this persists.",
+      "saveFailed": "Unable to save changes. Please try again.",
+      "saveFailedSupport": "Unable to save. Please contact support if this persists.",
+      "storageError": "Storage error. Please try again later.",
+      "databaseError": "Unable to process request. Please try again.",
+      "genericError": "Something went wrong. Please try again or contact support.",
+      "bucketNotFound": "Upload service unavailable. Please try again later.",
+      "constraintViolation": "Invalid data. Please check your input and try again."
+    }
+  },
+  "faces.realFutures.title": "Real Faces. Real Futures.",
+  "faces.realFutures.line1": "Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.",
+  "faces.realFutures.line2": "Likelee is where real talent powers the AI world.",
+  "faces.realFutures.line3": "Every creator, model, and performer is verified, tracked, and paid monthly retainers.",
+  "faces.realFutures.line4": "You're not being replaced by AI — you're becoming its monthly revenue stream.",
+  "faces.valueFloor.title": "Creator Value Floor",
+  "faces.valueFloor.line1": "No likeness license on Likelee pays below the community minimum.",
+  "faces.valueFloor.line2": "You can also set your own floor so brands and studios can't lowball you.",
+  "faces.valueFloor.line3": "Transparency builds trust. We publish average creator earnings and benchmark data so you always know your true market value.",
+  "faces.valueFloor.cards.0.description": "Minimum monthly retainer per active license",
+  "faces.valueFloor.cards.1.description": "Average monthly retainer per campaign",
+  "faces.valueFloor.cards.2.title": "As long as licensed",
+  "faces.valueFloor.cards.2.description": "Recurring payment while brand uses your likeness",
+  "faces.realEarnings.title": "Real Creators. Real Earnings.",
+  "faces.realEarnings.subtitle": "See what creators, models, and performers are earning through monthly likeness licensing.",
+  "faces.realEarnings.cards.0.title": "Recurring retainer across 3 active brand licenses",
+  "faces.realEarnings.cards.0.line1": "→ License 1 (Brand A): $500/month — Active for 6 months (so far)",
+  "faces.realEarnings.cards.0.line2": "→ License 2 (Brand B): $600/month — Active for 4 months (so far)",
+  "faces.realEarnings.cards.0.line3": "→ License 3 (Brand C): $400/month — Active for 2 months (so far)",
+  "faces.realEarnings.cards.0.total": "Total earned to date: $7,500 (and still earning monthly as licenses remain active)",
+  "faces.realEarnings.cards.1.title": "Single retainer for music label's AI music video campaign",
+  "faces.realEarnings.cards.1.line1": "→ Licensed for 12-month campaign",
+  "faces.realEarnings.cards.1.line2": "→ Brand uses your likeness for ongoing content generation",
+  "faces.realEarnings.cards.1.line3": "→ You earn $700/month for full year",
+  "faces.realEarnings.cards.1.total": "Total: $8,400",
+  "faces.realEarnings.cards.2.title": "Three licenses stacked together",
+  "faces.realEarnings.cards.2.line1": "→ License 1 (Tech Brand): $400/month × 9 months = $3,600",
+  "faces.realEarnings.cards.2.line2": "→ License 2 (Fashion Brand): $300/month × 6 months = $1,800",
+  "faces.realEarnings.cards.2.line3": "→ License 3 (Wellness Brand): $250/month × 4 months = $1,000",
+  "faces.realEarnings.cards.2.total": "Combined earnings: $6,400 (and more licenses can be added simultaneously)",
+  "faces.retainerModel.title": "How It Works: Monthly Retainer Model",
+  "faces.retainerModel.steps.0.title": "You license your likeness",
+  "faces.retainerModel.steps.0.description": "Brand gets usage rights",
+  "faces.retainerModel.steps.1.title": "You earn monthly",
+  "faces.retainerModel.steps.1.description": "As long as your license is active, you get paid every month",
+  "faces.retainerModel.steps.2.title": "License is active for X months",
+  "faces.retainerModel.steps.2.description": "You agreed to a 90-day, 6-month, or 12-month license period",
+  "faces.retainerModel.steps.3.title": "When license ends",
+  "faces.retainerModel.steps.3.description": "You decide to renew, revoke, or move on to new brands",
+  "faces.retainerModel.steps.4.title": "You can have multiple licenses at once",
+  "faces.retainerModel.steps.4.description": "Each brand pays you separately, each month",
+  "faces.retainerAdvantage.title": "The Monthly Retainer Advantage",
+  "faces.retainerAdvantage.cards.0.title": "✓ Predictable Income",
+  "faces.retainerAdvantage.cards.0.description": "Know exactly how much you're earning each month",
+  "faces.retainerAdvantage.cards.1.title": "✓ Passive While Active",
+  "faces.retainerAdvantage.cards.1.description": "You don't work; the brand generates content; you get paid",
+  "faces.retainerAdvantage.cards.2.title": "✓ Stack Multiple Licenses",
+  "faces.retainerAdvantage.cards.2.description": "Work with 3, 4, or 5 brands at once; get paid by all of them",
+  "faces.retainerAdvantage.cards.3.title": "✓ Full Transparency",
+  "faces.retainerAdvantage.cards.3.description": "Know exactly which brands are using you and how much you're earning from each",
+  "faces.realMonthlyIncome.title": "Real Creators. Real Monthly Income.",
+  "faces.realMonthlyIncome.subtitle1": "Creators on Likelee aren't waiting for payments. They're earning monthly, predictably, passively.",
+  "faces.realMonthlyIncome.subtitle2": "While you create new content, your licensed likeness generates recurring monthly revenue.",
+  "faces.likenessStaysYours.title": "Your Likeness Stays Yours",
+  "faces.likenessStaysYours.line1": "Your consent never expires on its own. Every license has an end date. If you say no, we say no.",
+  "faces.likenessStaysYours.line2": "If a brand wants to keep using your likeness, they renew—and you decide if it's worth it.",
+  "faces.likenessStaysYours.line3": "Watermarked contracts. Automated takedowns. Real legal protection.",
+  "faces.faq.title": "Frequently Asked Questions",
+  "faces.faq.subtitle": "Everything you need to know about being a Creator on Likelee",
+  "faces.faq.questions.0.title": "What is a \"Creator\"?",
+  "faces.faq.questions.0.description": "A Creator is any verified individual licensing their likeness (face, voice, or digital twin) for campaigns or AI-assisted productions. You keep ownership of your image; Likelee only facilitates licensed use under your chosen terms.",
+  "faces.faq.questions.1.title": "How do I get verified?",
+  "faces.faq.questions.1.description": "After your account is granted into the ecosystem, you'll receive a welcome email and verification link. You'll submit ID and a short selfie video so our system can confirm your authenticity and produce your cameo.",
+  "faces.faq.questions.2.title": "Can my likeness be used without consent?",
+  "faces.faq.questions.2.description": "Never. Each usage request requires your explicit approval. No brand, studio, or AI partner can use your likeness unless you've granted permission for that specific context.",
+  "faces.faq.questions.3.title": "Can I remove my likeness from the platform?",
+  "faces.faq.questions.3.description": "Yes. You can deactivate or delete your profile anytime. Existing active licences will expire automatically at the end of their contractual term, and no new usages can occur.",
+  "faces.faq.questions.4.title": "What if a brand asks for \"in perpetuity\" rights?",
+  "faces.faq.questions.4.description": "Likelee does not allow perpetual-use clauses by default. If you choose to accept one, you'll be shown a clear warning about what it means and can negotiate higher compensation or decline.",
+  "faces.faq.questions.5.title": "Can my likeness be used to train AI models?",
+  "faces.faq.questions.5.description": "Only if you explicitly enable the \"AI training rights\" option. This is disabled by default. You'll always see a disclosure when a campaign involves generative or synthetic use.",
+  "faces.faq.questions.6.title": "What protections exist if my likeness is misused?",
+  "faces.faq.questions.6.description": "Likelee tracks every approved asset and maintains digital proofs. If misuse occurs, our rights-enforcement team assists you with takedowns and documentation for legal follow-up.",
+  "faces.faq.questions.7.title": "Do I still own my digital likeness?",
+  "faces.faq.questions.7.description": "Yes. You retain full ownership. You're licensing usage, not transferring ownership. All digital replicas remain tied to your verified identity.",
+  "faces.faq.questions.8.title": "Can I negotiate rates for different types of usage?",
+  "faces.faq.questions.8.description": "Absolutely. You can set separate pricing for human-recorded UGC, AI cameos, and full AI digital twins. Our system auto-applies your chosen rate based on campaign type and duration.",
+  "faces.cta.title": "Ready to become a digital talent owner?",
+  "faces.cta.subtitle": "Join creators, models, and performers building sustainable income through monthly likeness licensing.",
+  "faces.cta.howToGetStarted": "How to get started:",
+  "faces.cta.steps.0": "→ Upload your cameo — Record a short video of yourself (AI reference)",
+  "faces.cta.steps.1": "→ Upload reference images — 15 photos from different angles/styles",
+  "faces.cta.steps.2": "→ Set your minimum rate — You decide your floor price ($350+/month)",
+  "faces.cta.steps.3": "→ Brands find you — They request licenses, you approve or decline",
+  "faces.cta.steps.4": "→ Start earning — Monthly payments as long as licenses are active",
+  "faces.cta.reserveProfileButton": "Reserve Your Profile",
+  "reserveProfile": {
+    "authMode": {
+      "signup": "Sign Up",
+      "login": "Log In"
+    },
+    "createAccount": {
+      "title": "Create Your Account",
+      "subtitle": "Let's start with the basics.",
+      "button": "Create Account",
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
+    },
+    "signIn": {
+      "title": "Sign In",
+      "subtitle": "Sign in to your Likelee account.",
+      "button": "Sign In",
+      "prompt": "Already have an account?",
+      "link": "Sign In"
+    },
+    "terms": {
+      "title": "Terms & Agreements",
+      "subtitle": "Please review and agree to our policies to complete your registration.",
+      "agreeTo": "I agree to the",
+      "policyLink": "Privacy Policy",
+      "mustAgree": "You must agree to the privacy policy to create your account.",
+      "completeRegistration": "Complete Registration"
+    },
+    "errors": {
+      "emailRegistered": "This email is already registered. Please use a different email or sign in instead.",
+      "invalidEmail": "Please enter a valid email address.",
+      "weakPassword": "Please choose a stronger password (at least 8 characters).",
+      "signInRequired": "Please sign in to continue.",
+      "fileTooLarge": "File is too large. Please use a smaller image (max 5MB).",
+      "invalidFileType": "Invalid file type. Please upload a JPG, PNG, or WebP image.",
+      "networkError": "Network error. Please check your connection and try again.",
+      "timeout": "Request timed out. Please try again.",
+      "permissionDenied": "Permission denied. Please check your settings and try again.",
+      "genericFallback": "Something went wrong. Please try again.",
+      "unknownError": "An error occurred. Please try again or contact support if the problem persists.",
+      "imageFlagged": "Image flagged by moderation",
+      "configurationError": "Configuration Error",
+      "imageUploadNotConfigured": "Image upload not configured. Please contact support.",
+      "photoFlagged": "Photo Flagged",
+      "photoFlaggedDescription": "Your {{side}} photo was flagged and cannot be used. Please upload a different photo.",
+      "uploadFailed": "Upload Failed",
+      "notReady": "Not Ready",
+      "notReadyDescription": "Please complete the previous steps before starting verification.",
+      "profileCreationFailed": "Profile Creation Failed",
+      "profileUpdateFailed": "Profile Update Failed",
+      "emailRequired": "Email Required",
+      "emailRequiredDescription": "Please enter your email address.",
+      "passwordRequired": "Password Required",
+      "passwordRequiredDescription": "Please enter your password.",
+      "confirmPassword": "Confirm Password Required",
+      "confirmPasswordDescription": "Please confirm your password.",
+      "passwordsDontMatch": "Passwords Don't Match",
+      "passwordsDontMatchDescription": "Please ensure your passwords match.",
+      "nameRequired": "Name Required",
+      "nameRequiredDescription": "Please enter your full name or stage name.",
+      "emailAlreadyRegistered": "Email Already Registered",
+      "emailAlreadyRegisteredDescription": "This email is already in use. Please sign in or use a different email.",
+      "signUpFailed": "Sign Up Failed",
+      "cityRequired": "City Required",
+      "cityRequiredDescription": "Please enter your city.",
+      "stateRequired": "State/Country Required",
+      "stateRequiredDescription": "Please enter your state or country.",
+      "birthdateRequired": "Birthdate Required",
+      "birthdateRequiredDescription": "Please enter your date of birth.",
+      "ageRestriction": "Age Restriction",
+      "ageRestrictionDescription": "You must be at least 18 years old to sign up.",
+      "genderRequired": "Gender Required",
+      "genderRequiredDescription": "Please select your gender.",
+      "pricingRequired": "Pricing Required",
+      "pricingRequiredDescription": "Please set a base monthly price of at least $150.",
+      "campaignTypeRequired": "Campaign Type Required",
+      "campaignTypeRequiredDescription": "Please select at least one campaign type.",
+      "industryRequired": "Industry Required",
+      "industryRequiredDescription": "Please select at least one industry.",
+      "platformRequired": "Platform Required",
+      "platformRequiredDescription": "Please select your primary social media platform.",
+      "handleRequired": "Handle Required",
+      "handleRequiredDescription": "Please enter your handle for the selected platform.",
+      "visibilityRequired": "Visibility Required",
+      "visibilityRequiredDescription": "Please set your profile visibility.",
+      "profileSaveFailed": "Profile Save Failed",
+      "selectionLimit": "Selection Limit Reached",
+      "selectionLimitDescription": "You can select a maximum of 3 work types.",
+      "livenessVerificationNotConfigured": "Liveness verification is not configured. Please contact support.",
+      "duplicateEmail": "This email is already registered. Please use a different email or sign in instead.",
+      "notAuthenticated": "Please sign in to continue.",
+      "genericFailed": "Something went wrong. Please try again.",
+      "unknown": "An error occurred. Please try again or contact support if the problem persists."
+    },
+    "photos": {
+      "title": "Upload at least 3 photos",
+      "description": "These will be used to train your AI model. Make sure they are high quality and show your face clearly.",
+      "why": "Why these photos work",
+      "whyDesc": "Clear, well-lit photos help potential clients see your versatility.",
+      "drop": "Drop files here or click to upload",
+      "front": "Front",
+      "left": "Left",
+      "right": "Right",
+      "pending": "Pending",
+      "livePreview": "Live Camera Preview",
+      "currentPose": "Current Pose:",
+      "openCamera": "Open Camera",
+      "verificationPending": "Wait! We need to verify your identity before you can upload photos. This ensures your AI model is only trained on you."
+    },
+    "skipModal": {
+      "title": "Skip Identity Verification?",
+      "description": "If you skip now, your profile will be created, but brands won't see you until you complete verification.",
+      "note": "You can complete verification anytime from your dashboard.",
+      "confirmSkip": "Skip for Now - I'm Sure",
+      "actions": {
+        "back": "← Go Back",
+        "confirm": "Skip for Now - I'm Sure"
+      }
+    },
+    "title": "Reserve Your Profile (Beta)",
+    "stepTitles": {
+      "step1": "Create Your Account",
+      "step2": {
+        "influencer": "Profile Basics",
+        "model_actor": "Talent Details",
+        "athlete": "Athlete Info"
+      },
+      "step3": {
+        "influencer": "Opportunities",
+        "model_actor": "Preferences",
+        "athlete": "Brand Setup"
+      }
+    },
+    "stepProgress": "Step {{step}} of {{total}}",
+    "stepDescriptions": {
+      "step1": {
+        "athlete": "Create your NIL-ready account",
+        "model_actor": "Create your Likelee account",
+        "influencer": "Let's start with the basics",
+        "creator": "Create your Likelee account"
+      },
+      "step2": {
+        "influencer": "Tell us a little about yourself",
+        "model_actor": "Let's start your portfolio",
+        "athlete": "Tell us about your sport"
+      },
+      "step3": {
+        "influencer": "Help us match you with the right campaigns",
+        "model_actor": "Help us tailor your opportunities",
+        "athlete": "Get ready to attract sponsorship and brand deals"
+      }
+    },
+    "verification": {
+      "title": "Identity Verification",
+      "subtitle": "Verify your identity to become visible to brands and unlock opportunities",
+      "description": "We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.",
+      "whyVerify": {
+        "title": "Why verify your identity?",
+        "reason1": "Get discovered by brands looking for verified creators",
+        "reason2": "Build trust and credibility with licensing partners",
+        "reason3": "Unlock higher-value campaign opportunities"
+      },
+      "requirements": {
+        "title": "What you'll need:",
+        "item1": "Government-issued ID (driver's license, passport, or state ID)",
+        "item2": "Good lighting and camera/mic access",
+        "item3": "2–3 minutes in a quiet space"
+      },
+      "status": {
+        "notStarted": "Not Started",
+        "verifying": "Verifying",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "actions": {
+        "skip": "Skip",
+        "verifyAndContinue": "Verify & Continue",
+        "checking": "Checking...",
+        "start": "Verify Identity Now",
+        "liveness": "Start Liveness Check",
+        "livenessApproved": "Liveness Approved",
+        "preparing": "Preparing…"
+      },
+      "verificationFailedTitle": "Verification Failed",
+      "statusCheckFailedTitle": "Status Check Failed",
+      "identityVerified": "Identity Verified",
+      "identityVerifiedDescription": "Please upload your 3 reference photos (Face, Left, Right) to complete your setup.",
+      "verificationPending": "Verification Pending",
+      "verificationPendingDescription": "Verification is not complete yet. KYC: {{kyc}}, Live: {{live}}."
+    },
+    "actions": {
+      "saveAndVerify": "Save & Continue to Verification",
+      "verifyIdentity": "Verify Identity Now",
+      "startingVerification": "Starting…",
+      "livenessApproved": "Liveness Approved",
+      "preparing": "Preparing…",
+      "startLiveness": "Start Liveness Check",
+      "skip": "Skip for Now",
+      "verifyAndContinue": "Verify & Continue",
+      "close": "Close",
+      "login": "Log in",
+      "signup": "Sign up",
+      "continue": "Continue",
+      "back": "Back"
+    },
+    "alreadyHaveAccount": "Already have an account?",
+    "steps": {
+      "accountSetup": "Account Setup",
+      "personalDetails": "Personal Details",
+      "verification": "Verification",
+      "photos": "Photos",
+      "finalize": "Finalize",
+      "representation": "Representation"
+    },
+    "form": {
+      "labels": {
+        "fullName": "Full Name",
+        "email": "Email Address",
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "city": "City",
+        "state": "State",
+        "socialLink": "Social Media Link (Instagram, TikTok, YouTube)",
+        "location": "Location (City, Country)",
+        "dob": "Date of Birth",
+        "age": "Age",
+        "genderQuestion": "How do you identify?"
+      },
+      "genderOptions": {
+        "female": "Female",
+        "male": "Male",
+        "nonbinary": "Nonbinary",
+        "genderFluid": "Gender fluid",
+        "preferNotToSay": "Prefer not to say"
+      },
+      "validation": {
+        "signInFailed": "Sign-in failed",
+        "selectionLimit": "Selection Limit",
+        "selectionLimitDesc": "Please select up to 3 options for now. You can add more later."
+      },
+      "forgotPassword": "Forgot Password?",
+      "languages": "Languages",
+      "representationStatus": "Representation Status",
+      "instagramOptional": "Instagram (optional)",
+      "twitterOptional": "Twitter/X (optional)",
+      "brandCategories": "Interests / Brand Categories",
+      "shortBio": "Short Bio",
+      "visibility": "Profile Visibility",
+      "visibilityOptions": {
+        "public": {
+          "label": "Public",
+          "description": "Visible to everyone"
+        },
+        "private": {
+          "label": "Private",
+          "description": "Only discoverable to brands and AI creators"
+        }
+      },
+      "step1": {
+        "athlete": "Create your NIL-ready account",
+        "model_actor": "Create your Likelee account",
+        "influencer": "Let's start with the basics"
+      },
+      "placeholders": {
+        "fullName": "Your full name",
+        "stageName": "Your name",
+        "bio": "Tell brands a bit about you...",
+        "platform": "Select platform",
+        "city": "ex: New York",
+        "state": "ex: NY or USA",
+        "age": "21",
+        "email": "ex: john@example.com",
+        "password": "••••••••",
+        "schoolName": "University name",
+        "sport": "Select your sport",
+        "languages": "e.g., English, Spanish",
+        "confirmPassword": "••••••••",
+        "handle": "@yourhandle",
+        "price": "150",
+        "headshot": "Image URL",
+        "specify": "Please specify..."
+      },
+      "perMonth": "/month",
+      "sport": "Sport",
+      "athleteType": "Athlete Type",
+      "athleteTypes": {
+        "University": "University",
+        "Professional": "Professional",
+        "Independent": "Independent"
+      },
+      "schoolName": "School Name",
+      "headshot": "Upload Headshot (optional)",
+      "headshotHint": "You can upload your headshot after creating your account",
+      "birthdate": "Birthdate",
+      "licensingPricing": "Licensing Pricing",
+      "basePrice": "Base monthly license price (USD)",
+      "basePriceHint": "Minimum $150/month. Currency is locked to USD.",
+      "campaignMatch": "Help us match you with the right campaigns",
+      "contentInterest": "What kind of content are you interested in being featured in?",
+      "selectMax3": "Select up to 3 for now",
+      "brandinterest": "What types of brands or industries do you want to work with?",
+      "handle": "Handle",
+      "primaryPlatform": "Primary Platform",
+      "gender": "How do you identify?",
+      "raceEthnicity": "Race/Ethnicity (select all that apply)",
+      "vibes": "Vibe / Style Tags",
+      "save": "Save & Continue to Verification",
+      "verification": {
+        "title": "Identity Verification",
+        "description": "Verify your identity to become visible to brands and unlock opportunities",
+        "whyVerify": {
+          "title": "Why verify your identity?",
+          "reason1": "Get discovered by brands looking for verified creators",
+          "reason2": "Build trust and credibility with licensing partners",
+          "reason3": "Unlock higher-value campaign opportunities"
+        },
+        "processDesc": "We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.",
+        "requirements": {
+          "title": "What you'll need:",
+          "item1": "Government-issued ID (driver's license, passport, or state ID)",
+          "item2": "Good lighting and camera/mic access",
+          "item3": "2–3 minutes in a quiet space"
+        },
+        "actions": {
+          "start": "Verify Identity Now",
+          "liveness": "Start Liveness Check",
+          "livenessApproved": "Liveness Approved"
+        }
+      },
+      "selectAll": "Select All"
+    },
+    "warning": {
+      "limitedBatches": "We're launching in limited batches to ensure every creator gets visibility and campaign opportunities. Reserve your profile now to join the first cohort of creators defining the future."
+    },
+    "success": {
+      "title": "Profile reserved — welcome to the Likelee ecosystem",
+      "description": "We're onboarding talent in waves. You'll receive an email once your profile is live and searchable by brands. In the meantime, you can edit your details or view your dashboard.",
+      "dashboardButton": "Go to Dashboard"
+    },
+    "liveness": {
+      "alreadyApproved": "Already Approved",
+      "alreadyApprovedDescription": "Your liveness verification is already approved. No further check needed.",
+      "sessionError": "Liveness Session Error"
+    },
+    "instagram": "Instagram (optional)",
+    "twitter": "Twitter/X (optional)",
+    "interests": "Interests / Brand Categories",
+    "bio": "Short Bio",
+    "bioPlaceholder": "Tell brands a bit about you...",
+    "visibility": "Profile Visibility",
+    "visibilityOptions": {
+      "public": "Public",
+      "publicDesc": "Visible to everyone",
+      "private": "Private",
+      "privateDesc": "Only discoverable to brands and AI creators"
+    },
+    "save": "Save & Continue to Verification",
+    "representation": {
+      "title": "Representation Status",
+      "options": {
+        "agency": "Agency",
+        "independent": "Independent"
+      }
+    },
+    "represented": "Represented by an Agent",
+    "agencyOwner": "I am an Agency Owner",
+    "agencyDetails": {
+      "name": "Agency Name",
+      "agentName": "Agent Name",
+      "agentEmail": "Agent Email"
+    },
+    "toasts": {
+      "configErrorTitle": "Configuration Error",
+      "configErrorDesc": "Liveness verification is not configured. Please contact support.",
+      "livenessErrorTitle": "Liveness Session Error",
+      "profileCreationFailed": "Profile Creation Failed",
+      "profileUpdateFailed": "Profile Update Failed",
+      "emailRequiredTitle": "Email Required",
+      "emailRequiredDesc": "Please enter your email address.",
+      "passwordRequiredTitle": "Password Required",
+      "passwordRequiredDesc": "Please enter a password.",
+      "confirmPasswordTitle": "Confirm Password",
+      "confirmPasswordDesc": "Please confirm your password.",
+      "passwordsDoNotMatchTitle": "Passwords Don't Match",
+      "passwordsDoNotMatchDesc": "The passwords you entered do not match. Please try again.",
+      "nameRequiredTitle": "Name Required",
+      "nameRequiredDesc": "Please enter your full name.",
+      "emailRegisteredTitle": "Email Already Registered",
+      "emailRegisteredDesc": "This email is already registered. Please log in instead or use a different email.",
+      "verifyEmailDesc": "Please check your email to verify your account before continuing.",
+      "signupFailed": "Sign-up Failed",
+      "cityRequiredTitle": "City Required",
+      "cityRequiredDesc": "Please enter your city.",
+      "stateRequiredTitle": "State Required",
+      "stateRequiredDesc": "Please enter your state.",
+      "birthdateRequiredTitle": "Birthdate Required",
+      "birthdateRequiredDesc": "Please enter your birthdate.",
+      "ageRestrictionTitle": "Age Restriction",
+      "ageRestrictionDesc": "You must be 18 or older to register.",
+      "genderRequiredTitle": "Gender Required",
+      "genderRequiredDesc": "Please select how you identify.",
+      "pricingRequiredTitle": "Pricing Required",
+      "pricingRequiredDesc": "Please set your base monthly license price (minimum $150).",
+      "campaignTypeRequiredTitle": "Campaign Type Required",
+      "campaignTypeRequiredDesc": "Please select at least one campaign type.",
+      "industryRequiredTitle": "Industry Required",
+      "industryRequiredDesc": "Please select at least one industry.",
+      "platformRequiredTitle": "Platform Required",
+      "platformRequiredDesc": "Please select your primary platform.",
+      "handleRequiredTitle": "Handle Required",
+      "handleRequiredDesc": "Please enter your platform handle.",
+      "visibilityRequiredTitle": "Visibility Required",
+      "visibilityRequiredDesc": "Please select your profile visibility preference.",
+      "notSignedInTitle": "Not Signed In",
+      "notSignedInDesc": "Please sign in to continue.",
+      "profileSaveFailed": "Profile Save Failed",
+      "invalidCredentials": "Invalid login credentials",
+      "uploadFailed": "Upload Failed",
+      "avatarGenFailed": "Avatar Generation Failed",
+      "verificationFailed": "Verification Failed",
+      "alreadyApproved": "Already Approved",
+      "alreadyApprovedDesc": "Your liveness check is already approved. No further verification needed.",
+      "identityVerified": "Identity Verified",
+      "identityVerifiedDesc": "Please upload your 3 reference photos (Front, Left, Right) to complete your setup.",
+      "statusCheckFailed": "Status Check Failed",
+      "cameraAccessRequiredTitle": "Camera Access Required",
+      "cameraAccessRequiredDesc": "Unable to access camera. Please allow camera permissions in your browser settings.",
+      "consentRequiredTitle": "Consent Required",
+      "consentRequiredDesc": "Please give consent before uploading your photos.",
+      "missingPhotosTitle": "Missing Photos",
+      "missingPhotosDesc": "Please capture all three views (front, left, and right).",
+      "livenessFailedTitle": "Liveness Check Failed",
+      "livenessFailedDesc": "Please try again with good lighting and follow prompts.",
+      "kycErrorTitle": "KYC Error"
+    }
+  },
+  "terms": {
+    "text": "By submitting, I agree to the",
+    "link": "Terms and Conditions",
+    "agree": "and confirm all information is accurate."
+  },
+  "actions": {
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit Profile"
+  },
+  "success": {
+    "title": "Profile reserved—welcome to the Likelee ecosystem",
+    "description": "We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.",
+    "dashboardButton": "Go to Dashboard"
+  },
+  "verification": {
+    "title": "Verify Identity",
+    "description": "Likelee uses facial verification to ensure that every profile is owned by a real human. This protects your rights and prevents AI identity theft.",
+    "why": {
+      "title": "Why verify?",
+      "items": {
+        "discovered": "Get discovered by verified brands.",
+        "trust": "Build trust with your audience.",
+        "opportunities": "Unlock premium opportunities."
+      }
+    },
+    "processDesc": "The process takes about 2 minutes. You'll need:",
+    "requirements": {
+      "title": "Requirements",
+      "items": {
+        "id": "A valid government ID (Driver's License, Passport, etc.)",
+        "camera": "A device with a camera (phone or webcam)",
+        "time": "About 2 minutes of your time"
+      }
+    },
+    "actions": {
+      "start": "Verify Identity",
+      "starting": "Starting...",
+      "liveness": "Liveness Check",
+      "livenessApproved": "Liveness Approved",
+      "preparing": "Preparing...",
+      "skip": "Skip for now",
+      "verifyAndContinue": "Verify & Continue",
+      "checking": "Checking..."
+    },
+    "status": {
+      "notStarted": "Not Started",
+      "verifying": "Verifying",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
+  },
+  "warning": {
+    "limitedBatches": "We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort."
+  },
+  "skipModal": {
+    "title": "Skip Verification?",
+    "description": "Your profile will be saved, but you won't be visible to brands until you verify your identity.",
+    "note": "Note: You can return to your dashboard at any time to complete verification.",
+    "actions": {
+      "back": "Go Back",
+      "confirm": "Skip & Finish"
+    }
+  },
+  "creatorDashboard": {
+    "myLikeness": "My Likeness",
+    "activeCampaigns": "Active Campaigns",
+    "licensesAndContracts": "Licenses & Contracts",
+    "earningsDashboard": "Earnings Dashboard",
+    "settings": {
+      "myRules": "My Rules",
+      "profileSettings": "Profile Settings"
+    },
+    "profileSettings": "Profile Settings",
+    "myRules": "My Rules",
+    "completeness": {
+      "profileCompleteness": "Profile Completeness: {{percentage}}%",
+      "missingSections": "You're missing {{count}} sections"
+    },
+    "settingsView": {
+      "title": "Settings",
+      "subtitle": "Manage your profile and preferences",
+      "tabs": {
+        "profile": "Profile Settings",
+        "rules": "My Rules"
+      },
+      "profile": {
+        "photoTitle": "Profile Photo",
+        "placeholders": {
+          "fullName": "Your full name",
+          "bio": "Tell us about yourself...",
+          "city": "City",
+          "state": "State",
+          "instagram": "@yourhandle",
+          "youtube": "@yourhandle",
+          "tiktok": "@yourhandle",
+          "portfolio": "https://yourportfolio.com",
+          "website": "https://yourwebsite.com",
+          "linkedin": "https://linkedin.com/in/yourprofile"
+        },
+        "uploadText": "Upload a professional headshot",
+        "uploadHint": "JPG or PNG, max 10MB",
+        "basicInfo": "Basic Information",
+        "name": "Name",
+        "email": "Email",
+        "location": "Location",
+        "bio": "Bio",
+        "saveProfile": "Save Profile",
+        "socialMedia": "Social Media",
+        "instagram": "Instagram Handle",
+        "tiktok": "TikTok Handle",
+        "portfolio": "Portfolio Link",
+        "saveSocial": "Save Social Links",
+        "visibility": "Visibility Settings",
+        "visibleToBrands": "Visible to Brands",
+        "visibleToBrandsDesc": "Allow brands to discover and contact you",
+        "enableLicensing": "Enable Licensing",
+        "enableLicensingDesc": "Accept licensing requests from brands",
+        "emailNotifications": "Email Notifications",
+        "emailNotificationsDesc": "Receive updates about campaigns and approvals"
+      },
+      "rules": {
+        "title": "My Rules",
+        "subtitle": "Set your licensing preferences and rates",
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "save": "Save",
+        "contentOpenTo": "Content I'm Open To",
+        "editRate": "Edit Rate",
+        "industries": "Industries I Work With",
+        "notComfortableWith": "Content I'm NOT Comfortable With",
+        "noRestrictions": "No restrictions set",
+        "conflictingCampaigns": "Conflicting Campaigns (Brand Exclusivity)",
+        "conflictingCampaignsDesc": "Brands you won't work with simultaneously",
+        "noBrandExclusivity": "No brand exclusivity set",
+        "initialLicensingRate": "Initial Licensing Rate",
+        "baseRateDesc": "This is your base monthly rate for standard social media licensing",
+        "month": "Month",
+        "acceptNegotiations": "Accept Negotiations",
+        "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate",
+        "negotiationEnabled": "Negotiation enabled!",
+        "negotiationDisabled": "Negotiation disabled!"
+      }
+    },
+    "referenceImageLibrary": {
+      "title": "REFERENCE IMAGE LIBRARY",
+      "subtitle": "Brands use these to match your appearance across different contexts",
+      "completenessFilled": "Completeness: {{filled}}/{{total}} sections filled",
+      "sectionsNeeded": "{{count}} sections needed for \"Complete Profile\""
+    },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Complete profiles earn 15% more.",
+        "text": "Brands pay premium rates for creators with full reference libraries."
+      },
+      "howThisWorks": {
+        "title": "How This Works:",
+        "text": "Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+      },
+      "qualityStandards": {
+        "title": "Quality Standards:",
+        "text": "High-resolution (minimum 1080x1080), clear lighting, face/body clearly visible, no heavy filters, professional quality preferred."
+      },
+      "imageActions": {
+        "view": "View",
+        "replace": "Replace",
+        "delete": "Delete",
+        "upload": "Upload",
+        "uploadImage": "Upload Image"
+      },
+      "imageStatus": {
+        "uploaded": "UPLOADED",
+        "missing": "MISSING",
+        "bestFor": "Best For:"
+      }
+    },
+    "usageGuidelines": {
+      "title": "USAGE GUIDELINES",
+      "subtitle": "Tell brands what you're comfortable with",
+      "comfortableWith": "Comfortable With:",
+      "notComfortableWith": "Not Comfortable With:",
+      "editPreferences": "Edit Preferences"
+    },
+    "verificationStatus": {
+      "title": "Verification & Status",
+      "identityVerification": "Identity Verification",
+      "likenessRights": "Likeness Rights",
+      "confirmed": "Confirmed",
+      "notStarted": "Not Started",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "viewVerification": "View Verification Details",
+      "updateRights": "Update Rights Agreement",
+      "completeVerification": "Complete Verification",
+      "refreshStatus": "Refresh Status"
+    },
+    "cameoVideo": {
+      "title": "CAMEO VIDEO",
+      "description": "The video representation of you - brands use this for AI cameos and content generation",
+      "uploaded": "Uploaded:",
+      "duration": "Duration:",
+      "quality": "Quality:",
+      "status": "Status:",
+      "verified": "✓ Verified & Approved",
+      "aboutCameo": {
+        "title": "About Your Cameo:",
+        "text": "Brands use this to generate AI cameos of you speaking, reference your voice/expressions, and create photorealistic content featuring you."
+      },
+      "actions": {
+        "watchFull": "Watch Full Cameo",
+        "reupload": "Re-upload New Cameo",
+        "download": "Download"
+      },
+      "comingSoon": {
+        "title": "Coming Soon",
+        "text": "Cameo video upload will be available soon"
+      },
+      "warning": {
+        "title": "Your cameo is required to start earning.",
+        "text": "Brands need this video reference to create content featuring you."
+      }
+    },
+    "contracts": {
+      "title": "Licenses & Contracts",
+      "subtitle": "Manage your active agreements and rights usage",
+      "welcome": {
+        "title": "Welcome!",
+        "message": "Manage your active contracts here. Pause, revoke, or renew anytime."
+      },
+      "activeTab": "Active ({{count}})",
+      "expiredTab": "Expired ({{count}})",
+      "status": {
+        "active": "Active",
+        "expiring_soon": "Expiring Soon",
+        "expired": "Expired"
+      },
+      "yourMonthlyFee": "Your Monthly Fee",
+      "earnedToDate": "Earned to Date",
+      "daysRemainingLabel": "Days Remaining",
+      "expiringIn": "Expiring in {{count}} days",
+      "renewLicensePrompt": "- renew license?",
+      "viewDetails": "View Details",
+      "renew": "Renew",
+      "noExpiredContracts": "No Expired Contracts",
+      "completedContractsWillAppearHere": "Completed contracts will appear here",
+      "backToContracts": "Back to Contracts",
+      "whatYoureEarning": "What You're Earning",
+      "monthlyPayment": "Monthly Payment",
+      "totalEarnedSoFar": "Total Earned So Far",
+      "paymentStatus": "Payment Status",
+      "paid": "PAID",
+      "amountReceived": "${{amount}} received this month",
+      "yourTimeline": "Your Timeline",
+      "started": "Started",
+      "today": "Today",
+      "expires": "Expires",
+      "daysRemaining": "{{count}} days remaining in contract",
+      "autoRenewal": {
+        "title": "Auto-Renewal Active:",
+        "message": "This contract will automatically renew for another term unless cancelled."
+      },
+      "howLikenessIsUsed": "How Your Likeness Is Being Used",
+      "whatTheyreUsing": "What They're Using",
+      "whereTheyCanUseIt": "Where They Can Use It",
+      "territory": "Territory:",
+      "channels": "Channels:",
+      "whatTheyCantDo": "What They CAN'T Do",
+      "revisions": "Revisions",
+      "roundsIncluded": "{{count}} rounds included",
+      "manageLicense": "Manage License",
+      "pauseLicense": "Pause License",
+      "revokeLicense": "Revoke License",
+      "messageBrand": "Message Brand",
+      "viewFullLegalContract": "View Full Legal Contract",
+      "modals": {
+        "pause": {
+          "title": "Pause This License?",
+          "warningTitle": "⚠️ IMPORTANT PAYMENT WARNING",
+          "warningDescription": "If you pause NOW (mid-month):",
+          "warningBullets": {
+            "noPayment": "You will NOT receive payment for {{month}}",
+            "earnedSoFar": "Even though you've earned ${{amount}} so far this month",
+            "forfeited": "That money will be forfeited"
+          },
+          "option1": {
+            "title": "OPTION 1: Pause Immediately",
+            "effective": "Effective:",
+            "effectiveToday": "Today",
+            "thisMonthPayment": "This Month's Payment:",
+            "forfeited": "✗ FORFEITED (${{amount}})",
+            "nextMonthPayment": "Next Month's Payment:",
+            "paused": "✗ PAUSED",
+            "description": "Use this if you want to stop immediately and are okay losing this month's partial payment."
+          },
+          "option2": {
+            "title": "OPTION 2: Pause Next Month",
+            "recommended": "Recommended",
+            "effective": "Effective:",
+            "thisMonthPayment": "This Month's Payment:",
+            "willBePaid": "✓ YOU'LL GET PAID (${{amount}})",
+            "nextMonthPayment": "Next Month's Payment:",
+            "paused": "✗ PAUSED",
+            "description": "Use this to keep earning through the end of this month, then pause starting next month."
+          },
+          "cancel": "Cancel - Don't Pause"
+        },
+        "revoke": {
+          "title": "Revoke This License?",
+          "whatHappens": "What happens when you revoke:",
+          "bullets": {
+            "endPermanently": "You're requesting to END this license permanently",
+            "noticePeriod": "30-day notice period begins (they keep rights for 30 more days)",
+            "takedown": "After 30 days, they must take down all content",
+            "earningsStop": "Your earnings STOP after the 30-day period ends",
+            "cannotReactivate": "The license cannot be reactivated"
+          },
+          "timeline": {
+            "title": "Revocation Timeline",
+            "noticeStarts": "Notice Starts",
+            "finalTakedown": "Final Takedown"
+          },
+          "days1to30": "Days 1-30: {{brand}} can still use your likeness (final payments due)",
+          "day30": "Day 30: All content must be taken down",
+          "finalPayment": "Your Final Payment: ${{amount}} on {{date}}",
+          "reasonLabel": "Reason for revoking (optional):",
+          "reasonPlaceholder": "e.g., I don't want to work with this brand anymore",
+          "cancel": "Cancel",
+          "confirm": "Yes, Revoke License"
+        }
+      }
+    },
+    "archive": {
+      "title": "Campaign Archive",
+      "subtitle": "View your completed campaigns and manage portfolio visibility",
+      "completedCount": "{{count}} Completed",
+      "welcome": {
+        "title": "Welcome to your Campaign Archive!",
+        "message": "This is an example of what your completed campaigns will look like. You don't have any archived campaigns yet — but when you do, they'll appear here just like this!"
+      },
+      "completedOn": "Completed {{date}}",
+      "status": {
+        "completed": "Completed"
+      },
+      "duration": "Duration:",
+      "monthlyRate": "Monthly Rate:",
+      "totalEarned": "Total Earned:",
+      "regions": "Regions:",
+      "showOnPortfolio": "Show on Portfolio",
+      "visibleOnPortfolio": "Visible to brands viewing your profile",
+      "hiddenFromPortfolio": "Hidden from public portfolio",
+      "viewDetails": "View Details"
+    },
+    "approvals": {
+      "backToQueue": "Back to Queue",
+      "contractReviewTitle": "{{brand}} - Contract Review",
+      "contractReviewSubtitle": "Review terms before approving",
+      "whatYouWillEarn": "What You'll Earn",
+      "yourMonthlyPayment": "Your Monthly Payment:",
+      "ifYouKeepThisFor": "If you keep this for {{term}}:",
+      "totalEstimatedEarnings": "Total estimated earnings",
+      "contractTerms": "Contract Terms",
+      "duration": "Duration:",
+      "territory": "Territory:",
+      "usageType": "Usage Type:",
+      "industries": "Industries:",
+      "yourRightsAndProtections": "Your Rights & Protections",
+      "canPause": "You can pause this license anytime (temporarily stop usage)",
+      "canRevoke": "You can revoke with 30 days notice (permanently end)",
+      "licenseExpires": "License expires on a specific date (not forever)",
+      "paymentProtected": "Payment protected in escrow until brand approves deliverables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Perpetual Use Warning:",
+        "message": "This brand wants to use your likeness forever. You should negotiate for time-limited terms (6 months, 1 year) instead."
+      },
+      "decline": "Decline",
+      "counterOffer": "Counter Offer",
+      "acceptAndSign": "Accept & Sign",
+      "title": "Approval Queue",
+      "subtitle": "Review and approve licensing requests",
+      "pendingCount": "{{count}} Pending",
+      "welcome": {
+        "title": "Welcome to your Approval Queue!",
+        "message": "This is an example of what brand requests will look like. You don't have any pending approvals yet — but when brands want to work with you, their requests will appear here!"
+      },
+      "requestedOn": "Requested {{date}}",
+      "perpetualRequest": "Perpetual Request",
+      "proposedRate": "Proposed Rate:",
+      "termLength": "Term Length:",
+      "estimatedMonthly": "Estimated Monthly:",
+      "regions": "Regions:",
+      "warning": {
+        "title": "Warning:",
+        "message": "This is a perpetual-use request. You would give up long-term control of your likeness for this campaign. Consider negotiating for time-limited terms instead."
+      },
+      "viewContract": "View Contract",
+      "labels": {
+        "industries": "Industries:",
+        "regions": "Regions:",
+        "estimatedMonthly": "Estimated Monthly:",
+        "termLength": "Term Length:",
+        "proposedRate": "Proposed Rate:",
+        "requestedOn": "Requested {{date}}",
+        "pricePerMonth": "${{price}}/month",
+        "months": "{{count}} months"
+      },
+      "actions": {
+        "viewContract": "View Contract",
+        "decline": "Decline",
+        "counterOffer": "Counter Offer",
+        "acceptAndSign": "Accept & Sign",
+        "backToQueue": "Back to Queue"
+      },
+      "contractReview": {
+        "title": "Review Contract from {{brand}}",
+        "subtitle": "Carefully review all terms below before accepting."
+      }
+    },
+    "campaigns": {
+      "title": "Active Campaigns",
+      "subtitle": "Track and manage your licensing agreements",
+      "activeCount": "{{count}} Active",
+      "welcome": {
+        "title": "Welcome to your Active Campaigns!",
+        "message": "This is an example of what your campaigns will look like. You don't have any active campaigns yet — but when brands start working with you, they'll appear here!"
+      },
+      "table": {
+        "brand": "Brand",
+        "usageType": "Usage Type",
+        "rate": "Rate",
+        "activeUntil": "Active Until",
+        "status": "Status",
+        "thisMonth": "This Month",
+        "actions": "Actions"
+      },
+      "autoRenew": "Auto-Renew",
+      "statusValues": {
+        "active": "Active",
+        "expiring_soon": "Expiring Soon"
+      },
+      "revoke": "Revoke",
+      "rateLabel": "Rate:",
+      "activeUntilLabel": "Active Until:",
+      "statusLabel": "Status:",
+      "thisMonthLabel": "This Month:",
+      "impressionsLabel": "Impressions/Week:",
+      "pause": "Pause",
+      "viewDetails": "View Details",
+      "status": {
+        "active": "Active",
+        "expiringSoon": "Expiring Soon"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "revoke": "Revoke",
+        "pause": "Pause"
+      },
+      "labels": {
+        "autoRenew": "Auto-Renew",
+        "monthlyRate": "Monthly Rate:",
+        "activeUntil": "Active Until:",
+        "regions": "Regions:",
+        "weeklyImpressions": "Weekly Impressions:",
+        "impressionsPerWeek": "{{count}} impressions/week"
+      },
+      "consent": {
+        "title": "Your consent required for all uses.",
+        "message": "{{count}} active campaigns, all time-limited, all approved by you. You can pause/revoke anytime."
+      }
+    },
+    "earnings": {
+      "title": "Earnings Dashboard",
+      "byIndustry": "Earnings by Industry",
+      "byCampaign": "Earnings by Campaign",
+      "bankConnection": {
+        "title": "Connect Your Bank Account",
+        "subtitle": "Link your bank account to receive your earnings directly.",
+        "securityTitle": "Bank-level Security",
+        "securityMessage": "Your information is encrypted and protected",
+        "privateTitle": "Private & Secure",
+        "privateMessage": "We never store your banking credentials",
+        "button": "Connect Bank Account",
+        "comingSoon": "Bank connection coming soon. We're integrating secure payment processing.",
+        "back": "Back"
+      },
+      "subtitle": "Track your revenue and payments",
+      "readyTitle": "Your earnings dashboard is ready",
+      "readyMessage": "Once your licenses activate, you'll see real-time earnings here. Currently, you have no active contracts.",
+      "actions": {
+        "cashOut": "Cash Out",
+        "downloadTax": "Download Tax Summary (1099)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total Earned YTD",
+        "willUpdate": "Will update once your first license activates",
+        "thisMonthRecurring": "This Month's Recurring",
+        "waitingForCampaigns": "Waiting for active campaigns",
+        "projectedNextMonth": "Projected Next Month",
+        "willCalculate": "Will calculate based on active licenses",
+        "nextPayment": "Next Payment",
+        "toBeDetermined": "To be determined",
+        "noActiveContracts": "No active contracts yet"
+      },
+      "charts": {
+        "revenueTrend": "Revenue Trend (Last 6 Months)",
+        "revenuePlaceholder": "Your revenue trend will appear here",
+        "activePlaceholder": "Once you have active campaigns",
+        "industryBreakdown": "Earnings by Industry",
+        "industryPlaceholder": "Your industry breakdown will appear here"
+      },
+      "comparison": {
+        "title": "This is what your earnings could look like",
+        "subtitle": "See how Likelee's recurring model compares to traditional one-time payments",
+        "traditionalModel": "Traditional Model:",
+        "traditionalDesc": "One-time payment per campaign",
+        "likeleeModel": "Likelee Model:",
+        "likeleeAmount": "$2,500+/month",
+        "likeleeDesc": "Per active license • Recurring revenue"
+      },
+      "campaigns": {
+        "title": "Earnings by Campaign",
+        "placeholderTitle": "Your campaigns will appear here",
+        "placeholderMessage": "Once you have active licenses generating revenue",
+        "thisMonth": "this month"
+      },
+      "history": {
+        "title": "Payment History",
+        "placeholderTitle": "Your payment history will appear here",
+        "placeholderMessage": "Once you receive your first payout"
+      }
+    },
+    "voice": {
+      "title": "Voice & Recordings",
+      "subtitle": "Build your voice library for different emotions and tones",
+      "voiceBadge": "Voice",
+      "voiceBadgePlural": "Voices",
+      "recordingModal": {
+        "title": "Record {{emotion}} Voice Sample",
+        "ready": "Ready to Record?",
+        "instruction": "The script will scroll slowly. Speak naturally and expressively.",
+        "start": "Start Recording",
+        "stop": "Stop Recording"
+      },
+      "deleteConfirmation": {
+        "title": "Delete Recording?",
+        "description": "This action cannot be undone.",
+        "action": "Delete"
+      },
+      "emotionNames": {
+        "happy": "Happy",
+        "emotional": "Emotional",
+        "excited": "Excited",
+        "mellow": "Mellow",
+        "relaxed": "Relaxed",
+        "angry": "Angry"
+      },
+      "overview": {
+        "title": "Voice Profile Overview",
+        "totalRecordings": "Total Recordings",
+        "elevenLabsProfiles": "ElevenLabs Profiles",
+        "totalUsage": "Total Usage"
+      },
+      "record": {
+        "title": "Record New Voice Sample",
+        "subtitle": "Record samples with different emotions to create a versatile voice profile",
+        "duration": "~60 seconds",
+        "recorded": "Recorded"
+      },
+      "library": {
+        "title": "Voice Library",
+        "used": "Used {{count}} times",
+        "elevenLabsReady": "ElevenLabs Ready",
+        "reRecord": "Re-record",
+        "creatingProfile": "Creating Voice Profile...",
+        "createProfile": "Create Voice Profile with ElevenLabs"
+      },
+      "tips": {
+        "title": "Voice Training Tips:",
+        "message": "Speak clearly, avoid background noise, record in a quiet room, and maintain consistent volume throughout the recording."
+      }
+    },
+    "dashboard": {
+      "totalMonthlyRevenue": "Total Monthly Revenue",
+      "revenueInfo": "Current recurring monthly income",
+      "activeCampaigns": "Active Campaigns",
+      "activeCampaignsInfo": "Generating revenue right now",
+      "pendingApprovals": "Pending Approvals",
+      "pendingApprovalsInfo": "Campaigns waiting for your review",
+      "annualRunRate": "Annual Run Rate",
+      "annualRunRateInfo": "Projected yearly earnings",
+      "quickActions": "Quick Actions",
+      "priority": "PRIORITY",
+      "completeProfile": "Complete Your Profile",
+      "completeProfileInfo": "You're missing X sections. Complete them to get verified.",
+      "uploadVoiceTone": "Upload Voice Tone",
+      "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
+      "recentActivity": "Recent Activity",
+      "previewExamples": {
+        "title": "Preview Examples:",
+        "message": "These are example campaigns to show you what your dashboard will look like."
+      },
+      "active": "ACTIVE",
+      "noCampaigns": "No Active Campaigns",
+      "noCampaignsInfo": "Complete your profile to start getting offers!",
+      "profileStatus": "Profile Status",
+      "completeToGetDiscovered": "Complete to get discovered",
+      "referenceImages": "Reference Images",
+      "voiceRecordings": "Voice Recordings",
+      "cameoVideo": "Cameo Video",
+      "missing": "MISSING"
+    },
+    "content": {
+      "title": "Content",
+      "subtitle": "Track content created with your likeness",
+      "welcome": {
+        "title": "Welcome to your Content page!",
+        "message": "This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+      },
+      "tabs": {
+        "brandContent": "Brand Content",
+        "detections": "Detections"
+      },
+      "brandContent": {
+        "info": "This feed shows all authorized content that brands have published using your likeness.",
+        "views": "Views",
+        "engagement": "Engagement",
+        "published": "Published {{date}}",
+        "noContent": "No brand content found."
+      },
+      "detections": {
+        "info": "Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+        "needsReview": "Needs Review",
+        "takedownRequested": "Takedown Requested",
+        "resolved": "Resolved",
+        "detected": "Detected",
+        "matchConfidence": "Match Confidence",
+        "viewOriginal": "View Original Content",
+        "requestTakedown": "Request Takedown",
+        "dismiss": "Dismiss (It's Authorized)",
+        "takedownSent": "Takedown request sent. Platforms typically respond within 24-72 hours.",
+        "contentRemoved": "Content has been removed or verified as authorized.",
+        "noDetections": "No detections found.",
+        "howItWorks": {
+          "title": "How Detection Works",
+          "scanning": {
+            "title": "Continuous Scanning",
+            "desc": "We scan major platforms for facial matches"
+          },
+          "ai": {
+            "title": "AI Matching",
+            "desc": "Advanced AI compares against your likeness"
+          },
+          "takedown": {
+            "title": "Takedown Support",
+            "desc": "We help file DMCA and platform reports"
+          }
+        }
+      },
+      "examples": {
+        "instagramReel": "Instagram Reel",
+        "webBanner": "Web Banner",
+        "tvCommercial": "TV Commercial"
+      }
+    },
+    "publicProfile": {
+      "title": "Public Profile Preview",
+      "subtitle": "This is how brands see your profile",
+      "viewCard": "View Card",
+      "hideCard": "Hide Card",
+      "editProfile": "Edit Profile",
+      "verifiedUser": "Verified User",
+      "kycVerified": "KYC Verified"
+    },
+    "voiceScripts": {
+      "happy": "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+      "emotional": "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+      "excited": "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+      "mellow": "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+      "relaxed": "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+      "angry": "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+    },
+    "imageSections": {
+      "headshot_neutral": {
+        "title": "Headshots - Neutral Expression",
+        "description": "Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+        "bestFor": "Brands need a clean face reference"
+      },
+      "headshot_smiling": {
+        "title": "Headshots - Smiling",
+        "description": "Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+        "bestFor": "Brands want to show you happy/approachable"
+      },
+      "fullbody_casual": {
+        "title": "Full Body - Casual Outfit",
+        "description": "Full body shot in casual everyday clothing. Natural pose.",
+        "bestFor": "Everyday casual look"
+      },
+      "fullbody_formal": {
+        "title": "Full Body - Formal/Professional",
+        "description": "Full body shot in professional or formal attire.",
+        "bestFor": "Professional or business contexts"
+      },
+      "side_profile": {
+        "title": "Side Profile",
+        "description": "Clean side view of your face and upper body.",
+        "bestFor": "Brands need your side angle"
+      },
+      "three_quarter": {
+        "title": "3/4 Angle",
+        "description": "Face turned at a 45-degree angle, natural expression.",
+        "bestFor": "Natural conversational angle"
+      },
+      "hair_down": {
+        "title": "Hair Down - Loose/Wavy",
+        "description": "Hair worn down in your natural style.",
+        "bestFor": "Casual, relaxed look"
+      },
+      "hair_up": {
+        "title": "Hair Up - Ponytail/Bun",
+        "description": "Hair pulled up/back, clean look.",
+        "bestFor": "Professional or active look"
+      },
+      "hair_styling": {
+        "title": "Hair Styling - Braids/Specific Style",
+        "description": "If you have a signature hairstyle.",
+        "bestFor": "If you have a signature style"
+      },
+      "upper_body": {
+        "title": "Upper Body Close-Up",
+        "description": "Shoulders and up, detailed facial features visible.",
+        "bestFor": "Close-up shots, detailed facial features"
+      },
+      "outdoors": {
+        "title": "In Environment - Outdoors",
+        "description": "You in an outdoor setting (park, street, nature).",
+        "bestFor": "Contextual, lifestyle content"
+      },
+      "indoors": {
+        "title": "In Environment - Indoors",
+        "description": "You in an indoor setting (home, office, cafe).",
+        "bestFor": "Indoor/office/home contexts"
+      },
+      "makeup_variation": {
+        "title": "Different Makeup Style",
+        "description": "If you vary your makeup style, show different looks.",
+        "bestFor": "If you vary makeup, brands should know"
+      },
+      "seasonal": {
+        "title": "Seasonal/Outfit Variation",
+        "description": "Different seasonal styles or outfit variations.",
+        "bestFor": "Seasonal campaigns, different looks"
+      },
+      "signature": {
+        "title": "Your Choice - Signature Moment",
+        "description": "A photo that really represents YOU and how people recognize you.",
+        "bestFor": "A photo that really represents YOU"
+      }
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "content": "Content",
+      "likeness": "My Likeness",
+      "voice": "Voice & Recordings",
+      "campaigns": "Active Campaigns",
+      "approvals": "Approval Queue",
+      "archive": "Campaign Archives",
+      "contracts": "Licenses & Contracts",
+      "earnings": "Earnings",
+      "settings": "Settings",
+      "profile": {
+        "edit": "Edit Profile",
+        "viewPublic": "View Public Profile",
+        "help": "Help / Support",
+        "logout": "Logout"
+      }
+    },
+    "likeness": {
+      "howItWorks": {
+        "title": "How This Works:",
+        "text": "Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+      },
+      "uploaded": "UPLOADED",
+      "missing": "MISSING",
+      "bestFor": "Best For:",
+      "view": "View",
+      "replace": "Replace"
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/wk",
+        "cancel": "Cancel",
+        "save": "Save Rates",
+        "saving": "Saving...",
+        "contentTitle": "Customize Content Type Rates",
+        "industryTitle": "Customize Industry Rates",
+        "contentDesc": "Set specific weekly rates for different content types. If left blank, your base rate ({rate}) will apply.",
+        "industryDesc": "Set specific weekly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "noContentTitle": "No content types selected.",
+        "noContentMsg": "Please go back to \"My Rules\" and select the content types you re open to first.",
+        "noIndustryTitle": "No industries selected.",
+        "noIndustryMsg": "Please go back to \"My Rules\" and select the industries you work with first.",
+        "contentHeader": "Content Types",
+        "industryHeader": "Industries"
+      }
+    },
+    "toasts": {
+      "profileSaved": "Profile saved successfully!",
+      "profileSaveFailed": "Failed to save profile",
+      "ratesSaved": "Rates saved successfully!",
+      "ratesSaveFailed": "Failed to save rates",
+      "contentSaved": "Content preferences saved!",
+      "industrySaved": "Industry preferences saved!",
+      "saveFailed": "Failed to save",
+      "restrictionsSaved": "Restrictions saved successfully!",
+      "restrictionsSaveFailed": "Failed to save restrictions",
+      "negotiationEnabled": "Negotiation enabled!",
+      "negotiationDisabled": "Negotiation disabled!",
+      "imageUploaded": "Image uploaded successfully!",
+      "imageUploadFailed": "Failed to upload image",
+      "imageDeleted": "Image deleted successfully!",
+      "imageDeleteFailed": "Failed to delete image",
+      "voiceUploaded": "Voice sample uploaded successfully!",
+      "voiceUploadFailed": "Failed to upload voice sample",
+      "voiceDeleted": "Voice sample deleted successfully!",
+      "voiceDeleteFailed": "Failed to delete voice sample",
+      "cameoUploaded": "Cameo uploaded successfully!",
+      "cameoUploadFailed": "Failed to upload cameo",
+      "avatarGenerating": "Generating avatar...",
+      "avatarGenerated": "Avatar generated successfully!",
+      "avatarGenerationFailed": "Failed to generate avatar",
+      "pleaseWait": "Please wait...",
+      "processing": "Processing...",
+      "success": "Success!",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Requirements Checklist:",
+      "resolution": "At least 1080x1080 resolution",
+      "faceVisible": "Face/body clearly visible",
+      "goodLighting": "Good lighting (natural or studio)",
+      "recentPhoto": "Recent photo (from last 3 months)",
+      "noFilters": "No heavy filters",
+      "professionalQuality": "Professional quality preferred (not selfie-style)",
+      "dragOrClick": "Drag photos here or click to browse",
+      "fileInfo": "File Size: Max 10MB | Formats: JPG, PNG, WebP",
+      "preview": "Preview:",
+      "cancel": "Cancel",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "modalTitle": "Upload Reference Image",
+      "sectionLabel": "Section:",
+      "bestForLabel": "Best For:"
+    },
+    "contentTypes": {
+      "socialMediaAds": "Social media ads",
+      "webBannerCampaigns": "Web & banner campaigns",
+      "tvStreamingCommercials": "TV / streaming commercials",
+      "filmScriptedStreaming": "Film & scripted streaming",
+      "printOutdoorAds": "Print & outdoor ads",
+      "musicVideos": "Music videos",
+      "videoGameVRCharacters": "Video-game / VR characters",
+      "stockPhotoVideoLibraries": "Stock photo / video libraries",
+      "educationalNonprofitSpots": "Educational / nonprofit spots"
+    },
+    "industries": {
+      "fashionBeauty": "Fashion / Beauty",
+      "techElectronics": "Tech / Electronics",
+      "sportsFitness": "Sports / Fitness",
+      "foodBeverage": "Food / Beverage",
+      "filmGamingMusic": "Film / Gaming / Music",
+      "automotive": "Automotive",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Health / Wellness",
+      "luxuryLifestyle": "Luxury & Lifestyle",
+      "travelHospitality": "Travel / Hospitality",
+      "education": "Education",
+      "realEstate": "Real Estate",
+      "entertainment": "Entertainment",
+      "openToAny": "Open to any industry"
+    },
+    "restrictions": {
+      "politicalContent": "Political Content",
+      "controversialTopics": "Controversial Topics",
+      "explicitAdultContent": "Explicit/Adult Content",
+      "pharmaceuticalClaims": "Pharmaceutical Claims",
+      "financialInvestmentAdvice": "Financial/Investment Advice",
+      "tobaccoVapingProducts": "Tobacco/Vaping Products",
+      "gamblingUnlicensed": "Gambling (Unlicensed)",
+      "alcohol": "Alcohol",
+      "byproductsAnimalTesting": "Byproducts/Animal Testing",
+      "weaponsFirearms": "Weapons/Firearms",
+      "cryptocurrencyNFT": "Cryptocurrency/NFT",
+      "mlmMultiLevelMarketing": "MLM/Multi-Level Marketing",
+      "unlicensedFinancialProducts": "Unlicensed Financial Products",
+      "healthMedicalClaims": "Health/Medical Claims"
+    },
+    "modals": {
+      "customizeContentTypeRate": {
+        "title": "Customize Content Type Rate",
+        "description": "Select content types you're open to creating",
+        "customRatesTitle": "Custom Rates",
+        "customRatesDesc": "Set custom rates for specific content types or industries. Your base rate is ${rate}/mo.",
+        "usingBaseRate": "Using base rate: ${rate}/mo",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "customizeIndustryRate": {
+        "title": "Customize Industry Rate",
+        "description": "Select industries you're interested in working with",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "contentRestrictions": {
+        "title": "Content Restrictions",
+        "description": "Specify any content you're not comfortable with",
+        "currentRestrictions": "Current Restrictions",
+        "clickToAdd": "Click to add restrictions",
+        "addCustomRestriction": "Add Custom Restriction",
+        "customPlaceholder": "e.g., No political content",
+        "brandExclusivity": "Brand Exclusivity",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      }
+    }
+  },
+  "imageSections": {
+    "headshot_neutral": {
+      "title": "Headshots - Neutral Expression",
+      "description": "Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+      "bestFor": "Brands need a clean face reference"
+    },
+    "headshot_smiling": {
+      "title": "Headshots - Smiling",
+      "description": "Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+      "bestFor": "Brands want to show you happy/approachable"
+    },
+    "fullbody_casual": {
+      "title": "Full Body - Casual Outfit",
+      "description": "Full body shot in casual everyday clothing. Natural pose.",
+      "bestFor": "Everyday casual look"
+    },
+    "fullbody_formal": {
+      "title": "Full Body - Formal/Professional",
+      "description": "Full body shot in professional or formal attire.",
+      "bestFor": "Professional or business contexts"
+    },
+    "side_profile": {
+      "title": "Side Profile",
+      "description": "Clean side view of your face and upper body.",
+      "bestFor": "Brands need your side angle"
+    },
+    "three_quarter": {
+      "title": "3/4 Angle",
+      "description": "Face turned at a 45-degree angle, natural expression.",
+      "bestFor": "Natural conversational angle"
+    },
+    "hair_down": {
+      "title": "Hair Down - Loose/Wavy",
+      "description": "Hair worn down in your natural style.",
+      "bestFor": "Casual, relaxed look"
+    },
+    "hair_up": {
+      "title": "Hair Up - Ponytail/Bun",
+      "description": "Hair pulled up/back, clean look.",
+      "bestFor": "Professional or active look"
+    },
+    "hair_styling": {
+      "title": "Hair Styling - Braids/Specific Style",
+      "description": "If you have a signature hairstyle.",
+      "bestFor": "If you have a signature style"
+    },
+    "upper_body": {
+      "title": "Upper Body Close-Up",
+      "description": "Shoulders and up, detailed facial features visible.",
+      "bestFor": "Close-up shots, detailed facial features"
+    },
+    "outdoors": {
+      "title": "In Environment - Outdoors",
+      "description": "You in an outdoor setting (park, street, nature).",
+      "bestFor": "Contextual, lifestyle content"
+    },
+    "indoors": {
+      "title": "In Environment - Indoors",
+      "description": "You in an indoor setting (home, office, cafe).",
+      "bestFor": "Indoor/office/home contexts"
+    },
+    "makeup_variation": {
+      "title": "Different Makeup Style",
+      "description": "If you vary your makeup style, show different looks.",
+      "bestFor": "If you vary makeup, brands should know"
+    },
+    "seasonal": {
+      "title": "Seasonal/Outfit Variation",
+      "description": "Different seasonal styles or outfit variations.",
+      "bestFor": "Seasonal campaigns, different looks"
+    },
+    "signature": {
+      "title": "Your Choice - Signature Moment",
+      "description": "A photo that really represents YOU and how people recognize you.",
+      "bestFor": "A photo that really represents YOU"
+    }
+  },
+  "voiceScripts": {
+    "happy": "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+    "emotional": "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+    "excited": "Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+    "mellow": "Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+    "relaxed": "Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+    "angry": "I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+  },
+  "forgotPasswordPage": {
+    "title": "Reset your password",
+    "instructions": "Enter your email address and we will send you a link to reset your password.",
+    "emailLabel": "Email",
+    "submitButton": {
+      "sending": "Sending...",
+      "default": "Send Reset Link"
+    },
+    "backToSignIn": "Back to Sign In",
+    "successMessage": "If an account exists for this email, a password reset link has been sent.",
+    "errorMessage": "Failed to send reset link"
+  },
+  "licensingSettingsPage": {
+    "title": "Licensing Settings",
+    "subtitle": "Pricing is public and USD-only. Set your monthly base price.",
+    "basePriceLabel": "Base monthly license price (USD)",
+    "perMonth": "/month",
+    "minimumHint": "Minimum $150/month.",
+    "saveButton": "Save Pricing",
+    "savingButton": "Saving...",
+    "invalidPriceTitle": "Invalid Price",
+    "invalidPriceDesc": "Minimum $150/month",
+    "successTitle": "Success",
+    "successDesc": "Pricing updated"
+  },
+  "marketingDashboard": {
+    "toasts": {
+      "campaignCreated": "Campaign created successfully!"
+    }
+  },
+  "uploadProject": {
+    "toasts": {
+      "missingFields": "Missing Fields",
+      "missingFieldsDesc": "Please fill in all required fields",
+      "projectUploaded": "Project uploaded! (Demo mode - not persisted)"
+    }
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Your password has been updated."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Sign-in failed"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Choose Your Identity",
+      "subtitle": "Join the ecosystem built for creators to own, control, and profit from their digital likeness."
+    },
+    "influencer": {
+      "title": "Influencer & Content Creator",
+      "description": "Monetize your social presence by licensing your digital double for social-first campaigns."
+    },
+    "model_actor": {
+      "title": "Model & Actor",
+      "description": "Secure high-end commercial and editorial opportunities with a verified digital twin."
+    },
+    "athlete": {
+      "title": "Athlete (NIL)",
+      "description": "Scale your brand partnerships and earn passive income with NIL-compliant digital likeness."
+    },
+    "selectButton": "Select & Continue",
+    "authModal": {
+      "title": "Welcome to Likelee",
+      "selected": "You selected:",
+      "signUpAs": "Sign up as",
+      "alreadyHaveAccount": "Already have an account? Sign In"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "welcome": "Welcome to Likelee",
+      "signInToContinue": "Sign in to continue",
+      "loading": "Loading...",
+      "alreadySignedIn": "You are already signed in.",
+      "goToDashboard": "Go to Dashboard",
+      "comingSoonTitle": "Coming Soon",
+      "comingSoonMessage": "We're currently onboarding agencies manually. Join the waitlist to get early access.",
+      "learnMore": "Learn More",
+      "googleSignInFailed": "Google sign-in failed",
+      "continueWithGoogle": "Continue with Google",
+      "or": "OR",
+      "emailLabel": "Email",
+      "companyEmailLabel": "Company Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "signingIn": "Signing in...",
+      "signInButton": "Sign in",
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
+    }
+  }
+}

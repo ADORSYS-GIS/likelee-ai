@@ -1,0 +1,56 @@
+# This workflow runs ALL checks for the 'likelee-server' (backend) code.
+name: CI - Backend (likelee-server)
+
+on:
+  pull_request:
+    branches: [main, develop] # Run on PRs to main or develop
+    # Only run this pipeline if changes were made in the 'likelee-server' folder
+    paths:
+      - "likelee-server/**"
+
+jobs:
+  check-backend:
+    runs-on: ubuntu-latest
+
+    # Set the working-directory for all steps to 'likelee-server'
+    defaults:
+      run:
+        working-directory: ./likelee-server
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt # Install clippy (lint) and rustfmt (format)
+
+      - name: Cache Cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check Formatting (cargo fmt)
+        run: cargo fmt -- --check
+
+      - name: Run Lint (cargo clippy)
+        run: cargo clippy -- -D warnings # Fails the check on any warnings
+
+      - name: Run Build (cargo build)
+        run: cargo build --verbose
+
+      - name: Run Tests (cargo test)
+        run: cargo test --verbose
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --force
+      - name: Run Security Audit (cargo audit)
+        run: cargo audit
