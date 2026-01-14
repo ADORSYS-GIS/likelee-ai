@@ -12924,18 +12924,18 @@ const NotificationsTab = () => {
                 <Card
                   key={idx}
                   className={`p-4 border ${notif.status === "error"
-                      ? "border-red-200 bg-red-50"
-                      : "border-gray-100 hover:border-indigo-200 transition-colors"
+                    ? "border-red-200 bg-red-50"
+                    : "border-gray-100 hover:border-indigo-200 transition-colors"
                     }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
                       <div
                         className={`p-2 rounded-lg ${notif.type === "EMAIL"
-                            ? "bg-blue-100 text-blue-600"
-                            : notif.type === "SMS"
-                              ? "bg-green-100 text-green-600"
-                              : "bg-purple-100 text-purple-600"
+                          ? "bg-blue-100 text-blue-600"
+                          : notif.type === "SMS"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-purple-100 text-purple-600"
                           }`}
                       >
                         {notif.type === "EMAIL" && <Mail className="w-5 h-5" />}
@@ -12970,8 +12970,8 @@ const NotificationsTab = () => {
                       </p>
                       <p
                         className={`text-xs font-bold mt-1 ${notif.status === "success"
-                            ? "text-green-600"
-                            : "text-red-600"
+                          ? "text-green-600"
+                          : "text-red-600"
                           }`}
                       >
                         {notif.detail}
@@ -13003,10 +13003,10 @@ const NotificationsTab = () => {
                 Booking Created/Confirmed
               </h4>
               <div className="grid grid-cols-3 gap-8">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Mail className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       Email
                     </span>
                   </div>
@@ -13019,10 +13019,10 @@ const NotificationsTab = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Phone className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
                   </div>
@@ -13035,10 +13035,10 @@ const NotificationsTab = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Bell className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
                   </div>
@@ -13060,10 +13060,10 @@ const NotificationsTab = () => {
                 Booking Updated
               </h4>
               <div className="grid grid-cols-3 gap-8">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Mail className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       Email
                     </span>
                   </div>
@@ -13076,10 +13076,10 @@ const NotificationsTab = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Phone className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
                   </div>
@@ -13088,10 +13088,10 @@ const NotificationsTab = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Bell className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
                   </div>
@@ -13113,10 +13113,10 @@ const NotificationsTab = () => {
                 Booking Cancelled
               </h4>
               <div className="grid grid-cols-3 gap-8">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Mail className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       Email
                     </span>
                   </div>
@@ -13129,10 +13129,10 @@ const NotificationsTab = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Phone className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
                   </div>
@@ -13145,10 +13145,10 @@ const NotificationsTab = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <Bell className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
                   </div>
@@ -13176,10 +13176,10 @@ const NotificationsTab = () => {
                     24 Hours Before Booking
                   </p>
                   <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Mail className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           Email
                         </span>
                       </div>
@@ -13192,10 +13192,10 @@ const NotificationsTab = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Phone className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
                       </div>
@@ -13208,10 +13208,10 @@ const NotificationsTab = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Bell className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
                       </div>
@@ -13232,10 +13232,10 @@ const NotificationsTab = () => {
                     48 Hours Before Booking
                   </p>
                   <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Mail className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           Email
                         </span>
                       </div>
@@ -13244,10 +13244,10 @@ const NotificationsTab = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Phone className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
                       </div>
@@ -13256,10 +13256,10 @@ const NotificationsTab = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Bell className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
                       </div>
@@ -13276,10 +13276,10 @@ const NotificationsTab = () => {
                     1 Week Before Booking
                   </p>
                   <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Mail className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           Email
                         </span>
                       </div>
@@ -13288,10 +13288,10 @@ const NotificationsTab = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Phone className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
                       </div>
@@ -13300,10 +13300,10 @@ const NotificationsTab = () => {
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <Bell className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
                       </div>
