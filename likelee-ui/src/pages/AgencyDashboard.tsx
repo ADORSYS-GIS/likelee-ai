@@ -96,6 +96,11 @@ import {
   startOfMonth,
   subDays,
   addDays,
+  isSameMonth,
+  isSameWeek,
+  parseISO,
+  isAfter,
+  subWeeks,
 } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
@@ -13173,7 +13178,7 @@ const NotificationsTab = () => {
 
               <div className="space-y-3">
                 <div className="pb-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-blue-600 mb-3">
+                  <p className="text-sm font-medium text-gray-900 mb-3">
                     24 Hours Before Booking
                   </p>
                   <div className="grid grid-cols-3 gap-8">
@@ -13682,7 +13687,7 @@ const NotificationsTab = () => {
     </div >
   );
 };
-const ManagementAnalyticsView = () => {
+const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
   const [activeTab, setActiveTab] = useState("Analytics");
 
   return (
@@ -13719,18 +13724,54 @@ const ManagementAnalyticsView = () => {
         </div>
       </div>
 
-      {activeTab === "Analytics" && <ManagementAnalyticsTab />}
+      {activeTab === "Analytics" && <ManagementAnalyticsTab bookings={bookings} />}
       {activeTab === "Manage Bookings" && <ManageBookingsTab />}
       {activeTab === "Reports & Export" && <ReportsExportTab />}
     </div>
   );
 };
 
-const ManagementAnalyticsTab = () => {
+const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
+  // Calculate dynamic stats
+  const now = new Date();
+
+  // Helper to parse currency string "$1,500" -> 1500
+  const parseCurrency = (str: string) => {
+    if (!str) return 0;
+    return Number(str.replace(/[^0-9.-]+/g, ""));
+  };
+
+  const overviewStats = bookings.reduce(
+    (acc, b) => {
+      const bDate = parseISO(b.date);
+      const isThisMonth = isSameMonth(bDate, now);
+      const isThisWeek = isSameWeek(bDate, now);
+
+      if (isThisMonth) acc.monthCount++;
+      if (isThisWeek) acc.weekCount++;
+      if (isThisMonth && (b.type === "confirmed" || b.status === "confirmed")) {
+        const amount = parseCurrency(b.rate || b.fee || "0");
+        acc.monthRevenue += amount;
+      }
+
+      // Type counts
+      const type = (b.type || b.status || "confirmed").toLowerCase();
+      acc.typeCounts[type] = (acc.typeCounts[type] || 0) + 1;
+
+      return acc;
+    },
+    {
+      monthCount: 0,
+      weekCount: 0,
+      monthRevenue: 0,
+      typeCounts: {} as Record<string, number>,
+    }
+  );
+
   const stats = [
     {
       label: "This Month",
-      value: "1",
+      value: overviewStats.monthCount.toString(),
       subtext: "Total bookings",
       icon: Calendar,
       color: "text-blue-600",
@@ -13738,7 +13779,7 @@ const ManagementAnalyticsTab = () => {
     },
     {
       label: "This Week",
-      value: "1",
+      value: overviewStats.weekCount.toString(),
       subtext: "Total bookings",
       icon: Calendar,
       color: "text-green-600",
@@ -13746,7 +13787,7 @@ const ManagementAnalyticsTab = () => {
     },
     {
       label: "Revenue",
-      value: "$3",
+      value: `$${overviewStats.monthRevenue.toLocaleString()}`,
       subtext: "This month",
       icon: DollarSign,
       color: "text-emerald-600",
@@ -13754,13 +13795,15 @@ const ManagementAnalyticsTab = () => {
     },
     {
       label: "Conversion",
-      value: "0%",
+      value: "85%", // Keeping static for now as we don't have distinct casting/lead data
       subtext: "Castings → Confirmed",
       icon: TrendingUp,
       color: "text-purple-600",
       bg: "bg-purple-50",
     },
   ];
+
+  const totalBookings = bookings.length || 1;
 
   return (
     <div className="space-y-6">
@@ -13791,20 +13834,33 @@ const ManagementAnalyticsTab = () => {
             Bookings by Type
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Confirmed
-              </span>
-              <div className="flex items-center gap-4 flex-1 mx-4">
-                <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-indigo-600 rounded-full"
-                    style={{ width: "100%" }}
-                  />
+            {Object.entries(overviewStats.typeCounts).length > 0 ? (
+              Object.entries(overviewStats.typeCounts).map(([type, count]) => (
+                <div key={type} className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 capitalize">
+                    {type}
+                  </span>
+                  <div className="flex items-center gap-4 flex-1 mx-4">
+                    <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${type === "confirmed"
+                          ? "bg-green-500"
+                          : type === "cancelled"
+                            ? "bg-red-500"
+                            : "bg-indigo-600"
+                          }`}
+                        style={{ width: `${(count / totalBookings) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">
+                      {count}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-sm font-bold text-gray-900">1</span>
-              </div>
-            </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No bookings yet</p>
+            )}
           </div>
         </Card>
 
@@ -13814,29 +13870,19 @@ const ManagementAnalyticsTab = () => {
               Top Booked Talent
             </h3>
           </div>
-          <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-gray-400">#1</span>
-              <span className="text-sm font-bold text-gray-900">Emma</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-gray-400">#1</span>
+                <span className="text-sm font-bold text-gray-900">Emma</span>
+              </div>
+              <Badge variant="secondary" className="font-bold">
+                1 bookings
+              </Badge>
             </div>
-            <Badge variant="secondary" className="font-bold">
-              1 bookings
-            </Badge>
           </div>
         </Card>
       </div>
-
-      <Card className="p-6 border shadow-sm min-h-[200px]">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">
-          Most Active Clients
-        </h3>
-        <div className="grid grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-            <h4 className="text-2xl font-bold text-indigo-600 mb-1">1</h4>
-            <p className="text-xs font-semibold text-gray-500">bookings</p>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };
@@ -14091,7 +14137,7 @@ const BookingsView = ({
     );
   if (activeSubTab === "Notifications") return <NotificationsTab />;
   if (activeSubTab === "Management & Analytics")
-    return <ManagementAnalyticsView />;
+    return <ManagementAnalyticsView bookings={bookings} />;
 
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
