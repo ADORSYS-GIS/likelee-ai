@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -59,23 +59,19 @@ import {
   MoreVertical,
   Share2,
   Upload,
-  MapPin,
-  Star,
   FolderPlus,
   FolderOpen,
   Briefcase,
   Receipt,
   Megaphone,
-  ChevronUp,
-  Send,
-  AlertTriangle,
   Calculator,
   FileDown,
+  Send,
   Printer,
   Files,
   TrendingDown,
-  Edit2,
-  Menu,
+  MapPin,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,40 +86,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  format,
-  addMonths,
-  subMonths,
-  getDaysInMonth,
-  startOfMonth,
-  subDays,
-  addDays,
-  isSameMonth,
-  isSameWeek,
-  parseISO,
-  isAfter,
-  subWeeks,
-} from "date-fns";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
-import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
 const AddProspectModal = ({
   open,
@@ -362,6 +327,110 @@ interface Client {
   };
 }
 
+interface FileItem {
+  id: string;
+  name: string;
+  type: "pdf" | "docx" | "jpg" | "png";
+  size: string;
+  folder: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  thumbnailUrl?: string;
+}
+
+interface FolderItem {
+  id: string;
+  name: string;
+  fileCount: number;
+  totalSize: string;
+  type: string;
+}
+
+const MOCK_FOLDERS: FolderItem[] = [
+  {
+    id: "1",
+    name: "Talent Files",
+    fileCount: 124,
+    totalSize: "4.2 GB",
+    type: "talent",
+  },
+  {
+    id: "2",
+    name: "Client Contracts",
+    fileCount: 45,
+    totalSize: "1.8 GB",
+    type: "client",
+  },
+  {
+    id: "3",
+    name: "Booking Documents",
+    fileCount: 89,
+    totalSize: "3.1 GB",
+    type: "booking",
+  },
+  {
+    id: "4",
+    name: "Receipts & Expenses",
+    fileCount: 156,
+    totalSize: "2.1 GB",
+    type: "expense",
+  },
+  {
+    id: "5",
+    name: "Marketing Materials",
+    fileCount: 67,
+    totalSize: "1.2 GB",
+    type: "marketing",
+  },
+];
+
+const MOCK_FILES: FileItem[] = [
+  {
+    id: "1",
+    name: "Emma_Contract_2024.pdf",
+    type: "pdf",
+    size: "245 KB",
+    folder: "Talent Files",
+    uploadedBy: "John Doe",
+    uploadedAt: "Jan 10, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
+  },
+  {
+    id: "2",
+    name: "Vogue_Shoot_Callsheet.pdf",
+    type: "pdf",
+    size: "186 KB",
+    folder: "Booking Documents",
+    uploadedBy: "Jane Smith",
+    uploadedAt: "Jan 9, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&h=300&fit=crop",
+  },
+  {
+    id: "3",
+    name: "Milan_Headshot_2024.jpg",
+    type: "jpg",
+    size: "3.2 MB",
+    folder: "Talent Files",
+    uploadedBy: "John Doe",
+    uploadedAt: "Jan 8, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop",
+  },
+  {
+    id: "4",
+    name: "Client_Brief_Nike.docx",
+    type: "docx",
+    size: "124 KB",
+    folder: "Client Contracts",
+    uploadedBy: "Sarah Wilson",
+    uploadedAt: "Jan 7, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+  },
+];
+
 const MOCK_CLIENTS: Client[] = [
   {
     id: "nike",
@@ -562,7 +631,7 @@ const MOCK_INVOICES = [
   },
 ];
 
-const SimpleAddClientModal = ({
+const AddClientModal = ({
   isOpen,
   onClose,
 }: {
@@ -671,25 +740,24 @@ const ClientProfileModal = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] h-[85vh] p-0 rounded-2xl border-none flex flex-col overflow-hidden">
-        <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
-          {/* Fixed Header Area */}
-          <div className="p-4 sm:p-8 pb-0 shrink-0 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-gray-400" />
-              </div>
-              <div className="flex items-center gap-3">
-                <DialogTitle className="text-2xl font-bold text-gray-900">
-                  {client.name}
-                </DialogTitle>
-                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
-                  {client.status}
-                </Badge>
-              </div>
+      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
+        <div className="p-8 space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-gray-400" />
             </div>
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                {client.name}
+              </DialogTitle>
+              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                {client.status}
+              </Badge>
+            </div>
+          </div>
 
-            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 overflow-x-auto no-scrollbar shrink-0">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
               <TabsTrigger
                 value="overview"
                 className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
@@ -721,12 +789,9 @@ const ClientProfileModal = ({
                 Files & Notes
               </TabsTrigger>
             </TabsList>
-          </div>
 
-          {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-6">
             <TabsContent value="overview" className="space-y-6 mt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <Building2 className="w-5 h-5 text-gray-400" />
@@ -808,7 +873,7 @@ const ClientProfileModal = ({
 
               <div className="space-y-4">
                 <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-4 gap-4">
                   <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
                     <span className="text-2xl font-bold text-purple-600 block">
                       {client.metrics?.revenue || "—"}
@@ -848,8 +913,8 @@ const ClientProfileModal = ({
             <TabsContent value="contacts" className="space-y-6 mt-0">
               <div className="flex justify-between items-center">
                 <h4 className="font-bold text-gray-900">Contact List</h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
-                  <Plus className="w-3.5 h-3.5" />
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <Plus className="w-4 h-4" />
                   Add Contact
                 </Button>
               </div>
@@ -857,10 +922,10 @@ const ClientProfileModal = ({
                 {MOCK_CONTACTS.map((contact, idx) => (
                   <Card
                     key={idx}
-                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-3">
                         <div>
                           <h5 className="font-bold text-gray-900 text-lg">
                             {contact.name}
@@ -880,27 +945,27 @@ const ClientProfileModal = ({
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-8 h-8 rounded-lg border-gray-100"
+                          className="w-10 h-10 rounded-xl border-gray-100"
                         >
-                          <Mail className="w-3.5 h-3.5 text-gray-500" />
+                          <Mail className="w-4 h-4 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-8 h-8 rounded-lg border-gray-100"
+                          className="w-10 h-10 rounded-xl border-gray-100"
                         >
-                          <Phone className="w-3.5 h-3.5 text-gray-500" />
+                          <Phone className="w-4 h-4 text-gray-500" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-8 h-8 rounded-lg border-gray-100"
+                          className="w-10 h-10 rounded-xl border-gray-100"
                         >
-                          <Edit className="w-3.5 h-3.5 text-gray-500" />
+                          <Edit className="w-4 h-4 text-gray-500" />
                         </Button>
                       </div>
                     </div>
@@ -914,19 +979,19 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">
                   Communication History
                 </h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
-                  <Plus className="w-3.5 h-3.5" />
-                  Log
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <Plus className="w-4 h-4" />
+                  Log Communication
                 </Button>
               </div>
               <div className="space-y-4">
                 {MOCK_COMMUNICATIONS.map((comm, idx) => (
                   <Card
                     key={idx}
-                    className="p-4 border-gray-100 rounded-2xl shadow-sm"
+                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 flex items-center gap-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
                           {comm.type === "email" && (
                             <Mail className="w-5 h-5 text-indigo-600" />
@@ -939,17 +1004,17 @@ const ClientProfileModal = ({
                           )}
                         </div>
                         <div>
-                          <h5 className="font-bold text-gray-900 text-sm">
+                          <h5 className="font-bold text-gray-900">
                             {comm.subject}
                           </h5>
-                          <p className="text-xs text-gray-600 font-medium">
+                          <p className="text-sm text-gray-600 font-medium">
                             {comm.date} • {comm.participants}
                           </p>
                         </div>
                       </div>
                       <Badge
                         variant="outline"
-                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-2 py-0.5 text-[10px]"
+                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
                       >
                         {comm.type}
                       </Badge>
@@ -976,20 +1041,18 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">Notes</h4>
                 <Textarea
                   defaultValue="Prefers diverse talent, always books for multi-day shoots."
-                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium text-gray-400 italic"
+                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
                 />
-                <div className="flex justify-end">
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-lg text-xs">
-                    Save Notes
-                  </Button>
-                </div>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
+                  Save Notes
+                </Button>
               </Card>
 
               <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
                 <div className="flex justify-between items-center">
                   <h4 className="font-bold text-gray-900">Files & Documents</h4>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs">
-                    <Plus className="w-3.5 h-3.5" />
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                    <Plus className="w-4 h-4" />
                     Upload File
                   </Button>
                 </div>
@@ -1001,34 +1064,33 @@ const ClientProfileModal = ({
                 </div>
               </Card>
             </TabsContent>
-          </div>
+          </Tabs>
 
-          {/* Fixed Footer Area */}
-          <div className="p-4 sm:p-8 border-t border-gray-100 shrink-0 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-white">
+          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-600 font-bold text-sm"
+                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
               >
-                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                <Edit className="w-4 h-4 mr-2" />
                 Edit Client
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold text-sm"
+                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
               >
-                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                <Trash2 className="w-4 h-4 mr-2" />
                 Delete Client
               </Button>
             </div>
             <Button
               onClick={onClose}
-              className="w-full sm:w-auto h-9 sm:h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-sm"
+              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
             >
               Close
             </Button>
           </div>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -1055,29 +1117,27 @@ const ClientCard = ({
   };
 
   return (
-    <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
       <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex flex-row gap-4 sm:gap-6">
-          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
-            <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+        <div className="flex gap-6">
+          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+            <Building2 className="w-10 h-10 text-gray-500" />
           </div>
-          <div className="space-y-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-                {client.name}
-              </h3>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
               <Badge
                 variant="outline"
-                className={`${getStatusColor(client.status)} font-bold text-[10px] sm:text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-sm shrink-0`}
+                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
               >
                 {client.status}
               </Badge>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex gap-1.5">
                 {client.tags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="text-[10px] sm:text-[11px] font-bold text-gray-900 border-gray-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
                   >
                     <Tag className="w-3 h-3 text-gray-900" />
                     {tag}
@@ -1085,21 +1145,21 @@ const ClientCard = ({
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm text-gray-600 font-medium">
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
               <span className="flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                <Building2 className="w-4 h-4 text-gray-400" />
                 {client.industry}
               </span>
               <span className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                <Globe className="w-4 h-4 text-gray-400" />
                 {client.website}
               </span>
               <span className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                <Users className="w-4 h-4 text-gray-400" />
                 {client.contacts} contacts
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs sm:text-sm mt-2.5 font-medium">
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
               <span className="text-gray-500">
                 Total Revenue:{" "}
                 <span className="font-bold text-gray-900">
@@ -1127,34 +1187,34 @@ const ClientCard = ({
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full lg:w-auto">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
           >
-            <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+            <Mail className="w-4 h-4 mr-2" />
             Email
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
           >
-            <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+            <Phone className="w-4 h-4 mr-2" />
             Call
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 w-full sm:w-auto col-span-2 sm:col-span-1"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
           >
-            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+            <Package className="w-4 h-4 mr-2" />
             Send Package
           </Button>
           <Button
             onClick={onViewProfile}
-            className="h-9 sm:h-10 px-4 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl w-full sm:w-auto col-span-2 sm:col-span-1"
+            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
           >
             View Profile
           </Button>
@@ -1191,9 +1251,9 @@ const ClientCRMView = () => {
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Client Relationship Management
           </h1>
           <p className="text-gray-600 font-medium">
@@ -1203,7 +1263,7 @@ const ClientCRMView = () => {
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center justify-center gap-2"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Add Client
@@ -1211,63 +1271,53 @@ const ClientCRMView = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="p-4 sm:p-6 bg-green-50/50 border-green-100 rounded-2xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-sm sm:text-base font-bold text-green-800">
+            <span className="text-base font-bold text-green-800">
               Active Clients
             </span>
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-green-900">
-            1
-          </span>
+          <span className="text-3xl font-bold text-green-900">1</span>
         </Card>
-        <Card className="p-4 sm:p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
+        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-sm sm:text-base font-bold text-blue-800">
-              Prospects
-            </span>
+            <span className="text-base font-bold text-blue-800">Prospects</span>
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-blue-900">
-            1
-          </span>
+          <span className="text-3xl font-bold text-blue-900">1</span>
         </Card>
-        <Card className="p-4 sm:p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
+        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
-            <span className="text-sm sm:text-base font-bold text-purple-800">
+            <span className="text-base font-bold text-purple-800">
               Total Revenue
             </span>
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-purple-900">
-            $495K
-          </span>
+          <span className="text-3xl font-bold text-purple-900">$495K</span>
         </Card>
-        <Card className="p-4 sm:p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
+        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2 bg-orange-100 rounded-lg">
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-sm sm:text-base font-bold text-orange-800">
+            <span className="text-base font-bold text-orange-800">
               Follow-ups Due
             </span>
           </div>
-          <span className="text-2xl sm:text-3xl font-bold text-orange-900">
-            0
-          </span>
+          <span className="text-3xl font-bold text-orange-900">0</span>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
@@ -1277,30 +1327,28 @@ const ClientCRMView = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="grid grid-cols-2 md:flex gap-4 sm:gap-6">
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-              <SelectValue placeholder="All Stages" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stages</SelectItem>
-              <SelectItem value="leads">Leads</SelectItem>
-              <SelectItem value="prospects">Prospects</SelectItem>
-              <SelectItem value="active">Active Clients</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-              <SelectValue placeholder="Last Booking" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="last-booking">Last Booking</SelectItem>
-              <SelectItem value="revenue">Total Revenue</SelectItem>
-              <SelectItem value="name">Company Name</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+            <SelectValue placeholder="All Stages" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Stages</SelectItem>
+            <SelectItem value="leads">Leads</SelectItem>
+            <SelectItem value="prospects">Prospects</SelectItem>
+            <SelectItem value="active">Active Clients</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+            <SelectValue placeholder="Last Booking" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last-booking">Last Booking</SelectItem>
+            <SelectItem value="revenue">Total Revenue</SelectItem>
+            <SelectItem value="name">Company Name</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Client List */}
@@ -1314,7 +1362,7 @@ const ClientCRMView = () => {
         ))}
       </div>
 
-      <SimpleAddClientModal
+      <AddClientModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
@@ -1325,6 +1373,3064 @@ const ClientCRMView = () => {
           onClose={() => setSelectedClient(null)}
         />
       )}
+    </div>
+  );
+};
+
+const StorageUsageCard = () => (
+  <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center gap-2">
+        <HardDrive className="w-5 h-5 text-indigo-600" />
+        <span className="text-base font-bold text-gray-900">Storage Usage</span>
+      </div>
+      <span className="text-sm font-bold text-gray-900">
+        <span className="text-indigo-600">12.4 GB</span> of 50 GB used
+      </span>
+    </div>
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+      <div
+        className="h-full bg-indigo-600 rounded-full"
+        style={{ width: "24.8%" }}
+      />
+    </div>
+    <div className="flex justify-between items-center">
+      <p className="text-sm text-gray-500 font-medium">
+        37.6 GB remaining • Professional Plan
+      </p>
+      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
+        Upgrade Plan
+      </Button>
+    </div>
+  </Card>
+);
+
+const FolderCard = ({ folder }: { folder: FolderItem }) => {
+  const getFolderColor = (type: string) => {
+    switch (type) {
+      case "talent":
+        return "text-indigo-500";
+      case "client":
+        return "text-emerald-500";
+      case "booking":
+        return "text-blue-500";
+      case "expense":
+        return "text-orange-500";
+      case "marketing":
+        return "text-purple-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const getFolderBg = (type: string) => {
+    switch (type) {
+      case "talent":
+        return "bg-indigo-50/50";
+      case "client":
+        return "bg-emerald-50/50";
+      case "booking":
+        return "bg-blue-50/50";
+      case "expense":
+        return "bg-orange-50/50";
+      case "marketing":
+        return "bg-purple-50/50";
+      default:
+        return "bg-gray-50/50";
+    }
+  };
+
+  return (
+    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-6 relative z-10">
+        <div
+          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
+        >
+          <div className="relative">
+            <Folder
+              className={`w-8 h-8 ${getFolderColor(folder.type)} fill-current opacity-20`}
+            />
+            <Folder
+              className={`absolute inset-0 w-8 h-8 ${getFolderColor(folder.type)}`}
+            />
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 rounded-xl">
+            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+              <FolderOpen className="w-4 h-4 mr-2" /> Open
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+              <Edit className="w-4 h-4 mr-2" /> Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="relative z-10">
+        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
+          {folder.name}
+        </h4>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-600 font-bold">
+            {folder.fileCount} files
+          </span>
+          <span className="text-xs text-gray-400">•</span>
+          <span className="text-xs text-gray-500 font-bold">
+            {folder.totalSize}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const FileCard = ({
+  file,
+  onPreview,
+  onShare,
+}: {
+  file: FileItem;
+  onPreview: (file: FileItem) => void;
+  onShare: (file: FileItem) => void;
+}) => (
+  <Card className="overflow-hidden bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow group max-w-[280px]">
+    <div className="aspect-video bg-gray-50 flex items-center justify-center relative">
+      {file.thumbnailUrl ? (
+        <img
+          src={file.thumbnailUrl}
+          alt={file.name}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="flex flex-col items-center gap-2">
+          {file.type === "pdf" && <FileText className="w-8 h-8 text-red-500" />}
+          {file.type === "docx" && (
+            <FileText className="w-8 h-8 text-blue-500" />
+          )}
+          {file.type === "jpg" && <File className="w-8 h-8 text-emerald-500" />}
+          <span className="text-[10px] font-black uppercase text-gray-400">
+            {file.type}
+          </span>
+        </div>
+      )}
+      <div className="absolute top-2 right-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 rounded-xl">
+            <DropdownMenuItem
+              onClick={() => onPreview(file)}
+              className="font-bold text-gray-700 cursor-pointer"
+            >
+              <Eye className="w-4 h-4 mr-2" /> Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+              <Download className="w-4 h-4 mr-2" /> Download
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onShare(file)}
+              className="font-bold text-gray-700 cursor-pointer"
+            >
+              <Share2 className="w-4 h-4 mr-2" /> Share Link
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+    <div className="p-2.5">
+      <h5 className="text-[13px] font-bold text-gray-900 truncate mb-1">
+        {file.name}
+      </h5>
+      <div className="flex justify-between items-center">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-gray-600 font-bold">
+            {file.size}
+          </span>
+          <span className="text-[10px] text-gray-500 font-bold">
+            {file.uploadedAt}
+          </span>
+        </div>
+        <Badge
+          variant="outline"
+          className="text-[9px] font-bold text-gray-700 border-gray-200 px-1.5 py-0 bg-gray-50/50"
+        >
+          {file.folder}
+        </Badge>
+      </div>
+    </div>
+  </Card>
+);
+
+const FileRow = ({
+  file,
+  onPreview,
+  onShare,
+}: {
+  file: FileItem;
+  onPreview: (file: FileItem) => void;
+  onShare: (file: FileItem) => void;
+}) => (
+  <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow group">
+    <div className="flex items-center gap-4 flex-1">
+      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
+        {file.type === "pdf" && <FileText className="w-5 h-5 text-red-500" />}
+        {file.type === "docx" && <FileText className="w-5 h-5 text-blue-500" />}
+        {file.type === "jpg" && <File className="w-5 h-5 text-emerald-500" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h5 className="text-sm font-bold text-gray-900 truncate">
+          {file.name}
+        </h5>
+        <p className="text-xs text-gray-600 font-bold">
+          {file.size} • <span className="text-indigo-600">{file.folder}</span> •
+          Uploaded by <span className="text-gray-900">{file.uploadedBy}</span>{" "}
+          on {file.uploadedAt}
+        </p>
+      </div>
+    </div>
+    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+        onClick={() => onPreview(file)}
+      >
+        <Eye className="w-4 h-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+      >
+        <Download className="w-4 h-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+        onClick={() => onShare(file)}
+      >
+        <Share2 className="w-4 h-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+);
+
+const NewFolderModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-[425px] rounded-2xl">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Create New Folder
+        </DialogTitle>
+        <DialogDescription className="text-gray-500 font-medium">
+          Organize your files into folders
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700">Folder Name</Label>
+          <Input
+            placeholder="e.g., Q1 2024 Campaigns"
+            className="h-11 rounded-xl border-gray-200"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700">Folder Type</Label>
+          <Select>
+            <SelectTrigger className="h-11 rounded-xl border-gray-200">
+              <SelectValue placeholder="Select type..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="talent">Talent Files</SelectItem>
+              <SelectItem value="client">Client Files</SelectItem>
+              <SelectItem value="booking">Booking Files</SelectItem>
+              <SelectItem value="expense">Expense Files</SelectItem>
+              <SelectItem value="marketing">Marketing Files</SelectItem>
+              <SelectItem value="others">others</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <DialogFooter className="gap-2">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
+          Cancel
+        </Button>
+        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+          Create Folder
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+const UploadFilesModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-[500px] rounded-2xl">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Upload Files
+        </DialogTitle>
+        <DialogDescription className="text-gray-500 font-medium">
+          Upload documents, images, or other files to your storage
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-6 py-4">
+        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
+          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Upload className="w-6 h-6 text-indigo-600" />
+          </div>
+          <p className="text-sm font-bold text-gray-900 mb-1">
+            Click to upload or drag and drop
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            PDF, DOC, JPG, PNG up to 50MB
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700">
+            Save to folder
+          </Label>
+          <Select>
+            <SelectTrigger className="h-11 rounded-xl border-gray-200">
+              <SelectValue placeholder="Select a folder..." />
+            </SelectTrigger>
+            <SelectContent>
+              {MOCK_FOLDERS.map((folder) => (
+                <SelectItem key={folder.id} value={folder.id}>
+                  {folder.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <DialogFooter className="gap-2">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
+          Cancel
+        </Button>
+        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+          Upload Files
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+const FilePreviewModal = ({
+  file,
+  isOpen,
+  onClose,
+}: {
+  file: FileItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!file) return null;
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+              {file.type === "pdf" && (
+                <FileText className="w-6 h-6 text-red-500" />
+              )}
+              {file.type === "docx" && (
+                <FileText className="w-6 h-6 text-blue-500" />
+              )}
+              {file.type === "jpg" && (
+                <File className="w-6 h-6 text-emerald-500" />
+              )}
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-bold text-gray-900">
+                {file.name}
+              </DialogTitle>
+              <p className="text-sm text-gray-500 font-medium">
+                {file.size} • Uploaded by {file.uploadedBy} on {file.uploadedAt}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-xl hover:bg-gray-50"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </Button>
+        </div>
+        <div className="p-10 bg-gray-50/50 flex items-center justify-center min-h-[500px] relative group">
+          {file.thumbnailUrl ? (
+            <div className="relative">
+              <img
+                src={file.thumbnailUrl}
+                alt={file.name}
+                className="max-w-full max-h-[600px] rounded-2xl shadow-2xl border-4 border-white transition-transform group-hover:scale-[1.01]"
+              />
+              <div className="absolute inset-0 rounded-2xl shadow-inner pointer-events-none" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-6 p-12 bg-white rounded-3xl shadow-sm border border-gray-100">
+              <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center">
+                {file.type === "pdf" && (
+                  <FileText className="w-10 h-10 text-red-500" />
+                )}
+                {file.type === "docx" && (
+                  <FileText className="w-10 h-10 text-blue-500" />
+                )}
+              </div>
+              <div className="text-center">
+                <p className="text-gray-900 font-bold text-lg mb-1">
+                  Preview not available
+                </p>
+                <p className="text-gray-500 text-sm font-medium">
+                  Please download the file to view its content
+                </p>
+              </div>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-8">
+                Download Now
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="p-6 border-t border-gray-100 flex justify-between items-center bg-white">
+          <div className="flex gap-2">
+            <Badge
+              variant="outline"
+              className="bg-gray-50 text-gray-600 border-gray-200 font-bold px-3 py-1 rounded-lg"
+            >
+              {file.folder}
+            </Badge>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
+            >
+              Close Preview
+            </Button>
+            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
+              <Download className="w-4 h-4" />
+              Download File
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ShareFileModal = ({
+  file,
+  isOpen,
+  onClose,
+}: {
+  file: FileItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!file) return null;
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+        <div className="p-6 border-b border-gray-100 bg-white">
+          <div className="flex justify-between items-start mb-1">
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Share File
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-xl -mr-2 -mt-2"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </Button>
+          </div>
+          <DialogDescription className="text-gray-500 font-medium">
+            Generate a secure shareable link for{" "}
+            <span className="text-gray-900 font-bold">{file.name}</span>
+          </DialogDescription>
+        </div>
+
+        <div className="p-6 space-y-6 bg-gray-50/30">
+          <div className="space-y-2.5">
+            <Label className="text-sm font-bold text-gray-700 ml-1">
+              Share Link
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  readOnly
+                  value={`https://agency.likelee.ai/share/${file.id}`}
+                  className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
+                />
+                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+              <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
+                <Copy className="w-4 h-4" />
+                Copy
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <Label className="text-sm font-bold text-gray-700 ml-1">
+                Link Expiration
+              </Label>
+              <Select defaultValue="7-days">
+                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
+                  <SelectValue placeholder="Select expiration..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="24-hours" className="font-medium">
+                    24 Hours
+                  </SelectItem>
+                  <SelectItem value="7-days" className="font-medium">
+                    7 Days
+                  </SelectItem>
+                  <SelectItem value="30-days" className="font-medium">
+                    30 Days
+                  </SelectItem>
+                  <SelectItem value="never" className="font-medium">
+                    Never
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2.5">
+              <Label className="text-sm font-bold text-gray-700 ml-1">
+                Access Level
+              </Label>
+              <Select defaultValue="view">
+                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
+                  <SelectValue placeholder="Select access..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="view" className="font-medium">
+                    View Only
+                  </SelectItem>
+                  <SelectItem value="download" className="font-medium">
+                    Can Download
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <Label
+                  className="text-sm font-bold text-gray-700 cursor-pointer"
+                  htmlFor="require-password"
+                >
+                  Require password
+                </Label>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Add an extra layer of security
+                </p>
+              </div>
+            </div>
+            <Checkbox
+              id="require-password"
+              className="rounded-md w-5 h-5 border-gray-300"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-white">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="h-12 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </Button>
+          <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
+            <Share2 className="w-4 h-4" />
+            Create Share Link
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const FileStorageView = () => {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedFileForPreview, setSelectedFileForPreview] =
+    useState<FileItem | null>(null);
+  const [selectedFileForShare, setSelectedFileForShare] =
+    useState<FileItem | null>(null);
+
+  return (
+    <div className="space-y-8">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Folder className="w-8 h-8 text-indigo-600" />
+            File Storage
+          </h1>
+          <p className="text-gray-600 font-medium">
+            Organize and manage your agency files
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setIsNewFolderModalOpen(true)}
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <FolderPlus className="w-5 h-5" />
+            New Folder
+          </Button>
+          <Button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+          >
+            <Upload className="w-5 h-5" />
+            Upload Files
+          </Button>
+        </div>
+      </div>
+
+      <StorageUsageCard />
+
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Search files by name..."
+              className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
+            <Select defaultValue="name-asc">
+              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                <SelectItem value="date-desc">Date (Newest)</SelectItem>
+                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
+                <SelectItem value="size-desc">Size (Largest)</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex bg-gray-100 p-1 rounded-xl">
+              <Button
+                variant={viewMode === "grid" ? "white" : "ghost"}
+                size="sm"
+                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
+                onClick={() => setViewMode("grid")}
+              >
+                <Grid className="w-4 h-4 mr-2" />
+                Grid
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "white" : "ghost"}
+                size="sm"
+                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4 mr-2" />
+                List
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {MOCK_FOLDERS.map((folder) => (
+            <FolderCard key={folder.id} folder={folder} />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
+          <span className="text-sm text-gray-500 font-medium">
+            {MOCK_FILES.length} files
+          </span>
+        </div>
+
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {MOCK_FILES.map((file) => (
+              <FileCard
+                key={file.id}
+                file={file}
+                onPreview={setSelectedFileForPreview}
+                onShare={setSelectedFileForShare}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {MOCK_FILES.map((file) => (
+              <FileRow
+                key={file.id}
+                file={file}
+                onPreview={setSelectedFileForPreview}
+                onShare={setSelectedFileForShare}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <NewFolderModal
+        isOpen={isNewFolderModalOpen}
+        onClose={() => setIsNewFolderModalOpen(false)}
+      />
+      <UploadFilesModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
+      <FilePreviewModal
+        file={selectedFileForPreview}
+        isOpen={!!selectedFileForPreview}
+        onClose={() => setSelectedFileForPreview(null)}
+      />
+      <ShareFileModal
+        file={selectedFileForShare}
+        isOpen={!!selectedFileForShare}
+        onClose={() => setSelectedFileForShare(null)}
+      />
+    </div>
+  );
+};
+
+// --- Accounting & Invoicing Views ---
+
+const ExpenseTrackingView = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "pending":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "rejected":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "Travel":
+        return <Calendar className="w-5 h-5 text-orange-600" />;
+      case "Equipment":
+        return <Package className="w-5 h-5 text-blue-600" />;
+      case "Marketing":
+        return <Megaphone className="w-5 h-5 text-purple-600" />;
+      default:
+        return <Receipt className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const totalExpenses = MOCK_EXPENSES.reduce((sum, expense) => {
+    const amount = parseFloat(expense.amount.replace("$", ""));
+    return sum + amount;
+  }, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Expense Tracking</h2>
+          <p className="text-gray-600 font-medium">
+            Track and manage agency expenses
+          </p>
+        </div>
+        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Add Expense
+        </Button>
+      </div>
+
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            placeholder="Search expenses..."
+            className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-64 h-12 bg-white border-gray-100 rounded-xl">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="travel">Travel</SelectItem>
+            <SelectItem value="equipment">Equipment</SelectItem>
+            <SelectItem value="marketing">Marketing</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3">
+        {MOCK_EXPENSES.map((expense) => (
+          <Card
+            key={expense.id}
+            className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
+                  {getCategoryIcon(expense.category)}
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-base font-bold text-gray-900">
+                    {expense.name}
+                  </h4>
+                  <p className="text-sm text-gray-600 font-bold">
+                    {expense.category} • {expense.date}
+                    {expense.submitter && ` • ${expense.submitter}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
+                >
+                  {expense.status}
+                </Badge>
+                <span className="text-lg font-bold text-gray-900">
+                  {expense.amount}
+                </span>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-6 bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-2xl">
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-sm font-bold text-gray-700 mb-1">
+              Total Expenses
+            </p>
+            <p className="text-3xl font-bold text-orange-600">
+              ${totalExpenses.toFixed(2)}
+            </p>
+          </div>
+          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center">
+            <Receipt className="w-8 h-8 text-orange-600" />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const TalentStatementsView = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("amount-high");
+  const [hasUnpaidEarnings, setHasUnpaidEarnings] = useState(false);
+  const [selectedTalent, setSelectedTalent] = useState<any>(null);
+
+  if (selectedTalent) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedTalent(null)}
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to All Talent
+            </Button>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Talent Statement - {selectedTalent.name}
+            </h2>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Mail className="w-4 h-4" />
+              Email Statement
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </Button>
+          </div>
+        </div>
+
+        <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+          <div className="flex items-center gap-6">
+            <img
+              src={selectedTalent.photo}
+              alt={selectedTalent.name}
+              className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-md"
+            />
+            <div className="space-y-3">
+              <h3 className="text-3xl font-bold text-gray-900">
+                {selectedTalent.name}
+              </h3>
+              <Select defaultValue="all-time">
+                <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 font-bold text-gray-700">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all-time">All Time</SelectItem>
+                  <SelectItem value="this-month">This Month</SelectItem>
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="this-quarter">This Quarter</SelectItem>
+                  <SelectItem value="this-year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-4 gap-6">
+          <Card className="p-6 bg-orange-50 border border-orange-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-4 h-4 text-orange-600" />
+              <p className="text-sm font-bold text-gray-700">Total Owed</p>
+            </div>
+            <p className="text-3xl font-bold text-orange-600 mb-1">
+              {selectedTalent.totalOwed}
+            </p>
+            <p className="text-xs text-gray-600 font-medium">0 unpaid jobs</p>
+          </Card>
+          <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <p className="text-sm font-bold text-gray-700">
+                Total Paid (YTD)
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-green-600 mb-1">
+              {selectedTalent.totalPaidYTD}
+            </p>
+            <p className="text-xs text-gray-600 font-medium">1 paid jobs</p>
+          </Card>
+          <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-purple-600" />
+              <p className="text-sm font-bold text-gray-700">
+                Lifetime Earnings
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-purple-600 mb-1">$2.4</p>
+            <p className="text-xs text-gray-600 font-medium">Avg: $0/mo</p>
+          </Card>
+          <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-bold text-gray-700">Last Payment</p>
+            </div>
+            <p className="text-lg font-bold text-blue-600 mb-1">
+              {selectedTalent.lastPayment}
+            </p>
+          </Card>
+        </div>
+
+        <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h4 className="text-lg font-bold text-gray-900">Earnings Detail</h4>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left w-12"></th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Job Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Client
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Gross
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Commission
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Net
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    Invoice
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                <tr className="bg-green-50/30">
+                  <td className="px-6 py-4">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                    Jan 12, 2026
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
+                    Emma
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                    Booking for
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                    $3
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-red-600">
+                    -$0.6
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-green-600">
+                    $2.4
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">
+                      Paid
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">
+                    2026-1000
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-3">
+            <div className="flex justify-between items-center max-w-md ml-auto">
+              <span className="text-sm text-gray-600 font-bold">
+                Total Gross Amount
+              </span>
+              <span className="text-sm font-bold text-gray-900">$3</span>
+            </div>
+            <div className="flex justify-between items-center max-w-md ml-auto">
+              <span className="text-sm text-gray-600 font-bold">
+                Total Agency Commission (20%)
+              </span>
+              <span className="text-sm font-bold text-red-600">-$0.6</span>
+            </div>
+            <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
+              <span className="text-lg font-bold text-gray-900">
+                Total Talent Net
+              </span>
+              <span className="text-lg font-bold text-green-600">$2.4</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Talent Earnings Statements
+          </h2>
+          <p className="text-gray-600 font-medium">
+            View and manage talent payment statements
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+        >
+          <Download className="w-5 h-5" />
+          Export All
+        </Button>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="Search by talent name..."
+            className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="amount-high">
+              Amount Owed (High to Low)
+            </SelectItem>
+            <SelectItem value="amount-low">
+              Amount Owed (Low to High)
+            </SelectItem>
+            <SelectItem value="total-paid">Total Paid (High to Low)</SelectItem>
+            <SelectItem value="name-az">Name (A-Z)</SelectItem>
+            <SelectItem value="name-za">Name (Z-A)</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl">
+          <Checkbox
+            id="unpaid-earnings"
+            checked={hasUnpaidEarnings}
+            onCheckedChange={(checked) =>
+              setHasUnpaidEarnings(checked as boolean)
+            }
+            className="rounded-md w-4 h-4 border-gray-300"
+          />
+          <Label
+            htmlFor="unpaid-earnings"
+            className="text-sm font-bold text-gray-700 cursor-pointer"
+          >
+            Has Unpaid Earnings
+          </Label>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {MOCK_TALENT_EARNINGS.map((talent) => (
+          <Card
+            key={talent.id}
+            className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                <img
+                  src={talent.photo}
+                  alt={talent.name}
+                  className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                />
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold text-gray-900">
+                    {talent.name}
+                  </h4>
+                  <p className="text-xs text-gray-600 font-bold">
+                    {talent.totalJobs} total jobs
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                    Total Owed
+                  </p>
+                  <p className="text-base font-bold text-orange-600">
+                    {talent.totalOwed}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    0 unpaid jobs
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                    Total Paid (YTD)
+                  </p>
+                  <p className="text-base font-bold text-green-600">
+                    {talent.totalPaidYTD}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    1 paid jobs
+                  </p>
+                </div>
+                <div className="text-right min-w-[100px]">
+                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                    Last Payment
+                  </p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    {talent.lastPayment}
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setSelectedTalent(talent)}
+                  className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  View Statement
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PaymentTrackingView = () => {
+  const [reminder3Days, setReminder3Days] = useState(true);
+  const [reminderDueDate, setReminderDueDate] = useState(true);
+  const [reminder7Days, setReminder7Days] = useState(true);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Payment Tracking</h2>
+        <p className="text-gray-600 font-medium">
+          Monitor payments and manage reminders
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">
+            Paid This Month
+          </p>
+          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
+          <p className="text-xs text-gray-600 font-medium">1 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">
+            Pending Payment
+          </p>
+          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">
+            Partial Payments
+          </p>
+          <p className="text-3xl font-bold text-blue-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
+          <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
+          <p className="text-3xl font-bold text-red-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Recent Payments
+        </h3>
+        <div className="space-y-3">
+          {MOCK_PAYMENTS.map((payment) => (
+            <div
+              key={payment.id}
+              className="flex items-center justify-between p-4 bg-green-50 border border-green-100 rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    Invoice {payment.invoiceNumber} • {payment.client}
+                  </p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    {payment.date}
+                  </p>
+                </div>
+              </div>
+              <span className="text-lg font-bold text-green-600">
+                {payment.amount}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Payment Reminder Settings
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Auto-send reminder 3 days before due date
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                Polite reminder template
+              </p>
+            </div>
+            <Checkbox
+              checked={reminder3Days}
+              onCheckedChange={(checked) =>
+                setReminder3Days(checked as boolean)
+              }
+              className="rounded-md w-6 h-6 border-gray-300"
+            />
+          </div>
+          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Auto-send reminder on due date
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                Payment due today template
+              </p>
+            </div>
+            <Checkbox
+              checked={reminderDueDate}
+              onCheckedChange={(checked) =>
+                setReminderDueDate(checked as boolean)
+              }
+              className="rounded-md w-6 h-6 border-gray-300"
+            />
+          </div>
+          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Auto-send reminder 7 days after due date
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                Firm reminder template
+              </p>
+            </div>
+            <Checkbox
+              checked={reminder7Days}
+              onCheckedChange={(checked) =>
+                setReminder7Days(checked as boolean)
+              }
+              className="rounded-md w-6 h-6 border-gray-300"
+            />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const FinancialReportsView = () => {
+  const [reportPeriod, setReportPeriod] = useState("this-year");
+  const [clientFilter, setClientFilter] = useState("all");
+  const [talentFilter, setTalentFilter] = useState("all");
+  const [activeReportTab, setActiveReportTab] = useState("revenue");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Financial Reports</h2>
+        <p className="text-gray-600 font-medium">
+          Comprehensive financial analytics and insights
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign className="w-5 h-5 text-green-600" />
+            <p className="text-sm font-bold text-gray-700">Total Revenue</p>
+          </div>
+          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
+          <p className="text-xs text-gray-600 font-medium">1 paid invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-5 h-5 text-yellow-600" />
+            <p className="text-sm font-bold text-gray-700">Pending</p>
+          </div>
+          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
+          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingDown className="w-5 h-5 text-red-600" />
+            <p className="text-sm font-bold text-gray-700">Expenses</p>
+          </div>
+          <p className="text-3xl font-bold text-red-600 mb-1">$775</p>
+          <p className="text-xs text-gray-600 font-medium">4 expenses</p>
+        </Card>
+        <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-5 h-5 text-indigo-600" />
+            <p className="text-sm font-bold text-gray-700">Net Income</p>
+          </div>
+          <p className="text-3xl font-bold text-indigo-600 mb-1">-$772</p>
+          <p className="text-xs text-gray-600 font-medium">past month</p>
+        </Card>
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-gray-900">Financial Reports</h3>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <FileDown className="w-4 h-4" />
+              Export to PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export to Excel
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Report Period
+            </Label>
+            <Select value={reportPeriod} onValueChange={setReportPeriod}>
+              <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="this-year">This Year</SelectItem>
+                <SelectItem value="last-year">Last Year</SelectItem>
+                <SelectItem value="this-quarter">This Quarter</SelectItem>
+                <SelectItem value="last-quarter">Last Quarter</SelectItem>
+                <SelectItem value="this-month">This Month</SelectItem>
+                <SelectItem value="last-month">Last Month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Filter by Client
+            </Label>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">All Clients</SelectItem>
+                <SelectItem value="nike">Nike Global</SelectItem>
+                <SelectItem value="adidas">Adidas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Filter by Talent
+            </Label>
+            <Select value={talentFilter} onValueChange={setTalentFilter}>
+              <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">All Talent</SelectItem>
+                <SelectItem value="emma">Emma</SelectItem>
+                <SelectItem value="milan">Milan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-6 border-b border-gray-100">
+          {[
+            { id: "revenue", label: "Revenue Report" },
+            { id: "receivables", label: "Outstanding Receivables" },
+            { id: "payables", label: "Talent Payables" },
+            { id: "commission", label: "Commission Report" },
+            { id: "profit", label: "Profit & Loss" },
+            { id: "tax", label: "Tax Reports" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveReportTab(tab.id)}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeReportTab === "revenue" && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <Card className="p-5 bg-green-50 border border-green-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <p className="text-xs font-bold text-gray-700">
+                    Total Revenue
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-green-600 mb-1">$3</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  1 paid invoices
+                </p>
+              </Card>
+              <Card className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <p className="text-xs font-bold text-gray-700">
+                    Pending Revenue
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-blue-600 mb-1">$0</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  0 outstanding invoices
+                </p>
+              </Card>
+              <Card className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Receipt className="w-4 h-4 text-purple-600" />
+                  <p className="text-xs font-bold text-gray-700">Avg Invoice</p>
+                </div>
+                <p className="text-2xl font-bold text-purple-600 mb-1">$3</p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  per invoice
+                </p>
+              </Card>
+              <Card className="p-5 bg-orange-50 border border-orange-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <p className="text-xs font-bold text-gray-700">Growth Rate</p>
+                </div>
+                <p className="text-2xl font-bold text-orange-600 mb-1">
+                  +15.3%
+                </p>
+                <p className="text-[10px] text-gray-600 font-medium">
+                  vs previous period
+                </p>
+              </Card>
+            </div>
+
+            <div className="mb-6">
+              <h4 className="text-sm font-bold text-gray-900 mb-3">
+                Revenue by Month
+              </h4>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-1/12"></div>
+              </div>
+              <p className="text-xs text-gray-600 font-medium mt-2">
+                Jan 2026: $3
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-sm font-bold text-gray-900 mb-4">
+                  Top Clients by Revenue
+                </h4>
+                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">
+                      Nike Global
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-green-600">$3</span>
+                </div>
+              </Card>
+              <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-sm font-bold text-gray-900 mb-4">
+                  Top Talent by Revenue
+                </h4>
+                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <User className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">Emma</p>
+                  </div>
+                  <span className="text-sm font-bold text-green-600">$3</span>
+                </div>
+              </Card>
+            </div>
+          </>
+        )}
+
+        {activeReportTab === "receivables" && (
+          <div className="space-y-6">
+            <Card className="p-8 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Total Outstanding Receivables
+                </p>
+                <p className="text-5xl font-bold text-red-600">$0</p>
+              </div>
+              <AlertCircle className="w-12 h-12 text-red-600" />
+            </Card>
+
+            <div className="grid grid-cols-5 gap-4">
+              {[
+                { label: "Current (Not Due)", color: "green" },
+                { label: "1-30 Days Overdue", color: "yellow" },
+                { label: "31-60 Days Overdue", color: "orange" },
+                { label: "61-90 Days Overdue", color: "red" },
+                { label: "90+ Days Overdue", color: "gray" },
+              ].map((aging) => (
+                <Card
+                  key={aging.label}
+                  className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}
+                >
+                  <p className="text-[10px] font-bold text-gray-700 mb-2">
+                    {aging.label}
+                  </p>
+                  <p className={`text-xl font-bold text-${aging.color}-600`}>
+                    $0
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    0 invoices
+                  </p>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+              <h4 className="text-base font-bold text-gray-900 mb-4">
+                Largest Outstanding Clients
+              </h4>
+              <div className="text-center py-8 text-gray-400 font-medium">
+                No outstanding receivables
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeReportTab === "payables" && (
+          <div className="space-y-6">
+            <Card className="p-8 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  Total Owed to All Talent
+                </p>
+                <p className="text-5xl font-bold text-orange-600">$0</p>
+              </div>
+              <Users className="w-12 h-12 text-orange-600" />
+            </Card>
+
+            <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+              <h4 className="text-base font-bold text-gray-900 mb-4">
+                Breakdown by Talent
+              </h4>
+              <div className="text-center py-8 text-gray-400 font-medium">
+                No pending talent payables
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeReportTab === "commission" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-6">
+              <Card className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Percent className="w-4 h-4 text-indigo-600" />
+                  <p className="text-sm font-bold text-gray-700">
+                    Total Commission Earned
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-indigo-600 mb-1">$0</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  20% of revenue
+                </p>
+              </Card>
+              <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-purple-600" />
+                  <p className="text-sm font-bold text-gray-700">
+                    Avg Commission per Deal
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-purple-600 mb-1">$0</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Average earned
+                </p>
+              </Card>
+              <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart2 className="w-4 h-4 text-blue-600" />
+                  <p className="text-sm font-bold text-gray-700">
+                    Commission Rate
+                  </p>
+                </div>
+                <p className="text-3xl font-bold text-blue-600 mb-1">20%</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Consistent across all deals
+                </p>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-base font-bold text-gray-900 mb-4">
+                  Commission by Client
+                </h4>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No commission data available
+                </div>
+              </Card>
+              <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+                <h4 className="text-base font-bold text-gray-900 mb-4">
+                  Commission by Talent
+                </h4>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No commission data available
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeReportTab === "profit" && (
+          <div className="space-y-6">
+            <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+              <h4 className="text-xl font-bold text-gray-900 mb-8 text-center">
+                Profit & Loss Statement
+              </h4>
+              <div className="max-w-2xl mx-auto space-y-4">
+                <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl border border-green-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Revenue (Gross from Invoices)
+                  </span>
+                  <span className="text-xl font-bold text-green-600">$0</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Less: Talent Payments (COGS)
+                  </span>
+                  <span className="text-xl font-bold text-red-600">-$0</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Gross Profit (Agency Commission)
+                  </span>
+                  <span className="text-xl font-bold text-blue-600">$0</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
+                  <span className="text-base font-bold text-gray-900">
+                    Less: Operating Expenses
+                  </span>
+                  <span className="text-xl font-bold text-orange-600">
+                    -$1,095
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
+                  <span className="text-2xl font-bold text-gray-900">
+                    Net Profit
+                  </span>
+                  <span className="text-4xl font-bold text-green-600">
+                    $-1,095
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 mt-12 max-w-2xl mx-auto">
+                <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Profit Margin
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                </Card>
+                <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
+                  <p className="text-xs font-bold text-gray-500 mb-1">
+                    Expense Ratio
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                </Card>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeReportTab === "tax" && (
+          <div className="space-y-6">
+            <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+              <h4 className="text-lg font-bold text-gray-900 mb-6">
+                Tax Summary
+              </h4>
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    Sales Tax Collected
+                  </p>
+                  <p className="text-3xl font-bold text-blue-600 mb-1">$0.00</p>
+                  <p className="text-xs text-gray-500 font-medium">By state</p>
+                </Card>
+                <Card className="p-6 bg-purple-50 border border-purple-100 rounded-xl">
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    VAT Collected
+                  </p>
+                  <p className="text-3xl font-bold text-purple-600 mb-1">
+                    $0.00
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    By country
+                  </p>
+                </Card>
+                <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
+                  <p className="text-sm font-bold text-gray-700 mb-2">
+                    1099 Eligible Payments
+                  </p>
+                  <p className="text-3xl font-bold text-orange-600 mb-1">$0</p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    US talent payments
+                  </p>
+                </Card>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900">
+                        Export Sales Tax Report
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Breakdown by state/region
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                      <Receipt className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900">
+                        Export VAT Report
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Breakdown by country
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-between px-6 rounded-xl border-gray-200 hover:bg-gray-50 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+                      <FileText className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-gray-900">
+                        Prepare 1099 Forms
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium">
+                        US talent with payments &gt; $600
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
+
+const GenerateInvoiceView = () => {
+  const [createFrom, setCreateFrom] = useState("booking");
+  const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
+  const [commission, setCommission] = useState("20");
+  const [taxExempt, setTaxExempt] = useState(false);
+  const [expenses, setExpenses] = useState<
+    { id: string; description: string; amount: string }[]
+  >([]);
+
+  const addExpense = () => {
+    setExpenses([
+      ...expenses,
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        description: "",
+        amount: "0",
+      },
+    ]);
+  };
+
+  const removeExpense = (id: string) => {
+    setExpenses(expenses.filter((e) => e.id !== id));
+  };
+
+  const updateExpense = (
+    id: string,
+    field: "description" | "amount",
+    value: string,
+  ) => {
+    setExpenses(
+      expenses.map((e) => (e.id === id ? { ...e, [field]: value } : e)),
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Invoice Generation
+          </h2>
+          <p className="text-gray-600 font-medium">
+            Create and manage client invoices
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <Download className="w-5 h-5" />
+            Load Template
+          </Button>
+          <Button
+            variant="outline"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <Eye className="w-5 h-5" />
+            Preview
+          </Button>
+        </div>
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <div className="space-y-6">
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-3 block">
+              Create Invoice From
+            </Label>
+            <div className="flex gap-3">
+              <Button
+                variant={createFrom === "booking" ? "default" : "outline"}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
+                onClick={() => setCreateFrom("booking")}
+              >
+                <Calendar className="w-5 h-5" />
+                Existing Booking
+              </Button>
+              <Button
+                variant={createFrom === "manual" ? "default" : "outline"}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
+                onClick={() => setCreateFrom("manual")}
+              >
+                <FileText className="w-5 h-5" />
+                Manual Entry
+              </Button>
+            </div>
+          </div>
+
+          {createFrom === "booking" && (
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Select Booking to Invoice
+              </Label>
+              <Select>
+                <SelectTrigger className="h-12 rounded-xl border-gray-200">
+                  <SelectValue placeholder="Choose a completed or confirmed booking" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="booking1">
+                    Booking #2026-001 - Nike Campaign
+                  </SelectItem>
+                  <SelectItem value="booking2">
+                    Booking #2026-002 - Adidas Shoot
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Invoice Number <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Invoice Date <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="date"
+                defaultValue="2026-01-13"
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Due Date <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  defaultValue="2026-02-13"
+                  className="h-12 rounded-xl border-gray-200 flex-1"
+                />
+                <Select defaultValue="net30">
+                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="net15">Net 15</SelectItem>
+                    <SelectItem value="net30">Net 30</SelectItem>
+                    <SelectItem value="net60">Net 60</SelectItem>
+                    <SelectItem value="due-on-receipt">
+                      Due on Receipt
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-bold text-gray-700 mb-2 block">
+              Bill To (Client Information){" "}
+              <span className="text-red-500">*</span>
+            </Label>
+            <Select>
+              <SelectTrigger className="h-12 rounded-xl border-gray-200">
+                <SelectValue placeholder="Select client" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="nike">Nike Global</SelectItem>
+                <SelectItem value="adidas">Adidas</SelectItem>
+                <SelectItem value="apple">Apple Inc.</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                PO Number (Optional)
+              </Label>
+              <Input
+                placeholder="Client purchase order number"
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Job/Project Reference (Optional)
+              </Label>
+              <Input
+                placeholder="Project name or reference"
+                className="h-12 rounded-xl border-gray-200"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <Label className="text-sm font-bold text-gray-700">
+                Invoice Items <span className="text-red-500">*</span>
+              </Label>
+              <Button
+                variant="outline"
+                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Line Item
+              </Button>
+            </div>
+            <Card className="p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <p className="text-sm font-bold text-gray-900 mb-4">Item #1</p>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                    Description
+                  </Label>
+                  <Textarea
+                    placeholder="e.g., Model services for brand photoshoot"
+                    className="min-h-[80px] rounded-xl border-gray-200 resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Talent
+                    </Label>
+                    <Select>
+                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                        <SelectValue placeholder="Select talent" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="emma">Emma</SelectItem>
+                        <SelectItem value="milan">Milan</SelectItem>
+                        <SelectItem value="julia">Julia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Date of Service
+                    </Label>
+                    <Input
+                      type="date"
+                      className="h-11 rounded-xl border-gray-200"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Rate Type
+                    </Label>
+                    <Select defaultValue="day">
+                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="day">Day Rate</SelectItem>
+                        <SelectItem value="hourly">Hourly Rate</SelectItem>
+                        <SelectItem value="project">Project Rate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Quantity/Hours
+                    </Label>
+                    <Input
+                      type="number"
+                      defaultValue="1"
+                      className="h-11 rounded-xl border-gray-200"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                      Unit Price ($)
+                    </Label>
+                    <Input
+                      type="number"
+                      defaultValue="0"
+                      className="h-11 rounded-xl border-gray-200"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                  <span className="text-sm font-bold text-gray-700">
+                    Line Total:
+                  </span>
+                  <span className="text-lg font-bold text-gray-900">$0.00</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <Label className="text-sm font-bold text-gray-900">
+                Expenses (Optional)
+              </Label>
+              <Button
+                variant="outline"
+                onClick={addExpense}
+                className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </Button>
+            </div>
+
+            {expenses.length > 0 && (
+              <div className="space-y-3">
+                {expenses.map((expense) => (
+                  <div key={expense.id} className="flex gap-3 items-center">
+                    <Input
+                      placeholder="Expense description"
+                      value={expense.description}
+                      onChange={(e) =>
+                        updateExpense(expense.id, "description", e.target.value)
+                      }
+                      className="h-10 rounded-xl border-gray-200 flex-1 text-sm"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={expense.amount}
+                      onChange={(e) =>
+                        updateExpense(expense.id, "amount", e.target.value)
+                      }
+                      className="h-10 rounded-xl border-gray-200 w-24 text-sm"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeExpense(expense.id)}
+                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold text-gray-900">
+                Financial Settings
+              </h4>
+              <div>
+                <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                  Agency Commission (%)
+                </Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    value={commission}
+                    onChange={(e) => setCommission(e.target.value)}
+                    className="h-11 rounded-xl border-gray-200 flex-1"
+                  />
+                  <span className="text-sm font-bold text-gray-600">%</span>
+                </div>
+                <p className="text-[10px] text-gray-500 font-medium mt-1">
+                  Agency fee: $0.00 | Talent net: $0.00
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                  Currency
+                </Label>
+                <Select defaultValue="usd">
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="usd">$ US Dollar (USD)</SelectItem>
+                    <SelectItem value="eur">€ Euro (EUR)</SelectItem>
+                    <SelectItem value="gbp">£ British Pound (GBP)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-xs font-bold text-gray-700">
+                    Tax Rate (%)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={taxExempt}
+                      onCheckedChange={(checked) =>
+                        setTaxExempt(checked as boolean)
+                      }
+                      className="rounded-md w-4 h-4 border-gray-300"
+                    />
+                    <span className="text-xs text-gray-600 font-medium">
+                      Tax Exempt
+                    </span>
+                  </div>
+                </div>
+                <Select defaultValue="0" disabled={taxExempt}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="0">0% - No Tax</SelectItem>
+                    <SelectItem value="5">5%</SelectItem>
+                    <SelectItem value="10">10%</SelectItem>
+                    <SelectItem value="15">15%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                  Discount
+                </Label>
+                <div className="flex gap-2">
+                  <Select defaultValue="dollar">
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="dollar">$</SelectItem>
+                      <SelectItem value="percent">%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    defaultValue="0"
+                    className="h-11 rounded-xl border-gray-200 flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
+              <h4 className="text-sm font-bold text-gray-900 mb-4">
+                Invoice Summary
+              </h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700 font-medium">
+                    Subtotal (1 items)
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">$0.00</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700 font-medium">
+                    Agency Commission (20%)
+                  </span>
+                  <span className="text-sm font-bold text-red-600">-$0.00</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-indigo-200">
+                  <span className="text-sm text-gray-700 font-medium">
+                    Talent Net Amount
+                  </span>
+                  <span className="text-sm font-bold text-green-600">
+                    $0.00
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    Grand Total
+                  </span>
+                  <span className="text-2xl font-bold text-indigo-600">
+                    $0.00
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                Additional Notes (Optional)
+              </Label>
+              <Textarea
+                placeholder="Internal notes, special terms, or additional details..."
+                className="min-h-[100px] rounded-xl border-gray-200 resize-none"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                Payment Instructions
+              </Label>
+              <Textarea
+                defaultValue="Payment due within 30 days. Please reference invoice number on payment."
+                className="min-h-[100px] rounded-xl border-gray-200 resize-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-2 block">
+              Invoice Footer Text
+            </Label>
+            <Input
+              defaultValue="Thank you for your business!"
+              className="h-11 rounded-xl border-gray-200"
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-2 block">
+              Attached Files (Optional)
+            </Label>
+            <p className="text-xs text-gray-500 font-medium mb-3">
+              Attach contracts, usage agreements, or supporting documents
+            </p>
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Upload File
+            </Button>
+          </div>
+
+          <div className="flex gap-3 pt-6 border-t border-gray-200">
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Save as Draft
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Mark as Sent
+            </Button>
+            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+              <Send className="w-4 h-4" />
+              Email to Client
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Files className="w-4 h-4" />
+              Duplicate
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const InvoiceManagementView = ({
+  setActiveSubTab,
+}: {
+  setActiveSubTab: (tab: string) => void;
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilters, setShowFilters] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+
+  // Filter states
+  const [issueDateFrom, setIssueDateFrom] = useState("");
+  const [issueDateTo, setIssueDateTo] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("10000");
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
+  const [currencyFilter, setCurrencyFilter] = useState("all");
+
+  const clearAllFilters = () => {
+    setIssueDateFrom("");
+    setIssueDateTo("");
+    setMinAmount("");
+    setMaxAmount("10000");
+    setShowOverdueOnly(false);
+    setCurrencyFilter("all");
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "sent":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "paid":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "overdue":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "partial":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "cancelled":
+        return "bg-gray-50 text-gray-700 border-gray-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const accountingTabs = [
+    { id: "Invoice Management", label: "Invoice Management", icon: FileText },
+    { id: "Invoice Generation", label: "Generate Invoice", icon: Plus },
+    { id: "Payment Tracking", label: "Payment Tracking", icon: DollarSign },
+    { id: "Talent Statements", label: "Talent Statements", icon: Receipt },
+    { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
+    { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Horizontal Tab Navigation */}
+      <Card className="p-2 bg-white border border-gray-100 rounded-2xl">
+        <div className="flex items-center gap-2">
+          {accountingTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = tab.id === "Invoice Management";
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Invoice Management
+          </h2>
+          <p className="text-gray-600 font-medium">
+            View and manage all client invoices
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="Search by invoice #, client, or talent name..."
+            className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="all" className="font-bold text-gray-700">
+              All Status
+            </SelectItem>
+            <SelectItem value="draft" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
+                <span className="text-gray-900">Draft</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="sent" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-yellow-500 rounded-sm"></div>
+                <span className="text-gray-900">Sent</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="paid" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                <span className="text-gray-900">Paid</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="overdue" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                <span className="text-gray-900">Overdue</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="partial" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
+                <span className="text-gray-900">Partial</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="cancelled" className="font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
+                <span className="text-gray-900">Cancelled</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="newest" className="font-bold text-gray-700">
+              Newest First
+            </SelectItem>
+            <SelectItem value="oldest" className="font-bold text-gray-700">
+              Oldest First
+            </SelectItem>
+            <SelectItem value="due-soonest" className="font-bold text-gray-700">
+              Due Date (Soonest)
+            </SelectItem>
+            <SelectItem value="due-latest" className="font-bold text-gray-700">
+              Due Date (Latest)
+            </SelectItem>
+            <SelectItem value="amount-high" className="font-bold text-gray-700">
+              Amount (High to Low)
+            </SelectItem>
+            <SelectItem value="amount-low" className="font-bold text-gray-700">
+              Amount (Low to High)
+            </SelectItem>
+            <SelectItem value="client-az" className="font-bold text-gray-700">
+              Client (A-Z)
+            </SelectItem>
+            <SelectItem value="client-za" className="font-bold text-gray-700">
+              Client (Z-A)
+            </SelectItem>
+            <SelectItem value="invoice-asc" className="font-bold text-gray-700">
+              Invoice # (Asc)
+            </SelectItem>
+            <SelectItem
+              value="invoice-desc"
+              className="font-bold text-gray-700"
+            >
+              Invoice # (Desc)
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <Card className="p-5 bg-white border border-gray-200 rounded-2xl">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Issue Date From
+              </Label>
+              <Input
+                type="date"
+                value={issueDateFrom}
+                onChange={(e) => setIssueDateFrom(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Issue Date To
+              </Label>
+              <Input
+                type="date"
+                value={issueDateTo}
+                onChange={(e) => setIssueDateTo(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Min Amount
+              </Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={minAmount}
+                onChange={(e) => setMinAmount(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-bold text-gray-700 mb-2 block">
+                Max Amount
+              </Label>
+              <Input
+                type="number"
+                placeholder="10000"
+                value={maxAmount}
+                onChange={(e) => setMaxAmount(e.target.value)}
+                className="h-10 rounded-xl border-gray-200 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={showOverdueOnly}
+                  onCheckedChange={(checked) =>
+                    setShowOverdueOnly(checked as boolean)
+                  }
+                  className="rounded-md w-4 h-4 border-gray-300"
+                />
+                <Label className="text-sm font-bold text-gray-700">
+                  Show Overdue Only
+                </Label>
+              </div>
+              <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+                <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 text-sm">
+                  <SelectValue placeholder="All Currencies" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all">All Currencies</SelectItem>
+                  <SelectItem value="usd">USD</SelectItem>
+                  <SelectItem value="eur">EUR</SelectItem>
+                  <SelectItem value="gbp">GBP</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={clearAllFilters}
+              className="h-10 px-4 rounded-xl font-bold text-gray-700 flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              Clear All Filters
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      <div className="text-sm text-gray-700 font-bold">
+        Showing <span className="font-bold text-gray-900">1 of 1</span> invoices
+      </div>
+
+      <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Invoice #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Client Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Issue Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Due Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {MOCK_INVOICES.map((invoice) => (
+                <tr
+                  key={invoice.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-3">
+                    <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-bold text-gray-900">
+                      {invoice.invoiceNumber}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-bold text-indigo-600">
+                      {invoice.clientName}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm text-gray-700 font-bold">
+                      {invoice.issueDate}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm text-gray-700 font-bold">
+                      {invoice.dueDate}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="text-sm font-bold text-gray-900">
+                      {invoice.amount}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(invoice.status)}`}
+                    >
+                      {invoice.status}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                        title="View Invoice"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                        title="Edit Invoice"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                        title="Download PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedInvoice(invoice);
+                              setShowPaymentHistory(true);
+                            }}
+                            className="font-bold text-gray-700 cursor-pointer"
+                          >
+                            <History className="w-4 h-4 mr-2" />
+                            Payment History
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+                            <Printer className="w-4 h-4 mr-2" />
+                            Print
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Payment History Modal */}
+      <Dialog open={showPaymentHistory} onOpenChange={setShowPaymentHistory}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Payment History
+            </DialogTitle>
+            <p className="text-sm text-gray-600 font-medium">
+              Invoice #{selectedInvoice?.invoiceNumber}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Invoice Total
+                </p>
+                <p className="text-2xl font-bold text-blue-600">$3</p>
+              </Card>
+              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Total Paid
+                </p>
+                <p className="text-2xl font-bold text-green-600">$3</p>
+              </Card>
+              <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                <p className="text-xs font-bold text-gray-700 mb-1">
+                  Remaining Balance
+                </p>
+                <p className="text-2xl font-bold text-orange-600">$0</p>
+              </Card>
+            </div>
+
+            {/* Payment Transactions */}
+            <div>
+              <h4 className="text-sm font-bold text-gray-900 mb-3">
+                Payment Transactions
+              </h4>
+              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          Payment #1
+                        </p>
+                        <p className="text-xs text-gray-600 font-medium">
+                          January 27, 2026 • Wire
+                        </p>
+                      </div>
+                      <span className="text-lg font-bold text-green-600">
+                        $3
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Full payment received
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export History
+            </Button>
+            <Button
+              onClick={() => setShowPaymentHistory(false)}
+              className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -1561,42 +4667,6 @@ TALENT_DATA.forEach((t: any) => {
   }
   // All other talent will NOT have a tier assigned to match the 1-3-1-0 count
 });
-
-const CLIENT_DATA = [
-  {
-    id: "acme",
-    company: "Company",
-    contact: "John Doe",
-    email: "john@acme.com",
-    phone: "+1 (555) 123-4567",
-    terms: "Net 15",
-    industryTags: ["Fashion", "Beauty"],
-    revenue: 0,
-    bookings_count: 0,
-  },
-  {
-    id: "globex",
-    company: "Company",
-    contact: "John Doe",
-    email: "jane@globex.com",
-    phone: "+1 (555) 987-6543",
-    terms: "Net 15",
-    industryTags: ["Fashion", "Beauty"],
-    revenue: 0,
-    bookings_count: 0,
-  },
-  {
-    id: "apple",
-    company: "name",
-    contact: "names",
-    email: "apple@example.com",
-    phone: "+1 (555) 000-0000",
-    terms: "Net 15",
-    industryTags: [],
-    revenue: 0,
-    bookings_count: 0,
-  },
-];
 
 const ANALYTICS_CAMPAIGN_STATUS = [
   { name: "In Progress", value: 15, color: "#111827" },
@@ -9821,6 +12891,92 @@ const AnalyticsDashboardView = () => {
   );
 };
 
+const SettingsView = () => {
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+
+      {/* Agency Information */}
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+          Agency Information
+        </h3>
+        <div className="space-y-6 max-w-2xl">
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">
+              Agency Name
+            </Label>
+            <Input
+              defaultValue="CM Models"
+              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">Website</Label>
+            <Input
+              defaultValue="https://cmmodels.com/"
+              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">Location</Label>
+            <Input
+              defaultValue="U.S."
+              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Integrations */}
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
+          Integrations
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+                <DollarSign className="w-5 h-5 text-gray-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">
+                  Stripe Connect
+                </p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Payouts & Invoicing
+                </p>
+              </div>
+            </div>
+            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
+              Connected
+            </Badge>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+                <Link className="w-5 h-5 text-gray-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">ElevenLabs</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Voice cloning
+                </p>
+              </div>
+            </div>
+            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
+              Connected
+            </Badge>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 const PlaceholderView = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center h-full py-20 text-center">
     <div className="bg-gray-100 p-6 rounded-full mb-4">
@@ -9833,4336 +12989,7 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
-const ManageAvailabilityModal = ({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-3xl">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold">
-          Talent Availability & Book-Outs
-        </DialogTitle>
-        <p className="text-sm text-gray-500">
-          Manage when talent is unavailable for bookings
-        </p>
-      </DialogHeader>
-      <div className="py-6">
-        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold mb-8 rounded-lg h-10">
-          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
-        </Button>
-        <div className="border border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
-          <div className="p-4 bg-gray-50 rounded-full mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="font-bold text-gray-900 mb-1">
-            No book-outs scheduled
-          </h3>
-          <p className="text-sm text-gray-500">
-            Talent will appear available for all dates
-          </p>
-        </div>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
-
-const NewBookingModal = ({
-  open,
-  onOpenChange,
-  onSave,
-  initialData,
-  mode = "new",
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (booking: any) => void;
-  initialData?: any;
-  mode?: "new" | "edit" | "duplicate";
-}) => {
-  const { toast } = useToast();
-  const [bookingType, setBookingType] = useState("confirmed");
-  const [multiTalent, setMultiTalent] = useState(false);
-  const [talentSearch, setTalentSearch] = useState("");
-  const [selectedTalents, setSelectedTalents] = useState<any[]>([]);
-  const [clientSearch, setClientSearch] = useState("");
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [showAddClient, setShowAddClient] = useState(false);
-  const [clients, setClients] = useState(CLIENT_DATA);
-  const [newClient, setNewClient] = useState({
-    company: "",
-    contact: "",
-    email: "",
-    phone: "",
-    terms: "Net 30",
-  });
-  const [date, setDate] = useState("2026-01-12");
-  const [allDay, setAllDay] = useState(false);
-  const [callTime, setCallTime] = useState("09:00");
-  const [wrapTime, setWrapTime] = useState("17:00");
-  const [rate, setRate] = useState(0);
-  const [currency, setCurrency] = useState("USD");
-  const [rateType, setRateType] = useState("day");
-  const [usageTerms, setUsageTerms] = useState("");
-  const [usageDuration, setUsageDuration] = useState("1");
-  const [exclusive, setExclusive] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    push: false,
-    calendar: true,
-  });
-
-  // Pre-fill data for Edit or Duplicate modes
-  useEffect(() => {
-    if (open && initialData) {
-      setBookingType(initialData.type || "confirmed");
-      setDate(initialData.date || "2026-01-12");
-      setNotes(initialData.notes || "");
-
-      // Try to find talent in TALENT_DATA
-      const talent = TALENT_DATA.find((t) => t.name === initialData.talentName);
-      if (talent) setSelectedTalents([talent]);
-
-      // Try to find client in clients
-      const client = clients.find((c) => c.company === initialData.clientName);
-      if (client) setSelectedClient(client);
-
-      setMultiTalent(false);
-    } else if (open && !initialData) {
-      setBookingType("confirmed");
-      setMultiTalent(false);
-      setSelectedTalents([]);
-      setSelectedClient(null);
-      setNotes("");
-      setDate("2026-01-12");
-    }
-  }, [open, initialData, clients]);
-
-  const filteredTalents = TALENT_DATA.filter((t) =>
-    t.name.toLowerCase().includes(talentSearch.toLowerCase()),
-  );
-
-  const filteredClients = clients.filter((c) =>
-    c.company.toLowerCase().includes(clientSearch.toLowerCase()),
-  );
-
-  const handleSelectTalent = (talent: any) => {
-    if (multiTalent) {
-      if (!selectedTalents.find((t) => t.id === talent.id)) {
-        setSelectedTalents([...selectedTalents, talent]);
-      } else {
-        setSelectedTalents(selectedTalents.filter((t) => t.id !== talent.id));
-      }
-    } else {
-      setSelectedTalents([talent]);
-    }
-    setTalentSearch("");
-  };
-
-  const handleAddClient = () => {
-    const client = { id: `client-${Date.now()}`, ...newClient };
-    setClients([...clients, client]);
-    setSelectedClient(client);
-    setShowAddClient(false);
-    setClientSearch("");
-  };
-
-  const commission = rate * 0.2;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            {mode === "edit" ? "Edit Booking" : "New Booking"}
-          </DialogTitle>
-          <p className="text-sm text-gray-500">
-            {mode === "edit"
-              ? "Update details for this booking"
-              : "Schedule a booking for your talent"}
-          </p>
-        </DialogHeader>
-        <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label>Booking Type *</Label>
-            <div className="flex gap-2">
-              <Select value={bookingType} onValueChange={setBookingType}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="casting">Casting</SelectItem>
-                  <SelectItem value="option">Option</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="test-shoot">Test shoot</SelectItem>
-                  <SelectItem value="fitting">Fitting</SelectItem>
-                  <SelectItem value="rehearsal">Rehearsal</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                className="text-green-600 border-green-200 bg-green-50"
-              >
-                Preview
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Talent *</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="multi"
-                  checked={multiTalent}
-                  onChange={(e) => {
-                    setMultiTalent(e.target.checked);
-                    if (!e.target.checked && selectedTalents.length > 1) {
-                      setSelectedTalents([selectedTalents[0]]);
-                    }
-                  }}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="multi" className="text-sm text-gray-600">
-                  Book multiple talent
-                </label>
-              </div>
-            </div>
-            <div className="relative">
-              <Input
-                placeholder="Search talent by name..."
-                value={talentSearch}
-                onChange={(e) => setTalentSearch(e.target.value)}
-              />
-            </div>
-
-            <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-white">
-              {filteredTalents.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => handleSelectTalent(t)}
-                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
-                    selectedTalents.find((st) => st.id === t.id)
-                      ? "bg-indigo-50/50"
-                      : ""
-                  }`}
-                >
-                  <img
-                    src={t.img}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-100"
-                    alt={t.name}
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">{t.name}</p>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <p className="text-xs text-green-600 font-medium lowercase">
-                        available
-                      </p>
-                    </div>
-                  </div>
-                  {selectedTalents.find((st) => st.id === t.id) && (
-                    <div className="text-indigo-600">
-                      <CheckCircle2 className="w-5 h-5" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {filteredTalents.length === 0 && (
-                <div className="p-8 text-center text-gray-500 text-sm">
-                  No talent found matching "{talentSearch}"
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 mt-2">
-              {selectedTalents.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between p-2 bg-indigo-50 border border-indigo-100 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={t.img}
-                      className="w-8 h-8 rounded-full"
-                      alt={t.name}
-                    />
-                    <p className="text-sm font-bold text-indigo-900">
-                      Selected: {t.name}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded leading-none uppercase">
-                      Available
-                    </span>
-                    <button
-                      onClick={() =>
-                        setSelectedTalents(
-                          selectedTalents.filter((st) => st.id !== t.id),
-                        )
-                      }
-                      className="text-indigo-400 hover:text-indigo-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Client *</Label>
-            {showAddClient ? (
-              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
-                  <Building2 className="w-4 h-4" /> New Client
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Company Name *</Label>
-                    <Input
-                      placeholder="Acme Inc."
-                      value={newClient.company}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, company: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Contact Name *</Label>
-                    <Input
-                      placeholder="John Doe"
-                      value={newClient.contact}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, contact: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Email</Label>
-                    <Input
-                      placeholder="john@acme.com"
-                      value={newClient.email}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, email: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Phone</Label>
-                    <Input
-                      placeholder="+1 (555) 123-4567"
-                      value={newClient.phone}
-                      onChange={(e) =>
-                        setNewClient({ ...newClient, phone: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Payment Terms</Label>
-                  <Select
-                    value={newClient.terms}
-                    onValueChange={(v) =>
-                      setNewClient({ ...newClient, terms: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Net 30">Net 30</SelectItem>
-                      <SelectItem value="Net 15">Net 15</SelectItem>
-                      <SelectItem value="Net 30">Net 30</SelectItem>
-                      <SelectItem value="Net 60">Net 60</SelectItem>
-                      <SelectItem value="Da">Da</SelectItem>
-                      <SelectItem value="Upon Completion">
-                        Upon Completion
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold"
-                    onClick={handleAddClient}
-                    disabled={!newClient.company || !newClient.contact}
-                  >
-                    Save Client & Use
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowAddClient(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <Input
-                    placeholder="Search client by name..."
-                    value={clientSearch}
-                    onChange={(e) => setClientSearch(e.target.value)}
-                  />
-                </div>
-
-                <div className="border border-gray-200 rounded-lg max-h-[200px] overflow-y-auto">
-                  {filteredClients.map((c) => (
-                    <div
-                      key={c.id}
-                      onClick={() => {
-                        setSelectedClient(c);
-                        setClientSearch("");
-                      }}
-                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
-                        selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
-                      }`}
-                    >
-                      <Building2 className="w-8 h-8 text-gray-400" />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-900">
-                          {c.company}
-                        </p>
-                        <p className="text-xs text-gray-500">{c.contact}</p>
-                      </div>
-                      {selectedClient?.id === c.id && (
-                        <div className="text-indigo-600">
-                          <CheckCircle2 className="w-5 h-5" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {filteredClients.length === 0 && (
-                    <div className="p-8 text-center text-gray-500 text-sm">
-                      No clients found matching "{clientSearch}"
-                    </div>
-                  )}
-                  <div
-                    onClick={() => setShowAddClient(true)}
-                    className="flex items-center gap-2 p-3 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-200 font-bold text-sm"
-                  >
-                    <Plus className="w-4 h-4" /> Add New Client
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Date *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-              <div className="flex items-center gap-2 mt-1">
-                <Switch
-                  id="allday"
-                  checked={allDay}
-                  onCheckedChange={setAllDay}
-                />
-                <Label
-                  htmlFor="allday"
-                  className="text-xs text-gray-500 cursor-pointer"
-                >
-                  All-day booking
-                </Label>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className={allDay ? "text-gray-300" : ""}>Call Time</Label>
-              <Input
-                type="time"
-                value={callTime}
-                onChange={(e) => setCallTime(e.target.value)}
-                disabled={allDay}
-                className={
-                  allDay ? "opacity-30 cursor-not-allowed bg-gray-50" : ""
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className={allDay ? "text-gray-300" : ""}>Wrap Time</Label>
-              <Input
-                type="time"
-                value={wrapTime}
-                onChange={(e) => setWrapTime(e.target.value)}
-                disabled={allDay}
-                className={
-                  allDay ? "opacity-30 cursor-not-allowed bg-gray-50" : ""
-                }
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Location *</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input className="pl-9" placeholder="Enter address..." />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Location Notes</Label>
-            <Input placeholder="e.g., Studio B, 3rd floor" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 pb-1">
-            <div className="space-y-2">
-              <Label>Rate/Fee</Label>
-              <div className="relative group">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  {currency === "USD"
-                    ? "$"
-                    : currency === "EUR"
-                      ? "€"
-                      : currency === "GBP"
-                        ? "£"
-                        : "$"}
-                </span>
-                <Input
-                  className="pl-7 pr-4"
-                  type="number"
-                  value={rate}
-                  onChange={(e) => setRate(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="GBP">GBP</SelectItem>
-                  <SelectItem value="CAD">CAD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Rate Type</Label>
-              <Select value={rateType} onValueChange={setRateType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Day Rate</SelectItem>
-                  <SelectItem value="hourly">Hourly</SelectItem>
-                  <SelectItem value="flat">Flat Fee</SelectItem>
-                  <SelectItem value="tbd">TBD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {rate > 0 && (
-            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex justify-between items-center -mt-2">
-              <span className="text-sm font-medium text-indigo-900">
-                Agency Commission (20%)
-              </span>
-              <span className="text-sm font-bold text-indigo-900">
-                {currency}{" "}
-                {commission.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </span>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Usage Terms</Label>
-              <Select value={usageTerms} onValueChange={setUsageTerms}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select usage terms" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="social">Social Media Only</SelectItem>
-                  <SelectItem value="print">Print</SelectItem>
-                  <SelectItem value="digital">Digital</SelectItem>
-                  <SelectItem value="broadcast">Broadcast</SelectItem>
-                  <SelectItem value="ecommerce">E-commerce</SelectItem>
-                  <SelectItem value="unlimited">Unlimited</SelectItem>
-                  <SelectItem value="tbd">TBD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex gap-4 items-center">
-              <div className="flex-1 space-y-2">
-                <Label>Usage Duration</Label>
-                <Select value={usageDuration} onValueChange={setUsageDuration}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select duration" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1 month">1 month</SelectItem>
-                    <SelectItem value="6 months">6 months</SelectItem>
-                    <SelectItem value="1 year">1 year</SelectItem>
-                    <SelectItem value="perpetuity">In Perpetuity</SelectItem>
-                    <SelectItem value="tbd">TBD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2 mt-6">
-                <Switch checked={exclusive} onCheckedChange={setExclusive} />
-                <span className="text-sm font-medium text-gray-700">
-                  Exclusive rights
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Attached Files (Call sheets, contracts, references)</Label>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative group">
-              <Upload className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600 font-medium">
-                Browse...
-              </span>
-              <span className="text-sm text-gray-400">No files selected.</span>
-              <input
-                type="file"
-                multiple
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={(e) => {
-                  console.log(e.target.files);
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Special Instructions / Notes</Label>
-            <Textarea
-              placeholder="Internal notes, special instructions..."
-              className="h-24"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>Notifications</Label>
-            <div className="space-y-2 border border-gray-100 p-4 rounded-xl bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="notify-email"
-                  checked={notifications.email}
-                  onChange={(e) =>
-                    setNotifications({
-                      ...notifications,
-                      email: e.target.checked,
-                    })
-                  }
-                />
-                <label htmlFor="notify-email" className="text-sm">
-                  Email talent
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="notify-sms"
-                  checked={notifications.sms}
-                  onChange={(e) =>
-                    setNotifications({
-                      ...notifications,
-                      sms: e.target.checked,
-                    })
-                  }
-                />
-                <label htmlFor="notify-sms" className="text-sm">
-                  SMS talent
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="notify-push"
-                  checked={notifications.push}
-                  onChange={(e) =>
-                    setNotifications({
-                      ...notifications,
-                      push: e.target.checked,
-                    })
-                  }
-                />
-                <label htmlFor="notify-push" className="text-sm">
-                  Push notification (mobile app)
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="notify-calendar"
-                  checked={notifications.calendar}
-                  onChange={(e) =>
-                    setNotifications({
-                      ...notifications,
-                      calendar: e.target.checked,
-                    })
-                  }
-                />
-                <label htmlFor="notify-calendar" className="text-sm">
-                  Send calendar invite (.ics file)
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0 mt-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <div className="flex gap-2">
-            <Button
-              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${
-                selectedTalents.length === 0 || !selectedClient
-                  ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
-                  : ""
-              }`}
-              onClick={() => {
-                if (selectedTalents.length === 0 || !selectedClient) return;
-
-                // For each selected talent, create a separate booking entry
-                selectedTalents.forEach((talent, index) => {
-                  const isOriginalEntry = mode === "edit" && index === 0;
-                  const booking = {
-                    id: isOriginalEntry
-                      ? initialData.id
-                      : `booking-${Date.now()}-${talent.id}-${index}`,
-                    talentName: talent.name,
-                    date: date,
-                    type: bookingType,
-                    clientName: selectedClient.company,
-                    notes: notes,
-                  };
-                  onSave(booking);
-                });
-
-                toast({
-                  title:
-                    mode === "edit" ? "Booking Updated" : "Booking Created",
-                  description: `Successfully ${
-                    mode === "edit" ? "updated" : "scheduled"
-                  } ${bookingType} for ${selectedTalents
-                    .map((t) => t.name)
-                    .join(", ")} on ${date}.`,
-                });
-
-                onOpenChange(false);
-              }}
-              disabled={selectedTalents.length === 0 || !selectedClient}
-            >
-              {mode === "edit"
-                ? "Update Booking"
-                : `Save as ${
-                    bookingType === "test-shoot"
-                      ? "Test Shoot"
-                      : bookingType.charAt(0).toUpperCase() +
-                        bookingType.slice(1)
-                  }`}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const BookingDetailsModal = ({
-  open,
-  onOpenChange,
-  booking,
-  onEdit,
-  onDuplicate,
-  onCancel,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  booking: any;
-  onEdit: (booking: any) => void;
-  onDuplicate: (booking: any) => void;
-  onCancel: (id: string) => void;
-}) => {
-  const { toast } = useToast();
-
-  if (!booking) return null;
-
-  const handleActionWithToast = (
-    title: string,
-    description: string,
-    showOkOnly: boolean = false,
-  ) => {
-    const { dismiss } = toast({
-      title,
-      description,
-      action: showOkOnly ? (
-        <ToastAction altText="OK" onClick={() => dismiss()}>
-          OK
-        </ToastAction>
-      ) : (
-        <div className="flex gap-2">
-          <ToastAction altText="Cancel" onClick={() => dismiss()}>
-            Cancel
-          </ToastAction>
-          <ToastAction altText="OK" onClick={() => dismiss()}>
-            OK
-          </ToastAction>
-        </div>
-      ),
-    });
-  };
-
-  const handleCancel = () => {
-    const { dismiss } = toast({
-      title: "Are you sure you want to cancel this booking?",
-      description: "This action cannot be undone.",
-      action: (
-        <div className="flex gap-2">
-          <ToastAction altText="Cancel" onClick={() => dismiss()}>
-            Cancel
-          </ToastAction>
-          <ToastAction
-            altText="OK"
-            onClick={() => {
-              onCancel(booking.id);
-              onOpenChange(false);
-              dismiss();
-            }}
-          >
-            OK
-          </ToastAction>
-        </div>
-      ),
-    });
-  };
-
-  const handleComplete = () => {
-    const { dismiss } = toast({
-      title: "Mark this booking as completed?",
-      description: "The status will be updated to Completed.",
-      action: (
-        <div className="flex gap-2">
-          <ToastAction altText="Cancel" onClick={() => dismiss()}>
-            Cancel
-          </ToastAction>
-          <ToastAction
-            altText="OK"
-            onClick={() => {
-              handleActionWithToast(
-                "Booking marked as completed",
-                "The status has been successfully updated.",
-                true,
-              );
-              dismiss();
-            }}
-          >
-            OK
-          </ToastAction>
-        </div>
-      ),
-    });
-  };
-
-  const handleRemind = () => {
-    const { dismiss } = toast({
-      title: "Send reminder notification to talent?",
-      description: "This will send a reminder to " + booking.talentName,
-      action: (
-        <div className="flex gap-2">
-          <ToastAction altText="Cancel" onClick={() => dismiss()}>
-            Cancel
-          </ToastAction>
-          <ToastAction
-            altText="OK"
-            onClick={() => {
-              handleActionWithToast(
-                "Reminder Sent",
-                "Notification has been sent to " + booking.talentName,
-                true,
-              );
-              dismiss();
-            }}
-          >
-            OK
-          </ToastAction>
-        </div>
-      ),
-    });
-  };
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="border-b pb-4">
-          <SheetTitle className="text-2xl font-black text-gray-900">
-            Booking Details
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-6 py-4">
-          <div className="flex gap-2">
-            <Badge className="bg-green-100 text-green-700 border-none font-bold">
-              Confirmed
-            </Badge>
-            <Badge variant="outline" className="font-bold border-gray-200">
-              Confirmed
-            </Badge>
-          </div>
-
-          <div className="border border-indigo-100 bg-indigo-50/30 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm mb-3">
-              <User className="w-4 h-4" /> Talent
-            </div>
-            <p className="text-lg font-black text-gray-900">
-              {booking.talentName}
-            </p>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 text-gray-600 font-bold text-sm">
-                <Building2 className="w-4 h-4" /> Client
-              </div>
-              <Link className="w-4 h-4 text-indigo-600 cursor-pointer" />
-            </div>
-            <p className="text-sm text-indigo-600 font-medium cursor-pointer hover:underline mb-1">
-              Click to view client profile
-            </p>
-            <p className="text-lg font-black text-gray-900">
-              {booking.clientName || "Not specified"}
-            </p>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <Calendar className="w-4 h-4" /> Date & Time
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500 font-medium">Date:</span>
-              <span className="font-bold text-gray-900">
-                {format(parseISO(booking.date), "EEEE, MMMM d, yyyy")}
-              </span>
-            </div>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <MapPin className="w-4 h-4" /> Location
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-bold text-gray-900">US</p>
-                <p className="text-xs text-gray-500">Studio B</p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-indigo-600 font-bold cursor-pointer hover:underline">
-                <Globe className="w-4 h-4" /> View on Google Maps
-              </div>
-              <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
-                <MapPin className="w-8 h-8 text-gray-300" />
-              </div>
-            </div>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <DollarSign className="w-4 h-4" /> Payment
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 font-medium">
-                Day Rate
-              </span>
-              <span className="text-xl font-black text-gray-900">USD $3</span>
-            </div>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <FileText className="w-4 h-4" /> Usage Terms
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-sm font-bold text-gray-900">Digital</p>
-              <p className="text-xs text-gray-500">
-                <span className="font-bold">Duration:</span> 1 Month
-              </p>
-            </div>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
-              <Edit className="w-4 h-4" /> Special Instructions
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {booking.notes || "bla bla"}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-              onClick={() => onEdit(booking)}
-            >
-              <Edit className="w-4 h-4 mr-2" /> Edit
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-gray-700 border-gray-200"
-              onClick={() => onDuplicate(booking)}
-            >
-              <Copy className="w-4 h-4 mr-2" /> Duplicate
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-green-600 border-green-200 hover:bg-green-50"
-              onClick={handleComplete}
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" /> Complete
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-              onClick={handleRemind}
-            >
-              <Bell className="w-4 h-4 mr-2" /> Remind
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-gray-700 border-gray-200 col-span-1"
-              onClick={() =>
-                handleActionWithToast(
-                  "PDF download feature coming soon!",
-                  "",
-                  true,
-                )
-              }
-            >
-              <Download className="w-4 h-4 mr-2" /> Download PDF
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-gray-700 border-gray-200 col-span-1"
-              onClick={() =>
-                handleActionWithToast(
-                  "Invoice generation feature coming soon!",
-                  "",
-                  true,
-                )
-              }
-            >
-              <Receipt className="w-4 h-4 mr-2" /> Generate Invoice
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50 col-span-2"
-              onClick={() => {
-                const shareUrl = `${window.location.origin}/booking/shared/${booking.id}`;
-                navigator.clipboard.writeText(shareUrl);
-                handleActionWithToast(
-                  "Booking link copied to clipboard!",
-                  shareUrl,
-                  true,
-                );
-              }}
-            >
-              <Share2 className="w-4 h-4 mr-2" /> Share Booking Link
-            </Button>
-            <Button
-              variant="outline"
-              className="font-bold text-red-600 border-red-200 hover:bg-red-50 col-span-2"
-              onClick={handleCancel}
-            >
-              <Trash2 className="w-4 h-4 mr-2" /> Cancel Booking
-            </Button>
-          </div>
-
-          <div className="border border-gray-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-4">
-              <TrendingUp className="w-4 h-4" /> Activity Log
-            </div>
-            <div className="space-y-6 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
-              <div className="relative pl-8">
-                <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm" />
-                <p className="text-sm font-bold text-gray-900">
-                  Booking Created
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Jan 12, 2026 @ 3:29 PM
-                </p>
-                <p className="text-xs text-gray-400">
-                  by leleivanlele22@gmail.com
-                </p>
-              </div>
-              <div className="relative pl-8">
-                <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-purple-600 border-4 border-white shadow-sm" />
-                <p className="text-sm font-bold text-gray-900">
-                  Talent Viewed Booking
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Jan 12, 2026 @ 3:29 PM
-                </p>
-                <p className="text-xs text-gray-400 flex items-center gap-1">
-                  <Eye className="w-3 h-3" /> 3 times
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-[10px] text-center text-gray-400 pt-2 font-medium">
-            Booking ID: 6965134959dd90fe62a25ba3
-          </p>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-};
-
-const CalendarScheduleTab = ({
-  bookings,
-  onAddBooking,
-  onUpdateBooking,
-  onCancelBooking,
-}: {
-  bookings: any[];
-  onAddBooking: (booking: any) => void;
-  onUpdateBooking: (booking: any) => void;
-  onCancelBooking: (id: string) => void;
-}) => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [newBookingOpen, setNewBookingOpen] = useState(false);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
-  const [bookingMode, setBookingMode] = useState<"new" | "edit" | "duplicate">(
-    "new",
-  );
-  // Ensure currentDate starts at today, resolving 13th vs 14th issue
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
-
-  const handlePrevDay = () => setCurrentDate((prev) => subDays(prev, 1));
-  const handleNextDay = () => setCurrentDate((prev) => addDays(prev, 1));
-  const handleToday = () => setCurrentDate(new Date());
-
-  // Month Navigation for the stats/dropdowns logic if we want to change view
-  const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
-  const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA"
-      )
-        return;
-
-      switch (e.key.toLowerCase()) {
-        case "c":
-          setNewBookingOpen(true);
-          break;
-        case "t":
-          handleToday();
-          break;
-        case "escape":
-          setDetailsModalOpen(false);
-          setNewBookingOpen(false);
-          break;
-        case "arrowleft":
-          handlePrevDay(); // Shortcut navigates on calendar (days)
-          break;
-        case "arrowright":
-          handleNextDay(); // Shortcut navigates on calendar (days)
-          break;
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const stats = [
-    { label: "Total Bookings", value: "1" },
-    { label: "This Month", value: "1" },
-    { label: "Confirmed", value: "1" },
-    { label: "Pending", value: "0" },
-  ];
-
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  // Dynamic Calendar Calculation
-  const daysInMonth = getDaysInMonth(currentDate);
-  const firstDayOfMonth = startOfMonth(currentDate).getDay(); // 0 for Sunday
-  const previousMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => {
-    const date = subDays(startOfMonth(currentDate), firstDayOfMonth - i);
-    return date.getDate();
-  });
-
-  const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Bookings & Schedule
-          </h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage your talent's bookings and availability
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="font-bold text-gray-700 bg-white"
-            onClick={() => setModalOpen(true)}
-          >
-            <Calendar className="w-4 h-4 mr-2" /> Manage Availability
-          </Button>
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-            onClick={() => {
-              setBookingMode("new");
-              setSelectedBooking(null);
-              setNewBookingOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> New Booking
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <Card
-            key={s.label}
-            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
-          >
-            <p className="text-xs font-bold text-gray-500 uppercase mb-2">
-              {s.label}
-            </p>
-            <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <Select
-              value={format(currentDate, "MMMM").toLowerCase()}
-              onValueChange={(val) => {
-                // Approximate set month logic if needed
-              }}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder={format(currentDate, "MMMM")} />
-              </SelectTrigger>
-              <SelectContent>
-                {[
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].map((m) => (
-                  <SelectItem key={m} value={m.toLowerCase()}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={format(currentDate, "yyyy")}
-              onValueChange={(val) => {
-                const year = parseInt(val);
-                const newDate = new Date(currentDate);
-                newDate.setFullYear(year);
-                setCurrentDate(newDate);
-              }}
-            >
-              <SelectTrigger className="w-24">
-                <SelectValue placeholder={format(currentDate, "yyyy")} />
-              </SelectTrigger>
-              <SelectContent>
-                {["2025", "2026", "2027", "2028", "2029"].map((y) => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
-              {/* UI Arrows still control Month as is standard behaviour */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-white hover:shadow-sm"
-                onClick={handlePrevMonth}
-              >
-                <ChevronDown className="w-4 h-4 rotate-90" />
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-8 px-3 text-sm font-bold hover:bg-white hover:shadow-sm"
-                onClick={handleToday}
-              >
-                Today
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-white hover:shadow-sm"
-                onClick={handleNextMonth}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Date Picker Trigger */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={
-                    "w-[140px] justify-start text-left font-normal border-gray-200"
-                  }
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {currentDate ? (
-                    format(currentDate, "MM/dd/yyyy")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarPicker
-                  mode="single"
-                  selected={currentDate}
-                  onSelect={(date) => date && setCurrentDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Select defaultValue="month">
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Month</SelectItem>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="day">Day</SelectItem>
-                <SelectItem value="team">Team View</SelectItem>
-                <SelectItem value="agenda">Agenda</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select defaultValue="single">
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Single View</SelectItem>
-                <SelectItem value="all">All Talent</SelectItem>
-                <SelectItem value="selected">Selected Talent</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-              onClick={() => {
-                setBookingMode("new");
-                setSelectedBooking(null);
-                setNewBookingOpen(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" /> New Booking
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 text-xs text-gray-400 mb-4 px-2">
-          <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">←</span>{" "}
-            <span className="border p-0.5 rounded px-1">→</span> Navigate
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">T</span> Today
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">C</span> New Booking
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">ESC</span> Close
-          </span>
-        </div>
-
-        <div className="border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-7 border-b bg-gray-50/50">
-            {days.map((d) => (
-              <div
-                key={d}
-                className="p-3 text-center text-sm font-bold text-gray-600"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
-            {/* Previous Month Filler */}
-            {previousMonthDays.map((d) => (
-              <div
-                key={`prev-${d}`}
-                className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
-              >
-                {d}
-              </div>
-            ))}
-            {/* Current Month Days */}
-            {currentMonthDays.map((d) => {
-              const year = currentDate.getFullYear();
-              const month = currentDate.getMonth() + 1;
-              const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-              const dayBookings = bookings.filter((b) => b.date === dayString);
-
-              const getTypeColor = (type: string) => {
-                switch (type) {
-                  case "casting":
-                    return "bg-blue-100 text-blue-800";
-                  case "option":
-                    return "bg-yellow-100 text-yellow-800";
-                  case "confirmed":
-                    return "bg-green-100 text-green-800";
-                  case "test-shoot":
-                    return "bg-orange-100 text-orange-800";
-                  case "fitting":
-                    return "bg-yellow-50 text-yellow-700";
-                  case "rehearsal":
-                    return "bg-gray-200 text-gray-800";
-                  default:
-                    return "bg-indigo-100 text-indigo-800";
-                }
-              };
-
-              const isSelected = d === currentDate.getDate();
-
-              return (
-                <div
-                  key={d}
-                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${
-                    isSelected
-                      ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    const newDate = new Date(currentDate);
-                    newDate.setDate(d);
-                    setCurrentDate(newDate);
-                  }}
-                >
-                  <span
-                    className={`text-sm font-medium ${
-                      isSelected
-                        ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {d}
-                  </span>
-                  <div className="mt-1 space-y-1">
-                    {dayBookings.map((b, idx) => (
-                      <div
-                        key={`${b.id} - ${idx}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedBooking(b);
-                          setDetailsModalOpen(true);
-                        }}
-                        className={`${getTypeColor(b.type)} text-[10px] p-1 rounded font-bold truncate border-l-2 border-current cursor-pointer hover:opacity-80 transition-opacity`}
-                      >
-                        {b.talentName}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium text-gray-600">
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-blue-100 rounded-sm"></div> Casting
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-100 rounded-sm"></div> Option
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-100 rounded-sm"></div> Confirmed
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-purple-100 rounded-sm"></div> Completed
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-100 rounded-sm"></div> Cancelled
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-orange-100 rounded-sm"></div> Test Shoot
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-50 rounded-sm"></div> Fitting
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Rehearsal
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-100 rounded-sm flex items-center justify-center text-[8px] text-red-600 font-bold">
-              ✕
-            </div>{" "}
-            Unavailable
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-50 rounded-sm flex items-center justify-center text-[8px] text-red-600 font-bold">
-              !
-            </div>{" "}
-            Conflict
-          </span>
-        </div>
-      </Card>
-
-      <ManageAvailabilityModal open={modalOpen} onOpenChange={setModalOpen} />
-      <NewBookingModal
-        open={newBookingOpen}
-        onOpenChange={setNewBookingOpen}
-        onSave={(b) => {
-          if (bookingMode === "edit") {
-            onUpdateBooking(b);
-          } else {
-            onAddBooking(b);
-          }
-        }}
-        initialData={bookingMode === "new" ? undefined : selectedBooking}
-        mode={bookingMode}
-      />
-
-      <BookingDetailsModal
-        open={detailsModalOpen}
-        onOpenChange={setDetailsModalOpen}
-        booking={selectedBooking}
-        onEdit={(b) => {
-          setSelectedBooking(b);
-          setBookingMode("edit");
-          setDetailsModalOpen(false);
-          setNewBookingOpen(true);
-        }}
-        onDuplicate={(b) => {
-          setSelectedBooking(b);
-          setBookingMode("duplicate");
-          setDetailsModalOpen(false);
-          setNewBookingOpen(true);
-        }}
-        onCancel={onCancelBooking}
-      />
-    </div>
-  );
-};
-
-const BookingRequestsTab = () => {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Booking Requests</h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Review and manage incoming booking requests
-          </p>
-        </div>
-      </div>
-
-      <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
-        <div className="bg-gray-50 p-4 rounded-full mb-4">
-          <Calendar className="w-12 h-12 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
-          Booking requests feature coming soon
-        </h3>
-        <p className="text-gray-500 max-w-md">
-          Manage incoming booking requests from clients
-        </p>
-      </div>
-    </div>
-  );
-};
-
-const AddClientModal = ({
-  open,
-  onOpenChange,
-  onAdd,
-  initialData,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onAdd: (client: any) => void;
-  initialData?: any;
-}) => {
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  const [formData, setFormData] = useState({
-    company: "",
-    website: "",
-    address: "",
-    contact: "",
-    email: "",
-    phone: "",
-    terms: "net15",
-    notes: "",
-  });
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        company: initialData.company || "",
-        website: initialData.website || "",
-        address: initialData.address || "",
-        contact: initialData.contact || "",
-        email: initialData.email || "",
-        phone: initialData.phone || "",
-        terms: initialData.terms || "net15",
-        notes: initialData.notes || "",
-      });
-      setSelectedTags(initialData.industryTags || []);
-    } else {
-      setFormData({
-        company: "",
-        website: "",
-        address: "",
-        contact: "",
-        email: "",
-        phone: "",
-        terms: "net15",
-        notes: "",
-      });
-      setSelectedTags([]);
-    }
-  }, [initialData, open]);
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  };
-
-  const handleSave = () => {
-    onAdd({
-      id: initialData?.id || `client-${Date.now()}`,
-      ...formData,
-      industryTags: selectedTags,
-      revenue: initialData?.revenue || 0,
-      bookings_count: initialData?.bookings_count || 0,
-    });
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {initialData ? "Edit Client" : "Add New Client"}
-          </DialogTitle>
-          <DialogDescription>
-            {initialData
-              ? "Update client information"
-              : "Add client information for easier booking management"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          <h3 className="text-lg font-bold border-b pb-2">
-            Company Information
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="font-bold">Company Name *</Label>
-              <Input
-                placeholder="Acme Inc."
-                value={formData.company}
-                onChange={(e) =>
-                  setFormData({ ...formData, company: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-bold">Website</Label>
-              <Input
-                placeholder="https://example.com"
-                value={formData.website}
-                onChange={(e) =>
-                  setFormData({ ...formData, website: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="font-bold">Address</Label>
-            <Input
-              placeholder="123 Main St, New York, NY 10001"
-              value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-3">
-            <Label className="font-bold">Industry/Category Tags</Label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "Fashion",
-                "Beauty",
-                "Fitness",
-                "Commercial",
-                "Editorial",
-                "E-commerce",
-                "Advertising",
-                "Film/TV",
-                "Events",
-                "Sports",
-                "Luxury",
-                "Tech",
-                "Food & Beverage",
-                "Automotive",
-              ].map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTags.includes(tag) ? "default" : "secondary"}
-                  className={`${
-                    selectedTags.includes(tag)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold"
-                  } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                  {selectedTags.includes(tag) && <X className="w-3 h-3 ml-1" />}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <h3 className="text-lg font-bold border-b pb-2 pt-2">
-            Primary Contact
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="font-bold">Contact Name *</Label>
-              <Input
-                placeholder="John Doe"
-                value={formData.contact}
-                onChange={(e) =>
-                  setFormData({ ...formData, contact: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-bold">Email</Label>
-              <Input
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label className="font-bold">Phone</Label>
-            <Input
-              placeholder="+1 (555) 123-4567"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-bold">Payment Terms</Label>
-            <Select
-              value={formData.terms}
-              onValueChange={(v) => setFormData({ ...formData, terms: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="net15">Net 15</SelectItem>
-                <SelectItem value="net30">Net 30</SelectItem>
-                <SelectItem value="net60">Net 60</SelectItem>
-                <SelectItem value="net90">Net 90</SelectItem>
-                <SelectItem value="upon_completion">Upon Completion</SelectItem>
-                <SelectItem value="split_deposit">
-                  50% Deposit / 50% Upon Completion
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-bold">Notes & Preferences</Label>
-            <Textarea
-              placeholder="Any special notes, preferences, or important information about this client..."
-              className="min-h-[100px]"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="font-bold"
-          >
-            Cancel
-          </Button>
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-            onClick={handleSave}
-            disabled={!formData.company || !formData.contact}
-          >
-            Add Client
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const MergeClientsModal = ({
-  open,
-  onOpenChange,
-  clients,
-  onMerge,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  clients: any[];
-  onMerge: (sourceId: string, targetId: string) => void;
-}) => {
-  const { toast } = useToast();
-  const [sourceId, setSourceId] = useState("");
-  const [targetId, setTargetId] = useState("");
-
-  const sourceClient = clients.find((c) => c.id === sourceId);
-  const targetClient = clients.find((c) => c.id === targetId);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            Merge Duplicate Clients
-          </DialogTitle>
-          <DialogDescription>
-            Select two clients to merge. All bookings from the source will be
-            moved to the target.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label className="font-bold">Source Client (will be deleted)</Label>
-            <Select value={sourceId} onValueChange={setSourceId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select client to merge from" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.company} ({c.bookings_count || 0} bookings)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label className="font-bold">
-              Target Client (will keep all data)
-            </Label>
-            <Select value={targetId} onValueChange={setTargetId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select client to merge into" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients
-                  .filter((c) => c.id !== sourceId)
-                  .map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.company} ({c.bookings_count || 0} bookings)
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {sourceId && targetId && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 mt-4">
-              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-              <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                <span className="font-bold">Warning:</span> This will move{" "}
-                {sourceClient?.bookings_count || 0} booking(s) from "
-                {sourceClient?.company}" to "{targetClient?.company}" and delete
-                the source client. This action cannot be undone.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="font-bold"
-          >
-            Cancel
-          </Button>
-          <Button
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold"
-            disabled={!sourceId || !targetId}
-            onClick={() => {
-              onMerge(sourceId, targetId);
-              toast({
-                title: "Clients Merged",
-                description: `Merge ${sourceClient?.company} into ${targetClient?.company}`,
-                action: <ToastAction altText="OK">OK</ToastAction>,
-              });
-              onOpenChange(false);
-            }}
-          >
-            Merge Clients
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const ClientDatabaseTab = () => {
-  const [clients, setClients] = useState(CLIENT_DATA);
-  const [addClientOpen, setAddClientOpen] = useState(false);
-  const [mergeOpen, setMergeOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [selectedClientForEdit, setSelectedClientForEdit] = useState<any>(null);
-
-  const stats = [
-    { label: "Total Clients", value: clients.length.toString() },
-    { label: "Active This Month", value: "1" },
-    {
-      label: "Total Revenue",
-      value: `$${clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3}`,
-    },
-    {
-      label: "Avg. Booking Value",
-      value: `$${(clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3) / (clients.length || 1)}`,
-    },
-  ];
-
-  const handleMerge = (sourceId: string, targetId: string) => {
-    setClients((prev) => prev.filter((c) => c.id !== sourceId));
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Client Database</h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage your client relationships and booking history
-          </p>
-        </div>
-        <Button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-          onClick={() => setAddClientOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Client
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <Card
-            key={s.label}
-            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
-          >
-            <p className="text-xs font-bold text-gray-500 uppercase mb-2">
-              {s.label}
-            </p>
-            <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl space-y-6">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input placeholder="Search by company name..." className="pl-9" />
-          </div>
-          <Select defaultValue="all">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Industries</SelectItem>
-              <SelectItem value="fashion">Fashion</SelectItem>
-              <SelectItem value="beauty">Beauty</SelectItem>
-              <SelectItem value="fitness">Fitness</SelectItem>
-              <SelectItem value="commercial">Commercial</SelectItem>
-              <SelectItem value="editorial">Editorial</SelectItem>
-              <SelectItem value="ecommerce">E-commerce</SelectItem>
-              <SelectItem value="advertising">Advertising</SelectItem>
-              <SelectItem value="filmtv">Film/TV</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="name">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Company Name</SelectItem>
-              <SelectItem value="bookings">Most Bookings</SelectItem>
-              <SelectItem value="revenue">Highest Revenue</SelectItem>
-              <SelectItem value="recent">Recent Activity</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            className="font-bold text-gray-700"
-            onClick={() => setMergeOpen(true)}
-          >
-            Merge Duplicates
-          </Button>
-        </div>
-
-        <div className="overflow-hidden">
-          {clients.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Company
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Industries
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Bookings
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Revenue
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {clients.map((client) => (
-                    <tr
-                      key={client.id}
-                      className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
-                      onClick={() => setSelectedClient(client)}
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="font-bold text-gray-900">
-                          {client.company}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {client.email}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-700">
-                          {client.contact}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex gap-1">
-                          {(client.industryTags || [])
-                            .slice(0, 2)
-                            .map((t: string) => (
-                              <Badge
-                                key={t}
-                                variant="secondary"
-                                className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
-                              >
-                                {t}
-                              </Badge>
-                            ))}
-                          {(client.industryTags || []).length > 2 && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
-                            >
-                              +{(client.industryTags || []).length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-gray-900">
-                          {client.bookings_count || 0}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-extrabold text-green-600">
-                          ${(client.revenue || 0).toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right">
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
-              <div className="bg-gray-50 p-4 rounded-full mb-4">
-                <Building2 className="w-12 h-12 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                No clients yet
-              </h3>
-              <p className="text-gray-500 max-w-md mb-4">
-                Start adding clients to track your business relationships
-              </p>
-              <Button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-                onClick={() => setAddClientOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" /> Add First Client
-              </Button>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      <AddClientModal
-        open={addClientOpen}
-        onOpenChange={(open) => {
-          setAddClientOpen(open);
-          if (!open) setSelectedClientForEdit(null);
-        }}
-        onAdd={(newClient) => {
-          setClients((prev) => {
-            const exists = prev.find((c) => c.id === newClient.id);
-            if (exists) {
-              return prev.map((c) => (c.id === newClient.id ? newClient : c));
-            }
-            return [...prev, newClient];
-          });
-          if (selectedClient && selectedClient.id === newClient.id) {
-            setSelectedClient(newClient);
-          }
-        }}
-        initialData={selectedClientForEdit}
-      />
-      <MergeClientsModal
-        open={mergeOpen}
-        onOpenChange={setMergeOpen}
-        clients={clients}
-        onMerge={handleMerge}
-      />
-
-      {selectedClient && (
-        <ClientProfileDrawer
-          client={selectedClient}
-          open={!!selectedClient}
-          onOpenChange={(open) => !open && setSelectedClient(null)}
-          onEdit={(client) => {
-            setSelectedClientForEdit(client);
-            setAddClientOpen(true);
-          }}
-          onDelete={(id) => {
-            setClients((prev) => prev.filter((c) => c.id !== id));
-            setSelectedClient(null);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-const ClientProfileDrawer = ({
-  client,
-  open,
-  onOpenChange,
-  onEdit,
-  onDelete,
-}: {
-  client: any;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onEdit: (client: any) => void;
-  onDelete: (id: string) => void;
-}) => {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="border-b pb-6 mb-6">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-16 h-16 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <Building2 className="w-8 h-8 text-gray-900" />
-            </div>
-            <div>
-              <SheetTitle className="text-2xl font-black text-gray-900">
-                {client.company}
-              </SheetTitle>
-              <div className="flex gap-2 mt-1">
-                {(client.industryTags || []).map((t: string) => (
-                  <Badge
-                    key={t}
-                    className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none font-bold text-[10px]"
-                  >
-                    {t}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => onEdit(client)}
-            >
-              <Edit className="w-4 h-4 text-gray-600" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 border-red-200 hover:bg-red-50"
-              onClick={() => onDelete(client.id)}
-            >
-              <Trash2 className="w-4 h-4 text-red-600" />
-            </Button>
-          </div>
-        </SheetHeader>
-
-        <div className="space-y-8">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                Total Revenue
-              </p>
-              <p className="text-2xl font-black text-green-600">
-                ${(client.revenue || 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                Total Bookings
-              </p>
-              <p className="text-2xl font-black text-gray-900">
-                {client.bookings_count || 0}
-              </p>
-            </div>
-          </div>
-
-          {/* Contact Details */}
-          <div className="space-y-4">
-            <h4 className="font-bold text-gray-900 border-b pb-2">
-              Primary Contact
-            </h4>
-            <div className="grid grid-cols-2 gap-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg">
-                  <User className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">
-                    Name
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {client.contact}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg">
-                  <Mail className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">
-                    Email
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {client.email || "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg">
-                  <Phone className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">
-                    Phone
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {client.phone || "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg">
-                  <CreditCard className="w-4 h-4 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">
-                    Terms
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {client.terms || "Net 15"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Address & Links */}
-          <div className="space-y-4">
-            <h4 className="font-bold text-gray-900 border-b pb-2">
-              Location & Links
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                <p className="text-sm text-gray-600">
-                  {client.address || "No address provided"}
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <Globe className="w-4 h-4 text-gray-400 mt-0.5" />
-                <p className="text-sm text-indigo-600 font-medium hover:underline cursor-pointer">
-                  {client.website || "No website provided"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Bookings Section */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center border-b pb-2">
-              <h4 className="font-bold text-gray-900">Recent Bookings</h4>
-              <Button
-                variant="ghost"
-                className="text-xs h-6 font-bold text-indigo-600"
-              >
-                View All
-              </Button>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-8 flex flex-col items-center justify-center text-center">
-              <Calendar className="w-8 h-8 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">No booking history yet</p>
-            </div>
-          </div>
-
-          <div className="pt-4 sticky bottom-0 bg-white pb-6">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl text-lg shadow-lg">
-              Create New Booking
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-};
-
-const AddBookOutModal = ({
-  open,
-  onOpenChange,
-  onAdd,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onAdd: (bookOut: any) => void;
-}) => {
-  const [reason, setReason] = useState("personal");
-  const [talentId, setTalentId] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [notes, setNotes] = useState("");
-
-  const handleSave = () => {
-    if (!talentId || !startDate || !endDate) {
-      // Basic validation
-      return;
-    }
-
-    const newBookOut = {
-      id: `bo-${Date.now()}`,
-      talentId,
-      reason,
-      startDate,
-      endDate,
-      notes,
-    };
-
-    onAdd(newBookOut);
-    onOpenChange(false);
-
-    // Reset form
-    setReason("personal");
-    setTalentId("");
-    setStartDate("");
-    setEndDate("");
-    setNotes("");
-  };
-
-  const isValid = reason && talentId && startDate && endDate;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            Talent Availability & Book-Outs
-          </DialogTitle>
-          <DialogDescription>
-            Manage when talent is unavailable for bookings
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label className="font-bold">Reason *</Label>
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="medical">Medical</SelectItem>
-                <SelectItem value="vacation">Vacation</SelectItem>
-                <SelectItem value="other_booking">Other Booking</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-bold">Talent *</Label>
-            <Select value={talentId} onValueChange={setTalentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select talent" />
-              </SelectTrigger>
-              <SelectContent>
-                {TALENT_DATA.map((talent) => (
-                  <SelectItem key={talent.id} value={talent.id}>
-                    {talent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="font-bold">Start Date *</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-bold">End Date *</Label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-bold">Notes</Label>
-            <Textarea
-              placeholder="Additional details..."
-              className="min-h-[80px]"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input type="checkbox" id="notify" className="rounded" />
-            <Label htmlFor="notify" className="font-normal cursor-pointer">
-              Notify talent via email
-            </Label>
-          </div>
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="font-bold"
-          >
-            Cancel
-          </Button>
-          <Button
-            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${
-              !isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
-            }`}
-            onClick={handleSave}
-            disabled={!isValid}
-          >
-            Save Book-Out
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const TalentAvailabilityTab = ({
-  bookOuts = [],
-  onAddBookOut,
-  onRemoveBookOut,
-}: {
-  bookOuts?: any[];
-  onAddBookOut: (bookOut: any) => void;
-  onRemoveBookOut: (id: string) => void;
-}) => {
-  const [addBookOutOpen, setAddBookOutOpen] = useState(false);
-  const { toast, dismiss } = useToast();
-
-  // Helper to find talent name
-  const getTalentName = (id: string) =>
-    TALENT_DATA.find((t) => t.id === id)?.name || "Unknown Talent";
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Talent Availability
-          </h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage book-outs and talent unavailability
-          </p>
-        </div>
-        <Button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-          onClick={() => setAddBookOutOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
-        </Button>
-      </div>
-
-      {bookOuts.length === 0 ? (
-        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
-          <div className="bg-gray-50 p-4 rounded-full mb-4">
-            <Calendar className="w-12 h-12 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No book-outs scheduled
-          </h3>
-          <p className="text-gray-500 max-w-md">
-            Add unavailability periods for your talent
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {bookOuts.map((bo) => (
-            <Card
-              key={bo.id}
-              className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#FFF9F5] border-orange-200"
-            >
-              <div className="flex flex-col gap-1">
-                <h4 className="font-bold text-gray-900 text-lg">
-                  {getTalentName(bo.talentId)}
-                </h4>
-                <p className="text-sm text-gray-500 font-medium mb-2">
-                  {new Date(bo.startDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}{" "}
-                  -{" "}
-                  {new Date(bo.endDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                <div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-100 text-orange-800 capitalize">
-                    {bo.reason.replace("_", " ")}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
-                  onClick={() => {
-                    toast({
-                      title: "Delete Book-Out?",
-                      description: "This action cannot be undone.",
-                      action: (
-                        <ToastAction
-                          altText="Delete"
-                          onClick={() => {
-                            onRemoveBookOut(bo.id);
-                            dismiss();
-                          }}
-                          className="font-bold bg-red-600 text-white hover:bg-red-700 hover:text-white border-none"
-                        >
-                          Delete
-                        </ToastAction>
-                      ),
-                    });
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <AddBookOutModal
-        open={addBookOutOpen}
-        onOpenChange={setAddBookOutOpen}
-        onAdd={onAddBookOut}
-      />
-    </div>
-  );
-};
-
-const NotificationsTab = () => {
-  const { toast } = useToast();
-  const [activeSubNav, setActiveSubNav] = useState("logs");
-  const [testNotificationType, setTestNotificationType] = useState("");
-  const [testTargetTalent, setTestTargetTalent] = useState("");
-
-  const testTalents = [
-    "Emma",
-    "Sergine",
-    "Milan",
-    "Julia",
-    "Matt",
-    "Carla",
-    "Luisa",
-    "Clemence",
-    "Lina",
-    "Aaron",
-  ];
-
-  const stats = [
-    {
-      label: "Emails Sent",
-      value: "127",
-      subtitle: "100% delivered",
-      icon: Mail,
-      color: "text-blue-600",
-    },
-    {
-      label: "SMS Sent",
-      value: "84",
-      subtitle: "100% delivered",
-      icon: Phone,
-      color: "text-green-600",
-    },
-    {
-      label: "Push Sent",
-      value: "56",
-      subtitle: "65% clicked",
-      icon: Bell,
-      color: "text-purple-600",
-    },
-    {
-      label: "Failed",
-      value: "3",
-      subtitle: "Last 30 days",
-      icon: XCircle,
-      color: "text-red-600",
-    },
-  ];
-
-  const notifications = [
-    {
-      type: "EMAIL",
-      title: "Booking Created",
-      recipient: "Emma (emma@example.com)",
-      message: "New Booking: Glossier Beauty on Jan 15, 2026",
-      time: "Jan 12, 2025 10:35 AM",
-      status: "success",
-      detail: "Opened 10:55 AM",
-    },
-    {
-      type: "SMS",
-      title: "24h Reminder",
-      recipient: "Milan (+1-555-0102)",
-      message: "Reminder: Booking tomorrow with CarNext WIP at 9:00 AM",
-      time: "Jan 11, 2025 9:00 PM",
-      status: "success",
-      detail: "48 chars",
-    },
-    {
-      type: "PUSH",
-      title: "Booking Confirmed",
-      recipient: "Julia",
-      message:
-        "Your booking with Esther Skincare has been confirmed for Jan 20",
-      time: "Jan 10, 2025 2:03 PM",
-      status: "success",
-      detail: "Clicked",
-    },
-    {
-      type: "EMAIL",
-      title: "Booking Updated",
-      recipient: "Carla (carla@example.com)",
-      message: "Booking Updated: Reformation on Jan 25, 2026",
-      time: "Jan 9, 2026 4:15 PM",
-      status: "success",
-      detail: "",
-    },
-    {
-      type: "EMAIL",
-      title: "Booking Cancelled",
-      recipient: "Matt (matt@example.com)",
-      message: "Booking Cancelled: Aesop Skincare on Jan 22, 2026",
-      time: "Jan 8, 2025 11:00 AM",
-      status: "error",
-      detail: "Error: Invalid email address",
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Bell className="w-8 h-8 text-gray-700" />
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            Notifications Center
-          </h2>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage booking notifications and delivery logs
-          </p>
-        </div>
-      </div>
-
-      {/* Sub-navigation */}
-      <div className="flex gap-1 border-b border-gray-200">
-        {[
-          "Notification Logs",
-          "Settings",
-          "Talent Preferences",
-          "Test Notifications",
-        ].map((tab, idx) => (
-          <button
-            key={tab}
-            onClick={() =>
-              setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
-            }
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {activeSubNav === "logs" && (
-        <>
-          <div className="grid grid-cols-4 gap-4">
-            {stats.map((s) => (
-              <Card
-                key={s.label}
-                className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <s.icon className={`w-5 h-5 ${s.color}`} />
-                  <p className="text-xs font-bold text-gray-500 uppercase">
-                    {s.label}
-                  </p>
-                </div>
-                <p className="text-4xl font-extrabold text-gray-900 mb-1">
-                  {s.value}
-                </p>
-                <p className="text-xs text-gray-500">{s.subtitle}</p>
-              </Card>
-            ))}
-          </div>
-
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Recent Notifications
-              </h3>
-              <Button variant="outline" className="font-bold text-gray-700">
-                <Filter className="w-4 h-4 mr-2" /> Filter
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              {notifications.map((notif, idx) => (
-                <Card
-                  key={idx}
-                  className={`p-4 border ${
-                    notif.status === "error"
-                      ? "border-red-200 bg-red-50"
-                      : "border-gray-100 hover:border-indigo-200 transition-colors"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={`p-2 rounded-lg ${
-                          notif.type === "EMAIL"
-                            ? "bg-blue-100 text-blue-600"
-                            : notif.type === "SMS"
-                              ? "bg-green-100 text-green-600"
-                              : "bg-purple-100 text-purple-600"
-                        }`}
-                      >
-                        {notif.type === "EMAIL" && <Mail className="w-5 h-5" />}
-                        {notif.type === "SMS" && <Phone className="w-5 h-5" />}
-                        {notif.type === "PUSH" && <Bell className="w-5 h-5" />}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-gray-900">
-                            {notif.title}
-                          </h4>
-                          <span className="text-xs font-medium text-gray-500">
-                            • {notif.type}
-                          </span>
-                          {notif.status === "error" && (
-                            <Badge variant="destructive" className="h-5 px-1.5">
-                              Failed
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-gray-900 font-medium mt-0.5">
-                          {notif.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          To:{" "}
-                          <span className="font-bold">{notif.recipient}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-gray-500">
-                        {notif.time}
-                      </p>
-                      <p
-                        className={`text-xs font-bold mt-1 ${
-                          notif.status === "success"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {notif.detail}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Card>
-        </>
-      )}
-
-      {activeSubNav === "settings" && (
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-1">
-              Event Notification Settings
-            </h3>
-            <p className="text-sm text-gray-500">
-              Configure which channels to use for each event type
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {/* Booking Created/Confirmed */}
-            <div className="pb-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">
-                Booking Created/Confirmed
-              </h4>
-              <div className="grid grid-cols-3 gap-8">
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Email
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      SMS
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Push
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Booking Updated */}
-            <div className="pb-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">
-                Booking Updated
-              </h4>
-              <div className="grid grid-cols-3 gap-8">
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Email
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      SMS
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Push
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Booking Cancelled */}
-            <div className="pb-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">
-                Booking Cancelled
-              </h4>
-              <div className="grid grid-cols-3 gap-8">
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Email
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      SMS
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Push
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Automatic Reminders */}
-            <div className="pt-2">
-              <h4 className="font-bold text-gray-900 mb-3 text-sm">
-                Automatic Reminders
-              </h4>
-
-              <div className="space-y-3">
-                <div className="pb-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900 mb-3">
-                    24 Hours Before Booking
-                  </p>
-                  <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          Email
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          SMS
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          Push
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pb-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900 mb-3">
-                    48 Hours Before Booking
-                  </p>
-                  <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          Email
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          SMS
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          Push
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-900 mb-3">
-                    1 Week Before Booking
-                  </p>
-                  <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          Email
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          SMS
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-medium text-gray-900">
-                          Push
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {activeSubNav === "preferences" && (
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-          <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Per-Talent Notification Preferences
-            </h3>
-            <p className="text-sm text-gray-600">
-              Override agency defaults for specific talent
-            </p>
-          </div>
-
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search talent by name..."
-              className="pl-9"
-              onChange={(e) => setTestTargetTalent(e.target.value)}
-              value={testTargetTalent}
-            />
-          </div>
-
-          <div className="space-y-4">
-            {[
-              {
-                name: "Emma",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-              },
-              {
-                name: "Sergine",
-                email: "tyler@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
-              },
-              {
-                name: "Milan",
-                email: "milan@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-              },
-              {
-                name: "Julia",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
-              },
-              {
-                name: "Matt",
-                email: "tyler@example.com",
-                image: "https://i.pravatar.cc/150?u=Matt",
-              },
-              {
-                name: "Carla",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
-              },
-              {
-                name: "Luisa",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/dfe7c47ac_Screenshot2025-10-29at63612PM.png",
-              },
-              {
-                name: "Clemence",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ee3aae03f_Screenshot2025-10-29at63651PM.png",
-              },
-              {
-                name: "Lina",
-                email: "lina@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ac71e274e_Screenshot2025-10-29at63715PM.png",
-              },
-              {
-                name: "Aaron",
-                email: "cleo@example.com",
-                image:
-                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/86e331be1_Screenshot2025-10-29at63806PM.png",
-              },
-            ]
-              .filter((t) =>
-                t.name.toLowerCase().includes(testTargetTalent.toLowerCase()),
-              )
-              .map((talent, idx) => (
-                <Card
-                  key={idx}
-                  className="p-4 border border-gray-200 bg-white rounded-xl"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={talent.image || ""} alt={talent.name} />
-                      <AvatarFallback className="bg-gray-100 text-gray-600 font-bold">
-                        {talent.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-bold text-gray-900">{talent.name}</h4>
-                      <p className="text-sm text-gray-500">{talent.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-8">
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
-                      <span className="text-sm font-bold text-gray-900">
-                        Email
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        SMS
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
-                      <span className="text-sm font-bold text-gray-900">
-                        Push
-                      </span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          defaultChecked
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                      </label>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-          </div>
-        </Card>
-      )}
-
-      {activeSubNav === "test" && (
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Test Notification Delivery
-            </h3>
-            <p className="text-sm text-gray-500 font-medium">
-              Send a test notification to verify delivery and formatting
-            </p>
-          </div>
-
-          <div className="space-y-6 max-w-full">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Notification Type
-              </Label>
-              <Select
-                value={testNotificationType}
-                onValueChange={setTestNotificationType}
-              >
-                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
-                  <SelectValue placeholder="Select notification type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="email">
-                    Email (with .ics attachment)
-                  </SelectItem>
-                  <SelectItem value="sms">SMS</SelectItem>
-                  <SelectItem value="push">Push notification</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Select Talent
-              </Label>
-              <Select
-                value={testTargetTalent}
-                onValueChange={setTestTargetTalent}
-              >
-                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
-                  <SelectValue placeholder="Choose talent to notify" />
-                </SelectTrigger>
-                <SelectContent>
-                  {testTalents.map((name) => (
-                    <SelectItem key={name} value={name.toLowerCase()}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
-              <div className="p-2 bg-white rounded-full text-amber-500 shadow-sm">
-                <AlertCircle className="w-4 h-4" />
-              </div>
-              <p className="text-sm text-amber-800 font-medium">
-                Test notifications will be sent with "[TEST]" prefix and won't
-                count toward billing.
-              </p>
-            </div>
-
-            <Button
-              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${
-                !testNotificationType || !testTargetTalent
-                  ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
-                  : ""
-              }`}
-              onClick={() => {
-                if (!testNotificationType || !testTargetTalent) return;
-
-                const talentName =
-                  testTalents.find(
-                    (t) => t.toLowerCase() === testTargetTalent,
-                  ) || testTargetTalent;
-
-                toast({
-                  title: "Notification Sent",
-                  description: `Test ${testNotificationType} notification sent to ${talentName}!`,
-                  action: (
-                    <ToastAction altText="OK" onClick={() => {}}>
-                      OK
-                    </ToastAction>
-                  ),
-                });
-              }}
-              disabled={!testNotificationType || !testTargetTalent}
-            >
-              <Send className="w-5 h-5" />
-              Send Test Notification
-            </Button>
-
-            <div className="pt-8">
-              <h4 className="text-lg font-bold text-gray-900 mb-6 uppercase tracking-wider">
-                Preview Templates
-              </h4>
-
-              <Card className="border border-gray-200 rounded-2xl bg-gray-50/50 p-6 overflow-hidden">
-                {testNotificationType === "email" && (
-                  <div className="space-y-6">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                        Subject:
-                      </p>
-                      <p className="text-base font-bold text-gray-900">
-                        [TEST] New Booking: Glossier Beauty on Jan 15, 2026
-                      </p>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-xl p-8 shadow-sm">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
-                        Body Preview:
-                      </p>
-                      <div className="space-y-4 text-[15px] text-gray-700 leading-relaxed">
-                        <p className="font-medium text-gray-900">Hi Emma,</p>
-                        <p className="font-medium text-gray-600">
-                          You have a new confirmed booking:
-                        </p>
-                        <div className="space-y-2 pt-2">
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Client:
-                            </span>{" "}
-                            Glossier Beauty
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Date:
-                            </span>{" "}
-                            Wednesday, January 15, 2026
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Call Time:
-                            </span>{" "}
-                            9:00 AM
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Wrap Time:
-                            </span>{" "}
-                            5:00 PM
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Location:
-                            </span>{" "}
-                            123 Main St, New York, NY
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Rate:
-                            </span>{" "}
-                            $1,200 Day Rate
-                          </p>
-                        </div>
-                        <p className="text-sm font-medium text-gray-400 mt-6 border-t border-gray-50 pt-4 italic">
-                          Calendar invite (.ics) attached
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {testNotificationType === "sms" && (
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Message Preview (160 chars max):
-                    </p>
-                    <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm min-h-[80px] flex items-center">
-                      <p className="text-sm text-gray-900 font-medium leading-relaxed">
-                        [TEST] You're booked for Glossier on Jan 15 at 9:00 AM.
-                        Location: 123 Main St, NY. Call time 9AM.
-                      </p>
-                    </div>
-                    <p className="text-[11px] font-bold text-gray-400">
-                      Character count: 98/160
-                    </p>
-                  </div>
-                )}
-
-                {testNotificationType === "push" && (
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Notification Preview:
-                    </p>
-                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xl max-w-sm flex gap-4 items-center animate-in slide-in-from-top-4 duration-500">
-                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 transform scale-95">
-                        <Bell className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-sm font-bold text-gray-900 truncate">
-                            Likelee Agency
-                          </p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase">
-                            now
-                          </p>
-                        </div>
-                        <p className="text-[13px] font-bold text-indigo-600 mb-0.5">
-                          [TEST] New Booking
-                        </p>
-                        <p className="text-[12px] font-medium text-gray-600 leading-tight">
-                          Glossier Beauty on Jan 15 at 9:00 AM
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-};
-const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
-  const [activeTab, setActiveTab] = useState("Analytics");
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <BarChart2 className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-2xl font-bold text-gray-900">
-              Management & Analytics
-            </h2>
-          </div>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Filter, search, and analyze your bookings
-          </p>
-        </div>
-        <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
-          {["Analytics", "Manage Bookings", "Reports & Export"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {activeTab === "Analytics" && (
-        <ManagementAnalyticsTab bookings={bookings} />
-      )}
-      {activeTab === "Manage Bookings" && (
-        <ManageBookingsTab bookings={bookings} />
-      )}
-      {activeTab === "Reports & Export" && <ReportsExportTab />}
-    </div>
-  );
-};
-
-const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
-  // Calculate dynamic stats
-  const now = new Date();
-
-  // Helper to parse currency string "$1,500" -> 1500
-  const parseCurrency = (str: string) => {
-    if (!str) return 0;
-    return Number(str.replace(/[^0-9.-]+/g, ""));
-  };
-
-  const overviewStats = bookings.reduce(
-    (acc, b) => {
-      const bDate = parseISO(b.date);
-      const isThisMonth = isSameMonth(bDate, now);
-      const isThisWeek = isSameWeek(bDate, now);
-
-      if (isThisMonth) acc.monthCount++;
-      if (isThisWeek) acc.weekCount++;
-      if (isThisMonth && (b.type === "confirmed" || b.status === "confirmed")) {
-        const amount = parseCurrency(b.rate || b.fee || "0");
-        acc.monthRevenue += amount;
-      }
-
-      // Type counts
-      const type = (b.type || b.status || "confirmed").toLowerCase();
-      acc.typeCounts[type] = (acc.typeCounts[type] || 0) + 1;
-
-      return acc;
-    },
-    {
-      monthCount: 0,
-      weekCount: 0,
-      monthRevenue: 0,
-      typeCounts: {} as Record<string, number>,
-    },
-  );
-
-  const stats = [
-    {
-      label: "This Month",
-      value: overviewStats.monthCount.toString(),
-      subtext: "Total bookings",
-      icon: Calendar,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      label: "This Week",
-      value: overviewStats.weekCount.toString(),
-      subtext: "Total bookings",
-      icon: Calendar,
-      color: "text-green-600",
-      bg: "bg-green-50",
-    },
-    {
-      label: "Revenue",
-      value: `$${overviewStats.monthRevenue.toLocaleString()}`,
-      subtext: "This month",
-      icon: DollarSign,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-    },
-    {
-      label: "Conversion",
-      value: "85%", // Keeping static for now as we don't have distinct casting/lead data
-      subtext: "Castings → Confirmed",
-      icon: TrendingUp,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-  ];
-
-  const totalBookings = bookings.length || 1;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-4">
-        {stats.map((s, i) => (
-          <Card key={i} className="p-6 border shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${s.bg}`}>
-                <s.icon className={`w-5 h-5 ${s.color}`} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-500">{s.label}</p>
-                <h3 className="text-3xl font-bold text-gray-900 mt-1">
-                  {s.value}
-                </h3>
-                <p className="text-xs text-gray-400 mt-1 font-medium">
-                  {s.subtext}
-                </p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <Card className="p-6 border shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">
-            Bookings by Type
-          </h3>
-          <div className="space-y-4">
-            {Object.entries(overviewStats.typeCounts).length > 0 ? (
-              Object.entries(overviewStats.typeCounts).map(([type, count]) => (
-                <div key={type} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 capitalize">
-                    {type}
-                  </span>
-                  <div className="flex items-center gap-4 flex-1 mx-4">
-                    <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          type === "confirmed"
-                            ? "bg-green-500"
-                            : type === "cancelled"
-                              ? "bg-red-500"
-                              : "bg-indigo-600"
-                        }`}
-                        style={{ width: `${(count / totalBookings) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-bold text-gray-900">
-                      {count}
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">No bookings yet</p>
-            )}
-          </div>
-        </Card>
-
-        <Card className="p-6 border shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-900">
-              Top Booked Talent
-            </h3>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-gray-400">#1</span>
-                <span className="text-sm font-bold text-gray-900">Emma</span>
-              </div>
-              <Badge variant="secondary" className="font-bold">
-                1 bookings
-              </Badge>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateStart, setDateStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
-  const [rateMin, setRateMin] = useState("");
-  const [rateMax, setRateMax] = useState("");
-  const [sortKey, setSortKey] = useState("bookingDate");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
-  // Helper to parse currency
-  const parseCurrency = (str: string) => {
-    if (!str) return 0;
-    return Number(str.replace(/[^0-9.-]+/g, ""));
-  };
-
-  // Filter and sort bookings
-  const filteredAndSortedBookings = bookings
-    .filter((b) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesTalent = (b.talentName || "")
-          .toLowerCase()
-          .includes(query);
-        const matchesClient = (b.clientName || b.client || "")
-          .toLowerCase()
-          .includes(query);
-        const matchesLocation = (b.location || "")
-          .toLowerCase()
-          .includes(query);
-        const matchesNotes = (b.notes || "").toLowerCase().includes(query);
-        if (
-          !matchesTalent &&
-          !matchesClient &&
-          !matchesLocation &&
-          !matchesNotes
-        ) {
-          return false;
-        }
-      }
-
-      // Date range filter
-      if (dateStart && b.date) {
-        if (new Date(b.date) < new Date(dateStart)) return false;
-      }
-      if (dateEnd && b.date) {
-        if (new Date(b.date) > new Date(dateEnd)) return false;
-      }
-
-      // Rate range filter
-      const rate = parseCurrency(b.rate || b.fee || "0");
-      if (rateMin && rate < Number(rateMin)) return false;
-      if (rateMax && rate > Number(rateMax)) return false;
-
-      return true;
-    })
-    .sort((a, b) => {
-      let aVal: any, bVal: any;
-
-      switch (sortKey) {
-        case "bookingDate":
-          aVal = new Date(a.date || 0).getTime();
-          bVal = new Date(b.date || 0).getTime();
-          break;
-        case "talentName":
-          aVal = (a.talentName || "").toLowerCase();
-          bVal = (b.talentName || "").toLowerCase();
-          break;
-        case "clientName":
-          aVal = (a.clientName || a.client || "").toLowerCase();
-          bVal = (b.clientName || b.client || "").toLowerCase();
-          break;
-        case "rateAmount":
-          aVal = parseCurrency(a.rate || a.fee || "0");
-          bVal = parseCurrency(b.rate || b.fee || "0");
-          break;
-        case "createdDate":
-          aVal = new Date(a.createdAt || a.date || 0).getTime();
-          bVal = new Date(b.createdAt || b.date || 0).getTime();
-          break;
-        default:
-          return 0;
-      }
-
-      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-
-  const toggleSortDirection = () => {
-    setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <Input
-          placeholder="Search by talent, client, location, or notes..."
-          className="pl-10 h-10 bg-white"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      <Card className="p-6 border shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-4 h-4 text-gray-900" />
-          <h3 className="font-bold text-gray-900">Filters</h3>
-        </div>
-
-        <div className="grid grid-cols-4 gap-4 mb-4">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Talent
-            </Label>
-            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
-              {["Emma", "Sergine", "Milan", "Julia", "Matt"].map((t) => (
-                <div key={t} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`t-${t}`}
-                    className="rounded border-gray-300"
-                  />
-                  <label
-                    htmlFor={`t-${t}`}
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    {t}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4">
-            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Client
-            </Label>
-            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
-              {["Company", "Company", "name"].map((c, i) => (
-                <div key={`${c}-${i}`} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`c-${i}`}
-                    className="rounded border-gray-300"
-                  />
-                  <label
-                    htmlFor={`c-${i}`}
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    {c}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4">
-            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Booking Type
-            </Label>
-            <div className="space-y-2">
-              {["Casting", "Option", "Confirmed", "Completed", "Cancelled"].map(
-                (t) => (
-                  <div key={t} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={`bt-${t}`}
-                      className="rounded border-gray-300"
-                    />
-                    <label
-                      htmlFor={`bt-${t}`}
-                      className="text-sm font-medium text-gray-700 cursor-pointer"
-                    >
-                      {t}
-                    </label>
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-
-          <div className="border border-gray-200 rounded-lg p-4">
-            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Status
-            </Label>
-            <div className="space-y-2">
-              {[
-                "Pending Confirmation",
-                "Confirmed",
-                "Completed",
-                "Cancelled",
-              ].map((s) => (
-                <div key={s} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`s-${s}`}
-                    className="rounded border-gray-300"
-                  />
-                  <label
-                    htmlFor={`s-${s}`}
-                    className="text-sm font-medium text-gray-700 cursor-pointer"
-                  >
-                    {s}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Date Range
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="date"
-                value={dateStart}
-                onChange={(e) => setDateStart(e.target.value)}
-                placeholder="Start Date"
-              />
-              <Input
-                type="date"
-                value={dateEnd}
-                onChange={(e) => setDateEnd(e.target.value)}
-                placeholder="End Date"
-              />
-            </div>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
-              Rate Range ($)
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                placeholder="Min"
-                type="number"
-                value={rateMin}
-                onChange={(e) => setRateMin(e.target.value)}
-              />
-              <Input
-                placeholder="Max"
-                type="number"
-                value={rateMax}
-                onChange={(e) => setRateMax(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-4 border shadow-sm">
-        <div className="flex items-center gap-2">
-          <ArrowUpDown className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-bold text-gray-700">Sort by:</span>
-          <Select value={sortKey} onValueChange={setSortKey}>
-            <SelectTrigger className="w-[180px] h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="bookingDate">Booking Date</SelectItem>
-              <SelectItem value="talentName">Talent Name</SelectItem>
-              <SelectItem value="clientName">Client Name</SelectItem>
-              <SelectItem value="rateAmount">Rate Amount</SelectItem>
-              <SelectItem value="createdDate">Created Date</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9"
-            onClick={toggleSortDirection}
-          >
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`}
-            />
-          </Button>
-        </div>
-      </Card>
-
-      <div className="space-y-4">
-        <h4 className="font-bold text-gray-900">
-          Results ({filteredAndSortedBookings.length})
-        </h4>
-        {filteredAndSortedBookings.length > 0 ? (
-          filteredAndSortedBookings.map((booking) => (
-            <div
-              key={booking.id}
-              className="bg-white border rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
-                  {(booking.talentName || "?")[0].toUpperCase()}
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900">
-                    {booking.talentName || "Unknown"}
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    {booking.status || booking.type || "Pending"} •{" "}
-                    {booking.bookingType || "Booking"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-xs font-bold text-gray-500">
-                    {booking.date
-                      ? format(parseISO(booking.date), "MMM dd, yyyy")
-                      : "No date"}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {booking.callTime || "--:--"}
-                  </p>
-                </div>
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">
-                  {booking.status || booking.type || "Pending"}
-                </Badge>
-                <p className="font-bold text-gray-900">
-                  {booking.rate || booking.fee || "$0"}
-                </p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-12 text-gray-500">
-            <p>No bookings found matching your filters.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const ReportsExportTab = () => {
-  const { toast } = useToast();
-
-  const handleExport = (format: string) => {
-    const { dismiss } = toast({
-      title: `Exporting 1 bookings as ${format}...`,
-      action: (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            dismiss();
-          }}
-        >
-          OK
-        </Button>
-      ),
-    });
-  };
-
-  const handleScheduleReports = () => {
-    const { dismiss } = toast({
-      title: "Scheduled weekly reports via email!",
-      action: (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            dismiss();
-          }}
-        >
-          OK
-        </Button>
-      ),
-    });
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card className="p-6 border shadow-sm">
-        <div className="mb-6">
-          <h3 className="text-lg font-bold text-gray-900">Export Bookings</h3>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Export 1 filtered bookings to your preferred format
-          </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all group"
-            onClick={() => handleExport("CSV")}
-          >
-            <FileText className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-green-700">Export to CSV</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col gap-2 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all group"
-            onClick={() => handleExport("PDF")}
-          >
-            <FileText className="w-6 h-6 text-red-600 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-red-700">Export to PDF</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all group"
-            onClick={() => handleExport("EXCEL")}
-          >
-            <FileText className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-blue-700">Export to Excel</span>
-          </Button>
-        </div>
-
-        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-          <h4 className="font-bold text-gray-900 mb-4">Included Columns:</h4>
-          <div className="grid grid-cols-4 gap-4">
-            {[
-              "Talent Name",
-              "Client Name",
-              "Booking Date",
-              "Call Time",
-              "Wrap Time",
-              "Location",
-              "Rate",
-              "Type",
-              "Status",
-              "Notes",
-              "Created Date",
-              "Updated Date",
-            ].map((col) => (
-              <div key={col} className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-orange-500 fill-orange-500" />
-                <span className="text-sm font-medium text-gray-700">{col}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6 border shadow-sm">
-        <div className="mb-6">
-          <h3 className="text-lg font-bold text-gray-900">
-            Schedule Automated Reports
-          </h3>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Receive booking reports automatically via email
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="font-bold">Report Frequency</Label>
-            <Select defaultValue="weekly">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">
-                  Daily (every morning at 8 AM)
-                </SelectItem>
-                <SelectItem value="weekly">
-                  Weekly (every Monday at 8 AM)
-                </SelectItem>
-                <SelectItem value="monthly">
-                  Monthly (1st of each month)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="font-bold">Email Recipients</Label>
-            <Input defaultValue="agent@agency.com" />
-          </div>
-
-          <Button
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 mt-2"
-            onClick={handleScheduleReports}
-          >
-            <Mail className="w-4 h-4 mr-2" /> Schedule Weekly Reports
-          </Button>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const BookingsView = ({
-  activeSubTab,
-  bookings,
-  onAddBooking,
-  bookOuts = [],
-  onAddBookOut,
-  onRemoveBookOut,
-  onUpdateBooking,
-  onCancelBooking,
-}: {
-  activeSubTab: string;
-  bookings: any[];
-  onAddBooking: (booking: any) => void;
-  onUpdateBooking: (booking: any) => void;
-  onCancelBooking: (id: string) => void;
-  bookOuts: any[];
-  onAddBookOut: (bookOut: any) => void;
-  onRemoveBookOut: (id: string) => void;
-}) => {
-  if (activeSubTab === "Calendar & Schedule")
-    return (
-      <CalendarScheduleTab
-        bookings={bookings}
-        onAddBooking={onAddBooking}
-        onUpdateBooking={onUpdateBooking}
-        onCancelBooking={onCancelBooking}
-      />
-    );
-  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
-  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
-  if (activeSubTab === "Talent Availability")
-    return (
-      <TalentAvailabilityTab
-        bookOuts={bookOuts}
-        onAddBookOut={onAddBookOut}
-        onRemoveBookOut={onRemoveBookOut}
-      />
-    );
-  if (activeSubTab === "Notifications") return <NotificationsTab />;
-  if (activeSubTab === "Management & Analytics")
-    return <ManagementAnalyticsView bookings={bookings} />;
-
-  return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-      <div className="p-6 bg-gray-100 rounded-full mb-4">
-        <Calendar className="w-12 h-12 text-gray-400" />
-      </div>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">{activeSubTab}</h2>
-      <p className="text-gray-500">Feature currently under development.</p>
-    </div>
-  );
-};
-
-function AgencyDashboard() {
+export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
   const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
@@ -14175,7 +13002,6 @@ function AgencyDashboard() {
     "licensing",
     "protection",
     "analytics",
-    "bookings",
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -14187,30 +13013,6 @@ function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
-
-  const [bookings, setBookings] = useState([
-    { id: "1", talentName: "Emma", date: "2026-01-12", type: "confirmed" },
-  ]);
-
-  const onUpdateBooking = (updatedBooking: any) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b)),
-    );
-  };
-
-  const onAddBooking = (b: any) => {
-    setBookings((prev) => [...prev, { ...b, id: b.id || `b-${Date.now()}` }]);
-  };
-
-  const onCancelBooking = (id: string) => {
-    setBookings((prev) => prev.filter((b) => b.id !== id));
-  };
-
-  const [bookOuts, setBookOuts] = useState<any[]>([]);
-
-  const onAddBookOut = (bo: any) => setBookOuts((prev) => [...prev, bo]);
-  const onRemoveBookOut = (id: string) =>
-    setBookOuts((prev) => prev.filter((bo) => bo.id !== id));
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -14273,32 +13075,6 @@ function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const notificationRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
-      ) {
-        setShowNotifications(false);
-      }
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target as Node)
-      ) {
-        setShowProfileMenu(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -14349,12 +13125,7 @@ function AgencyDashboard() {
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
           { id: "file-storage", label: "File Storage", icon: Folder },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
+          { id: "settings", label: "Settings", icon: Settings },
         ]
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14372,12 +13143,12 @@ function AgencyDashboard() {
             label: "Bookings",
             icon: Calendar,
             subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
+              "Calendar and schedule",
+              "Booking request",
               "Client Database",
-              "Talent Availability",
+              "Talent availability",
               "Notifications",
-              "Management & Analytics",
+              "Management and Analytics",
             ],
           },
           {
@@ -14399,28 +13170,13 @@ function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
+          { id: "settings", label: "Settings", icon: Settings },
         ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Sidebar */}
-      <aside
-        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
-      >
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -14449,10 +13205,6 @@ function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
-                    if (item.id === "settings") {
-                      setActiveTab("settings");
-                      setActiveSubTab("General Settings");
-                    }
                   } else {
                     setActiveTab(item.id);
                   }
@@ -14518,19 +13270,10 @@ function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
+      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden text-gray-500 hover:text-gray-900"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu className="w-6 h-6" />
-          </Button>
-
-          <div className="flex items-center gap-4 ml-auto">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
+          <div className="flex items-center gap-4">
             <Button
               variant="outline"
               size="sm"
@@ -14549,7 +13292,7 @@ function AgencyDashboard() {
             </Button>
 
             {/* Notifications Dropdown */}
-            <div className="relative" ref={notificationRef}>
+            <div className="relative">
               <Button
                 variant="ghost"
                 size="icon"
@@ -14561,7 +13304,7 @@ function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="fixed inset-x-4 top-20 mt-0 w-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80 md:inset-x-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
@@ -14609,7 +13352,7 @@ function AgencyDashboard() {
             </Button>
 
             {/* Profile Dropdown */}
-            <div className="relative" ref={profileRef}>
+            <div className="relative">
               <Button
                 variant="ghost"
                 size="icon"
@@ -14710,7 +13453,7 @@ function AgencyDashboard() {
         </header>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 py-8 bg-gray-50">
+        <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
           {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
@@ -14748,12 +13491,7 @@ function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "settings" && activeSubTab === "General Settings" && (
-            <GeneralSettingsView />
-          )}
-          {activeTab === "settings" && activeSubTab === "File Storage" && (
-            <FileStorageView />
-          )}
+          {activeTab === "settings" && <SettingsView />}
           {activeTab === "scouting" && (
             <ScoutingHubView
               activeTab={activeScoutingTab}
@@ -14763,16 +13501,12 @@ function AgencyDashboard() {
           {activeTab === "client-crm" && <ClientCRMView />}
           {activeTab === "file-storage" && <FileStorageView />}
           {activeTab === "bookings" && (
-            <BookingsView
-              activeSubTab={activeSubTab}
-              bookings={bookings}
-              onAddBooking={onAddBooking}
-              onUpdateBooking={onUpdateBooking}
-              onCancelBooking={onCancelBooking}
-              bookOuts={bookOuts}
-              onAddBookOut={onAddBookOut}
-              onRemoveBookOut={onRemoveBookOut}
-            />
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Bookings</h2>
+              <p className="text-gray-500">{activeSubTab}</p>
+              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
+            </div>
           )}
           {activeTab === "accounting" && (
             <div>
@@ -14791,5 +13525,3 @@ function AgencyDashboard() {
     </div>
   );
 }
-
-export default AgencyDashboard;
