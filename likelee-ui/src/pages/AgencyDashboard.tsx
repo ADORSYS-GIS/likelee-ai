@@ -97,6 +97,7 @@ import {
   subDays,
   addDays,
 } from "date-fns";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -13321,8 +13322,8 @@ const NotificationsTab = () => {
       )}
 
       {activeSubNav === "preferences" && (
-        <div className="space-y-6">
-          <div>
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               Per-Talent Notification Preferences
             </h3>
@@ -13331,57 +13332,93 @@ const NotificationsTab = () => {
             </p>
           </div>
 
-          <div className="relative">
+          <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search talent by name..."
               className="pl-9"
-              onChange={(e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                const talentCards =
-                  document.querySelectorAll("[data-talent-name]");
-                talentCards.forEach((card) => {
-                  const name =
-                    card.getAttribute("data-talent-name")?.toLowerCase() || "";
-                  if (name.includes(searchTerm)) {
-                    (card as HTMLElement).style.display = "";
-                  } else {
-                    (card as HTMLElement).style.display = "none";
-                  }
-                });
-              }}
+              onChange={(e) => setTestTargetTalent(e.target.value)}
+              value={testTargetTalent}
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[
-              { name: "Emma", email: "cleo@example.com" },
-              { name: "Sergine", email: "tyler@example.com" },
-              { name: "Milan", email: "milan@example.com" },
-              { name: "Julia", email: "cleo@example.com" },
-              { name: "Matt", email: "tyler@example.com" },
-              { name: "Carla", email: "cleo@example.com" },
-              { name: "Luisa", email: "cleo@example.com" },
-              { name: "Clemence", email: "cleo@example.com" },
-              { name: "Lina", email: "lina@example.com" },
-              { name: "Aaron", email: "cleo@example.com" },
-            ].map((talent, idx) => (
-              <Card
-                key={idx}
-                className="p-4 border border-gray-200 bg-white rounded-xl"
-                data-talent-name={talent.name}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-gray-600" />
+              {
+                name: "Emma",
+                email: "cleo@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
+              },
+              {
+                name: "Sergine",
+                email: "tyler@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
+              },
+              {
+                name: "Milan",
+                email: "milan@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
+              },
+              {
+                name: "Julia",
+                email: "cleo@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
+              },
+              {
+                name: "Matt",
+                email: "tyler@example.com",
+                image: "https://i.pravatar.cc/150?u=Matt",
+              },
+              {
+                name: "Carla",
+                email: "cleo@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
+              },
+              {
+                name: "Luisa",
+                email: "cleo@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/dfe7c47ac_Screenshot2025-10-29at63612PM.png",
+              },
+              {
+                name: "Clemence",
+                email: "cleo@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ee3aae03f_Screenshot2025-10-29at63651PM.png",
+              },
+              {
+                name: "Lina",
+                email: "lina@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ac71e274e_Screenshot2025-10-29at63715PM.png",
+              },
+              {
+                name: "Aaron",
+                email: "cleo@example.com",
+                image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/86e331be1_Screenshot2025-10-29at63806PM.png",
+              },
+            ]
+              .filter((t) =>
+                t.name.toLowerCase().includes(testTargetTalent.toLowerCase())
+              )
+              .map((talent, idx) => (
+                <Card
+                  key={idx}
+                  className="p-4 border border-gray-200 bg-white rounded-xl"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={talent.image || ""} alt={talent.name} />
+                      <AvatarFallback className="bg-gray-100 text-gray-600 font-bold">
+                        {talent.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h4 className="font-bold text-gray-900">{talent.name}</h4>
+                      <p className="text-sm text-gray-500">{talent.email}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-900">{talent.name}</h4>
-                    <p className="text-sm text-blue-600">{talent.email}</p>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">
+
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <span className="text-sm font-bold text-gray-900">
                         Email
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -13390,11 +13427,11 @@ const NotificationsTab = () => {
                           defaultChecked
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                      <span className="text-sm font-bold text-gray-900">
                         SMS
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -13403,11 +13440,11 @@ const NotificationsTab = () => {
                           defaultChecked
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                      <span className="text-sm font-bold text-gray-900">
                         Push
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -13416,232 +13453,233 @@ const NotificationsTab = () => {
                           defaultChecked
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeSubNav === "test" && (
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Test Notification Delivery
-            </h3>
-            <p className="text-sm text-gray-500 font-medium">
-              Send a test notification to verify delivery and formatting
-            </p>
-          </div>
-
-          <div className="space-y-6 max-w-full">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Notification Type
-              </Label>
-              <Select
-                value={testNotificationType}
-                onValueChange={setTestNotificationType}
-              >
-                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
-                  <SelectValue placeholder="Select notification type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="email">
-                    Email (with .ics attachment)
-                  </SelectItem>
-                  <SelectItem value="sms">SMS</SelectItem>
-                  <SelectItem value="push">Push notification</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Select Talent
-              </Label>
-              <Select
-                value={testTargetTalent}
-                onValueChange={setTestTargetTalent}
-              >
-                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
-                  <SelectValue placeholder="Choose talent to notify" />
-                </SelectTrigger>
-                <SelectContent>
-                  {testTalents.map((name) => (
-                    <SelectItem key={name} value={name.toLowerCase()}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
-              <div className="p-2 bg-white rounded-full text-amber-500 shadow-sm">
-                <AlertCircle className="w-4 h-4" />
-              </div>
-              <p className="text-sm text-amber-800 font-medium">
-                Test notifications will be sent with "[TEST]" prefix and won't
-                count toward billing.
-              </p>
-            </div>
-
-            <Button
-              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${!testNotificationType || !testTargetTalent
-                ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
-                : ""
-                }`}
-              onClick={() => {
-                if (!testNotificationType || !testTargetTalent) return;
-
-                const talentName =
-                  testTalents.find(
-                    (t) => t.toLowerCase() === testTargetTalent,
-                  ) || testTargetTalent;
-
-                toast({
-                  title: "Notification Sent",
-                  description: `Test ${testNotificationType} notification sent to ${talentName}!`,
-                  action: (
-                    <ToastAction altText="OK" onClick={() => { }}>
-                      OK
-                    </ToastAction>
-                  ),
-                });
-              }}
-              disabled={!testNotificationType || !testTargetTalent}
-            >
-              <Send className="w-5 h-5" />
-              Send Test Notification
-            </Button>
-
-            <div className="pt-8">
-              <h4 className="text-lg font-bold text-gray-900 mb-6 uppercase tracking-wider">
-                Preview Templates
-              </h4>
-
-              <Card className="border border-gray-200 rounded-2xl bg-gray-50/50 p-6 overflow-hidden">
-                {testNotificationType === "email" && (
-                  <div className="space-y-6">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                        Subject:
-                      </p>
-                      <p className="text-base font-bold text-gray-900">
-                        [TEST] New Booking: Glossier Beauty on Jan 15, 2026
-                      </p>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-xl p-8 shadow-sm">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
-                        Body Preview:
-                      </p>
-                      <div className="space-y-4 text-[15px] text-gray-700 leading-relaxed">
-                        <p className="font-medium text-gray-900">Hi Emma,</p>
-                        <p className="font-medium text-gray-600">
-                          You have a new confirmed booking:
-                        </p>
-                        <div className="space-y-2 pt-2">
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Client:
-                            </span>{" "}
-                            Glossier Beauty
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Date:
-                            </span>{" "}
-                            Wednesday, January 15, 2026
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Call Time:
-                            </span>{" "}
-                            9:00 AM
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Wrap Time:
-                            </span>{" "}
-                            5:00 PM
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Location:
-                            </span>{" "}
-                            123 Main St, New York, NY
-                          </p>
-                          <p>
-                            <span className="font-bold text-gray-900">
-                              Rate:
-                            </span>{" "}
-                            $1,200 Day Rate
-                          </p>
-                        </div>
-                        <p className="text-sm font-medium text-gray-400 mt-6 border-t border-gray-50 pt-4 italic">
-                          Calendar invite (.ics) attached
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {testNotificationType === "sms" && (
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Message Preview (160 chars max):
-                    </p>
-                    <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm min-h-[80px] flex items-center">
-                      <p className="text-sm text-gray-900 font-medium leading-relaxed">
-                        [TEST] You're booked for Glossier on Jan 15 at 9:00 AM.
-                        Location: 123 Main St, NY. Call time 9AM.
-                      </p>
-                    </div>
-                    <p className="text-[11px] font-bold text-gray-400">
-                      Character count: 98/160
-                    </p>
-                  </div>
-                )}
-
-                {testNotificationType === "push" && (
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Notification Preview:
-                    </p>
-                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xl max-w-sm flex gap-4 items-center animate-in slide-in-from-top-4 duration-500">
-                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 transform scale-95">
-                        <Bell className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-sm font-bold text-gray-900 truncate">
-                            Likelee Agency
-                          </p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase">
-                            now
-                          </p>
-                        </div>
-                        <p className="text-[13px] font-bold text-indigo-600 mb-0.5">
-                          [TEST] New Booking
-                        </p>
-                        <p className="text-[12px] font-medium text-gray-600 leading-tight">
-                          Glossier Beauty on Jan 15 at 9:00 AM
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
+                </Card>
+              ))}
           </div>
         </Card>
       )}
-    </div>
+
+      {
+        activeSubNav === "test" && (
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="mb-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Test Notification Delivery
+              </h3>
+              <p className="text-sm text-gray-500 font-medium">
+                Send a test notification to verify delivery and formatting
+              </p>
+            </div>
+
+            <div className="space-y-6 max-w-full">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Notification Type
+                </Label>
+                <Select
+                  value={testNotificationType}
+                  onValueChange={setTestNotificationType}
+                >
+                  <SelectTrigger className="h-12 border-gray-200 rounded-xl">
+                    <SelectValue placeholder="Select notification type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">
+                      Email (with .ics attachment)
+                    </SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="push">Push notification</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Select Talent
+                </Label>
+                <Select
+                  value={testTargetTalent}
+                  onValueChange={setTestTargetTalent}
+                >
+                  <SelectTrigger className="h-12 border-gray-200 rounded-xl">
+                    <SelectValue placeholder="Choose talent to notify" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {testTalents.map((name) => (
+                      <SelectItem key={name} value={name.toLowerCase()}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+                <div className="p-2 bg-white rounded-full text-amber-500 shadow-sm">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <p className="text-sm text-amber-800 font-medium">
+                  Test notifications will be sent with "[TEST]" prefix and won't
+                  count toward billing.
+                </p>
+              </div>
+
+              <Button
+                className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${!testNotificationType || !testTargetTalent
+                  ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
+                  : ""
+                  }`}
+                onClick={() => {
+                  if (!testNotificationType || !testTargetTalent) return;
+
+                  const talentName =
+                    testTalents.find(
+                      (t) => t.toLowerCase() === testTargetTalent,
+                    ) || testTargetTalent;
+
+                  toast({
+                    title: "Notification Sent",
+                    description: `Test ${testNotificationType} notification sent to ${talentName}!`,
+                    action: (
+                      <ToastAction altText="OK" onClick={() => { }}>
+                        OK
+                      </ToastAction>
+                    ),
+                  });
+                }}
+                disabled={!testNotificationType || !testTargetTalent}
+              >
+                <Send className="w-5 h-5" />
+                Send Test Notification
+              </Button>
+
+              <div className="pt-8">
+                <h4 className="text-lg font-bold text-gray-900 mb-6 uppercase tracking-wider">
+                  Preview Templates
+                </h4>
+
+                <Card className="border border-gray-200 rounded-2xl bg-gray-50/50 p-6 overflow-hidden">
+                  {testNotificationType === "email" && (
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                          Subject:
+                        </p>
+                        <p className="text-base font-bold text-gray-900">
+                          [TEST] New Booking: Glossier Beauty on Jan 15, 2026
+                        </p>
+                      </div>
+                      <div className="bg-white border border-gray-100 rounded-xl p-8 shadow-sm">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
+                          Body Preview:
+                        </p>
+                        <div className="space-y-4 text-[15px] text-gray-700 leading-relaxed">
+                          <p className="font-medium text-gray-900">Hi Emma,</p>
+                          <p className="font-medium text-gray-600">
+                            You have a new confirmed booking:
+                          </p>
+                          <div className="space-y-2 pt-2">
+                            <p>
+                              <span className="font-bold text-gray-900">
+                                Client:
+                              </span>{" "}
+                              Glossier Beauty
+                            </p>
+                            <p>
+                              <span className="font-bold text-gray-900">
+                                Date:
+                              </span>{" "}
+                              Wednesday, January 15, 2026
+                            </p>
+                            <p>
+                              <span className="font-bold text-gray-900">
+                                Call Time:
+                              </span>{" "}
+                              9:00 AM
+                            </p>
+                            <p>
+                              <span className="font-bold text-gray-900">
+                                Wrap Time:
+                              </span>{" "}
+                              5:00 PM
+                            </p>
+                            <p>
+                              <span className="font-bold text-gray-900">
+                                Location:
+                              </span>{" "}
+                              123 Main St, New York, NY
+                            </p>
+                            <p>
+                              <span className="font-bold text-gray-900">
+                                Rate:
+                              </span>{" "}
+                              $1,200 Day Rate
+                            </p>
+                          </div>
+                          <p className="text-sm font-medium text-gray-400 mt-6 border-t border-gray-50 pt-4 italic">
+                            Calendar invite (.ics) attached
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {testNotificationType === "sms" && (
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        Message Preview (160 chars max):
+                      </p>
+                      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm min-h-[80px] flex items-center">
+                        <p className="text-sm text-gray-900 font-medium leading-relaxed">
+                          [TEST] You're booked for Glossier on Jan 15 at 9:00 AM.
+                          Location: 123 Main St, NY. Call time 9AM.
+                        </p>
+                      </div>
+                      <p className="text-[11px] font-bold text-gray-400">
+                        Character count: 98/160
+                      </p>
+                    </div>
+                  )}
+
+                  {testNotificationType === "push" && (
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        Notification Preview:
+                      </p>
+                      <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xl max-w-sm flex gap-4 items-center animate-in slide-in-from-top-4 duration-500">
+                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 transform scale-95">
+                          <Bell className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="text-sm font-bold text-gray-900 truncate">
+                              Likelee Agency
+                            </p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase">
+                              now
+                            </p>
+                          </div>
+                          <p className="text-[13px] font-bold text-indigo-600 mb-0.5">
+                            [TEST] New Booking
+                          </p>
+                          <p className="text-[12px] font-medium text-gray-600 leading-tight">
+                            Glossier Beauty on Jan 15 at 9:00 AM
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </div>
+            </div>
+          </Card>
+        )
+      }
+    </div >
   );
 };
 const ManagementAnalyticsView = () => {
