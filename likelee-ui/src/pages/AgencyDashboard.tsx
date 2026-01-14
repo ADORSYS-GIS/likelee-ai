@@ -12320,45 +12320,43 @@ const ClientProfileDrawer = ({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl overflow-y-auto">
         <SheetHeader className="border-b pb-6 mb-6">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <Building2 className="w-8 h-8 text-gray-900" />
-              </div>
-              <div>
-                <SheetTitle className="text-2xl font-black text-gray-900">
-                  {client.company}
-                </SheetTitle>
-                <div className="flex gap-2 mt-1">
-                  {(client.industryTags || []).map((t: string) => (
-                    <Badge
-                      key={t}
-                      className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none font-bold text-[10px]"
-                    >
-                      {t}
-                    </Badge>
-                  ))}
-                </div>
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-16 h-16 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <Building2 className="w-8 h-8 text-gray-900" />
+            </div>
+            <div>
+              <SheetTitle className="text-2xl font-black text-gray-900">
+                {client.company}
+              </SheetTitle>
+              <div className="flex gap-2 mt-1">
+                {(client.industryTags || []).map((t: string) => (
+                  <Badge
+                    key={t}
+                    className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none font-bold text-[10px]"
+                  >
+                    {t}
+                  </Badge>
+                ))}
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onEdit(client)}
-              >
-                <Edit className="w-4 h-4 text-gray-600" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 border-red-200 hover:bg-red-50"
-                onClick={() => onDelete(client.id)}
-              >
-                <Trash2 className="w-4 h-4 text-red-600" />
-              </Button>
-            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onEdit(client)}
+            >
+              <Edit className="w-4 h-4 text-gray-600" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-red-200 hover:bg-red-50"
+              onClick={() => onDelete(client.id)}
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </Button>
           </div>
         </SheetHeader>
 
