@@ -795,10 +795,10 @@ const ClientProfileModal = ({
                           )}
                         </div>
                         <div>
-                          <h5 className="font-bold text-gray-900">
+                          <h5 className="font-bold text-gray-900 text-sm">
                             {comm.subject}
                           </h5>
-                          <p className="text-sm text-gray-600 font-medium">
+                          <p className="text-xs text-gray-600 font-medium">
                             {comm.date} • {comm.participants}
                           </p>
                         </div>
@@ -832,11 +832,13 @@ const ClientProfileModal = ({
                 <h4 className="font-bold text-gray-900">Notes</h4>
                 <Textarea
                   defaultValue="Prefers diverse talent, always books for multi-day shoots."
-                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium text-gray-400 italic"
                 />
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
-                  Save Notes
-                </Button>
+                <div className="flex justify-end">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-lg text-xs">
+                    Save Notes
+                  </Button>
+                </div>
               </Card>
 
               <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
