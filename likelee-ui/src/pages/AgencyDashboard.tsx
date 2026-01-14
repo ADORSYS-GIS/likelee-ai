@@ -527,8 +527,8 @@ const ClientProfileModal = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
-        <div className="p-8 space-y-6">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-[900px] max-h-[85vh] overflow-y-auto p-0 rounded-2xl border-none">
+        <div className="p-4 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
               <Building2 className="w-6 h-6 text-gray-400" />
