@@ -141,7 +141,7 @@ function toast({ ...props }) {
   if (!props.action) {
     setTimeout(() => {
       dismiss();
-    }, 5000); // 5 seconds
+    }, 3000); // 3 seconds
   }
 
   return {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -59,19 +59,21 @@ import {
   MoreVertical,
   Share2,
   Upload,
+  MapPin,
+  Star,
   FolderPlus,
   FolderOpen,
   Briefcase,
   Receipt,
   Megaphone,
+  ChevronUp,
+  Send,
+  AlertTriangle,
   Calculator,
   FileDown,
-  Send,
   Printer,
   Files,
   TrendingDown,
-  MapPin,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -86,9 +88,38 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  format,
+  addMonths,
+  subMonths,
+  getDaysInMonth,
+  startOfMonth,
+  subDays,
+  addDays,
+  isSameMonth,
+  isSameWeek,
+  parseISO,
+  isAfter,
+  subWeeks,
+} from "date-fns";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const AddProspectModal = ({
   open,
@@ -631,7 +662,7 @@ const MOCK_INVOICES = [
   },
 ];
 
-const AddClientModal = ({
+const SimpleAddClientModal = ({
   isOpen,
   onClose,
 }: {
@@ -1243,14 +1274,6 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
-
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -1362,7 +1385,7 @@ const ClientCRMView = () => {
         ))}
       </div>
 
-      <AddClientModal
+      <SimpleAddClientModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
@@ -2026,14 +2049,6 @@ const FileStorageView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
-
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -4667,6 +4682,42 @@ TALENT_DATA.forEach((t: any) => {
   }
   // All other talent will NOT have a tier assigned to match the 1-3-1-0 count
 });
+
+const CLIENT_DATA = [
+  {
+    id: "acme",
+    company: "Company",
+    contact: "John Doe",
+    email: "john@acme.com",
+    phone: "+1 (555) 123-4567",
+    terms: "Net 15",
+    industryTags: ["Fashion", "Beauty"],
+    revenue: 0,
+    bookings_count: 0,
+  },
+  {
+    id: "globex",
+    company: "Company",
+    contact: "John Doe",
+    email: "jane@globex.com",
+    phone: "+1 (555) 987-6543",
+    terms: "Net 15",
+    industryTags: ["Fashion", "Beauty"],
+    revenue: 0,
+    bookings_count: 0,
+  },
+  {
+    id: "apple",
+    company: "name",
+    contact: "names",
+    email: "apple@example.com",
+    phone: "+1 (555) 000-0000",
+    terms: "Net 15",
+    industryTags: [],
+    revenue: 0,
+    bookings_count: 0,
+  },
+];
 
 const ANALYTICS_CAMPAIGN_STATUS = [
   { name: "In Progress", value: 15, color: "#111827" },
@@ -12989,7 +13040,4336 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
-export default function AgencyDashboard() {
+const ManageAvailabilityModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-3xl">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold">
+          Talent Availability & Book-Outs
+        </DialogTitle>
+        <p className="text-sm text-gray-500">
+          Manage when talent is unavailable for bookings
+        </p>
+      </DialogHeader>
+      <div className="py-6">
+        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold mb-8 rounded-lg h-10">
+          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+        </Button>
+        <div className="border border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
+          <div className="p-4 bg-gray-50 rounded-full mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="font-bold text-gray-900 mb-1">
+            No book-outs scheduled
+          </h3>
+          <p className="text-sm text-gray-500">
+            Talent will appear available for all dates
+          </p>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
+
+const NewBookingModal = ({
+  open,
+  onOpenChange,
+  onSave,
+  initialData,
+  mode = "new",
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (booking: any) => void;
+  initialData?: any;
+  mode?: "new" | "edit" | "duplicate";
+}) => {
+  const { toast } = useToast();
+  const [bookingType, setBookingType] = useState("confirmed");
+  const [multiTalent, setMultiTalent] = useState(false);
+  const [talentSearch, setTalentSearch] = useState("");
+  const [selectedTalents, setSelectedTalents] = useState<any[]>([]);
+  const [clientSearch, setClientSearch] = useState("");
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [clients, setClients] = useState(CLIENT_DATA);
+  const [newClient, setNewClient] = useState({
+    company: "",
+    contact: "",
+    email: "",
+    phone: "",
+    terms: "Net 30",
+  });
+  const [date, setDate] = useState("2026-01-12");
+  const [allDay, setAllDay] = useState(false);
+  const [callTime, setCallTime] = useState("09:00");
+  const [wrapTime, setWrapTime] = useState("17:00");
+  const [rate, setRate] = useState(0);
+  const [currency, setCurrency] = useState("USD");
+  const [rateType, setRateType] = useState("day");
+  const [usageTerms, setUsageTerms] = useState("");
+  const [usageDuration, setUsageDuration] = useState("1");
+  const [exclusive, setExclusive] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [notifications, setNotifications] = useState({
+    email: true,
+    sms: false,
+    push: false,
+    calendar: true,
+  });
+
+  // Pre-fill data for Edit or Duplicate modes
+  useEffect(() => {
+    if (open && initialData) {
+      setBookingType(initialData.type || "confirmed");
+      setDate(initialData.date || "2026-01-12");
+      setNotes(initialData.notes || "");
+
+      // Try to find talent in TALENT_DATA
+      const talent = TALENT_DATA.find((t) => t.name === initialData.talentName);
+      if (talent) setSelectedTalents([talent]);
+
+      // Try to find client in clients
+      const client = clients.find((c) => c.company === initialData.clientName);
+      if (client) setSelectedClient(client);
+
+      setMultiTalent(false);
+    } else if (open && !initialData) {
+      setBookingType("confirmed");
+      setMultiTalent(false);
+      setSelectedTalents([]);
+      setSelectedClient(null);
+      setNotes("");
+      setDate("2026-01-12");
+    }
+  }, [open, initialData, clients]);
+
+  const filteredTalents = TALENT_DATA.filter((t) =>
+    t.name.toLowerCase().includes(talentSearch.toLowerCase()),
+  );
+
+  const filteredClients = clients.filter((c) =>
+    c.company.toLowerCase().includes(clientSearch.toLowerCase()),
+  );
+
+  const handleSelectTalent = (talent: any) => {
+    if (multiTalent) {
+      if (!selectedTalents.find((t) => t.id === talent.id)) {
+        setSelectedTalents([...selectedTalents, talent]);
+      } else {
+        setSelectedTalents(selectedTalents.filter((t) => t.id !== talent.id));
+      }
+    } else {
+      setSelectedTalents([talent]);
+    }
+    setTalentSearch("");
+  };
+
+  const handleAddClient = () => {
+    const client = { id: `client-${Date.now()}`, ...newClient };
+    setClients([...clients, client]);
+    setSelectedClient(client);
+    setShowAddClient(false);
+    setClientSearch("");
+  };
+
+  const commission = rate * 0.2;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">
+            {mode === "edit" ? "Edit Booking" : "New Booking"}
+          </DialogTitle>
+          <p className="text-sm text-gray-500">
+            {mode === "edit"
+              ? "Update details for this booking"
+              : "Schedule a booking for your talent"}
+          </p>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <Label>Booking Type *</Label>
+            <div className="flex gap-2">
+              <Select value={bookingType} onValueChange={setBookingType}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="casting">Casting</SelectItem>
+                  <SelectItem value="option">Option</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="test-shoot">Test shoot</SelectItem>
+                  <SelectItem value="fitting">Fitting</SelectItem>
+                  <SelectItem value="rehearsal">Rehearsal</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                className="text-green-600 border-green-200 bg-green-50"
+              >
+                Preview
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label>Talent *</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="multi"
+                  checked={multiTalent}
+                  onChange={(e) => {
+                    setMultiTalent(e.target.checked);
+                    if (!e.target.checked && selectedTalents.length > 1) {
+                      setSelectedTalents([selectedTalents[0]]);
+                    }
+                  }}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor="multi" className="text-sm text-gray-600">
+                  Book multiple talent
+                </label>
+              </div>
+            </div>
+            <div className="relative">
+              <Input
+                placeholder="Search talent by name..."
+                value={talentSearch}
+                onChange={(e) => setTalentSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-white">
+              {filteredTalents.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => handleSelectTalent(t)}
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
+                    selectedTalents.find((st) => st.id === t.id)
+                      ? "bg-indigo-50/50"
+                      : ""
+                  }`}
+                >
+                  <img
+                    src={t.img}
+                    className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                    alt={t.name}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-gray-900">{t.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <p className="text-xs text-green-600 font-medium lowercase">
+                        available
+                      </p>
+                    </div>
+                  </div>
+                  {selectedTalents.find((st) => st.id === t.id) && (
+                    <div className="text-indigo-600">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {filteredTalents.length === 0 && (
+                <div className="p-8 text-center text-gray-500 text-sm">
+                  No talent found matching "{talentSearch}"
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2 mt-2">
+              {selectedTalents.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between p-2 bg-indigo-50 border border-indigo-100 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={t.img}
+                      className="w-8 h-8 rounded-full"
+                      alt={t.name}
+                    />
+                    <p className="text-sm font-bold text-indigo-900">
+                      Selected: {t.name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded leading-none uppercase">
+                      Available
+                    </span>
+                    <button
+                      onClick={() =>
+                        setSelectedTalents(
+                          selectedTalents.filter((st) => st.id !== t.id),
+                        )
+                      }
+                      className="text-indigo-400 hover:text-indigo-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Client *</Label>
+            {showAddClient ? (
+              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                  <Building2 className="w-4 h-4" /> New Client
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Company Name *</Label>
+                    <Input
+                      placeholder="Acme Inc."
+                      value={newClient.company}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, company: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Contact Name *</Label>
+                    <Input
+                      placeholder="John Doe"
+                      value={newClient.contact}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, contact: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Email</Label>
+                    <Input
+                      placeholder="john@acme.com"
+                      value={newClient.email}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, email: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Phone</Label>
+                    <Input
+                      placeholder="+1 (555) 123-4567"
+                      value={newClient.phone}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, phone: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Payment Terms</Label>
+                  <Select
+                    value={newClient.terms}
+                    onValueChange={(v) =>
+                      setNewClient({ ...newClient, terms: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Net 30">Net 30</SelectItem>
+                      <SelectItem value="Net 15">Net 15</SelectItem>
+                      <SelectItem value="Net 30">Net 30</SelectItem>
+                      <SelectItem value="Net 60">Net 60</SelectItem>
+                      <SelectItem value="Da">Da</SelectItem>
+                      <SelectItem value="Upon Completion">
+                        Upon Completion
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold"
+                    onClick={handleAddClient}
+                    disabled={!newClient.company || !newClient.contact}
+                  >
+                    Save Client & Use
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddClient(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <Input
+                    placeholder="Search client by name..."
+                    value={clientSearch}
+                    onChange={(e) => setClientSearch(e.target.value)}
+                  />
+                </div>
+
+                <div className="border border-gray-200 rounded-lg max-h-[200px] overflow-y-auto">
+                  {filteredClients.map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedClient(c);
+                        setClientSearch("");
+                      }}
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
+                        selectedClient?.id === c.id ? "bg-indigo-50/50" : ""
+                      }`}
+                    >
+                      <Building2 className="w-8 h-8 text-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-900">
+                          {c.company}
+                        </p>
+                        <p className="text-xs text-gray-500">{c.contact}</p>
+                      </div>
+                      {selectedClient?.id === c.id && (
+                        <div className="text-indigo-600">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {filteredClients.length === 0 && (
+                    <div className="p-8 text-center text-gray-500 text-sm">
+                      No clients found matching "{clientSearch}"
+                    </div>
+                  )}
+                  <div
+                    onClick={() => setShowAddClient(true)}
+                    className="flex items-center gap-2 p-3 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-200 font-bold text-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Add New Client
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Date *</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+              <div className="flex items-center gap-2 mt-1">
+                <Switch
+                  id="allday"
+                  checked={allDay}
+                  onCheckedChange={setAllDay}
+                />
+                <Label
+                  htmlFor="allday"
+                  className="text-xs text-gray-500 cursor-pointer"
+                >
+                  All-day booking
+                </Label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className={allDay ? "text-gray-300" : ""}>Call Time</Label>
+              <Input
+                type="time"
+                value={callTime}
+                onChange={(e) => setCallTime(e.target.value)}
+                disabled={allDay}
+                className={
+                  allDay ? "opacity-30 cursor-not-allowed bg-gray-50" : ""
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={allDay ? "text-gray-300" : ""}>Wrap Time</Label>
+              <Input
+                type="time"
+                value={wrapTime}
+                onChange={(e) => setWrapTime(e.target.value)}
+                disabled={allDay}
+                className={
+                  allDay ? "opacity-30 cursor-not-allowed bg-gray-50" : ""
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Location *</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input className="pl-9" placeholder="Enter address..." />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Location Notes</Label>
+            <Input placeholder="e.g., Studio B, 3rd floor" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 pb-1">
+            <div className="space-y-2">
+              <Label>Rate/Fee</Label>
+              <div className="relative group">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {currency === "USD"
+                    ? "$"
+                    : currency === "EUR"
+                      ? "€"
+                      : currency === "GBP"
+                        ? "£"
+                        : "$"}
+                </span>
+                <Input
+                  className="pl-7 pr-4"
+                  type="number"
+                  value={rate}
+                  onChange={(e) => setRate(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                  <SelectItem value="GBP">GBP</SelectItem>
+                  <SelectItem value="CAD">CAD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Rate Type</Label>
+              <Select value={rateType} onValueChange={setRateType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Day Rate</SelectItem>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                  <SelectItem value="flat">Flat Fee</SelectItem>
+                  <SelectItem value="tbd">TBD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {rate > 0 && (
+            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex justify-between items-center -mt-2">
+              <span className="text-sm font-medium text-indigo-900">
+                Agency Commission (20%)
+              </span>
+              <span className="text-sm font-bold text-indigo-900">
+                {currency}{" "}
+                {commission.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Usage Terms</Label>
+              <Select value={usageTerms} onValueChange={setUsageTerms}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select usage terms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="social">Social Media Only</SelectItem>
+                  <SelectItem value="print">Print</SelectItem>
+                  <SelectItem value="digital">Digital</SelectItem>
+                  <SelectItem value="broadcast">Broadcast</SelectItem>
+                  <SelectItem value="ecommerce">E-commerce</SelectItem>
+                  <SelectItem value="unlimited">Unlimited</SelectItem>
+                  <SelectItem value="tbd">TBD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-4 items-center">
+              <div className="flex-1 space-y-2">
+                <Label>Usage Duration</Label>
+                <Select value={usageDuration} onValueChange={setUsageDuration}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1 month">1 month</SelectItem>
+                    <SelectItem value="6 months">6 months</SelectItem>
+                    <SelectItem value="1 year">1 year</SelectItem>
+                    <SelectItem value="perpetuity">In Perpetuity</SelectItem>
+                    <SelectItem value="tbd">TBD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 mt-6">
+                <Switch checked={exclusive} onCheckedChange={setExclusive} />
+                <span className="text-sm font-medium text-gray-700">
+                  Exclusive rights
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Attached Files (Call sheets, contracts, references)</Label>
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative group">
+              <Upload className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600 font-medium">
+                Browse...
+              </span>
+              <span className="text-sm text-gray-400">No files selected.</span>
+              <input
+                type="file"
+                multiple
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={(e) => {
+                  console.log(e.target.files);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Special Instructions / Notes</Label>
+            <Textarea
+              placeholder="Internal notes, special instructions..."
+              className="h-24"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Notifications</Label>
+            <div className="space-y-2 border border-gray-100 p-4 rounded-xl bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-email"
+                  checked={notifications.email}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      email: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-email" className="text-sm">
+                  Email talent
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-sms"
+                  checked={notifications.sms}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      sms: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-sms" className="text-sm">
+                  SMS talent
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-push"
+                  checked={notifications.push}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      push: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-push" className="text-sm">
+                  Push notification (mobile app)
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="notify-calendar"
+                  checked={notifications.calendar}
+                  onChange={(e) =>
+                    setNotifications({
+                      ...notifications,
+                      calendar: e.target.checked,
+                    })
+                  }
+                />
+                <label htmlFor="notify-calendar" className="text-sm">
+                  Send calendar invite (.ics file)
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0 mt-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <div className="flex gap-2">
+            <Button
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${
+                selectedTalents.length === 0 || !selectedClient
+                  ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
+                  : ""
+              }`}
+              onClick={() => {
+                if (selectedTalents.length === 0 || !selectedClient) return;
+
+                // For each selected talent, create a separate booking entry
+                selectedTalents.forEach((talent, index) => {
+                  const isOriginalEntry = mode === "edit" && index === 0;
+                  const booking = {
+                    id: isOriginalEntry
+                      ? initialData.id
+                      : `booking-${Date.now()}-${talent.id}-${index}`,
+                    talentName: talent.name,
+                    date: date,
+                    type: bookingType,
+                    clientName: selectedClient.company,
+                    notes: notes,
+                  };
+                  onSave(booking);
+                });
+
+                toast({
+                  title:
+                    mode === "edit" ? "Booking Updated" : "Booking Created",
+                  description: `Successfully ${
+                    mode === "edit" ? "updated" : "scheduled"
+                  } ${bookingType} for ${selectedTalents
+                    .map((t) => t.name)
+                    .join(", ")} on ${date}.`,
+                });
+
+                onOpenChange(false);
+              }}
+              disabled={selectedTalents.length === 0 || !selectedClient}
+            >
+              {mode === "edit"
+                ? "Update Booking"
+                : `Save as ${
+                    bookingType === "test-shoot"
+                      ? "Test Shoot"
+                      : bookingType.charAt(0).toUpperCase() +
+                        bookingType.slice(1)
+                  }`}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const BookingDetailsModal = ({
+  open,
+  onOpenChange,
+  booking,
+  onEdit,
+  onDuplicate,
+  onCancel,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  booking: any;
+  onEdit: (booking: any) => void;
+  onDuplicate: (booking: any) => void;
+  onCancel: (id: string) => void;
+}) => {
+  const { toast } = useToast();
+
+  if (!booking) return null;
+
+  const handleActionWithToast = (
+    title: string,
+    description: string,
+    showOkOnly: boolean = false,
+  ) => {
+    const { dismiss } = toast({
+      title,
+      description,
+      action: showOkOnly ? (
+        <ToastAction altText="OK" onClick={() => dismiss()}>
+          OK
+        </ToastAction>
+      ) : (
+        <div className="flex gap-2">
+          <ToastAction altText="Cancel" onClick={() => dismiss()}>
+            Cancel
+          </ToastAction>
+          <ToastAction altText="OK" onClick={() => dismiss()}>
+            OK
+          </ToastAction>
+        </div>
+      ),
+    });
+  };
+
+  const handleCancel = () => {
+    const { dismiss } = toast({
+      title: "Are you sure you want to cancel this booking?",
+      description: "This action cannot be undone.",
+      action: (
+        <div className="flex gap-2">
+          <ToastAction altText="Cancel" onClick={() => dismiss()}>
+            Cancel
+          </ToastAction>
+          <ToastAction
+            altText="OK"
+            onClick={() => {
+              onCancel(booking.id);
+              onOpenChange(false);
+              dismiss();
+            }}
+          >
+            OK
+          </ToastAction>
+        </div>
+      ),
+    });
+  };
+
+  const handleComplete = () => {
+    const { dismiss } = toast({
+      title: "Mark this booking as completed?",
+      description: "The status will be updated to Completed.",
+      action: (
+        <div className="flex gap-2">
+          <ToastAction altText="Cancel" onClick={() => dismiss()}>
+            Cancel
+          </ToastAction>
+          <ToastAction
+            altText="OK"
+            onClick={() => {
+              handleActionWithToast(
+                "Booking marked as completed",
+                "The status has been successfully updated.",
+                true,
+              );
+              dismiss();
+            }}
+          >
+            OK
+          </ToastAction>
+        </div>
+      ),
+    });
+  };
+
+  const handleRemind = () => {
+    const { dismiss } = toast({
+      title: "Send reminder notification to talent?",
+      description: "This will send a reminder to " + booking.talentName,
+      action: (
+        <div className="flex gap-2">
+          <ToastAction altText="Cancel" onClick={() => dismiss()}>
+            Cancel
+          </ToastAction>
+          <ToastAction
+            altText="OK"
+            onClick={() => {
+              handleActionWithToast(
+                "Reminder Sent",
+                "Notification has been sent to " + booking.talentName,
+                true,
+              );
+              dismiss();
+            }}
+          >
+            OK
+          </ToastAction>
+        </div>
+      ),
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-xl overflow-y-auto">
+        <SheetHeader className="border-b pb-4">
+          <SheetTitle className="text-2xl font-black text-gray-900">
+            Booking Details
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="space-y-6 py-4">
+          <div className="flex gap-2">
+            <Badge className="bg-green-100 text-green-700 border-none font-bold">
+              Confirmed
+            </Badge>
+            <Badge variant="outline" className="font-bold border-gray-200">
+              Confirmed
+            </Badge>
+          </div>
+
+          <div className="border border-indigo-100 bg-indigo-50/30 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm mb-3">
+              <User className="w-4 h-4" /> Talent
+            </div>
+            <p className="text-lg font-black text-gray-900">
+              {booking.talentName}
+            </p>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-gray-600 font-bold text-sm">
+                <Building2 className="w-4 h-4" /> Client
+              </div>
+              <Link className="w-4 h-4 text-indigo-600 cursor-pointer" />
+            </div>
+            <p className="text-sm text-indigo-600 font-medium cursor-pointer hover:underline mb-1">
+              Click to view client profile
+            </p>
+            <p className="text-lg font-black text-gray-900">
+              {booking.clientName || "Not specified"}
+            </p>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
+              <Calendar className="w-4 h-4" /> Date & Time
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 font-medium">Date:</span>
+              <span className="font-bold text-gray-900">
+                {format(parseISO(booking.date), "EEEE, MMMM d, yyyy")}
+              </span>
+            </div>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
+              <MapPin className="w-4 h-4" /> Location
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-bold text-gray-900">US</p>
+                <p className="text-xs text-gray-500">Studio B</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-indigo-600 font-bold cursor-pointer hover:underline">
+                <Globe className="w-4 h-4" /> View on Google Maps
+              </div>
+              <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
+                <MapPin className="w-8 h-8 text-gray-300" />
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
+              <DollarSign className="w-4 h-4" /> Payment
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500 font-medium">
+                Day Rate
+              </span>
+              <span className="text-xl font-black text-gray-900">USD $3</span>
+            </div>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
+              <FileText className="w-4 h-4" /> Usage Terms
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-sm font-bold text-gray-900">Digital</p>
+              <p className="text-xs text-gray-500">
+                <span className="font-bold">Duration:</span> 1 Month
+              </p>
+            </div>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
+              <Edit className="w-4 h-4" /> Special Instructions
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {booking.notes || "bla bla"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={() => onEdit(booking)}
+            >
+              <Edit className="w-4 h-4 mr-2" /> Edit
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-gray-700 border-gray-200"
+              onClick={() => onDuplicate(booking)}
+            >
+              <Copy className="w-4 h-4 mr-2" /> Duplicate
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-green-600 border-green-200 hover:bg-green-50"
+              onClick={handleComplete}
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" /> Complete
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+              onClick={handleRemind}
+            >
+              <Bell className="w-4 h-4 mr-2" /> Remind
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-gray-700 border-gray-200 col-span-1"
+              onClick={() =>
+                handleActionWithToast(
+                  "PDF download feature coming soon!",
+                  "",
+                  true,
+                )
+              }
+            >
+              <Download className="w-4 h-4 mr-2" /> Download PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-gray-700 border-gray-200 col-span-1"
+              onClick={() =>
+                handleActionWithToast(
+                  "Invoice generation feature coming soon!",
+                  "",
+                  true,
+                )
+              }
+            >
+              <Receipt className="w-4 h-4 mr-2" /> Generate Invoice
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-indigo-600 border-indigo-200 hover:bg-indigo-50 col-span-2"
+              onClick={() => {
+                const shareUrl = `${window.location.origin}/booking/shared/${booking.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                handleActionWithToast(
+                  "Booking link copied to clipboard!",
+                  shareUrl,
+                  true,
+                );
+              }}
+            >
+              <Share2 className="w-4 h-4 mr-2" /> Share Booking Link
+            </Button>
+            <Button
+              variant="outline"
+              className="font-bold text-red-600 border-red-200 hover:bg-red-50 col-span-2"
+              onClick={handleCancel}
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Cancel Booking
+            </Button>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-4">
+              <TrendingUp className="w-4 h-4" /> Activity Log
+            </div>
+            <div className="space-y-6 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
+              <div className="relative pl-8">
+                <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm" />
+                <p className="text-sm font-bold text-gray-900">
+                  Booking Created
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Jan 12, 2026 @ 3:29 PM
+                </p>
+                <p className="text-xs text-gray-400">
+                  by leleivanlele22@gmail.com
+                </p>
+              </div>
+              <div className="relative pl-8">
+                <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full bg-purple-600 border-4 border-white shadow-sm" />
+                <p className="text-sm font-bold text-gray-900">
+                  Talent Viewed Booking
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Jan 12, 2026 @ 3:29 PM
+                </p>
+                <p className="text-xs text-gray-400 flex items-center gap-1">
+                  <Eye className="w-3 h-3" /> 3 times
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-center text-gray-400 pt-2 font-medium">
+            Booking ID: 6965134959dd90fe62a25ba3
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+const CalendarScheduleTab = ({
+  bookings,
+  onAddBooking,
+  onUpdateBooking,
+  onCancelBooking,
+}: {
+  bookings: any[];
+  onAddBooking: (booking: any) => void;
+  onUpdateBooking: (booking: any) => void;
+  onCancelBooking: (id: string) => void;
+}) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [newBookingOpen, setNewBookingOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [bookingMode, setBookingMode] = useState<"new" | "edit" | "duplicate">(
+    "new",
+  );
+  // Ensure currentDate starts at today, resolving 13th vs 14th issue
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+
+  const handlePrevDay = () => setCurrentDate((prev) => subDays(prev, 1));
+  const handleNextDay = () => setCurrentDate((prev) => addDays(prev, 1));
+  const handleToday = () => setCurrentDate(new Date());
+
+  // Month Navigation for the stats/dropdowns logic if we want to change view
+  const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
+  const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      )
+        return;
+
+      switch (e.key.toLowerCase()) {
+        case "c":
+          setNewBookingOpen(true);
+          break;
+        case "t":
+          handleToday();
+          break;
+        case "escape":
+          setDetailsModalOpen(false);
+          setNewBookingOpen(false);
+          break;
+        case "arrowleft":
+          handlePrevDay(); // Shortcut navigates on calendar (days)
+          break;
+        case "arrowright":
+          handleNextDay(); // Shortcut navigates on calendar (days)
+          break;
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const stats = [
+    { label: "Total Bookings", value: "1" },
+    { label: "This Month", value: "1" },
+    { label: "Confirmed", value: "1" },
+    { label: "Pending", value: "0" },
+  ];
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  // Dynamic Calendar Calculation
+  const daysInMonth = getDaysInMonth(currentDate);
+  const firstDayOfMonth = startOfMonth(currentDate).getDay(); // 0 for Sunday
+  const previousMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => {
+    const date = subDays(startOfMonth(currentDate), firstDayOfMonth - i);
+    return date.getDate();
+  });
+
+  const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Bookings & Schedule
+          </h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage your talent's bookings and availability
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="font-bold text-gray-700 bg-white"
+            onClick={() => setModalOpen(true)}
+          >
+            <Calendar className="w-4 h-4 mr-2" /> Manage Availability
+          </Button>
+          <Button
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            onClick={() => {
+              setBookingMode("new");
+              setSelectedBooking(null);
+              setNewBookingOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" /> New Booking
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <Card
+            key={s.label}
+            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
+          >
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">
+              {s.label}
+            </p>
+            <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <Select
+              value={format(currentDate, "MMMM").toLowerCase()}
+              onValueChange={(val) => {
+                // Approximate set month logic if needed
+              }}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder={format(currentDate, "MMMM")} />
+              </SelectTrigger>
+              <SelectContent>
+                {[
+                  "January",
+                  "February",
+                  "March",
+                  "April",
+                  "May",
+                  "June",
+                  "July",
+                  "August",
+                  "September",
+                  "October",
+                  "November",
+                  "December",
+                ].map((m) => (
+                  <SelectItem key={m} value={m.toLowerCase()}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={format(currentDate, "yyyy")}
+              onValueChange={(val) => {
+                const year = parseInt(val);
+                const newDate = new Date(currentDate);
+                newDate.setFullYear(year);
+                setCurrentDate(newDate);
+              }}
+            >
+              <SelectTrigger className="w-24">
+                <SelectValue placeholder={format(currentDate, "yyyy")} />
+              </SelectTrigger>
+              <SelectContent>
+                {["2025", "2026", "2027", "2028", "2029"].map((y) => (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+              {/* UI Arrows still control Month as is standard behaviour */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-white hover:shadow-sm"
+                onClick={handlePrevMonth}
+              >
+                <ChevronDown className="w-4 h-4 rotate-90" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-8 px-3 text-sm font-bold hover:bg-white hover:shadow-sm"
+                onClick={handleToday}
+              >
+                Today
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-white hover:shadow-sm"
+                onClick={handleNextMonth}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Date Picker Trigger */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={
+                    "w-[140px] justify-start text-left font-normal border-gray-200"
+                  }
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {currentDate ? (
+                    format(currentDate, "MM/dd/yyyy")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarPicker
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={(date) => date && setCurrentDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Select defaultValue="month">
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Month</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="team">Team View</SelectItem>
+                <SelectItem value="agenda">Agenda</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="single">
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single">Single View</SelectItem>
+                <SelectItem value="all">All Talent</SelectItem>
+                <SelectItem value="selected">Selected Talent</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={() => {
+                setBookingMode("new");
+                setSelectedBooking(null);
+                setNewBookingOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> New Booking
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs text-gray-400 mb-4 px-2">
+          <span className="flex items-center gap-1">
+            <span className="border p-0.5 rounded px-1">←</span>{" "}
+            <span className="border p-0.5 rounded px-1">→</span> Navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="border p-0.5 rounded px-1">T</span> Today
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="border p-0.5 rounded px-1">C</span> New Booking
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="border p-0.5 rounded px-1">ESC</span> Close
+          </span>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-7 border-b bg-gray-50/50">
+            {days.map((d) => (
+              <div
+                key={d}
+                className="p-3 text-center text-sm font-bold text-gray-600"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
+            {/* Previous Month Filler */}
+            {previousMonthDays.map((d) => (
+              <div
+                key={`prev-${d}`}
+                className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
+              >
+                {d}
+              </div>
+            ))}
+            {/* Current Month Days */}
+            {currentMonthDays.map((d) => {
+              const year = currentDate.getFullYear();
+              const month = currentDate.getMonth() + 1;
+              const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
+              const dayBookings = bookings.filter((b) => b.date === dayString);
+
+              const getTypeColor = (type: string) => {
+                switch (type) {
+                  case "casting":
+                    return "bg-blue-100 text-blue-800";
+                  case "option":
+                    return "bg-yellow-100 text-yellow-800";
+                  case "confirmed":
+                    return "bg-green-100 text-green-800";
+                  case "test-shoot":
+                    return "bg-orange-100 text-orange-800";
+                  case "fitting":
+                    return "bg-yellow-50 text-yellow-700";
+                  case "rehearsal":
+                    return "bg-gray-200 text-gray-800";
+                  default:
+                    return "bg-indigo-100 text-indigo-800";
+                }
+              };
+
+              const isSelected = d === currentDate.getDate();
+
+              return (
+                <div
+                  key={d}
+                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                    isSelected
+                      ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    const newDate = new Date(currentDate);
+                    newDate.setDate(d);
+                    setCurrentDate(newDate);
+                  }}
+                >
+                  <span
+                    className={`text-sm font-medium ${
+                      isSelected
+                        ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {d}
+                  </span>
+                  <div className="mt-1 space-y-1">
+                    {dayBookings.map((b, idx) => (
+                      <div
+                        key={`${b.id} - ${idx}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedBooking(b);
+                          setDetailsModalOpen(true);
+                        }}
+                        className={`${getTypeColor(b.type)} text-[10px] p-1 rounded font-bold truncate border-l-2 border-current cursor-pointer hover:opacity-80 transition-opacity`}
+                      >
+                        {b.talentName}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium text-gray-600">
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-blue-100 rounded-sm"></div> Casting
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-yellow-100 rounded-sm"></div> Option
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-green-100 rounded-sm"></div> Confirmed
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-purple-100 rounded-sm"></div> Completed
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-red-100 rounded-sm"></div> Cancelled
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-orange-100 rounded-sm"></div> Test Shoot
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-yellow-50 rounded-sm"></div> Fitting
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Rehearsal
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-red-100 rounded-sm flex items-center justify-center text-[8px] text-red-600 font-bold">
+              ✕
+            </div>{" "}
+            Unavailable
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-red-50 rounded-sm flex items-center justify-center text-[8px] text-red-600 font-bold">
+              !
+            </div>{" "}
+            Conflict
+          </span>
+        </div>
+      </Card>
+
+      <ManageAvailabilityModal open={modalOpen} onOpenChange={setModalOpen} />
+      <NewBookingModal
+        open={newBookingOpen}
+        onOpenChange={setNewBookingOpen}
+        onSave={(b) => {
+          if (bookingMode === "edit") {
+            onUpdateBooking(b);
+          } else {
+            onAddBooking(b);
+          }
+        }}
+        initialData={bookingMode === "new" ? undefined : selectedBooking}
+        mode={bookingMode}
+      />
+
+      <BookingDetailsModal
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+        booking={selectedBooking}
+        onEdit={(b) => {
+          setSelectedBooking(b);
+          setBookingMode("edit");
+          setDetailsModalOpen(false);
+          setNewBookingOpen(true);
+        }}
+        onDuplicate={(b) => {
+          setSelectedBooking(b);
+          setBookingMode("duplicate");
+          setDetailsModalOpen(false);
+          setNewBookingOpen(true);
+        }}
+        onCancel={onCancelBooking}
+      />
+    </div>
+  );
+};
+
+const BookingRequestsTab = () => {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Booking Requests</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Review and manage incoming booking requests
+          </p>
+        </div>
+      </div>
+
+      <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
+        <div className="bg-gray-50 p-4 rounded-full mb-4">
+          <Calendar className="w-12 h-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">
+          Booking requests feature coming soon
+        </h3>
+        <p className="text-gray-500 max-w-md">
+          Manage incoming booking requests from clients
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const AddClientModal = ({
+  open,
+  onOpenChange,
+  onAdd,
+  initialData,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (client: any) => void;
+  initialData?: any;
+}) => {
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const [formData, setFormData] = useState({
+    company: "",
+    website: "",
+    address: "",
+    contact: "",
+    email: "",
+    phone: "",
+    terms: "net15",
+    notes: "",
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        company: initialData.company || "",
+        website: initialData.website || "",
+        address: initialData.address || "",
+        contact: initialData.contact || "",
+        email: initialData.email || "",
+        phone: initialData.phone || "",
+        terms: initialData.terms || "net15",
+        notes: initialData.notes || "",
+      });
+      setSelectedTags(initialData.industryTags || []);
+    } else {
+      setFormData({
+        company: "",
+        website: "",
+        address: "",
+        contact: "",
+        email: "",
+        phone: "",
+        terms: "net15",
+        notes: "",
+      });
+      setSelectedTags([]);
+    }
+  }, [initialData, open]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  const handleSave = () => {
+    onAdd({
+      id: initialData?.id || `client-${Date.now()}`,
+      ...formData,
+      industryTags: selectedTags,
+      revenue: initialData?.revenue || 0,
+      bookings_count: initialData?.bookings_count || 0,
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            {initialData ? "Edit Client" : "Add New Client"}
+          </DialogTitle>
+          <DialogDescription>
+            {initialData
+              ? "Update client information"
+              : "Add client information for easier booking management"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <h3 className="text-lg font-bold border-b pb-2">
+            Company Information
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Company Name *</Label>
+              <Input
+                placeholder="Acme Inc."
+                value={formData.company}
+                onChange={(e) =>
+                  setFormData({ ...formData, company: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Website</Label>
+              <Input
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={(e) =>
+                  setFormData({ ...formData, website: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Address</Label>
+            <Input
+              placeholder="123 Main St, New York, NY 10001"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-3">
+            <Label className="font-bold">Industry/Category Tags</Label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Fashion",
+                "Beauty",
+                "Fitness",
+                "Commercial",
+                "Editorial",
+                "E-commerce",
+                "Advertising",
+                "Film/TV",
+                "Events",
+                "Sports",
+                "Luxury",
+                "Tech",
+                "Food & Beverage",
+                "Automotive",
+              ].map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={selectedTags.includes(tag) ? "default" : "secondary"}
+                  className={`${
+                    selectedTags.includes(tag)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold"
+                  } cursor-pointer py-1 px-3 text-sm flex items-center gap-1.5 transition-all`}
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                  {selectedTags.includes(tag) && <X className="w-3 h-3 ml-1" />}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <h3 className="text-lg font-bold border-b pb-2 pt-2">
+            Primary Contact
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Contact Name *</Label>
+              <Input
+                placeholder="John Doe"
+                value={formData.contact}
+                onChange={(e) =>
+                  setFormData({ ...formData, contact: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Email</Label>
+              <Input
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Phone</Label>
+            <Input
+              placeholder="+1 (555) 123-4567"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Payment Terms</Label>
+            <Select
+              value={formData.terms}
+              onValueChange={(v) => setFormData({ ...formData, terms: v })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="net15">Net 15</SelectItem>
+                <SelectItem value="net30">Net 30</SelectItem>
+                <SelectItem value="net60">Net 60</SelectItem>
+                <SelectItem value="net90">Net 90</SelectItem>
+                <SelectItem value="upon_completion">Upon Completion</SelectItem>
+                <SelectItem value="split_deposit">
+                  50% Deposit / 50% Upon Completion
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Notes & Preferences</Label>
+            <Textarea
+              placeholder="Any special notes, preferences, or important information about this client..."
+              className="min-h-[100px]"
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            onClick={handleSave}
+            disabled={!formData.company || !formData.contact}
+          >
+            Add Client
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const MergeClientsModal = ({
+  open,
+  onOpenChange,
+  clients,
+  onMerge,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  clients: any[];
+  onMerge: (sourceId: string, targetId: string) => void;
+}) => {
+  const { toast } = useToast();
+  const [sourceId, setSourceId] = useState("");
+  const [targetId, setTargetId] = useState("");
+
+  const sourceClient = clients.find((c) => c.id === sourceId);
+  const targetClient = clients.find((c) => c.id === targetId);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            Merge Duplicate Clients
+          </DialogTitle>
+          <DialogDescription>
+            Select two clients to merge. All bookings from the source will be
+            moved to the target.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Source Client (will be deleted)</Label>
+            <Select value={sourceId} onValueChange={setSourceId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select client to merge from" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.company} ({c.bookings_count || 0} bookings)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">
+              Target Client (will keep all data)
+            </Label>
+            <Select value={targetId} onValueChange={setTargetId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select client to merge into" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients
+                  .filter((c) => c.id !== sourceId)
+                  .map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.company} ({c.bookings_count || 0} bookings)
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {sourceId && targetId && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3 mt-4">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                <span className="font-bold">Warning:</span> This will move{" "}
+                {sourceClient?.bookings_count || 0} booking(s) from "
+                {sourceClient?.company}" to "{targetClient?.company}" and delete
+                the source client. This action cannot be undone.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold"
+            disabled={!sourceId || !targetId}
+            onClick={() => {
+              onMerge(sourceId, targetId);
+              toast({
+                title: "Clients Merged",
+                description: `Merge ${sourceClient?.company} into ${targetClient?.company}`,
+                action: <ToastAction altText="OK">OK</ToastAction>,
+              });
+              onOpenChange(false);
+            }}
+          >
+            Merge Clients
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ClientDatabaseTab = () => {
+  const [clients, setClients] = useState(CLIENT_DATA);
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedClientForEdit, setSelectedClientForEdit] = useState<any>(null);
+
+  const stats = [
+    { label: "Total Clients", value: clients.length.toString() },
+    { label: "Active This Month", value: "1" },
+    {
+      label: "Total Revenue",
+      value: `$${clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3}`,
+    },
+    {
+      label: "Avg. Booking Value",
+      value: `$${(clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3) / (clients.length || 1)}`,
+    },
+  ];
+
+  const handleMerge = (sourceId: string, targetId: string) => {
+    setClients((prev) => prev.filter((c) => c.id !== sourceId));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Client Database</h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage your client relationships and booking history
+          </p>
+        </div>
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+          onClick={() => setAddClientOpen(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" /> Add Client
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <Card
+            key={s.label}
+            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
+          >
+            <p className="text-xs font-bold text-gray-500 uppercase mb-2">
+              {s.label}
+            </p>
+            <p className="text-4xl font-extrabold text-gray-900">{s.value}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl space-y-6">
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input placeholder="Search by company name..." className="pl-9" />
+          </div>
+          <Select defaultValue="all">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Industries</SelectItem>
+              <SelectItem value="fashion">Fashion</SelectItem>
+              <SelectItem value="beauty">Beauty</SelectItem>
+              <SelectItem value="fitness">Fitness</SelectItem>
+              <SelectItem value="commercial">Commercial</SelectItem>
+              <SelectItem value="editorial">Editorial</SelectItem>
+              <SelectItem value="ecommerce">E-commerce</SelectItem>
+              <SelectItem value="advertising">Advertising</SelectItem>
+              <SelectItem value="filmtv">Film/TV</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select defaultValue="name">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Company Name</SelectItem>
+              <SelectItem value="bookings">Most Bookings</SelectItem>
+              <SelectItem value="revenue">Highest Revenue</SelectItem>
+              <SelectItem value="recent">Recent Activity</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            className="font-bold text-gray-700"
+            onClick={() => setMergeOpen(true)}
+          >
+            Merge Duplicates
+          </Button>
+        </div>
+
+        <div className="overflow-hidden">
+          {clients.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Industries
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Bookings
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Revenue
+                    </th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {clients.map((client) => (
+                    <tr
+                      key={client.id}
+                      className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                      onClick={() => setSelectedClient(client)}
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="font-bold text-gray-900">
+                          {client.company}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {client.email}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-700">
+                          {client.contact}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex gap-1">
+                          {(client.industryTags || [])
+                            .slice(0, 2)
+                            .map((t: string) => (
+                              <Badge
+                                key={t}
+                                variant="secondary"
+                                className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                              >
+                                {t}
+                              </Badge>
+                            ))}
+                          {(client.industryTags || []).length > 2 && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
+                            >
+                              +{(client.industryTags || []).length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">
+                          {client.bookings_count || 0}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-extrabold text-green-600">
+                          ${(client.revenue || 0).toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right">
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
+              <div className="bg-gray-50 p-4 rounded-full mb-4">
+                <Building2 className="w-12 h-12 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                No clients yet
+              </h3>
+              <p className="text-gray-500 max-w-md mb-4">
+                Start adding clients to track your business relationships
+              </p>
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                onClick={() => setAddClientOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add First Client
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <AddClientModal
+        open={addClientOpen}
+        onOpenChange={(open) => {
+          setAddClientOpen(open);
+          if (!open) setSelectedClientForEdit(null);
+        }}
+        onAdd={(newClient) => {
+          setClients((prev) => {
+            const exists = prev.find((c) => c.id === newClient.id);
+            if (exists) {
+              return prev.map((c) => (c.id === newClient.id ? newClient : c));
+            }
+            return [...prev, newClient];
+          });
+          if (selectedClient && selectedClient.id === newClient.id) {
+            setSelectedClient(newClient);
+          }
+        }}
+        initialData={selectedClientForEdit}
+      />
+      <MergeClientsModal
+        open={mergeOpen}
+        onOpenChange={setMergeOpen}
+        clients={clients}
+        onMerge={handleMerge}
+      />
+
+      {selectedClient && (
+        <ClientProfileDrawer
+          client={selectedClient}
+          open={!!selectedClient}
+          onOpenChange={(open) => !open && setSelectedClient(null)}
+          onEdit={(client) => {
+            setSelectedClientForEdit(client);
+            setAddClientOpen(true);
+          }}
+          onDelete={(id) => {
+            setClients((prev) => prev.filter((c) => c.id !== id));
+            setSelectedClient(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+const ClientProfileDrawer = ({
+  client,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: {
+  client: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEdit: (client: any) => void;
+  onDelete: (id: string) => void;
+}) => {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-xl overflow-y-auto">
+        <SheetHeader className="border-b pb-6 mb-6">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-16 h-16 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <Building2 className="w-8 h-8 text-gray-900" />
+            </div>
+            <div>
+              <SheetTitle className="text-2xl font-black text-gray-900">
+                {client.company}
+              </SheetTitle>
+              <div className="flex gap-2 mt-1">
+                {(client.industryTags || []).map((t: string) => (
+                  <Badge
+                    key={t}
+                    className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none font-bold text-[10px]"
+                  >
+                    {t}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onEdit(client)}
+            >
+              <Edit className="w-4 h-4 text-gray-600" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-red-200 hover:bg-red-50"
+              onClick={() => onDelete(client.id)}
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </Button>
+          </div>
+        </SheetHeader>
+
+        <div className="space-y-8">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Total Revenue
+              </p>
+              <p className="text-2xl font-black text-green-600">
+                ${(client.revenue || 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Total Bookings
+              </p>
+              <p className="text-2xl font-black text-gray-900">
+                {client.bookings_count || 0}
+              </p>
+            </div>
+          </div>
+
+          {/* Contact Details */}
+          <div className="space-y-4">
+            <h4 className="font-bold text-gray-900 border-b pb-2">
+              Primary Contact
+            </h4>
+            <div className="grid grid-cols-2 gap-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <User className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Name
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.contact}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <Mail className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Email
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.email || "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <Phone className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Phone
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.phone || "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <CreditCard className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">
+                    Terms
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {client.terms || "Net 15"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Address & Links */}
+          <div className="space-y-4">
+            <h4 className="font-bold text-gray-900 border-b pb-2">
+              Location & Links
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                <p className="text-sm text-gray-600">
+                  {client.address || "No address provided"}
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Globe className="w-4 h-4 text-gray-400 mt-0.5" />
+                <p className="text-sm text-indigo-600 font-medium hover:underline cursor-pointer">
+                  {client.website || "No website provided"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Bookings Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h4 className="font-bold text-gray-900">Recent Bookings</h4>
+              <Button
+                variant="ghost"
+                className="text-xs h-6 font-bold text-indigo-600"
+              >
+                View All
+              </Button>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-8 flex flex-col items-center justify-center text-center">
+              <Calendar className="w-8 h-8 text-gray-300 mb-2" />
+              <p className="text-sm text-gray-500">No booking history yet</p>
+            </div>
+          </div>
+
+          <div className="pt-4 sticky bottom-0 bg-white pb-6">
+            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl text-lg shadow-lg">
+              Create New Booking
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+const AddBookOutModal = ({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdd: (bookOut: any) => void;
+}) => {
+  const [reason, setReason] = useState("personal");
+  const [talentId, setTalentId] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const handleSave = () => {
+    if (!talentId || !startDate || !endDate) {
+      // Basic validation
+      return;
+    }
+
+    const newBookOut = {
+      id: `bo-${Date.now()}`,
+      talentId,
+      reason,
+      startDate,
+      endDate,
+      notes,
+    };
+
+    onAdd(newBookOut);
+    onOpenChange(false);
+
+    // Reset form
+    setReason("personal");
+    setTalentId("");
+    setStartDate("");
+    setEndDate("");
+    setNotes("");
+  };
+
+  const isValid = reason && talentId && startDate && endDate;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            Talent Availability & Book-Outs
+          </DialogTitle>
+          <DialogDescription>
+            Manage when talent is unavailable for bookings
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Reason *</Label>
+            <Select value={reason} onValueChange={setReason}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="medical">Medical</SelectItem>
+                <SelectItem value="vacation">Vacation</SelectItem>
+                <SelectItem value="other_booking">Other Booking</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Talent *</Label>
+            <Select value={talentId} onValueChange={setTalentId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select talent" />
+              </SelectTrigger>
+              <SelectContent>
+                {TALENT_DATA.map((talent) => (
+                  <SelectItem key={talent.id} value={talent.id}>
+                    {talent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Start Date *</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">End Date *</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Notes</Label>
+            <Textarea
+              placeholder="Additional details..."
+              className="min-h-[80px]"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input type="checkbox" id="notify" className="rounded" />
+            <Label htmlFor="notify" className="font-normal cursor-pointer">
+              Notify talent via email
+            </Label>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="font-bold"
+          >
+            Cancel
+          </Button>
+          <Button
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${
+              !isValid ? "opacity-50 blur-[1px] pointer-events-none" : ""
+            }`}
+            onClick={handleSave}
+            disabled={!isValid}
+          >
+            Save Book-Out
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const TalentAvailabilityTab = ({
+  bookOuts = [],
+  onAddBookOut,
+  onRemoveBookOut,
+}: {
+  bookOuts?: any[];
+  onAddBookOut: (bookOut: any) => void;
+  onRemoveBookOut: (id: string) => void;
+}) => {
+  const [addBookOutOpen, setAddBookOutOpen] = useState(false);
+  const { toast, dismiss } = useToast();
+
+  // Helper to find talent name
+  const getTalentName = (id: string) =>
+    TALENT_DATA.find((t) => t.id === id)?.name || "Unknown Talent";
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Talent Availability
+          </h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage book-outs and talent unavailability
+          </p>
+        </div>
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+          onClick={() => setAddBookOutOpen(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+        </Button>
+      </div>
+
+      {bookOuts.length === 0 ? (
+        <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[400px]">
+          <div className="bg-gray-50 p-4 rounded-full mb-4">
+            <Calendar className="w-12 h-12 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            No book-outs scheduled
+          </h3>
+          <p className="text-gray-500 max-w-md">
+            Add unavailability periods for your talent
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {bookOuts.map((bo) => (
+            <Card
+              key={bo.id}
+              className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#FFF9F5] border-orange-200"
+            >
+              <div className="flex flex-col gap-1">
+                <h4 className="font-bold text-gray-900 text-lg">
+                  {getTalentName(bo.talentId)}
+                </h4>
+                <p className="text-sm text-gray-500 font-medium mb-2">
+                  {new Date(bo.startDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}{" "}
+                  -{" "}
+                  {new Date(bo.endDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+                <div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-100 text-orange-800 capitalize">
+                    {bo.reason.replace("_", " ")}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
+                  onClick={() => {
+                    toast({
+                      title: "Delete Book-Out?",
+                      description: "This action cannot be undone.",
+                      action: (
+                        <ToastAction
+                          altText="Delete"
+                          onClick={() => {
+                            onRemoveBookOut(bo.id);
+                            dismiss();
+                          }}
+                          className="font-bold bg-red-600 text-white hover:bg-red-700 hover:text-white border-none"
+                        >
+                          Delete
+                        </ToastAction>
+                      ),
+                    });
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <AddBookOutModal
+        open={addBookOutOpen}
+        onOpenChange={setAddBookOutOpen}
+        onAdd={onAddBookOut}
+      />
+    </div>
+  );
+};
+
+const NotificationsTab = () => {
+  const { toast } = useToast();
+  const [activeSubNav, setActiveSubNav] = useState("logs");
+  const [testNotificationType, setTestNotificationType] = useState("");
+  const [testTargetTalent, setTestTargetTalent] = useState("");
+
+  const testTalents = [
+    "Emma",
+    "Sergine",
+    "Milan",
+    "Julia",
+    "Matt",
+    "Carla",
+    "Luisa",
+    "Clemence",
+    "Lina",
+    "Aaron",
+  ];
+
+  const stats = [
+    {
+      label: "Emails Sent",
+      value: "127",
+      subtitle: "100% delivered",
+      icon: Mail,
+      color: "text-blue-600",
+    },
+    {
+      label: "SMS Sent",
+      value: "84",
+      subtitle: "100% delivered",
+      icon: Phone,
+      color: "text-green-600",
+    },
+    {
+      label: "Push Sent",
+      value: "56",
+      subtitle: "65% clicked",
+      icon: Bell,
+      color: "text-purple-600",
+    },
+    {
+      label: "Failed",
+      value: "3",
+      subtitle: "Last 30 days",
+      icon: XCircle,
+      color: "text-red-600",
+    },
+  ];
+
+  const notifications = [
+    {
+      type: "EMAIL",
+      title: "Booking Created",
+      recipient: "Emma (emma@example.com)",
+      message: "New Booking: Glossier Beauty on Jan 15, 2026",
+      time: "Jan 12, 2025 10:35 AM",
+      status: "success",
+      detail: "Opened 10:55 AM",
+    },
+    {
+      type: "SMS",
+      title: "24h Reminder",
+      recipient: "Milan (+1-555-0102)",
+      message: "Reminder: Booking tomorrow with CarNext WIP at 9:00 AM",
+      time: "Jan 11, 2025 9:00 PM",
+      status: "success",
+      detail: "48 chars",
+    },
+    {
+      type: "PUSH",
+      title: "Booking Confirmed",
+      recipient: "Julia",
+      message:
+        "Your booking with Esther Skincare has been confirmed for Jan 20",
+      time: "Jan 10, 2025 2:03 PM",
+      status: "success",
+      detail: "Clicked",
+    },
+    {
+      type: "EMAIL",
+      title: "Booking Updated",
+      recipient: "Carla (carla@example.com)",
+      message: "Booking Updated: Reformation on Jan 25, 2026",
+      time: "Jan 9, 2026 4:15 PM",
+      status: "success",
+      detail: "",
+    },
+    {
+      type: "EMAIL",
+      title: "Booking Cancelled",
+      recipient: "Matt (matt@example.com)",
+      message: "Booking Cancelled: Aesop Skincare on Jan 22, 2026",
+      time: "Jan 8, 2025 11:00 AM",
+      status: "error",
+      detail: "Error: Invalid email address",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Bell className="w-8 h-8 text-gray-700" />
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Notifications Center
+          </h2>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Manage booking notifications and delivery logs
+          </p>
+        </div>
+      </div>
+
+      {/* Sub-navigation */}
+      <div className="flex gap-1 border-b border-gray-200">
+        {[
+          "Notification Logs",
+          "Settings",
+          "Talent Preferences",
+          "Test Notifications",
+        ].map((tab, idx) => (
+          <button
+            key={tab}
+            onClick={() =>
+              setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
+            }
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {activeSubNav === "logs" && (
+        <>
+          <div className="grid grid-cols-4 gap-4">
+            {stats.map((s) => (
+              <Card
+                key={s.label}
+                className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                  <p className="text-xs font-bold text-gray-500 uppercase">
+                    {s.label}
+                  </p>
+                </div>
+                <p className="text-4xl font-extrabold text-gray-900 mb-1">
+                  {s.value}
+                </p>
+                <p className="text-xs text-gray-500">{s.subtitle}</p>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                Recent Notifications
+              </h3>
+              <Button variant="outline" className="font-bold text-gray-700">
+                <Filter className="w-4 h-4 mr-2" /> Filter
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {notifications.map((notif, idx) => (
+                <Card
+                  key={idx}
+                  className={`p-4 border ${
+                    notif.status === "error"
+                      ? "border-red-200 bg-red-50"
+                      : "border-gray-100 hover:border-indigo-200 transition-colors"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          notif.type === "EMAIL"
+                            ? "bg-blue-100 text-blue-600"
+                            : notif.type === "SMS"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-purple-100 text-purple-600"
+                        }`}
+                      >
+                        {notif.type === "EMAIL" && <Mail className="w-5 h-5" />}
+                        {notif.type === "SMS" && <Phone className="w-5 h-5" />}
+                        {notif.type === "PUSH" && <Bell className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-gray-900">
+                            {notif.title}
+                          </h4>
+                          <span className="text-xs font-medium text-gray-500">
+                            • {notif.type}
+                          </span>
+                          {notif.status === "error" && (
+                            <Badge variant="destructive" className="h-5 px-1.5">
+                              Failed
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-900 font-medium mt-0.5">
+                          {notif.message}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          To:{" "}
+                          <span className="font-bold">{notif.recipient}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-gray-500">
+                        {notif.time}
+                      </p>
+                      <p
+                        className={`text-xs font-bold mt-1 ${
+                          notif.status === "success"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {notif.detail}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+
+      {activeSubNav === "settings" && (
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              Event Notification Settings
+            </h3>
+            <p className="text-sm text-gray-500">
+              Configure which channels to use for each event type
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Booking Created/Confirmed */}
+            <div className="pb-4 border-b border-gray-100">
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Booking Created/Confirmed
+              </h4>
+              <div className="grid grid-cols-3 gap-8">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Email
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      SMS
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Push
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Booking Updated */}
+            <div className="pb-4 border-b border-gray-100">
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Booking Updated
+              </h4>
+              <div className="grid grid-cols-3 gap-8">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Email
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      SMS
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Push
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Booking Cancelled */}
+            <div className="pb-4 border-b border-gray-100">
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Booking Cancelled
+              </h4>
+              <div className="grid grid-cols-3 gap-8">
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Email
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      SMS
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-medium text-gray-900">
+                      Push
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Automatic Reminders */}
+            <div className="pt-2">
+              <h4 className="font-bold text-gray-900 mb-3 text-sm">
+                Automatic Reminders
+              </h4>
+
+              <div className="space-y-3">
+                <div className="pb-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 mb-3">
+                    24 Hours Before Booking
+                  </p>
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Email
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          SMS
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Push
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pb-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 mb-3">
+                    48 Hours Before Booking
+                  </p>
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Email
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          SMS
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Push
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-900 mb-3">
+                    1 Week Before Booking
+                  </p>
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Email
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          SMS
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-medium text-gray-900">
+                          Push
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {activeSubNav === "preferences" && (
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Per-Talent Notification Preferences
+            </h3>
+            <p className="text-sm text-gray-600">
+              Override agency defaults for specific talent
+            </p>
+          </div>
+
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search talent by name..."
+              className="pl-9"
+              onChange={(e) => setTestTargetTalent(e.target.value)}
+              value={testTargetTalent}
+            />
+          </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                name: "Emma",
+                email: "cleo@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
+              },
+              {
+                name: "Sergine",
+                email: "tyler@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
+              },
+              {
+                name: "Milan",
+                email: "milan@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
+              },
+              {
+                name: "Julia",
+                email: "cleo@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
+              },
+              {
+                name: "Matt",
+                email: "tyler@example.com",
+                image: "https://i.pravatar.cc/150?u=Matt",
+              },
+              {
+                name: "Carla",
+                email: "cleo@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
+              },
+              {
+                name: "Luisa",
+                email: "cleo@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/dfe7c47ac_Screenshot2025-10-29at63612PM.png",
+              },
+              {
+                name: "Clemence",
+                email: "cleo@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ee3aae03f_Screenshot2025-10-29at63651PM.png",
+              },
+              {
+                name: "Lina",
+                email: "lina@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/ac71e274e_Screenshot2025-10-29at63715PM.png",
+              },
+              {
+                name: "Aaron",
+                email: "cleo@example.com",
+                image:
+                  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/86e331be1_Screenshot2025-10-29at63806PM.png",
+              },
+            ]
+              .filter((t) =>
+                t.name.toLowerCase().includes(testTargetTalent.toLowerCase()),
+              )
+              .map((talent, idx) => (
+                <Card
+                  key={idx}
+                  className="p-4 border border-gray-200 bg-white rounded-xl"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={talent.image || ""} alt={talent.name} />
+                      <AvatarFallback className="bg-gray-100 text-gray-600 font-bold">
+                        {talent.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h4 className="font-bold text-gray-900">{talent.name}</h4>
+                      <p className="text-sm text-gray-500">{talent.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
+                      <span className="text-sm font-bold text-gray-900">
+                        Email
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                      <span className="text-sm font-bold text-gray-900">
+                        SMS
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2">
+                      <span className="text-sm font-bold text-gray-900">
+                        Push
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          defaultChecked
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                      </label>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+          </div>
+        </Card>
+      )}
+
+      {activeSubNav === "test" && (
+        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Test Notification Delivery
+            </h3>
+            <p className="text-sm text-gray-500 font-medium">
+              Send a test notification to verify delivery and formatting
+            </p>
+          </div>
+
+          <div className="space-y-6 max-w-full">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Notification Type
+              </Label>
+              <Select
+                value={testNotificationType}
+                onValueChange={setTestNotificationType}
+              >
+                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
+                  <SelectValue placeholder="Select notification type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">
+                    Email (with .ics attachment)
+                  </SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="push">Push notification</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Select Talent
+              </Label>
+              <Select
+                value={testTargetTalent}
+                onValueChange={setTestTargetTalent}
+              >
+                <SelectTrigger className="h-12 border-gray-200 rounded-xl">
+                  <SelectValue placeholder="Choose talent to notify" />
+                </SelectTrigger>
+                <SelectContent>
+                  {testTalents.map((name) => (
+                    <SelectItem key={name} value={name.toLowerCase()}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+              <div className="p-2 bg-white rounded-full text-amber-500 shadow-sm">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <p className="text-sm text-amber-800 font-medium">
+                Test notifications will be sent with "[TEST]" prefix and won't
+                count toward billing.
+              </p>
+            </div>
+
+            <Button
+              className={`w-full bg-indigo-400 hover:bg-indigo-500 text-white font-bold h-14 rounded-xl shadow-md transition-all flex items-center justify-center gap-3 text-lg ${
+                !testNotificationType || !testTargetTalent
+                  ? "opacity-50 cursor-not-allowed grayscale-[0.3]"
+                  : ""
+              }`}
+              onClick={() => {
+                if (!testNotificationType || !testTargetTalent) return;
+
+                const talentName =
+                  testTalents.find(
+                    (t) => t.toLowerCase() === testTargetTalent,
+                  ) || testTargetTalent;
+
+                toast({
+                  title: "Notification Sent",
+                  description: `Test ${testNotificationType} notification sent to ${talentName}!`,
+                  action: (
+                    <ToastAction altText="OK" onClick={() => {}}>
+                      OK
+                    </ToastAction>
+                  ),
+                });
+              }}
+              disabled={!testNotificationType || !testTargetTalent}
+            >
+              <Send className="w-5 h-5" />
+              Send Test Notification
+            </Button>
+
+            <div className="pt-8">
+              <h4 className="text-lg font-bold text-gray-900 mb-6 uppercase tracking-wider">
+                Preview Templates
+              </h4>
+
+              <Card className="border border-gray-200 rounded-2xl bg-gray-50/50 p-6 overflow-hidden">
+                {testNotificationType === "email" && (
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                        Subject:
+                      </p>
+                      <p className="text-base font-bold text-gray-900">
+                        [TEST] New Booking: Glossier Beauty on Jan 15, 2026
+                      </p>
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-xl p-8 shadow-sm">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
+                        Body Preview:
+                      </p>
+                      <div className="space-y-4 text-[15px] text-gray-700 leading-relaxed">
+                        <p className="font-medium text-gray-900">Hi Emma,</p>
+                        <p className="font-medium text-gray-600">
+                          You have a new confirmed booking:
+                        </p>
+                        <div className="space-y-2 pt-2">
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Client:
+                            </span>{" "}
+                            Glossier Beauty
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Date:
+                            </span>{" "}
+                            Wednesday, January 15, 2026
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Call Time:
+                            </span>{" "}
+                            9:00 AM
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Wrap Time:
+                            </span>{" "}
+                            5:00 PM
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Location:
+                            </span>{" "}
+                            123 Main St, New York, NY
+                          </p>
+                          <p>
+                            <span className="font-bold text-gray-900">
+                              Rate:
+                            </span>{" "}
+                            $1,200 Day Rate
+                          </p>
+                        </div>
+                        <p className="text-sm font-medium text-gray-400 mt-6 border-t border-gray-50 pt-4 italic">
+                          Calendar invite (.ics) attached
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {testNotificationType === "sms" && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Message Preview (160 chars max):
+                    </p>
+                    <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm min-h-[80px] flex items-center">
+                      <p className="text-sm text-gray-900 font-medium leading-relaxed">
+                        [TEST] You're booked for Glossier on Jan 15 at 9:00 AM.
+                        Location: 123 Main St, NY. Call time 9AM.
+                      </p>
+                    </div>
+                    <p className="text-[11px] font-bold text-gray-400">
+                      Character count: 98/160
+                    </p>
+                  </div>
+                )}
+
+                {testNotificationType === "push" && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Notification Preview:
+                    </p>
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-xl max-w-sm flex gap-4 items-center animate-in slide-in-from-top-4 duration-500">
+                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 transform scale-95">
+                        <Bell className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <p className="text-sm font-bold text-gray-900 truncate">
+                            Likelee Agency
+                          </p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase">
+                            now
+                          </p>
+                        </div>
+                        <p className="text-[13px] font-bold text-indigo-600 mb-0.5">
+                          [TEST] New Booking
+                        </p>
+                        <p className="text-[12px] font-medium text-gray-600 leading-tight">
+                          Glossier Beauty on Jan 15 at 9:00 AM
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
+const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
+  const [activeTab, setActiveTab] = useState("Analytics");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-6 h-6 text-indigo-600" />
+            <h2 className="text-2xl font-bold text-gray-900">
+              Management & Analytics
+            </h2>
+          </div>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Filter, search, and analyze your bookings
+          </p>
+        </div>
+        <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
+          {["Analytics", "Manage Bookings", "Reports & Export"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${
+                activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeTab === "Analytics" && (
+        <ManagementAnalyticsTab bookings={bookings} />
+      )}
+      {activeTab === "Manage Bookings" && (
+        <ManageBookingsTab bookings={bookings} />
+      )}
+      {activeTab === "Reports & Export" && <ReportsExportTab />}
+    </div>
+  );
+};
+
+const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
+  // Calculate dynamic stats
+  const now = new Date();
+
+  // Helper to parse currency string "$1,500" -> 1500
+  const parseCurrency = (str: string) => {
+    if (!str) return 0;
+    return Number(str.replace(/[^0-9.-]+/g, ""));
+  };
+
+  const overviewStats = bookings.reduce(
+    (acc, b) => {
+      const bDate = parseISO(b.date);
+      const isThisMonth = isSameMonth(bDate, now);
+      const isThisWeek = isSameWeek(bDate, now);
+
+      if (isThisMonth) acc.monthCount++;
+      if (isThisWeek) acc.weekCount++;
+      if (isThisMonth && (b.type === "confirmed" || b.status === "confirmed")) {
+        const amount = parseCurrency(b.rate || b.fee || "0");
+        acc.monthRevenue += amount;
+      }
+
+      // Type counts
+      const type = (b.type || b.status || "confirmed").toLowerCase();
+      acc.typeCounts[type] = (acc.typeCounts[type] || 0) + 1;
+
+      return acc;
+    },
+    {
+      monthCount: 0,
+      weekCount: 0,
+      monthRevenue: 0,
+      typeCounts: {} as Record<string, number>,
+    },
+  );
+
+  const stats = [
+    {
+      label: "This Month",
+      value: overviewStats.monthCount.toString(),
+      subtext: "Total bookings",
+      icon: Calendar,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "This Week",
+      value: overviewStats.weekCount.toString(),
+      subtext: "Total bookings",
+      icon: Calendar,
+      color: "text-green-600",
+      bg: "bg-green-50",
+    },
+    {
+      label: "Revenue",
+      value: `$${overviewStats.monthRevenue.toLocaleString()}`,
+      subtext: "This month",
+      icon: DollarSign,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+    },
+    {
+      label: "Conversion",
+      value: "85%", // Keeping static for now as we don't have distinct casting/lead data
+      subtext: "Castings → Confirmed",
+      icon: TrendingUp,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+    },
+  ];
+
+  const totalBookings = bookings.length || 1;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-4 gap-4">
+        {stats.map((s, i) => (
+          <Card key={i} className="p-6 border shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg ${s.bg}`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500">{s.label}</p>
+                <h3 className="text-3xl font-bold text-gray-900 mt-1">
+                  {s.value}
+                </h3>
+                <p className="text-xs text-gray-400 mt-1 font-medium">
+                  {s.subtext}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <Card className="p-6 border shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">
+            Bookings by Type
+          </h3>
+          <div className="space-y-4">
+            {Object.entries(overviewStats.typeCounts).length > 0 ? (
+              Object.entries(overviewStats.typeCounts).map(([type, count]) => (
+                <div key={type} className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 capitalize">
+                    {type}
+                  </span>
+                  <div className="flex items-center gap-4 flex-1 mx-4">
+                    <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          type === "confirmed"
+                            ? "bg-green-500"
+                            : type === "cancelled"
+                              ? "bg-red-500"
+                              : "bg-indigo-600"
+                        }`}
+                        style={{ width: `${(count / totalBookings) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">
+                      {count}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No bookings yet</p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-6 border shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-900">
+              Top Booked Talent
+            </h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-gray-400">#1</span>
+                <span className="text-sm font-bold text-gray-900">Emma</span>
+              </div>
+              <Badge variant="secondary" className="font-bold">
+                1 bookings
+              </Badge>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
+  const [rateMin, setRateMin] = useState("");
+  const [rateMax, setRateMax] = useState("");
+  const [sortKey, setSortKey] = useState("bookingDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  // Helper to parse currency
+  const parseCurrency = (str: string) => {
+    if (!str) return 0;
+    return Number(str.replace(/[^0-9.-]+/g, ""));
+  };
+
+  // Filter and sort bookings
+  const filteredAndSortedBookings = bookings
+    .filter((b) => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTalent = (b.talentName || "")
+          .toLowerCase()
+          .includes(query);
+        const matchesClient = (b.clientName || b.client || "")
+          .toLowerCase()
+          .includes(query);
+        const matchesLocation = (b.location || "")
+          .toLowerCase()
+          .includes(query);
+        const matchesNotes = (b.notes || "").toLowerCase().includes(query);
+        if (
+          !matchesTalent &&
+          !matchesClient &&
+          !matchesLocation &&
+          !matchesNotes
+        ) {
+          return false;
+        }
+      }
+
+      // Date range filter
+      if (dateStart && b.date) {
+        if (new Date(b.date) < new Date(dateStart)) return false;
+      }
+      if (dateEnd && b.date) {
+        if (new Date(b.date) > new Date(dateEnd)) return false;
+      }
+
+      // Rate range filter
+      const rate = parseCurrency(b.rate || b.fee || "0");
+      if (rateMin && rate < Number(rateMin)) return false;
+      if (rateMax && rate > Number(rateMax)) return false;
+
+      return true;
+    })
+    .sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      switch (sortKey) {
+        case "bookingDate":
+          aVal = new Date(a.date || 0).getTime();
+          bVal = new Date(b.date || 0).getTime();
+          break;
+        case "talentName":
+          aVal = (a.talentName || "").toLowerCase();
+          bVal = (b.talentName || "").toLowerCase();
+          break;
+        case "clientName":
+          aVal = (a.clientName || a.client || "").toLowerCase();
+          bVal = (b.clientName || b.client || "").toLowerCase();
+          break;
+        case "rateAmount":
+          aVal = parseCurrency(a.rate || a.fee || "0");
+          bVal = parseCurrency(b.rate || b.fee || "0");
+          break;
+        case "createdDate":
+          aVal = new Date(a.createdAt || a.date || 0).getTime();
+          bVal = new Date(b.createdAt || b.date || 0).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          placeholder="Search by talent, client, location, or notes..."
+          className="pl-10 h-10 bg-white"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      <Card className="p-6 border shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-gray-900" />
+          <h3 className="font-bold text-gray-900">Filters</h3>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
+              Talent
+            </Label>
+            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+              {["Emma", "Sergine", "Milan", "Julia", "Matt"].map((t) => (
+                <div key={t} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`t-${t}`}
+                    className="rounded border-gray-300"
+                  />
+                  <label
+                    htmlFor={`t-${t}`}
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    {t}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
+              Client
+            </Label>
+            <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+              {["Company", "Company", "name"].map((c, i) => (
+                <div key={`${c}-${i}`} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`c-${i}`}
+                    className="rounded border-gray-300"
+                  />
+                  <label
+                    htmlFor={`c-${i}`}
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    {c}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
+              Booking Type
+            </Label>
+            <div className="space-y-2">
+              {["Casting", "Option", "Confirmed", "Completed", "Cancelled"].map(
+                (t) => (
+                  <div key={t} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`bt-${t}`}
+                      className="rounded border-gray-300"
+                    />
+                    <label
+                      htmlFor={`bt-${t}`}
+                      className="text-sm font-medium text-gray-700 cursor-pointer"
+                    >
+                      {t}
+                    </label>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
+              Status
+            </Label>
+            <div className="space-y-2">
+              {[
+                "Pending Confirmation",
+                "Confirmed",
+                "Completed",
+                "Cancelled",
+              ].map((s) => (
+                <div key={s} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`s-${s}`}
+                    className="rounded border-gray-300"
+                  />
+                  <label
+                    htmlFor={`s-${s}`}
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    {s}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
+              Date Range
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="date"
+                value={dateStart}
+                onChange={(e) => setDateStart(e.target.value)}
+                placeholder="Start Date"
+              />
+              <Input
+                type="date"
+                value={dateEnd}
+                onChange={(e) => setDateEnd(e.target.value)}
+                placeholder="End Date"
+              />
+            </div>
+          </div>
+          <div className="border border-gray-200 rounded-lg p-4">
+            <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
+              Rate Range ($)
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                placeholder="Min"
+                type="number"
+                value={rateMin}
+                onChange={(e) => setRateMin(e.target.value)}
+              />
+              <Input
+                placeholder="Max"
+                type="number"
+                value={rateMax}
+                onChange={(e) => setRateMax(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 border shadow-sm">
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-4 h-4 text-gray-500" />
+          <span className="text-sm font-bold text-gray-700">Sort by:</span>
+          <Select value={sortKey} onValueChange={setSortKey}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bookingDate">Booking Date</SelectItem>
+              <SelectItem value="talentName">Talent Name</SelectItem>
+              <SelectItem value="clientName">Client Name</SelectItem>
+              <SelectItem value="rateAmount">Rate Amount</SelectItem>
+              <SelectItem value="createdDate">Created Date</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={toggleSortDirection}
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${sortDirection === "asc" ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </div>
+      </Card>
+
+      <div className="space-y-4">
+        <h4 className="font-bold text-gray-900">
+          Results ({filteredAndSortedBookings.length})
+        </h4>
+        {filteredAndSortedBookings.length > 0 ? (
+          filteredAndSortedBookings.map((booking) => (
+            <div
+              key={booking.id}
+              className="bg-white border rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
+                  {(booking.talentName || "?")[0].toUpperCase()}
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-900">
+                    {booking.talentName || "Unknown"}
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    {booking.status || booking.type || "Pending"} •{" "}
+                    {booking.bookingType || "Booking"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-xs font-bold text-gray-500">
+                    {booking.date
+                      ? format(parseISO(booking.date), "MMM dd, yyyy")
+                      : "No date"}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {booking.callTime || "--:--"}
+                  </p>
+                </div>
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">
+                  {booking.status || booking.type || "Pending"}
+                </Badge>
+                <p className="font-bold text-gray-900">
+                  {booking.rate || booking.fee || "$0"}
+                </p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            <p>No bookings found matching your filters.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ReportsExportTab = () => {
+  const { toast } = useToast();
+
+  const handleExport = (format: string) => {
+    const { dismiss } = toast({
+      title: `Exporting 1 bookings as ${format}...`,
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            dismiss();
+          }}
+        >
+          OK
+        </Button>
+      ),
+    });
+  };
+
+  const handleScheduleReports = () => {
+    const { dismiss } = toast({
+      title: "Scheduled weekly reports via email!",
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            dismiss();
+          }}
+        >
+          OK
+        </Button>
+      ),
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6 border shadow-sm">
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-gray-900">Export Bookings</h3>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Export 1 filtered bookings to your preferred format
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all group"
+            onClick={() => handleExport("CSV")}
+          >
+            <FileText className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-green-700">Export to CSV</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col gap-2 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all group"
+            onClick={() => handleExport("PDF")}
+          >
+            <FileText className="w-6 h-6 text-red-600 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-red-700">Export to PDF</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col gap-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all group"
+            onClick={() => handleExport("EXCEL")}
+          >
+            <FileText className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-blue-700">Export to Excel</span>
+          </Button>
+        </div>
+
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <h4 className="font-bold text-gray-900 mb-4">Included Columns:</h4>
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              "Talent Name",
+              "Client Name",
+              "Booking Date",
+              "Call Time",
+              "Wrap Time",
+              "Location",
+              "Rate",
+              "Type",
+              "Status",
+              "Notes",
+              "Created Date",
+              "Updated Date",
+            ].map((col) => (
+              <div key={col} className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-orange-500 fill-orange-500" />
+                <span className="text-sm font-medium text-gray-700">{col}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 border shadow-sm">
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-gray-900">
+            Schedule Automated Reports
+          </h3>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Receive booking reports automatically via email
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Report Frequency</Label>
+            <Select defaultValue="weekly">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">
+                  Daily (every morning at 8 AM)
+                </SelectItem>
+                <SelectItem value="weekly">
+                  Weekly (every Monday at 8 AM)
+                </SelectItem>
+                <SelectItem value="monthly">
+                  Monthly (1st of each month)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-bold">Email Recipients</Label>
+            <Input defaultValue="agent@agency.com" />
+          </div>
+
+          <Button
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 mt-2"
+            onClick={handleScheduleReports}
+          >
+            <Mail className="w-4 h-4 mr-2" /> Schedule Weekly Reports
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const BookingsView = ({
+  activeSubTab,
+  bookings,
+  onAddBooking,
+  bookOuts = [],
+  onAddBookOut,
+  onRemoveBookOut,
+  onUpdateBooking,
+  onCancelBooking,
+}: {
+  activeSubTab: string;
+  bookings: any[];
+  onAddBooking: (booking: any) => void;
+  onUpdateBooking: (booking: any) => void;
+  onCancelBooking: (id: string) => void;
+  bookOuts: any[];
+  onAddBookOut: (bookOut: any) => void;
+  onRemoveBookOut: (id: string) => void;
+}) => {
+  if (activeSubTab === "Calendar & Schedule")
+    return (
+      <CalendarScheduleTab
+        bookings={bookings}
+        onAddBooking={onAddBooking}
+        onUpdateBooking={onUpdateBooking}
+        onCancelBooking={onCancelBooking}
+      />
+    );
+  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
+  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
+  if (activeSubTab === "Talent Availability")
+    return (
+      <TalentAvailabilityTab
+        bookOuts={bookOuts}
+        onAddBookOut={onAddBookOut}
+        onRemoveBookOut={onRemoveBookOut}
+      />
+    );
+  if (activeSubTab === "Notifications") return <NotificationsTab />;
+  if (activeSubTab === "Management & Analytics")
+    return <ManagementAnalyticsView bookings={bookings} />;
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="p-6 bg-gray-100 rounded-full mb-4">
+        <Calendar className="w-12 h-12 text-gray-400" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{activeSubTab}</h2>
+      <p className="text-gray-500">Feature currently under development.</p>
+    </div>
+  );
+};
+
+function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
   const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
@@ -13002,6 +17382,7 @@ export default function AgencyDashboard() {
     "licensing",
     "protection",
     "analytics",
+    "bookings",
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -13013,6 +17394,30 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+
+  const [bookings, setBookings] = useState([
+    { id: "1", talentName: "Emma", date: "2026-01-12", type: "confirmed" },
+  ]);
+
+  const onUpdateBooking = (updatedBooking: any) => {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b)),
+    );
+  };
+
+  const onAddBooking = (b: any) => {
+    setBookings((prev) => [...prev, { ...b, id: b.id || `b-${Date.now()}` }]);
+  };
+
+  const onCancelBooking = (id: string) => {
+    setBookings((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const [bookOuts, setBookOuts] = useState<any[]>([]);
+
+  const onAddBookOut = (bo: any) => setBookOuts((prev) => [...prev, bo]);
+  const onRemoveBookOut = (id: string) =>
+    setBookOuts((prev) => prev.filter((bo) => bo.id !== id));
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -13143,12 +17548,12 @@ export default function AgencyDashboard() {
             label: "Bookings",
             icon: Calendar,
             subItems: [
-              "Calendar and schedule",
-              "Booking request",
+              "Calendar & Schedule",
+              "Booking Requests",
               "Client Database",
-              "Talent availability",
+              "Talent Availability",
               "Notifications",
-              "Management and Analytics",
+              "Management & Analytics",
             ],
           },
           {
@@ -13501,12 +17906,16 @@ export default function AgencyDashboard() {
           {activeTab === "client-crm" && <ClientCRMView />}
           {activeTab === "file-storage" && <FileStorageView />}
           {activeTab === "bookings" && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Calendar className="w-16 h-16 text-gray-200 mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900">Bookings</h2>
-              <p className="text-gray-500">{activeSubTab}</p>
-              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
-            </div>
+            <BookingsView
+              activeSubTab={activeSubTab}
+              bookings={bookings}
+              onAddBooking={onAddBooking}
+              onUpdateBooking={onUpdateBooking}
+              onCancelBooking={onCancelBooking}
+              bookOuts={bookOuts}
+              onAddBookOut={onAddBookOut}
+              onRemoveBookOut={onRemoveBookOut}
+            />
           )}
           {activeTab === "accounting" && (
             <div>
@@ -13525,3 +17934,5 @@ export default function AgencyDashboard() {
     </div>
   );
 }
+
+export default AgencyDashboard;
