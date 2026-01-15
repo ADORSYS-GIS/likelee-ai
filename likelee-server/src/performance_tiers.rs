@@ -88,7 +88,10 @@ pub async fn get_performance_tiers(
                 (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
             })?;
 
-        let metrics_text = metrics_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        let metrics_text = metrics_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
         let metrics: Vec<serde_json::Value> =
             serde_json::from_str(&metrics_text).unwrap_or_default();
 
@@ -146,13 +149,10 @@ pub async fn get_tier_talents(
         ));
     }
 
-    let tier_id = tier_rows[0]
-        .get("id")
-        .and_then(|v| v.as_str())
-        .ok_or((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Invalid tier ID".to_string(),
-        ))?;
+    let tier_id = tier_rows[0].get("id").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Invalid tier ID".to_string(),
+    ))?;
 
     let metrics_resp = state
         .pg
@@ -167,7 +167,10 @@ pub async fn get_tier_talents(
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
-    let metrics_text = metrics_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let metrics_text = metrics_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
     let metrics: Vec<serde_json::Value> = serde_json::from_str(&metrics_text).unwrap_or_default();
 
     let mut talents = Vec::new();
@@ -202,7 +205,10 @@ pub async fn get_tier_talents(
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("Unknown")
                                 .to_string(),
-                            photo_url: profile.get("photo_url").and_then(|v| v.as_str()).map(String::from),
+                            photo_url: profile
+                                .get("photo_url")
+                                .and_then(|v| v.as_str())
+                                .map(String::from),
                             avg_monthly_earnings: metric
                                 .get("avg_monthly_earnings")
                                 .and_then(|v| v.as_f64())
@@ -231,7 +237,11 @@ pub async fn get_tier_talents(
         }
     }
 
-    info!("Successfully fetched {} talents for tier {}", talents.len(), tier_name);
+    info!(
+        "Successfully fetched {} talents for tier {}",
+        talents.len(),
+        tier_name
+    );
     Ok(Json(talents))
 }
 
@@ -240,7 +250,7 @@ pub async fn calculate_tier_assignments(
     State(_state): State<AppState>,
 ) -> Result<Json<TierCalculationResult>, (StatusCode, String)> {
     info!("Tier calculation endpoint called");
-    
+
     Ok(Json(TierCalculationResult {
         total_talents_processed: 0,
         tier_assignments: vec![
