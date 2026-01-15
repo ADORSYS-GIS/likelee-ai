@@ -20,6 +20,8 @@ import {
   History,
   Trash2,
   XCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -329,6 +331,10 @@ const GeneralSettingsView = () => {
   const [secondaryColor, setSecondaryColor] = useState("#10B981");
   const primaryColorInputRef = useRef<HTMLInputElement>(null);
   const secondaryColorInputRef = useRef<HTMLInputElement>(null);
+  const [prodKey, setProdKey] = useState("pk_live_51P2x8S2e3f4g5h6i7j8k9l0m");
+  const [testKey, setTestKey] = useState("pk_test_51P2x8S2e3f4g5h6i7j8k9l0m");
+  const [showProdKey, setShowProdKey] = useState(false);
+  const [showTestKey, setShowTestKey] = useState(false);
 
   return (
     <div className="max-w-full mx-auto">
@@ -1640,15 +1646,33 @@ const GeneralSettingsView = () => {
                     Production API Key
                   </Label>
                   <div className="flex gap-2">
-                    <Input
-                      value="••••••••••••••••••••••••••••"
-                      readOnly
-                      className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
-                    />
+                    <div className="relative flex-1">
+                      <Input
+                        type={showProdKey ? "text" : "password"}
+                        value={prodKey}
+                        onChange={(e) => setProdKey(e.target.value)}
+                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-12"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowProdKey(!showProdKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600"
+                      >
+                        {showProdKey ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 rounded-xl border-gray-200 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(prodKey);
+                      }}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
@@ -1659,15 +1683,33 @@ const GeneralSettingsView = () => {
                     Test API Key
                   </Label>
                   <div className="flex gap-2">
-                    <Input
-                      value="••••••••••••••••••••••••••••"
-                      readOnly
-                      className="bg-white border-gray-200 h-11 text-gray-500 font-medium rounded-xl"
-                    />
+                    <div className="relative flex-1">
+                      <Input
+                        type={showTestKey ? "text" : "password"}
+                        value={testKey}
+                        onChange={(e) => setTestKey(e.target.value)}
+                        className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-12"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowTestKey(!showTestKey)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600"
+                      >
+                        {showTestKey ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-11 w-11 rounded-xl border-gray-200 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(testKey);
+                      }}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
