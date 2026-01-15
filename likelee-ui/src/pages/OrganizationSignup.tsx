@@ -238,6 +238,18 @@ export default function OrganizationSignup() {
     useState(false); // New state for email verification
   const { profile } = useAuth();
 
+  // Debug logging
+  useEffect(() => {
+    console.log("OrganizationSignup State:", {
+      step,
+      orgType,
+      profileId,
+      user: user?.id,
+      profile: profile?.id,
+      emailVerificationPending
+    });
+  }, [step, orgType, profileId, user, profile, emailVerificationPending]);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     let type = urlParams.get("type");
@@ -2042,10 +2054,13 @@ export default function OrganizationSignup() {
                         <Checkbox
                           id="select_all_open_to_ai"
                           checked={getOpenToAiOptions(t).every((option) =>
-                            formData.open_to_ai.includes(option),
+                            formData.open_to_ai.includes(option.value),
                           )}
                           onCheckedChange={() =>
-                            toggleSelectAll("open_to_ai", getOpenToAiOptions(t))
+                            toggleSelectAll(
+                              "open_to_ai",
+                              getOpenToAiOptions(t).map((o) => o.value),
+                            )
                           }
                           className="border-2 border-gray-900"
                         />
@@ -2053,27 +2068,27 @@ export default function OrganizationSignup() {
                           htmlFor="select_all_open_to_ai"
                           className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                         >
-                          Select All
+                          {t("organizationSignup.selectAll")}
                         </label>
                       </div>
                       {getOpenToAiOptions(t).map((option) => (
                         <div
-                          key={option}
+                          key={option.value}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={option}
-                            checked={formData.open_to_ai.includes(option)}
+                            id={option.value}
+                            checked={formData.open_to_ai.includes(option.value)}
                             onCheckedChange={() =>
-                              toggleArrayItem("open_to_ai", option)
+                              toggleArrayItem("open_to_ai", option.value)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={option}
+                            htmlFor={option.value}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {option}
+                            {option.label}
                           </label>
                         </div>
                       ))}
@@ -2090,10 +2105,13 @@ export default function OrganizationSignup() {
                       <Checkbox
                         id="select_all_campaign_types"
                         checked={getCampaignTypes(t).every((type) =>
-                          formData.campaign_types.includes(type),
+                          formData.campaign_types.includes(type.value),
                         )}
                         onCheckedChange={() =>
-                          toggleSelectAll("campaign_types", getCampaignTypes(t))
+                          toggleSelectAll(
+                            "campaign_types",
+                            getCampaignTypes(t).map((c) => c.value),
+                          )
                         }
                         className="border-2 border-gray-900"
                       />
@@ -2101,27 +2119,27 @@ export default function OrganizationSignup() {
                         htmlFor="select_all_campaign_types"
                         className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                       >
-                        Select All
+                        {t("organizationSignup.selectAll")}
                       </label>
                     </div>
                     {getCampaignTypes(t).map((type) => (
                       <div
-                        key={type}
+                        key={type.value}
                         className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                       >
                         <Checkbox
-                          id={type}
-                          checked={formData.campaign_types.includes(type)}
+                          id={type.value}
+                          checked={formData.campaign_types.includes(type.value)}
                           onCheckedChange={() =>
-                            toggleArrayItem("campaign_types", type)
+                            toggleArrayItem("campaign_types", type.value)
                           }
                           className="border-2 border-gray-400"
                         />
                         <label
-                          htmlFor={type}
+                          htmlFor={type.value}
                           className="text-sm text-gray-700 cursor-pointer flex-1"
                         >
-                          {type}
+                          {type.label}
                         </label>
                       </div>
                     ))}
@@ -2185,6 +2203,36 @@ export default function OrganizationSignup() {
               </div>
             </div>
           )}
+          {/* Fallback for invalid state */}
+          {step === 2 &&
+            ![
+              "brand_company",
+              "production_studio",
+              "marketing_agency",
+              "talent_agency",
+              "sports_agency",
+            ].includes(orgType) && (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-bold text-red-600 mb-2">
+                  Error: Invalid Organization Type
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  We could not determine your organization type. Please try
+                  refreshing the page or contacting support.
+                </p>
+                <p className="text-sm text-gray-400">
+                  Debug Info: orgType="{orgType}", step={step}, profileId="
+                  {profileId}"
+                </p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            )}
         </Card>
       </div>
     </div>
