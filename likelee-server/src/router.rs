@@ -41,7 +41,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/voice/recordings",
             get(crate::voice::list_voice_recordings),
         )
-        .route("/api/voice/models", post(crate::voice::register_voice_model))
+        .route(
+            "/api/voice/models",
+            post(crate::voice::register_voice_model),
+        )
         .route(
             "/api/voice/models/clone",
             post(crate::voice::create_clone_from_recording),

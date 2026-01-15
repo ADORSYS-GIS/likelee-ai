@@ -157,8 +157,14 @@ pub async fn register(
             "organization_name".into(),
             serde_json::Value::String(organization_name),
         );
-        map.insert("status".into(), serde_json::Value::String("waitlist".to_string()));
-        map.insert("onboarding_step".into(), serde_json::Value::String("email_verification".to_string()));
+        map.insert(
+            "status".into(),
+            serde_json::Value::String("waitlist".to_string()),
+        );
+        map.insert(
+            "onboarding_step".into(),
+            serde_json::Value::String("email_verification".to_string()),
+        );
         // Remove auth-only fields that are not part of organization_profiles schema
         map.remove("password");
         if let Some(serde_json::Value::Array(arr)) = map.get("primary_goal").cloned() {
@@ -202,11 +208,14 @@ pub async fn register(
         .pg
         .from("profiles")
         .auth(state.supabase_service_key.clone())
-        .upsert(serde_json::json!({ 
-            "id": &owner_user_id, 
-            "role": role,
-            "email": payload.email 
-        }).to_string())
+        .upsert(
+            serde_json::json!({
+                "id": &owner_user_id,
+                "role": role,
+                "email": payload.email
+            })
+            .to_string(),
+        )
         .execute()
         .await;
 
@@ -256,7 +265,10 @@ pub async fn create(
                 .join(", ");
             map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
-        map.insert("onboarding_step".into(), serde_json::Value::String("complete".to_string()));
+        map.insert(
+            "onboarding_step".into(),
+            serde_json::Value::String("complete".to_string()),
+        );
     }
     let body = v.to_string();
     let resp = state
@@ -340,7 +352,10 @@ pub async fn update(
         for k in null_keys {
             map.remove(&k);
         }
-        map.insert("onboarding_step".into(), serde_json::Value::String("complete".to_string()));
+        map.insert(
+            "onboarding_step".into(),
+            serde_json::Value::String("complete".to_string()),
+        );
     }
     let body = v.to_string();
     let resp = state

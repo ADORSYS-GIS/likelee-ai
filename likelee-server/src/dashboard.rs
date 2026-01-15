@@ -1,9 +1,5 @@
 use crate::{auth::AuthUser, config::AppState};
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::Serialize;
 
 #[derive(Serialize)]

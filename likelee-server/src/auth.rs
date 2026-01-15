@@ -40,7 +40,10 @@ where
             .headers
             .get("Authorization")
             .and_then(|v| v.to_str().ok())
-            .ok_or((StatusCode::UNAUTHORIZED, "Missing Authorization header".to_string()))?;
+            .ok_or((
+                StatusCode::UNAUTHORIZED,
+                "Missing Authorization header".to_string(),
+            ))?;
 
         if !auth_header.starts_with("Bearer ") {
             return Err((StatusCode::UNAUTHORIZED, "Invalid token format".to_string()));
@@ -123,7 +126,8 @@ pub async fn creator_only(
     } else {
         (
             StatusCode::FORBIDDEN,
-            "You do not have permission to access this resource (Creator role required)".to_string(),
+            "You do not have permission to access this resource (Creator role required)"
+                .to_string(),
         )
             .into_response()
     }
@@ -139,7 +143,8 @@ pub async fn agency_only(
     } else {
         (
             StatusCode::FORBIDDEN,
-            "You do not have permission to access this resource (Agency/Brand role required)".to_string(),
+            "You do not have permission to access this resource (Agency/Brand role required)"
+                .to_string(),
         )
             .into_response()
     }

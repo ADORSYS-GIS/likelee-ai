@@ -1,10 +1,5 @@
 use crate::{auth::AuthUser, config::AppState};
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -20,10 +15,7 @@ pub struct CustomRate {
     pub price_per_month_cents: i32,
 }
 
-pub async fn get_creator_rates(
-    State(ctx): State<AppState>,
-    user: AuthUser,
-) -> impl IntoResponse {
+pub async fn get_creator_rates(State(ctx): State<AppState>, user: AuthUser) -> impl IntoResponse {
     let response = ctx
         .pg
         .from("creator_custom_rates")
