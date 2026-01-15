@@ -11,7 +11,6 @@ pub mod face_profiles;
 pub mod kyc;
 pub mod licenses;
 pub mod moderation;
-pub mod creators;
 pub mod organization_profiles;
 pub mod profiles;
 pub mod reference_images;
