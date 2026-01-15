@@ -9,12 +9,6 @@ use uuid::Uuid;
 pub struct GenerateAvatarRequest {
     #[serde(default)]
     pub video_url: Option<String>,
-    #[serde(default)]
-    pub front_url: Option<String>,
-    #[serde(default)]
-    pub left_url: Option<String>,
-    #[serde(default)]
-    pub right_url: Option<String>,
 }
 
 #[derive(Serialize)]

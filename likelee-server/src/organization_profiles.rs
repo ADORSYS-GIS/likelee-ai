@@ -200,7 +200,7 @@ pub async fn register(
     let role = match payload.organization_type.as_str() {
         "brand" | "brand_company" | "production_studio" => "brand",
         "marketing_agency" | "talent_agency" | "sports_agency" => "agency",
-        _ => "brand", // Default to brand if unknown
+        _ => return Err((StatusCode::BAD_REQUEST, "Invalid organization type".into())),
     };
 
     // Use upsert to ensure the profile exists and has the correct role
