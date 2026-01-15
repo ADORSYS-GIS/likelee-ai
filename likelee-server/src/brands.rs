@@ -1,9 +1,5 @@
 use crate::{auth::AuthUser, config::AppState};
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -45,7 +41,7 @@ pub async fn register(
     Json(payload): Json<BrandRegisterPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let client = Client::new();
-    
+
     // 1. Create Supabase user with role metadata
     let create_user_url = format!("{}/auth/v1/admin/users", state.supabase_url);
     let body = json!({
@@ -56,23 +52,36 @@ pub async fn register(
             "role": "brand"
         }
     });
-    
+
     let resp = client
         .post(&create_user_url)
         .header("apikey", state.supabase_service_key.clone())
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .json(&body)
         .send()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !resp.status().is_success() {
-        let txt = resp.text().await.unwrap_or_else(|_| "failed to create user".to_string());
+        let txt = resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "failed to create user".to_string());
         return Err((StatusCode::BAD_REQUEST, txt));
     }
 
-    let created: serde_json::Value = resp.json().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let user_id = created.get("id").and_then(|v| v.as_str()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing id".to_string()))?.to_string();
+    let created: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_id = created
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing id".to_string()))?
+        .to_string();
 
     // 2. Generate confirmation link
     let gen_link_url = format!("{}/auth/v1/admin/generate_link", state.supabase_url);
@@ -81,11 +90,14 @@ pub async fn register(
         "email": payload.email,
         "password": payload.password
     });
-    
+
     let link_resp = client
         .post(&gen_link_url)
         .header("apikey", state.supabase_service_key.clone())
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .json(&link_body)
         .send()
         .await
@@ -93,7 +105,11 @@ pub async fn register(
 
     let action_link = if link_resp.status().is_success() {
         let link_json: serde_json::Value = link_resp.json().await.unwrap_or(json!({}));
-        link_json.get("action_link").and_then(|v| v.as_str()).unwrap_or("").to_string()
+        link_json
+            .get("action_link")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string()
     } else {
         "".to_string()
     };
@@ -120,7 +136,10 @@ pub async fn register(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !resp.status().is_success() {
-        let txt = resp.text().await.unwrap_or_else(|_| "failed to create brand profile".to_string());
+        let txt = resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "failed to create brand profile".to_string());
         return Err((StatusCode::BAD_REQUEST, txt));
     }
 
@@ -138,15 +157,21 @@ pub async fn update(
     user: AuthUser,
     Json(payload): Json<BrandProfilePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let mut v = serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-    
+    let mut v =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
     if let serde_json::Value::Object(ref mut map) = v {
         map.remove("id");
         map.insert("onboarding_step".into(), json!("complete"));
-        
+
         // Remove nulls
-        let null_keys: Vec<String> = map.iter().filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None }).collect();
-        for k in null_keys { map.remove(&k); }
+        let null_keys: Vec<String> = map
+            .iter()
+            .filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None })
+            .collect();
+        for k in null_keys {
+            map.remove(&k);
+        }
     }
 
     let resp = state
@@ -159,9 +184,13 @@ pub async fn update(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     Ok(Json(v))
 }
 
@@ -179,8 +208,12 @@ pub async fn get_by_user(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     Ok(Json(v))
 }

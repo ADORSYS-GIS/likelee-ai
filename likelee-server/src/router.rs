@@ -83,18 +83,9 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::kyc::create_session),
         )
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
-        .route(
-            "/api/brand-profile",
-            post(crate::brands::update),
-        )
-        .route(
-            "/api/brand-profile/user",
-            get(crate::brands::get_by_user),
-        )
-        .route(
-            "/api/agency-profile",
-            post(crate::agencies::update),
-        )
+        .route("/api/brand-profile", post(crate::brands::update))
+        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        .route("/api/agency-profile", post(crate::agencies::update))
         .route(
             "/api/agency-profile/user",
             get(crate::agencies::get_by_user),
@@ -156,14 +147,8 @@ pub fn build_router(state: AppState) -> Router {
 
     // Public or Shared routes (Authentication enforced via AuthUser extractor in handlers if needed)
     let common_routes = Router::new()
-        .route(
-            "/api/brand-register",
-            post(crate::brands::register),
-        )
-        .route(
-            "/api/agency-register",
-            post(crate::agencies::register),
-        )
+        .route("/api/brand-register", post(crate::brands::register))
+        .route("/api/agency-register", post(crate::agencies::register))
         .route(
             "/api/organization-register",
             post(crate::organization_profiles::register),
