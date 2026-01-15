@@ -307,7 +307,10 @@ export default function OrganizationSignup() {
           if (orgProfile.onboarding_step === "email_verification") {
             setProfileId(orgProfile.id);
             // Determine orgType from profile if possible, or use existing
-            setOrgType(orgProfile.organization_type || (brandProfile ? "brand_company" : "marketing_agency"));
+            setOrgType(
+              orgProfile.organization_type ||
+                (brandProfile ? "brand_company" : "marketing_agency"),
+            );
             setFormData((prev) => ({
               ...prev,
               email: orgProfile.email || user.email || "",

@@ -145,7 +145,7 @@ export default function CameoUpload() {
             progress: 100,
           }));
         }
-      } catch (_) { }
+      } catch (_) {}
     })();
   }, [user]);
 
@@ -183,7 +183,7 @@ export default function CameoUpload() {
         .from("creators")
         .update({ cameo_front_url: url })
         .eq("id", user.id);
-    } catch (_) { }
+    } catch (_) {}
     return url;
   };
 

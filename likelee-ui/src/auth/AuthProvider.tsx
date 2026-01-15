@@ -83,7 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("creators")
-          .insert([{ id: userId, email: userEmail, full_name: userFullName, role: role || "creator" }])
+          .insert([
+            {
+              id: userId,
+              email: userEmail,
+              full_name: userFullName,
+              role: role || "creator",
+            },
+          ])
           .select()
           .single();
 
@@ -97,7 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select("*")
               .eq("id", userId)
               .maybeSingle();
-            if (existingProfile) setProfile({ ...existingProfile, role: role || existingProfile.role });
+            if (existingProfile)
+              setProfile({
+                ...existingProfile,
+                role: role || existingProfile.role,
+              });
           } else {
             console.error("Error creating profile:", insertError);
           }
@@ -198,7 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           options: {
             data: {
               full_name: displayName || null,
-              role: "creator"
+              role: "creator",
             },
             emailRedirectTo: `${window.location.origin}/ReserveProfile?step=2`,
           },
