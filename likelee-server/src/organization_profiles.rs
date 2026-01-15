@@ -206,7 +206,7 @@ pub async fn register(
     // Use upsert to ensure the profile exists and has the correct role
     let _ = state
         .pg
-        .from("profiles")
+        .from("creators")
         .auth(state.supabase_service_key.clone())
         .upsert(
             serde_json::json!({

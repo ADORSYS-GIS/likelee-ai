@@ -12,7 +12,7 @@ pub mod kyc;
 pub mod licenses;
 pub mod moderation;
 pub mod organization_profiles;
-pub mod profiles;
+pub mod creators;
 pub mod reference_images;
 pub mod router;
 pub mod voice;

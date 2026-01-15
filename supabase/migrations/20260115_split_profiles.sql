@@ -96,4 +96,7 @@ WHERE p.id = auth.users.id
 -- Safely drop the redundant role column from profiles
 ALTER TABLE public.profiles DROP COLUMN IF EXISTS role;
 
+-- 7. Rename profiles table to creators
+ALTER TABLE IF EXISTS public.profiles RENAME TO creators;
+
 COMMIT;

@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role?: string,
   ) => {
     try {
-      let table = "profiles";
+      let table = "creators";
       const effectiveRole = role || "creator";
 
       if (effectiveRole === "brand") {
@@ -78,11 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data) {
         // Add role to profile object for convenience
         setProfile({ ...data, role: role || data.role });
-      } else if (userEmail && table === "profiles") {
+      } else if (userEmail && table === "creators") {
         // Profile missing in profiles table, create it (only for creators)
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
-          .from("profiles")
+          .from("creators")
           .insert([{ id: userId, email: userEmail, full_name: userFullName, role: role || "creator" }])
           .select()
           .single();
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             insertError.message.includes("duplicate key")
           ) {
             const { data: existingProfile } = await supabase
-              .from("profiles")
+              .from("creators")
               .select("*")
               .eq("id", userId)
               .maybeSingle();

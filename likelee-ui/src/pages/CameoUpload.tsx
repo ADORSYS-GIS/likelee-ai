@@ -112,7 +112,7 @@ export default function CameoUpload() {
       try {
         if (!user || !supabase) return;
         const { data, error } = await supabase
-          .from("profiles")
+          .from("creators")
           .select("cameo_front_url")
           .eq("id", user.id)
           .maybeSingle();
@@ -145,7 +145,7 @@ export default function CameoUpload() {
             progress: 100,
           }));
         }
-      } catch (_) {}
+      } catch (_) { }
     })();
   }, [user]);
 
@@ -180,10 +180,10 @@ export default function CameoUpload() {
     // Persist the training video url back to profiles
     try {
       await supabase
-        .from("profiles")
+        .from("creators")
         .update({ cameo_front_url: url })
         .eq("id", user.id);
-    } catch (_) {}
+    } catch (_) { }
     return url;
   };
 

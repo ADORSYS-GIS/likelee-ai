@@ -1258,7 +1258,7 @@ pub async fn get_avatar_status(
         );
         let _ = state
             .pg
-            .from("profiles")
+            .from("creators")
             .update(serde_json::Value::Object(upd).to_string())
             .eq("id", &q.user_id)
             .execute()
