@@ -246,7 +246,7 @@ export default function OrganizationSignup() {
       profileId,
       user: user?.id,
       profile: profile?.id,
-      emailVerificationPending
+      emailVerificationPending,
     });
   }, [step, orgType, profileId, user, profile, emailVerificationPending]);
 
