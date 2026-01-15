@@ -61,7 +61,11 @@ export default function MarketingAgency() {
               {t("bookDemo")}
             </Button>
             <Button
-              onClick={() => navigate(`${createPageUrl("OrganizationSignup")}?type=marketing_agency`)}
+              onClick={() =>
+                navigate(
+                  `${createPageUrl("OrganizationSignup")}?type=marketing_agency`,
+                )
+              }
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
             >
               {t("getStarted")}

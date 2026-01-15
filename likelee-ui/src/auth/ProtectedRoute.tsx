@@ -5,7 +5,10 @@ import { useAuth } from "./AuthProvider";
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div className="text-center">
-      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#32C8D1] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+      <div
+        className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#32C8D1] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+        role="status"
+      >
         <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
           Loading...
         </span>
@@ -37,13 +40,20 @@ export default function ProtectedRoute({
 
       // Redirect incomplete onboarding to signup
       if (
-        profile.onboarding_step === 'email_verification' &&
-        location.pathname !== '/organization-signup'
+        profile.onboarding_step === "email_verification" &&
+        location.pathname !== "/organization-signup"
       ) {
         navigate("/organization-signup", { replace: true });
       }
     }
-  }, [initialized, authenticated, profile, allowedRoles, location.pathname, navigate]);
+  }, [
+    initialized,
+    authenticated,
+    profile,
+    allowedRoles,
+    location.pathname,
+    navigate,
+  ]);
 
   if (!initialized) {
     return <LoadingSpinner />; // Show spinner during initialization
@@ -66,8 +76,8 @@ export default function ProtectedRoute({
 
   // Show loading spinner during onboarding redirect
   if (
-    profile.onboarding_step === 'email_verification' &&
-    location.pathname !== '/organization-signup'
+    profile.onboarding_step === "email_verification" &&
+    location.pathname !== "/organization-signup"
   ) {
     return <LoadingSpinner />;
   }

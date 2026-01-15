@@ -34,7 +34,14 @@ const Label: any = UILabel;
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login, loginWithProvider, initialized, authenticated, profile, logout } = useAuth();
+  const {
+    login,
+    loginWithProvider,
+    initialized,
+    authenticated,
+    profile,
+    logout,
+  } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -55,14 +62,14 @@ export default function Login() {
 
   React.useEffect(() => {
     if (initialized && authenticated && profile) {
-
-
       // Enforce role-based login
       const normalizedRole = (profile.role || "").toLowerCase().trim();
       const normalizedUserType = (userType || "").toLowerCase().trim();
 
       if (normalizedRole !== normalizedUserType) {
-        setError(`This account is not registered . Check if on the correct tab`);
+        setError(
+          `This account is not registered . Check if on the correct tab`,
+        );
         logout();
         return;
       }
@@ -77,13 +84,23 @@ export default function Login() {
         );
       } else {
         const dashboard =
-          profile.role === 'brand' ? '/BrandDashboard' :
-            profile.role === 'agency' ? '/AgencyDashboard' :
-              '/CreatorDashboard';
+          profile.role === "brand"
+            ? "/BrandDashboard"
+            : profile.role === "agency"
+              ? "/AgencyDashboard"
+              : "/CreatorDashboard";
         navigate(dashboard, { replace: true });
       }
     }
-  }, [initialized, authenticated, profile, navigate, creatorType, userType, logout]);
+  }, [
+    initialized,
+    authenticated,
+    profile,
+    navigate,
+    creatorType,
+    userType,
+    logout,
+  ]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +137,10 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#32C8D1] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
+          <div
+            className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#32C8D1] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+            role="status"
+          >
             <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
               Loading...
             </span>
@@ -194,7 +214,9 @@ export default function Login() {
                   {t("auth.login.tabs.agency", "Agency")}
                 </TabsTrigger>
               </TabsList>
-              {(userType === "creator" || userType === "brand" || userType === "agency") && (
+              {(userType === "creator" ||
+                userType === "brand" ||
+                userType === "agency") && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   <Button
                     variant="outline"
@@ -336,8 +358,6 @@ export default function Login() {
                 </div>
               )}
             </Tabs>
-
-
 
             <div className="text-center pt-4">
               <p className="text-sm text-gray-500 font-medium">

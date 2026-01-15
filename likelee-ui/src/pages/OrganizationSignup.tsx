@@ -234,23 +234,28 @@ export default function OrganizationSignup() {
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
-  const [emailVerificationPending, setEmailVerificationPending] = useState(false); // New state for email verification
+  const [emailVerificationPending, setEmailVerificationPending] =
+    useState(false); // New state for email verification
   const { profile } = useAuth();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     let type = urlParams.get("type");
     if (type) {
-      if (type === 'brand') type = 'brand_company';
-      if (type === 'agency') type = 'marketing_agency';
+      if (type === "brand") type = "brand_company";
+      if (type === "agency") type = "marketing_agency";
       setOrgType(type);
       setIsPreSelected(true);
     }
   }, []);
 
   const flow = React.useMemo(() => {
-    if (['brand_company', 'production_studio'].includes(orgType)) return 'brand';
-    if (['marketing_agency', 'talent_agency', 'sports_agency'].includes(orgType)) return 'agency';
+    if (["brand_company", "production_studio"].includes(orgType))
+      return "brand";
+    if (
+      ["marketing_agency", "talent_agency", "sports_agency"].includes(orgType)
+    )
+      return "agency";
     return null;
   }, [orgType]);
 
@@ -266,16 +271,20 @@ export default function OrganizationSignup() {
         // The user's profile now contains their role, but we need the org profile
         // to get the onboarding step and other details.
         const { data: orgProfile, error } = await supabase
-          .from('organization_profiles')
-          .select('id, organization_type, email, onboarding_step, status')
-          .eq('owner_user_id', user.id)
+          .from("organization_profiles")
+          .select("id, organization_type, email, onboarding_step, status")
+          .eq("owner_user_id", user.id)
           .single(); // Use single() as the org profile must exist
 
         if (error) {
-          console.error("Error fetching organization profile for verified user:", error);
+          console.error(
+            "Error fetching organization profile for verified user:",
+            error,
+          );
           toast({
             title: "Error",
-            description: "Could not load your organization's profile. Please try again.",
+            description:
+              "Could not load your organization's profile. Please try again.",
             variant: "destructive",
           });
           return;
@@ -283,21 +292,24 @@ export default function OrganizationSignup() {
 
         if (orgProfile) {
           // If the user has completed the flow, redirect them to the correct dashboard.
-          if (orgProfile.status === 'complete' || orgProfile.onboarding_step === 'complete') {
-            if (profile.role === 'brand') {
-              window.location.href = '/BrandDashboard';
-            } else if (profile.role === 'agency') {
-              window.location.href = '/AgencyDashboard';
+          if (
+            orgProfile.status === "complete" ||
+            orgProfile.onboarding_step === "complete"
+          ) {
+            if (profile.role === "brand") {
+              window.location.href = "/BrandDashboard";
+            } else if (profile.role === "agency") {
+              window.location.href = "/AgencyDashboard";
             }
             return;
           }
 
           // If the user has verified their email, they are on the 'email_verification' step.
           // We can now safely move them to step 2.
-          if (orgProfile.onboarding_step === 'email_verification') {
+          if (orgProfile.onboarding_step === "email_verification") {
             setProfileId(orgProfile.id);
             setOrgType(orgProfile.organization_type);
-            setFormData(prev => ({
+            setFormData((prev) => ({
               ...prev,
               email: orgProfile.email || user.email || "",
             }));
@@ -375,7 +387,7 @@ export default function OrganizationSignup() {
         if (resendEmailConfirmation) {
           await resendEmailConfirmation(
             formData.email,
-            `${window.location.origin}/organization-signup`
+            `${window.location.origin}/organization-signup`,
           );
         }
       } catch (err) {
@@ -406,31 +418,28 @@ export default function OrganizationSignup() {
       if (!profileId) {
         throw new Error("Profile ID not found for update."); // Modified error message
       }
-      return updateOrganizationProfile(
-        profileId,
-        {
-          // Step 2 specific fields
-          industry: data.industry,
-          primary_goal: data.primary_goal,
-          geographic_target: data.geographic_target,
-          production_type: data.production_type,
-          budget_range: data.budget_range,
-          uses_ai: data.uses_ai,
-          creates_for: data.creates_for,
-          roles_needed: data.roles_needed,
-          client_count: data.client_count,
-          campaign_budget: data.campaign_budget,
-          services_offered: data.services_offered,
-          handle_contracts: data.handle_contracts,
-          talent_count: data.talent_count,
-          licenses_likeness: data.licenses_likeness,
-          open_to_ai: data.open_to_ai,
-          campaign_types: data.campaign_types,
-          bulk_onboard: data.bulk_onboard,
-          provide_creators: data.provide_creators,
-          status: "waitlist",
-        },
-      );
+      return updateOrganizationProfile(profileId, {
+        // Step 2 specific fields
+        industry: data.industry,
+        primary_goal: data.primary_goal,
+        geographic_target: data.geographic_target,
+        production_type: data.production_type,
+        budget_range: data.budget_range,
+        uses_ai: data.uses_ai,
+        creates_for: data.creates_for,
+        roles_needed: data.roles_needed,
+        client_count: data.client_count,
+        campaign_budget: data.campaign_budget,
+        services_offered: data.services_offered,
+        handle_contracts: data.handle_contracts,
+        talent_count: data.talent_count,
+        licenses_likeness: data.licenses_likeness,
+        open_to_ai: data.open_to_ai,
+        campaign_types: data.campaign_types,
+        bulk_onboard: data.bulk_onboard,
+        provide_creators: data.provide_creators,
+        status: "waitlist",
+      });
     },
     onSuccess: () => {
       // Move to Success Page
@@ -458,7 +467,8 @@ export default function OrganizationSignup() {
       if (!orgType) {
         toast({
           title: t("error"),
-          description: "Organization type is missing. Please try again from the beginning.",
+          description:
+            "Organization type is missing. Please try again from the beginning.",
           variant: "destructive",
         });
         return;
@@ -551,9 +561,13 @@ export default function OrganizationSignup() {
   // Render email verification message
   if (emailVerificationPending) {
     return (
-      <div className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}>
+      <div
+        className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
+      >
         <Card className="max-w-xl w-full p-12 bg-white border-2 border-black shadow-2xl rounded-none text-center">
-          <div className={`w-20 h-20 bg-gradient-to-r ${colors.primary} border-2 border-black rounded-full flex items-center justify-center mx-auto mb-8`}>
+          <div
+            className={`w-20 h-20 bg-gradient-to-r ${colors.primary} border-2 border-black rounded-full flex items-center justify-center mx-auto mb-8`}
+          >
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
@@ -561,11 +575,13 @@ export default function OrganizationSignup() {
           </h1>
           <p className="text-lg text-gray-700 mb-6">
             We've sent a verification link to <strong>{formData.email}</strong>.
-            Please verify your email to continue setting up your organization profile.
+            Please verify your email to continue setting up your organization
+            profile.
           </p>
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 text-left mb-6">
             <p className="text-sm text-blue-700">
-              <strong>Note:</strong> After verifying your email, you will be automatically redirected to complete your profile setup.
+              <strong>Note:</strong> After verifying your email, you will be
+              automatically redirected to complete your profile setup.
             </p>
           </div>
           <Button
@@ -663,10 +679,10 @@ export default function OrganizationSignup() {
               {/* Added Go to Dashboard button */}
               <Button
                 onClick={() => {
-                  if (orgType === 'brand' || orgType === 'production_studio') {
-                    window.location.href = '/BrandDashboard';
+                  if (orgType === "brand" || orgType === "production_studio") {
+                    window.location.href = "/BrandDashboard";
                   } else {
-                    window.location.href = '/AgencyDashboard';
+                    window.location.href = "/AgencyDashboard";
                   }
                 }}
                 variant="outline"
@@ -717,7 +733,9 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {flow === 'agency' ? t("organizationSignup.agencyInfo") : t("organizationSignup.companyInfo")}
+                  {flow === "agency"
+                    ? t("organizationSignup.agencyInfo")
+                    : t("organizationSignup.companyInfo")}
                 </h3>
                 <p className="text-gray-600">
                   {t("organizationSignup.startWithBasics")}
@@ -742,7 +760,7 @@ export default function OrganizationSignup() {
                         <SelectValue placeholder="Select your organization type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(flow === 'brand' || !flow) && (
+                        {(flow === "brand" || !flow) && (
                           <>
                             <SelectItem value="brand_company">
                               Brand / Company
@@ -752,7 +770,7 @@ export default function OrganizationSignup() {
                             </SelectItem>
                           </>
                         )}
-                        {(flow === 'agency' || !flow) && (
+                        {(flow === "agency" || !flow) && (
                           <>
                             <SelectItem value="marketing_agency">
                               Marketing Agency
@@ -863,7 +881,10 @@ export default function OrganizationSignup() {
                     htmlFor="organization_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {flow === 'agency' ? t("organizationSignup.agencyName") : t("organizationSignup.organizationName")} *
+                    {flow === "agency"
+                      ? t("organizationSignup.agencyName")
+                      : t("organizationSignup.organizationName")}{" "}
+                    *
                   </Label>
                   <Input
                     id="organization_name"
@@ -875,7 +896,11 @@ export default function OrganizationSignup() {
                       })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={flow === 'agency' ? "e.g., Elite Sports Management" : t("common.companyNamePlaceholder")}
+                    placeholder={
+                      flow === "agency"
+                        ? "e.g., Elite Sports Management"
+                        : t("common.companyNamePlaceholder")
+                    }
                   />
                 </div>
 
@@ -885,7 +910,10 @@ export default function OrganizationSignup() {
                       htmlFor="contact_name"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {flow === 'agency' ? t("organizationSignup.agentName") : t("organizationSignup.contactName")} *
+                      {flow === "agency"
+                        ? t("organizationSignup.agentName")
+                        : t("organizationSignup.contactName")}{" "}
+                      *
                     </Label>
                     <Input
                       id="contact_name"
@@ -906,7 +934,9 @@ export default function OrganizationSignup() {
                       htmlFor="contact_title"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {flow === 'agency' ? t("organizationSignup.agentTitle") : t("organizationSignup.contactTitle")}
+                      {flow === "agency"
+                        ? t("organizationSignup.agentTitle")
+                        : t("organizationSignup.contactTitle")}
                     </Label>
                     <Input
                       id="contact_title"
@@ -1969,7 +1999,9 @@ export default function OrganizationSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    {t("organizationSignup.sportsAgency.licenseAthletesQuestion")}
+                    {t(
+                      "organizationSignup.sportsAgency.licenseAthletesQuestion",
+                    )}
                   </Label>
                   <RadioGroup
                     value={formData.licenses_likeness}

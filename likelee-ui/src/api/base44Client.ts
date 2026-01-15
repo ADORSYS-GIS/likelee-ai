@@ -56,7 +56,11 @@ export const base44 = {
     const full = buildUrl(API_BASE, url, config?.params);
 
     // Get token from Supabase
-    const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {
@@ -79,7 +83,11 @@ export const base44 = {
     const full = buildUrl(API_BASE, url, config?.params);
 
     // Get token from Supabase
-    const { data: { session } } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
