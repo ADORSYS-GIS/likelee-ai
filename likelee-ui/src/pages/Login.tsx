@@ -115,8 +115,8 @@ export default function Login() {
     return "/Register";
   };
 
-  // Show loading state when redirecting or when authenticated
-  if (isRedirecting || (authenticated && profile)) {
+  // Show loading state when redirecting or when authenticated but profile not yet loaded
+  if (isRedirecting || (authenticated && !profile)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">

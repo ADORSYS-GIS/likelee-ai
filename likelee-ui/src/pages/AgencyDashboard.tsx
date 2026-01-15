@@ -12972,6 +12972,38 @@ const AnalyticsDashboardView = () => {
   );
 };
 
+const PlaceholderView = ({ title }: { title: string }) => (
+  <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+    <div className="bg-gray-100 p-6 rounded-full mb-4">
+      <Settings className="w-10 h-10 text-gray-400" />
+    </div>
+    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
+    <p className="text-gray-500 max-w-sm">
+      This section is currently under development. Check back soon for updates.
+    </p>
+  </div>
+);
+
+const CalendarScheduleTab = ({ bookings, onAddBooking, onUpdateBooking, onCancelBooking }: any) => (
+  <PlaceholderView title="Calendar & Schedule" />
+);
+
+const BookingRequestsTab = () => (
+  <PlaceholderView title="Booking Requests" />
+);
+
+const ClientDatabaseTab = () => (
+  <PlaceholderView title="Client Database" />
+);
+
+const TalentAvailabilityTab = ({ bookOuts, onAddBookOut, onRemoveBookOut }: any) => (
+  <PlaceholderView title="Talent Availability" />
+);
+
+const ManagementAnalyticsView = ({ bookings }: any) => (
+  <PlaceholderView title="Management & Analytics" />
+);
+
 const BookingsView = ({
   activeSubTab,
   bookings,
@@ -13025,17 +13057,7 @@ const BookingsView = ({
   );
 };
 
-const PlaceholderView = ({ title }: { title: string }) => (
-  <div className="flex flex-col items-center justify-center h-full py-20 text-center">
-    <div className="bg-gray-100 p-6 rounded-full mb-4">
-      <Settings className="w-10 h-10 text-gray-400" />
-    </div>
-    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-    <p className="text-gray-500 max-w-sm">
-      This section is currently under development. Check back soon for updates.
-    </p>
-  </div>
-);
+
 
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
@@ -13061,6 +13083,24 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookOuts, setBookOuts] = useState<any[]>([]);
+
+  const onAddBooking = (booking: any) => {
+    setBookings([...bookings, booking]);
+  };
+  const onUpdateBooking = (booking: any) => {
+    setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+  };
+  const onCancelBooking = (id: string) => {
+    setBookings(bookings.filter((b) => b.id !== id));
+  };
+  const onAddBookOut = (bookOut: any) => {
+    setBookOuts([...bookOuts, bookOut]);
+  };
+  const onRemoveBookOut = (id: string) => {
+    setBookOuts(bookOuts.filter((b) => b.id !== id));
+  };
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -13195,12 +13235,12 @@ export default function AgencyDashboard() {
           label: "Bookings",
           icon: Calendar,
           subItems: [
-            "Calendar and schedule",
-            "Booking request",
+            "Calendar & Schedule",
+            "Booking Requests",
             "Client Database",
-            "Talent availability",
+            "Talent Availability",
             "Notifications",
-            "Management and Analytics",
+            "Management & Analytics",
           ],
         },
         {
