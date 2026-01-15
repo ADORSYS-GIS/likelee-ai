@@ -29,10 +29,15 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
-  createOrganizationKycSession,
   getOrganizationKycStatus,
   registerOrganization,
   updateOrganizationProfile,
+  registerBrand,
+  registerAgency,
+  updateBrandProfile,
+  updateAgencyProfile,
+  getBrandProfile,
+  getAgencyProfile,
 } from "@/api/functions";
 
 const getProductionTypes = (t: any) => [
@@ -280,30 +285,13 @@ export default function OrganizationSignup() {
     const handleVerifiedUser = async () => {
       // We need both the user object and their profile to proceed.
       if (user && profile) {
-        // The user's profile now contains their role, but we need the org profile
-        // to get the onboarding step and other details.
-        const { data: orgProfile, error } = await supabase
-          .from("organization_profiles")
-          .select("id, organization_type, email, onboarding_step, status")
-          .eq("owner_user_id", user.id)
-          .single(); // Use single() as the org profile must exist
+        // Try fetching brand profile first
+        let { data: brandProfile } = await getBrandProfile();
+        let { data: agencyProfile } = await getAgencyProfile();
 
-        if (error) {
-          console.error(
-            "Error fetching organization profile for verified user:",
-            error,
-          );
-          toast({
-            title: "Error",
-            description:
-              "Could not load your organization's profile. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
+        const orgProfile = brandProfile || agencyProfile;
 
         if (orgProfile) {
-          // If the user has completed the flow, redirect them to the correct dashboard.
           if (
             orgProfile.status === "complete" ||
             orgProfile.onboarding_step === "complete"
@@ -316,11 +304,10 @@ export default function OrganizationSignup() {
             return;
           }
 
-          // If the user has verified their email, they are on the 'email_verification' step.
-          // We can now safely move them to step 2.
           if (orgProfile.onboarding_step === "email_verification") {
             setProfileId(orgProfile.id);
-            setOrgType(orgProfile.organization_type);
+            // Determine orgType from profile if possible, or use existing
+            setOrgType(orgProfile.organization_type || (brandProfile ? "brand_company" : "marketing_agency"));
             setFormData((prev) => ({
               ...prev,
               email: orgProfile.email || user.email || "",
@@ -376,17 +363,30 @@ export default function OrganizationSignup() {
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const payload = {
-        email: data.email,
-        password: data.password,
-        organization_name: data.organization_name,
-        organization_type: orgType, // Required field
-        contact_name: data.contact_name || undefined,
-        contact_title: data.contact_title || undefined,
-        website: data.website || undefined,
-        phone_number: data.phone_number || undefined,
-      };
-      return await registerOrganization(payload);
+      if (flow === "brand") {
+        const payload = {
+          email: data.email,
+          password: data.password,
+          company_name: data.organization_name,
+          contact_name: data.contact_name || undefined,
+          contact_title: data.contact_title || undefined,
+          website: data.website || undefined,
+          phone_number: data.phone_number || undefined,
+        };
+        return await registerBrand(payload);
+      } else {
+        const payload = {
+          email: data.email,
+          password: data.password,
+          agency_name: data.organization_name,
+          agency_type: orgType,
+          contact_name: data.contact_name || undefined,
+          contact_title: data.contact_title || undefined,
+          website: data.website || undefined,
+          phone_number: data.phone_number || undefined,
+        };
+        return await registerAgency(payload);
+      }
     },
     onSuccess: async (resp: any) => {
       // Postgrest usually returns an array of inserted rows; handle both array/object
@@ -430,28 +430,35 @@ export default function OrganizationSignup() {
       if (!profileId) {
         throw new Error("Profile ID not found for update."); // Modified error message
       }
-      return updateOrganizationProfile(profileId, {
-        // Step 2 specific fields
-        industry: data.industry,
-        primary_goal: data.primary_goal,
-        geographic_target: data.geographic_target,
-        production_type: data.production_type,
-        budget_range: data.budget_range,
-        uses_ai: data.uses_ai,
-        creates_for: data.creates_for,
-        roles_needed: data.roles_needed,
-        client_count: data.client_count,
-        campaign_budget: data.campaign_budget,
-        services_offered: data.services_offered,
-        handle_contracts: data.handle_contracts,
-        talent_count: data.talent_count,
-        licenses_likeness: data.licenses_likeness,
-        open_to_ai: data.open_to_ai,
-        campaign_types: data.campaign_types,
-        bulk_onboard: data.bulk_onboard,
-        provide_creators: data.provide_creators,
-        status: "waitlist",
-      });
+      if (flow === "brand") {
+        return updateBrandProfile({
+          industry: data.industry,
+          primary_goal: data.primary_goal,
+          geographic_target: data.geographic_target,
+          provide_creators: data.provide_creators,
+          production_type: data.production_type,
+          budget_range: data.budget_range,
+          creates_for: data.creates_for,
+          uses_ai: data.uses_ai,
+          roles_needed: data.roles_needed,
+          status: "waitlist",
+        });
+      } else {
+        return updateAgencyProfile({
+          agency_type: orgType,
+          client_count: data.client_count,
+          campaign_budget: data.campaign_budget,
+          services_offered: data.services_offered,
+          provide_creators: data.provide_creators,
+          handle_contracts: data.handle_contracts,
+          talent_count: data.talent_count,
+          licenses_likeness: data.licenses_likeness,
+          open_to_ai: data.open_to_ai,
+          campaign_types: data.campaign_types,
+          bulk_onboard: data.bulk_onboard,
+          status: "waitlist",
+        });
+      }
     },
     onSuccess: () => {
       // Move to Success Page

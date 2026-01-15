@@ -13,6 +13,7 @@ pub struct Claims {
     pub sub: String, // User ID
     pub email: Option<String>,
     pub exp: usize,
+    pub user_metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone)]
@@ -60,30 +61,20 @@ where
 
         let user_id = token_data.claims.sub;
 
-        // 3. Fetch role from database
-        let resp = app_state
-            .pg
-            .from("profiles")
-            .select("role")
-            .eq("id", &user_id)
-            .single()
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        // 3. Extract role from JWT metadata
+        let role = token_data
+            .claims
+            .user_metadata
+            .as_ref()
+            .and_then(|m| m.get("role"))
+            .and_then(|r| r.as_str())
+            .map(|s| s.to_string());
 
-        let text = resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let profile: serde_json::Value = serde_json::from_str(&text)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let role = profile
-            .get("role")
-            .and_then(|v| v.as_str())
-            .unwrap_or("creator") // Default to creator if not found
-            .to_string();
+        // 4. Ensure role is present
+        let role = role.ok_or((
+            StatusCode::UNAUTHORIZED,
+            "User role not found in token metadata".to_string(),
+        ))?;
 
         Ok(AuthUser {
             id: user_id,

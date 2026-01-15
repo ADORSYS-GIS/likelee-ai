@@ -1,5 +1,7 @@
+pub mod agencies;
 pub mod auth;
 pub mod avatar;
+pub mod brands;
 pub mod config;
 mod creatify;
 pub mod creator_rates;
@@ -9,6 +11,7 @@ pub mod face_profiles;
 pub mod kyc;
 pub mod licenses;
 pub mod moderation;
+pub mod creators;
 pub mod organization_profiles;
 pub mod profiles;
 pub mod reference_images;

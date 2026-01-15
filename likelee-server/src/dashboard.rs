@@ -17,7 +17,7 @@ pub async fn get_dashboard(
 ) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity")
         .eq("id", &user.id)
         .execute()

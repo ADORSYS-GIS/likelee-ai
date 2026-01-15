@@ -106,7 +106,8 @@ pub async fn check_email(
     State(state): State<AppState>,
     Query(q): Query<EmailQuery>,
 ) -> Result<Json<EmailAvailability>, (StatusCode, String)> {
-    match state
+    // Check profiles table
+    let profiles_exists = match state
         .pg
         .from("profiles")
         .select("id")
@@ -116,27 +117,58 @@ pub async fn check_email(
         .await
     {
         Ok(resp) => {
-            let text = resp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let rows: serde_json::Value = serde_json::from_str(&text)
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let exists = rows.as_array().map(|a| !a.is_empty()).unwrap_or(false);
-            Ok(Json(EmailAvailability { available: !exists }))
+            let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+            rows.as_array().map(|a| !a.is_empty()).unwrap_or(false)
         }
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("42703")
-                || msg.contains("column") && msg.contains("does not exist")
-                || msg.contains("relation") && msg.contains("does not exist")
-            {
-                warn!(%msg, "profiles table/email column missing; defaulting email available");
-                return Ok(Json(EmailAvailability { available: true }));
-            }
-            Err((StatusCode::INTERNAL_SERVER_ERROR, msg))
-        }
+        Err(_) => false,
+    };
+
+    if profiles_exists {
+        return Ok(Json(EmailAvailability { available: false }));
     }
+
+    // Check brands table
+    let brands_exists = match state
+        .pg
+        .from("brands")
+        .select("id")
+        .eq("email", &q.email)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(resp) => {
+            let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+            rows.as_array().map(|a| !a.is_empty()).unwrap_or(false)
+        }
+        Err(_) => false,
+    };
+
+    if brands_exists {
+        return Ok(Json(EmailAvailability { available: false }));
+    }
+
+    // Check agencies table
+    let agencies_exists = match state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("email", &q.email)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(resp) => {
+            let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+            rows.as_array().map(|a| !a.is_empty()).unwrap_or(false)
+        }
+        Err(_) => false,
+    };
+
+    Ok(Json(EmailAvailability { available: !agencies_exists }))
 }
 
 #[derive(Deserialize)]

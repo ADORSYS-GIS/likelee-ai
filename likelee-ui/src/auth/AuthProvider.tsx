@@ -52,32 +52,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userId: string,
     userEmail?: string,
     userFullName?: string,
+    role?: string,
   ) => {
     try {
+      let table = "profiles";
+      const effectiveRole = role || "creator";
+
+      if (effectiveRole === "brand") {
+        table = "brands";
+      } else if (effectiveRole === "agency") {
+        table = "agencies";
+      }
+
       const { data, error } = await supabase
-        .from("profiles")
+        .from(table)
         .select("*")
         .eq("id", userId)
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching profile:", error);
+        console.error(`Error fetching profile from ${table}:`, error);
         return;
       }
 
       if (data) {
-        setProfile(data);
-      } else if (userEmail) {
-        // Profile missing, create it
+        // Add role to profile object for convenience
+        setProfile({ ...data, role: role || data.role });
+      } else if (userEmail && table === "profiles") {
+        // Profile missing in profiles table, create it (only for creators)
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
-          .insert([{ id: userId, email: userEmail, full_name: userFullName }])
+          .insert([{ id: userId, email: userEmail, full_name: userFullName, role: role || "creator" }])
           .select()
           .single();
 
         if (insertError) {
-          // If 409 Conflict, it means profile already exists, so just fetch it
           if (
             insertError.code === "23505" ||
             insertError.message.includes("duplicate key")
@@ -87,12 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select("*")
               .eq("id", userId)
               .maybeSingle();
-            if (existingProfile) setProfile(existingProfile);
+            if (existingProfile) setProfile({ ...existingProfile, role: role || existingProfile.role });
           } else {
             console.error("Error creating profile:", insertError);
           }
         } else if (newProfile) {
-          setProfile(newProfile);
+          setProfile({ ...newProfile, role: role || newProfile.role });
         }
       }
     } catch (err) {
@@ -121,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             currentUser.id,
             currentUser.email,
             currentUser.user_metadata?.full_name,
+            currentUser.user_metadata?.role,
           );
         } else {
           setProfile(null);
@@ -137,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           currentUser.id,
           currentUser.email,
           currentUser.user_metadata?.full_name,
+          currentUser.user_metadata?.role,
         );
       }
       setInitialized(true);
@@ -184,7 +196,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: emailNormalized,
           password,
           options: {
-            data: { full_name: displayName || null },
+            data: {
+              full_name: displayName || null,
+              role: "creator"
+            },
             emailRedirectTo: `${window.location.origin}/ReserveProfile?step=2`,
           },
         });
@@ -220,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user.id,
             user.email,
             user.user_metadata?.full_name,
+            user.user_metadata?.role,
           );
         }
       },
