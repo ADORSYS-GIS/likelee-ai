@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -59,21 +59,20 @@ import {
   MoreVertical,
   Share2,
   Upload,
-  MapPin,
-  Star,
   FolderPlus,
   FolderOpen,
   Briefcase,
   Receipt,
   Megaphone,
-  ChevronUp,
-  Send,
-  AlertTriangle,
   Calculator,
   FileDown,
+  Send,
   Printer,
   Files,
   TrendingDown,
+  MapPin,
+  Star,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -88,38 +87,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  format,
-  addMonths,
-  subMonths,
-  getDaysInMonth,
-  startOfMonth,
-  subDays,
-  addDays,
-  isSameMonth,
-  isSameWeek,
-  parseISO,
-  isAfter,
-  subWeeks,
-} from "date-fns";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
+import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
 const AddProspectModal = ({
   open,
@@ -1274,6 +1246,14 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -2034,161 +2014,6 @@ const ShareFileModal = ({
         </div>
       </DialogContent>
     </Dialog>
-  );
-};
-
-const FileStorageView = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFileForPreview, setSelectedFileForPreview] =
-    useState<FileItem | null>(null);
-  const [selectedFileForShare, setSelectedFileForShare] =
-    useState<FileItem | null>(null);
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Folder className="w-8 h-8 text-indigo-600" />
-            File Storage
-          </h1>
-          <p className="text-gray-600 font-medium">
-            Organize and manage your agency files
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setIsNewFolderModalOpen(true)}
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <FolderPlus className="w-5 h-5" />
-            New Folder
-          </Button>
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-          >
-            <Upload className="w-5 h-5" />
-            Upload Files
-          </Button>
-        </div>
-      </div>
-
-      <StorageUsageCard />
-
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              placeholder="Search files by name..."
-              className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <Select defaultValue="name-asc">
-              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                <SelectItem value="date-desc">Date (Newest)</SelectItem>
-                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
-                <SelectItem value="size-desc">Size (Largest)</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex bg-gray-100 p-1 rounded-xl">
-              <Button
-                variant={viewMode === "grid" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4 mr-2" />
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4 mr-2" />
-                List
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {MOCK_FOLDERS.map((folder) => (
-            <FolderCard key={folder.id} folder={folder} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
-          <span className="text-sm text-gray-500 font-medium">
-            {MOCK_FILES.length} files
-          </span>
-        </div>
-
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {MOCK_FILES.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {MOCK_FILES.map((file) => (
-              <FileRow
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <NewFolderModal
-        isOpen={isNewFolderModalOpen}
-        onClose={() => setIsNewFolderModalOpen(false)}
-      />
-      <UploadFilesModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-      />
-      <FilePreviewModal
-        file={selectedFileForPreview}
-        isOpen={!!selectedFileForPreview}
-        onClose={() => setSelectedFileForPreview(null)}
-      />
-      <ShareFileModal
-        file={selectedFileForShare}
-        isOpen={!!selectedFileForShare}
-        onClose={() => setSelectedFileForShare(null)}
-      />
-    </div>
   );
 };
 
@@ -4678,42 +4503,6 @@ TALENT_DATA.forEach((t: any) => {
   }
   // All other talent will NOT have a tier assigned to match the 1-3-1-0 count
 });
-
-const CLIENT_DATA = [
-  {
-    id: "acme",
-    company: "Company",
-    contact: "John Doe",
-    email: "john@acme.com",
-    phone: "+1 (555) 123-4567",
-    terms: "Net 15",
-    industryTags: ["Fashion", "Beauty"],
-    revenue: 0,
-    bookings_count: 0,
-  },
-  {
-    id: "globex",
-    company: "Company",
-    contact: "John Doe",
-    email: "jane@globex.com",
-    phone: "+1 (555) 987-6543",
-    terms: "Net 15",
-    industryTags: ["Fashion", "Beauty"],
-    revenue: 0,
-    bookings_count: 0,
-  },
-  {
-    id: "apple",
-    company: "name",
-    contact: "names",
-    email: "apple@example.com",
-    phone: "+1 (555) 000-0000",
-    terms: "Net 15",
-    industryTags: [],
-    revenue: 0,
-    bookings_count: 0,
-  },
-];
 
 const ANALYTICS_CAMPAIGN_STATUS = [
   { name: "In Progress", value: 15, color: "#111827" },
@@ -12932,88 +12721,55 @@ const AnalyticsDashboardView = () => {
   );
 };
 
-const SettingsView = () => {
+const BookingsView = ({
+  activeSubTab,
+  bookings,
+  onAddBooking,
+  bookOuts = [],
+  onAddBookOut,
+  onRemoveBookOut,
+  onUpdateBooking,
+  onCancelBooking,
+}: {
+  activeSubTab: string;
+  bookings: any[];
+  onAddBooking: (booking: any) => void;
+  onUpdateBooking: (booking: any) => void;
+  onCancelBooking: (id: string) => void;
+  bookOuts: any[];
+  onAddBookOut: (bookOut: any) => void;
+  onRemoveBookOut: (id: string) => void;
+}) => {
+  if (activeSubTab === "Calendar & Schedule")
+    return (
+      <CalendarScheduleTab
+        bookings={bookings}
+        onAddBooking={onAddBooking}
+        onUpdateBooking={onUpdateBooking}
+        onCancelBooking={onCancelBooking}
+      />
+    );
+  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
+  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
+  if (activeSubTab === "Talent Availability")
+    return (
+      <TalentAvailabilityTab
+        bookOuts={bookOuts}
+        onAddBookOut={onAddBookOut}
+        onRemoveBookOut={onRemoveBookOut}
+      />
+    );
+  if (activeSubTab === "Notifications") return <NotificationsTab />;
+  if (activeSubTab === "Management & Analytics")
+    return <ManagementAnalyticsView bookings={bookings} />;
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-
-      {/* Agency Information */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Agency Information
-        </h3>
-        <div className="space-y-6 max-w-2xl">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">
-              Agency Name
-            </Label>
-            <Input
-              defaultValue="CM Models"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Website</Label>
-            <Input
-              defaultValue="https://cmmodels.com/"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Location</Label>
-            <Input
-              defaultValue="U.S."
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Integrations */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Integrations
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <DollarSign className="w-5 h-5 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  Stripe Connect
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Payouts & Invoicing
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50/30 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                <Link className="w-5 h-5 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">ElevenLabs</p>
-                <p className="text-xs text-gray-500 font-medium">
-                  Voice cloning
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-50 text-green-600 border-green-100 gap-1.5 font-bold h-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
-              Connected
-            </Badge>
-          </div>
-        </div>
-      </Card>
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="p-6 bg-gray-100 rounded-full mb-4">
+        <Calendar className="w-12 h-12 text-gray-400" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{activeSubTab}</h2>
+      <p className="text-gray-500">Feature currently under development.</p>
     </div>
   );
 };
@@ -13030,119 +12786,43 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
-const ManageAvailabilityModal = ({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-3xl">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold">
-          Talent Availability & Book-Outs
-        </DialogTitle>
-        <p className="text-sm text-gray-500">
-          Manage when talent is unavailable for bookings
-        </p>
-      </DialogHeader>
-      <div className="py-6">
-        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold mb-8 rounded-lg h-10">
-          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
-        </Button>
-        <div className="border border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
-          <div className="p-4 bg-gray-50 rounded-full mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="font-bold text-gray-900 mb-1">
-            No book-outs scheduled
-          </h3>
-          <p className="text-sm text-gray-500">
-            Talent will appear available for all dates
-          </p>
-        </div>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
+export default function AgencyDashboard() {
+  const { logout, user, authenticated } = useAuth();
+  const navigate = useNavigate();
+  const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeSubTab, setActiveSubTab] = useState("All Talent");
+  const [activeScoutingTab, setActiveScoutingTab] =
+    useState("Prospect Pipeline");
+  const [expandedItems, setExpandedItems] = useState<string[]>([
+    "roster",
+    "licensing",
+    "protection",
+    "analytics",
+  ]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [consentFilter, setConsentFilter] = useState("All Consent");
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
 
-const NewBookingModal = ({
-  open,
-  onOpenChange,
-  onSave,
-  initialData,
-  mode = "new",
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (booking: any) => void;
-  initialData?: any;
-  mode?: "new" | "edit" | "duplicate";
-}) => {
   const { toast } = useToast();
-  const [bookingType, setBookingType] = useState("confirmed");
-  const [multiTalent, setMultiTalent] = useState(false);
-  const [talentSearch, setTalentSearch] = useState("");
-  const [selectedTalents, setSelectedTalents] = useState<any[]>([]);
-  const [clientSearch, setClientSearch] = useState("");
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [showAddClient, setShowAddClient] = useState(false);
-  const [clients, setClients] = useState(CLIENT_DATA);
-  const [newClient, setNewClient] = useState({
-    company: "",
-    contact: "",
-    email: "",
-    phone: "",
-    terms: "Net 30",
-  });
-  const [date, setDate] = useState("2026-01-12");
-  const [allDay, setAllDay] = useState(false);
-  const [callTime, setCallTime] = useState("09:00");
-  const [wrapTime, setWrapTime] = useState("17:00");
-  const [rate, setRate] = useState(0);
-  const [currency, setCurrency] = useState("USD");
-  const [rateType, setRateType] = useState("day");
-  const [usageTerms, setUsageTerms] = useState("");
-  const [usageDuration, setUsageDuration] = useState("1");
-  const [exclusive, setExclusive] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    push: false,
-    calendar: true,
-  });
+  const [kycLoading, setKycLoading] = useState(false);
 
-  // Pre-fill data for Edit or Duplicate modes
-  useEffect(() => {
-    if (open && initialData) {
-      setBookingType(initialData.type || "confirmed");
-      setDate(initialData.date || "2026-01-12");
-      setNotes(initialData.notes || "");
-
-      // Try to find talent in TALENT_DATA
-      const talent = TALENT_DATA.find((t) => t.name === initialData.talentName);
-      if (talent) setSelectedTalents([talent]);
-
-      // Try to find client in clients
-      const client = clients.find((c) => c.company === initialData.clientName);
-      if (client) setSelectedClient(client);
-
-      setMultiTalent(false);
-    } else if (open && !initialData) {
-      setBookingType("confirmed");
-      setMultiTalent(false);
-      setSelectedTalents([]);
-      setSelectedClient(null);
-      setNotes("");
-      setDate("2026-01-12");
+  // Helper for API URLs
+  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
+  const API_BASE_ABS = (() => {
+    try {
+      if (!API_BASE) return new URL("/", window.location.origin).toString();
+      if (API_BASE.startsWith("http")) return API_BASE;
+      return new URL(API_BASE, window.location.origin).toString();
+    } catch {
+      return new URL("/", window.location.origin).toString();
     }
-  }, [open, initialData, clients]);
-
-  const filteredTalents = TALENT_DATA.filter((t) =>
-    t.name.toLowerCase().includes(talentSearch.toLowerCase()),
-  );
+  })();
+  const api = (path: string) => new URL(path, API_BASE_ABS).toString();
 
   const filteredClients = clients.filter((c) =>
     c.company.toLowerCase().includes(clientSearch.toLowerCase()),
@@ -17476,6 +17156,7 @@ function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -17495,89 +17176,107 @@ function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        { id: "settings", label: "Settings", icon: Settings },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        { id: "file-storage", label: "File Storage", icon: Folder },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "settings", label: "Settings", icon: Settings },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar and schedule",
+              "Booking request",
+              "Client Database",
+              "Talent availability",
+              "Notifications",
+              "Management and Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
+      <aside
+        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+      >
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -17606,8 +17305,13 @@ function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
+                    if (item.id === "settings") {
+                      setActiveTab("settings");
+                      setActiveSubTab("General Settings");
+                    }
                   } else {
                     setActiveTab(item.id);
+                    setSidebarOpen(false);
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
@@ -17636,6 +17340,7 @@ function AgencyDashboard() {
                       onClick={() => {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
+                        setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
                         ? "text-indigo-700 bg-indigo-50 font-bold"
@@ -17668,10 +17373,19 @@ function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-gray-500 hover:text-gray-900"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+
+          <div className="flex items-center gap-4 ml-auto">
             <Button
               variant="outline"
               size="sm"
@@ -17889,7 +17603,12 @@ function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "settings" && <SettingsView />}
+          {activeTab === "settings" && activeSubTab === "General Settings" && (
+            <GeneralSettingsView />
+          )}
+          {activeTab === "settings" && activeSubTab === "File Storage" && (
+            <FileStorageView />
+          )}
           {activeTab === "scouting" && (
             <ScoutingHubView
               activeTab={activeScoutingTab}
@@ -17927,5 +17646,3 @@ function AgencyDashboard() {
     </div>
   );
 }
-
-export default AgencyDashboard;
