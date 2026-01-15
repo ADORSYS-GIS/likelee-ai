@@ -1,15 +1,10 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
-    extract::{Query, State},
+    extract::State,
     http::StatusCode,
     Json,
 };
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize)]
-pub struct DashboardQuery {
-    pub user_id: String,
-}
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct DashboardResponse {
@@ -22,13 +17,13 @@ pub struct DashboardResponse {
 
 pub async fn get_dashboard(
     State(state): State<AppState>,
-    Query(q): Query<DashboardQuery>,
+    user: AuthUser,
 ) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("profiles")
         .select("id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity")
-        .eq("id", &q.user_id)
+        .eq("id", &user.id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

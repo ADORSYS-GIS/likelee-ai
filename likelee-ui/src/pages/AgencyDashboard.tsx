@@ -73,6 +73,8 @@ import {
   MapPin,
   Star,
   Menu,
+  Image as ImageIcon,
+  Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -921,61 +923,309 @@ const ClientProfileModal = ({
                   Add Contact
                 </Button>
               </div>
-              <div className="space-y-4">
-                {MOCK_CONTACTS.map((contact, idx) => (
-                  <Card
-                    key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
-                        <div>
-                          <h5 className="font-bold text-gray-900 text-lg">
-                            {contact.name}
-                          </h5>
-                          <p className="text-sm text-gray-500 font-medium">
-                            {contact.role}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                            <Mail className="w-4 h-4 text-gray-500" />
-                            {contact.email}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                            <Phone className="w-4 h-4 text-gray-500" />
-                            {contact.phone}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+              <div className="mt-0">
+                <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
+                  <div className="flex-1 min-w-[200px]">
+                    <Input
+                      placeholder="Search talent..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={consentFilter}
+                      onChange={(e) => setConsentFilter(e.target.value)}
+                    >
+                      <option value="all">All Consent</option>
+                      <option value="complete">Complete</option>
+                      <option value="expiring">Expiring</option>
+                      <option value="missing">Missing</option>
+                    </select>
+                  </div>
+
+                  {(searchQuery ||
+                    statusFilter !== "all" ||
+                    consentFilter !== "all") && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("all");
+                          setConsentFilter("all");
+                        }}
+                        className="text-gray-600"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear Filters
+                      </Button>
+                    )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("name")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Talent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("status")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Status
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("consent")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Consent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          AI Usage
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() =>
+                              handleSort("instagram_followers")
+                            }
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Followers
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Assets
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Top Brand
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          License Expiry
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("earnings_30d")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            30D Earnings
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("projected_earnings")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Projected
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredRoster.map((talent) => (
+                        <tr
+                          key={talent.id}
+                          onClick={() => setSelectedTalent(talent)}
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
                         >
-                          <Mail className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
-                        >
-                          <Phone className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
-                        >
-                          <Edit className="w-4 h-4 text-gray-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={talent.headshot}
+                                alt={talent.name}
+                                className="w-12 h-12 object-cover border-2 border-gray-200"
+                              />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900">
+                                    {talent.name}
+                                  </span>
+                                  {talent.verified && (
+                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {talent.categories.join(", ")}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                              }
+                            >
+                              {talent.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.consent === "complete"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.consent === "expiring"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-red-100 text-red-800"
+                              }
+                            >
+                              {talent.consent === "expiring" ? (
+                                <Clock className="w-3 h-3 mr-1" />
+                              ) : talent.consent === "missing" ? (
+                                <XCircle className="w-3 h-3 mr-1" />
+                              ) : (
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                              )}
+                              {talent.consent}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex gap-1">
+                              {talent.ai_usage_types.includes("video") && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  <Video className="w-3 h-3 mr-1" />
+                                  Video
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("image") && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  <ImageIcon className="w-3 h-3 mr-1" />
+                                  Image
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("voice") && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  <Mic className="w-3 h-3 mr-1" />
+                                  Voice
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-1 text-sm text-gray-700">
+                              <Instagram className="w-4 h-4 text-purple-600" />
+                              {talent.instagram_followers.toLocaleString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.assets_count}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.top_brand}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-sm ${isLicenseExpired(talent.license_expiry) ? "text-red-600 font-medium" : isLicenseExpiring(talent.license_expiry) ? "text-orange-600 font-medium" : "text-gray-700"}`}
+                              >
+                                {talent.license_expiry !== "—"
+                                  ? new Date(
+                                    talent.license_expiry,
+                                  ).toLocaleDateString()
+                                  : "—"}
+                              </span>
+                              {isLicenseExpiring(talent.license_expiry) && (
+                                <Clock className="w-4 h-4 text-orange-500" />
+                              )}
+                              {isLicenseExpired(talent.license_expiry) && (
+                                <XCircle className="w-4 h-4 text-red-500" />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                            ${talent.earnings_30d.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            ${talent.projected_earnings.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4">
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    Campaign tracking coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    License management coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg mb-2">
+                    Advanced Analytics
+                  </p>
+                  <p className="text-gray-400 text-sm mb-6">
+                    Upgrade to Agency Pro to unlock revenue forecasting,
+                    performance charts, and insights.
+                  </p>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Upgrade to Pro
+                  </Button>
+                </div>
               </div>
             </TabsContent>
+
 
             <TabsContent value="communications" className="space-y-6 mt-0">
               <div className="flex justify-between items-center">
@@ -1093,9 +1343,9 @@ const ClientProfileModal = ({
               Close
             </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </div >
+      </DialogContent >
+    </Dialog >
   );
 };
 
@@ -2554,6 +2804,7 @@ const PaymentTrackingView = () => {
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
+
                 <div>
                   <p className="text-sm font-bold text-gray-900">
                     Invoice {payment.invoiceNumber} • {payment.client}
@@ -2767,11 +3018,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -3245,11 +3495,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3257,11 +3506,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -3815,11 +4063,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -4931,11 +5178,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -6260,13 +6506,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -6385,16 +6631,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -7235,9 +7480,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -8049,11 +8294,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -10224,7 +10468,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -10387,11 +10631,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -10884,11 +11127,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -11770,11 +12012,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -12769,7 +13010,7 @@ const BookingsView = ({
         onRemoveBookOut={onRemoveBookOut}
       />
     );
-  if (activeSubTab === "Notifications") return <NotificationsTab />;
+  // if (activeSubTab === "Notifications") return <NotificationsTab />;
   if (activeSubTab === "Management & Analytics")
     return <ManagementAnalyticsView bookings={bookings} />;
 
@@ -12902,92 +13143,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar and schedule",
-              "Booking request",
-              "Client Database",
-              "Talent availability",
-              "Notifications",
-              "Management and Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar and schedule",
+            "Booking request",
+            "Client Database",
+            "Talent availability",
+            "Notifications",
+            "Management and Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -13040,16 +13281,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -13070,11 +13309,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (

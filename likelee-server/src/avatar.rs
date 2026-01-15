@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
@@ -6,9 +7,14 @@ use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct GenerateAvatarRequest {
-    pub user_id: String,
     #[serde(default)]
     pub video_url: Option<String>,
+    #[serde(default)]
+    pub front_url: Option<String>,
+    #[serde(default)]
+    pub left_url: Option<String>,
+    #[serde(default)]
+    pub right_url: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -20,13 +26,14 @@ pub struct GenerateAvatarResponse {
 
 pub async fn generate_avatar(
     State(state): State<AppState>,
+    _user: AuthUser,
     Json(req): Json<GenerateAvatarRequest>,
 ) -> Result<Json<GenerateAvatarResponse>, (StatusCode, String)> {
     if state.tavus_api_key.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "Tavus not configured".into()));
     }
 
-    let user_id = req.user_id;
+    let user_id = _user.id;
 
     let resp = state
         .pg
