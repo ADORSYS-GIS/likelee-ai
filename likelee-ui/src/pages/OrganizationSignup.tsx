@@ -38,6 +38,7 @@ import {
   updateAgencyProfile,
   getBrandProfile,
   getAgencyProfile,
+  createOrganizationKycSession,
 } from "@/api/functions";
 
 const getProductionTypes = (t: any) => [
@@ -278,27 +279,69 @@ export default function OrganizationSignup() {
 
   // Check for existing session and onboarding step
   // This effect handles the user's return after email verification.
-  // When the user clicks the link, Supabase confirms the email, and the AuthProvider
-  // detects the state change, fetching the user's profile.
-  // We react to the presence of the user and their profile to advance the flow.
   useEffect(() => {
     const handleVerifiedUser = async () => {
+      console.log("handleVerifiedUser check:", {
+        hasUser: !!user,
+        hasProfile: !!profile,
+        userRole: user?.user_metadata?.role,
+        profileRole: profile?.role,
+        onboardingStep: profile?.onboarding_step,
+      });
+
       // We need both the user object and their profile to proceed.
       if (user && profile) {
-        // Try fetching brand profile first
-        let { data: brandProfile } = await getBrandProfile();
-        let { data: agencyProfile } = await getAgencyProfile();
+        // Use the profile from useAuth directly if it's an organization profile
+        const isBrand = profile.role === "brand";
+        const isAgency = profile.role === "agency";
+
+        if (isBrand || isAgency) {
+          if (
+            profile.status === "complete" ||
+            profile.onboarding_step === "complete"
+          ) {
+            console.log("Onboarding complete, redirecting to dashboard");
+            if (isBrand) {
+              window.location.href = "/BrandDashboard";
+            } else {
+              window.location.href = "/AgencyDashboard";
+            }
+            return;
+          }
+
+          if (profile.onboarding_step === "email_verification") {
+            console.log("Advancing to Step 2 based on AuthProvider profile");
+            setProfileId(profile.id);
+            setOrgType(
+              profile.organization_type ||
+              profile.agency_type ||
+              (isBrand ? "brand_company" : "marketing_agency"),
+            );
+            setFormData((prev) => ({
+              ...prev,
+              email: profile.email || user.email || "",
+            }));
+            setStep(2);
+            return;
+          }
+        }
+
+        // Fallback to direct API calls if profile role is not yet set or synced
+        console.log("Profile role not yet synced, falling back to API calls");
+        let brandProfile = await getBrandProfile().catch(() => null);
+        let agencyProfile = await getAgencyProfile().catch(() => null);
 
         const orgProfile = brandProfile || agencyProfile;
 
         if (orgProfile) {
+          console.log("Found orgProfile via API fallback:", orgProfile);
           if (
             orgProfile.status === "complete" ||
             orgProfile.onboarding_step === "complete"
           ) {
-            if (profile.role === "brand") {
+            if (profile.role === "brand" || brandProfile) {
               window.location.href = "/BrandDashboard";
-            } else if (profile.role === "agency") {
+            } else {
               window.location.href = "/AgencyDashboard";
             }
             return;
@@ -306,10 +349,10 @@ export default function OrganizationSignup() {
 
           if (orgProfile.onboarding_step === "email_verification") {
             setProfileId(orgProfile.id);
-            // Determine orgType from profile if possible, or use existing
             setOrgType(
               orgProfile.organization_type ||
-                (brandProfile ? "brand_company" : "marketing_agency"),
+              orgProfile.agency_type ||
+              (brandProfile ? "brand_company" : "marketing_agency"),
             );
             setFormData((prev) => ({
               ...prev,

@@ -211,7 +211,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               full_name: displayName || null,
               role: "creator",
             },
-            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=2`,
+            emailRedirectTo:
+              (displayName as any)?.redirectTo ||
+              `${window.location.origin}/ReserveProfile?step=2`,
           },
         });
         if (error) throw error;
