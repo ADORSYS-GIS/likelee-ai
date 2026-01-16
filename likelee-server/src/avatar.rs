@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct GenerateAvatarRequest {
+    pub user_id: String,
     #[serde(default)]
     pub video_url: Option<String>,
 }
