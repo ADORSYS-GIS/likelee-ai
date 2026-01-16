@@ -126,7 +126,7 @@ pub struct ProfileQuery {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BalanceRow {
-    pub profile_id: String,
+    pub creator_id: String,
     pub currency: String,
     pub available_cents: i64,
     pub total_credits_cents: i64,
@@ -242,8 +242,8 @@ pub async fn get_balance(
     let resp = match state
         .pg
         .from("creator_balances")
-        .select("profile_id,currency,available_cents,total_credits_cents,total_debits_cents,reserved_cents")
-        .eq("profile_id", &q.profile_id)
+        .select("creator_id,currency,available_cents,total_credits_cents,total_debits_cents,reserved_cents")
+        .eq("creator_id", &q.profile_id)
         .execute()
         .await
     {
@@ -366,7 +366,7 @@ pub async fn request_payout(
         .pg
         .from("creator_balances")
         .select("available_cents")
-        .eq("profile_id", &payload.profile_id)
+        .eq("creator_id", &payload.profile_id)
         .eq("currency", &currency)
         .limit(1)
         .execute()
@@ -404,7 +404,7 @@ pub async fn request_payout(
     };
 
     let body = json!({
-        "profile_id": payload.profile_id,
+        "creator_id": payload.profile_id,
         "amount_cents": payload.amount_cents,
         "fee_cents": fee_cents,
         "currency": currency,
@@ -439,7 +439,7 @@ pub async fn request_payout(
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
             created
-                .get("profile_id")
+                .get("creator_id")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
         ) {
@@ -568,8 +568,7 @@ async fn execute_payout(
                         return Err(());
                     }
                 };
-                let mut payout_params =
-                    stripe_sdk::CreatePayout::new(net_cents, payout_currency);
+                let mut payout_params = stripe_sdk::CreatePayout::new(net_cents, payout_currency);
                 payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
                 // Create payout on connected account (use special header)
                 let connected_client = match account_id.parse::<stripe_sdk::AccountId>() {
@@ -658,7 +657,7 @@ pub async fn get_history(
         .pg
         .from("payout_requests")
         .select("id,amount_cents,fee_cents,instant_fee_cents,payout_method,currency,status,created_at,stripe_transfer_id,stripe_payout_id,failure_reason")
-        .eq("profile_id", &q.profile_id)
+        .eq("creator_id", &q.profile_id)
         .order("created_at.desc")
         .execute()
         .await
