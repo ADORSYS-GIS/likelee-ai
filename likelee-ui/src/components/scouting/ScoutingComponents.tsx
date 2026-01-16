@@ -196,15 +196,21 @@ export const AddProspectModal = ({
                                 "Voice",
                                 "Athlete",
                             ].map((cat) => (
-                                <Button
+                                <button
                                     key={cat}
                                     type="button"
-                                    variant={formData.categories?.includes(cat) ? "default" : "secondary"}
-                                    className={formData.categories?.includes(cat) ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"}
-                                    onClick={() => handleCategoryToggle(cat)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${formData.categories?.includes(cat)
+                                            ? "bg-indigo-600 text-white"
+                                            : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                                        }`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleCategoryToggle(cat);
+                                    }}
                                 >
                                     {cat}
-                                </Button>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -297,12 +303,21 @@ export const AddProspectModal = ({
                         <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
                         <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((i) => (
-                                <Star
+                                <button
                                     key={i}
-                                    className={`w-8 h-8 cursor-pointer ${(formData.rating || 0) >= i ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                        }`}
-                                    onClick={() => handleInputChange("rating", i)}
-                                />
+                                    type="button"
+                                    className="focus:outline-none transition-transform hover:scale-110 p-1 rounded-full hover:bg-gray-100"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleInputChange("rating", i);
+                                    }}
+                                >
+                                    <Star
+                                        className={`w-8 h-8 pointer-events-none ${(formData.rating || 0) >= i ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                            }`}
+                                    />
+                                </button>
                             ))}
                         </div>
                     </div>

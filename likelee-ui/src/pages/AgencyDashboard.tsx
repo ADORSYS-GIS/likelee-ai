@@ -102,6 +102,17 @@ const AddProspectModal = ({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) => {
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [starRating, setStarRating] = useState(3);
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -149,8 +160,12 @@ const AddProspectModal = ({
               ].map((cat) => (
                 <Button
                   key={cat}
-                  variant="secondary"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"
+                  variant={selectedCategories.includes(cat) ? "default" : "secondary"}
+                  onClick={() => toggleCategory(cat)}
+                  className={`${selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -219,14 +234,12 @@ const AddProspectModal = ({
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
             <div className="flex gap-1">
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Star
                   key={i}
-                  className="w-8 h-8 fill-yellow-400 text-yellow-400"
+                  className={`w-8 h-8 cursor-pointer ${i <= starRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  onClick={() => setStarRating(i)}
                 />
-              ))}
-              {[4, 5].map((i) => (
-                <Star key={i} className="w-8 h-8 text-gray-300" />
               ))}
             </div>
           </div>
