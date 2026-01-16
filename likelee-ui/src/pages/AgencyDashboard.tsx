@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -5422,32 +5422,69 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
+const DashboardView = ({ onKYC, kycStatus }: { onKYC: () => void; kycStatus?: string }) => (
   <div className="space-y-8">
-    {/* KYC Verification Alert */}
-    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-white rounded-xl shadow-sm">
-          <ShieldAlert className="w-6 h-6 text-indigo-600" />
+    {(!kycStatus || kycStatus === "pending") && (
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white rounded-xl shadow-sm">
+            <ShieldAlert className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">
+              {kycStatus === "pending" ? "KYC In Review" : "KYC Verification Required"}
+            </h3>
+            <p className="text-sm text-gray-500">
+              {kycStatus === "pending"
+                ? "Your verification is being reviewed. You will be notified once it's complete."
+                : "To enable payouts and licensing for your talent, please complete your agency's ID verification."}
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
-          </h3>
-          <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
-          </p>
+        {(!kycStatus || kycStatus !== "pending") && (
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
+            onClick={onKYC}
+          >
+            Complete KYC
+          </Button>
+        )}
+      </div>
+    )}
+    {kycStatus === "approved" && (
+      <div className="bg-green-50 border border-green-100 rounded-xl p-6 flex items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white rounded-xl shadow-sm">
+            <ShieldAlert className="w-6 h-6 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">KYC Verified</h3>
+            <p className="text-sm text-gray-600">Your agency is verified. Payouts and licensing are enabled.</p>
+          </div>
         </div>
       </div>
-      <Button
-        variant="default"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-        onClick={onKYC}
-      >
-        Complete KYC
-      </Button>
-    </div>
+    )}
+    {kycStatus === "rejected" && (
+      <div className="bg-red-50 border border-red-100 rounded-xl p-6 flex items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white rounded-xl shadow-sm">
+            <ShieldAlert className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">KYC Rejected</h3>
+            <p className="text-sm text-gray-600">Please review the decision and try again with correct information.</p>
+          </div>
+        </div>
+        <Button
+          variant="default"
+          className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 h-12 rounded-xl"
+          onClick={onKYC}
+        >
+          Retry KYC
+        </Button>
+      </div>
+    )}
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Roster Health */}
@@ -12820,6 +12857,11 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+  const kycPollRef = useRef<number | undefined>(undefined);
+  const veriffMsgHandlerRef = useRef<(e: MessageEvent) => void>();
+  const keydownHandlerRef = useRef<(e: KeyboardEvent) => void>();
+  const kycStatusIntervalRef = useRef<number | undefined>(undefined);
+  const [kycStatus, setKycStatus] = useState<string | undefined>(undefined);
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -12833,6 +12875,141 @@ export default function AgencyDashboard() {
     }
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
+
+  const fetchKycStatus = async (id: string) => {
+    try {
+      const res = await fetch(
+        api(`/api/kyc/organization/status?organization_id=${encodeURIComponent(id)}`),
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      const row = Array.isArray(rows) ? rows[0] : rows?.[0];
+      const status: string | undefined = row?.kyc_status || row?.liveness_status || undefined;
+      setKycStatus(status);
+      return status;
+    } catch {}
+  };
+
+  if (authenticated && user?.id && kycStatusIntervalRef.current === undefined) {
+    kycStatusIntervalRef.current = window.setInterval(async () => {
+      const s = await fetchKycStatus(user.id);
+      if (s && s !== "pending") {
+        if (kycStatusIntervalRef.current) window.clearInterval(kycStatusIntervalRef.current);
+        kycStatusIntervalRef.current = undefined;
+      }
+    }, 10000);
+    fetchKycStatus(user.id);
+  }
+
+  const ensureScript = async (src: string) => {
+    const existing = Array.from(document.getElementsByTagName("script")).find(
+      (s) => s.src === src,
+    );
+    if (existing) return;
+    await new Promise<void>((resolve, reject) => {
+      const el = document.createElement("script");
+      el.src = src;
+      el.async = true;
+      el.onload = () => resolve();
+      el.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(el);
+    });
+  };
+
+  const openVeriffOverlay = async (url: string) => {
+    let root = document.getElementById("veriff-root");
+    if (!root) {
+      const overlay = document.createElement("div");
+      overlay.id = "veriff-overlay";
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.background = "rgba(0,0,0,0.6)";
+      overlay.style.zIndex = "10000";
+      document.body.appendChild(overlay);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeVeriffOverlay();
+      });
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.innerText = "Close";
+      closeBtn.style.position = "absolute";
+      closeBtn.style.top = "16px";
+      closeBtn.style.right = "16px";
+      closeBtn.style.background = "#111827";
+      closeBtn.style.color = "#fff";
+      closeBtn.style.fontWeight = "700";
+      closeBtn.style.border = "none";
+      closeBtn.style.borderRadius = "8px";
+      closeBtn.style.padding = "8px 12px";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.onclick = () => closeVeriffOverlay();
+      overlay.appendChild(closeBtn);
+      root = document.createElement("div");
+      root.id = "veriff-root";
+      root.style.position = "absolute";
+      root.style.top = "50%";
+      root.style.left = "50%";
+      root.style.transform = "translate(-50%, -50%)";
+      root.style.width = "95%";
+      root.style.maxWidth = "480px";
+      root.style.height = "85%";
+      root.style.maxHeight = "800px";
+      root.style.background = "#fff";
+      root.style.borderRadius = "12px";
+      root.style.overflow = "hidden";
+      overlay.appendChild(root);
+    }
+
+    await ensureScript("https://cdn.veriff.me/sdk/js/1.5/veriff.min.js");
+    await ensureScript("https://cdn.veriff.me/incontext/js/v1/veriff.js");
+
+    const anyWin = window as any;
+    if (anyWin?.veriffSDK?.createVeriffFrame) {
+      anyWin.veriffSDK.createVeriffFrame({ url });
+    } else {
+      throw new Error("Veriff SDK unavailable");
+    }
+
+    if (!veriffMsgHandlerRef.current) {
+      veriffMsgHandlerRef.current = (e: MessageEvent) => {
+        const origin = e.origin || "";
+        const data = e.data as any;
+        const fromVeriffOrigin =
+          origin.includes("veriff.me") ||
+          origin.includes("veriff.com") ||
+          origin.includes("stationapi.veriff.com");
+        const looksLikeVeriffMsg =
+          (data && (data.veriff || data.source === "veriffWebSDK" || data.type === "veriff-event")) ||
+          (typeof data === "string" && data.toLowerCase().includes("veriff"));
+        if (fromVeriffOrigin || looksLikeVeriffMsg) {
+          closeVeriffOverlay();
+        }
+      };
+      window.addEventListener("message", veriffMsgHandlerRef.current);
+    }
+
+    if (!keydownHandlerRef.current) {
+      keydownHandlerRef.current = (e: KeyboardEvent) => {
+        if (e.key === "Escape") closeVeriffOverlay();
+      };
+      window.addEventListener("keydown", keydownHandlerRef.current);
+    }
+  };
+
+  const closeVeriffOverlay = () => {
+    const overlay = document.getElementById("veriff-overlay");
+    if (overlay) overlay.remove();
+    if (kycPollRef.current) window.clearInterval(kycPollRef.current);
+    if (veriffMsgHandlerRef.current) {
+      window.removeEventListener("message", veriffMsgHandlerRef.current);
+      veriffMsgHandlerRef.current = undefined;
+    }
+    if (keydownHandlerRef.current) {
+      window.removeEventListener("keydown", keydownHandlerRef.current);
+      keydownHandlerRef.current = undefined;
+    }
+    if (authenticated && user?.id) fetchKycStatus(user.id);
+  };
 
   const handleKYC = async () => {
     if (!authenticated || !user?.id) {
@@ -12853,17 +13030,45 @@ export default function AgencyDashboard() {
         duration: 3000,
       });
 
-      const res = await fetch(api(`/api/kyc/session`), {
+      const res = await fetch(api(`/api/kyc/organization/session`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
+        body: JSON.stringify({ organization_id: user.id }),
       });
 
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
       if (data.session_url) {
-        window.open(data.session_url, "_blank");
+        setKycStatus("pending");
+        await openVeriffOverlay(data.session_url);
+        if (kycPollRef.current) window.clearInterval(kycPollRef.current);
+        kycPollRef.current = window.setInterval(async () => {
+          try {
+            const s = await fetch(
+              api(
+                `/api/kyc/organization/status?organization_id=${encodeURIComponent(
+                  user.id,
+                )}`,
+              ),
+            );
+            if (!s.ok) return;
+            const rows = await s.json();
+            const row = Array.isArray(rows) ? rows[0] : rows?.[0];
+            const status = row?.kyc_status || row?.liveness_status;
+            if (status && status !== "pending") {
+              if (kycPollRef.current) window.clearInterval(kycPollRef.current);
+              closeVeriffOverlay();
+              toast({
+                title: "Verification Completed",
+                description:
+                  status === "approved"
+                    ? "Your agency verification was approved."
+                    : "Verification finished. Please review the result.",
+              });
+            }
+          } catch {}
+        }, 5000);
       } else {
         throw new Error("No session URL returned");
       }
@@ -13295,7 +13500,9 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
-          {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
+          {activeTab === "dashboard" && (
+            <DashboardView onKYC={handleKYC} kycStatus={kycStatus} />
+          )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
               searchTerm={searchTerm}

@@ -37,16 +37,17 @@ pub struct ProfileVerification {
     pub verified_at: Option<String>,
 }
 
-async fn update_profile(
+async fn update_table(
     state: &AppState,
-    user_id: &str,
+    table: &str,
+    id: &str,
     payload: &ProfileVerification,
 ) -> Result<(), String> {
     let body = serde_json::to_string(payload).map_err(|e| e.to_string())?;
     match state
         .pg
-        .from("profiles")
-        .eq("id", user_id)
+        .from(table)
+        .eq("id", id)
         .update(body)
         .execute()
         .await
@@ -55,7 +56,7 @@ async fn update_profile(
         Err(e) => {
             let msg = e.to_string();
             if msg.contains("42703") || msg.contains("column") && msg.contains("does not exist") {
-                warn!(%msg, "profiles table missing verification columns; skipping profile update");
+                warn!(table = table, %msg, "table missing verification columns; skipping update");
                 return Ok(());
             }
             return Err(msg);
@@ -190,9 +191,15 @@ pub async fn create_session(
         },
         verified_at: None,
     };
-    update_profile(&state, profile_id, &payload)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    if req.organization_id.is_some() {
+        update_table(&state, "agencies", profile_id, &payload)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    } else {
+        update_table(&state, "profiles", profile_id, &payload)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    }
 
     Ok(Json(SessionResponse {
         session_id,
@@ -215,9 +222,10 @@ pub async fn get_status(
         StatusCode::BAD_REQUEST,
         "missing user_id or organization_id".to_string(),
     ))?;
+    let table = if q.organization_id.is_some() { "agencies" } else { "profiles" };
     let resp = state
         .pg
-        .from("profiles")
+        .from(table)
         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
         .eq("id", profile_id)
         .execute()
@@ -301,10 +309,10 @@ pub async fn get_status(
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
-                    let _ = update_profile(&state, profile_id, &payload).await;
+                    let _ = update_table(&state, table, profile_id, &payload).await;
                     let resp2 = state
                         .pg
-                        .from("profiles")
+                        .from(table)
                         .select(
                             "kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at",
                         )
@@ -409,8 +417,8 @@ pub async fn veriff_webhook(
         kyc_session_id: parsed.session.map(|s| s.id),
         verified_at: approved.then(|| Utc::now().to_rfc3339()),
     };
-    update_profile(&state, &user_id, &payload)
-        .await
-        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    let _ = update_table(&state, "agencies", &user_id, &payload).await;
+    let _ = update_table(&state, "profiles", &user_id, &payload).await;
+    // If both updates fail due to structure differences, we still return 200 after attempts.
     Ok(axum::http::StatusCode::OK)
 }
