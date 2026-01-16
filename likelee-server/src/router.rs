@@ -147,22 +147,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/payouts/account_status",
             get(crate::payouts::get_account_status),
         )
-        .route(
-            "/api/payouts/balance",
-            get(crate::payouts::get_balance),
-        )
-        .route(
-            "/api/payouts/request",
-            post(crate::payouts::request_payout),
-        )
-        .route(
-            "/api/payouts/history",
-            get(crate::payouts::get_history),
-        )
-        .route(
-            "/webhooks/stripe",
-            post(crate::payouts::stripe_webhook),
-        )
+        .route("/api/payouts/balance", get(crate::payouts::get_balance))
+        .route("/api/payouts/request", post(crate::payouts::request_payout))
+        .route("/api/payouts/history", get(crate::payouts::get_history))
+        .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
         // Integrations: Core
         .route(
             "/api/integrations/core/send-email",

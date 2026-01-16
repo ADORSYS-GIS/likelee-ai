@@ -1,11 +1,15 @@
-use axum::{extract::{Query, State}, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::warn;
 
 use crate::config::AppState;
-use stripe as stripe_sdk;
 use std::str::FromStr;
+use stripe as stripe_sdk;
 
 pub async fn create_onboarding_link(
     State(state): State<AppState>,
@@ -32,7 +36,7 @@ pub async fn create_onboarding_link(
     // Ensure profile exists and get existing account id if any
     let prof_resp = match state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id,stripe_connect_account_id")
         .eq("id", &q.profile_id)
         .limit(1)
@@ -75,7 +79,7 @@ pub async fn create_onboarding_link(
                 let body = json!({"stripe_connect_account_id": account_id});
                 let _ = state
                     .pg
-                    .from("profiles")
+                    .from("creators")
                     .eq("id", &q.profile_id)
                     .update(body.to_string())
                     .execute()
@@ -107,7 +111,7 @@ pub async fn create_onboarding_link(
     link_params.return_url = Some(state.stripe_onboarding_return_url.as_str());
     link_params.refresh_url = Some(state.stripe_onboarding_refresh_url.as_str());
     match stripe_sdk::AccountLink::create(&client, link_params).await {
-        Ok(link) => (StatusCode::OK, Json(json!({"url": link.url})) ),
+        Ok(link) => (StatusCode::OK, Json(json!({"url": link.url}))),
         Err(e) => (
             StatusCode::BAD_GATEWAY,
             Json(json!({"status":"error","error":e.to_string()})),
@@ -142,7 +146,7 @@ pub async fn get_account_status(
     }
     let resp = match state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error")
         .eq("id", &q.profile_id)
         .limit(1)
@@ -270,7 +274,12 @@ pub async fn get_balance(
     };
     let mut rows: Vec<BalanceRow> = serde_json::from_str(&text).unwrap_or_default();
     // filter to allowed currencies
-    rows.retain(|r| state.payout_allowed_currencies.iter().any(|c| c == &r.currency.to_uppercase()));
+    rows.retain(|r| {
+        state
+            .payout_allowed_currencies
+            .iter()
+            .any(|c| c == &r.currency.to_uppercase())
+    });
     (
         StatusCode::OK,
         Json(json!({"balances": rows, "allowed_currencies": state.payout_allowed_currencies})),
@@ -312,25 +321,37 @@ pub async fn request_payout(
     {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({"status":"error","error":"unsupported_currency","allowed": state.payout_allowed_currencies})),
+            Json(
+                json!({"status":"error","error":"unsupported_currency","allowed": state.payout_allowed_currencies}),
+            ),
         );
     }
     if (payload.amount_cents as u32) < state.min_payout_amount_cents {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({"status":"error","error":"below_minimum","min_cents": state.min_payout_amount_cents})),
+            Json(
+                json!({"status":"error","error":"below_minimum","min_cents": state.min_payout_amount_cents}),
+            ),
         );
     }
 
     // Validate payout method
     let method = payload
         .payout_method
-        .unwrap_or_else(|| if state.instant_payouts_enabled { "instant".to_string() } else { "standard".to_string() })
+        .unwrap_or_else(|| {
+            if state.instant_payouts_enabled {
+                "instant".to_string()
+            } else {
+                "standard".to_string()
+            }
+        })
         .to_lowercase();
     if method != "standard" && method != "instant" {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({"status":"error","error":"invalid_payout_method","allowed":["standard","instant"]})),
+            Json(
+                json!({"status":"error","error":"invalid_payout_method","allowed":["standard","instant"]}),
+            ),
         );
     }
     if method == "instant" && !state.instant_payouts_enabled {
@@ -368,12 +389,14 @@ pub async fn request_payout(
     if available < payload.amount_cents {
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({"status":"error","error":"insufficient_funds","available_cents": available})),
+            Json(
+                json!({"status":"error","error":"insufficient_funds","available_cents": available}),
+            ),
         );
     }
 
     // Compute fee and initial status (auto-approve under threshold)
-    let fee_cents = ((payload.amount_cents as i64) * (state.payout_fee_bps as i64) + 9999) / 10000;
+    let fee_cents = (payload.amount_cents * (state.payout_fee_bps as i64) + 9999) / 10000;
     let status = if (payload.amount_cents as u32) <= state.payout_auto_approve_threshold_cents {
         "approved"
     } else {
@@ -411,10 +434,25 @@ pub async fn request_payout(
     // If auto-approved, try to execute transfer (and instant payout if requested)
     if status == "approved" {
         if let (Some(req_id), Some(profile_id)) = (
-            created.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            created.get("profile_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            created
+                .get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            created
+                .get("profile_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
         ) {
-            let _ = execute_payout(&state, &req_id, &profile_id, payload.amount_cents as i64, fee_cents, &currency, &method).await;
+            let _ = execute_payout(
+                &state,
+                &req_id,
+                &profile_id,
+                payload.amount_cents,
+                fee_cents,
+                &currency,
+                &method,
+            )
+            .await;
         }
     }
     (
@@ -435,7 +473,7 @@ async fn execute_payout(
     // Get connected account id
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("stripe_connect_account_id")
         .eq("id", profile_id)
         .limit(1)
@@ -454,7 +492,9 @@ async fn execute_payout(
             .pg
             .from("payout_requests")
             .eq("id", payout_request_id)
-            .update(json!({"status":"failed","failure_reason":"missing_connected_account"}).to_string())
+            .update(
+                json!({"status":"failed","failure_reason":"missing_connected_account"}).to_string(),
+            )
             .execute()
             .await;
         return Err(());
@@ -498,7 +538,7 @@ async fn execute_payout(
         }
     };
     let mut params = stripe_sdk::CreateTransfer::new(currency_enum, account_id.clone());
-    params.amount = Some(net_cents as i64);
+    params.amount = Some(net_cents);
     match stripe_sdk::Transfer::create(&client, params).await {
         Ok(t) => {
             let _ = state
@@ -511,20 +551,25 @@ async fn execute_payout(
 
             // If instant method requested, attempt an immediate payout from connected account
             if method == "instant" && state.instant_payouts_enabled {
-                let payout_currency = match stripe_sdk::Currency::from_str(&currency.to_lowercase()) {
+                let payout_currency = match stripe_sdk::Currency::from_str(&currency.to_lowercase())
+                {
                     Ok(c) => c,
                     Err(_) => {
                         let _ = state
                             .pg
                             .from("payout_requests")
                             .eq("id", payout_request_id)
-                            .update(json!({"status":"failed","failure_reason":"invalid_currency"}).to_string())
+                            .update(
+                                json!({"status":"failed","failure_reason":"invalid_currency"})
+                                    .to_string(),
+                            )
                             .execute()
                             .await;
                         return Err(());
                     }
                 };
-                let mut payout_params = stripe_sdk::CreatePayout::new(net_cents as i64, payout_currency);
+                let mut payout_params =
+                    stripe_sdk::CreatePayout::new(net_cents, payout_currency);
                 payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
                 // Create payout on connected account (use special header)
                 let connected_client = match account_id.parse::<stripe_sdk::AccountId>() {
@@ -534,7 +579,10 @@ async fn execute_payout(
                             .pg
                             .from("payout_requests")
                             .eq("id", payout_request_id)
-                            .update(json!({"status":"failed","failure_reason":"invalid_account_id"}).to_string())
+                            .update(
+                                json!({"status":"failed","failure_reason":"invalid_account_id"})
+                                    .to_string(),
+                            )
                             .execute()
                             .await;
                         return Err(());
@@ -546,10 +594,13 @@ async fn execute_payout(
                             .pg
                             .from("payout_requests")
                             .eq("id", payout_request_id)
-                            .update(json!({
-                                "stripe_payout_id": p.id.to_string(),
-                                // instant_fee_cents to be updated later from balance transaction via webhook (MVP: 0)
-                            }).to_string())
+                            .update(
+                                json!({
+                                    "stripe_payout_id": p.id.to_string(),
+                                    // instant_fee_cents to be updated later from balance transaction via webhook (MVP: 0)
+                                })
+                                .to_string(),
+                            )
                             .execute()
                             .await;
                         // Mark paid optimistically; webhooks will confirm
@@ -566,7 +617,10 @@ async fn execute_payout(
                             .pg
                             .from("payout_requests")
                             .eq("id", payout_request_id)
-                            .update(json!({"status":"failed","failure_reason": e.to_string()}).to_string())
+                            .update(
+                                json!({"status":"failed","failure_reason": e.to_string()})
+                                    .to_string(),
+                            )
                             .execute()
                             .await;
                         return Err(());
@@ -619,10 +673,7 @@ pub async fn get_history(
     };
     let text = resp.text().await.unwrap_or("[]".into());
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    (
-        StatusCode::OK,
-        Json(json!({"items": rows})),
-    )
+    (StatusCode::OK, Json(json!({"items": rows})))
 }
 
 pub async fn stripe_webhook(
@@ -630,22 +681,41 @@ pub async fn stripe_webhook(
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> (StatusCode, Json<serde_json::Value>) {
-    let sig = match headers.get("Stripe-Signature").and_then(|v| v.to_str().ok()) {
+    let sig = match headers
+        .get("Stripe-Signature")
+        .and_then(|v| v.to_str().ok())
+    {
         Some(s) => s.to_string(),
-        None => return (StatusCode::BAD_REQUEST, Json(json!({"status":"error","error":"missing_signature"})))
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"status":"error","error":"missing_signature"})),
+            )
+        }
     };
     let payload = String::from_utf8_lossy(&body).to_string();
-    let event = match stripe_sdk::Webhook::construct_event(&payload, &sig, &state.stripe_webhook_secret) {
-        Ok(e) => e,
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({"status":"error","error":e.to_string()}))),
-    };
+    let event =
+        match stripe_sdk::Webhook::construct_event(&payload, &sig, &state.stripe_webhook_secret) {
+            Ok(e) => e,
+            Err(e) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({"status":"error","error":e.to_string()})),
+                )
+            }
+        };
     // Store raw event
     let body = json!({
         "provider": "stripe",
         "event_type": event.type_.to_string(),
         "payload": serde_json::from_str::<serde_json::Value>(&payload).unwrap_or(json!({}))
     });
-    let _ = state.pg.from("webhook_events").insert(body.to_string()).execute().await;
+    let _ = state
+        .pg
+        .from("webhook_events")
+        .insert(body.to_string())
+        .execute()
+        .await;
 
     // Minimal handlers
     let etype = event.type_.to_string();
@@ -662,12 +732,15 @@ pub async fn stripe_webhook(
                 if !account_id.is_empty() {
                     let _ = state
                         .pg
-                        .from("profiles")
+                        .from("creators")
                         .eq("stripe_connect_account_id", account_id)
-                        .update(json!({
-                            "payouts_enabled": payouts_enabled,
-                            "last_payout_error": disabled_reason
-                        }).to_string())
+                        .update(
+                            json!({
+                                "payouts_enabled": payouts_enabled,
+                                "last_payout_error": disabled_reason
+                            })
+                            .to_string(),
+                        )
                         .execute()
                         .await;
                 }
@@ -693,7 +766,9 @@ pub async fn stripe_webhook(
                     .pg
                     .from("payout_requests")
                     .eq("stripe_transfer_id", tid)
-                    .update(json!({"status":"failed","failure_reason":"transfer_reversed"}).to_string())
+                    .update(
+                        json!({"status":"failed","failure_reason":"transfer_reversed"}).to_string(),
+                    )
                     .execute()
                     .await;
             }
@@ -707,9 +782,15 @@ pub async fn stripe_webhook(
             if let stripe_sdk::EventObject::Payout(p) = event.data.object.clone() {
                 let pid = p.id.to_string();
                 let mut update = serde_json::Map::new();
-                if is_paid { update.insert("status".into(), json!("paid")); }
-                if is_failed { update.insert("status".into(), json!("failed")); }
-                if is_canceled { update.insert("status".into(), json!("canceled")); }
+                if is_paid {
+                    update.insert("status".into(), json!("paid"));
+                }
+                if is_failed {
+                    update.insert("status".into(), json!("failed"));
+                }
+                if is_canceled {
+                    update.insert("status".into(), json!("canceled"));
+                }
                 update.insert("stripe_payout_id".into(), json!(pid));
                 if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
                     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
@@ -722,11 +803,10 @@ pub async fn stripe_webhook(
                         stripe_sdk::Expandable::Object(obj) => Some(obj.id),
                     };
                     if let Some(id) = maybe_id {
-                        if let Ok(bt) = stripe_sdk::BalanceTransaction::retrieve(
-                            &connected_client,
-                            &id,
-                            &[],
-                        ).await {
+                        if let Ok(bt) =
+                            stripe_sdk::BalanceTransaction::retrieve(&connected_client, &id, &[])
+                                .await
+                        {
                             let fee = bt.fee.abs();
                             update.insert("instant_fee_cents".into(), json!(fee));
                         }

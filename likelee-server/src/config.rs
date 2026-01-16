@@ -116,10 +116,16 @@ pub struct ServerConfig {
     pub stripe_connect_client_id: String,
 
     // Onboarding URLs (dashboard routes to return/refresh after Stripe onboarding)
-    #[envconfig(from = "STRIPE_ONBOARDING_RETURN_URL", default = "http://localhost:5173/dashboard/payouts")]
+    #[envconfig(
+        from = "STRIPE_ONBOARDING_RETURN_URL",
+        default = "http://localhost:5173/dashboard/payouts"
+    )]
     pub stripe_onboarding_return_url: String,
 
-    #[envconfig(from = "STRIPE_ONBOARDING_REFRESH_URL", default = "http://localhost:5173/dashboard/payouts")]
+    #[envconfig(
+        from = "STRIPE_ONBOARDING_REFRESH_URL",
+        default = "http://localhost:5173/dashboard/payouts"
+    )]
     pub stripe_onboarding_refresh_url: String,
 
     // Payouts feature flags and thresholds
