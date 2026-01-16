@@ -1,4 +1,5 @@
 import { scoutingService } from "@/services/scoutingService";
+import { ScoutingProspect } from "@/types/scouting";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -78,6 +79,8 @@ import {
   Menu,
   Image as ImageIcon,
   Mic,
+  Link as LinkIcon,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -92,6 +95,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -2329,7 +2340,7 @@ const ShareFileModal = ({
                   value={`https://agency.likelee.ai/share/${file.id}`}
                   className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
                 />
-                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
               <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
                 <Copy className="w-4 h-4" />
@@ -5367,11 +5378,149 @@ const ScoutingHubView = ({
   );
 };
 
+const ProspectDetailsSheet = ({
+  prospect,
+  onClose,
+}: {
+  prospect: ScoutingProspect | null;
+  onClose: () => void;
+}) => {
+  if (!prospect) return null;
+
+  const statusOptions = ["New Lead", "In Contact", "Test Shoots", "Offer Sent", "Signed", "Declined"];
+
+  return (
+    <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-[500px] sm:max-w-none bg-white p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="text-xl font-bold">Prospect Details</SheetTitle>
+        </SheetHeader>
+
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Main Info */}
+          <div className="space-y-6 border-b pb-6">
+            <div className="flex items-start space-x-6">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border">
+                <User className="w-12 h-12 text-gray-400" />
+              </div>
+              <div className="flex-1 pt-2">
+                <h2 className="text-3xl font-bold text-gray-900">{prospect.full_name}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  {prospect.categories?.map(cat => <Badge key={cat} variant="outline" className="font-medium">{cat}</Badge>)}
+                </div>
+                <div className="flex items-center gap-1 mt-3 text-yellow-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`w-5 h-5 ${i < (prospect.rating || 0) ? 'fill-current' : 'text-gray-300'}`} />
+                  ))}
+                  <span className="text-sm text-gray-500 ml-1">({prospect.rating || 0}/5 rating)</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/70">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-gray-700">Status</h3>
+                <Badge variant={prospect.status === 'declined' ? 'destructive' : 'default'} className="capitalize">{prospect.status.replace('_', ' ')}</Badge>
+              </div>
+              <Select defaultValue={prospect.status}>
+                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map(opt => <SelectItem key={opt} value={opt.toLowerCase().replace(' ', '_')} className="font-medium">{opt}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Section title="Contact Information">
+            <InfoRow icon={Mail} text={prospect.email} />
+            <InfoRow icon={Phone} text={prospect.phone} />
+            <InfoRow icon={Instagram} text={prospect.instagram_handle} subtext={`(${prospect.instagram_followers?.toLocaleString()} followers)`} />
+          </Section>
+
+          <Section title="Discovery Details">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm p-4 bg-gray-50/70 rounded-xl border">
+              <DetailItem label="Source" value={prospect.source} />
+              <DetailItem label="Date" value={new Date(prospect.discovery_date).toLocaleDateString()} />
+              <DetailItem label="Location" value={prospect.discovery_location} />
+              <DetailItem label="Referred By" value={prospect.referred_by} />
+            </div>
+          </Section>
+
+          <Section title="Assignment">
+            <div className="p-4 bg-gray-50/70 rounded-xl border font-medium text-gray-800">
+              {prospect.assigned_agent_name || "Not Assigned"}
+            </div>
+          </Section>
+
+          <Section title="Internal Notes">
+            <div className="p-4 bg-gray-50/70 rounded-xl border text-gray-700 text-sm whitespace-pre-wrap min-h-[60px]">
+              {prospect.notes || <span className="text-gray-500 italic">No internal notes added.</span>}
+            </div>
+          </Section>
+
+          <Section title="Social Metrics">
+            <div className="grid grid-cols-2 gap-4">
+              <MetricBox label="Instagram Followers" value={prospect.instagram_followers?.toLocaleString() || 'N/A'} />
+              <MetricBox label="Engagement Rate" value={`${prospect.engagement_rate || 'N/A'}%`} />
+            </div>
+          </Section>
+
+          <Button className="w-full h-11 text-base font-bold flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"><Pencil className="w-4 h-4" /> Edit Prospect</Button>
+          <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2"><Send className="w-4 h-4" /> Send Email</Button>
+          <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2"><Calendar className="w-4 h-4" /> Schedule Meeting</Button>
+          <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+            <Trash2 className="w-4 h-4" /> Delete Prospect
+          </Button>
+          <p className="text-xs text-gray-400 text-center pt-2">
+            Added {new Date(prospect.created_at).toLocaleDateString()} | Last updated {new Date(prospect.updated_at).toLocaleDateString()}
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
+  <div className="space-y-3">
+    <h3 className="font-semibold text-gray-700 flex items-center gap-2"><MapPin className="w-4 h-4 text-gray-400" /> {title}</h3>
+    {children}
+  </div>
+);
+
+const InfoRow = ({ icon: Icon, text, subtext }: { icon: React.ElementType, text?: string | null, subtext?: string }) => (
+  <div className="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-xl border">
+    <div className="flex items-center gap-3">
+      <Icon className="w-5 h-5 text-gray-400" />
+      <span className="font-medium text-gray-800">{text || "-"}</span>
+      {subtext && <span className="text-xs text-gray-500">{subtext}</span>}
+    </div>
+    <LinkIcon className="w-4 h-4 text-gray-400 cursor-pointer hover:text-indigo-600" />
+  </div>
+);
+
+const DetailItem = ({ label, value }: { label: string, value?: string | null }) => (
+  <div>
+    <div className="text-xs text-gray-500">{label}</div>
+    <div className="font-semibold text-gray-800">{value || "-"}</div>
+  </div>
+);
+
+const MetricBox = ({ label, value }: { label: string, value: string | number }) => (
+  <div className="p-4 bg-gray-50/70 rounded-xl border">
+    <div className="text-xs text-gray-500 mb-1">{label}</div>
+    <div className="text-2xl font-bold text-gray-900">{value}</div>
+  </div>
+);
+
 const ProspectPipelineTab = ({
   onAddProspect,
 }: {
   onAddProspect: () => void;
 }) => {
+  const [selectedProspect, setSelectedProspect] = useState<ScoutingProspect | null>(null);
   const { data: prospects, isLoading } = useQuery({
     queryKey: ["prospects"],
     queryFn: async () => {
@@ -5483,7 +5632,7 @@ const ProspectPipelineTab = ({
               </thead>
               <tbody>
                 {prospects.map((p) => (
-                  <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedProspect(p)}>
                     <td className="px-4 py-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                         <User className="w-5 h-5 text-gray-400" />
@@ -5510,6 +5659,10 @@ const ProspectPipelineTab = ({
           </div>
         )}
       </Card>
+      <ProspectDetailsSheet
+        prospect={selectedProspect}
+        onClose={() => setSelectedProspect(null)}
+      />
     </div>
   );
 };
@@ -13570,7 +13723,6 @@ export default function AgencyDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
-      <DebugPanel />
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -13843,7 +13995,7 @@ export default function AgencyDashboard() {
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
-                      <Link className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                      <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
                           Integrations
