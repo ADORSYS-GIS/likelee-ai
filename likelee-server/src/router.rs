@@ -61,7 +61,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/moderation/image-bytes",
             post(crate::moderation::moderate_image_bytes),
         )
-        .route("/api/faces/search", get(crate::profiles::search_faces))
         .route(
             "/api/reference-images/upload",
             post(crate::reference_images::upload_reference_image),

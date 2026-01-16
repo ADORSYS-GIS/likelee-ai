@@ -44,6 +44,27 @@ import {
   ArrowRight,
   Building2,
   CreditCard,
+  Folder,
+  Phone,
+  Mail,
+  Package,
+  Globe,
+  Video,
+  File,
+  Tag,
+  HardDrive,
+  Grid,
+  List,
+  MoreVertical,
+  Share2,
+  Upload,
+  FolderPlus,
+  FolderOpen,
+  Briefcase,
+  Receipt,
+  Megaphone,
+  MapPin,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -55,10 +76,186 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+
+const AddProspectModal = ({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            Add New Prospect
+          </DialogTitle>
+          <p className="text-sm text-gray-500">
+            Track talent before signing them to your roster
+          </p>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input id="name" placeholder="Full name" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" placeholder="email@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" placeholder="+1 (555) 123-4567" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram Handle</Label>
+                <Input id="instagram" placeholder="@username" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Model",
+                "Actor",
+                "Influencer",
+                "Creator",
+                "Voice",
+                "Athlete",
+              ].map((cat) => (
+                <Button
+                  key={cat}
+                  variant="secondary"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Discovery Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Discovery Source</Label>
+                <Select defaultValue="instagram">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="street">Street Scouting</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Discovery Date</Label>
+                <div className="relative">
+                  <Input type="date" defaultValue="2026-01-12" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Discovery Location</Label>
+                <Input placeholder="New York, NY" />
+              </div>
+              <div className="space-y-2">
+                <Label>Referred By</Label>
+                <Input placeholder="Name of referrer" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">
+              Status & Assignment
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select defaultValue="new">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New Lead</SelectItem>
+                    <SelectItem value="contacted">Contacted</SelectItem>
+                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Assigned Agent</Label>
+                <Input placeholder="Agent name" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
+            <div className="flex gap-1">
+              {[1, 2, 3].map((i) => (
+                <Star
+                  key={i}
+                  className="w-8 h-8 fill-yellow-400 text-yellow-400"
+                />
+              ))}
+              {[4, 5].map((i) => (
+                <Star key={i} className="w-8 h-8 text-gray-300" />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Internal Notes</Label>
+            <Textarea
+              placeholder="Add notes about this prospect..."
+              className="h-32"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-bold text-gray-900 mb-4">
+              Social Media (Optional)
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Instagram Followers</Label>
+                <Input type="number" defaultValue="10000" />
+              </div>
+              <div className="space-y-2">
+                <Label>Engagement Rate (%)</Label>
+                <Input type="number" defaultValue="4.5" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              Add Prospect
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -82,12 +279,1790 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "../auth/AuthProvider";
 
 // --- Mock Data (Based on Reference) ---
 const mockAgency = {
   name: "CM Models",
   email: "admin@cmmodels.com",
+};
+
+interface Client {
+  id: string;
+  name: string;
+  status: "Active Client" | "Prospect" | "Lead" | "Inactive";
+  industry: string;
+  website: string;
+  contacts: number;
+  totalRevenue: string;
+  bookings: number;
+  lastBooking: string;
+  nextFollowUp: string;
+  tags: string[];
+  notes?: string;
+  preferences?: {
+    talentTypes: string[];
+    budgetRange: string;
+    leadTime: string;
+  };
+  metrics?: {
+    revenue: string;
+    bookings: number;
+    packagesSent: number;
+    lastBookingDate: string;
+  };
+}
+
+interface FileItem {
+  id: string;
+  name: string;
+  type: "pdf" | "docx" | "jpg" | "png";
+  size: string;
+  folder: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  thumbnailUrl?: string;
+}
+
+interface FolderItem {
+  id: string;
+  name: string;
+  fileCount: number;
+  totalSize: string;
+  type: string;
+}
+
+const MOCK_FOLDERS: FolderItem[] = [
+  {
+    id: "1",
+    name: "Talent Files",
+    fileCount: 124,
+    totalSize: "4.2 GB",
+    type: "talent",
+  },
+  {
+    id: "2",
+    name: "Client Contracts",
+    fileCount: 45,
+    totalSize: "1.8 GB",
+    type: "client",
+  },
+  {
+    id: "3",
+    name: "Booking Documents",
+    fileCount: 89,
+    totalSize: "3.1 GB",
+    type: "booking",
+  },
+  {
+    id: "4",
+    name: "Receipts & Expenses",
+    fileCount: 156,
+    totalSize: "2.1 GB",
+    type: "expense",
+  },
+  {
+    id: "5",
+    name: "Marketing Materials",
+    fileCount: 67,
+    totalSize: "1.2 GB",
+    type: "marketing",
+  },
+];
+
+const MOCK_FILES: FileItem[] = [
+  {
+    id: "1",
+    name: "Emma_Contract_2024.pdf",
+    type: "pdf",
+    size: "245 KB",
+    folder: "Talent Files",
+    uploadedBy: "John Doe",
+    uploadedAt: "Jan 10, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
+  },
+  {
+    id: "2",
+    name: "Vogue_Shoot_Callsheet.pdf",
+    type: "pdf",
+    size: "186 KB",
+    folder: "Booking Documents",
+    uploadedBy: "Jane Smith",
+    uploadedAt: "Jan 9, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=400&h=300&fit=crop",
+  },
+  {
+    id: "3",
+    name: "Milan_Headshot_2024.jpg",
+    type: "jpg",
+    size: "3.2 MB",
+    folder: "Talent Files",
+    uploadedBy: "John Doe",
+    uploadedAt: "Jan 8, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=300&fit=crop",
+  },
+  {
+    id: "4",
+    name: "Client_Brief_Nike.docx",
+    type: "docx",
+    size: "124 KB",
+    folder: "Client Contracts",
+    uploadedBy: "Sarah Wilson",
+    uploadedAt: "Jan 7, 2024",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+  },
+];
+
+const MOCK_CLIENTS: Client[] = [
+  {
+    id: "nike",
+    name: "Nike Global",
+    status: "Active Client",
+    industry: "Athletic Apparel",
+    website: "nike.com",
+    contacts: 3,
+    totalRevenue: "$450K",
+    bookings: 12,
+    lastBooking: "Dec 15, 2025",
+    nextFollowUp: "Jan 20, 2026",
+    tags: ["Fashion", "Sports", "High-Budget"],
+    preferences: {
+      talentTypes: ["Athletic", "Fitness", "Lifestyle"],
+      budgetRange: "$50,000 - $250,000",
+      leadTime: "3-4 weeks",
+    },
+    metrics: {
+      revenue: "$450K",
+      bookings: 12,
+      packagesSent: 8,
+      lastBookingDate: "Dec 15",
+    },
+  },
+  {
+    id: "vogue",
+    name: "Vogue Magazine",
+    status: "Prospect",
+    industry: "Fashion Publishing",
+    website: "vogue.com",
+    contacts: 2,
+    totalRevenue: "$45K",
+    bookings: 3,
+    lastBooking: "Nov 20, 2025",
+    nextFollowUp: "Jan 15, 2026",
+    tags: ["Editorial", "Fashion", "Print"],
+  },
+  {
+    id: "apple",
+    name: "Apple Inc.",
+    status: "Lead",
+    industry: "Technology",
+    website: "apple.com",
+    contacts: 1,
+    totalRevenue: "$0K",
+    bookings: 0,
+    lastBooking: "Never",
+    nextFollowUp: "Jan 18, 2026",
+    tags: ["Tech", "Commercial", "Premium"],
+  },
+];
+
+const MOCK_CONTACTS = [
+  {
+    name: "Sarah Chen",
+    role: "Casting Director",
+    email: "sarah.chen@nike.com",
+    phone: "+1 (503) 555-0101",
+  },
+  {
+    name: "Mike Johnson",
+    role: "Creative Director",
+    email: "mike.j@nike.com",
+    phone: "+1 (503) 555-0102",
+  },
+  {
+    name: "Lisa Park",
+    role: "Finance",
+    email: "lisa.park@nike.com",
+    phone: "+1 (503) 555-0103",
+  },
+];
+
+const MOCK_COMMUNICATIONS = [
+  {
+    subject: "Spring Campaign Talent Options",
+    date: "January 5, 2026",
+    type: "email",
+    participants: "Agency",
+  },
+  {
+    subject: "Follow-up on December shoot",
+    date: "December 20, 2025",
+    type: "call",
+    participants: "Client",
+  },
+  {
+    subject: "Q1 2026 Planning Meeting",
+    date: "December 10, 2025",
+    type: "meeting",
+    participants: "Both",
+  },
+];
+
+const AddClientModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
+        <div className="p-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Add New Client
+            </DialogTitle>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Company Name *
+              </Label>
+              <Input
+                placeholder="Company Inc."
+                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Industry
+              </Label>
+              <Input
+                placeholder="Fashion, Tech, etc."
+                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">Website</Label>
+            <Input
+              placeholder="company.com"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">
+              Pipeline Stage
+            </Label>
+            <Select defaultValue="lead">
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue placeholder="Select stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lead">Lead</SelectItem>
+                <SelectItem value="prospect">Prospect</SelectItem>
+                <SelectItem value="active">Active Client</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">
+              Tags (comma-separated)
+            </Label>
+            <Input
+              placeholder="Fashion, Commercial, High-Budget"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">Notes</Label>
+            <Textarea
+              placeholder="Add notes about this client..."
+              className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold"
+            >
+              Cancel
+            </Button>
+            <Button className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+              Add Client
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ClientProfileModal = ({
+  client,
+  isOpen,
+  onClose,
+}: {
+  client: Client;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
+        <div className="p-8 space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-gray-400" />
+            </div>
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                {client.name}
+              </DialogTitle>
+              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                {client.status}
+              </Badge>
+            </div>
+          </div>
+
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+              <TabsTrigger
+                value="overview"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="contacts"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Contacts
+              </TabsTrigger>
+              <TabsTrigger
+                value="communications"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Communications
+              </TabsTrigger>
+              <TabsTrigger
+                value="bookings"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Bookings
+              </TabsTrigger>
+              <TabsTrigger
+                value="files"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Files & Notes
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6 mt-0">
+              <div className="grid grid-cols-2 gap-6">
+                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building2 className="w-5 h-5 text-gray-400" />
+                    <h4 className="font-bold text-gray-900">
+                      Company Information
+                    </h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Industry
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.industry}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Website
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.website}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
+                        Tags
+                      </p>
+                      <div className="flex gap-2">
+                        {client.tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="text-[10px] font-bold text-gray-500 border-gray-200"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-gray-400" />
+                    <h4 className="font-bold text-gray-900">
+                      Client Preferences
+                    </h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Preferred Talent Types
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.preferences?.talentTypes.join(", ") || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Budget Range
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.preferences?.budgetRange || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Booking Lead Time
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.preferences?.leadTime || "—"}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-gray-900">Client Metrics</h4>
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-purple-600 block">
+                      {client.metrics?.revenue || "—"}
+                    </span>
+                    <span className="text-[10px] font-bold text-purple-400 uppercase">
+                      Total Revenue
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-green-50/50 border-green-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-green-600 block">
+                      {client.metrics?.bookings || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-green-400 uppercase">
+                      Total Bookings
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-blue-50/50 border-blue-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-blue-600 block">
+                      {client.metrics?.packagesSent || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase">
+                      Packages Sent
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-orange-50/50 border-orange-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-orange-600 block">
+                      {client.metrics?.lastBookingDate || "—"}
+                    </span>
+                    <span className="text-[10px] font-bold text-orange-400 uppercase">
+                      Last Booking
+                    </span>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="contacts" className="space-y-6 mt-0">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-gray-900">Contact List</h4>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <Plus className="w-4 h-4" />
+                  Add Contact
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {MOCK_CONTACTS.map((contact, idx) => (
+                  <Card
+                    key={idx}
+                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-3">
+                        <div>
+                          <h5 className="font-bold text-gray-900 text-lg">
+                            {contact.name}
+                          </h5>
+                          <p className="text-sm text-gray-500 font-medium">
+                            {contact.role}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <Mail className="w-4 h-4 text-gray-500" />
+                            {contact.email}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <Phone className="w-4 h-4 text-gray-500" />
+                            {contact.phone}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-10 h-10 rounded-xl border-gray-100"
+                        >
+                          <Mail className="w-4 h-4 text-gray-500" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-10 h-10 rounded-xl border-gray-100"
+                        >
+                          <Phone className="w-4 h-4 text-gray-500" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="w-10 h-10 rounded-xl border-gray-100"
+                        >
+                          <Edit className="w-4 h-4 text-gray-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="communications" className="space-y-6 mt-0">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-gray-900">
+                  Communication History
+                </h4>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <Plus className="w-4 h-4" />
+                  Log Communication
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {MOCK_COMMUNICATIONS.map((comm, idx) => (
+                  <Card
+                    key={idx}
+                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
+                          {comm.type === "email" && (
+                            <Mail className="w-5 h-5 text-indigo-600" />
+                          )}
+                          {comm.type === "call" && (
+                            <Phone className="w-5 h-5 text-indigo-600" />
+                          )}
+                          {comm.type === "meeting" && (
+                            <Video className="w-5 h-5 text-indigo-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-gray-900">
+                            {comm.subject}
+                          </h5>
+                          <p className="text-sm text-gray-600 font-medium">
+                            {comm.date} • {comm.participants}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
+                      >
+                        {comm.type}
+                      </Badge>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="bookings" className="space-y-6 mt-0">
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+                <h4 className="text-xl font-bold text-gray-900">
+                  No Bookings Yet
+                </h4>
+                <p className="text-gray-500">
+                  This client hasn't made any bookings through the platform yet.
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="files" className="space-y-6 mt-0">
+              <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
+                <h4 className="font-bold text-gray-900">Notes</h4>
+                <Textarea
+                  defaultValue="Prefers diverse talent, always books for multi-day shoots."
+                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                />
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
+                  Save Notes
+                </Button>
+              </Card>
+
+              <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-bold text-gray-900">Files & Documents</h4>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                    <Plus className="w-4 h-4" />
+                    Upload File
+                  </Button>
+                </div>
+                <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                  <File className="w-12 h-12 text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-bold">
+                    No files uploaded yet
+                  </p>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Client
+              </Button>
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Client
+              </Button>
+            </div>
+            <Button
+              onClick={onClose}
+              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ClientCard = ({
+  client,
+  onViewProfile,
+}: {
+  client: Client;
+  onViewProfile: () => void;
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Active Client":
+        return "bg-emerald-50 text-emerald-800 border-emerald-100";
+      case "Prospect":
+        return "bg-blue-50 text-blue-800 border-blue-100";
+      case "Lead":
+        return "bg-gray-50 text-gray-800 border-gray-100";
+      default:
+        return "bg-gray-50 text-gray-800 border-gray-100";
+    }
+  };
+
+  return (
+    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+      <div className="flex flex-col lg:flex-row justify-between gap-6">
+        <div className="flex gap-6">
+          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+            <Building2 className="w-10 h-10 text-gray-500" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
+              <Badge
+                variant="outline"
+                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
+              >
+                {client.status}
+              </Badge>
+              <div className="flex gap-1.5">
+                {client.tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                  >
+                    <Tag className="w-3 h-3 text-gray-900" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
+              <span className="flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-gray-400" />
+                {client.industry}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-gray-400" />
+                {client.website}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-gray-400" />
+                {client.contacts} contacts
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
+              <span className="text-gray-500">
+                Total Revenue:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.totalRevenue}
+                </span>
+              </span>
+              <span className="text-gray-500">
+                Bookings:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.bookings}
+                </span>
+              </span>
+              <span className="text-gray-500">
+                Last Booking:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.lastBooking}
+                </span>
+              </span>
+              <span className="text-gray-500">
+                Next Follow-up:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.nextFollowUp}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Email
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+          >
+            <Phone className="w-4 h-4 mr-2" />
+            Call
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+          >
+            <Package className="w-4 h-4 mr-2" />
+            Send Package
+          </Button>
+          <Button
+            onClick={onViewProfile}
+            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+          >
+            View Profile
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const ClientCRMView = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("last-booking");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  const filteredClients = MOCK_CLIENTS.filter((client) => {
+    const matchesSearch =
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.industry.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStage =
+      stageFilter === "all" ||
+      client.status.toLowerCase().includes(stageFilter.toLowerCase());
+    return matchesSearch && matchesStage;
+  });
+
+  return (
+    <div className="space-y-8">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Client Relationship Management
+          </h1>
+          <p className="text-gray-600 font-medium">
+            Manage client relationships, track communications, and monitor
+            pipeline
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          Add Client
+        </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+            </div>
+            <span className="text-base font-bold text-green-800">
+              Active Clients
+            </span>
+          </div>
+          <span className="text-3xl font-bold text-green-900">1</span>
+        </Card>
+        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <span className="text-base font-bold text-blue-800">Prospects</span>
+          </div>
+          <span className="text-3xl font-bold text-blue-900">1</span>
+        </Card>
+        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <DollarSign className="w-5 h-5 text-purple-600" />
+            </div>
+            <span className="text-base font-bold text-purple-800">
+              Total Revenue
+            </span>
+          </div>
+          <span className="text-3xl font-bold text-purple-900">$495K</span>
+        </Card>
+        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Clock className="w-5 h-5 text-orange-600" />
+            </div>
+            <span className="text-base font-bold text-orange-800">
+              Follow-ups Due
+            </span>
+          </div>
+          <span className="text-3xl font-bold text-orange-900">0</span>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            placeholder="Search clients..."
+            className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+            <SelectValue placeholder="All Stages" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Stages</SelectItem>
+            <SelectItem value="leads">Leads</SelectItem>
+            <SelectItem value="prospects">Prospects</SelectItem>
+            <SelectItem value="active">Active Clients</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+            <SelectValue placeholder="Last Booking" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last-booking">Last Booking</SelectItem>
+            <SelectItem value="revenue">Total Revenue</SelectItem>
+            <SelectItem value="name">Company Name</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Client List */}
+      <div className="space-y-4">
+        {filteredClients.map((client) => (
+          <ClientCard
+            key={client.id}
+            client={client}
+            onViewProfile={() => setSelectedClient(client)}
+          />
+        ))}
+      </div>
+
+      <AddClientModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
+      {selectedClient && (
+        <ClientProfileModal
+          client={selectedClient}
+          isOpen={!!selectedClient}
+          onClose={() => setSelectedClient(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+const StorageUsageCard = () => (
+  <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center gap-2">
+        <HardDrive className="w-5 h-5 text-indigo-600" />
+        <span className="text-base font-bold text-gray-900">Storage Usage</span>
+      </div>
+      <span className="text-sm font-bold text-gray-900">
+        <span className="text-indigo-600">12.4 GB</span> of 50 GB used
+      </span>
+    </div>
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+      <div
+        className="h-full bg-indigo-600 rounded-full"
+        style={{ width: "24.8%" }}
+      />
+    </div>
+    <div className="flex justify-between items-center">
+      <p className="text-sm text-gray-500 font-medium">
+        37.6 GB remaining • Professional Plan
+      </p>
+      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
+        Upgrade Plan
+      </Button>
+    </div>
+  </Card>
+);
+
+const FolderCard = ({ folder }: { folder: FolderItem }) => {
+  const getFolderColor = (type: string) => {
+    switch (type) {
+      case "talent":
+        return "text-indigo-500";
+      case "client":
+        return "text-emerald-500";
+      case "booking":
+        return "text-blue-500";
+      case "expense":
+        return "text-orange-500";
+      case "marketing":
+        return "text-purple-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const getFolderBg = (type: string) => {
+    switch (type) {
+      case "talent":
+        return "bg-indigo-50/50";
+      case "client":
+        return "bg-emerald-50/50";
+      case "booking":
+        return "bg-blue-50/50";
+      case "expense":
+        return "bg-orange-50/50";
+      case "marketing":
+        return "bg-purple-50/50";
+      default:
+        return "bg-gray-50/50";
+    }
+  };
+
+  return (
+    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-6 relative z-10">
+        <div
+          className={`w-14 h-14 ${getFolderBg(folder.type)} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm border border-white/50`}
+        >
+          <div className="relative">
+            <Folder
+              className={`w-8 h-8 ${getFolderColor(folder.type)} fill-current opacity-20`}
+            />
+            <Folder
+              className={`absolute inset-0 w-8 h-8 ${getFolderColor(folder.type)}`}
+            />
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-8 h-8 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-50"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 rounded-xl">
+            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+              <FolderOpen className="w-4 h-4 mr-2" /> Open
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+              <Edit className="w-4 h-4 mr-2" /> Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="relative z-10">
+        <h4 className="text-base font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">
+          {folder.name}
+        </h4>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-600 font-bold">
+            {folder.fileCount} files
+          </span>
+          <span className="text-xs text-gray-400">•</span>
+          <span className="text-xs text-gray-500 font-bold">
+            {folder.totalSize}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const FileCard = ({
+  file,
+  onPreview,
+  onShare,
+}: {
+  file: FileItem;
+  onPreview: (file: FileItem) => void;
+  onShare: (file: FileItem) => void;
+}) => (
+  <Card className="overflow-hidden bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow group max-w-[280px]">
+    <div className="aspect-video bg-gray-50 flex items-center justify-center relative">
+      {file.thumbnailUrl ? (
+        <img
+          src={file.thumbnailUrl}
+          alt={file.name}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="flex flex-col items-center gap-2">
+          {file.type === "pdf" && <FileText className="w-8 h-8 text-red-500" />}
+          {file.type === "docx" && (
+            <FileText className="w-8 h-8 text-blue-500" />
+          )}
+          {file.type === "jpg" && <File className="w-8 h-8 text-emerald-500" />}
+          <span className="text-[10px] font-black uppercase text-gray-400">
+            {file.type}
+          </span>
+        </div>
+      )}
+      <div className="absolute top-2 right-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="w-7 h-7 rounded-lg bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <MoreVertical className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 rounded-xl">
+            <DropdownMenuItem
+              onClick={() => onPreview(file)}
+              className="font-bold text-gray-700 cursor-pointer"
+            >
+              <Eye className="w-4 h-4 mr-2" /> Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
+              <Download className="w-4 h-4 mr-2" /> Download
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onShare(file)}
+              className="font-bold text-gray-700 cursor-pointer"
+            >
+              <Share2 className="w-4 h-4 mr-2" /> Share Link
+            </DropdownMenuItem>
+            <DropdownMenuItem className="font-bold text-red-600 cursor-pointer">
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+    <div className="p-2.5">
+      <h5 className="text-[13px] font-bold text-gray-900 truncate mb-1">
+        {file.name}
+      </h5>
+      <div className="flex justify-between items-center">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-gray-600 font-bold">
+            {file.size}
+          </span>
+          <span className="text-[10px] text-gray-500 font-bold">
+            {file.uploadedAt}
+          </span>
+        </div>
+        <Badge
+          variant="outline"
+          className="text-[9px] font-bold text-gray-700 border-gray-200 px-1.5 py-0 bg-gray-50/50"
+        >
+          {file.folder}
+        </Badge>
+      </div>
+    </div>
+  </Card>
+);
+
+const FileRow = ({
+  file,
+  onPreview,
+  onShare,
+}: {
+  file: FileItem;
+  onPreview: (file: FileItem) => void;
+  onShare: (file: FileItem) => void;
+}) => (
+  <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow group">
+    <div className="flex items-center gap-4 flex-1">
+      <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
+        {file.type === "pdf" && <FileText className="w-5 h-5 text-red-500" />}
+        {file.type === "docx" && <FileText className="w-5 h-5 text-blue-500" />}
+        {file.type === "jpg" && <File className="w-5 h-5 text-emerald-500" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h5 className="text-sm font-bold text-gray-900 truncate">
+          {file.name}
+        </h5>
+        <p className="text-xs text-gray-600 font-bold">
+          {file.size} • <span className="text-indigo-600">{file.folder}</span> •
+          Uploaded by <span className="text-gray-900">{file.uploadedBy}</span>{" "}
+          on {file.uploadedAt}
+        </p>
+      </div>
+    </div>
+    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+        onClick={() => onPreview(file)}
+      >
+        <Eye className="w-4 h-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+      >
+        <Download className="w-4 h-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+        onClick={() => onShare(file)}
+      >
+        <Share2 className="w-4 h-4" />
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+);
+
+const NewFolderModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-[425px] rounded-2xl">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Create New Folder
+        </DialogTitle>
+        <DialogDescription className="text-gray-500 font-medium">
+          Organize your files into folders
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700">Folder Name</Label>
+          <Input
+            placeholder="e.g., Q1 2024 Campaigns"
+            className="h-11 rounded-xl border-gray-200"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700">Folder Type</Label>
+          <Select>
+            <SelectTrigger className="h-11 rounded-xl border-gray-200">
+              <SelectValue placeholder="Select type..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="talent">Talent Files</SelectItem>
+              <SelectItem value="client">Client Files</SelectItem>
+              <SelectItem value="booking">Booking Files</SelectItem>
+              <SelectItem value="expense">Expense Files</SelectItem>
+              <SelectItem value="marketing">Marketing Files</SelectItem>
+              <SelectItem value="others">others</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <DialogFooter className="gap-2">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
+          Cancel
+        </Button>
+        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+          Create Folder
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+const UploadFilesModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-[500px] rounded-2xl">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-bold text-gray-900">
+          Upload Files
+        </DialogTitle>
+        <DialogDescription className="text-gray-500 font-medium">
+          Upload documents, images, or other files to your storage
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-6 py-4">
+        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer group">
+          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Upload className="w-6 h-6 text-indigo-600" />
+          </div>
+          <p className="text-sm font-bold text-gray-900 mb-1">
+            Click to upload or drag and drop
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            PDF, DOC, JPG, PNG up to 50MB
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-bold text-gray-700">
+            Save to folder
+          </Label>
+          <Select>
+            <SelectTrigger className="h-11 rounded-xl border-gray-200">
+              <SelectValue placeholder="Select a folder..." />
+            </SelectTrigger>
+            <SelectContent>
+              {MOCK_FOLDERS.map((folder) => (
+                <SelectItem key={folder.id} value={folder.id}>
+                  {folder.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <DialogFooter className="gap-2">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+        >
+          Cancel
+        </Button>
+        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+          Upload Files
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
+const FilePreviewModal = ({
+  file,
+  isOpen,
+  onClose,
+}: {
+  file: FileItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!file) return null;
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+              {file.type === "pdf" && (
+                <FileText className="w-6 h-6 text-red-500" />
+              )}
+              {file.type === "docx" && (
+                <FileText className="w-6 h-6 text-blue-500" />
+              )}
+              {file.type === "jpg" && (
+                <File className="w-6 h-6 text-emerald-500" />
+              )}
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-bold text-gray-900">
+                {file.name}
+              </DialogTitle>
+              <p className="text-sm text-gray-500 font-medium">
+                {file.size} • Uploaded by {file.uploadedBy} on {file.uploadedAt}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-xl hover:bg-gray-50"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </Button>
+        </div>
+        <div className="p-10 bg-gray-50/50 flex items-center justify-center min-h-[500px] relative group">
+          {file.thumbnailUrl ? (
+            <div className="relative">
+              <img
+                src={file.thumbnailUrl}
+                alt={file.name}
+                className="max-w-full max-h-[600px] rounded-2xl shadow-2xl border-4 border-white transition-transform group-hover:scale-[1.01]"
+              />
+              <div className="absolute inset-0 rounded-2xl shadow-inner pointer-events-none" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-6 p-12 bg-white rounded-3xl shadow-sm border border-gray-100">
+              <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center">
+                {file.type === "pdf" && (
+                  <FileText className="w-10 h-10 text-red-500" />
+                )}
+                {file.type === "docx" && (
+                  <FileText className="w-10 h-10 text-blue-500" />
+                )}
+              </div>
+              <div className="text-center">
+                <p className="text-gray-900 font-bold text-lg mb-1">
+                  Preview not available
+                </p>
+                <p className="text-gray-500 text-sm font-medium">
+                  Please download the file to view its content
+                </p>
+              </div>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-8">
+                Download Now
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className="p-6 border-t border-gray-100 flex justify-between items-center bg-white">
+          <div className="flex gap-2">
+            <Badge
+              variant="outline"
+              className="bg-gray-50 text-gray-600 border-gray-200 font-bold px-3 py-1 rounded-lg"
+            >
+              {file.folder}
+            </Badge>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
+            >
+              Close Preview
+            </Button>
+            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
+              <Download className="w-4 h-4" />
+              Download File
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ShareFileModal = ({
+  file,
+  isOpen,
+  onClose,
+}: {
+  file: FileItem | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!file) return null;
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+        <div className="p-6 border-b border-gray-100 bg-white">
+          <div className="flex justify-between items-start mb-1">
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Share File
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-xl -mr-2 -mt-2"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </Button>
+          </div>
+          <DialogDescription className="text-gray-500 font-medium">
+            Generate a secure shareable link for{" "}
+            <span className="text-gray-900 font-bold">{file.name}</span>
+          </DialogDescription>
+        </div>
+
+        <div className="p-6 space-y-6 bg-gray-50/30">
+          <div className="space-y-2.5">
+            <Label className="text-sm font-bold text-gray-700 ml-1">
+              Share Link
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  readOnly
+                  value={`https://agency.likelee.ai/share/${file.id}`}
+                  className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
+                />
+                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+              <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
+                <Copy className="w-4 h-4" />
+                Copy
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2.5">
+              <Label className="text-sm font-bold text-gray-700 ml-1">
+                Link Expiration
+              </Label>
+              <Select defaultValue="7-days">
+                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
+                  <SelectValue placeholder="Select expiration..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="24-hours" className="font-medium">
+                    24 Hours
+                  </SelectItem>
+                  <SelectItem value="7-days" className="font-medium">
+                    7 Days
+                  </SelectItem>
+                  <SelectItem value="30-days" className="font-medium">
+                    30 Days
+                  </SelectItem>
+                  <SelectItem value="never" className="font-medium">
+                    Never
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2.5">
+              <Label className="text-sm font-bold text-gray-700 ml-1">
+                Access Level
+              </Label>
+              <Select defaultValue="view">
+                <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white shadow-sm">
+                  <SelectValue placeholder="Select access..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="view" className="font-medium">
+                    View Only
+                  </SelectItem>
+                  <SelectItem value="download" className="font-medium">
+                    Can Download
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <Label
+                  className="text-sm font-bold text-gray-700 cursor-pointer"
+                  htmlFor="require-password"
+                >
+                  Require password
+                </Label>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Add an extra layer of security
+                </p>
+              </div>
+            </div>
+            <Checkbox
+              id="require-password"
+              className="rounded-md w-5 h-5 border-gray-300"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-white">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="h-12 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </Button>
+          <Button className="h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200">
+            <Share2 className="w-4 h-4" />
+            Create Share Link
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const FileStorageView = () => {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedFileForPreview, setSelectedFileForPreview] =
+    useState<FileItem | null>(null);
+  const [selectedFileForShare, setSelectedFileForShare] =
+    useState<FileItem | null>(null);
+
+  return (
+    <div className="space-y-8">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <Folder className="w-8 h-8 text-indigo-600" />
+            File Storage
+          </h1>
+          <p className="text-gray-600 font-medium">
+            Organize and manage your agency files
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setIsNewFolderModalOpen(true)}
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          >
+            <FolderPlus className="w-5 h-5" />
+            New Folder
+          </Button>
+          <Button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+          >
+            <Upload className="w-5 h-5" />
+            Upload Files
+          </Button>
+        </div>
+      </div>
+
+      <StorageUsageCard />
+
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Search files by name..."
+              className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
+            <Select defaultValue="name-asc">
+              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                <SelectItem value="date-desc">Date (Newest)</SelectItem>
+                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
+                <SelectItem value="size-desc">Size (Largest)</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex bg-gray-100 p-1 rounded-xl">
+              <Button
+                variant={viewMode === "grid" ? "white" : "ghost"}
+                size="sm"
+                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
+                onClick={() => setViewMode("grid")}
+              >
+                <Grid className="w-4 h-4 mr-2" />
+                Grid
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "white" : "ghost"}
+                size="sm"
+                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4 mr-2" />
+                List
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {MOCK_FOLDERS.map((folder) => (
+            <FolderCard key={folder.id} folder={folder} />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
+          <span className="text-sm text-gray-500 font-medium">
+            {MOCK_FILES.length} files
+          </span>
+        </div>
+
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {MOCK_FILES.map((file) => (
+              <FileCard
+                key={file.id}
+                file={file}
+                onPreview={setSelectedFileForPreview}
+                onShare={setSelectedFileForShare}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {MOCK_FILES.map((file) => (
+              <FileRow
+                key={file.id}
+                file={file}
+                onPreview={setSelectedFileForPreview}
+                onShare={setSelectedFileForShare}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <NewFolderModal
+        isOpen={isNewFolderModalOpen}
+        onClose={() => setIsNewFolderModalOpen(false)}
+      />
+      <UploadFilesModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
+      <FilePreviewModal
+        file={selectedFileForPreview}
+        isOpen={!!selectedFileForPreview}
+        onClose={() => setSelectedFileForPreview(null)}
+      />
+      <ShareFileModal
+        file={selectedFileForShare}
+        isOpen={!!selectedFileForShare}
+        onClose={() => setSelectedFileForShare(null)}
+      />
+    </div>
+  );
 };
 
 const TALENT_DATA = [
@@ -690,6 +2665,549 @@ const PerformanceTiersView = ({ onBack }: { onBack: () => void }) => {
           );
         })}
       </div>
+    </div>
+  );
+};
+
+const ScoutingHubView = ({
+  activeTab,
+  setActiveTab,
+}: {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}) => {
+  const [isAddProspectOpen, setIsAddProspectOpen] = useState(false);
+
+  const tabs = [
+    "Prospect Pipeline",
+    "Social Discovery",
+    "Marketplace",
+    "Scouting Map",
+    "Submissions",
+    "Open Calls",
+    "Analytics",
+  ];
+
+  return (
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Scouting Hub
+          </h1>
+          <p className="text-gray-500 font-medium text-sm mt-1">
+            Discover, track, and manage talent prospects
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
+            onClick={() => setIsAddProspectOpen(true)}
+          >
+            <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
+          </Button>
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
+          >
+            <MapPin className="w-4 h-4" /> Plan Scouting Trip
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto max-w-full">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        {activeTab === "Prospect Pipeline" && (
+          <ProspectPipelineTab
+            onAddProspect={() => setIsAddProspectOpen(true)}
+          />
+        )}
+        {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
+        {activeTab === "Marketplace" && <MarketplaceTab />}
+        {activeTab === "Scouting Map" && <ScoutingMapTab />}
+        {activeTab === "Submissions" && <SubmissionsTab />}
+        {activeTab === "Open Calls" && <OpenCallsTab />}
+        {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
+      </div>
+      <AddProspectModal
+        open={isAddProspectOpen}
+        onOpenChange={setIsAddProspectOpen}
+      />
+    </div>
+  );
+};
+
+const ProspectPipelineTab = ({
+  onAddProspect,
+}: {
+  onAddProspect: () => void;
+}) => {
+  const stats = [
+    { label: "New Leads", count: 0, color: "border-blue-200 bg-blue-50/30" },
+    {
+      label: "In Contact",
+      count: 0,
+      color: "border-yellow-200 bg-yellow-50/30",
+    },
+    {
+      label: "Test Shoots",
+      count: 0,
+      color: "border-purple-200 bg-purple-50/30",
+    },
+    {
+      label: "Offers Sent",
+      count: 0,
+      color: "border-green-200 bg-green-50/30",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <h2 className="text-xl font-bold text-gray-900">Prospect Pipeline</h2>
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search prospects..."
+                className="pl-10 h-10 border-gray-200 bg-white"
+              />
+            </div>
+            <Select defaultValue="all">
+              <SelectTrigger className="w-[140px] h-10 border-gray-200">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="new">New Lead</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                <SelectItem value="test_shoot">Test Shoot Pending</SelectItem>
+                <SelectItem value="offer_sent">Offer Sent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className={`p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
+            >
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
+                {stat.label}
+              </p>
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {stat.count}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
+          <div className="p-6 bg-gray-50 rounded-full mb-4">
+            <Users className="w-10 h-10 text-gray-300" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            No prospects yet
+          </h3>
+          <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
+            Start building your pipeline by adding discovered talent
+          </p>
+          <Button
+            onClick={onAddProspect}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Add First Prospect
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const SocialDiscoveryTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">
+          Social Media Discovery Tool
+        </h2>
+        <p className="text-sm text-gray-500 font-medium">
+          Find talent on Instagram, TikTok, and other platforms
+        </p>
+      </div>
+      <Button
+        variant="default"
+        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-lg shadow-sm"
+      >
+        <Instagram className="w-4 h-4" /> Connect Instagram
+      </Button>
+    </div>
+
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-2 w-full">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Search by username, hashtag, or location..."
+            className="h-10 border-gray-200 bg-white rounded-lg"
+          />
+        </div>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
+          Search
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
+        >
+          <Instagram className="w-4 h-4" /> Instagram
+        </Button>
+        <Button
+          variant="outline"
+          className="border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
+        >
+          TikTok
+        </Button>
+        <Button
+          variant="outline"
+          className="border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
+        >
+          YouTube
+        </Button>
+      </div>
+
+      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
+        <div className="p-6 bg-gray-50 rounded-full mb-6">
+          <Instagram className="w-12 h-12 text-gray-200" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          Social Media Discovery Coming Soon
+        </h3>
+        <p className="text-gray-500 max-w-sm font-medium mb-8">
+          Search Instagram, TikTok, and YouTube to find potential talent
+        </p>
+
+        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
+          <h4 className="font-bold text-gray-900 mb-4">Features:</h4>
+          <ul className="space-y-3">
+            {[
+              "Search by hashtags, locations, and usernames",
+              "Filter by follower count and engagement rate",
+              "Save profiles directly to prospect pipeline",
+              "Track engagement metrics over time",
+            ].map((feature) => (
+              <li
+                key={feature}
+                className="flex items-start gap-3 text-sm text-gray-600 font-medium"
+              >
+                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-1.5 flex-shrink-0" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </Card>
+);
+
+const MarketplaceTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Likelee Marketplace</h2>
+        <p className="text-sm text-gray-500 font-medium">
+          Browse verified creators on the Likelee platform
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm"
+      >
+        <Filter className="w-4 h-4 text-gray-400" /> Filters
+      </Button>
+    </div>
+
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-2 w-full">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Search by name, category, or skills..."
+            className="h-10 border-gray-200 bg-white rounded-lg"
+          />
+        </div>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
+          Search
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Select defaultValue="all">
+          <SelectTrigger className="h-11 border-gray-200">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="model">Models</SelectItem>
+            <SelectItem value="actor">Actors</SelectItem>
+            <SelectItem value="influencer">Influencers</SelectItem>
+            <SelectItem value="athlete">Athletes</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="all">
+          <SelectTrigger className="h-11 border-gray-200">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="unsigned">Unsigned</SelectItem>
+            <SelectItem value="signed">Signed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="followers">
+          <SelectTrigger className="h-11 border-gray-200">
+            <SelectValue placeholder="Followers" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="followers">Followers</SelectItem>
+            <SelectItem value="engagement">Engagement</SelectItem>
+            <SelectItem value="recent">Recently Added</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
+        <div className="p-6 bg-gray-50 rounded-full mb-6">
+          <Globe className="w-12 h-12 text-gray-200" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          Marketplace Integration Coming Soon
+        </h3>
+        <p className="text-gray-500 max-w-sm font-medium mb-8">
+          Browse and connect with verified creators from the Likelee network
+        </p>
+
+        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
+          <h4 className="font-bold text-gray-900 mb-4">Benefits:</h4>
+          <ul className="space-y-3">
+            {[
+              "Access verified, vetted talent profiles",
+              "See availability and booking rates",
+              "Send connection requests directly",
+              "Review portfolios and past campaigns",
+            ].map((benefit) => (
+              <li
+                key={benefit}
+                className="flex items-start gap-3 text-sm text-gray-600 font-medium"
+              >
+                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-1.5 flex-shrink-0" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </Card>
+);
+
+const ScoutingMapTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <h2 className="text-xl font-bold text-gray-900">Scouting Map</h2>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          className="font-bold text-gray-700 px-6 h-11 rounded-xl shadow-sm border-gray-300"
+        >
+          View Trip History
+        </Button>
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 h-11 rounded-xl shadow-sm">
+          Plan New Trip
+        </Button>
+      </div>
+    </div>
+
+    <div className="bg-gray-50 rounded-2xl h-[500px] border border-gray-200 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]" />
+      <div className="relative z-10 p-6 bg-white rounded-full mb-4 shadow-sm">
+        <MapPin className="w-12 h-12 text-gray-200" />
+      </div>
+      <h3 className="relative z-10 text-xl font-bold text-gray-900 mb-2">
+        Interactive Map Coming Soon
+      </h3>
+      <p className="relative z-10 text-gray-500 max-w-sm font-medium">
+        Track discoveries, plan trips, and visualize your scouting activity
+      </p>
+    </div>
+  </Card>
+);
+
+const SubmissionsTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Website Submissions</h2>
+        <p className="text-sm text-gray-500 font-medium">
+          Review talent applications
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge
+          variant="secondary"
+          className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 text-sm rounded-xl h-11 flex items-center gap-2"
+        >
+          18 Pending Review
+        </Badge>
+        <Button
+          variant="outline"
+          className="font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm border-gray-300"
+        >
+          Bulk Actions
+        </Button>
+      </div>
+    </div>
+
+    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
+      <div className="p-8 bg-gray-50 rounded-full mb-6">
+        <Mail className="w-12 h-12 text-gray-200" />
+      </div>
+      <h3 className="text-xl font-bold text-gray-900 mb-2">
+        No new submissions
+      </h3>
+      <p className="text-gray-500 max-w-sm font-medium">
+        Applications from your website will appear here
+      </p>
+    </div>
+  </Card>
+);
+
+const OpenCallsTab = () => (
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">
+          Open Calls & Casting Events
+        </h2>
+      </div>
+      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-lg shadow-sm">
+        <Plus className="w-4 h-4" /> Create Event
+      </Button>
+    </div>
+
+    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
+      <div className="p-8 bg-gray-50 rounded-full mb-6">
+        <Calendar className="w-12 h-12 text-gray-400" />
+      </div>
+      <h3 className="text-xl font-bold text-gray-900 mb-2">
+        No upcoming events
+      </h3>
+      <p className="text-gray-500 max-w-sm font-medium mb-6">
+        Organize open calls and virtual castings
+      </p>
+      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm">
+        <Plus className="w-4 h-4" /> Create First Event
+      </Button>
+    </div>
+  </Card>
+);
+
+const ScoutingAnalyticsTab = () => {
+  const stats = [
+    {
+      label: "TOTAL PROSPECTS",
+      value: "127",
+      sub: "+23 this month",
+      subColor: "text-green-600",
+    },
+    {
+      label: "CONVERSION RATE",
+      value: "18%",
+      sub: "Prospects → Signed",
+      subColor: "text-gray-500",
+    },
+    {
+      label: "AVG. TIME TO SIGN",
+      value: "34d",
+      sub: "From discovery",
+      subColor: "text-gray-500",
+    },
+  ];
+
+  const sources = [
+    { name: "Instagram", value: 42 },
+    { name: "Street Scouting", value: 28 },
+    { name: "Referrals", value: 18 },
+    { name: "Website Submissions", value: 12 },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((stat) => (
+          <Card
+            key={stat.label}
+            className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl"
+          >
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+              {stat.label}
+            </p>
+            <div className="mb-1">
+              <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                {stat.value}
+              </span>
+            </div>
+            <p className={`text-sm font-medium ${stat.subColor}`}>{stat.sub}</p>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <h3 className="text-sm font-bold text-gray-900 mb-6">
+          Discovery Sources
+        </h3>
+        <div className="space-y-6">
+          {sources.map((source) => (
+            <div key={source.name}>
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-sm font-semibold text-gray-900">
+                  {source.name}
+                </span>
+                <span className="text-xs font-bold text-gray-900">
+                  {source.value}%
+                </span>
+              </div>
+              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gray-900 rounded-full"
+                  style={{ width: `${source.value}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };
@@ -8104,8 +10622,11 @@ const PlaceholderView = ({ title }: { title: string }) => (
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
+  const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
   const [activeTab, setActiveTab] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState("All Talent");
+  const [activeScoutingTab, setActiveScoutingTab] =
+    useState("Prospect Pipeline");
   const [expandedItems, setExpandedItems] = useState<string[]>([
     "roster",
     "licensing",
@@ -8200,40 +10721,92 @@ export default function AgencyDashboard() {
     badges?: Record<string, string | number>;
   }
 
-  const sidebarItems: SidebarItem[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    {
-      id: "roster",
-      label: "Roster",
-      icon: Users,
-      subItems: ["All Talent", "Performance Tiers"],
-    },
-    {
-      id: "licensing",
-      label: "Licensing",
-      icon: FileText,
-      subItems: ["Licensing Requests", "Active Licenses", "License Templates"],
-    },
-    {
-      id: "protection",
-      label: "Protection & Usage",
-      icon: Shield,
-      subItems: ["Protect & Usage", "Compliance Hub"],
-      badges: { "Compliance Hub": "NEW" },
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: BarChart2,
-      subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-    },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+  const sidebarItems: SidebarItem[] =
+    agencyMode === "AI"
+      ? [
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          { id: "settings", label: "Settings", icon: Settings },
+        ]
+      : [
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          { id: "file-storage", label: "File Storage", icon: Folder },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar and schedule",
+              "Booking request",
+              "Client Database",
+              "Talent availability",
+              "Notifications",
+              "Management and Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "settings", label: "Settings", icon: Settings },
+        ];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-slate-800 pt-20">
+    <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-20 left-0 h-[calc(100vh-5rem)] z-10 transition-all duration-300">
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -8331,6 +10904,15 @@ export default function AgencyDashboard() {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")}
+              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all"
+            >
+              {agencyMode === "AI" ? "AI Mode" : "IRL Mode"}
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -8540,6 +11122,32 @@ export default function AgencyDashboard() {
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "settings" && <SettingsView />}
+          {activeTab === "scouting" && (
+            <ScoutingHubView
+              activeTab={activeScoutingTab}
+              setActiveTab={setActiveScoutingTab}
+            />
+          )}
+          {activeTab === "client-crm" && <ClientCRMView />}
+          {activeTab === "file-storage" && <FileStorageView />}
+          {activeTab === "bookings" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Bookings</h2>
+              <p className="text-gray-500">{activeSubTab}</p>
+              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
+            </div>
+          )}
+          {activeTab === "accounting" && (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <CreditCard className="w-16 h-16 text-gray-200 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">
+                Accounting & Invoicing
+              </h2>
+              <p className="text-gray-500">{activeSubTab}</p>
+              <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
+            </div>
+          )}
         </main>
       </div>
     </div>
