@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
-import { getPayoutsAccountStatus, createPayoutsOnboardingLink } from "@/api/functions";
+import {
+  getPayoutsAccountStatus,
+  createPayoutsOnboardingLink,
+} from "@/api/functions";
 
 export default function PayoutsStatus() {
   const { user } = useAuth();
@@ -51,7 +54,12 @@ export default function PayoutsStatus() {
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Payouts Status</h1>
-          <Button variant="outline" onClick={() => navigate("/CreatorDashboard")}>Back</Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/CreatorDashboard")}
+          >
+            Back
+          </Button>
         </div>
 
         <Card className="p-6 bg-white border-2 border-black rounded-none">
@@ -62,29 +70,40 @@ export default function PayoutsStatus() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-gray-700">Connected to Stripe</div>
-                <div className={`font-semibold ${status.connected ? "text-green-700" : "text-gray-600"}`}>
+                <div
+                  className={`font-semibold ${status.connected ? "text-green-700" : "text-gray-600"}`}
+                >
                   {status.connected ? "Yes" : "No"}
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-gray-700">Payouts Enabled</div>
-                <div className={`font-semibold ${status.payouts_enabled ? "text-green-700" : "text-gray-600"}`}>
+                <div
+                  className={`font-semibold ${status.payouts_enabled ? "text-green-700" : "text-gray-600"}`}
+                >
                   {status.payouts_enabled ? "Yes" : "No"}
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-gray-700">Transfers Enabled</div>
-                <div className={`font-semibold ${status.transfers_enabled ? "text-green-700" : "text-gray-600"}`}>
+                <div
+                  className={`font-semibold ${status.transfers_enabled ? "text-green-700" : "text-gray-600"}`}
+                >
                   {status.transfers_enabled ? "Yes" : "No"}
                 </div>
               </div>
               {status.last_error && (
-                <div className="text-sm text-amber-700">Last issue: {status.last_error}</div>
+                <div className="text-sm text-amber-700">
+                  Last issue: {status.last_error}
+                </div>
               )}
 
               <div className="pt-4 flex gap-3">
                 {!status.connected && (
-                  <Button className="bg-emerald-600" onClick={restartOnboarding}>
+                  <Button
+                    className="bg-emerald-600"
+                    onClick={restartOnboarding}
+                  >
                     Connect Bank Account
                   </Button>
                 )}
