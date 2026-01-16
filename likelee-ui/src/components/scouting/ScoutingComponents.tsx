@@ -200,8 +200,8 @@ export const AddProspectModal = ({
                                     key={cat}
                                     type="button"
                                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${formData.categories?.includes(cat)
-                                            ? "bg-indigo-600 text-white"
-                                            : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                                        ? "bg-indigo-600 text-white"
+                                        : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                                         }`}
                                     onClick={(e) => {
                                         e.preventDefault();
@@ -390,8 +390,10 @@ export const ProspectPipelineTab = ({
         try {
             setLoading(true);
             const agencyId = await scoutingService.getUserAgencyId();
+            console.log("Fetching prospects for agency:", agencyId);
             if (agencyId) {
                 const data = await scoutingService.getProspects(agencyId);
+                console.log("Fetched prospects:", data);
                 setProspects(data);
             } else {
                 console.warn("No agency ID found for current user");

@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import { scoutingService } from "@/services/scoutingService";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import {
   LayoutDashboard,
   Users,
@@ -105,12 +108,111 @@ const AddProspectModal = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [starRating, setStarRating] = useState(3);
 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    source: "instagram",
+    discoveryDate: new Date().toISOString().split("T")[0],
+    discoveryLocation: "",
+    referredBy: "",
+    status: "new",
+    assignedAgent: "",
+    notes: "",
+    instagramFollowers: 10000,
+    engagementRate: 4.5,
+  });
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
+  };
+
+  const queryClient = useQueryClient();
+
+  const handleSaveProspect = async () => {
+    console.log("Scouting Service:", scoutingService);
+    try {
+      if (!formData.name) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter a name for the prospect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) {
+        toast({
+          title: "Error",
+          description: "Could not identify your agency. Please try logging in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for duplicates
+      const existing = await scoutingService.checkDuplicate(
+        agencyId,
+        formData.email,
+        formData.instagram
+      );
+
+      if (existing) {
+        toast({
+          title: "Prospect Already Exists",
+          description: `This prospect (${existing.full_name}) is already in your pipeline.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await scoutingService.createProspect({
+        agency_id: agencyId,
+        full_name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        instagram_handle: formData.instagram,
+        categories: selectedCategories,
+        rating: starRating,
+        source: formData.source,
+        discovery_date: formData.discoveryDate,
+        discovery_location: formData.discoveryLocation,
+        referred_by: formData.referredBy,
+        status: formData.status as any,
+        assigned_agent_name: formData.assignedAgent,
+        notes: formData.notes,
+        instagram_followers: formData.instagramFollowers,
+        engagement_rate: formData.engagementRate,
+      });
+
+      toast({
+        title: "Prospect Added",
+        description: `${formData.name} has been added to your pipeline.`,
+      });
+
+      // Invalidate the prospects query to trigger a refetch
+      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving prospect:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save prospect. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -130,19 +232,39 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
-                <Input id="name" placeholder="Full name" />
+                <Input
+                  id="name"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="email@example.com" />
+                <Input
+                  id="email"
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="+1 (555) 123-4567" />
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram Handle</Label>
-                <Input id="instagram" placeholder="@username" />
+                <Input
+                  id="instagram"
+                  placeholder="@username"
+                  value={formData.instagram}
+                  onChange={(e) => handleInputChange("instagram", e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -163,8 +285,8 @@ const AddProspectModal = ({
                   variant={selectedCategories.includes(cat) ? "default" : "secondary"}
                   onClick={() => toggleCategory(cat)}
                   className={`${selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                     } font-medium`}
                 >
                   {cat}
@@ -178,7 +300,10 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Discovery Source</Label>
-                <Select defaultValue="instagram">
+                <Select
+                  value={formData.source}
+                  onValueChange={(val) => handleInputChange("source", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
@@ -192,16 +317,28 @@ const AddProspectModal = ({
               <div className="space-y-2">
                 <Label>Discovery Date</Label>
                 <div className="relative">
-                  <Input type="date" defaultValue="2026-01-12" />
+                  <Input
+                    type="date"
+                    value={formData.discoveryDate}
+                    onChange={(e) => handleInputChange("discoveryDate", e.target.value)}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Location</Label>
-                <Input placeholder="New York, NY" />
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.discoveryLocation}
+                  onChange={(e) => handleInputChange("discoveryLocation", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Referred By</Label>
-                <Input placeholder="Name of referrer" />
+                <Input
+                  placeholder="Name of referrer"
+                  value={formData.referredBy}
+                  onChange={(e) => handleInputChange("referredBy", e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -213,7 +350,10 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="new">
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => handleInputChange("status", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -226,7 +366,11 @@ const AddProspectModal = ({
               </div>
               <div className="space-y-2">
                 <Label>Assigned Agent</Label>
-                <Input placeholder="Agent name" />
+                <Input
+                  placeholder="Agent name"
+                  value={formData.assignedAgent}
+                  onChange={(e) => handleInputChange("assignedAgent", e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -249,6 +393,8 @@ const AddProspectModal = ({
             <Textarea
               placeholder="Add notes about this prospect..."
               className="h-32"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
             />
           </div>
 
@@ -259,11 +405,19 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Instagram Followers</Label>
-                <Input type="number" defaultValue="10000" />
+                <Input
+                  type="number"
+                  value={formData.instagramFollowers}
+                  onChange={(e) => handleInputChange("instagramFollowers", parseFloat(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Engagement Rate (%)</Label>
-                <Input type="number" defaultValue="4.5" />
+                <Input
+                  type="number"
+                  value={formData.engagementRate}
+                  onChange={(e) => handleInputChange("engagementRate", parseFloat(e.target.value))}
+                />
               </div>
             </div>
           </div>
@@ -272,7 +426,10 @@ const AddProspectModal = ({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={handleSaveProspect}
+            >
               Add Prospect
             </Button>
           </div>
@@ -5215,21 +5372,30 @@ const ProspectPipelineTab = ({
 }: {
   onAddProspect: () => void;
 }) => {
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: ["prospects"],
+    queryFn: async () => {
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getProspects(agencyId);
+    },
+  });
+
   const stats = [
-    { label: "New Leads", count: 0, color: "border-blue-200 bg-blue-50/30" },
+    { label: "New Leads", count: prospects?.filter(p => p.status === 'new').length || 0, color: "border-blue-200 bg-blue-50/30" },
     {
       label: "In Contact",
-      count: 0,
+      count: prospects?.filter(p => p.status === 'contacted').length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count: 0,
+      count: prospects?.filter(p => p.status === 'test_shoot').length || 0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count: 0,
+      count: prospects?.filter(p => p.status === 'offer_sent').length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -5279,23 +5445,70 @@ const ProspectPipelineTab = ({
           ))}
         </div>
 
-        <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
-          <div className="p-6 bg-gray-50 rounded-full mb-4">
-            <Users className="w-10 h-10 text-gray-300" />
+        {isLoading ? (
+          <div className="text-center py-24">Loading prospects...</div>
+        ) : !prospects || prospects.length === 0 ? (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
+            <div className="p-6 bg-gray-50 rounded-full mb-4">
+              <Users className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              No prospects yet
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
+              Start building your pipeline by adding discovered talent
+            </p>
+            <Button
+              onClick={onAddProspect}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add First Prospect
+            </Button>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No prospects yet
-          </h3>
-          <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
-            Start building your pipeline by adding discovered talent
-          </p>
-          <Button
-            onClick={onAddProspect}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Add First Prospect
-          </Button>
-        </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">PHOTO</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">NAME</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">CONTACT</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">NEW LEAD</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">IN CONTACT</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">TEST SHOOTS</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">OFFERS SENT</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">SOURCE</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {prospects.map((p) => (
+                  <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-bold text-gray-900">
+                      {p.full_name}
+                      <div className="text-xs font-normal text-gray-500">{p.categories?.join(", ")}</div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {p.email}
+                      <div className="text-xs">{p.phone}</div>
+                    </td>
+                    <td className="px-4 py-3">{p.status === 'new' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'contacted' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'test_shoot' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'offer_sent' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
+                    <td className="px-4 py-3 text-gray-600 font-medium">{p.source}</td>
+                    <td className="px-4 py-3"><ChevronRight className="w-5 h-5 text-gray-400" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -13059,6 +13272,55 @@ const BookingsView = ({
   );
 };
 
+const DebugPanel = () => {
+  const [debugData, setDebugData] = useState<any>({});
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const runDebug = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: agency, error: agencyError } = await supabase
+        .from("agencies")
+        .select("*")
+        .eq("id", user?.id)
+        .maybeSingle();
+
+      const { data: prospects, error: prospectsError } = await supabase
+        .from("scouting_prospects")
+        .select("*"); // Try fetching ALL first to see if RLS blocks it
+
+      const { data: myProspects, error: myProspectsError } = await supabase
+        .from("scouting_prospects")
+        .select("*")
+        .eq("agency_id", user?.id);
+
+      setDebugData({
+        user_id: user?.id,
+        agency_entry: agency,
+        agency_error: agencyError,
+        all_prospects_count: prospects?.length,
+        all_prospects_error: prospectsError,
+        my_prospects: myProspects,
+        my_prospects_error: myProspectsError
+      });
+    };
+    if (visible) runDebug();
+  }, [visible]);
+
+  if (!visible) return <Button className="fixed bottom-4 right-4 z-50" onClick={() => setVisible(true)}>Show Debug</Button>;
+
+  return (
+    <div className="fixed bottom-0 right-0 w-full h-96 bg-black text-green-400 p-4 overflow-auto z-50 opacity-90 font-mono text-xs border-t-4 border-green-600">
+      <div className="flex justify-between mb-2">
+        <h3 className="font-bold text-lg">System Debugger</h3>
+        <Button size="sm" variant="destructive" onClick={() => setVisible(false)}>Close</Button>
+      </div>
+      <pre>{JSON.stringify(debugData, null, 2)}</pre>
+    </div>
+  );
+};
+
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
@@ -13308,6 +13570,7 @@ export default function AgencyDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+      <DebugPanel />
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div

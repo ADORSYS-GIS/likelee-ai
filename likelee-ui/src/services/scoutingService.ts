@@ -6,15 +6,19 @@ export const scoutingService = {
         if (!supabase) throw new Error("Supabase client not initialized");
 
         const { data: { user } } = await supabase.auth.getUser();
+        console.log("scoutingService: Current user:", user?.id);
         if (!user) return null;
 
         // In the new schema, agencies.id directly references auth.users(id)
         // So we just need to check if this user has an agency profile
-        const { data: agency } = await supabase
+        const { data: agency, error } = await supabase
             .from("agencies")
             .select("id")
             .eq("id", user.id)
             .maybeSingle();
+
+        if (error) console.error("scoutingService: Error fetching agency:", error);
+        console.log("scoutingService: Found agency:", agency);
 
         return agency ? agency.id : null;
     },

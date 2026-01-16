@@ -46,7 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_scouting_prospects_assigned_agent ON public.scout
 -- 2. Scouting Trips
 CREATE TABLE IF NOT EXISTS public.scouting_trips (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  agency_id uuid NOT NULL REFERENCES public.organization_profiles(id) ON DELETE CASCADE,
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
   
   name text NOT NULL,
   location text NOT NULL,
@@ -64,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_scouting_trips_agency_id ON public.scouting_trips
 -- 3. Scouting Events (Open Calls)
 CREATE TABLE IF NOT EXISTS public.scouting_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  agency_id uuid NOT NULL REFERENCES public.organization_profiles(id) ON DELETE CASCADE,
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
   
   name text NOT NULL,
   event_date timestamptz NOT NULL,
@@ -81,7 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_scouting_events_agency_id ON public.scouting_even
 -- 4. Scouting Submissions (Website Applications)
 CREATE TABLE IF NOT EXISTS public.scouting_submissions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  agency_id uuid NOT NULL REFERENCES public.organization_profiles(id) ON DELETE CASCADE,
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
   
   name text NOT NULL,
   email text NOT NULL,
@@ -95,6 +95,58 @@ CREATE TABLE IF NOT EXISTS public.scouting_submissions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_scouting_submissions_agency_id ON public.scouting_submissions(agency_id);
+
+-- Fix Existing Constraints (if tables already exist with wrong FK)
+DO $$
+BEGIN
+    -- 1. Scouting Prospects
+    -- Clean up orphan rows first
+    DELETE FROM public.scouting_prospects WHERE agency_id NOT IN (SELECT id FROM public.agencies);
+
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_prospects_agency_id_fkey') THEN
+        ALTER TABLE public.scouting_prospects DROP CONSTRAINT scouting_prospects_agency_id_fkey;
+    END IF;
+    
+    ALTER TABLE public.scouting_prospects 
+    ADD CONSTRAINT scouting_prospects_agency_id_fkey 
+    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
+
+    -- 2. Scouting Trips
+    DELETE FROM public.scouting_trips WHERE agency_id NOT IN (SELECT id FROM public.agencies);
+
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_trips_agency_id_fkey') THEN
+        ALTER TABLE public.scouting_trips DROP CONSTRAINT scouting_trips_agency_id_fkey;
+    END IF;
+
+    ALTER TABLE public.scouting_trips
+    ADD CONSTRAINT scouting_trips_agency_id_fkey
+    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
+
+    -- 3. Scouting Events
+    DELETE FROM public.scouting_events WHERE agency_id NOT IN (SELECT id FROM public.agencies);
+
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_events_agency_id_fkey') THEN
+        ALTER TABLE public.scouting_events DROP CONSTRAINT scouting_events_agency_id_fkey;
+    END IF;
+
+    ALTER TABLE public.scouting_events
+    ADD CONSTRAINT scouting_events_agency_id_fkey
+    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
+
+    -- 4. Scouting Submissions
+    DELETE FROM public.scouting_submissions WHERE agency_id NOT IN (SELECT id FROM public.agencies);
+
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_submissions_agency_id_fkey') THEN
+        ALTER TABLE public.scouting_submissions DROP CONSTRAINT scouting_submissions_agency_id_fkey;
+    END IF;
+
+    ALTER TABLE public.scouting_submissions
+    ADD CONSTRAINT scouting_submissions_agency_id_fkey
+    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
+
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 -- RLS Policies
 
