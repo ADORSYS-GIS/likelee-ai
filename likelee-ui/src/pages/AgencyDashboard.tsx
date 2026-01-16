@@ -5391,7 +5391,7 @@ const ProspectDetailsSheet = ({
 
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[500px] sm:max-w-none bg-white p-0 flex flex-col">
+      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
         <SheetHeader className="p-6 border-b">
           <SheetTitle className="text-xl font-bold">Prospect Details</SheetTitle>
         </SheetHeader>
