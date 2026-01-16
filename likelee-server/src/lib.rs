@@ -9,6 +9,7 @@ pub mod kyc;
 pub mod licenses;
 pub mod moderation;
 pub mod organization_profiles;
+pub mod payouts;
 pub mod profiles;
 pub mod reference_images;
 pub mod router;

@@ -99,6 +99,7 @@ import AboutUs from "./AboutUs";
 import CommercialRights from "./CommercialRights";
 import CameoUpload from "./CameoUpload";
 import RoyaltyWallet from "./RoyaltyWallet";
+import PayoutsStatus from "./PayoutsStatus";
 import PublicProfile from "./PublicProfile";
 import BrandDiscoverFaces from "./BrandDiscoverFaces";
 
@@ -224,6 +225,7 @@ const PAGES = {
   RoyaltyWallet: RoyaltyWallet,
   PublicProfile: PublicProfile,
   BrandDiscoverFaces: BrandDiscoverFaces,
+  PayoutsStatus: PayoutsStatus,
 };
 
 function _getCurrentPage(url) {
@@ -468,6 +470,15 @@ function PagesContent() {
         />
 
         <Route path="/BrandDiscoverFaces" element={<BrandDiscoverFaces />} />
+
+        <Route
+          path="/dashboard/payouts"
+          element={
+            <ProtectedRoute>
+              <PayoutsStatus />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/Login" element={<Login />} />
         <Route path="/login" element={<Login />} />

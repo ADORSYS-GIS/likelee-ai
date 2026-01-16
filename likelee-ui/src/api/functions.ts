@@ -125,3 +125,19 @@ export const registerOrganization = (
 // Dashboard data for a specific user
 export const getDashboard = (user_id: string) =>
   base44Client.get(`/api/dashboard`, { params: { user_id } });
+
+// Payouts
+export const createPayoutsOnboardingLink = (profile_id: string) =>
+  base44Client.post<{ url: string }>(
+    `/api/payouts/onboarding_link`,
+    undefined,
+    { params: { profile_id } },
+  );
+
+export const getPayoutsAccountStatus = (profile_id: string) =>
+  base44Client.get<{
+    connected: boolean;
+    payouts_enabled: boolean;
+    transfers_enabled: boolean;
+    last_error?: string;
+  }>(`/api/payouts/account_status`, { params: { profile_id } });
