@@ -106,15 +106,36 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
-const AddProspectModal = ({
+const STATUS_MAP = {
+  new: "New Lead",
+  contacted: "In Contact",
+  meeting: "Meeting Scheduled",
+  test_shoot: "Test Shoots",
+  offer_sent: "Offer Sent",
+  signed: "Signed",
+  declined: "Declined",
+};
+
+const STATUS_COLORS = {
+  new: "bg-blue-50 text-blue-700 border-blue-200",
+  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  meeting: "bg-purple-50 text-purple-700 border-purple-200",
+  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
+  offer_sent: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  signed: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const ProspectModal = ({
   open,
   onOpenChange,
+  prospect = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prospect?: ScoutingProspect | null;
 }) => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [starRating, setStarRating] = useState(3);
@@ -134,6 +155,47 @@ const AddProspectModal = ({
     instagramFollowers: 10000,
     engagementRate: 4.5,
   });
+
+  useEffect(() => {
+    if (prospect) {
+      setFormData({
+        name: prospect.full_name,
+        email: prospect.email || "",
+        phone: prospect.phone || "",
+        instagram: prospect.instagram_handle || "",
+        source: prospect.source || "instagram",
+        discoveryDate: prospect.discovery_date || new Date().toISOString().split("T")[0],
+        discoveryLocation: prospect.discovery_location || "",
+        referredBy: prospect.referred_by || "",
+        status: prospect.status,
+        assignedAgent: prospect.assigned_agent_name || "",
+        notes: prospect.notes || "",
+        instagramFollowers: prospect.instagram_followers || 10000,
+        engagementRate: prospect.engagement_rate || 4.5,
+      });
+      setSelectedCategories(prospect.categories || []);
+      setStarRating(prospect.rating || 3);
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        instagram: "",
+        source: "instagram",
+        discoveryDate: new Date().toISOString().split("T")[0],
+        discoveryLocation: "",
+        referredBy: "",
+        status: "new",
+        assignedAgent: "",
+        notes: "",
+        instagramFollowers: 10000,
+        engagementRate: 4.5,
+      });
+      setSelectedCategories([]);
+      setStarRating(3);
+    }
+  }, [prospect, open]);
+
   const { toast } = useToast();
 
   const handleInputChange = (field: string, value: any) => {
@@ -151,7 +213,6 @@ const AddProspectModal = ({
   const queryClient = useQueryClient();
 
   const handleSaveProspect = async () => {
-    console.log("Scouting Service:", scoutingService);
     try {
       if (!formData.name) {
         toast({
@@ -172,45 +233,71 @@ const AddProspectModal = ({
         return;
       }
 
-      // Check for duplicates
-      const existing = await scoutingService.checkDuplicate(
-        agencyId,
-        formData.email,
-        formData.instagram
-      );
+      if (!prospect) {
+        // Check for duplicates only when adding new
+        const existing = await scoutingService.checkDuplicate(
+          agencyId,
+          formData.email,
+          formData.instagram
+        );
 
-      if (existing) {
-        toast({
-          title: "Prospect Already Exists",
-          description: `This prospect (${existing.full_name}) is already in your pipeline.`,
-          variant: "destructive",
+        if (existing) {
+          toast({
+            title: "Prospect Already Exists",
+            description: `This prospect (${existing.full_name}) is already in your pipeline.`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        await scoutingService.createProspect({
+          agency_id: agencyId,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
         });
-        return;
+
+        toast({
+          title: "Prospect Added",
+          description: `${formData.name} has been added to your pipeline.`,
+        });
+      } else {
+        // Update existing prospect
+        await scoutingService.updateProspect(prospect.id, {
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Updated",
+          description: `${formData.name}'s information has been updated.`,
+        });
       }
-
-      await scoutingService.createProspect({
-        agency_id: agencyId,
-        full_name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        instagram_handle: formData.instagram,
-        categories: selectedCategories,
-        rating: starRating,
-        source: formData.source,
-        discovery_date: formData.discoveryDate,
-        discovery_location: formData.discoveryLocation,
-        referred_by: formData.referredBy,
-        status: formData.status as any,
-        assigned_agent_name: formData.assignedAgent,
-        notes: formData.notes,
-        instagram_followers: formData.instagramFollowers,
-        engagement_rate: formData.engagementRate,
-      });
-
-      toast({
-        title: "Prospect Added",
-        description: `${formData.name} has been added to your pipeline.`,
-      });
 
       // Invalidate the prospects query to trigger a refetch
       await queryClient.invalidateQueries({ queryKey: ["prospects"] });
@@ -231,7 +318,7 @@ const AddProspectModal = ({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Add New Prospect
+            {prospect ? "Edit Prospect" : "Add New Prospect"}
           </DialogTitle>
           <p className="text-sm text-gray-500">
             Track talent before signing them to your roster
@@ -322,6 +409,8 @@ const AddProspectModal = ({
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="street">Street Scouting</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -369,9 +458,11 @@ const AddProspectModal = ({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">New Lead</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                    {Object.entries(STATUS_MAP).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -441,7 +532,7 @@ const AddProspectModal = ({
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
               onClick={handleSaveProspect}
             >
-              Add Prospect
+              {prospect ? "Update Prospect" : "Add Prospect"}
             </Button>
           </div>
         </div>
@@ -5302,7 +5393,8 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
-  const [isAddProspectOpen, setIsAddProspectOpen] = useState(false);
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(null);
 
   const tabs = [
     "Prospect Pipeline",
@@ -5329,7 +5421,10 @@ const ScoutingHubView = ({
           <Button
             variant="outline"
             className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
-            onClick={() => setIsAddProspectOpen(true)}
+            onClick={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
           >
             <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
           </Button>
@@ -5360,7 +5455,14 @@ const ScoutingHubView = ({
       <div className="mt-8">
         {activeTab === "Prospect Pipeline" && (
           <ProspectPipelineTab
-            onAddProspect={() => setIsAddProspectOpen(true)}
+            onAddProspect={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
+            onEditProspect={(prospect) => {
+              setProspectToEdit(prospect);
+              setIsProspectModalOpen(true);
+            }}
           />
         )}
         {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
@@ -5370,9 +5472,10 @@ const ScoutingHubView = ({
         {activeTab === "Open Calls" && <OpenCallsTab />}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
-      <AddProspectModal
-        open={isAddProspectOpen}
-        onOpenChange={setIsAddProspectOpen}
+      <ProspectModal
+        open={isProspectModalOpen}
+        onOpenChange={setIsProspectModalOpen}
+        prospect={prospectToEdit}
       />
     </div>
   );
@@ -5381,13 +5484,34 @@ const ScoutingHubView = ({
 const ProspectDetailsSheet = ({
   prospect,
   onClose,
+  onEdit,
 }: {
   prospect: ScoutingProspect | null;
   onClose: () => void;
+  onEdit: (prospect: ScoutingProspect) => void;
 }) => {
   if (!prospect) return null;
 
-  const statusOptions = ["New Lead", "In Contact", "Test Shoots", "Offer Sent", "Signed", "Declined"];
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await scoutingService.updateProspect(prospect.id, { status: newStatus as any });
+      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
+      toast({
+        title: "Status Updated",
+        description: `Prospect status changed to ${STATUS_MAP[newStatus as keyof typeof STATUS_MAP] || newStatus}.`,
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
@@ -5402,8 +5526,14 @@ const ProspectDetailsSheet = ({
           {/* Main Info */}
           <div className="space-y-6 border-b pb-6">
             <div className="flex items-start space-x-6">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border">
-                <User className="w-12 h-12 text-gray-400" />
+              <div
+                className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border cursor-pointer hover:bg-gray-200 transition-colors group relative"
+                onClick={() => onEdit(prospect)}
+              >
+                <User className="w-12 h-12 text-gray-400 group-hover:text-gray-500" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-6 h-6 text-white" />
+                </div>
               </div>
               <div className="flex-1 pt-2">
                 <h2 className="text-3xl font-bold text-gray-900">{prospect.full_name}</h2>
@@ -5421,14 +5551,22 @@ const ProspectDetailsSheet = ({
             <div className="p-4 rounded-xl border bg-gray-50/70">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold text-gray-700">Status</h3>
-                <Badge variant={prospect.status === 'declined' ? 'destructive' : 'default'} className="capitalize">{prospect.status.replace('_', ' ')}</Badge>
+                <Badge
+                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || 'bg-gray-100 text-gray-700'}`}
+                >
+                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] || prospect.status.replace('_', ' ')}
+                </Badge>
               </div>
-              <Select defaultValue={prospect.status}>
+              <Select defaultValue={prospect.status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="h-11 text-base bg-white border-gray-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map(opt => <SelectItem key={opt} value={opt.toLowerCase().replace(' ', '_')} className="font-medium">{opt}</SelectItem>)}
+                  {Object.entries(STATUS_MAP).map(([value, label]) => (
+                    <SelectItem key={value} value={value} className="font-medium">
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -5468,7 +5606,12 @@ const ProspectDetailsSheet = ({
             </div>
           </Section>
 
-          <Button className="w-full h-11 text-base font-bold flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"><Pencil className="w-4 h-4" /> Edit Prospect</Button>
+          <Button
+            className="w-full h-11 text-base font-bold flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => onEdit(prospect)}
+          >
+            <Pencil className="w-4 h-4" /> Edit Prospect
+          </Button>
           <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2"><Send className="w-4 h-4" /> Send Email</Button>
           <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2"><Calendar className="w-4 h-4" /> Schedule Meeting</Button>
           <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
@@ -5517,8 +5660,10 @@ const MetricBox = ({ label, value }: { label: string, value: string | number }) 
 
 const ProspectPipelineTab = ({
   onAddProspect,
+  onEditProspect,
 }: {
   onAddProspect: () => void;
+  onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
   const [selectedProspect, setSelectedProspect] = useState<ScoutingProspect | null>(null);
   const { data: prospects, isLoading } = useQuery({
@@ -5529,6 +5674,13 @@ const ProspectPipelineTab = ({
       return scoutingService.getProspects(agencyId);
     },
   });
+
+  useEffect(() => {
+    if (selectedProspect && prospects) {
+      const updated = prospects.find(p => p.id === selectedProspect.id);
+      if (updated) setSelectedProspect(updated);
+    }
+  }, [prospects]);
 
   const stats = [
     { label: "New Leads", count: prospects?.filter(p => p.status === 'new').length || 0, color: "border-blue-200 bg-blue-50/30" },
@@ -5568,11 +5720,11 @@ const ProspectPipelineTab = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="new">New Lead</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="meeting">Meeting Scheduled</SelectItem>
-                <SelectItem value="test_shoot">Test Shoot Pending</SelectItem>
-                <SelectItem value="offer_sent">Offer Sent</SelectItem>
+                {Object.entries(STATUS_MAP).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -5646,10 +5798,10 @@ const ProspectPipelineTab = ({
                       {p.email}
                       <div className="text-xs">{p.phone}</div>
                     </td>
-                    <td className="px-4 py-3">{p.status === 'new' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
-                    <td className="px-4 py-3">{p.status === 'contacted' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
-                    <td className="px-4 py-3">{p.status === 'test_shoot' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
-                    <td className="px-4 py-3">{p.status === 'offer_sent' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'new' ? <CheckCircle2 className="w-5 h-5 text-blue-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'contacted' ? <CheckCircle2 className="w-5 h-5 text-yellow-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'test_shoot' ? <CheckCircle2 className="w-5 h-5 text-purple-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'offer_sent' ? <CheckCircle2 className="w-5 h-5 text-indigo-500" /> : null}</td>
                     <td className="px-4 py-3 text-gray-600 font-medium">{p.source}</td>
                     <td className="px-4 py-3"><ChevronRight className="w-5 h-5 text-gray-400" /></td>
                   </tr>
@@ -5662,6 +5814,10 @@ const ProspectPipelineTab = ({
       <ProspectDetailsSheet
         prospect={selectedProspect}
         onClose={() => setSelectedProspect(null)}
+        onEdit={(p) => {
+          setSelectedProspect(null);
+          onEditProspect(p);
+        }}
       />
     </div>
   );

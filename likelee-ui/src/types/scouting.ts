@@ -1,4 +1,4 @@
-export type ScoutingStatus = 'new' | 'contacted' | 'meeting' | 'signed' | 'rejected';
+export type ScoutingStatus = 'new' | 'contacted' | 'meeting' | 'test_shoot' | 'offer_sent' | 'signed' | 'declined';
 export type ScoutingSource = 'instagram' | 'tiktok' | 'street' | 'referral' | 'website';
 
 export interface ScoutingProspect {

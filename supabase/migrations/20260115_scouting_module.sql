@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.scouting_prospects (
   engagement_rate numeric(5,2), -- e.g. 4.50
   
   -- Status & Assignment
-  status text NOT NULL DEFAULT 'new', -- new, contacted, meeting, signed, rejected
+  status text NOT NULL DEFAULT 'new', -- new, contacted, meeting, test_shoot, offer_sent, signed, declined
   assigned_agent_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   assigned_agent_name text, -- Cache name for display
   
