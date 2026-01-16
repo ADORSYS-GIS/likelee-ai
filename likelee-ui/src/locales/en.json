@@ -629,6 +629,7 @@
     "step": "Step",
     "of": "of",
     "companyInfo": "Company Info",
+    "agencyInfo": "Agency Info",
     "startWithBasics": "Let's start with the basics.",
     "emailPlaceholder": "company@example.com",
     "passwordPlaceholder": "••••••••",
@@ -644,11 +645,15 @@
       "networkError": "Connection lost. Please check your internet connection."
     },
     "companyEmail": "Company Email",
+    "agencyEmail": "Agency Email",
     "confirmPassword": "Confirm Password",
     "organizationName": "Organization Name",
+    "agencyName": "Agency Name",
     "contactName": "Contact Name",
     "contactTitle": "Contact Title",
     "contactTitlePlaceholder": "e.g. Marketing Manager",
+    "agentName": "Primary Agent Name",
+    "agentTitle": "Agent Title",
     "website": "Website",
     "phoneNumber": "Phone Number",
     "saving": "Saving...",
@@ -656,6 +661,7 @@
     "back": "Back",
     "submitting": "Submitting...",
     "completeSignUp": "Complete Sign Up",
+    "selectAndContinue": "Select and Continue",
     "industries": {
       "fashion": "Fashion",
       "beauty": "Beauty",
@@ -729,6 +735,15 @@
       "licenseLikenessQuestion": "Do you currently license your models' likeness?",
       "openToAiQuestion": "Are your talents open to AI recreation or only likeness protection?",
       "campaignsPursuedLabel": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
+    },
+    "sportsAgency": {
+      "title": "Sports Agency Details",
+      "subtitle": "Tell us about your athlete roster",
+      "athleteCount": "Number of Athletes Represented",
+      "licenseAthletesQuestion": "Do you currently license your athletes' likeness?",
+      "openToAiQuestion": "Are your athletes open to AI recreation or only likeness protection?",
+      "campaignTypesQuestion": "What types of campaigns or collaborations do you pursue most?",
       "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
     },
     "options": {

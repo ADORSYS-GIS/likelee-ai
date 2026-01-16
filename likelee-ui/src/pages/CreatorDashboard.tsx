@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1161,9 +1162,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const full = api(
-          `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-        );
+        const full = api(`/api/reference-images`);
         const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
@@ -1306,12 +1305,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const res = await fetch(
-          api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
-          { signal: abort.signal },
-        );
-        if (!res.ok) throw new Error(await res.text());
-        const json = await res.json();
+        const json = await base44.get("/api/dashboard");
         const profile = json.profile || {};
         setCreator((prev: any) => ({
           ...prev,
@@ -1369,21 +1363,16 @@ export default function CreatorDashboard() {
     if (!initialized || !authenticated || !user?.id) return;
     (async () => {
       try {
-        const res = await fetch(
-          api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+        const data = await base44.get("/api/creator-rates");
+        setCustomRates(
+          data.filter(
+            (rate: any) =>
+              rate.rate_name !== "Social-media ads" &&
+              rate.rate_name !== "Other" &&
+              (CONTENT_TYPES.includes(rate.rate_name) ||
+                INDUSTRIES.includes(rate.rate_name)),
+          ),
         );
-        if (res.ok) {
-          const data = await res.json();
-          setCustomRates(
-            data.filter(
-              (rate: any) =>
-                rate.rate_name !== "Social-media ads" &&
-                rate.rate_name !== "Other" &&
-                (CONTENT_TYPES.includes(rate.rate_name) ||
-                  INDUSTRIES.includes(rate.rate_name)),
-            ),
-          );
-        }
       } catch (e) {
         console.error("Failed to fetch rates", e);
       }
@@ -1425,11 +1414,7 @@ export default function CreatorDashboard() {
     if (!authenticated || !user?.id) return;
     try {
       setKycLoading(true);
-      const res = await fetch(
-        api(`/api/kyc/status?user_id=${encodeURIComponent(user.id)}`),
-      );
-      if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
+      const rows = await base44.get("/api/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
         setCreator((prev: any) => ({
@@ -2280,7 +2265,7 @@ export default function CreatorDashboard() {
         const publicUrl = data.publicUrl;
 
         const { error: dbError } = await supabase
-          .from("profiles")
+          .from("creators")
           .update({ cameo_front_url: publicUrl })
           .eq("id", user.id);
 
@@ -3139,7 +3124,7 @@ export default function CreatorDashboard() {
                 {imagesFilled}/{imagesTotal}
               </div>
               <Progress
-                value={Math.round((imagesFilled / imagesTotal) * 100)}
+                value={Math.round((imagesFilled / IMAGE_SECTIONS.length) * 100)}
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
@@ -3239,7 +3224,7 @@ export default function CreatorDashboard() {
       // Upload via backend (Option B: server-only writes)
       const buf = await file.arrayBuffer();
       const full = api(
-        `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
+        `/api/reference-images/upload?section_id=${encodeURIComponent(selectedImageSection)}`,
       );
       const res = await fetch(full, {
         method: "POST",
@@ -5862,7 +5847,7 @@ export default function CreatorDashboard() {
 
       // Persist category selections to profiles table as well
       const profileStatus = await supabase
-        .from("profiles")
+        .from("creators")
         .update({
           content_types:
             showRatesModal === "content"

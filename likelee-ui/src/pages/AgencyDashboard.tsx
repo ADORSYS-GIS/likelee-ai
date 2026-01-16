@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -59,21 +59,22 @@ import {
   MoreVertical,
   Share2,
   Upload,
-  MapPin,
-  Star,
   FolderPlus,
   FolderOpen,
   Briefcase,
   Receipt,
   Megaphone,
-  ChevronUp,
-  Send,
-  AlertTriangle,
   Calculator,
   FileDown,
+  Send,
   Printer,
   Files,
   TrendingDown,
+  MapPin,
+  Star,
+  Menu,
+  Image as ImageIcon,
+  Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -88,27 +89,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  format,
-  addMonths,
-  subMonths,
-  getDaysInMonth,
-  startOfMonth,
-  subDays,
-  addDays,
-  isSameMonth,
-  isSameWeek,
-  parseISO,
-  isAfter,
-  subWeeks,
-} from "date-fns";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -121,6 +101,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { BookingsView } from "@/components/Bookings/BookingsView";
+import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
+import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
 const AddProspectModal = ({
   open,
@@ -663,7 +645,7 @@ const MOCK_INVOICES = [
   },
 ];
 
-const SimpleAddClientModal = ({
+const AddClientModal = ({
   isOpen,
   onClose,
 }: {
@@ -950,59 +932,295 @@ const ClientProfileModal = ({
                   Add Contact
                 </Button>
               </div>
-              <div className="space-y-4">
-                {MOCK_CONTACTS.map((contact, idx) => (
-                  <Card
-                    key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
-                        <div>
-                          <h5 className="font-bold text-gray-900 text-lg">
-                            {contact.name}
-                          </h5>
-                          <p className="text-sm text-gray-500 font-medium">
-                            {contact.role}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                            <Mail className="w-4 h-4 text-gray-500" />
-                            {contact.email}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                            <Phone className="w-4 h-4 text-gray-500" />
-                            {contact.phone}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+              <div className="mt-0">
+                <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
+                  <div className="flex-1 min-w-[200px]">
+                    <Input
+                      placeholder="Search talent..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={consentFilter}
+                      onChange={(e) => setConsentFilter(e.target.value)}
+                    >
+                      <option value="all">All Consent</option>
+                      <option value="complete">Complete</option>
+                      <option value="expiring">Expiring</option>
+                      <option value="missing">Missing</option>
+                    </select>
+                  </div>
+
+                  {(searchQuery ||
+                    statusFilter !== "all" ||
+                    consentFilter !== "all") && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setStatusFilter("all");
+                        setConsentFilter("all");
+                      }}
+                      className="text-gray-600"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("name")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Talent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("status")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Status
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("consent")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Consent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          AI Usage
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("instagram_followers")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Followers
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Assets
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Top Brand
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          License Expiry
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("earnings_30d")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            30D Earnings
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("projected_earnings")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Projected
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredRoster.map((talent) => (
+                        <tr
+                          key={talent.id}
+                          onClick={() => setSelectedTalent(talent)}
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
                         >
-                          <Mail className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
-                        >
-                          <Phone className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
-                        >
-                          <Edit className="w-4 h-4 text-gray-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={talent.headshot}
+                                alt={talent.name}
+                                className="w-12 h-12 object-cover border-2 border-gray-200"
+                              />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900">
+                                    {talent.name}
+                                  </span>
+                                  {talent.verified && (
+                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {talent.categories.join(", ")}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                              }
+                            >
+                              {talent.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.consent === "complete"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.consent === "expiring"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-red-100 text-red-800"
+                              }
+                            >
+                              {talent.consent === "expiring" ? (
+                                <Clock className="w-3 h-3 mr-1" />
+                              ) : talent.consent === "missing" ? (
+                                <XCircle className="w-3 h-3 mr-1" />
+                              ) : (
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                              )}
+                              {talent.consent}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex gap-1">
+                              {talent.ai_usage_types.includes("video") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Video className="w-3 h-3 mr-1" />
+                                  Video
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("image") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <ImageIcon className="w-3 h-3 mr-1" />
+                                  Image
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("voice") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Mic className="w-3 h-3 mr-1" />
+                                  Voice
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-1 text-sm text-gray-700">
+                              <Instagram className="w-4 h-4 text-purple-600" />
+                              {talent.instagram_followers.toLocaleString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.assets_count}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.top_brand}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-sm ${isLicenseExpired(talent.license_expiry) ? "text-red-600 font-medium" : isLicenseExpiring(talent.license_expiry) ? "text-orange-600 font-medium" : "text-gray-700"}`}
+                              >
+                                {talent.license_expiry !== "—"
+                                  ? new Date(
+                                      talent.license_expiry,
+                                    ).toLocaleDateString()
+                                  : "—"}
+                              </span>
+                              {isLicenseExpiring(talent.license_expiry) && (
+                                <Clock className="w-4 h-4 text-orange-500" />
+                              )}
+                              {isLicenseExpired(talent.license_expiry) && (
+                                <XCircle className="w-4 h-4 text-red-500" />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                            ${talent.earnings_30d.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            ${talent.projected_earnings.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4">
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    Campaign tracking coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    License management coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg mb-2">
+                    Advanced Analytics
+                  </p>
+                  <p className="text-gray-400 text-sm mb-6">
+                    Upgrade to Agency Pro to unlock revenue forecasting,
+                    performance charts, and insights.
+                  </p>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Upgrade to Pro
+                  </Button>
+                </div>
               </div>
             </TabsContent>
 
@@ -1275,6 +1493,14 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -1386,7 +1612,7 @@ const ClientCRMView = () => {
         ))}
       </div>
 
-      <SimpleAddClientModal
+      <AddClientModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
@@ -2038,161 +2264,6 @@ const ShareFileModal = ({
   );
 };
 
-const FileStorageView = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFileForPreview, setSelectedFileForPreview] =
-    useState<FileItem | null>(null);
-  const [selectedFileForShare, setSelectedFileForShare] =
-    useState<FileItem | null>(null);
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Folder className="w-8 h-8 text-indigo-600" />
-            File Storage
-          </h1>
-          <p className="text-gray-600 font-medium">
-            Organize and manage your agency files
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setIsNewFolderModalOpen(true)}
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
-          >
-            <FolderPlus className="w-5 h-5" />
-            New Folder
-          </Button>
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-          >
-            <Upload className="w-5 h-5" />
-            Upload Files
-          </Button>
-        </div>
-      </div>
-
-      <StorageUsageCard />
-
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              placeholder="Search files by name..."
-              className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <Select defaultValue="name-asc">
-              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                <SelectItem value="date-desc">Date (Newest)</SelectItem>
-                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
-                <SelectItem value="size-desc">Size (Largest)</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex bg-gray-100 p-1 rounded-xl">
-              <Button
-                variant={viewMode === "grid" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4 mr-2" />
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "white" : "ghost"}
-                size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4 mr-2" />
-                List
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {MOCK_FOLDERS.map((folder) => (
-            <FolderCard key={folder.id} folder={folder} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
-          <span className="text-sm text-gray-500 font-medium">
-            {MOCK_FILES.length} files
-          </span>
-        </div>
-
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {MOCK_FILES.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {MOCK_FILES.map((file) => (
-              <FileRow
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <NewFolderModal
-        isOpen={isNewFolderModalOpen}
-        onClose={() => setIsNewFolderModalOpen(false)}
-      />
-      <UploadFilesModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-      />
-      <FilePreviewModal
-        file={selectedFileForPreview}
-        isOpen={!!selectedFileForPreview}
-        onClose={() => setSelectedFileForPreview(null)}
-      />
-      <ShareFileModal
-        file={selectedFileForShare}
-        isOpen={!!selectedFileForShare}
-        onClose={() => setSelectedFileForShare(null)}
-      />
-    </div>
-  );
-};
-
 // --- Accounting & Invoicing Views ---
 
 const ExpenseTrackingView = () => {
@@ -2730,6 +2801,7 @@ const PaymentTrackingView = () => {
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
+
                 <div>
                   <p className="text-sm font-bold text-gray-900">
                     Invoice {payment.invoiceNumber} • {payment.client}
@@ -4683,42 +4755,6 @@ TALENT_DATA.forEach((t: any) => {
   }
   // All other talent will NOT have a tier assigned to match the 1-3-1-0 count
 });
-
-const CLIENT_DATA = [
-  {
-    id: "acme",
-    company: "Company",
-    contact: "John Doe",
-    email: "john@acme.com",
-    phone: "+1 (555) 123-4567",
-    terms: "Net 15",
-    industryTags: ["Fashion", "Beauty"],
-    revenue: 0,
-    bookings_count: 0,
-  },
-  {
-    id: "globex",
-    company: "Company",
-    contact: "John Doe",
-    email: "jane@globex.com",
-    phone: "+1 (555) 987-6543",
-    terms: "Net 15",
-    industryTags: ["Fashion", "Beauty"],
-    revenue: 0,
-    bookings_count: 0,
-  },
-  {
-    id: "apple",
-    company: "name",
-    contact: "names",
-    email: "apple@example.com",
-    phone: "+1 (555) 000-0000",
-    terms: "Net 15",
-    industryTags: [],
-    revenue: 0,
-    bookings_count: 0,
-  },
-];
 
 const ANALYTICS_CAMPAIGN_STATUS = [
   { name: "In Progress", value: 15, color: "#111827" },
@@ -12943,42 +12979,24 @@ const AnalyticsDashboardView = () => {
   );
 };
 
-const SettingsView = () => {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+const PlaceholderView = ({ title }: { title: string }) => (
+  <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+    <div className="bg-gray-100 p-6 rounded-full mb-4">
+      <Settings className="w-10 h-10 text-gray-400" />
+    </div>
+    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
+    <p className="text-gray-500 max-w-sm">
+      This section is currently under development. Check back soon for updates.
+    </p>
+  </div>
+);
 
-      {/* Agency Information */}
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-          Agency Information
-        </h3>
-        <div className="space-y-6 max-w-2xl">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">
-              Agency Name
-            </Label>
-            <Input
-              defaultValue="CM Models"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Website</Label>
-            <Input
-              defaultValue="https://cmmodels.com/"
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">Location</Label>
-            <Input
-              defaultValue="U.S."
-              className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-lg"
-            />
-          </div>
-        </div>
-      </Card>
+const CalendarScheduleTab = ({
+  bookings,
+  onAddBooking,
+  onUpdateBooking,
+  onCancelBooking,
+}: any) => <PlaceholderView title="Calendar & Schedule" />;
 
       {/* Integrations */}
       <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -13025,6 +13043,69 @@ const SettingsView = () => {
           </div>
         </div>
       </Card>
+const BookingRequestsTab = () => <PlaceholderView title="Booking Requests" />;
+
+const ClientDatabaseTab = () => <PlaceholderView title="Client Database" />;
+
+const TalentAvailabilityTab = ({
+  bookOuts,
+  onAddBookOut,
+  onRemoveBookOut,
+}: any) => <PlaceholderView title="Talent Availability" />;
+
+const ManagementAnalyticsView = ({ bookings }: any) => (
+  <PlaceholderView title="Management & Analytics" />
+);
+
+const BookingsView = ({
+  activeSubTab,
+  bookings,
+  onAddBooking,
+  bookOuts = [],
+  onAddBookOut,
+  onRemoveBookOut,
+  onUpdateBooking,
+  onCancelBooking,
+}: {
+  activeSubTab: string;
+  bookings: any[];
+  onAddBooking: (booking: any) => void;
+  onUpdateBooking: (booking: any) => void;
+  onCancelBooking: (id: string) => void;
+  bookOuts: any[];
+  onAddBookOut: (bookOut: any) => void;
+  onRemoveBookOut: (id: string) => void;
+}) => {
+  if (activeSubTab === "Calendar & Schedule")
+    return (
+      <CalendarScheduleTab
+        bookings={bookings}
+        onAddBooking={onAddBooking}
+        onUpdateBooking={onUpdateBooking}
+        onCancelBooking={onCancelBooking}
+      />
+    );
+  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
+  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
+  if (activeSubTab === "Talent Availability")
+    return (
+      <TalentAvailabilityTab
+        bookOuts={bookOuts}
+        onAddBookOut={onAddBookOut}
+        onRemoveBookOut={onRemoveBookOut}
+      />
+    );
+  // if (activeSubTab === "Notifications") return <NotificationsTab />;
+  if (activeSubTab === "Management & Analytics")
+    return <ManagementAnalyticsView bookings={bookings} />;
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="p-6 bg-gray-100 rounded-full mb-4">
+        <Calendar className="w-12 h-12 text-gray-400" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{activeSubTab}</h2>
+      <p className="text-gray-500">Feature currently under development.</p>
     </div>
   );
 };
@@ -13042,6 +13123,7 @@ const PlaceholderView = ({ title }: { title: string }) => (
 );
 
 function AgencyDashboard() {
+export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
   const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
@@ -13054,7 +13136,6 @@ function AgencyDashboard() {
     "licensing",
     "protection",
     "analytics",
-    "bookings",
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -13066,30 +13147,24 @@ function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
-
-  const [bookings, setBookings] = useState([
-    { id: "1", talentName: "Emma", date: "2026-01-12", type: "confirmed" },
-  ]);
-
-  const onUpdateBooking = (updatedBooking: any) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b)),
-    );
-  };
-
-  const onAddBooking = (b: any) => {
-    setBookings((prev) => [...prev, { ...b, id: b.id || `b-${Date.now()}` }]);
-  };
-
-  const onCancelBooking = (id: string) => {
-    setBookings((prev) => prev.filter((b) => b.id !== id));
-  };
-
+  const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
 
-  const onAddBookOut = (bo: any) => setBookOuts((prev) => [...prev, bo]);
-  const onRemoveBookOut = (id: string) =>
-    setBookOuts((prev) => prev.filter((bo) => bo.id !== id));
+  const onAddBooking = (booking: any) => {
+    setBookings([...bookings, booking]);
+  };
+  const onUpdateBooking = (booking: any) => {
+    setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+  };
+  const onCancelBooking = (id: string) => {
+    setBookings(bookings.filter((b) => b.id !== id));
+  };
+  const onAddBookOut = (bookOut: any) => {
+    setBookOuts([...bookOuts, bookOut]);
+  };
+  const onRemoveBookOut = (id: string) => {
+    setBookOuts(bookOuts.filter((b) => b.id !== id));
+  };
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -13152,6 +13227,7 @@ function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -13201,8 +13277,12 @@ function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
-          { id: "file-storage", label: "File Storage", icon: Folder },
-          { id: "settings", label: "Settings", icon: Settings },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
         ]
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -13214,7 +13294,6 @@ function AgencyDashboard() {
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
-          { id: "file-storage", label: "File Storage", icon: Folder },
           {
             id: "bookings",
             label: "Bookings",
@@ -13247,13 +13326,28 @@ function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
-          { id: "settings", label: "Settings", icon: Settings },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
         ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-10 transition-all duration-300">
+      <aside
+        className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+      >
         <div className="p-6 flex items-center gap-3">
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
@@ -13282,8 +13376,13 @@ function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
+                    if (item.id === "settings") {
+                      setActiveTab("settings");
+                      setActiveSubTab("General Settings");
+                    }
                   } else {
                     setActiveTab(item.id);
+                    setSidebarOpen(false);
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -13314,6 +13413,7 @@ function AgencyDashboard() {
                       onClick={() => {
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
+                        setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
                         activeTab === item.id && activeSubTab === subItem
@@ -13347,10 +13447,19 @@ function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-64 overflow-hidden">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 sticky top-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-gray-500 hover:text-gray-900"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+
+          <div className="flex items-center gap-4 ml-auto">
             <Button
               variant="outline"
               size="sm"
@@ -13568,7 +13677,12 @@ function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "settings" && <SettingsView />}
+          {activeTab === "settings" && activeSubTab === "General Settings" && (
+            <GeneralSettingsView />
+          )}
+          {activeTab === "settings" && activeSubTab === "File Storage" && (
+            <FileStorageView />
+          )}
           {activeTab === "scouting" && (
             <ScoutingHubView
               activeTab={activeScoutingTab}
@@ -13606,5 +13720,3 @@ function AgencyDashboard() {
     </div>
   );
 }
-
-export default AgencyDashboard;

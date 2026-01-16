@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{
     body::Bytes,
@@ -13,25 +14,19 @@ use tracing::{error, info};
 
 #[derive(Deserialize)]
 pub struct UploadQuery {
-    pub user_id: String,
     pub section_id: String,
-}
-
-#[derive(Deserialize)]
-pub struct ListQuery {
-    pub user_id: String,
 }
 
 pub async fn list_reference_images(
     State(state): State<AppState>,
-    Query(q): Query<ListQuery>,
+    user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // Query reference_images for this user via PostgREST and return raw JSON array
     let req = state
         .pg
         .from("reference_images")
         .select("*")
-        .eq("user_id", &q.user_id)
+        .eq("user_id", &user.id)
         .order("created_at.desc");
 
     let resp = req.execute().await.map_err(|e| {
@@ -60,6 +55,7 @@ pub struct ErrorOut {
 
 pub async fn upload_reference_image(
     State(state): State<AppState>,
+    user: AuthUser,
     headers: HeaderMap,
     Query(q): Query<UploadQuery>,
     body: Bytes,
@@ -285,7 +281,7 @@ pub async fn upload_reference_image(
 
     // 2) Upload to Supabase Storage (public bucket) using service key
     let bucket = state.supabase_bucket_public.clone();
-    let owner = q.user_id.replace(
+    let owner = user.id.replace(
         |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
         "_",
     );
@@ -344,7 +340,7 @@ pub async fn upload_reference_image(
 
     // 3) Persist to reference_images via Postgrest
     let payload = serde_json::json!({
-        "user_id": q.user_id,
+        "user_id": user.id,
         "section_id": q.section_id,
         "storage_bucket": bucket,
         "storage_path": path,

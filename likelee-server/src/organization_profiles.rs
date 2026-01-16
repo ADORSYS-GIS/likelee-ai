@@ -1,4 +1,4 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -56,9 +56,9 @@ pub struct OrganizationRegisterPayload {
     pub email: String,
     pub password: String,
     pub organization_name: String,
+    pub organization_type: String,
     pub contact_name: Option<String>,
     pub contact_title: Option<String>,
-    pub organization_type: Option<String>,
     pub website: Option<String>,
     pub phone_number: Option<String>,
 }
@@ -150,12 +150,20 @@ pub async fn register(
     if let serde_json::Value::Object(ref mut map) = org {
         map.insert(
             "owner_user_id".into(),
-            serde_json::Value::String(owner_user_id),
+            serde_json::Value::String(owner_user_id.clone()),
         );
         map.insert("email".into(), serde_json::Value::String(email));
         map.insert(
             "organization_name".into(),
             serde_json::Value::String(organization_name),
+        );
+        map.insert(
+            "status".into(),
+            serde_json::Value::String("waitlist".to_string()),
+        );
+        map.insert(
+            "onboarding_step".into(),
+            serde_json::Value::String("email_verification".to_string()),
         );
         // Remove auth-only fields that are not part of organization_profiles schema
         map.remove("password");
@@ -188,6 +196,29 @@ pub async fn register(
     }
     let org_row: serde_json::Value = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // 3) Set role in profiles table based on organization type
+    let role = match payload.organization_type.as_str() {
+        "brand" | "brand_company" | "production_studio" => "brand",
+        "marketing_agency" | "talent_agency" | "sports_agency" => "agency",
+        _ => return Err((StatusCode::BAD_REQUEST, "Invalid organization type".into())),
+    };
+
+    // Use upsert to ensure the profile exists and has the correct role
+    let _ = state
+        .pg
+        .from("creators")
+        .auth(state.supabase_service_key.clone())
+        .upsert(
+            serde_json::json!({
+                "id": &owner_user_id,
+                "role": role,
+                "email": payload.email
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
     let resp = json!({
         "organization": org_row,
         "next_action": {
@@ -200,22 +231,10 @@ pub async fn register(
 
 pub async fn create(
     State(state): State<AppState>,
-    headers: axum::http::HeaderMap,
+    user: AuthUser,
     Json(payload): Json<OrganizationProfilePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let owner_user_id = payload
-        .owner_user_id
-        .clone()
-        .or_else(|| {
-            headers
-                .get("x-user-id")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string())
-        })
-        .ok_or((
-            StatusCode::BAD_REQUEST,
-            "missing owner_user_id (provide in body or x-user-id header)".to_string(),
-        ))?;
+    let owner_user_id = user.id;
     // Validate required fields on create
     let email = payload
         .email
@@ -246,6 +265,10 @@ pub async fn create(
                 .join(", ");
             map.insert("primary_goal".into(), serde_json::Value::String(joined));
         }
+        map.insert(
+            "onboarding_step".into(),
+            serde_json::Value::String("complete".to_string()),
+        );
     }
     let body = v.to_string();
     let resp = state
@@ -272,10 +295,42 @@ pub async fn create(
 
 pub async fn update(
     State(state): State<AppState>,
+    user: AuthUser,
     Path(id): Path<String>,
     Json(payload): Json<OrganizationProfilePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Normalize primary_goal to a string if provided as array
+    // 1. Verify ownership
+    let check_resp = state
+        .pg
+        .from("organization_profiles")
+        .select("owner_user_id")
+        .eq("id", &id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let check_text = check_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let check_json: serde_json::Value = serde_json::from_str(&check_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let owner_id = check_json
+        .get("owner_user_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "Organization not found".to_string()))?;
+
+    if owner_id != user.id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You do not own this organization".to_string(),
+        ));
+    }
+
+    // 2. Normalize primary_goal to a string if provided as array
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if let serde_json::Value::Object(ref mut map) = v {
@@ -297,11 +352,16 @@ pub async fn update(
         for k in null_keys {
             map.remove(&k);
         }
+        map.insert(
+            "onboarding_step".into(),
+            serde_json::Value::String("complete".to_string()),
+        );
     }
     let body = v.to_string();
     let resp = state
         .pg
         .from("organization_profiles")
+        .auth(state.supabase_service_key.clone()) // Use service key
         .eq("id", &id)
         .update(body)
         .execute()
@@ -318,13 +378,13 @@ pub async fn update(
 
 pub async fn get_by_user(
     State(state): State<AppState>,
-    Path(user_id): Path<String>,
+    user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("organization_profiles")
         .select("*")
-        .eq("owner_user_id", &user_id)
+        .eq("owner_user_id", &user.id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

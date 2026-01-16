@@ -58,10 +58,9 @@ export default function AgencySelection() {
                 <p className="text-gray-600 text-sm md:text-base">{desc}</p>
                 <Button
                   onClick={() => navigate(to)}
-                  variant="outline"
-                  className="mt-2 border-2 border-black rounded-none"
+                  className="mt-4 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-2 border-black rounded-none w-full font-bold h-12"
                 >
-                  {t("learnMore")}
+                  {t("organizationSignup.selectAndContinue")}
                 </Button>
               </div>
             </Card>
