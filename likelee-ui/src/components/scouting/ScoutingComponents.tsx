@@ -198,6 +198,7 @@ export const AddProspectModal = ({
                             ].map((cat) => (
                                 <Button
                                     key={cat}
+                                    type="button"
                                     variant={formData.categories?.includes(cat) ? "default" : "secondary"}
                                     className={formData.categories?.includes(cat) ? "bg-indigo-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"}
                                     onClick={() => handleCategoryToggle(cat)}
