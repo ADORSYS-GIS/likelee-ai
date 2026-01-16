@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
@@ -44,6 +45,7 @@ export interface Profile {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -206,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout: async () => {
         if (!supabase) return;
         await supabase.auth.signOut();
+        queryClient.clear();
       },
       register: async (email, password, displayName) => {
         if (!supabase) throw new Error("Supabase not configured");

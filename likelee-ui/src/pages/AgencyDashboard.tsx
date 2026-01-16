@@ -123,7 +123,7 @@ const STATUS_COLORS = {
   contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
   meeting: "bg-purple-50 text-purple-700 border-purple-200",
   test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
-  offer_sent: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  offer_sent: "bg-green-50 text-green-700 border-green-200",
   signed: "bg-green-50 text-green-700 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
 };
@@ -137,8 +137,10 @@ const ProspectModal = ({
   onOpenChange: (open: boolean) => void;
   prospect?: ScoutingProspect | null;
 }) => {
+  const { user } = useAuth();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [starRating, setStarRating] = useState(3);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -223,6 +225,8 @@ const ProspectModal = ({
         return;
       }
 
+      setIsSaving(true);
+
       const agencyId = await scoutingService.getUserAgencyId();
       if (!agencyId) {
         toast({
@@ -237,8 +241,8 @@ const ProspectModal = ({
         // Check for duplicates only when adding new
         const existing = await scoutingService.checkDuplicate(
           agencyId,
-          formData.email,
-          formData.instagram
+          formData.email || undefined,
+          formData.instagram || undefined
         );
 
         if (existing) {
@@ -247,6 +251,7 @@ const ProspectModal = ({
             description: `This prospect (${existing.full_name}) is already in your pipeline.`,
             variant: "destructive",
           });
+          setIsSaving(false);
           return;
         }
 
@@ -300,7 +305,7 @@ const ProspectModal = ({
       }
 
       // Invalidate the prospects query to trigger a refetch
-      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
+      await queryClient.invalidateQueries({ queryKey: ["prospects", user?.id] });
 
       onOpenChange(false);
     } catch (error) {
@@ -310,6 +315,8 @@ const ProspectModal = ({
         description: "Failed to save prospect. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -509,30 +516,38 @@ const ProspectModal = ({
                 <Label>Instagram Followers</Label>
                 <Input
                   type="number"
-                  value={formData.instagramFollowers}
-                  onChange={(e) => handleInputChange("instagramFollowers", parseFloat(e.target.value))}
+                  value={formData.instagramFollowers || ""}
+                  onChange={(e) => handleInputChange("instagramFollowers", e.target.value === "" ? 0 : parseFloat(e.target.value))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Engagement Rate (%)</Label>
                 <Input
                   type="number"
-                  value={formData.engagementRate}
-                  onChange={(e) => handleInputChange("engagementRate", parseFloat(e.target.value))}
+                  value={formData.engagementRate || ""}
+                  onChange={(e) => handleInputChange("engagementRate", e.target.value === "" ? 0 : parseFloat(e.target.value))}
                 />
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancel
             </Button>
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
               onClick={handleSaveProspect}
+              disabled={isSaving}
             >
-              {prospect ? "Update Prospect" : "Add Prospect"}
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : (
+                prospect ? "Update Prospect" : "Add Prospect"
+              )}
             </Button>
           </div>
         </div>
@@ -5665,14 +5680,17 @@ const ProspectPipelineTab = ({
   onAddProspect: () => void;
   onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
+  const { user } = useAuth();
   const [selectedProspect, setSelectedProspect] = useState<ScoutingProspect | null>(null);
   const { data: prospects, isLoading } = useQuery({
-    queryKey: ["prospects"],
+    queryKey: ["prospects", user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const agencyId = await scoutingService.getUserAgencyId();
       if (!agencyId) return [];
       return scoutingService.getProspects(agencyId);
     },
+    enabled: !!user,
   });
 
   useEffect(() => {
@@ -5801,7 +5819,7 @@ const ProspectPipelineTab = ({
                     <td className="px-4 py-3">{p.status === 'new' ? <CheckCircle2 className="w-5 h-5 text-blue-500" /> : null}</td>
                     <td className="px-4 py-3">{p.status === 'contacted' ? <CheckCircle2 className="w-5 h-5 text-yellow-500" /> : null}</td>
                     <td className="px-4 py-3">{p.status === 'test_shoot' ? <CheckCircle2 className="w-5 h-5 text-purple-500" /> : null}</td>
-                    <td className="px-4 py-3">{p.status === 'offer_sent' ? <CheckCircle2 className="w-5 h-5 text-indigo-500" /> : null}</td>
+                    <td className="px-4 py-3">{p.status === 'offer_sent' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : null}</td>
                     <td className="px-4 py-3 text-gray-600 font-medium">{p.source}</td>
                     <td className="px-4 py-3"><ChevronRight className="w-5 h-5 text-gray-400" /></td>
                   </tr>
