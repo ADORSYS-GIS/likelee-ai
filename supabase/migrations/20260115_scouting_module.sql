@@ -109,15 +109,19 @@ ALTER TABLE public.scouting_submissions ENABLE ROW LEVEL SECURITY;
 -- User must be the owner OR exist in agency_users for that agency
 
 -- Prospects Policies
+DROP POLICY IF EXISTS "Agency members can select prospects" ON public.scouting_prospects;
 CREATE POLICY "Agency members can select prospects" ON public.scouting_prospects
   FOR SELECT USING (agency_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agency members can insert prospects" ON public.scouting_prospects;
 CREATE POLICY "Agency members can insert prospects" ON public.scouting_prospects
   FOR INSERT WITH CHECK (agency_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agency members can update prospects" ON public.scouting_prospects;
 CREATE POLICY "Agency members can update prospects" ON public.scouting_prospects
   FOR UPDATE USING (agency_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agency members can delete prospects" ON public.scouting_prospects;
 CREATE POLICY "Agency members can delete prospects" ON public.scouting_prospects
   FOR DELETE USING (agency_id = auth.uid());
 
@@ -125,14 +129,17 @@ CREATE POLICY "Agency members can delete prospects" ON public.scouting_prospects
 -- (Simplified for brevity, assuming same access pattern)
 
 -- Trips
+DROP POLICY IF EXISTS "Agency members can all trips" ON public.scouting_trips;
 CREATE POLICY "Agency members can all trips" ON public.scouting_trips
   FOR ALL USING (agency_id = auth.uid());
 
 -- Events
+DROP POLICY IF EXISTS "Agency members can all events" ON public.scouting_events;
 CREATE POLICY "Agency members can all events" ON public.scouting_events
   FOR ALL USING (agency_id = auth.uid());
 
 -- Submissions
+DROP POLICY IF EXISTS "Agency members can all submissions" ON public.scouting_submissions;
 CREATE POLICY "Agency members can all submissions" ON public.scouting_submissions
   FOR ALL USING (agency_id = auth.uid());
 
