@@ -69,7 +69,7 @@ pub async fn start_lipsync(
     // Always fetch profile to read stored avatar id or cameo url as needed
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id, cameo_front_url, creatify_avatar_id, creatify_job_id, creatify_job_status")
         .eq("id", &user_id)
         .limit(1)
@@ -503,7 +503,7 @@ pub async fn start_lipsync(
     });
     state
         .pg
-        .from("profiles")
+        .from("creators")
         .update(update.to_string())
         .eq("id", &user_id)
         .execute()
@@ -557,7 +557,7 @@ pub async fn get_lipsync_status(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("creatify_job_id, creatify_job_status, creatify_output_url")
         .eq("id", &q.user_id)
         .limit(1)
@@ -654,7 +654,7 @@ pub async fn get_lipsync_status(
                 if !upd.is_empty() {
                     let _ = state
                         .pg
-                        .from("profiles")
+                        .from("creators")
                         .update(serde_json::Value::Object(upd).to_string())
                         .eq("creatify_job_id", &job_id)
                         .execute()
@@ -687,7 +687,7 @@ pub async fn creatify_webhook(
     };
     state
         .pg
-        .from("profiles")
+        .from("creators")
         .update(update.to_string())
         .eq("creatify_job_id", &body.job_id)
         .execute()
@@ -710,7 +710,7 @@ pub async fn set_creatify_avatar_id(
     let update = json!({ "creatify_avatar_id": req.avatar_id });
     state
         .pg
-        .from("profiles")
+        .from("creators")
         .update(update.to_string())
         .eq("id", &req.user_id)
         .execute()
@@ -777,7 +777,7 @@ pub async fn create_avatar_from_video(
     // Fetch cameo and user info from profile (name, gender, existing avatar)
     let r = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("cameo_front_url, full_name, gender, creatify_avatar_id")
         .eq("id", &req.user_id)
         .limit(1)
@@ -1100,7 +1100,7 @@ pub async fn create_avatar_from_video(
     let upd = json!({"creatify_avatar_id": avatar_id});
     state
         .pg
-        .from("profiles")
+        .from("creators")
         .update(upd.to_string())
         .eq("id", &req.user_id)
         .execute()
@@ -1140,7 +1140,7 @@ pub async fn get_avatar_status(
     // get avatar id from profile
     let r = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("creatify_avatar_id")
         .eq("id", &q.user_id)
         .limit(1)
@@ -1258,7 +1258,7 @@ pub async fn get_avatar_status(
         );
         let _ = state
             .pg
-            .from("profiles")
+            .from("creators")
             .update(serde_json::Value::Object(upd).to_string())
             .eq("id", &q.user_id)
             .execute()

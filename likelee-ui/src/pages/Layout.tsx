@@ -8,7 +8,15 @@ import { useAuth } from "@/auth/AuthProvider";
 
 export default function Layout({ children, currentPageName }) {
   const { t, i18n } = useTranslation();
-  const { authenticated, logout } = useAuth();
+  const { authenticated, logout, profile } = useAuth();
+
+  // Determine the correct dashboard path based on the user's role.
+  const dashboardPath =
+    profile?.role === "brand"
+      ? "/BrandDashboard"
+      : profile?.role === "agency"
+        ? "/AgencyDashboard"
+        : "/CreatorDashboard";
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -622,12 +630,14 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 ) : (
                   <div className="flex items-center gap-3 ml-4">
-                    <Link
-                      to="/CreatorDashboard"
-                      className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
-                    >
-                      {t("common.dashboard")}
-                    </Link>
+                    {currentPageName !== "OrganizationSignup" && (
+                      <Link
+                        to={dashboardPath}
+                        className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
+                      >
+                        {t("common.dashboard")}
+                      </Link>
+                    )}
                     <button
                       onClick={() => logout()}
                       className="p-2 text-gray-500 hover:text-red-500 transition-colors"
@@ -751,7 +761,7 @@ export default function Layout({ children, currentPageName }) {
                 ) : (
                   <div className="space-y-3 w-full">
                     <Link
-                      to="/CreatorDashboard"
+                      to={dashboardPath}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
                     >

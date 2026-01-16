@@ -1,4 +1,4 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -9,8 +9,15 @@ use tracing::warn;
 
 pub async fn upsert_profile(
     State(state): State<AppState>,
+    user: AuthUser,
     Json(mut body): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Force the ID and email from the authenticated user
+    body["id"] = serde_json::Value::String(user.id.clone());
+    if let Some(email) = user.email {
+        body["email"] = serde_json::Value::String(email);
+    }
+
     let email = body
         .get("email")
         .and_then(|v| v.as_str())
@@ -23,7 +30,7 @@ pub async fn upsert_profile(
 
     let exists = match state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id")
         .eq("email", &email)
         .limit(1)
@@ -58,7 +65,7 @@ pub async fn upsert_profile(
     if exists {
         let resp = state
             .pg
-            .from("profiles")
+            .from("creators")
             .eq("email", &email)
             .update(body_str)
             .execute()
@@ -75,7 +82,7 @@ pub async fn upsert_profile(
             serde_json::to_string(&body).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         let resp = state
             .pg
-            .from("profiles")
+            .from("creators")
             .insert(body_str)
             .execute()
             .await
@@ -101,7 +108,7 @@ pub async fn check_email(
 ) -> Result<Json<EmailAvailability>, (StatusCode, String)> {
     match state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id")
         .eq("email", &q.email)
         .limit(1)
@@ -140,11 +147,11 @@ pub struct PhotoUploadQuery {
 /// Handles the profile photo upload and updates the user's profile.
 pub async fn upload_profile_photo(
     State(state): State<AppState>,
-    Query(q): Query<PhotoUploadQuery>,
+    user: AuthUser,
     headers: axum::http::HeaderMap,
     body: axum::body::Bytes,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let user_id = q.user_id;
+    let user_id = user.id;
     if user_id.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "user_id is required".to_string()));
     }
@@ -217,7 +224,7 @@ pub async fn upload_profile_photo(
 
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .eq("id", &user_id)
         .update(update_body.to_string())
         .execute()
@@ -287,7 +294,7 @@ pub async fn search_faces(
 ) -> Result<Json<FaceSearchResponse>, (axum::http::StatusCode, String)> {
     let mut req = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select(
             "id,full_name,profile_photo_url,age,race,hair_color,hairstyle,eye_color,height_cm,weight_kg,facial_features",
         )

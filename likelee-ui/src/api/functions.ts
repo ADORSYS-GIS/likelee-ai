@@ -69,11 +69,11 @@ export const sitemapXml = () => base44Client.get("/sitemap.xml");
 export const staticPages = () => base44Client.get("/static-pages");
 
 // Owner (user) KYC
-export const createKycSession = (data: { user_id: string }) =>
-  base44Client.post<KycSessionResponse>("/api/kyc/session", data);
+export const createKycSession = () =>
+  base44Client.post<KycSessionResponse>("/api/kyc/session", {});
 
-export const getKycStatus = (user_id: string) =>
-  base44Client.get<KycStatusResponse>(`/api/kyc/status?user_id=${user_id}`);
+export const getKycStatus = () =>
+  base44Client.get<KycStatusResponse>(`/api/kyc/status`);
 
 // Organization (profile) KYC
 export const createOrganizationKycSession = (data: {
@@ -86,23 +86,27 @@ export const getOrganizationKycStatus = (organization_id: string) =>
     `/api/kyc/organization/status?organization_id=${organization_id}`,
   );
 
-export const getOrganizationProfileByUserId = (user_id: string) =>
-  base44Client.get(`/api/organization-profile/user/${user_id}`);
+export const getOrganizationProfileByUserId = () =>
+  base44Client.get(`/api/organization-profile/user`);
+
+export const getBrandProfile = () =>
+  base44Client.get(`/api/brand-profile/user`);
+
+export const getAgencyProfile = () =>
+  base44Client.get(`/api/agency-profile/user`);
 
 // Organization profile CRUD
-export const createOrganizationProfile = (data: any, userId?: string) =>
-  base44Client.post(`/api/organization-profile`, data, {
-    headers: userId ? { "x-user-id": userId } : {},
-  });
+export const createOrganizationProfile = (data: any) =>
+  base44Client.post(`/api/organization-profile`, data);
 
-export const updateOrganizationProfile = (
-  id: string,
-  data: any,
-  userId?: string,
-) =>
-  base44Client.post(`/api/organization-profile/${id}`, data, {
-    headers: userId ? { "x-user-id": userId } : {},
-  });
+export const updateOrganizationProfile = (id: string, data: any) =>
+  base44Client.post(`/api/organization-profile/${id}`, data);
+
+export const updateBrandProfile = (data: any) =>
+  base44Client.post(`/api/brand-profile`, data);
+
+export const updateAgencyProfile = (data: any) =>
+  base44Client.post(`/api/agency-profile`, data);
 
 // Organization registration (creates user + organization and links ownership)
 export const registerOrganization = (
@@ -122,6 +126,11 @@ export const registerOrganization = (
     headers: userId ? { "x-user-id": userId } : {},
   });
 
-// Dashboard data for a specific user
-export const getDashboard = (user_id: string) =>
-  base44Client.get(`/api/dashboard`, { params: { user_id } });
+export const registerBrand = (data: any) =>
+  base44Client.post(`/api/brand-register`, data);
+
+export const registerAgency = (data: any) =>
+  base44Client.post(`/api/agency-register`, data);
+
+// Dashboard data for the authenticated user
+export const getDashboard = () => base44Client.get(`/api/dashboard`);

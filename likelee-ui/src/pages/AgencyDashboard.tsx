@@ -73,6 +73,8 @@ import {
   MapPin,
   Star,
   Menu,
+  Image as ImageIcon,
+  Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -921,59 +923,295 @@ const ClientProfileModal = ({
                   Add Contact
                 </Button>
               </div>
-              <div className="space-y-4">
-                {MOCK_CONTACTS.map((contact, idx) => (
-                  <Card
-                    key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
-                        <div>
-                          <h5 className="font-bold text-gray-900 text-lg">
-                            {contact.name}
-                          </h5>
-                          <p className="text-sm text-gray-500 font-medium">
-                            {contact.role}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                            <Mail className="w-4 h-4 text-gray-500" />
-                            {contact.email}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                            <Phone className="w-4 h-4 text-gray-500" />
-                            {contact.phone}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
+              <div className="mt-0">
+                <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
+                  <div className="flex-1 min-w-[200px]">
+                    <Input
+                      placeholder="Search talent..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={consentFilter}
+                      onChange={(e) => setConsentFilter(e.target.value)}
+                    >
+                      <option value="all">All Consent</option>
+                      <option value="complete">Complete</option>
+                      <option value="expiring">Expiring</option>
+                      <option value="missing">Missing</option>
+                    </select>
+                  </div>
+
+                  {(searchQuery ||
+                    statusFilter !== "all" ||
+                    consentFilter !== "all") && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setStatusFilter("all");
+                        setConsentFilter("all");
+                      }}
+                      className="text-gray-600"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("name")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Talent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("status")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Status
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("consent")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Consent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          AI Usage
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("instagram_followers")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Followers
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Assets
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Top Brand
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          License Expiry
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("earnings_30d")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            30D Earnings
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("projected_earnings")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Projected
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredRoster.map((talent) => (
+                        <tr
+                          key={talent.id}
+                          onClick={() => setSelectedTalent(talent)}
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
                         >
-                          <Mail className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
-                        >
-                          <Phone className="w-4 h-4 text-gray-500" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 rounded-xl border-gray-100"
-                        >
-                          <Edit className="w-4 h-4 text-gray-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={talent.headshot}
+                                alt={talent.name}
+                                className="w-12 h-12 object-cover border-2 border-gray-200"
+                              />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900">
+                                    {talent.name}
+                                  </span>
+                                  {talent.verified && (
+                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {talent.categories.join(", ")}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                              }
+                            >
+                              {talent.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.consent === "complete"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.consent === "expiring"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-red-100 text-red-800"
+                              }
+                            >
+                              {talent.consent === "expiring" ? (
+                                <Clock className="w-3 h-3 mr-1" />
+                              ) : talent.consent === "missing" ? (
+                                <XCircle className="w-3 h-3 mr-1" />
+                              ) : (
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                              )}
+                              {talent.consent}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex gap-1">
+                              {talent.ai_usage_types.includes("video") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Video className="w-3 h-3 mr-1" />
+                                  Video
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("image") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <ImageIcon className="w-3 h-3 mr-1" />
+                                  Image
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("voice") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Mic className="w-3 h-3 mr-1" />
+                                  Voice
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-1 text-sm text-gray-700">
+                              <Instagram className="w-4 h-4 text-purple-600" />
+                              {talent.instagram_followers.toLocaleString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.assets_count}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.top_brand}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-sm ${isLicenseExpired(talent.license_expiry) ? "text-red-600 font-medium" : isLicenseExpiring(talent.license_expiry) ? "text-orange-600 font-medium" : "text-gray-700"}`}
+                              >
+                                {talent.license_expiry !== "—"
+                                  ? new Date(
+                                      talent.license_expiry,
+                                    ).toLocaleDateString()
+                                  : "—"}
+                              </span>
+                              {isLicenseExpiring(talent.license_expiry) && (
+                                <Clock className="w-4 h-4 text-orange-500" />
+                              )}
+                              {isLicenseExpired(talent.license_expiry) && (
+                                <XCircle className="w-4 h-4 text-red-500" />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                            ${talent.earnings_30d.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            ${talent.projected_earnings.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4">
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    Campaign tracking coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    License management coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg mb-2">
+                    Advanced Analytics
+                  </p>
+                  <p className="text-gray-400 text-sm mb-6">
+                    Upgrade to Agency Pro to unlock revenue forecasting,
+                    performance charts, and insights.
+                  </p>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Upgrade to Pro
+                  </Button>
+                </div>
               </div>
             </TabsContent>
 
@@ -2554,6 +2792,7 @@ const PaymentTrackingView = () => {
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
+
                 <div>
                   <p className="text-sm font-bold text-gray-900">
                     Invoice {payment.invoiceNumber} • {payment.client}
@@ -12731,6 +12970,39 @@ const AnalyticsDashboardView = () => {
   );
 };
 
+const PlaceholderView = ({ title }: { title: string }) => (
+  <div className="flex flex-col items-center justify-center h-full py-20 text-center">
+    <div className="bg-gray-100 p-6 rounded-full mb-4">
+      <Settings className="w-10 h-10 text-gray-400" />
+    </div>
+    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
+    <p className="text-gray-500 max-w-sm">
+      This section is currently under development. Check back soon for updates.
+    </p>
+  </div>
+);
+
+const CalendarScheduleTab = ({
+  bookings,
+  onAddBooking,
+  onUpdateBooking,
+  onCancelBooking,
+}: any) => <PlaceholderView title="Calendar & Schedule" />;
+
+const BookingRequestsTab = () => <PlaceholderView title="Booking Requests" />;
+
+const ClientDatabaseTab = () => <PlaceholderView title="Client Database" />;
+
+const TalentAvailabilityTab = ({
+  bookOuts,
+  onAddBookOut,
+  onRemoveBookOut,
+}: any) => <PlaceholderView title="Talent Availability" />;
+
+const ManagementAnalyticsView = ({ bookings }: any) => (
+  <PlaceholderView title="Management & Analytics" />
+);
+
 const BookingsView = ({
   activeSubTab,
   bookings,
@@ -12769,7 +13041,7 @@ const BookingsView = ({
         onRemoveBookOut={onRemoveBookOut}
       />
     );
-  if (activeSubTab === "Notifications") return <NotificationsTab />;
+  // if (activeSubTab === "Notifications") return <NotificationsTab />;
   if (activeSubTab === "Management & Analytics")
     return <ManagementAnalyticsView bookings={bookings} />;
 
@@ -12783,18 +13055,6 @@ const BookingsView = ({
     </div>
   );
 };
-
-const PlaceholderView = ({ title }: { title: string }) => (
-  <div className="flex flex-col items-center justify-center h-full py-20 text-center">
-    <div className="bg-gray-100 p-6 rounded-full mb-4">
-      <Settings className="w-10 h-10 text-gray-400" />
-    </div>
-    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-    <p className="text-gray-500 max-w-sm">
-      This section is currently under development. Check back soon for updates.
-    </p>
-  </div>
-);
 
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
@@ -12820,6 +13080,24 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookOuts, setBookOuts] = useState<any[]>([]);
+
+  const onAddBooking = (booking: any) => {
+    setBookings([...bookings, booking]);
+  };
+  const onUpdateBooking = (booking: any) => {
+    setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+  };
+  const onCancelBooking = (id: string) => {
+    setBookings(bookings.filter((b) => b.id !== id));
+  };
+  const onAddBookOut = (bookOut: any) => {
+    setBookOuts([...bookOuts, bookOut]);
+  };
+  const onRemoveBookOut = (id: string) => {
+    setBookOuts(bookOuts.filter((b) => b.id !== id));
+  };
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -12954,12 +13232,12 @@ export default function AgencyDashboard() {
             label: "Bookings",
             icon: Calendar,
             subItems: [
-              "Calendar and schedule",
-              "Booking request",
+              "Calendar & Schedule",
+              "Booking Requests",
               "Client Database",
-              "Talent availability",
+              "Talent Availability",
               "Notifications",
-              "Management and Analytics",
+              "Management & Analytics",
             ],
           },
           {

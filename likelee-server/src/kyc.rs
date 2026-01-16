@@ -1,4 +1,4 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -45,7 +45,7 @@ async fn update_profile(
     let body = serde_json::to_string(payload).map_err(|e| e.to_string())?;
     match state
         .pg
-        .from("profiles")
+        .from("creators")
         .eq("id", user_id)
         .update(body)
         .execute()
@@ -89,16 +89,10 @@ fn compute_hmac_hex(secret: &str, body: &[u8]) -> String {
 
 pub async fn create_session(
     State(state): State<AppState>,
+    user: AuthUser,
     Json(req): Json<SessionRequest>,
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
-    let profile_id = req
-        .user_id
-        .as_ref()
-        .or(req.organization_id.as_ref())
-        .ok_or((
-            StatusCode::BAD_REQUEST,
-            "missing user_id or organization_id".to_string(),
-        ))?;
+    let profile_id = req.organization_id.as_ref().unwrap_or(&user.id);
     debug!(%profile_id, "Creating Veriff session");
     let veriff_body = VeriffCreateSessionBody {
         verification: VeriffVerification {
@@ -209,15 +203,13 @@ pub struct StatusQuery {
 
 pub async fn get_status(
     State(state): State<AppState>,
+    user: AuthUser,
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let profile_id = q.user_id.as_ref().or(q.organization_id.as_ref()).ok_or((
-        StatusCode::BAD_REQUEST,
-        "missing user_id or organization_id".to_string(),
-    ))?;
+    let profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
         .eq("id", profile_id)
         .execute()
@@ -304,7 +296,7 @@ pub async fn get_status(
                     let _ = update_profile(&state, profile_id, &payload).await;
                     let resp2 = state
                         .pg
-                        .from("profiles")
+                        .from("creators")
                         .select(
                             "kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at",
                         )
