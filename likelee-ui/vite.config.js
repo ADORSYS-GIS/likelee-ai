@@ -30,6 +30,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@aws-amplify/ui-react/styles.css": path.resolve(
+        __dirname,
+        "./node_modules/@aws-amplify/ui-react/dist/styles.css",
+      ),
+      "@aws-amplify/ui-react-liveness/styles.css": path.resolve(
+        __dirname,
+        "./node_modules/@aws-amplify/ui-react-liveness/dist/styles.css",
+      ),
     },
     extensions: [".mjs", ".js", ".jsx", ".ts", ".tsx", ".json"],
   },
