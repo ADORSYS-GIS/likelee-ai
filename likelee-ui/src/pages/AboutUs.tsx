@@ -18,9 +18,8 @@ export default function AboutUs() {
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "AboutPage",
-      name: "About Likelee",
-      description:
-        "In the age of AI, human identity should be an asset, not a liability. Likelee builds the infrastructure for creators to own, control, and profit from their digital likeness.",
+      name: t("aboutPageName"),
+      description: t("aboutPageDescription"),
       url: "https://likelee.ai/about-us",
       mainEntity: {
         "@type": "Organization",
