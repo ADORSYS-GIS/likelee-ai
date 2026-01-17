@@ -176,6 +176,7 @@
       "readyMessage": "Una vez que se activen sus licencias, verá las ganancias en tiempo real aquí. Actualmente, no tiene contratos activos.",
       "actions": {
         "cashOut": "Retirar Fondos",
+        "loading": "Procesando...",
         "downloadTax": "Descargar resumen de impuestos (1099)"
       },
       "metrics": {

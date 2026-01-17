@@ -4,6 +4,33 @@
 -- Extensions
 create extension if not exists pgcrypto;
 
+-- Fix/Migration: Ensure creator_id exists (handle legacy profile_id or missing column)
+do $$
+begin
+  -- payout_requests
+  if exists (select from information_schema.tables where table_name = 'payout_requests') then
+    if exists (select from information_schema.columns where table_name = 'payout_requests' and column_name = 'profile_id') then
+       alter table payout_requests rename column profile_id to creator_id;
+    end if;
+    -- payout_requests: backfill columns if table exists but they are missing
+    alter table payout_requests add column if not exists fee_cents integer not null default 0;
+    alter table payout_requests add column if not exists instant_fee_cents integer not null default 0;
+    alter table payout_requests add column if not exists currency text not null default 'EUR';
+    alter table payout_requests add column if not exists stripe_transfer_id text;
+    alter table payout_requests add column if not exists stripe_payout_id text;
+    alter table payout_requests add column if not exists failure_reason text;
+    alter table payout_requests add column if not exists approved_by uuid;
+    alter table payout_requests add column if not exists approved_at timestamptz;
+  end if;
+
+  -- ledger_entries: backfill columns
+  if exists (select from information_schema.tables where table_name = 'ledger_entries') then
+    alter table ledger_entries add column if not exists reference_type text;
+    alter table ledger_entries add column if not exists reference_id text;
+    alter table ledger_entries add column if not exists metadata jsonb;
+  end if;
+end $$;
+
 -- Creators payout integration columns
 alter table if exists creators
   add column if not exists stripe_connect_account_id text,
@@ -67,6 +94,8 @@ create table if not exists ledger_entries (
 create index if not exists idx_ledger_entries_creator on ledger_entries(creator_id);
 create index if not exists idx_ledger_entries_created_at on ledger_entries(created_at);
 
+
+
 -- Balance view: available = credits - debits - payout holds (approved/processing)
 create or replace view creator_balances as
 with
@@ -101,3 +130,16 @@ full outer join debits d
 full outer join holds h
   on coalesce(c.creator_id, d.creator_id) = h.creator_id
  and coalesce(c.currency, d.currency) = h.currency;
+-- Add payout settings to creators and payout_provider to payout_requests
+
+-- Add payout_settings column to creators
+alter table if exists creators
+  add column if not exists payout_settings jsonb default '{}'::jsonb,
+  add column if not exists payout_method_preference text default 'stripe';
+
+-- Add payout_provider to payout_requests
+alter table if exists payout_requests
+  add column if not exists payout_provider text default 'stripe';
+
+-- Create index for payout_provider
+create index if not exists idx_payout_requests_provider on payout_requests(payout_provider);

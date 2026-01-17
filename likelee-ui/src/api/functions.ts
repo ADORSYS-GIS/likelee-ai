@@ -138,6 +138,18 @@ export const getPayoutsAccountStatus = (profile_id: string) =>
   base44Client.get<{
     connected: boolean;
     payouts_enabled: boolean;
+    stripe_payouts_enabled: boolean;
+    preference: string;
+    paypal_configured: boolean;
+    wise_configured: boolean;
+    settings: any;
     transfers_enabled: boolean;
     last_error?: string;
   }>(`/api/payouts/account_status`, { params: { profile_id } });
+
+export const updatePayoutSettings = (data: {
+  profile_id: string;
+  preference: string;
+  paypal_email?: string;
+  wise_details?: any;
+}) => base44Client.post("/api/payouts/settings", data);

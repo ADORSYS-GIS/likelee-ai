@@ -748,6 +748,7 @@
       "readyMessage": "Une fois vos licences actives, vous verrez vos revenus en temps réel ici. Actuellement, vous n'avez aucun contrat actif.",
       "actions": {
         "cashOut": "Retrait",
+        "loading": "Traitement...",
         "downloadTax": "Télécharger le résumé fiscal (1099)"
       },
       "metrics": {

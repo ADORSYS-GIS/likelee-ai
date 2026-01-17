@@ -2121,6 +2121,7 @@
       "readyMessage": "Once your licenses activate, you'll see real-time earnings here. Currently, you have no active contracts.",
       "actions": {
         "cashOut": "Cash Out",
+        "loading": "Processing...",
         "downloadTax": "Download Tax Summary (1099)"
       },
       "metrics": {
