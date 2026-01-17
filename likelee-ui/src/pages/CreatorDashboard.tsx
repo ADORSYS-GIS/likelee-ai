@@ -1156,6 +1156,12 @@ export default function CreatorDashboard() {
   const [showCardModal, setShowCardModal] = useState(false);
   const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
   const [isLoadingPayout, setIsLoadingPayout] = useState(false);
+  const [showPayoutSettings, setShowPayoutSettings] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState<
+    "stripe" | "paypal" | "wise"
+  >("stripe");
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [wiseDetails, setWiseDetails] = useState("");
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -5597,38 +5603,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Button
-            onClick={async () => {
-              try {
-                setIsLoadingPayout(true);
-                const profileId = user?.id;
-                if (!profileId) throw new Error("Not authenticated");
-                const res = await createPayoutsOnboardingLink(profileId);
-                if (res?.url) {
-                  window.location.href = res.url;
-                } else {
-                  setShowConnectBankAccount(true);
-                }
-              } catch (e) {
-                console.error(e);
-                setShowConnectBankAccount(true);
-              } finally {
-                setIsLoadingPayout(false);
-              }
-            }}
-            disabled={isLoadingPayout}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setShowPayoutSettings(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
           >
-            {isLoadingPayout ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {t("creatorDashboard.earnings.actions.loading")}
-              </>
-            ) : (
-              <>
-                <DollarSign className="w-4 h-4" />
-                {t("creatorDashboard.earnings.actions.cashOut")}
-              </>
-            )}
+            <DollarSign className="w-4 h-4" />
+            {t("creatorDashboard.earnings.actions.cashOut")}
           </Button>
         </div>
 
@@ -8241,6 +8220,286 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.modals.contentRestrictions.saveChanges")}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payout Settings Modal */}
+      <Dialog open={showPayoutSettings} onOpenChange={setShowPayoutSettings}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              Setup Payout Method
+            </DialogTitle>
+            <DialogDescription>
+              Choose how you'd like to receive your earnings
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Payout Method Selection */}
+            <div className="space-y-4">
+              <label className="text-sm font-semibold text-gray-700">
+                Select Payout Method
+              </label>
+
+              {/* Stripe Connect Standard */}
+              <div
+                onClick={() => setPayoutMethod("stripe")}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  payoutMethod === "stripe"
+                    ? "border-emerald-500 bg-emerald-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                      payoutMethod === "stripe"
+                        ? "border-emerald-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {payoutMethod === "stripe" && (
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-gray-900">
+                        Stripe Connect
+                      </h3>
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                        Recommended
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Connect your existing Stripe account or create a new one.
+                      Fast, secure, and supports multiple currencies.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        Instant Setup
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Multiple Currencies
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Direct Deposit
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PayPal */}
+              <div
+                onClick={() => setPayoutMethod("paypal")}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  payoutMethod === "paypal"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                      payoutMethod === "paypal"
+                        ? "border-blue-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {payoutMethod === "paypal" && (
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">PayPal</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Receive payments directly to your PayPal account. Requires
+                      manual processing.
+                    </p>
+                    {payoutMethod === "paypal" && (
+                      <div className="mt-3">
+                        <Label
+                          htmlFor="paypal-email"
+                          className="text-sm font-medium"
+                        >
+                          PayPal Email Address
+                        </Label>
+                        <Input
+                          id="paypal-email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={paypalEmail}
+                          onChange={(e) => setPaypalEmail(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Wise */}
+              <div
+                onClick={() => setPayoutMethod("wise")}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  payoutMethod === "wise"
+                    ? "border-purple-500 bg-purple-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                      payoutMethod === "wise"
+                        ? "border-purple-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {payoutMethod === "wise" && (
+                      <div className="w-3 h-3 rounded-full bg-purple-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">
+                      Wise (TransferWise)
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      International transfers with low fees. Great for
+                      cross-border payments.
+                    </p>
+                    {payoutMethod === "wise" && (
+                      <div className="mt-3">
+                        <Label
+                          htmlFor="wise-email"
+                          className="text-sm font-medium"
+                        >
+                          Wise Account Email
+                        </Label>
+                        <Input
+                          id="wise-email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={wiseDetails}
+                          onChange={(e) => setWiseDetails(e.target.value)}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          We'll send payouts to your Wise account registered
+                          with this email
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Banner */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900">
+                  <p className="font-semibold">Important Information</p>
+                  <ul className="mt-2 space-y-1 list-disc list-inside">
+                    <li>Stripe Connect offers the fastest payout processing</li>
+                    <li>
+                      PayPal and Wise payouts are processed manually within 3-5
+                      business days
+                    </li>
+                    <li>
+                      You can change your payout method anytime in settings
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPayoutSettings(false)}
+              className="mr-2"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  setIsLoadingPayout(true);
+                  const profileId = user?.id;
+                  if (!profileId) throw new Error("Not authenticated");
+
+                  if (payoutMethod === "stripe") {
+                    // Create Stripe Connect onboarding link
+                    const res = await createPayoutsOnboardingLink(profileId);
+                    if (res?.url) {
+                      window.location.href = res.url;
+                    } else {
+                      toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Failed to create Stripe onboarding link",
+                      });
+                    }
+                  } else {
+                    // Save PayPal or Wise settings
+                    const { updatePayoutSettings } =
+                      await import("@/api/functions");
+                    await updatePayoutSettings({
+                      profile_id: profileId,
+                      preference: payoutMethod,
+                      paypal_email:
+                        payoutMethod === "paypal" ? paypalEmail : undefined,
+                      wise_details:
+                        payoutMethod === "wise"
+                          ? { email: wiseDetails }
+                          : undefined,
+                    });
+
+                    toast({
+                      title: "Success",
+                      description: `${payoutMethod === "paypal" ? "PayPal" : "Wise"} payout method configured successfully`,
+                    });
+                    setShowPayoutSettings(false);
+                  }
+                } catch (e) {
+                  console.error(e);
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to setup payout method",
+                  });
+                } finally {
+                  setIsLoadingPayout(false);
+                }
+              }}
+              disabled={
+                isLoadingPayout ||
+                (payoutMethod === "paypal" && !paypalEmail) ||
+                (payoutMethod === "wise" && !wiseDetails)
+              }
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isLoadingPayout ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Continue with{" "}
+                  {payoutMethod === "stripe"
+                    ? "Stripe"
+                    : payoutMethod === "paypal"
+                      ? "PayPal"
+                      : "Wise"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
