@@ -70,7 +70,7 @@ pub async fn create_onboarding_link(
     // Create account if missing
     if account_id.is_empty() {
         let mut params = stripe_sdk::CreateAccount::new();
-        params.type_ = Some(stripe_sdk::AccountType::Express);
+        params.type_ = Some(stripe_sdk::AccountType::Standard);
         // Optional: set default currency/country if you want to constrain onboarding
         match stripe_sdk::Account::create(&client, params).await {
             Ok(acct) => {
@@ -134,6 +134,57 @@ pub struct BalanceRow {
     pub reserved_cents: i64,
 }
 
+#[derive(Deserialize)]
+pub struct PayoutSettingsPayload {
+    pub profile_id: String,
+    pub preference: String, // "stripe", "paypal", "wise"
+    pub paypal_email: Option<String>,
+    pub wise_details: Option<serde_json::Value>,
+}
+
+pub async fn update_payout_settings(
+    State(state): State<AppState>,
+    Json(payload): Json<PayoutSettingsPayload>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    if payload.profile_id.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"missing_profile_id"})),
+        );
+    }
+
+    let valid_methods = ["stripe", "paypal", "wise"];
+    if !valid_methods.contains(&payload.preference.as_str()) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"invalid_preference"})),
+        );
+    }
+
+    let mut settings = serde_json::Map::new();
+    if let Some(email) = payload.paypal_email {
+        settings.insert("paypal_email".to_string(), json!(email));
+    }
+    if let Some(details) = payload.wise_details {
+        settings.insert("wise_details".to_string(), details);
+    }
+
+    let body = json!({
+        "payout_method_preference": payload.preference,
+        "payout_settings": settings
+    });
+
+    let _ = state
+        .pg
+        .from("creators")
+        .eq("id", &payload.profile_id)
+        .update(body.to_string())
+        .execute()
+        .await;
+
+    (StatusCode::OK, Json(json!({"status":"ok"})))
+}
+
 pub async fn get_account_status(
     State(state): State<AppState>,
     Query(q): Query<ProfileQuery>,
@@ -147,7 +198,7 @@ pub async fn get_account_status(
     let resp = match state
         .pg
         .from("creators")
-        .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error")
+        .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error,payout_method_preference,payout_settings")
         .eq("id", &q.profile_id)
         .limit(1)
         .execute()
@@ -213,11 +264,46 @@ pub async fn get_account_status(
             }
         }
     }
+
+    let preference = row
+        .get("payout_method_preference")
+        .and_then(|v| v.as_str())
+        .unwrap_or("stripe")
+        .to_string();
+
+    let settings = row.get("payout_settings").cloned().unwrap_or(json!({}));
+
+    // Check if configured
+    let paypal_configured = settings
+        .get("paypal_email")
+        .and_then(|s| s.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let wise_configured = settings
+        .get("wise_details")
+        .map(|obj| obj.is_object() && !obj.as_object().unwrap().is_empty())
+        .unwrap_or(false);
+
+    // If preference is NOT stripe, we consider "payouts_enabled" based on configuration
+    // But we still return the stripe-specific flag as "stripe_payouts_enabled" for clarity
+    let stripe_payouts_enabled = payouts_enabled;
+    if preference == "paypal" {
+        payouts_enabled = paypal_configured;
+    } else if preference == "wise" {
+        payouts_enabled = wise_configured;
+    } else {
+        payouts_enabled = stripe_payouts_enabled;
+    }
     (
         StatusCode::OK,
         Json(json!({
             "connected": connected,
             "payouts_enabled": payouts_enabled,
+            "stripe_payouts_enabled": stripe_payouts_enabled,
+            "preference": preference,
+            "paypal_configured": paypal_configured,
+            "wise_configured": wise_configured,
+            "settings": settings,
             "transfers_enabled": transfers_enabled,
             "last_error": last_error
         })),
@@ -397,11 +483,46 @@ pub async fn request_payout(
 
     // Compute fee and initial status (auto-approve under threshold)
     let fee_cents = (payload.amount_cents * (state.payout_fee_bps as i64) + 9999) / 10000;
-    let status = if (payload.amount_cents as u32) <= state.payout_auto_approve_threshold_cents {
+    let mut status = if (payload.amount_cents as u32) <= state.payout_auto_approve_threshold_cents {
         "approved"
     } else {
         "pending"
     };
+
+    // Determine provider from preference
+    let prof_resp = match state
+        .pg
+        .from("creators")
+        .select("payout_method_preference")
+        .eq("id", &payload.profile_id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error"})),
+            )
+        }
+    };
+
+    let prof_text = prof_resp.text().await.unwrap_or("[]".into());
+    let prof_rows: Vec<serde_json::Value> = serde_json::from_str(&prof_text).unwrap_or_default();
+    let provider = prof_rows
+        .first()
+        .and_then(|r| r.get("payout_method_preference").and_then(|v| v.as_str()))
+        .unwrap_or("stripe")
+        .to_string();
+
+    if provider != "stripe" {
+        // Non-stripe providers are always pending manual approval/processing for now
+        // Or if auto-approved, they enter "processing" state but won't be executed by Stripe logic
+        if status == "approved" {
+            status = "processing";
+        }
+    }
 
     let body = json!({
         "creator_id": payload.profile_id,
@@ -411,6 +532,7 @@ pub async fn request_payout(
         "payout_method": method,
         "instant_fee_cents": 0,
         "status": status,
+        "payout_provider": provider,
     });
     let ins = match state
         .pg
@@ -431,8 +553,8 @@ pub async fn request_payout(
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     let created = rows.first().cloned().unwrap_or(json!({"status":"ok"}));
 
-    // If auto-approved, try to execute transfer (and instant payout if requested)
-    if status == "approved" {
+    // If auto-approved (and Stripe), try to execute transfer
+    if status == "approved" && provider == "stripe" {
         if let (Some(req_id), Some(profile_id)) = (
             created
                 .get("id")

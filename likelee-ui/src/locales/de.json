@@ -176,6 +176,7 @@
       "readyMessage": "Sobald Ihre Lizenzen aktiviert sind, sehen Sie hier Echtzeit-Einnahmen. Derzeit haben Sie keine aktiven Verträge.",
       "actions": {
         "cashOut": "Auszahlen",
+        "loading": "Wird verarbeitet...",
         "downloadTax": "Steuerübersicht herunterladen (1099)"
       },
       "metrics": {

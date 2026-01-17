@@ -143,6 +143,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::payouts::create_onboarding_link),
         )
         .route(
+            "/api/payouts/settings",
+            post(crate::payouts::update_payout_settings),
+        )
+        .route(
             "/api/payouts/account_status",
             get(crate::payouts::get_account_status),
         )

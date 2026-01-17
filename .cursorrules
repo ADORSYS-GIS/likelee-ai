@@ -6,6 +6,9 @@
   - For Frontend: Run `npx prettier --write .`
   - For Backend: Run `cargo fmt`
   - **Do this proactively**. Do not wait for the user to ask or for CI to fail.
+- **Automatic Build (MANDATORY)**: You MUST ALWAYS run a full build of the project after completing any code changes.
+  - For Frontend: `npm run build` in `likelee-ui`
+  - For Backend: `cargo build` in `likelee-server`
 - Always implement based on the design.md file located at `./docs/design.md`. If anything is unclear, ask questions.
 - **Workflow**: Always run and check the Local CI Pre-Push Checklist automatically after completion of an issue or task.
 

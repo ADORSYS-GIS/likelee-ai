@@ -1155,6 +1155,7 @@ export default function CreatorDashboard() {
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
+  const [isLoadingPayout, setIsLoadingPayout] = useState(false);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -5598,6 +5599,7 @@ export default function CreatorDashboard() {
           <Button
             onClick={async () => {
               try {
+                setIsLoadingPayout(true);
                 const profileId = user?.id;
                 if (!profileId) throw new Error("Not authenticated");
                 const res = await createPayoutsOnboardingLink(profileId);
@@ -5609,12 +5611,24 @@ export default function CreatorDashboard() {
               } catch (e) {
                 console.error(e);
                 setShowConnectBankAccount(true);
+              } finally {
+                setIsLoadingPayout(false);
               }
             }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
+            disabled={isLoadingPayout}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <DollarSign className="w-4 h-4" />
-            {t("creatorDashboard.earnings.actions.cashOut")}
+            {isLoadingPayout ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t("creatorDashboard.earnings.actions.loading")}
+              </>
+            ) : (
+              <>
+                <DollarSign className="w-4 h-4" />
+                {t("creatorDashboard.earnings.actions.cashOut")}
+              </>
+            )}
           </Button>
         </div>
 
