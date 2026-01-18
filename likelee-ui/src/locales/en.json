@@ -2122,7 +2122,11 @@
       "actions": {
         "cashOut": "Cash Out",
         "loading": "Processing...",
-        "downloadTax": "Download Tax Summary (1099)"
+        "downloadTax": "Download tax summary (1099)"
+      },
+      "announcement": {
+        "title": "New: Cashout Options!",
+        "message": "You can now receive your earnings through Stripe, PayPal, or Wise. Connect your account today!"
       },
       "metrics": {
         "totalEarnedYTD": "Total Earned YTD",

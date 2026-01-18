@@ -161,7 +161,30 @@ pub async fn update_payout_settings(
         );
     }
 
-    let mut settings = serde_json::Map::new();
+    // First, fetch existing settings to merge
+    let existing_resp = state
+        .pg
+        .from("creators")
+        .select("payout_settings")
+        .eq("id", &payload.profile_id)
+        .limit(1)
+        .execute()
+        .await;
+
+    let mut settings = match existing_resp {
+        Ok(r) => {
+            let text = r.text().await.unwrap_or("[]".to_string());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            rows.first()
+                .and_then(|row| row.get("payout_settings"))
+                .and_then(|v| v.as_object())
+                .cloned()
+                .unwrap_or_default()
+        }
+        Err(_) => serde_json::Map::new(),
+    };
+
+    // Merge new settings
     if let Some(email) = payload.paypal_email {
         settings.insert("paypal_email".to_string(), json!(email));
     }
@@ -174,15 +197,30 @@ pub async fn update_payout_settings(
         "payout_settings": settings
     });
 
-    let _ = state
+    match state
         .pg
         .from("creators")
         .eq("id", &payload.profile_id)
         .update(body.to_string())
         .execute()
-        .await;
-
-    (StatusCode::OK, Json(json!({"status":"ok"})))
+        .await
+    {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({
+                "status": "ok",
+                "preference": payload.preference,
+                "settings": settings
+            })),
+        ),
+        Err(e) => {
+            warn!(error = %e, "Failed to update payout settings");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error": e.to_string()})),
+            )
+        }
+    }
 }
 
 pub async fn get_account_status(
