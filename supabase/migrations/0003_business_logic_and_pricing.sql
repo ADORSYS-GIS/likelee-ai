@@ -3,8 +3,8 @@
 
 BEGIN;
 
--- 1. Add business logic columns to profiles
-ALTER TABLE public.profiles
+-- 1. Add business logic columns to creators
+ALTER TABLE public.creators
   ADD COLUMN IF NOT EXISTS accept_negotiations boolean DEFAULT false,
   ADD COLUMN IF NOT EXISTS content_restrictions text[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS brand_exclusivity text[] DEFAULT '{}',
@@ -14,7 +14,7 @@ ALTER TABLE public.profiles
 -- 2. Creator custom rates table
 CREATE TABLE IF NOT EXISTS public.creator_custom_rates (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  creator_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  creator_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   rate_type text NOT NULL, -- 'content_type' or 'industry'
   rate_name text NOT NULL,
   price_per_month_cents integer NOT NULL,

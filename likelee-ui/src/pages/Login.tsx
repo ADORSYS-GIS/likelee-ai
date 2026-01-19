@@ -68,16 +68,14 @@ export default function Login() {
 
       if (!normalizedRole) {
         setError("Account role not found. Please contact support.");
-        logout();
-        return;
+        // Do not logout; allow navigation based on available profile data
       }
 
       if (normalizedRole !== normalizedUserType) {
         setError(
           "This account is not registered on this tab. Please switch to the correct tab.",
         );
-        logout();
-        return;
+        // Do not logout; continue to navigate to the appropriate dashboard by role
       }
 
       // Set redirecting state to hide content during navigation
@@ -285,6 +283,7 @@ export default function Login() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
+                          autoComplete="email"
                           className="pl-12 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#32C8D1] focus:border-transparent transition-all"
                         />
                       </div>
@@ -314,6 +313,7 @@ export default function Login() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
+                          autoComplete="current-password"
                           className="pl-12 pr-12 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#32C8D1] focus:border-transparent transition-all"
                         />
                         <button

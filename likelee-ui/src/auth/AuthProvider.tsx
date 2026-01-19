@@ -128,12 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // This is the key fix. When a user signs in after email verification,
-        // we must explicitly set the session for the client to be aware of it.
-        if (event === "SIGNED_IN" && session) {
-          supabase.auth.setSession(session);
-        }
-
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
@@ -154,14 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
-      if (currentUser && currentUser.email_confirmed_at) {
-        fetchProfile(
-          currentUser.id,
-          currentUser.email,
-          currentUser.user_metadata?.full_name,
-          currentUser.user_metadata?.role,
-        );
-      }
+      // Avoid double-fetching profile; rely on onAuthStateChange handler above
       setInitialized(true);
     });
     return () => {
