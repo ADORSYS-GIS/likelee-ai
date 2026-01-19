@@ -90,7 +90,7 @@ SELECT
   SUM(rl.amount_cents) AS total_cents,
   COUNT(*) AS event_count
 FROM public.royalty_ledger rl
-JOIN public.profiles p ON p.id = rl.face_id
+JOIN public.creators p ON p.id = rl.face_id
 GROUP BY rl.face_id, p.full_name, date_trunc('month', rl.period_month);
 
 GRANT SELECT ON public.v_face_payouts TO anon;

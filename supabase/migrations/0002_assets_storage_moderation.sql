@@ -79,7 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_moderation_events_user_id ON public.moderation_ev
 -- 3. Reference images
 CREATE TABLE IF NOT EXISTS public.reference_images (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   section_id text NOT NULL, -- headshot_neutral, cameo_front, etc.
   storage_bucket text NOT NULL,
   storage_path text NOT NULL,
@@ -121,7 +121,7 @@ END$$;
 -- 4. Voice assets
 CREATE TABLE IF NOT EXISTS public.voice_recordings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   storage_bucket text NOT NULL,
   storage_path text NOT NULL,
   public_url text,
@@ -155,7 +155,7 @@ END$$;
 
 CREATE TABLE IF NOT EXISTS public.voice_models (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   provider text NOT NULL,
   provider_voice_id text NOT NULL,
   status text NOT NULL DEFAULT 'ready',
@@ -184,8 +184,8 @@ END$$;
 -- 5. Brand-side licensing and delivery
 CREATE TABLE IF NOT EXISTS public.brand_licenses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand_org_id uuid NOT NULL REFERENCES public.organization_profiles(id) ON DELETE CASCADE,
-  face_user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  brand_org_id uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
+  face_user_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   type text,
   status text NOT NULL DEFAULT 'active',
   start_at timestamptz,
@@ -198,8 +198,8 @@ CREATE INDEX IF NOT EXISTS idx_brand_licenses_face ON public.brand_licenses(face
 
 CREATE TABLE IF NOT EXISTS public.brand_voice_folders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  brand_org_id uuid NOT NULL REFERENCES public.organization_profiles(id) ON DELETE CASCADE,
-  face_user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  brand_org_id uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
+  face_user_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   license_id uuid NOT NULL REFERENCES public.brand_licenses(id) ON DELETE CASCADE,
   name text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -230,32 +230,17 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='brand_voice_folders' AND policyname='brand members select folders') THEN
     CREATE POLICY "brand members select folders" ON public.brand_voice_folders FOR SELECT USING (
-      EXISTS (
-        SELECT 1 FROM public.organization_profiles p
-        WHERE p.id = brand_org_id AND (p.owner_user_id = auth.uid() OR EXISTS (
-          SELECT 1 FROM public.agency_users au WHERE au.agency_id = p.id AND au.user_id = auth.uid()
-        ))
-      )
+      auth.uid() = (SELECT user_id FROM public.brands WHERE id = brand_org_id)
     );
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='brand_voice_assets' AND policyname='brand members select assets') THEN
     CREATE POLICY "brand members select assets" ON public.brand_voice_assets FOR SELECT USING (
-      EXISTS (
-        SELECT 1 FROM public.brand_voice_folders f
-        JOIN public.organization_profiles p ON p.id = f.brand_org_id
-        WHERE f.id = folder_id AND (p.owner_user_id = auth.uid() OR EXISTS (
-          SELECT 1 FROM public.agency_users au WHERE au.agency_id = p.id AND au.user_id = auth.uid()
-        ))
-      )
+      auth.uid() = (SELECT user_id FROM public.brands WHERE id = (SELECT brand_org_id FROM public.brand_voice_folders WHERE id = folder_id))
     );
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='brand_licenses' AND policyname='brand members select licenses') THEN
     CREATE POLICY "brand members select licenses" ON public.brand_licenses FOR SELECT USING (
-      EXISTS (
-        SELECT 1 FROM public.organization_profiles p WHERE p.id = brand_org_id AND (p.owner_user_id = auth.uid() OR EXISTS (
-          SELECT 1 FROM public.agency_users au WHERE au.agency_id = p.id AND au.user_id = auth.uid()
-        ))
-      )
+      auth.uid() = (SELECT user_id FROM public.brands WHERE id = brand_org_id)
     );
   END IF;
 END$$;
