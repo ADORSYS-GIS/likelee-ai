@@ -172,7 +172,7 @@ pub async fn register(
     let body = org.to_string();
     let resp = state
         .pg
-        .from("organization_profiles")
+        .from("agency")
         .insert(body)
         .execute()
         .await
@@ -250,7 +250,7 @@ pub async fn create(
     let body = v.to_string();
     let resp = state
         .pg
-        .from("organization_profiles")
+        .from("agency")
         .insert(body)
         .execute()
         .await
@@ -301,7 +301,7 @@ pub async fn update(
     let body = v.to_string();
     let resp = state
         .pg
-        .from("organization_profiles")
+        .from("agency")
         .eq("id", &id)
         .update(body)
         .execute()
@@ -322,7 +322,7 @@ pub async fn get_by_user(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
-        .from("organization_profiles")
+        .from("agency")
         .select("*")
         .eq("owner_user_id", &user_id)
         .execute()

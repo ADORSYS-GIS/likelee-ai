@@ -36,7 +36,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/organization-profile/user/:user_id",
             get(crate::organization_profiles::get_by_user),
         )
-        .route("/api/dashboard", get(crate::dashboard::get_dashboard))
+        .route("/api/agency/dashboard", get(crate::dashboard::get_agency_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::profiles::check_email))
