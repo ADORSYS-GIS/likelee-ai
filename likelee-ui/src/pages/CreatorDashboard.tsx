@@ -83,6 +83,7 @@ import {
   ArrowLeft,
   Ban,
   BadgeCheck,
+  Sparkles,
 } from "lucide-react";
 import {
   LineChart,
@@ -1162,6 +1163,62 @@ export default function CreatorDashboard() {
   >("stripe");
   const [paypalEmail, setPaypalEmail] = useState("");
   const [wiseDetails, setWiseDetails] = useState("");
+  const [showShoutOut, setShowShoutOut] = useState(true);
+  const [payoutAccountStatus, setPayoutAccountStatus] = useState<any>(null);
+  const [balances, setBalances] = useState<any[]>([]);
+  const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
+  const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
+
+  const fetchPayoutStatus = async () => {
+    if (!initialized || !authenticated || !user?.id) return;
+    try {
+      const { getPayoutsAccountStatus, getPayoutBalance } =
+        await import("@/api/functions");
+      const [statusRes, balanceRes] = await Promise.all([
+        getPayoutsAccountStatus(user.id),
+        getPayoutBalance(user.id),
+      ]);
+      setPayoutAccountStatus(statusRes.data);
+      setBalances(balanceRes.data.balances || []);
+    } catch (e) {
+      console.error("Failed to fetch payout status", e);
+    }
+  };
+
+  useEffect(() => {
+    if (initialized && authenticated && user?.id) {
+      fetchPayoutStatus();
+    }
+  }, [initialized, authenticated, user?.id]);
+
+  // Announcement logic: show for 6 days from first sight
+  useEffect(() => {
+    const firstSight = localStorage.getItem("cashout_announcement_first_sight");
+    const dismissed = localStorage.getItem("cashout_announcement_dismissed");
+
+    if (dismissed) {
+      setShowShoutOut(false);
+      return;
+    }
+
+    if (!firstSight) {
+      localStorage.setItem(
+        "cashout_announcement_first_sight",
+        Date.now().toString(),
+      );
+    } else {
+      const startTime = parseInt(firstSight);
+      const sixDaysMs = 6 * 24 * 60 * 60 * 1000;
+      if (Date.now() > startTime + sixDaysMs) {
+        setShowShoutOut(false);
+      }
+    }
+  }, []);
+
+  const dismissShoutOut = () => {
+    setShowShoutOut(false);
+    localStorage.setItem("cashout_announcement_dismissed", "true");
+  };
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -5603,13 +5660,44 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Button
-            onClick={() => setShowPayoutSettings(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
+            onClick={() => {
+              if (payoutAccountStatus?.payouts_enabled) {
+                setShowRequestPayoutModal(true);
+              } else {
+                setShowPayoutSettings(true);
+              }
+            }}
+            className={`bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2 transition-all ${showShoutOut ? "animate-twinkle animate-shine scale-110 shadow-lg" : ""}`}
           >
             <DollarSign className="w-4 h-4" />
-            {t("creatorDashboard.earnings.actions.cashOut")}
+            {payoutAccountStatus?.payouts_enabled
+              ? t("creatorDashboard.earnings.actions.cashOut")
+              : "Setup Payouts"}
           </Button>
         </div>
+
+        {/* Shout Out Banner */}
+        {showShoutOut && (
+          <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 animate-in fade-in slide-in-from-top-4 duration-500">
+            <Sparkles className="h-5 w-5 text-emerald-600" />
+            <AlertDescription className="flex items-center justify-between w-full">
+              <div className="ml-2">
+                <span className="font-bold">
+                  {t("creatorDashboard.earnings.announcement.title")}
+                </span>{" "}
+                {t("creatorDashboard.earnings.announcement.message")}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={dismissShoutOut}
+                className="hover:bg-emerald-100 text-emerald-700 h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Info banner */}
         <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
@@ -5625,12 +5713,18 @@ export default function CreatorDashboard() {
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">
-              {t("creatorDashboard.earnings.metrics.totalEarnedYTD")}
+            <p className="text-sm text-gray-600 mb-2">Available Balance</p>
+            <p className="text-3xl font-bold text-gray-900">
+              $
+              {(
+                (balances.find((b) => b.currency === "USD")?.available_cents ||
+                  0) / 100
+              ).toFixed(2)}
             </p>
-            <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              {t("creatorDashboard.earnings.metrics.willUpdate")}
+              {payoutAccountStatus?.payouts_enabled
+                ? `Ready to cash out via ${payoutAccountStatus.preference}`
+                : "Setup payouts to withdraw"}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
@@ -8264,13 +8358,20 @@ export default function CreatorDashboard() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900">
-                        Stripe Connect
-                      </h3>
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
-                        Recommended
-                      </Badge>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">
+                          Stripe Connect
+                        </h3>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                          Recommended
+                        </Badge>
+                      </div>
+                      <img
+                        src="https://www.vectorlogo.zone/logos/stripe/stripe-icon.svg"
+                        className="h-6 w-auto opacity-80"
+                        alt="Stripe"
+                      />
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
                       Connect your existing Stripe account or create a new one.
@@ -8291,106 +8392,55 @@ export default function CreatorDashboard() {
                 </div>
               </div>
 
-              {/* PayPal */}
-              <div
-                onClick={() => setPayoutMethod("paypal")}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  payoutMethod === "paypal"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
+              {/* PayPal - Coming Soon */}
+              <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
+                <div className="absolute top-2 right-2">
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-300">
+                    Coming Soon
+                  </Badge>
+                </div>
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
-                      payoutMethod === "paypal"
-                        ? "border-blue-500"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {payoutMethod === "paypal" && (
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                    )}
-                  </div>
+                  <div className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center border-gray-300" />
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">PayPal</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Receive payments directly to your PayPal account. Requires
-                      manual processing.
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-gray-500">PayPal</h3>
+                      <img
+                        src="https://www.vectorlogo.zone/logos/paypal/paypal-icon.svg"
+                        className="h-6 w-auto opacity-50"
+                        alt="PayPal"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Receive payments directly to your PayPal account.
                     </p>
-                    {payoutMethod === "paypal" && (
-                      <div className="mt-3">
-                        <Label
-                          htmlFor="paypal-email"
-                          className="text-sm font-medium"
-                        >
-                          PayPal Email Address
-                        </Label>
-                        <Input
-                          id="paypal-email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={paypalEmail}
-                          onChange={(e) => setPaypalEmail(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Wise */}
-              <div
-                onClick={() => setPayoutMethod("wise")}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  payoutMethod === "wise"
-                    ? "border-purple-500 bg-purple-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
+              {/* Wise - Coming Soon */}
+              <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
+                <div className="absolute top-2 right-2">
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-300">
+                    Coming Soon
+                  </Badge>
+                </div>
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
-                      payoutMethod === "wise"
-                        ? "border-purple-500"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {payoutMethod === "wise" && (
-                      <div className="w-3 h-3 rounded-full bg-purple-500" />
-                    )}
-                  </div>
+                  <div className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center border-gray-300" />
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">
-                      Wise (TransferWise)
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-gray-500">
+                        Wise (TransferWise)
+                      </h3>
+                      <img
+                        src="https://www.vectorlogo.zone/logos/transferwise/transferwise-icon.svg"
+                        className="h-6 w-auto opacity-50"
+                        alt="Wise"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
                       International transfers with low fees. Great for
                       cross-border payments.
                     </p>
-                    {payoutMethod === "wise" && (
-                      <div className="mt-3">
-                        <Label
-                          htmlFor="wise-email"
-                          className="text-sm font-medium"
-                        >
-                          Wise Account Email
-                        </Label>
-                        <Input
-                          id="wise-email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={wiseDetails}
-                          onChange={(e) => setWiseDetails(e.target.value)}
-                          className="mt-1"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          We'll send payouts to your Wise account registered
-                          with this email
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -8403,14 +8453,11 @@ export default function CreatorDashboard() {
                 <div className="text-sm text-blue-900">
                   <p className="font-semibold">Important Information</p>
                   <ul className="mt-2 space-y-1 list-disc list-inside">
-                    <li>Stripe Connect offers the fastest payout processing</li>
                     <li>
-                      PayPal and Wise payouts are processed manually within 3-5
-                      business days
+                      Stripe Connect is currently our active payout method
                     </li>
-                    <li>
-                      You can change your payout method anytime in settings
-                    </li>
+                    <li>PayPal and Wise integration is coming soon</li>
+                    <li>We provide secure and fast payouts through Stripe</li>
                   </ul>
                 </div>
               </div>
@@ -8448,7 +8495,7 @@ export default function CreatorDashboard() {
                     // Save PayPal or Wise settings
                     const { updatePayoutSettings } =
                       await import("@/api/functions");
-                    await updatePayoutSettings({
+                    const result = await updatePayoutSettings({
                       profile_id: profileId,
                       preference: payoutMethod,
                       paypal_email:
@@ -8459,11 +8506,17 @@ export default function CreatorDashboard() {
                           : undefined,
                     });
 
+                    // Check if the response indicates an error
+                    if (result.data?.status === "error") {
+                      throw new Error(result.data?.error || "Unknown error");
+                    }
+
                     toast({
                       title: "Success",
-                      description: `${payoutMethod === "paypal" ? "PayPal" : "Wise"} payout method configured successfully`,
+                      description: `${payoutMethod === "paypal" ? "PayPal" : "Wise"} payout method configured successfully! You can now withdraw funds.`,
                     });
                     setShowPayoutSettings(false);
+                    await fetchPayoutStatus();
                   }
                 } catch (e) {
                   console.error(e);
@@ -8497,6 +8550,145 @@ export default function CreatorDashboard() {
                       ? "PayPal"
                       : "Wise"}
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Payout Modal */}
+      <Dialog
+        open={showRequestPayoutModal}
+        onOpenChange={setShowRequestPayoutModal}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Cash Out</DialogTitle>
+            <DialogDescription>
+              Withdraw your earnings to your {payoutAccountStatus?.preference}{" "}
+              account
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <WalletIcon className="h-5 w-5 text-emerald-600" />
+                <span className="text-emerald-900 font-medium">
+                  Available Balance
+                </span>
+              </div>
+              <span className="text-emerald-900 font-bold text-lg">
+                $
+                {(
+                  (balances.find((b) => b.currency === "USD")
+                    ?.available_cents || 0) / 100
+                ).toFixed(2)}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payout-amount">Amount to Withdraw</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  $
+                </span>
+                <Input
+                  id="payout-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={requestPayoutAmount}
+                  onChange={(e) => setRequestPayoutAmount(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-emerald-600 h-auto p-0"
+                  onClick={() =>
+                    setRequestPayoutAmount(
+                      (
+                        (balances.find((b) => b.currency === "USD")
+                          ?.available_cents || 0) / 100
+                      ).toString(),
+                    )
+                  }
+                >
+                  Withdraw Maximum
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100">
+              <Clock className="h-4 w-4" />
+              <span>
+                {payoutAccountStatus?.preference === "stripe"
+                  ? "Stripe payouts usually arrive within 24 hours."
+                  : "PayPal/Wise payouts are manually processed in 3-5 days."}
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowRequestPayoutModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                isLoadingPayout ||
+                !requestPayoutAmount ||
+                parseFloat(requestPayoutAmount) <= 0 ||
+                parseFloat(requestPayoutAmount) >
+                  (balances.find((b) => b.currency === "USD")
+                    ?.available_cents || 0) /
+                    100
+              }
+              onClick={async () => {
+                try {
+                  setIsLoadingPayout(true);
+                  const { requestPayout } = await import("@/api/functions");
+                  const amountCents = Math.round(
+                    parseFloat(requestPayoutAmount) * 100,
+                  );
+                  await requestPayout({
+                    profile_id: user?.id!,
+                    amount_cents: amountCents,
+                  });
+                  toast({
+                    title: "Payout Requested",
+                    description: `Your withdrawal of $${requestPayoutAmount} is being processed.`,
+                  });
+                  setShowRequestPayoutModal(false);
+                  setRequestPayoutAmount("");
+                  fetchPayoutStatus(); // Refresh balance
+                } catch (e: any) {
+                  console.error(e);
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description:
+                      e.response?.data?.error === "insufficient_funds"
+                        ? "Insufficient funds available."
+                        : "Failed to request payout. Please try again.",
+                  });
+                } finally {
+                  setIsLoadingPayout(false);
+                }
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isLoadingPayout ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                "Confirm Withdrawal"
               )}
             </Button>
           </DialogFooter>

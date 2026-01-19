@@ -153,3 +153,18 @@ export const updatePayoutSettings = (data: {
   paypal_email?: string;
   wise_details?: any;
 }) => base44Client.post("/api/payouts/settings", data);
+
+export const getPayoutBalance = (profile_id: string) =>
+  base44Client.get<{
+    balances: Array<{
+      creator_id: string;
+      currency: string;
+      available_cents: number;
+    }>;
+  }>("/api/payouts/balance", { params: { profile_id } });
+
+export const requestPayout = (data: {
+  profile_id: string;
+  amount_cents: number;
+  payout_method?: string;
+}) => base44Client.post("/api/payouts/request", data);
