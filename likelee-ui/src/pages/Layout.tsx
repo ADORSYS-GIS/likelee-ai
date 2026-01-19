@@ -535,17 +535,6 @@ export default function Layout({ children, currentPageName }) {
             {/* Desktop Navigation */}
             {!isDashboardPage && (
               <div className="hidden md:flex items-center gap-1">
-                <Link
-                  to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("BrandCompany")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("brands")}
-                </Link>
-
                 {/* For Business Dropdown */}
                 <div className="relative group">
                   <Link
@@ -671,18 +660,6 @@ export default function Layout({ children, currentPageName }) {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-100 bg-white">
             <div className="px-4 py-3 space-y-1">
-              <Link
-                to={createPageUrl("BrandCompany")}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {t("brands")}
-              </Link>
-
               {/* Mobile For Business with sub-items */}
               <div>
                 <Link
@@ -889,6 +866,12 @@ export default function Layout({ children, currentPageName }) {
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
                     {t("creators")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("BrandCompany")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("brands")}
                   </Link>
                 </div>
               </div>
