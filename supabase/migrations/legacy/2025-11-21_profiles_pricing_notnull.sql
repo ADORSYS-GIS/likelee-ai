@@ -1,3 +1,0 @@
--- Backfill per_use_price_cents to $5 where null, then enforce NOT NULL and range
--- No-op: consolidated into 2025-11-21_profiles_pricing.sql
--- This file intentionally left blank to avoid duplicate effects when running migrations in order.
