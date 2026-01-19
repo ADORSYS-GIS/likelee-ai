@@ -306,6 +306,7 @@
     }
   },
   "organizationSignup": {
+    "selectAndContinue": "Sélectionner et continuer",
     "selectAll": "Tout sélectionner",
     "missingFieldsTitle": "Champs manquants",
     "missingFieldsDescription": "Veuillez remplir tous les champs obligatoires pour continuer.",

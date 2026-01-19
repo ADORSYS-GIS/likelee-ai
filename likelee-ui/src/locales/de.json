@@ -1883,6 +1883,7 @@
     "assistance": "Für sofortige Unterstützung senden Sie uns eine E-Mail an"
   },
   "organizationSignup": {
+    "selectAndContinue": "Auswählen und fortfahren",
     "selectAll": "Alles auswählen",
     "missingFieldsTitle": "Fehlende Felder",
     "missingFieldsDescription": "Bitte füllen Sie alle Pflichtfelder aus, um fortzufahren.",

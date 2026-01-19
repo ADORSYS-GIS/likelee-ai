@@ -603,6 +603,7 @@
     "assistance": "Need immediate assistance? Email us at"
   },
   "organizationSignup": {
+    "selectAndContinue": "Select and Continue",
     "selectAll": "Select All",
     "missingFieldsTitle": "Missing Fields",
     "missingFieldsDescription": "Please fill in all required fields to proceed.",
