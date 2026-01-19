@@ -552,17 +552,6 @@ export default function Layout({ children, currentPageName }) {
                   <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="p-2">
                       <Link
-                        to={createPageUrl("MarketingAgency")}
-                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <div className="font-semibold text-gray-900">
-                          {t("marketingAgency")}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {t("marketingAgencySub")}
-                        </div>
-                      </Link>
-                      <Link
                         to={createPageUrl("TalentAgency")}
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
@@ -674,13 +663,6 @@ export default function Layout({ children, currentPageName }) {
                   {t("agencies")}
                 </Link>
                 <div className="ml-4 mt-1 space-y-1">
-                  <Link
-                    to={createPageUrl("MarketingAgency")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                  >
-                    {t("marketingAgency")}
-                  </Link>
                   <Link
                     to={createPageUrl("TalentAgency")}
                     onClick={() => setMobileMenuOpen(false)}
