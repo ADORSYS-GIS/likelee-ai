@@ -5627,8 +5627,30 @@ const ProspectDetailsSheet = ({
           >
             <Pencil className="w-4 h-4" /> Edit Prospect
           </Button>
-          <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2"><Send className="w-4 h-4" /> Send Email</Button>
-          <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2"><Calendar className="w-4 h-4" /> Schedule Meeting</Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2"
+            onClick={() => {
+              if (prospect.email) {
+                window.location.href = `mailto:${prospect.email}`;
+              } else {
+                toast({
+                  title: "No Email Found",
+                  description: "This prospect does not have an email address associated with them.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            <Send className="w-4 h-4" /> Send Email
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2"
+            onClick={() => window.open("https://calendar.google.com", "_blank")}
+          >
+            <Calendar className="w-4 h-4" /> Schedule Meeting
+          </Button>
           <Button variant="outline" className="w-full h-11 text-base flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
             <Trash2 className="w-4 h-4" /> Delete Prospect
           </Button>
