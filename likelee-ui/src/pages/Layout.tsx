@@ -8,7 +8,15 @@ import { useAuth } from "@/auth/AuthProvider";
 
 export default function Layout({ children, currentPageName }) {
   const { t, i18n } = useTranslation();
-  const { authenticated, logout } = useAuth();
+  const { authenticated, logout, profile } = useAuth();
+
+  // Determine the correct dashboard path based on the user's role.
+  const dashboardPath =
+    profile?.role === "brand"
+      ? "/BrandDashboard"
+      : profile?.role === "agency"
+        ? "/AgencyDashboard"
+        : "/CreatorDashboard";
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -527,17 +535,6 @@ export default function Layout({ children, currentPageName }) {
             {/* Desktop Navigation */}
             {!isDashboardPage && (
               <div className="hidden md:flex items-center gap-1">
-                <Link
-                  to={createPageUrl("BrandCompany")}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                    location.pathname === createPageUrl("BrandCompany")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("brands")}
-                </Link>
-
                 {/* For Business Dropdown */}
                 <div className="relative group">
                   <Link
@@ -554,17 +551,6 @@ export default function Layout({ children, currentPageName }) {
                   {/* Dropdown Menu */}
                   <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <div className="p-2">
-                      <Link
-                        to={createPageUrl("MarketingAgency")}
-                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <div className="font-semibold text-gray-900">
-                          {t("marketingAgency")}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {t("marketingAgencySub")}
-                        </div>
-                      </Link>
                       <Link
                         to={createPageUrl("TalentAgency")}
                         className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
@@ -622,12 +608,14 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 ) : (
                   <div className="flex items-center gap-3 ml-4">
-                    <Link
-                      to="/CreatorDashboard"
-                      className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
-                    >
-                      {t("common.dashboard")}
-                    </Link>
+                    {currentPageName !== "OrganizationSignup" && (
+                      <Link
+                        to={dashboardPath}
+                        className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
+                      >
+                        {t("common.dashboard")}
+                      </Link>
+                    )}
                     <button
                       onClick={() => logout()}
                       className="p-2 text-gray-500 hover:text-red-500 transition-colors"
@@ -661,18 +649,6 @@ export default function Layout({ children, currentPageName }) {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-100 bg-white">
             <div className="px-4 py-3 space-y-1">
-              <Link
-                to={createPageUrl("BrandCompany")}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                  location.pathname === createPageUrl("BrandCompany")
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {t("brands")}
-              </Link>
-
               {/* Mobile For Business with sub-items */}
               <div>
                 <Link
@@ -687,13 +663,6 @@ export default function Layout({ children, currentPageName }) {
                   {t("agencies")}
                 </Link>
                 <div className="ml-4 mt-1 space-y-1">
-                  <Link
-                    to={createPageUrl("MarketingAgency")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                  >
-                    {t("marketingAgency")}
-                  </Link>
                   <Link
                     to={createPageUrl("TalentAgency")}
                     onClick={() => setMobileMenuOpen(false)}
@@ -751,7 +720,7 @@ export default function Layout({ children, currentPageName }) {
                 ) : (
                   <div className="space-y-3 w-full">
                     <Link
-                      to="/CreatorDashboard"
+                      to={dashboardPath}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
                     >
@@ -776,7 +745,6 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-
       <main className="pt-16">{children}</main>
 
       {/* Footer - Hidden on Dashboard pages */}
@@ -880,6 +848,12 @@ export default function Layout({ children, currentPageName }) {
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
                     {t("creators")}
+                  </Link>
+                  <Link
+                    to={createPageUrl("BrandCompany")}
+                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  >
+                    {t("brands")}
                   </Link>
                 </div>
               </div>

@@ -34,13 +34,21 @@ const Label: any = UILabel;
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login, loginWithProvider, initialized, authenticated } = useAuth();
+  const {
+    login,
+    loginWithProvider,
+    initialized,
+    authenticated,
+    profile,
+    logout,
+  } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [userType, setUserType] = React.useState("creator");
+  const [loginAttempted, setLoginAttempted] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -49,34 +57,65 @@ export default function Login() {
     [location.search],
   );
 
+  // Track if we're about to redirect
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
+
   React.useEffect(() => {
-    if (initialized && authenticated) {
+    if (initialized && authenticated && profile) {
+      // Enforce role-based login
+      const normalizedRole = (profile.role || "").toLowerCase().trim();
+      const normalizedUserType = (userType || "").toLowerCase().trim();
+
+      if (!normalizedRole) {
+        setError("Account role not found. Please contact support.");
+        // Do not logout; allow navigation based on available profile data
+      }
+
+      if (normalizedRole !== normalizedUserType) {
+        setError(
+          "This account is not registered on this tab. Please switch to the correct tab.",
+        );
+        // Do not logout; continue to navigate to the appropriate dashboard by role
+      }
+
+      // Set redirecting state to hide content during navigation
+      setIsRedirecting(true);
+
       if (creatorType) {
         navigate(
           `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
           { replace: true },
         );
       } else {
-        navigate("/CreatorDashboard", { replace: true });
+        const dashboard =
+          profile.role === "brand"
+            ? "/BrandDashboard"
+            : profile.role === "agency"
+              ? "/AgencyDashboard"
+              : "/CreatorDashboard";
+        navigate(dashboard, { replace: true });
       }
     }
-  }, [initialized, authenticated, navigate, creatorType]);
+  }, [
+    initialized,
+    authenticated,
+    profile,
+    navigate,
+    creatorType,
+    userType,
+    logout,
+  ]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (userType === "agency") return; // Agency is coming soon
+    // Agency login is now enabled
+    // if (userType === "agency") return; // Agency is coming soon
 
     setError(null);
     setLoading(true);
     try {
       await login(email, password);
-      if (creatorType) {
-        navigate(
-          `/ReserveProfile?type=${encodeURIComponent(creatorType)}&mode=login`,
-        );
-      } else {
-        navigate("/CreatorDashboard");
-      }
+      // Redirection is handled by the useEffect above once profile is loaded
     } catch (err: any) {
       const msg = getFriendlyErrorMessage(err, t);
       setError(msg);
@@ -92,26 +131,35 @@ export default function Login() {
 
   const getSignupLink = () => {
     if (userType === "creator") return "/CreatorSignupOptions";
-    if (userType === "brand") return "/OrganizationSignup";
-    if (userType === "agency") return "/TalentAgency";
+    if (userType === "brand") return "/OrganizationSignup?type=brand_company";
+    if (userType === "agency") return "/AgencySelection";
     return "/Register";
   };
+
+  // Show loading state when redirecting or when authenticated
+  if (isRedirecting || authenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div
+            className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#32C8D1] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+            role="status"
+          >
+            <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+              Loading...
+            </span>
+          </div>
+          <p className="mt-4 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
       <h1 className="text-2xl font-bold mb-4">{t("auth.login.title")}</h1>
       {!initialized ? (
         <p>{t("auth.login.loading")}</p>
-      ) : authenticated ? (
-        <div className="text-center space-y-4">
-          <p>{t("auth.login.alreadySignedIn")}</p>
-          <Button
-            onClick={() => navigate("/CreatorDashboard")}
-            className="w-full h-12 bg-gray-900 hover:bg-black text-white font-bold rounded-xl"
-          >
-            {t("auth.login.goToDashboard")}
-          </Button>
-        </div>
       ) : (
         <Card className="w-full max-w-md border-2 border-gray-100 shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="space-y-4 text-center pb-8">
@@ -160,31 +208,9 @@ export default function Login() {
                   {t("auth.login.tabs.agency", "Agency")}
                 </TabsTrigger>
               </TabsList>
-
-              <TabsContent value="agency" className="mt-0">
-                <div className="py-12 text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyan-50 text-[#32C8D1]">
-                    <Sparkles className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {t("auth.login.comingSoonTitle")}
-                    </h3>
-                    <p className="text-gray-500 max-w-[240px] mx-auto">
-                      {t("auth.login.comingSoonMessage")}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="mt-4 border-2 border-black rounded-none"
-                    onClick={() => navigate("/TalentAgency")}
-                  >
-                    {t("auth.login.learnMore")}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {(userType === "creator" || userType === "brand") && (
+              {(userType === "creator" ||
+                userType === "brand" ||
+                userType === "agency") && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   <Button
                     variant="outline"
@@ -257,6 +283,7 @@ export default function Login() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
+                          autoComplete="email"
                           className="pl-12 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#32C8D1] focus:border-transparent transition-all"
                         />
                       </div>
@@ -286,6 +313,7 @@ export default function Login() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
+                          autoComplete="current-password"
                           className="pl-12 pr-12 h-12 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#32C8D1] focus:border-transparent transition-all"
                         />
                         <button

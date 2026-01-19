@@ -7,8 +7,8 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. Profiles table
-CREATE TABLE IF NOT EXISTS public.profiles (
+-- 1. Creators table
+CREATE TABLE IF NOT EXISTS public.creators (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name text,
   email text,
@@ -27,8 +27,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   weight_kg integer,
   facial_features text[],
   
-  -- Role and metadata
-  role text DEFAULT 'creator',
+  -- Metadata
   tagline text,
   
   -- Verification status
@@ -42,21 +41,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Indexes for profiles
-CREATE INDEX IF NOT EXISTS profiles_age_idx ON public.profiles(age);
-CREATE INDEX IF NOT EXISTS profiles_race_idx ON public.profiles(race);
-CREATE INDEX IF NOT EXISTS profiles_hair_color_idx ON public.profiles(hair_color);
-CREATE INDEX IF NOT EXISTS profiles_hairstyle_idx ON public.profiles(hairstyle);
-CREATE INDEX IF NOT EXISTS profiles_eye_color_idx ON public.profiles(eye_color);
-CREATE INDEX IF NOT EXISTS profiles_height_cm_idx ON public.profiles(height_cm);
-CREATE INDEX IF NOT EXISTS profiles_weight_kg_idx ON public.profiles(weight_kg);
-CREATE INDEX IF NOT EXISTS profiles_facial_features_gin ON public.profiles USING GIN (facial_features);
-CREATE INDEX IF NOT EXISTS idx_profiles_profile_avatar_id ON public.profiles (profile_avatar_id);
+-- Indexes for creators
+CREATE INDEX IF NOT EXISTS creators_age_idx ON public.creators(age);
+CREATE INDEX IF NOT EXISTS creators_race_idx ON public.creators(race);
+CREATE INDEX IF NOT EXISTS creators_hair_color_idx ON public.creators(hair_color);
+CREATE INDEX IF NOT EXISTS creators_hairstyle_idx ON public.creators(hairstyle);
+CREATE INDEX IF NOT EXISTS creators_eye_color_idx ON public.creators(eye_color);
+CREATE INDEX IF NOT EXISTS creators_height_cm_idx ON public.creators(height_cm);
+CREATE INDEX IF NOT EXISTS creators_weight_kg_idx ON public.creators(weight_kg);
+CREATE INDEX IF NOT EXISTS creators_facial_features_gin ON public.creators USING GIN (facial_features);
+CREATE INDEX IF NOT EXISTS idx_creators_profile_avatar_id ON public.creators (profile_avatar_id);
 
 -- 2. Royalty Wallet ledger
 CREATE TABLE IF NOT EXISTS public.royalty_ledger (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  face_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  face_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
   booking_id text,
   brand_name text,
   amount_cents integer NOT NULL CHECK (amount_cents >= 0),
@@ -91,9 +90,90 @@ SELECT
   SUM(rl.amount_cents) AS total_cents,
   COUNT(*) AS event_count
 FROM public.royalty_ledger rl
-JOIN public.profiles p ON p.id = rl.face_id
+JOIN public.creators p ON p.id = rl.face_id
 GROUP BY rl.face_id, p.full_name, date_trunc('month', rl.period_month);
 
 GRANT SELECT ON public.v_face_payouts TO anon;
+
+-- 4. Create independent tables for brands and agencies
+
+-- 4.1. Create brands table
+CREATE TABLE IF NOT EXISTS public.brands (
+    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    company_name text NOT NULL,
+    contact_name text,
+    contact_title text,
+    email text NOT NULL,
+    website text,
+    phone_number text,
+    industry text,
+    primary_goal jsonb,
+    geographic_target text,
+    provide_creators text,
+    production_type text,
+    budget_range text,
+    creates_for text,
+    uses_ai text,
+    roles_needed jsonb,
+    status text DEFAULT 'waitlist',
+    onboarding_step text DEFAULT 'email_verification',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- 4.2. Create agencies table
+CREATE TABLE IF NOT EXISTS public.agencies (
+    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    agency_name text NOT NULL,
+    contact_name text,
+    contact_title text,
+    email text NOT NULL,
+    website text,
+    phone_number text,
+    agency_type text, -- marketing_agency, talent_agency, sports_agency
+    client_count text,
+    campaign_budget text,
+    services_offered jsonb,
+    provide_creators text,
+    handle_contracts text,
+    talent_count text,
+    licenses_likeness text,
+    open_to_ai jsonb,
+    campaign_types jsonb,
+    bulk_onboard text,
+    status text DEFAULT 'waitlist',
+    onboarding_step text DEFAULT 'email_verification',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- 4.3. Indexes
+CREATE INDEX IF NOT EXISTS idx_brands_email ON public.brands(email);
+CREATE INDEX IF NOT EXISTS idx_agencies_email ON public.agencies(email);
+CREATE INDEX IF NOT EXISTS idx_agencies_type ON public.agencies(agency_type);
+
+-- 4.4. RLS for brands
+ALTER TABLE public.brands ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own brand profile" ON public.brands;
+CREATE POLICY "Users can view their own brand profile" ON public.brands
+    FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update their own brand profile" ON public.brands;
+CREATE POLICY "Users can update their own brand profile" ON public.brands
+    FOR UPDATE USING (auth.uid() = id);
+
+-- 4.5. RLS for agencies
+ALTER TABLE public.agencies ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own agency profile" ON public.agencies;
+CREATE POLICY "Users can view their own agency profile" ON public.agencies
+    FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update their own agency profile" ON public.agencies;
+CREATE POLICY "Users can update their own agency profile" ON public.agencies
+    FOR UPDATE USING (auth.uid() = id);
+
+
 
 COMMIT;

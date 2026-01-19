@@ -1,5 +1,6 @@
 {
   "greeting": "Hallo, willkommen!",
+  "getStarted": "Loslegen",
   "brands": "Marken",
   "agencies": "Agenturen",
   "marketingAgency": "Marketingagentur",
@@ -176,7 +177,6 @@
       "readyMessage": "Sobald Ihre Lizenzen aktiviert sind, sehen Sie hier Echtzeit-Einnahmen. Derzeit haben Sie keine aktiven Verträge.",
       "actions": {
         "cashOut": "Auszahlen",
-        "loading": "Wird verarbeitet...",
         "downloadTax": "Steuerübersicht herunterladen (1099)"
       },
       "metrics": {
@@ -1883,6 +1883,7 @@
     "assistance": "Für sofortige Unterstützung senden Sie uns eine E-Mail an"
   },
   "organizationSignup": {
+    "selectAndContinue": "Auswählen und fortfahren",
     "selectAll": "Alles auswählen",
     "missingFieldsTitle": "Fehlende Felder",
     "missingFieldsDescription": "Bitte füllen Sie alle Pflichtfelder aus, um fortzufahren.",

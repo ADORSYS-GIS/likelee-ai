@@ -1,4 +1,4 @@
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     body::Bytes,
     extract::{Path, Query, State},
@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct UploadVoiceQuery {
-    pub user_id: String,
     #[serde(default)]
     pub emotion_tag: Option<String>,
 }
@@ -23,6 +22,7 @@ pub struct UploadVoiceResponse {
 
 pub async fn upload_voice_recording(
     State(state): State<AppState>,
+    user: AuthUser,
     headers: HeaderMap,
     Query(q): Query<UploadVoiceQuery>,
     body: Bytes,
@@ -39,7 +39,7 @@ pub async fn upload_voice_recording(
 
     // Private bucket
     let bucket = state.supabase_bucket_private.clone();
-    let owner = q.user_id.replace(
+    let owner = user.id.replace(
         |c: char| !c.is_ascii_alphanumeric() && c != '_' && c != '-',
         "_",
     );
@@ -88,7 +88,7 @@ pub async fn upload_voice_recording(
 
     // Persist row
     let payload = serde_json::json!({
-        "user_id": q.user_id,
+        "user_id": user.id,
         "storage_bucket": bucket,
         "storage_path": path,
         "mime_type": ct,
@@ -136,8 +136,10 @@ pub struct RegisterModelOut {
 
 pub async fn register_voice_model(
     State(state): State<AppState>,
-    Json(input): Json<RegisterModelIn>,
+    user: AuthUser,
+    Json(mut input): Json<RegisterModelIn>,
 ) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
+    input.user_id = user.id;
     let payload = serde_json::json!({
         "user_id": input.user_id,
         "provider": input.provider,
@@ -186,13 +188,14 @@ pub struct SignedUrlOut {
 
 pub async fn signed_url_for_recording(
     State(state): State<AppState>,
+    user: AuthUser,
     Query(q): Query<SignedUrlQuery>,
 ) -> Result<Json<SignedUrlOut>, (StatusCode, String)> {
-    // Fetch recording
+    // 1) Fetch recording and verify ownership
     let resp = state
         .pg
         .from("voice_recordings")
-        .select("storage_bucket,storage_path")
+        .select("storage_bucket,storage_path,user_id")
         .eq("id", &q.recording_id)
         .limit(1)
         .execute()
@@ -205,6 +208,19 @@ pub async fn signed_url_for_recording(
         .and_then(|a| a.first())
         .cloned()
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+
+    let owner_id = row
+        .get("user_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+
+    if owner_id != user.id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You do not have permission to access this recording".to_string(),
+        ));
+    }
+
     let bucket = row
         .get("storage_bucket")
         .and_then(|v| v.as_str())
@@ -267,8 +283,10 @@ pub struct CreateCloneOut {
 // Creates an ElevenLabs voice from an existing private recording
 pub async fn create_clone_from_recording(
     State(state): State<AppState>,
-    Json(input): Json<CreateCloneIn>,
+    user: AuthUser,
+    Json(mut input): Json<CreateCloneIn>,
 ) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
+    input.user_id = user.id;
     if state.elevenlabs_api_key.is_empty() {
         return Err((
             StatusCode::SERVICE_UNAVAILABLE,
@@ -282,6 +300,7 @@ pub async fn create_clone_from_recording(
         .from("voice_recordings")
         .select("storage_bucket,storage_path,mime_type,emotion_tag")
         .eq("id", &input.recording_id)
+        .eq("user_id", &input.user_id)
         .limit(1)
         .execute()
         .await
@@ -414,13 +433,13 @@ pub struct ListVoiceQuery {
 // List persisted recordings for a user and include derived fields
 pub async fn list_voice_recordings(
     State(state): State<AppState>,
-    Query(q): Query<ListVoiceQuery>,
+    user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
         .from("voice_recordings")
         .select("*")
-        .eq("user_id", &q.user_id)
+        .eq("user_id", &user.id)
         .order("created_at.desc")
         .execute()
         .await
@@ -471,13 +490,14 @@ pub struct DeleteVoiceOut {
 // Delete a recording: remove storage object, any brand_voice_assets references, then DB row
 pub async fn delete_voice_recording(
     State(state): State<AppState>,
+    user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<DeleteVoiceOut>, (StatusCode, String)> {
-    // Lookup bucket/path
+    // 1) Lookup bucket/path and verify ownership
     let resp = state
         .pg
         .from("voice_recordings")
-        .select("storage_bucket,storage_path")
+        .select("storage_bucket,storage_path,user_id")
         .eq("id", &id)
         .limit(1)
         .execute()
@@ -490,6 +510,19 @@ pub async fn delete_voice_recording(
         .and_then(|a| a.first())
         .cloned()
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+
+    let owner_id = row
+        .get("user_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
+
+    if owner_id != user.id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You do not have permission to delete this recording".to_string(),
+        ));
+    }
+
     let bucket = row
         .get("storage_bucket")
         .and_then(|v| v.as_str())

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { createPayoutsOnboardingLink } from "@/api/functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
@@ -83,7 +83,6 @@ import {
   ArrowLeft,
   Ban,
   BadgeCheck,
-  Sparkles,
 } from "lucide-react";
 import {
   LineChart,
@@ -1156,69 +1155,6 @@ export default function CreatorDashboard() {
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
-  const [isLoadingPayout, setIsLoadingPayout] = useState(false);
-  const [showPayoutSettings, setShowPayoutSettings] = useState(false);
-  const [payoutMethod, setPayoutMethod] = useState<
-    "stripe" | "paypal" | "wise"
-  >("stripe");
-  const [paypalEmail, setPaypalEmail] = useState("");
-  const [wiseDetails, setWiseDetails] = useState("");
-  const [showShoutOut, setShowShoutOut] = useState(true);
-  const [payoutAccountStatus, setPayoutAccountStatus] = useState<any>(null);
-  const [balances, setBalances] = useState<any[]>([]);
-  const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
-  const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
-
-  const fetchPayoutStatus = async () => {
-    if (!initialized || !authenticated || !user?.id) return;
-    try {
-      const { getPayoutsAccountStatus, getPayoutBalance } =
-        await import("@/api/functions");
-      const [statusRes, balanceRes] = await Promise.all([
-        getPayoutsAccountStatus(user.id),
-        getPayoutBalance(user.id),
-      ]);
-      setPayoutAccountStatus(statusRes.data);
-      setBalances(balanceRes.data.balances || []);
-    } catch (e) {
-      console.error("Failed to fetch payout status", e);
-    }
-  };
-
-  useEffect(() => {
-    if (initialized && authenticated && user?.id) {
-      fetchPayoutStatus();
-    }
-  }, [initialized, authenticated, user?.id]);
-
-  // Announcement logic: show for 6 days from first sight
-  useEffect(() => {
-    const firstSight = localStorage.getItem("cashout_announcement_first_sight");
-    const dismissed = localStorage.getItem("cashout_announcement_dismissed");
-
-    if (dismissed) {
-      setShowShoutOut(false);
-      return;
-    }
-
-    if (!firstSight) {
-      localStorage.setItem(
-        "cashout_announcement_first_sight",
-        Date.now().toString(),
-      );
-    } else {
-      const startTime = parseInt(firstSight);
-      const sixDaysMs = 6 * 24 * 60 * 60 * 1000;
-      if (Date.now() > startTime + sixDaysMs) {
-        setShowShoutOut(false);
-      }
-    }
-  }, []);
-
-  const dismissShoutOut = () => {
-    setShowShoutOut(false);
-    localStorage.setItem("cashout_announcement_dismissed", "true");
-  };
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -1226,9 +1162,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const full = api(
-          `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-        );
+        const full = api(`/api/reference-images`);
         const res = await fetch(full, { signal: abort.signal });
         if (!res.ok) return; // best-effort
         const items = await res.json();
@@ -1371,12 +1305,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const res = await fetch(
-          api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
-          { signal: abort.signal },
-        );
-        if (!res.ok) throw new Error(await res.text());
-        const json = await res.json();
+        const json = await base44.get("/api/dashboard");
         const profile = json.profile || {};
         setCreator((prev: any) => ({
           ...prev,
@@ -1434,21 +1363,16 @@ export default function CreatorDashboard() {
     if (!initialized || !authenticated || !user?.id) return;
     (async () => {
       try {
-        const res = await fetch(
-          api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+        const data = await base44.get("/api/creator-rates");
+        setCustomRates(
+          data.filter(
+            (rate: any) =>
+              rate.rate_name !== "Social-media ads" &&
+              rate.rate_name !== "Other" &&
+              (CONTENT_TYPES.includes(rate.rate_name) ||
+                INDUSTRIES.includes(rate.rate_name)),
+          ),
         );
-        if (res.ok) {
-          const data = await res.json();
-          setCustomRates(
-            data.filter(
-              (rate: any) =>
-                rate.rate_name !== "Social-media ads" &&
-                rate.rate_name !== "Other" &&
-                (CONTENT_TYPES.includes(rate.rate_name) ||
-                  INDUSTRIES.includes(rate.rate_name)),
-            ),
-          );
-        }
       } catch (e) {
         console.error("Failed to fetch rates", e);
       }
@@ -1490,11 +1414,7 @@ export default function CreatorDashboard() {
     if (!authenticated || !user?.id) return;
     try {
       setKycLoading(true);
-      const res = await fetch(
-        api(`/api/kyc/status?user_id=${encodeURIComponent(user.id)}`),
-      );
-      if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
+      const rows = await base44.get("/api/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
         setCreator((prev: any) => ({
@@ -2345,7 +2265,7 @@ export default function CreatorDashboard() {
         const publicUrl = data.publicUrl;
 
         const { error: dbError } = await supabase
-          .from("profiles")
+          .from("creators")
           .update({ cameo_front_url: publicUrl })
           .eq("id", user.id);
 
@@ -3204,7 +3124,7 @@ export default function CreatorDashboard() {
                 {imagesFilled}/{imagesTotal}
               </div>
               <Progress
-                value={Math.round((imagesFilled / imagesTotal) * 100)}
+                value={Math.round((imagesFilled / IMAGE_SECTIONS.length) * 100)}
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
@@ -3304,7 +3224,7 @@ export default function CreatorDashboard() {
       // Upload via backend (Option B: server-only writes)
       const buf = await file.arrayBuffer();
       const full = api(
-        `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
+        `/api/reference-images/upload?section_id=${encodeURIComponent(selectedImageSection)}`,
       );
       const res = await fetch(full, {
         method: "POST",
@@ -5660,44 +5580,13 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Button
-            onClick={() => {
-              if (payoutAccountStatus?.payouts_enabled) {
-                setShowRequestPayoutModal(true);
-              } else {
-                setShowPayoutSettings(true);
-              }
-            }}
-            className={`bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2 transition-all ${showShoutOut ? "animate-twinkle animate-shine scale-110 shadow-lg" : ""}`}
+            onClick={() => setShowConnectBankAccount(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
           >
             <DollarSign className="w-4 h-4" />
-            {payoutAccountStatus?.payouts_enabled
-              ? t("creatorDashboard.earnings.actions.cashOut")
-              : "Setup Payouts"}
+            {t("creatorDashboard.earnings.actions.cashOut")}
           </Button>
         </div>
-
-        {/* Shout Out Banner */}
-        {showShoutOut && (
-          <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 animate-in fade-in slide-in-from-top-4 duration-500">
-            <Sparkles className="h-5 w-5 text-emerald-600" />
-            <AlertDescription className="flex items-center justify-between w-full">
-              <div className="ml-2">
-                <span className="font-bold">
-                  {t("creatorDashboard.earnings.announcement.title")}
-                </span>{" "}
-                {t("creatorDashboard.earnings.announcement.message")}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={dismissShoutOut}
-                className="hover:bg-emerald-100 text-emerald-700 h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Info banner */}
         <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 flex gap-3">
@@ -5713,18 +5602,12 @@ export default function CreatorDashboard() {
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">Available Balance</p>
-            <p className="text-3xl font-bold text-gray-900">
-              $
-              {(
-                (balances.find((b) => b.currency === "USD")?.available_cents ||
-                  0) / 100
-              ).toFixed(2)}
+            <p className="text-sm text-gray-600 mb-2">
+              {t("creatorDashboard.earnings.metrics.totalEarnedYTD")}
             </p>
+            <p className="text-3xl font-bold text-gray-900">$0</p>
             <p className="text-sm text-gray-600 mt-1">
-              {payoutAccountStatus?.payouts_enabled
-                ? `Ready to cash out via ${payoutAccountStatus.preference}`
-                : "Setup payouts to withdraw"}
+              {t("creatorDashboard.earnings.metrics.willUpdate")}
             </p>
           </Card>
           <Card className="p-6 bg-white border border-gray-200">
@@ -5964,7 +5847,7 @@ export default function CreatorDashboard() {
 
       // Persist category selections to profiles table as well
       const profileStatus = await supabase
-        .from("profiles")
+        .from("creators")
         .update({
           content_types:
             showRatesModal === "content"
@@ -8314,384 +8197,6 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.modals.contentRestrictions.saveChanges")}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Payout Settings Modal */}
-      <Dialog open={showPayoutSettings} onOpenChange={setShowPayoutSettings}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              Setup Payout Method
-            </DialogTitle>
-            <DialogDescription>
-              Choose how you'd like to receive your earnings
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Payout Method Selection */}
-            <div className="space-y-4">
-              <label className="text-sm font-semibold text-gray-700">
-                Select Payout Method
-              </label>
-
-              {/* Stripe Connect Standard */}
-              <div
-                onClick={() => setPayoutMethod("stripe")}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  payoutMethod === "stripe"
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
-                      payoutMethod === "stripe"
-                        ? "border-emerald-500"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {payoutMethod === "stripe" && (
-                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">
-                          Stripe Connect
-                        </h3>
-                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
-                          Recommended
-                        </Badge>
-                      </div>
-                      <img
-                        src="https://www.vectorlogo.zone/logos/stripe/stripe-icon.svg"
-                        className="h-6 w-auto opacity-80"
-                        alt="Stripe"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Connect your existing Stripe account or create a new one.
-                      Fast, secure, and supports multiple currencies.
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        Instant Setup
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        Multiple Currencies
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        Direct Deposit
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* PayPal - Coming Soon */}
-              <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
-                <div className="absolute top-2 right-2">
-                  <Badge className="bg-amber-100 text-amber-700 border-amber-300">
-                    Coming Soon
-                  </Badge>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center border-gray-300" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-gray-500">PayPal</h3>
-                      <img
-                        src="https://www.vectorlogo.zone/logos/paypal/paypal-icon.svg"
-                        className="h-6 w-auto opacity-50"
-                        alt="PayPal"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Receive payments directly to your PayPal account.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wise - Coming Soon */}
-              <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
-                <div className="absolute top-2 right-2">
-                  <Badge className="bg-amber-100 text-amber-700 border-amber-300">
-                    Coming Soon
-                  </Badge>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center border-gray-300" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-gray-500">
-                        Wise (TransferWise)
-                      </h3>
-                      <img
-                        src="https://www.vectorlogo.zone/logos/transferwise/transferwise-icon.svg"
-                        className="h-6 w-auto opacity-50"
-                        alt="Wise"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-400 mt-1">
-                      International transfers with low fees. Great for
-                      cross-border payments.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Info Banner */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-900">
-                  <p className="font-semibold">Important Information</p>
-                  <ul className="mt-2 space-y-1 list-disc list-inside">
-                    <li>
-                      Stripe Connect is currently our active payout method
-                    </li>
-                    <li>PayPal and Wise integration is coming soon</li>
-                    <li>We provide secure and fast payouts through Stripe</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPayoutSettings(false)}
-              className="mr-2"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                try {
-                  setIsLoadingPayout(true);
-                  const profileId = user?.id;
-                  if (!profileId) throw new Error("Not authenticated");
-
-                  if (payoutMethod === "stripe") {
-                    // Create Stripe Connect onboarding link
-                    const res = await createPayoutsOnboardingLink(profileId);
-                    if (res?.url) {
-                      window.location.href = res.url;
-                    } else {
-                      toast({
-                        variant: "destructive",
-                        title: "Error",
-                        description: "Failed to create Stripe onboarding link",
-                      });
-                    }
-                  } else {
-                    // Save PayPal or Wise settings
-                    const { updatePayoutSettings } =
-                      await import("@/api/functions");
-                    const result = await updatePayoutSettings({
-                      profile_id: profileId,
-                      preference: payoutMethod,
-                      paypal_email:
-                        payoutMethod === "paypal" ? paypalEmail : undefined,
-                      wise_details:
-                        payoutMethod === "wise"
-                          ? { email: wiseDetails }
-                          : undefined,
-                    });
-
-                    // Check if the response indicates an error
-                    if (result.data?.status === "error") {
-                      throw new Error(result.data?.error || "Unknown error");
-                    }
-
-                    toast({
-                      title: "Success",
-                      description: `${payoutMethod === "paypal" ? "PayPal" : "Wise"} payout method configured successfully! You can now withdraw funds.`,
-                    });
-                    setShowPayoutSettings(false);
-                    await fetchPayoutStatus();
-                  }
-                } catch (e) {
-                  console.error(e);
-                  toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Failed to setup payout method",
-                  });
-                } finally {
-                  setIsLoadingPayout(false);
-                }
-              }}
-              disabled={
-                isLoadingPayout ||
-                (payoutMethod === "paypal" && !paypalEmail) ||
-                (payoutMethod === "wise" && !wiseDetails)
-              }
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {isLoadingPayout ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  Continue with{" "}
-                  {payoutMethod === "stripe"
-                    ? "Stripe"
-                    : payoutMethod === "paypal"
-                      ? "PayPal"
-                      : "Wise"}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Request Payout Modal */}
-      <Dialog
-        open={showRequestPayoutModal}
-        onOpenChange={setShowRequestPayoutModal}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Cash Out</DialogTitle>
-            <DialogDescription>
-              Withdraw your earnings to your {payoutAccountStatus?.preference}{" "}
-              account
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <WalletIcon className="h-5 w-5 text-emerald-600" />
-                <span className="text-emerald-900 font-medium">
-                  Available Balance
-                </span>
-              </div>
-              <span className="text-emerald-900 font-bold text-lg">
-                $
-                {(
-                  (balances.find((b) => b.currency === "USD")
-                    ?.available_cents || 0) / 100
-                ).toFixed(2)}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="payout-amount">Amount to Withdraw</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  $
-                </span>
-                <Input
-                  id="payout-amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={requestPayoutAmount}
-                  onChange={(e) => setRequestPayoutAmount(e.target.value)}
-                  className="pl-7"
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-emerald-600 h-auto p-0"
-                  onClick={() =>
-                    setRequestPayoutAmount(
-                      (
-                        (balances.find((b) => b.currency === "USD")
-                          ?.available_cents || 0) / 100
-                      ).toString(),
-                    )
-                  }
-                >
-                  Withdraw Maximum
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100">
-              <Clock className="h-4 w-4" />
-              <span>
-                {payoutAccountStatus?.preference === "stripe"
-                  ? "Stripe payouts usually arrive within 24 hours."
-                  : "PayPal/Wise payouts are manually processed in 3-5 days."}
-              </span>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowRequestPayoutModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                isLoadingPayout ||
-                !requestPayoutAmount ||
-                parseFloat(requestPayoutAmount) <= 0 ||
-                parseFloat(requestPayoutAmount) >
-                  (balances.find((b) => b.currency === "USD")
-                    ?.available_cents || 0) /
-                    100
-              }
-              onClick={async () => {
-                try {
-                  setIsLoadingPayout(true);
-                  const { requestPayout } = await import("@/api/functions");
-                  const amountCents = Math.round(
-                    parseFloat(requestPayoutAmount) * 100,
-                  );
-                  await requestPayout({
-                    profile_id: user?.id!,
-                    amount_cents: amountCents,
-                  });
-                  toast({
-                    title: "Payout Requested",
-                    description: `Your withdrawal of $${requestPayoutAmount} is being processed.`,
-                  });
-                  setShowRequestPayoutModal(false);
-                  setRequestPayoutAmount("");
-                  fetchPayoutStatus(); // Refresh balance
-                } catch (e: any) {
-                  console.error(e);
-                  toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description:
-                      e.response?.data?.error === "insufficient_funds"
-                        ? "Insufficient funds available."
-                        : "Failed to request payout. Please try again.",
-                  });
-                } finally {
-                  setIsLoadingPayout(false);
-                }
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {isLoadingPayout ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Processing...
-                </>
-              ) : (
-                "Confirm Withdrawal"
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

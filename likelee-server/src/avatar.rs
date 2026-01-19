@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
@@ -20,17 +21,18 @@ pub struct GenerateAvatarResponse {
 
 pub async fn generate_avatar(
     State(state): State<AppState>,
+    _user: AuthUser,
     Json(req): Json<GenerateAvatarRequest>,
 ) -> Result<Json<GenerateAvatarResponse>, (StatusCode, String)> {
     if state.tavus_api_key.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "Tavus not configured".into()));
     }
 
-    let user_id = req.user_id;
+    let user_id = _user.id;
 
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("id, cameo_front_url, tavus_avatar_id, tavus_avatar_status")
         .eq("id", &user_id)
         .limit(1)
@@ -52,7 +54,7 @@ pub async fn generate_avatar(
         other => {
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("unexpected response from profiles select: {}", other),
+                format!("unexpected response from creators select: {}", other),
             ))
         }
     };
@@ -171,7 +173,7 @@ pub async fn generate_avatar(
     });
     state
         .pg
-        .from("profiles")
+        .from("creators")
         .update(update.to_string())
         .eq("id", &user_id)
         .execute()
@@ -195,7 +197,7 @@ pub async fn get_avatar_status(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
-        .from("profiles")
+        .from("creators")
         .select("tavus_avatar_id, tavus_avatar_status, id")
         .eq("id", &q.user_id)
         .limit(1)
@@ -244,7 +246,7 @@ pub async fn get_avatar_status(
                     // Persist updated status
                     let _ = state
                         .pg
-                        .from("profiles")
+                        .from("creators")
                         .update(json!({ "tavus_avatar_status": status }).to_string())
                         .eq("tavus_avatar_id", &replica_id)
                         .execute()
@@ -273,7 +275,7 @@ pub async fn tavus_webhook(
     let update = json!({ "tavus_avatar_status": status });
     state
         .pg
-        .from("profiles")
+        .from("creators")
         .update(update.to_string())
         .eq("tavus_avatar_id", id)
         .execute()
