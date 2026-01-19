@@ -157,10 +157,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/performance-tiers/:tier_name/talents",
             get(crate::performance_tiers::get_tier_talents),
         )
-        .route(
-            "/api/performance-tiers/calculate",
-            post(crate::performance_tiers::calculate_tier_assignments),
-        )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)

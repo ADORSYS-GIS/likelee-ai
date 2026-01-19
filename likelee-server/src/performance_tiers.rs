@@ -7,11 +7,13 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PerformanceTier {
     pub id: String,
     pub tier_name: String,
     pub tier_level: i32,
+    pub min_monthly_earnings: f64,
+    pub min_monthly_bookings: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub talent_count: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -35,16 +37,83 @@ pub struct TalentPerformanceMetrics {
     pub current_tier: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TierCalculationResult {
-    pub total_talents_processed: i32,
-    pub tier_assignments: Vec<TierAssignment>,
+#[derive(Debug, Clone)]
+struct MockTalent {
+    profile_id: String,
+    name: String,
+    photo_url: Option<String>,
+    monthly_earnings: f64,
+    monthly_bookings: i32,
+    total_campaigns: i32,
+    engagement_percentage: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TierAssignment {
-    pub tier_name: String,
-    pub count: i32,
+/// Mock talent data - simulates what we'd get from agency_users + royalty_ledger
+/// TODO: Replace with real database queries when bookings/earnings tracking is implemented
+fn get_mock_talent_data() -> Vec<MockTalent> {
+    vec![
+        MockTalent {
+            profile_id: "carla-uuid".to_string(),
+            name: "Carla".to_string(),
+            photo_url: Some("https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png".to_string()),
+            monthly_earnings: 6800.0,
+            monthly_bookings: 13,
+            total_campaigns: 13,
+            engagement_percentage: 7.1,
+        },
+        MockTalent {
+            profile_id: "emma-uuid".to_string(),
+            name: "Emma".to_string(),
+            photo_url: Some("https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png".to_string()),
+            monthly_earnings: 3200.0,
+            monthly_bookings: 6,
+            total_campaigns: 6,
+            engagement_percentage: 4.0,
+        },
+        MockTalent {
+            profile_id: "sergine-uuid".to_string(),
+            name: "Sergine".to_string(),
+            photo_url: Some("https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png".to_string()),
+            monthly_earnings: 3600.0,
+            monthly_bookings: 5,
+            total_campaigns: 5,
+            engagement_percentage: 3.8,
+        },
+        MockTalent {
+            profile_id: "matt-uuid".to_string(),
+            name: "Matt".to_string(),
+            photo_url: Some("https://i.pravatar.cc/150?u=Matt".to_string()),
+            monthly_earnings: 3600.0,
+            monthly_bookings: 6,
+            total_campaigns: 6,
+            engagement_percentage: 4.5,
+        },
+        MockTalent {
+            profile_id: "julia-uuid".to_string(),
+            name: "Julia".to_string(),
+            photo_url: Some("https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png".to_string()),
+            monthly_earnings: 2400.0,
+            monthly_bookings: 4,
+            total_campaigns: 4,
+            engagement_percentage: 3.2,
+        },
+    ]
+}
+
+/// Calculate which tier a talent belongs to based on their earnings and bookings
+fn calculate_tier(earnings: f64, bookings: i32, tiers: &[PerformanceTier]) -> String {
+    // Sort tiers by level and check from highest (Premium=1) to lowest (Inactive=4)
+    let mut sorted_tiers = tiers.to_vec();
+    sorted_tiers.sort_by_key(|t| t.tier_level);
+
+    for tier in sorted_tiers.iter() {
+        if earnings >= tier.min_monthly_earnings && bookings >= tier.min_monthly_bookings {
+            return tier.tier_name.clone();
+        }
+    }
+
+    // Fallback to Inactive if no tier matches
+    "Inactive".to_string()
 }
 
 /// GET /api/performance-tiers
@@ -53,10 +122,11 @@ pub async fn get_performance_tiers(
 ) -> Result<Json<Vec<PerformanceTier>>, (StatusCode, String)> {
     info!("Fetching performance tiers with statistics");
 
+    // Fetch tier definitions from database
     let tiers_resp = state
         .pg
         .from("performance_tiers")
-        .select("id,tier_name,tier_level")
+        .select("id,tier_name,tier_level,min_monthly_earnings,min_monthly_bookings")
         .order("tier_level.asc")
         .execute()
         .await
@@ -75,43 +145,36 @@ pub async fn get_performance_tiers(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
+    // Get mock talent data
+    let mock_talents = get_mock_talent_data();
+
+    // Calculate tier assignments
+    let mut tier_counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    let mut tier_earnings: std::collections::HashMap<String, Vec<f64>> = std::collections::HashMap::new();
+    let mut tier_bookings: std::collections::HashMap<String, Vec<f64>> = std::collections::HashMap::new();
+
+    for talent in mock_talents.iter() {
+        let assigned_tier = calculate_tier(talent.monthly_earnings, talent.monthly_bookings, &tiers);
+        
+        *tier_counts.entry(assigned_tier.clone()).or_insert(0) += 1;
+        tier_earnings.entry(assigned_tier.clone()).or_default().push(talent.monthly_earnings);
+        tier_bookings.entry(assigned_tier.clone()).or_default().push(talent.monthly_bookings as f64);
+    }
+
+    // Populate tier statistics
     for tier in &mut tiers {
-        let metrics_resp = state
-            .pg
-            .from("talent_performance_metrics")
-            .select("avg_monthly_earnings,avg_booking_frequency")
-            .eq("current_tier_id", &tier.id)
-            .execute()
-            .await
-            .map_err(|e| {
-                error!("Failed to fetch metrics for tier {}: {}", tier.tier_name, e);
-                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-            })?;
-
-        let metrics_text = metrics_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string());
-        let metrics: Vec<serde_json::Value> =
-            serde_json::from_str(&metrics_text).unwrap_or_default();
-
-        tier.talent_count = Some(metrics.len() as i64);
-
-        if !metrics.is_empty() {
-            let total_earnings: f64 = metrics
-                .iter()
-                .filter_map(|m| m.get("avg_monthly_earnings")?.as_f64())
-                .sum();
-            let total_freq: f64 = metrics
-                .iter()
-                .filter_map(|m| m.get("avg_booking_frequency")?.as_f64())
-                .sum();
-
-            tier.avg_monthly_earnings = Some(total_earnings / metrics.len() as f64);
-            tier.avg_booking_frequency = Some(total_freq / metrics.len() as f64);
-        } else {
-            tier.avg_monthly_earnings = Some(0.0);
-            tier.avg_booking_frequency = Some(0.0);
+        tier.talent_count = Some(*tier_counts.get(&tier.tier_name).unwrap_or(&0));
+        
+        if let Some(earnings_list) = tier_earnings.get(&tier.tier_name) {
+            if !earnings_list.is_empty() {
+                tier.avg_monthly_earnings = Some(earnings_list.iter().sum::<f64>() / earnings_list.len() as f64);
+            }
+        }
+        
+        if let Some(bookings_list) = tier_bookings.get(&tier.tier_name) {
+            if !bookings_list.is_empty() {
+                tier.avg_booking_frequency = Some(bookings_list.iter().sum::<f64>() / bookings_list.len() as f64);
+            }
         }
     }
 
@@ -126,116 +189,69 @@ pub async fn get_tier_talents(
 ) -> Result<Json<Vec<TalentPerformanceMetrics>>, (StatusCode, String)> {
     info!("Fetching talents for tier: {}", tier_name);
 
-    let tier_resp = state
+    // Fetch tier definitions
+    let tiers_resp = state
         .pg
         .from("performance_tiers")
-        .select("id")
-        .eq("tier_name", &tier_name)
-        .limit(1)
+        .select("id,tier_name,tier_level,min_monthly_earnings,min_monthly_bookings")
         .execute()
         .await
         .map_err(|e| {
-            error!("Failed to fetch tier {}: {}", tier_name, e);
+            error!("Failed to fetch tiers: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
-    let tier_text = tier_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let tier_rows: Vec<serde_json::Value> = serde_json::from_str(&tier_text).unwrap_or_default();
+    let tiers_text = tiers_resp.text().await.map_err(|e| {
+        error!("Failed to read tiers response: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
 
-    if tier_rows.is_empty() {
+    let tiers: Vec<PerformanceTier> = serde_json::from_str(&tiers_text).map_err(|e| {
+        error!("Failed to parse tiers: {}", e);
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    // Verify tier exists
+    if !tiers.iter().any(|t| t.tier_name == tier_name) {
         return Err((
             StatusCode::NOT_FOUND,
             format!("Tier '{}' not found", tier_name),
         ));
     }
 
-    let tier_id = tier_rows[0].get("id").and_then(|v| v.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid tier ID".to_string(),
-    ))?;
+    // Get mock talent data
+    let mock_talents = get_mock_talent_data();
 
-    let metrics_resp = state
-        .pg
-        .from("talent_performance_metrics")
-        .select("profile_id,avg_monthly_earnings,avg_booking_frequency,total_campaigns,engagement_percentage,days_since_last_booking")
-        .eq("current_tier_id", tier_id)
-        .order("avg_monthly_earnings.desc")
-        .execute()
-        .await
-        .map_err(|e| {
-            error!("Failed to fetch talent metrics: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
-
-    let metrics_text = metrics_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let metrics: Vec<serde_json::Value> = serde_json::from_str(&metrics_text).unwrap_or_default();
-
-    let mut talents = Vec::new();
-
-    for metric in metrics {
-        let profile_id = metric
-            .get("profile_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-
-        if profile_id.is_empty() {
-            continue;
-        }
-
-        let profile_resp = state
-            .pg
-            .from("profiles")
-            .select("name,photo_url")
-            .eq("id", profile_id)
-            .limit(1)
-            .execute()
-            .await;
-
-        if let Ok(resp) = profile_resp {
-            if let Ok(text) = resp.text().await {
-                if let Ok(profiles) = serde_json::from_str::<Vec<serde_json::Value>>(&text) {
-                    if let Some(profile) = profiles.first() {
-                        talents.push(TalentPerformanceMetrics {
-                            profile_id: profile_id.to_string(),
-                            name: profile
-                                .get("name")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unknown")
-                                .to_string(),
-                            photo_url: profile
-                                .get("photo_url")
-                                .and_then(|v| v.as_str())
-                                .map(String::from),
-                            avg_monthly_earnings: metric
-                                .get("avg_monthly_earnings")
-                                .and_then(|v| v.as_f64())
-                                .unwrap_or(0.0),
-                            avg_booking_frequency: metric
-                                .get("avg_booking_frequency")
-                                .and_then(|v| v.as_f64())
-                                .unwrap_or(0.0),
-                            total_campaigns: metric
-                                .get("total_campaigns")
-                                .and_then(|v| v.as_i64())
-                                .unwrap_or(0) as i32,
-                            engagement_percentage: metric
-                                .get("engagement_percentage")
-                                .and_then(|v| v.as_f64())
-                                .unwrap_or(0.0),
-                            days_since_last_booking: metric
-                                .get("days_since_last_booking")
-                                .and_then(|v| v.as_i64())
-                                .map(|v| v as i32),
-                            current_tier: tier_name.clone(),
-                        });
-                    }
-                }
+    // Filter talents by tier and convert to response format
+    let mut talents: Vec<TalentPerformanceMetrics> = mock_talents
+        .into_iter()
+        .filter_map(|talent| {
+            let assigned_tier = calculate_tier(talent.monthly_earnings, talent.monthly_bookings, &tiers);
+            
+            if assigned_tier == tier_name {
+                Some(TalentPerformanceMetrics {
+                    profile_id: talent.profile_id,
+                    name: talent.name,
+                    photo_url: talent.photo_url,
+                    avg_monthly_earnings: talent.monthly_earnings,
+                    avg_booking_frequency: talent.monthly_bookings as f64,
+                    total_campaigns: talent.total_campaigns,
+                    engagement_percentage: talent.engagement_percentage,
+                    days_since_last_booking: None,
+                    current_tier: assigned_tier,
+                })
+            } else {
+                None
             }
-        }
-    }
+        })
+        .collect();
+
+    // Sort by earnings descending
+    talents.sort_by(|a, b| {
+        b.avg_monthly_earnings
+            .partial_cmp(&a.avg_monthly_earnings)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     info!(
         "Successfully fetched {} talents for tier {}",
@@ -245,31 +261,11 @@ pub async fn get_tier_talents(
     Ok(Json(talents))
 }
 
-/// POST /api/performance-tiers/calculate
-pub async fn calculate_tier_assignments(
-    State(_state): State<AppState>,
-) -> Result<Json<TierCalculationResult>, (StatusCode, String)> {
-    info!("Tier calculation endpoint called");
-
-    Ok(Json(TierCalculationResult {
-        total_talents_processed: 0,
-        tier_assignments: vec![
-            TierAssignment {
-                tier_name: "Premium".to_string(),
-                count: 0,
-            },
-            TierAssignment {
-                tier_name: "Core".to_string(),
-                count: 0,
-            },
-            TierAssignment {
-                tier_name: "Growth".to_string(),
-                count: 0,
-            },
-            TierAssignment {
-                tier_name: "Inactive".to_string(),
-                count: 0,
-            },
-        ],
-    }))
-}
+// TODO: Future implementation when bookings/earnings are tracked in database
+// async fn get_real_talent_data(pg: &postgrest::Postgrest) -> Result<Vec<MockTalent>, String> {
+//     // 1. Fetch agency_users to get list of talents
+//     // 2. Fetch v_face_payouts for current month to get earnings/bookings
+//     // 3. Fetch profiles for names/photos
+//     // 4. Join data and return
+//     unimplemented!("Real data integration pending bookings implementation")
+// }
