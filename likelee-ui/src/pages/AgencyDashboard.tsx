@@ -1,6 +1,7 @@
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
 import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
+import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5527,7 +5528,18 @@ const ScoutingHubView = ({
         )}
         {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
         {activeTab === "Marketplace" && <MarketplaceTab />}
-        {activeTab === "Scouting Map" && <ScoutingMapTab />}
+        {activeTab === "Scouting Map" && (
+          <ScoutingMapTab
+            onEditEvent={(event) => {
+              setEventToEdit(event);
+              setIsEventModalOpen(true);
+            }}
+            onViewProspect={(prospect) => {
+              setProspectToEdit(prospect);
+              setIsProspectModalOpen(true);
+            }}
+          />
+        )}
         {activeTab === "Submissions" && <SubmissionsTab />}
         {activeTab === "Open Calls" && (
           <OpenCallsTab
@@ -6237,37 +6249,13 @@ const MarketplaceTab = () => (
   </Card>
 );
 
-const ScoutingMapTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <h2 className="text-xl font-bold text-gray-900">Scouting Map</h2>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          className="font-bold text-gray-700 px-6 h-11 rounded-xl shadow-sm border-gray-300"
-        >
-          View Trip History
-        </Button>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 h-11 rounded-xl shadow-sm">
-          Plan New Trip
-        </Button>
-      </div>
-    </div>
-
-    <div className="bg-gray-50 rounded-2xl h-[500px] border border-gray-200 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]" />
-      <div className="relative z-10 p-6 bg-white rounded-full mb-4 shadow-sm">
-        <MapPin className="w-12 h-12 text-gray-200" />
-      </div>
-      <h3 className="relative z-10 text-xl font-bold text-gray-900 mb-2">
-        Interactive Map Coming Soon
-      </h3>
-      <p className="relative z-10 text-gray-500 max-w-sm font-medium">
-        Track discoveries, plan trips, and visualize your scouting activity
-      </p>
-    </div>
-  </Card>
-);
+const ScoutingMapTab = ({
+  onEditEvent,
+  onViewProspect,
+}: {
+  onEditEvent?: (event: ScoutingEvent) => void;
+  onViewProspect?: (prospect: ScoutingProspect) => void;
+}) => <ScoutingMap onEditEvent={onEditEvent} onViewProspect={onViewProspect} />;
 
 const SubmissionsTab = () => (
   <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
