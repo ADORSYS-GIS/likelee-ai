@@ -4,7 +4,7 @@ Voice assets and brand delivery (Supabase):
 
 - `voice_recordings` (private bucket) store Face-owned audio samples, with `accessible` flag to control inclusion in licensed delivery.
 - `voice_models` register cloned voice metadata per provider (e.g., ElevenLabs `provider_voice_id`).
-- `brand_licenses` link `brand_org_id` (organization_profiles.id) ↔ `face_user_id` with status and validity window.
+- `brand_licenses` link `brand_org_id` (brands.id) ↔ `face_user_id` with status and validity window.
 - `brand_voice_folders` and `brand_voice_assets` expose licensed voice assets under the Brand’s workspace without duplicating binaries.
 
 Version: 0.1 (draft)
@@ -57,7 +57,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   - Payments (Stripe Connect): split payments Brand → Platform → Face + Creator; Stripe Express payouts.
   - Likelee Studio: Model Router (Replicate/HF/Together) + Simple Prompt UI.
   - i18n: Default EN; ES and FR prioritized for MVP.
-  - Authentication/Authorization: Keycloak (OIDC/OAuth2) for identities, realms/clients/roles.
+  - Authentication/Authorization: Supabase Auth (OIDC/OAuth2/Email).
 
 ## 5. Tech Stack
 
@@ -95,7 +95,7 @@ Reference images storage model (Supabase):
 - Verification: KYC + liveness for Faces and before agency creation.
 - Privacy-first: consented uploads, minimization, encryption in transit/at rest, DSRs.
 - Trust & Traceability: invisible watermarking; C2PA manifest (P2) for attribution.
-- AuthN/AuthZ: Keycloak (OIDC/OAuth2); roles for Faces, Creators, Brands, Admins.
+- AuthN/AuthZ: Supabase Auth; roles for Faces, Creators, Brands, Admins.
 - Moderation: automated image checks (Rekognition) + policy guardrails.
 
 ## 9. Monetization Model
@@ -300,8 +300,6 @@ Notes:
 
 To ensure a robust multi-step signup flow (especially after external redirects like Veriff), the following mechanisms are implemented:
 
-- **Local State Persistence**: Critical fields like `creatorType` are persisted to `localStorage` on change.
-- **Data Recovery on Mount**: When the `ReserveProfile` component mounts, it checks for an authenticated user. If present, it fetches existing profile data from Supabase and merges it into the local `formData` state. This acts as a safety net if `localStorage` is cleared or the session is lost during redirect.
 - **Robust Finalization**: The `finalizeProfile` function uses the recovered/merged data and validates critical fields (like pricing) before the final upsert, preventing amnesia-related data loss or constraint violations.
 - **Pricing Validation**: Hard fallbacks for pricing are avoided. If pricing data is missing after recovery, the user is redirected back to the pricing step to ensure explicit consent and data integrity.
 
