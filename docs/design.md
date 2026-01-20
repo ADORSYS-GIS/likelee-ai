@@ -38,14 +38,12 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   3. Import talents (CSV/drag-and-drop) to trigger invites.
   4. Seat activates when Face accepts terms.
 
-### Voice & Recordings and License Activation (P1)
+### Scouting Module (P0 for Agencies)
 
-- Faces record/upload voice samples in their dashboard (private storage, consented).
-- Optional: create an AI cloned voice model via ElevenLabs from approved samples.
-- When a Brand’s likeness license is activated, Likelee provisions a Voice Folder in the Brand workspace and links:
-  - All accessible voice recordings of the Face
-  - Any ready cloned voice models (e.g., ElevenLabs)
-- Brands consume recordings via signed URLs and models via provider IDs within Likelee Studio workflows.
+- **Prospects**: Manage talent leads with status tracking, ratings, and agent assignments.
+- **Trips**: Plan and track physical scouting journeys.
+- **Events (Open Calls)**: Organize and manage casting events, both physical and virtual.
+- **Submissions**: Process talent applications received via the agency's website.
 
 ## 4. Architecture Overview
 
@@ -53,6 +51,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 - Backend/Data: Supabase (Auth, Postgres, Storage) with service APIs (Rust axum server).
 - Core services (logical):
   - Royalty Ledger: record bookings and expose reads for dashboards.
+  - Scouting Hub: Full CRM for talent discovery and event management.
   - Watermark API: apply invisible watermark to exports; hash tied to booking ID.
   - Payments (Stripe Connect): split payments Brand → Platform → Face + Creator; Stripe Express payouts.
   - Likelee Studio: Model Router (Replicate/HF/Together) + Simple Prompt UI.
@@ -79,11 +78,23 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
 ## 7. Data Model (Conceptual)
 
 - Core entities: Face, Creator, Brand/Agency, Project, Booking, License, Asset, Experience, Session.
+- Scouting entities: Prospect, Trip, Event, Submission.
 - Separation of concerns:
   - PII vs content data stored separately where feasible.
   - Booking → Ledger entry (immutable) with references to payments, C2PA/watermark hash.
 - Consent:
   - Explicit consent steps for uploading face photos and licensing terms.
+
+### Scouting ER Diagram
+
+```mermaid
+erDiagram
+    agencies ||--o{ scouting_prospects : "manages"
+    agencies ||--o{ scouting_trips : "organizes"
+    agencies ||--o{ scouting_events : "hosts"
+    agencies ||--o{ scouting_submissions : "receives"
+    scouting_prospects }o--|| auth_users : "assigned to"
+```
 
 Reference images storage model (Supabase):
 
@@ -97,6 +108,7 @@ Reference images storage model (Supabase):
 - Trust & Traceability: invisible watermarking; C2PA manifest (P2) for attribution.
 - AuthN/AuthZ: Supabase Auth; roles for Faces, Creators, Brands, Admins.
 - Moderation: automated image checks (Rekognition) + policy guardrails.
+- Auth Restrictions: New signups via Google OAuth are disabled to ensure controlled onboarding.
 
 ## 9. Monetization Model
 
@@ -135,6 +147,16 @@ Royalty model analogy: a digital bank ledger. Instead of a one-time sale, earnin
 - Runtime configuration is centralized via the Rust `envconfig` crate.
 - Service reads configuration from environment variables (with dotenv support in dev).
 - Single source of truth struct: `ServerConfig` (`likelee-server/src/config.rs`).
+
+### Migration Structure (Supabase)
+
+Migrations are organized into a sequential structure to ensure clean database initialization:
+
+1. `0001_core_profiles.sql`: Core tables (creators, brands, agencies, royalty_ledger) and auth restrictions.
+2. `0002_scouting_module.sql`: Scouting Hub entities (prospects, trips, events, submissions) and RLS.
+3. `0003_assets_storage_moderation.sql`: Storage buckets, moderation events, reference images, and voice assets.
+4. `0004_business_logic_and_pricing.sql`: Creator rates, business logic columns, and pricing functions.
+5. `0005_external_integrations.sql`: Tracking columns and legacy transition fields for external services (e.g., Creatify).
 
 ### Environment Variables (Backend – likelee-server)
 

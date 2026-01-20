@@ -1,4 +1,4 @@
--- 20260115_scouting_module.sql
+-- 0002_scouting_module.sql
 -- Scouting Module: Prospects, Trips, Events, and Submissions
 
 BEGIN;
@@ -72,6 +72,27 @@ CREATE TABLE IF NOT EXISTS public.scouting_events (
   description text,
   status text DEFAULT 'scheduled', -- scheduled, completed, cancelled
   
+  -- Expanded fields
+  event_type text,
+  casting_for text,
+  start_time text,
+  end_time text,
+  looking_for text[],
+  min_age integer DEFAULT 18,
+  max_age integer DEFAULT 30,
+  gender_preference text DEFAULT 'all',
+  special_skills text,
+  what_to_bring text,
+  dress_code text,
+  location_details text,
+  virtual_link text,
+  max_attendees integer,
+  registration_required boolean DEFAULT false,
+  internal_notes text,
+  contact_name text,
+  contact_email text,
+  contact_phone text,
+  
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -96,69 +117,11 @@ CREATE TABLE IF NOT EXISTS public.scouting_submissions (
 
 CREATE INDEX IF NOT EXISTS idx_scouting_submissions_agency_id ON public.scouting_submissions(agency_id);
 
--- Fix Existing Constraints (if tables already exist with wrong FK)
-DO $$
-BEGIN
-    -- 1. Scouting Prospects
-    -- Clean up orphan rows first
-    DELETE FROM public.scouting_prospects WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_prospects_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_prospects DROP CONSTRAINT scouting_prospects_agency_id_fkey;
-    END IF;
-    
-    ALTER TABLE public.scouting_prospects 
-    ADD CONSTRAINT scouting_prospects_agency_id_fkey 
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-    -- 2. Scouting Trips
-    DELETE FROM public.scouting_trips WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_trips_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_trips DROP CONSTRAINT scouting_trips_agency_id_fkey;
-    END IF;
-
-    ALTER TABLE public.scouting_trips
-    ADD CONSTRAINT scouting_trips_agency_id_fkey
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-    -- 3. Scouting Events
-    DELETE FROM public.scouting_events WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_events_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_events DROP CONSTRAINT scouting_events_agency_id_fkey;
-    END IF;
-
-    ALTER TABLE public.scouting_events
-    ADD CONSTRAINT scouting_events_agency_id_fkey
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-    -- 4. Scouting Submissions
-    DELETE FROM public.scouting_submissions WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_submissions_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_submissions DROP CONSTRAINT scouting_submissions_agency_id_fkey;
-    END IF;
-
-    ALTER TABLE public.scouting_submissions
-    ADD CONSTRAINT scouting_submissions_agency_id_fkey
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-EXCEPTION
-    WHEN duplicate_object THEN NULL;
-END $$;
-
 -- RLS Policies
-
--- Enable RLS
 ALTER TABLE public.scouting_prospects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scouting_trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scouting_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scouting_submissions ENABLE ROW LEVEL SECURITY;
-
--- Policy Helper: Check if user is a member of the agency
--- We reuse the logic from agency_users policies:
--- User must be the owner OR exist in agency_users for that agency
 
 -- Prospects Policies
 DROP POLICY IF EXISTS "Agency members can select prospects" ON public.scouting_prospects;
@@ -176,9 +139,6 @@ CREATE POLICY "Agency members can update prospects" ON public.scouting_prospects
 DROP POLICY IF EXISTS "Agency members can delete prospects" ON public.scouting_prospects;
 CREATE POLICY "Agency members can delete prospects" ON public.scouting_prospects
   FOR DELETE USING (agency_id = auth.uid());
-
--- Repeat similar policies for Trips, Events, and Submissions
--- (Simplified for brevity, assuming same access pattern)
 
 -- Trips
 DROP POLICY IF EXISTS "Agency members can all trips" ON public.scouting_trips;
