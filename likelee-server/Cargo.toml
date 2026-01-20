@@ -29,3 +29,4 @@ kamadak-exif = { version = "0.5" }
 lettre = { version = "0.11", default-features = false, features = ["builder", "hostname", "pool", "smtp-transport", "tokio1-rustls-tls"] }
 urlencoding = "2"
 jsonwebtoken = "9"
+stripe-sdk = { package = "async-stripe", version = "0.33.0", features = ["runtime-tokio-hyper-rustls"] }

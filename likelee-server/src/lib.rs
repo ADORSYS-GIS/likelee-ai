@@ -13,6 +13,7 @@ pub mod kyc;
 pub mod licenses;
 pub mod moderation;
 pub mod organization_profiles;
+pub mod payouts;
 pub mod reference_images;
 pub mod router;
 pub mod voice;

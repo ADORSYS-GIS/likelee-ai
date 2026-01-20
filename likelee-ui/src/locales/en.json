@@ -2120,36 +2120,28 @@
     },
     "earnings": {
       "title": "Earnings Dashboard",
-      "byIndustry": "Earnings by Industry",
-      "byCampaign": "Earnings by Campaign",
-      "bankConnection": {
-        "title": "Connect Your Bank Account",
-        "subtitle": "Link your bank account to receive your earnings directly.",
-        "securityTitle": "Bank-level Security",
-        "securityMessage": "Your information is encrypted and protected",
-        "privateTitle": "Private & Secure",
-        "privateMessage": "We never store your banking credentials",
-        "button": "Connect Bank Account",
-        "comingSoon": "Bank connection coming soon. We're integrating secure payment processing.",
-        "back": "Back"
-      },
       "subtitle": "Track your revenue and payments",
-      "readyTitle": "Your earnings dashboard is ready",
-      "readyMessage": "Once your licenses activate, you'll see real-time earnings here. Currently, you have no active contracts.",
-      "actions": {
-        "cashOut": "Cash Out",
-        "downloadTax": "Download Tax Summary (1099)"
+      "readyTitle": "Ready to Cash Out?",
+      "readyMessage": "Connect your payout method to withdraw your earnings. It only takes a few minutes to get set up.",
+      "announcement": {
+        "title": "New: Flexible Cash Out!",
+        "message": "You can now withdraw your earnings via Stripe Connect. PayPal and Wise coming soon!"
       },
       "metrics": {
-        "totalEarnedYTD": "Total Earned YTD",
-        "willUpdate": "Will update once your first license activates",
-        "thisMonthRecurring": "This Month's Recurring",
+        "totalEarnedYTD": "Total Earned (YTD)",
+        "willUpdate": "Updates after each payout",
+        "thisMonthRecurring": "This Month (Recurring)",
         "waitingForCampaigns": "Waiting for active campaigns",
         "projectedNextMonth": "Projected Next Month",
         "willCalculate": "Will calculate based on active licenses",
         "nextPayment": "Next Payment",
-        "toBeDetermined": "To be determined",
+        "toBeDetermined": "TBD",
         "noActiveContracts": "No active contracts yet"
+      },
+      "actions": {
+        "cashOut": "Cash Out",
+        "loading": "Processing...",
+        "downloadTax": "Download Tax Documents (PDF)"
       },
       "charts": {
         "revenueTrend": "Revenue Trend (Last 6 Months)",

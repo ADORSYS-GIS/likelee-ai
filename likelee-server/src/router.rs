@@ -1,8 +1,6 @@
-use crate::auth;
 use crate::config::AppState;
 use axum::{
     extract::DefaultBodyLimit,
-    middleware,
     routing::{delete, get, post},
     Router,
 };
@@ -13,13 +11,35 @@ pub fn build_router(state: AppState) -> Router {
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
-
-    // Routes accessible by Creators
-    let creator_routes = Router::new()
+    Router::new()
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
+        .route(
+            "/api/kyc/organization/session",
+            post(crate::kyc::create_session),
+        )
+        .route("/api/kyc/organization/status", get(crate::kyc::get_status))
+        // Organization Profiles
+        .route(
+            "/api/organization-register",
+            post(crate::organization_profiles::register),
+        )
+        .route(
+            "/api/organization-profile",
+            post(crate::organization_profiles::create),
+        )
+        .route(
+            "/api/organization-profile/:id",
+            post(crate::organization_profiles::update),
+        )
+        .route(
+            "/api/organization-profile/user/:user_id",
+            get(crate::organization_profiles::get_by_user),
+        )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
+        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
+        .route("/api/email/available", get(crate::creators::check_email))
         .route("/api/profile", post(crate::creators::upsert_profile))
         .route(
             "/api/profile/photo-upload",
@@ -33,6 +53,23 @@ pub fn build_router(state: AppState) -> Router {
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
         )
+        .route(
+            "/api/moderation/image",
+            post(crate::moderation::moderate_image),
+        )
+        .route(
+            "/api/moderation/image-bytes",
+            post(crate::moderation::moderate_image_bytes),
+        )
+        .route(
+            "/api/reference-images/upload",
+            post(crate::reference_images::upload_reference_image),
+        )
+        .route(
+            "/api/reference-images",
+            get(crate::reference_images::list_reference_images),
+        )
+        // Voice
         .route(
             "/api/voice/recordings",
             post(crate::voice::upload_voice_recording),
@@ -57,52 +94,12 @@ pub fn build_router(state: AppState) -> Router {
             "/api/voice/recordings/:id",
             delete(crate::voice::delete_voice_recording),
         )
+        // Licensing activation stub (to be called by checkout flow)
         .route(
-            "/api/creator-rates",
-            get(crate::creator_rates::get_creator_rates)
-                .post(crate::creator_rates::upsert_creator_rates),
+            "/api/licenses/activated",
+            post(crate::licenses::activated_stub),
         )
-        .route(
-            "/api/reference-images/upload",
-            post(crate::reference_images::upload_reference_image),
-        )
-        .route(
-            "/api/reference-images",
-            get(crate::reference_images::list_reference_images),
-        )
-        .route("/api/avatar/generate", post(crate::avatar::generate_avatar))
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            auth::creator_only,
-        ));
-
-    // Routes accessible by Agencies and Brands
-    let agency_routes = Router::new()
-        .route(
-            "/api/kyc/organization/session",
-            post(crate::kyc::create_session),
-        )
-        .route("/api/kyc/organization/status", get(crate::kyc::get_status))
-        .route("/api/brand-profile", post(crate::brands::update))
-        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
-        .route("/api/agency-profile", post(crate::agencies::update))
-        .route(
-            "/api/agency-profile/user",
-            get(crate::agencies::get_by_user),
-        )
-        .route(
-            "/api/organization-profile",
-            post(crate::organization_profiles::create),
-        )
-        .route(
-            "/api/organization-profile/:id",
-            post(crate::organization_profiles::update),
-        )
-        .route(
-            "/api/organization-profile/user",
-            get(crate::organization_profiles::get_by_user),
-        )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
+        // Brand voice folders/assets listing (implemented in licenses module)
         .route(
             "/api/brand/voice-folders",
             get(crate::licenses::list_brand_voice_folders),
@@ -140,42 +137,29 @@ pub fn build_router(state: AppState) -> Router {
             "/webhooks/creatify",
             post(crate::creatify::creatify_webhook),
         )
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            auth::agency_only,
-        ));
-
-    // Public or Shared routes (Authentication enforced via AuthUser extractor in handlers if needed)
-    let common_routes = Router::new()
-        .route("/api/brand-register", post(crate::brands::register))
-        .route("/api/agency-register", post(crate::agencies::register))
+        // Payouts
         .route(
-            "/api/organization-register",
-            post(crate::organization_profiles::register),
-        )
-        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
-        .route("/api/email/available", get(crate::creators::check_email))
-        .route(
-            "/api/moderation/image",
-            post(crate::moderation::moderate_image),
+            "/api/payouts/onboarding_link",
+            post(crate::payouts::create_onboarding_link),
         )
         .route(
-            "/api/moderation/image-bytes",
-            post(crate::moderation::moderate_image_bytes),
+            "/api/payouts/account_status",
+            get(crate::payouts::get_account_status),
         )
-        .route(
-            "/api/licenses/activated",
-            post(crate::licenses::activated_stub),
-        )
+        .route("/api/payouts/balance", get(crate::payouts::get_balance))
+        .route("/api/payouts/request", post(crate::payouts::request_payout))
+        .route("/api/payouts/history", get(crate::payouts::get_history))
+        .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
+        // Integrations: Core
         .route(
             "/api/integrations/core/send-email",
             post(crate::email::send_email),
-        );
-
-    Router::new()
-        .merge(creator_routes)
-        .merge(agency_routes)
-        .merge(common_routes)
+        )
+        .route(
+            "/api/creator-rates",
+            get(crate::creator_rates::get_creator_rates)
+                .post(crate::creator_rates::upsert_creator_rates),
+        )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)

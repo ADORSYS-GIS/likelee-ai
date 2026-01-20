@@ -134,3 +134,32 @@ export const registerAgency = (data: any) =>
 
 // Dashboard data for the authenticated user
 export const getDashboard = () => base44Client.get(`/api/dashboard`);
+
+// Payouts (Stripe Connect)
+export const getPayoutsAccountStatus = async (profileId: string) => {
+  const resp = await base44Client.get(`/api/payouts/account_status`, {
+    params: { profile_id: profileId },
+  });
+  return { data: resp } as any;
+};
+
+export const getPayoutBalance = async (profileId: string) => {
+  const resp = await base44Client.get(`/api/payouts/balance`, {
+    params: { profile_id: profileId },
+  });
+  return { data: resp } as any;
+};
+
+export const getStripeOAuthUrl = async (profileId: string) => {
+  const resp = await base44Client.post(`/api/payouts/onboarding_link`, {}, {
+    params: { profile_id: profileId },
+  });
+  // Backend returns { url }, adapt to UI expectations
+  return { data: { status: "ok", url: (resp as any)?.url } } as any;
+};
+
+// Some flows may reference an OAuth code exchange; backend currently uses account links.
+// Provide a safe placeholder to avoid runtime import errors if called.
+export const exchangeStripeOAuthCode = async (_code: string, _profileId: string) => {
+  return { data: { status: "error", error: "not_supported" } } as any;
+};
