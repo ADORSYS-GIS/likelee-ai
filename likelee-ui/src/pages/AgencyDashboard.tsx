@@ -5502,8 +5502,8 @@ const ScoutingHubView = ({
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
           >
             {tab}
@@ -5552,7 +5552,7 @@ const ScoutingHubView = ({
         onOpenChange={setIsEventModalOpen}
         event={eventToEdit}
         onSuccess={() => {
-          // useQuery will automatically refetch if we use the right query key
+          queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
         }}
       />
     </div>
@@ -6364,55 +6364,58 @@ const OpenCallsTab = ({
           {events.map((event) => (
             <Card
               key={event.id}
-              className="overflow-hidden border border-gray-100 hover:shadow-md transition-all group cursor-pointer rounded-xl"
+              className="overflow-hidden border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer rounded-xl bg-white hover:-translate-y-1"
               onClick={() => onEditEvent(event)}
             >
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] ${event.status === "published"
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : "bg-gray-50 text-gray-600 border-gray-100"
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${event.status === "published" ? "bg-green-50 text-green-700 border-green-100" :
+                        event.status === "draft" ? "bg-gray-50 text-gray-600 border-gray-100" :
+                          event.status === "scheduled" ? "bg-blue-50 text-blue-700 border-blue-100" :
+                            event.status === "completed" ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
+                              event.status === "cancelled" ? "bg-red-50 text-red-700 border-red-100" :
+                                "bg-gray-50 text-gray-600 border-gray-100"
                       }`}
                   >
                     {event.status.toUpperCase()}
                   </Badge>
-                  <div className="flex items-center gap-1 text-gray-400">
+                  <div className="flex items-center gap-1 text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
                     <Clock className="w-3 h-3" />
                     <span className="text-[10px] font-bold">
                       {event.start_time || "TBD"}
                     </span>
                   </div>
                 </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors line-clamp-1">
                   {event.name}
                 </h3>
-                <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-3">
+                <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4 min-h-[2rem]">
                   {event.description || "No description provided."}
                 </p>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar className="w-3.5 h-3.5" />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-500" />
                     <span className="text-[11px] font-bold">
-                      {new Date(event.event_date).toLocaleDateString()}
+                      {new Date(event.event_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
+                    <MapPin className="w-3.5 h-3.5 text-indigo-500" />
                     <span className="text-[11px] font-bold truncate">
                       {event.location}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-50 flex justify-between items-center">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <div className="px-4 py-3 bg-gray-50/30 border-t border-gray-100 flex justify-between items-center group-hover:bg-gray-50/80 transition-colors">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-gray-100">
                   {event.event_type || "EVENT"}
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-50 text-[11px] px-2"
+                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
                 >
                   Edit Details
                 </Button>
