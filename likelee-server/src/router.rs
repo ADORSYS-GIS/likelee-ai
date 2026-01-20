@@ -19,23 +19,14 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::kyc::create_session),
         )
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
-        // Organization Profiles
-        .route(
-            "/api/organization-register",
-            post(crate::organization_profiles::register),
-        )
-        .route(
-            "/api/organization-profile",
-            post(crate::organization_profiles::create),
-        )
-        .route(
-            "/api/organization-profile/:id",
-            post(crate::organization_profiles::update),
-        )
-        .route(
-            "/api/organization-profile/user/:user_id",
-            get(crate::organization_profiles::get_by_user),
-        )
+        // Brands
+        .route("/api/brand-register", post(crate::brands::register))
+        .route("/api/brand-profile", post(crate::brands::update))
+        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        // Agencies
+        .route("/api/agency-register", post(crate::agencies::register))
+        .route("/api/agency-profile", post(crate::agencies::update))
+        .route("/api/agency-profile/user", get(crate::agencies::get_by_user))
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
