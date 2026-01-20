@@ -6364,18 +6364,18 @@ const OpenCallsTab = ({
           {events.map((event) => (
             <Card
               key={event.id}
-              className="overflow-hidden border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer rounded-xl bg-white hover:-translate-y-1"
+              className="overflow-hidden border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer rounded-xl bg-slate-50/30 hover:bg-white hover:-translate-y-1"
               onClick={() => onEditEvent(event)}
             >
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
                     className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${event.status === "published" ? "bg-green-50 text-green-700 border-green-100" :
-                        event.status === "draft" ? "bg-gray-50 text-gray-600 border-gray-100" :
-                          event.status === "scheduled" ? "bg-blue-50 text-blue-700 border-blue-100" :
-                            event.status === "completed" ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
-                              event.status === "cancelled" ? "bg-red-50 text-red-700 border-red-100" :
-                                "bg-gray-50 text-gray-600 border-gray-100"
+                      event.status === "draft" ? "bg-gray-50 text-gray-600 border-gray-100" :
+                        event.status === "scheduled" ? "bg-blue-50 text-blue-700 border-blue-100" :
+                          event.status === "completed" ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
+                            event.status === "cancelled" ? "bg-red-50 text-red-700 border-red-100" :
+                              "bg-gray-50 text-gray-600 border-gray-100"
                       }`}
                   >
                     {event.status.toUpperCase()}
