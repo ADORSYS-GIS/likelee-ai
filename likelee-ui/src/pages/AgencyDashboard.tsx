@@ -5444,6 +5444,7 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
+  const queryClient = useQueryClient();
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
     null,

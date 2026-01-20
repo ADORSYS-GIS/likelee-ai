@@ -122,7 +122,6 @@ export const CreateEventModal = ({
 
       if (event) {
         await scoutingService.updateEvent(event.id, formData);
-        toast({ title: "Success", description: "Event updated successfully" });
       } else {
         await scoutingService.createEvent({
           ...formData,
@@ -132,11 +131,14 @@ export const CreateEventModal = ({
           location: formData.location || "TBD",
           status: formData.status || "draft",
         } as any);
-        toast({ title: "Success", description: "Event created successfully" });
       }
 
-      onOpenChange(false);
       if (onSuccess) onSuccess();
+      toast({
+        title: "Success",
+        description: `Event ${event ? "updated" : "created"} successfully`
+      });
+      onOpenChange(false);
     } catch (error) {
       console.error(error);
       toast({
@@ -212,9 +214,11 @@ export const CreateEventModal = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Open Call">Open Call</SelectItem>
-                      <SelectItem value="Casting">Casting</SelectItem>
-                      <SelectItem value="Audition">Audition</SelectItem>
-                      <SelectItem value="Workshop">Workshop</SelectItem>
+                      <SelectItem value="Private Casting">Private Casting</SelectItem>
+                      <SelectItem value="Virtual Audition">Virtual Audition</SelectItem>
+                      <SelectItem value="Go-See">Go-See</SelectItem>
+                      <SelectItem value="Test Shoot">Test Shoot</SelectItem>
+                      <SelectItem value="Model Search">Model Search</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -474,8 +478,7 @@ export const CreateEventModal = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft (Not Visible)</SelectItem>
-                    <SelectItem value="published">Published (Visible to Talent)</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="published">Published (Visible)</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
