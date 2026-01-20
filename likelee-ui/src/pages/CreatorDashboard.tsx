@@ -2415,13 +2415,23 @@ export default function CreatorDashboard() {
 
       try {
         const buf = await file.arrayBuffer();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          throw new Error("Missing auth session. Please sign in again.");
+        }
         const res = await fetch(
           api(
             `/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`,
           ),
           {
             method: "POST",
-            headers: { "content-type": file.type || "image/jpeg" },
+            headers: {
+              "content-type": file.type || "image/jpeg",
+              Authorization: `Bearer ${token}`,
+            },
             body: new Uint8Array(buf),
             cache: "no-cache",
           },
@@ -2453,9 +2463,16 @@ export default function CreatorDashboard() {
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const token = session?.access_token;
           const profileRes = await fetch(
             api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
-            { cache: "no-cache" },
+            {
+              cache: "no-cache",
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            },
           );
           if (profileRes.ok) {
             const profileJson = await profileRes.json();
