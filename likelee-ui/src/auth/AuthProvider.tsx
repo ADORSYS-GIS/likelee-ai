@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
@@ -44,6 +45,7 @@ export interface Profile {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -71,7 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        console.error(`Error fetching profile from ${table}:`, error);
+        // Ignore AbortError which happens on rapid re-renders/navigation
+        if (error.message && error.message.includes("AbortError")) {
+          return;
+        }
+        console.error(
+          `Error fetching profile from ${table}:`,
+          JSON.stringify(error, null, 2),
+        );
         return;
       }
 
@@ -132,12 +141,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
 
         if (currentUser && (currentUser.email_confirmed_at || session)) {
-          fetchProfile(
-            currentUser.id,
-            currentUser.email,
-            currentUser.user_metadata?.full_name,
-            currentUser.user_metadata?.role,
-          );
+          // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
+          if (!profile || profile.id !== currentUser.id) {
+            fetchProfile(
+              currentUser.id,
+              currentUser.email,
+              currentUser.user_metadata?.full_name,
+              currentUser.user_metadata?.role,
+            );
+          }
         } else {
           setProfile(null);
         }
@@ -186,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout: async () => {
         if (!supabase) return;
         await supabase.auth.signOut();
+        queryClient.clear();
       },
       register: async (email, password, displayName) => {
         if (!supabase) throw new Error("Supabase not configured");

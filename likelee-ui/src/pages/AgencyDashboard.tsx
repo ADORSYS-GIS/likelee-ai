@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { scoutingService } from "@/services/scoutingService";
+import { ScoutingProspect } from "@/types/scouting";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import {
   LayoutDashboard,
   Users,
@@ -75,6 +79,8 @@ import {
   Menu,
   Image as ImageIcon,
   Mic,
+  Link as LinkIcon,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -89,34 +95,244 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
-const AddProspectModal = ({
+const STATUS_MAP = {
+  new: "New Lead",
+  contacted: "In Contact",
+  meeting: "Meeting Scheduled",
+  test_shoot: "Test Shoots",
+  offer_sent: "Offer Sent",
+  signed: "Signed",
+  declined: "Declined",
+};
+
+const STATUS_COLORS = {
+  new: "bg-blue-50 text-blue-700 border-blue-200",
+  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  meeting: "bg-purple-50 text-purple-700 border-purple-200",
+  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
+  offer_sent: "bg-green-50 text-green-700 border-green-200",
+  signed: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const ProspectModal = ({
   open,
   onOpenChange,
+  prospect = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prospect?: ScoutingProspect | null;
 }) => {
+  const { user } = useAuth();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [starRating, setStarRating] = useState(3);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    source: "instagram",
+    discoveryDate: new Date().toISOString().split("T")[0],
+    discoveryLocation: "",
+    referredBy: "",
+    status: "new",
+    assignedAgent: "",
+    notes: "",
+    instagramFollowers: 10000,
+    engagementRate: 4.5,
+  });
+
+  useEffect(() => {
+    if (prospect) {
+      setFormData({
+        name: prospect.full_name,
+        email: prospect.email || "",
+        phone: prospect.phone || "",
+        instagram: prospect.instagram_handle || "",
+        source: prospect.source || "instagram",
+        discoveryDate:
+          prospect.discovery_date || new Date().toISOString().split("T")[0],
+        discoveryLocation: prospect.discovery_location || "",
+        referredBy: prospect.referred_by || "",
+        status: prospect.status,
+        assignedAgent: prospect.assigned_agent_name || "",
+        notes: prospect.notes || "",
+        instagramFollowers: prospect.instagram_followers || 10000,
+        engagementRate: prospect.engagement_rate || 4.5,
+      });
+      setSelectedCategories(prospect.categories || []);
+      setStarRating(prospect.rating || 3);
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        instagram: "",
+        source: "instagram",
+        discoveryDate: new Date().toISOString().split("T")[0],
+        discoveryLocation: "",
+        referredBy: "",
+        status: "new",
+        assignedAgent: "",
+        notes: "",
+        instagramFollowers: 10000,
+        engagementRate: 4.5,
+      });
+      setSelectedCategories([]);
+      setStarRating(3);
+    }
+  }, [prospect, open]);
+
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+  };
+
+  const queryClient = useQueryClient();
+
+  const handleSaveProspect = async () => {
+    try {
+      if (!formData.name) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter a name for the prospect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSaving(true);
+
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) {
+        toast({
+          title: "Error",
+          description:
+            "Could not identify your agency. Please try logging in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!prospect) {
+        // Check for duplicates only when adding new
+        const existing = await scoutingService.checkDuplicate(
+          agencyId,
+          formData.email || undefined,
+          formData.instagram || undefined,
+        );
+
+        if (existing) {
+          toast({
+            title: "Prospect Already Exists",
+            description: `This prospect (${existing.full_name}) is already in your pipeline.`,
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        await scoutingService.createProspect({
+          agency_id: agencyId,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Added",
+          description: `${formData.name} has been added to your pipeline.`,
+        });
+      } else {
+        // Update existing prospect
+        await scoutingService.updateProspect(prospect.id, {
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Updated",
+          description: `${formData.name}'s information has been updated.`,
+        });
+      }
+
+      // Invalidate the prospects query to trigger a refetch
+      await queryClient.invalidateQueries({
+        queryKey: ["prospects", user?.id],
+      });
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving prospect:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save prospect. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Add New Prospect
+            {prospect ? "Edit Prospect" : "Add New Prospect"}
           </DialogTitle>
           <p className="text-sm text-gray-500">
             Track talent before signing them to your roster
@@ -128,19 +344,41 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
-                <Input id="name" placeholder="Full name" />
+                <Input
+                  id="name"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="email@example.com" />
+                <Input
+                  id="email"
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="+1 (555) 123-4567" />
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram Handle</Label>
-                <Input id="instagram" placeholder="@username" />
+                <Input
+                  id="instagram"
+                  placeholder="@username"
+                  value={formData.instagram}
+                  onChange={(e) =>
+                    handleInputChange("instagram", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -158,8 +396,15 @@ const AddProspectModal = ({
               ].map((cat) => (
                 <Button
                   key={cat}
-                  variant="secondary"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"
+                  variant={
+                    selectedCategories.includes(cat) ? "default" : "secondary"
+                  }
+                  onClick={() => toggleCategory(cat)}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -172,7 +417,10 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Discovery Source</Label>
-                <Select defaultValue="instagram">
+                <Select
+                  value={formData.source}
+                  onValueChange={(val) => handleInputChange("source", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
@@ -180,22 +428,42 @@ const AddProspectModal = ({
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="street">Street Scouting</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Date</Label>
                 <div className="relative">
-                  <Input type="date" defaultValue="2026-01-12" />
+                  <Input
+                    type="date"
+                    value={formData.discoveryDate}
+                    onChange={(e) =>
+                      handleInputChange("discoveryDate", e.target.value)
+                    }
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Location</Label>
-                <Input placeholder="New York, NY" />
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.discoveryLocation}
+                  onChange={(e) =>
+                    handleInputChange("discoveryLocation", e.target.value)
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Referred By</Label>
-                <Input placeholder="Name of referrer" />
+                <Input
+                  placeholder="Name of referrer"
+                  value={formData.referredBy}
+                  onChange={(e) =>
+                    handleInputChange("referredBy", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -207,20 +475,31 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="new">
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => handleInputChange("status", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">New Lead</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                    {Object.entries(STATUS_MAP).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Assigned Agent</Label>
-                <Input placeholder="Agent name" />
+                <Input
+                  placeholder="Agent name"
+                  value={formData.assignedAgent}
+                  onChange={(e) =>
+                    handleInputChange("assignedAgent", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -228,14 +507,12 @@ const AddProspectModal = ({
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
             <div className="flex gap-1">
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Star
                   key={i}
-                  className="w-8 h-8 fill-yellow-400 text-yellow-400"
+                  className={`w-8 h-8 cursor-pointer ${i <= starRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  onClick={() => setStarRating(i)}
                 />
-              ))}
-              {[4, 5].map((i) => (
-                <Star key={i} className="w-8 h-8 text-gray-300" />
               ))}
             </div>
           </div>
@@ -245,6 +522,8 @@ const AddProspectModal = ({
             <Textarea
               placeholder="Add notes about this prospect..."
               className="h-32"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
             />
           </div>
 
@@ -255,21 +534,56 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Instagram Followers</Label>
-                <Input type="number" defaultValue="10000" />
+                <Input
+                  type="number"
+                  value={formData.instagramFollowers || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "instagramFollowers",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Engagement Rate (%)</Label>
-                <Input type="number" defaultValue="4.5" />
+                <Input
+                  type="number"
+                  value={formData.engagementRate || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "engagementRate",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              Add Prospect
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+              onClick={handleSaveProspect}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : prospect ? (
+                "Update Prospect"
+              ) : (
+                "Add Prospect"
+              )}
             </Button>
           </div>
         </div>
@@ -2168,7 +2482,7 @@ const ShareFileModal = ({
                   value={`https://agency.likelee.ai/share/${file.id}`}
                   className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
                 />
-                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
               <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
                 <Copy className="w-4 h-4" />
@@ -5134,7 +5448,10 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
-  const [isAddProspectOpen, setIsAddProspectOpen] = useState(false);
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
+    null,
+  );
 
   const tabs = [
     "Prospect Pipeline",
@@ -5161,7 +5478,10 @@ const ScoutingHubView = ({
           <Button
             variant="outline"
             className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
-            onClick={() => setIsAddProspectOpen(true)}
+            onClick={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
           >
             <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
           </Button>
@@ -5193,7 +5513,14 @@ const ScoutingHubView = ({
       <div className="mt-8">
         {activeTab === "Prospect Pipeline" && (
           <ProspectPipelineTab
-            onAddProspect={() => setIsAddProspectOpen(true)}
+            onAddProspect={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
+            onEditProspect={(prospect) => {
+              setProspectToEdit(prospect);
+              setIsProspectModalOpen(true);
+            }}
           />
         )}
         {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
@@ -5203,34 +5530,336 @@ const ScoutingHubView = ({
         {activeTab === "Open Calls" && <OpenCallsTab />}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
-      <AddProspectModal
-        open={isAddProspectOpen}
-        onOpenChange={setIsAddProspectOpen}
+      <ProspectModal
+        open={isProspectModalOpen}
+        onOpenChange={setIsProspectModalOpen}
+        prospect={prospectToEdit}
       />
     </div>
   );
 };
 
+const ProspectDetailsSheet = ({
+  prospect,
+  onClose,
+  onEdit,
+}: {
+  prospect: ScoutingProspect | null;
+  onClose: () => void;
+  onEdit: (prospect: ScoutingProspect) => void;
+}) => {
+  if (!prospect) return null;
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await scoutingService.updateProspect(prospect.id, {
+        status: newStatus as any,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
+      toast({
+        title: "Status Updated",
+        description: `Prospect status changed to ${STATUS_MAP[newStatus as keyof typeof STATUS_MAP] || newStatus}.`,
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="text-xl font-bold">
+            Prospect Details
+          </SheetTitle>
+        </SheetHeader>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Main Info */}
+          <div className="space-y-6 border-b pb-6">
+            <div className="flex items-start space-x-6">
+              <div
+                className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border cursor-pointer hover:bg-gray-200 transition-colors group relative"
+                onClick={() => onEdit(prospect)}
+              >
+                <User className="w-12 h-12 text-gray-400 group-hover:text-gray-500" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="flex-1 pt-2">
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {prospect.full_name}
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  {prospect.categories?.map((cat) => (
+                    <Badge key={cat} variant="outline" className="font-medium">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 mt-3 text-yellow-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${i < (prospect.rating || 0) ? "fill-current" : "text-gray-300"}`}
+                    />
+                  ))}
+                  <span className="text-sm text-gray-500 ml-1">
+                    ({prospect.rating || 0}/5 rating)
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/70">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-gray-700">Status</h3>
+                <Badge
+                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
+                >
+                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
+                    prospect.status.replace("_", " ")}
+                </Badge>
+              </div>
+              <Select
+                defaultValue={prospect.status}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_MAP).map(([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="font-medium"
+                    >
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Section title="Contact Information">
+            <InfoRow icon={Mail} text={prospect.email} />
+            <InfoRow icon={Phone} text={prospect.phone} />
+            <InfoRow
+              icon={Instagram}
+              text={prospect.instagram_handle}
+              subtext={`(${prospect.instagram_followers?.toLocaleString()} followers)`}
+            />
+          </Section>
+
+          <Section title="Discovery Details">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm p-4 bg-gray-50/70 rounded-xl border">
+              <DetailItem label="Source" value={prospect.source} />
+              <DetailItem
+                label="Date"
+                value={new Date(prospect.discovery_date).toLocaleDateString()}
+              />
+              <DetailItem
+                label="Location"
+                value={prospect.discovery_location}
+              />
+              <DetailItem label="Referred By" value={prospect.referred_by} />
+            </div>
+          </Section>
+
+          <Section title="Assignment">
+            <div className="p-4 bg-gray-50/70 rounded-xl border font-medium text-gray-800">
+              {prospect.assigned_agent_name || "Not Assigned"}
+            </div>
+          </Section>
+
+          <Section title="Internal Notes">
+            <div className="p-4 bg-gray-50/70 rounded-xl border text-gray-700 text-sm whitespace-pre-wrap min-h-[60px]">
+              {prospect.notes || (
+                <span className="text-gray-500 italic">
+                  No internal notes added.
+                </span>
+              )}
+            </div>
+          </Section>
+
+          <Section title="Social Metrics">
+            <div className="grid grid-cols-2 gap-4">
+              <MetricBox
+                label="Instagram Followers"
+                value={prospect.instagram_followers?.toLocaleString() || "N/A"}
+              />
+              <MetricBox
+                label="Engagement Rate"
+                value={`${prospect.engagement_rate || "N/A"}%`}
+              />
+            </div>
+          </Section>
+
+          <Button
+            className="w-full h-11 text-base font-bold flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => onEdit(prospect)}
+          >
+            <Pencil className="w-4 h-4" /> Edit Prospect
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2"
+            onClick={() => {
+              if (prospect.email) {
+                window.location.href = `mailto:${prospect.email}`;
+              } else {
+                toast({
+                  title: "No Email Found",
+                  description:
+                    "This prospect does not have an email address associated with them.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            <Send className="w-4 h-4" /> Send Email
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2"
+            onClick={() => window.open("https://calendar.google.com", "_blank")}
+          >
+            <Calendar className="w-4 h-4" /> Schedule Meeting
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+          >
+            <Trash2 className="w-4 h-4" /> Delete Prospect
+          </Button>
+          <p className="text-xs text-gray-400 text-center pt-2">
+            Added {new Date(prospect.created_at).toLocaleDateString()} | Last
+            updated {new Date(prospect.updated_at).toLocaleDateString()}
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-3">
+    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+      <MapPin className="w-4 h-4 text-gray-400" /> {title}
+    </h3>
+    {children}
+  </div>
+);
+
+const InfoRow = ({
+  icon: Icon,
+  text,
+  subtext,
+}: {
+  icon: React.ElementType;
+  text?: string | null;
+  subtext?: string;
+}) => (
+  <div className="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-xl border">
+    <div className="flex items-center gap-3">
+      <Icon className="w-5 h-5 text-gray-400" />
+      <span className="font-medium text-gray-800">{text || "-"}</span>
+      {subtext && <span className="text-xs text-gray-500">{subtext}</span>}
+    </div>
+    <LinkIcon className="w-4 h-4 text-gray-400 cursor-pointer hover:text-indigo-600" />
+  </div>
+);
+
+const DetailItem = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) => (
+  <div>
+    <div className="text-xs text-gray-500">{label}</div>
+    <div className="font-semibold text-gray-800">{value || "-"}</div>
+  </div>
+);
+
+const MetricBox = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) => (
+  <div className="p-4 bg-gray-50/70 rounded-xl border">
+    <div className="text-xs text-gray-500 mb-1">{label}</div>
+    <div className="text-2xl font-bold text-gray-900">{value}</div>
+  </div>
+);
+
 const ProspectPipelineTab = ({
   onAddProspect,
+  onEditProspect,
 }: {
   onAddProspect: () => void;
+  onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
+  const { user } = useAuth();
+  const [selectedProspect, setSelectedProspect] =
+    useState<ScoutingProspect | null>(null);
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: ["prospects", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getProspects(agencyId);
+    },
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (selectedProspect && prospects) {
+      const updated = prospects.find((p) => p.id === selectedProspect.id);
+      if (updated) setSelectedProspect(updated);
+    }
+  }, [prospects]);
+
   const stats = [
-    { label: "New Leads", count: 0, color: "border-blue-200 bg-blue-50/30" },
+    {
+      label: "New Leads",
+      count: prospects?.filter((p) => p.status === "new").length || 0,
+      color: "border-blue-200 bg-blue-50/30",
+    },
     {
       label: "In Contact",
-      count: 0,
+      count: prospects?.filter((p) => p.status === "contacted").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count: 0,
+      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count: 0,
+      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -5254,11 +5883,11 @@ const ProspectPipelineTab = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="new">New Lead</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="meeting">Meeting Scheduled</SelectItem>
-                <SelectItem value="test_shoot">Test Shoot Pending</SelectItem>
-                <SelectItem value="offer_sent">Offer Sent</SelectItem>
+                {Object.entries(STATUS_MAP).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -5280,24 +5909,121 @@ const ProspectPipelineTab = ({
           ))}
         </div>
 
-        <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
-          <div className="p-6 bg-gray-50 rounded-full mb-4">
-            <Users className="w-10 h-10 text-gray-300" />
+        {isLoading ? (
+          <div className="text-center py-24">Loading prospects...</div>
+        ) : !prospects || prospects.length === 0 ? (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
+            <div className="p-6 bg-gray-50 rounded-full mb-4">
+              <Users className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              No prospects yet
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
+              Start building your pipeline by adding discovered talent
+            </p>
+            <Button
+              onClick={onAddProspect}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add First Prospect
+            </Button>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No prospects yet
-          </h3>
-          <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
-            Start building your pipeline by adding discovered talent
-          </p>
-          <Button
-            onClick={onAddProspect}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Add First Prospect
-          </Button>
-        </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    PHOTO
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    NAME
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    CONTACT
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    NEW LEAD
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    IN CONTACT
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    TEST SHOOTS
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    OFFERS SENT
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    SOURCE
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {prospects.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedProspect(p)}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-bold text-gray-900">
+                      {p.full_name}
+                      <div className="text-xs font-normal text-gray-500">
+                        {p.categories?.join(", ")}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {p.email}
+                      <div className="text-xs">{p.phone}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "new" ? (
+                        <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "contacted" ? (
+                        <CheckCircle2 className="w-5 h-5 text-yellow-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "test_shoot" ? (
+                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "offer_sent" ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 font-medium">
+                      {p.source}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
+      <ProspectDetailsSheet
+        prospect={selectedProspect}
+        onClose={() => setSelectedProspect(null)}
+        onEdit={(p) => {
+          setSelectedProspect(null);
+          onEditProspect(p);
+        }}
+      />
     </div>
   );
 };
@@ -12994,11 +13720,19 @@ const PlaceholderView = ({ title }: { title: string }) => (
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
-  const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize state from URL params
+  const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
+    (searchParams.get("mode") as "AI" | "IRL") || "AI",
+  );
+  const [activeTab, setActiveTabState] = useState(
+    searchParams.get("tab") || "dashboard",
+  );
   const [activeSubTab, setActiveSubTab] = useState("All Talent");
-  const [activeScoutingTab, setActiveScoutingTab] =
-    useState("Prospect Pipeline");
+  const [activeScoutingTab, setActiveScoutingTabState] = useState(
+    searchParams.get("scoutingTab") || "Prospect Pipeline",
+  );
   const [expandedItems, setExpandedItems] = useState<string[]>([
     "roster",
     "licensing",
@@ -13032,6 +13766,34 @@ export default function AgencyDashboard() {
   };
   const onRemoveBookOut = (id: string) => {
     setBookOuts(bookOuts.filter((b) => b.id !== id));
+  };
+
+  // Wrapper functions to update both state and URL params
+  const setAgencyMode = (mode: "AI" | "IRL") => {
+    setAgencyModeState(mode);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("mode", mode);
+      return newParams;
+    });
+  };
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tab);
+      return newParams;
+    });
+  };
+
+  const setActiveScoutingTab = (tab: string) => {
+    setActiveScoutingTabState(tab);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("scoutingTab", tab);
+      return newParams;
+    });
   };
 
   // Helper for API URLs
@@ -13479,7 +14241,7 @@ export default function AgencyDashboard() {
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
-                      <Link className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                      <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
                           Integrations
