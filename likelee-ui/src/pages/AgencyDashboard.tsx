@@ -5501,9 +5501,9 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
           >
             {tab}
@@ -6337,12 +6337,6 @@ const OpenCallsTab = ({
             Manage your upcoming talent search events
           </p>
         </div>
-        <Button
-          onClick={onCreateEvent}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-9 px-4 rounded-lg shadow-sm text-xs"
-        >
-          <Plus className="w-3.5 h-3.5" /> Create Event
-        </Button>
       </div>
 
       {isLoading ? (
