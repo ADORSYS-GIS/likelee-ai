@@ -77,7 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error.message && error.message.includes("AbortError")) {
           return;
         }
-        console.error(`Error fetching profile from ${table}:`, JSON.stringify(error, null, 2));
+        console.error(
+          `Error fetching profile from ${table}:`,
+          JSON.stringify(error, null, 2),
+        );
         return;
       }
 

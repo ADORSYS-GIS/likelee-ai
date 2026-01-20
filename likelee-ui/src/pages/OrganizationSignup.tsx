@@ -315,8 +315,8 @@ export default function OrganizationSignup() {
               setProfileId(profile.id);
               setOrgType(
                 profile.organization_type ||
-                profile.agency_type ||
-                (isBrand ? "brand_company" : "marketing_agency"),
+                  profile.agency_type ||
+                  (isBrand ? "brand_company" : "marketing_agency"),
               );
               setFormData((prev) => ({
                 ...prev,
@@ -329,17 +329,25 @@ export default function OrganizationSignup() {
         }
 
         // Fallback to direct API calls if profile is not in context or role is not yet set
-        console.log("Profile not in context or incomplete, falling back to API calls");
+        console.log(
+          "Profile not in context or incomplete, falling back to API calls",
+        );
         try {
           const [brandProfile, agencyProfile] = await Promise.all([
             getBrandProfile().catch((err) => {
-              if (err.name === "AbortError" || err.message?.includes("aborted")) {
+              if (
+                err.name === "AbortError" ||
+                err.message?.includes("aborted")
+              ) {
                 console.log("getBrandProfile aborted");
               }
               return null;
             }),
             getAgencyProfile().catch((err) => {
-              if (err.name === "AbortError" || err.message?.includes("aborted")) {
+              if (
+                err.name === "AbortError" ||
+                err.message?.includes("aborted")
+              ) {
                 console.log("getAgencyProfile aborted");
               }
               return null;
@@ -368,8 +376,8 @@ export default function OrganizationSignup() {
               setProfileId(orgProfile.id);
               setOrgType(
                 orgProfile.organization_type ||
-                orgProfile.agency_type ||
-                (brandProfile ? "brand_company" : "marketing_agency"),
+                  orgProfile.agency_type ||
+                  (brandProfile ? "brand_company" : "marketing_agency"),
               );
               setFormData((prev) => ({
                 ...prev,
