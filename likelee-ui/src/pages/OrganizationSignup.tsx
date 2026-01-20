@@ -25,13 +25,20 @@ import {
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import {
-  createOrganizationKycSession,
   getOrganizationKycStatus,
   registerOrganization,
   updateOrganizationProfile,
+  registerBrand,
+  registerAgency,
+  updateBrandProfile,
+  updateAgencyProfile,
+  getBrandProfile,
+  getAgencyProfile,
+  createOrganizationKycSession,
 } from "@/api/functions";
 
 const getProductionTypes = (t: any) => [
@@ -189,10 +196,11 @@ const getIndustries = (t: any) => [
 
 export default function OrganizationSignup() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, login, resendEmailConfirmation } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
+  const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
   const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
@@ -232,11 +240,132 @@ export default function OrganizationSignup() {
   const totalSteps = 2;
   const progress = (step / totalSteps) * 100;
 
+  const [emailVerificationPending, setEmailVerificationPending] =
+    useState(false); // New state for email verification
+  const { profile } = useAuth();
+
+  // Debug logging
+  useEffect(() => {
+    console.log("OrganizationSignup State:", {
+      step,
+      orgType,
+      profileId,
+      user: user?.id,
+      profile: profile?.id,
+      emailVerificationPending,
+    });
+  }, [step, orgType, profileId, user, profile, emailVerificationPending]);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const type = urlParams.get("type");
-    if (type) setOrgType(type);
+    let type = urlParams.get("type");
+    if (type) {
+      if (type === "brand") type = "brand_company";
+      if (type === "agency") type = "marketing_agency";
+      setOrgType(type);
+      setIsPreSelected(true);
+    }
   }, []);
+
+  const flow = React.useMemo(() => {
+    if (["brand_company", "production_studio"].includes(orgType))
+      return "brand";
+    if (
+      ["marketing_agency", "talent_agency", "sports_agency"].includes(orgType)
+    )
+      return "agency";
+    return null;
+  }, [orgType]);
+
+  // Check for existing session and onboarding step
+  // This effect handles the user's return after email verification.
+  useEffect(() => {
+    const handleVerifiedUser = async () => {
+      console.log("handleVerifiedUser check:", {
+        hasUser: !!user,
+        hasProfile: !!profile,
+        userRole: user?.user_metadata?.role,
+        profileRole: profile?.role,
+        onboardingStep: profile?.onboarding_step,
+      });
+
+      // We need both the user object and their profile to proceed.
+      if (user && profile) {
+        // Use the profile from useAuth directly if it's an organization profile
+        const isBrand = profile.role === "brand";
+        const isAgency = profile.role === "agency";
+
+        if (isBrand || isAgency) {
+          if (
+            profile.status === "complete" ||
+            profile.onboarding_step === "complete"
+          ) {
+            console.log("Onboarding complete, redirecting to dashboard");
+            if (isBrand) {
+              window.location.href = "/BrandDashboard";
+            } else {
+              window.location.href = "/AgencyDashboard";
+            }
+            return;
+          }
+
+          if (profile.onboarding_step === "email_verification") {
+            console.log("Advancing to Step 2 based on AuthProvider profile");
+            setProfileId(profile.id);
+            setOrgType(
+              profile.organization_type ||
+                profile.agency_type ||
+                (isBrand ? "brand_company" : "marketing_agency"),
+            );
+            setFormData((prev) => ({
+              ...prev,
+              email: profile.email || user.email || "",
+            }));
+            setStep(2);
+            return;
+          }
+        }
+
+        // Fallback to direct API calls if profile role is not yet set or synced
+        console.log("Profile role not yet synced, falling back to API calls");
+        let brandProfile = await getBrandProfile().catch(() => null);
+        let agencyProfile = await getAgencyProfile().catch(() => null);
+
+        const orgProfile = brandProfile || agencyProfile;
+
+        if (orgProfile) {
+          console.log("Found orgProfile via API fallback:", orgProfile);
+          if (
+            orgProfile.status === "complete" ||
+            orgProfile.onboarding_step === "complete"
+          ) {
+            if (profile.role === "brand" || brandProfile) {
+              window.location.href = "/BrandDashboard";
+            } else {
+              window.location.href = "/AgencyDashboard";
+            }
+            return;
+          }
+
+          if (orgProfile.onboarding_step === "email_verification") {
+            setProfileId(orgProfile.id);
+            setOrgType(
+              orgProfile.organization_type ||
+                orgProfile.agency_type ||
+                (brandProfile ? "brand_company" : "marketing_agency"),
+            );
+            setFormData((prev) => ({
+              ...prev,
+              email: orgProfile.email || user.email || "",
+            }));
+            setStep(2);
+          }
+        }
+      }
+    };
+
+    handleVerifiedUser();
+  }, [user, profile, toast]); // Rerun when user or profile state changes
 
   // Color schemes for each organization type
   const getColorScheme = () => {
@@ -265,6 +394,12 @@ export default function OrganizationSignup() {
         button: "bg-slate-700 hover:bg-slate-800",
         badge: "bg-slate-100 text-slate-700",
       },
+      sports_agency: {
+        gradient: "from-blue-50 via-indigo-50 to-slate-50",
+        primary: "from-[#0D1B3A] to-[#1E3A8A]",
+        button: "bg-[#0D1B3A] hover:bg-[#1E3A8A]",
+        badge: "bg-blue-100 text-blue-700",
+      },
     };
     return schemes[orgType] || schemes.brand_company;
   };
@@ -274,25 +409,56 @@ export default function OrganizationSignup() {
   // New mutation for initial profile creation (Step 1)
   const createInitialProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const payload = {
-        email: data.email,
-        password: data.password,
-        organization_name: data.organization_name,
-        contact_name: data.contact_name || undefined,
-        contact_title: data.contact_title || undefined,
-        organization_type: orgType || undefined,
-        website: data.website || undefined,
-        phone_number: data.phone_number || undefined,
-      };
-      return await registerOrganization(payload);
+      if (flow === "brand") {
+        const payload = {
+          email: data.email,
+          password: data.password,
+          company_name: data.organization_name,
+          contact_name: data.contact_name || undefined,
+          contact_title: data.contact_title || undefined,
+          website: data.website || undefined,
+          phone_number: data.phone_number || undefined,
+        };
+        return await registerBrand(payload);
+      } else {
+        const payload = {
+          email: data.email,
+          password: data.password,
+          agency_name: data.organization_name,
+          agency_type: orgType,
+          contact_name: data.contact_name || undefined,
+          contact_title: data.contact_title || undefined,
+          website: data.website || undefined,
+          phone_number: data.phone_number || undefined,
+        };
+        return await registerAgency(payload);
+      }
     },
     onSuccess: async (resp: any) => {
       // Postgrest usually returns an array of inserted rows; handle both array/object
       const created = Array.isArray(resp) ? resp[0] : resp;
       const newId = created?.id;
       setProfileId(newId);
-      // Move to Step 2; KYC/Liveness will happen in Step 3
-      setStep(2);
+
+      // Trigger email confirmation from frontend since backend admin API doesn't send it
+      try {
+        if (resendEmailConfirmation) {
+          await resendEmailConfirmation(
+            formData.email,
+            `${window.location.origin}/organization-signup`,
+          );
+        }
+      } catch (err) {
+        console.error("Failed to send confirmation email:", err);
+        // Continue anyway to show the UI, user can click "Resend" if we add it later
+      }
+
+      // Show email verification UI instead of auto-login
+      setEmailVerificationPending(true);
+      toast({
+        title: "Account Created",
+        description: "Please check your email to verify your account.",
+      });
     },
     onError: (error) => {
       console.error("Error creating initial profile:", error);
@@ -310,32 +476,35 @@ export default function OrganizationSignup() {
       if (!profileId) {
         throw new Error("Profile ID not found for update."); // Modified error message
       }
-      return updateOrganizationProfile(
-        profileId,
-        {
-          // Step 2 specific fields
+      if (flow === "brand") {
+        return updateBrandProfile({
           industry: data.industry,
           primary_goal: data.primary_goal,
           geographic_target: data.geographic_target,
+          provide_creators: data.provide_creators,
           production_type: data.production_type,
           budget_range: data.budget_range,
-          uses_ai: data.uses_ai,
           creates_for: data.creates_for,
+          uses_ai: data.uses_ai,
           roles_needed: data.roles_needed,
+          status: "waitlist",
+        });
+      } else {
+        return updateAgencyProfile({
+          agency_type: orgType,
           client_count: data.client_count,
           campaign_budget: data.campaign_budget,
           services_offered: data.services_offered,
+          provide_creators: data.provide_creators,
           handle_contracts: data.handle_contracts,
           talent_count: data.talent_count,
           licenses_likeness: data.licenses_likeness,
           open_to_ai: data.open_to_ai,
           campaign_types: data.campaign_types,
           bulk_onboard: data.bulk_onboard,
-          provide_creators: data.provide_creators,
           status: "waitlist",
-        },
-        user?.id,
-      );
+        });
+      }
     },
     onSuccess: () => {
       // Move to Success Page
@@ -359,6 +528,17 @@ export default function OrganizationSignup() {
   const handleNext = () => {
     // Basic validation for Step 1 before proceeding
     if (step === 1) {
+      // Validate organization type is set
+      if (!orgType) {
+        toast({
+          title: t("error"),
+          description:
+            "Organization type is missing. Please try again from the beginning.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (
         !formData.email ||
         !formData.password ||
@@ -427,6 +607,7 @@ export default function OrganizationSignup() {
       production_studio: t("organizationSignup.orgType.productionStudio"),
       marketing_agency: t("organizationSignup.orgType.marketingAgency"),
       talent_agency: t("organizationSignup.orgType.talentAgency"),
+      sports_agency: t("sportsAgency"),
     };
     return titles[orgType] || t("common.organization");
   };
@@ -441,6 +622,44 @@ export default function OrganizationSignup() {
     queryFn: () => getOrganizationKycStatus(profileId!),
     enabled: !!profileId && submitted,
   });
+
+  // Render email verification message
+  if (emailVerificationPending) {
+    return (
+      <div
+        className={`min-h-screen bg-gradient-to-br ${colors.gradient} py-16 px-6 flex items-center justify-center`}
+      >
+        <Card className="max-w-xl w-full p-12 bg-white border-2 border-black shadow-2xl rounded-none text-center">
+          <div
+            className={`w-20 h-20 bg-gradient-to-r ${colors.primary} border-2 border-black rounded-full flex items-center justify-center mx-auto mb-8`}
+          >
+            <CheckCircle2 className="w-12 h-12 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Check Your Email
+          </h1>
+          <p className="text-lg text-gray-700 mb-6">
+            We've sent a verification link to <strong>{formData.email}</strong>.
+            Please verify your email to continue setting up your organization
+            profile.
+          </p>
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 text-left mb-6">
+            <p className="text-sm text-blue-700">
+              <strong>Note:</strong> After verifying your email, you will be
+              automatically redirected to complete your profile setup.
+            </p>
+          </div>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="border-2 border-black rounded-none"
+          >
+            I've verified my email
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   // Render success message if form was submitted successfully
   if (submitted) {
@@ -521,6 +740,22 @@ export default function OrganizationSignup() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               )}
+
+              {/* Added Go to Dashboard button */}
+              <Button
+                onClick={() => {
+                  if (orgType === "brand" || orgType === "production_studio") {
+                    window.location.href = "/BrandDashboard";
+                  } else {
+                    window.location.href = "/AgencyDashboard";
+                  }
+                }}
+                variant="outline"
+                className="mt-4 w-full h-12 border-2 border-black rounded-none font-bold hover:bg-gray-100"
+              >
+                Go to Dashboard
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
             </div>
           )}
         </Card>
@@ -563,7 +798,9 @@ export default function OrganizationSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {t("organizationSignup.companyInfo")}
+                  {flow === "agency"
+                    ? t("organizationSignup.agencyInfo")
+                    : t("organizationSignup.companyInfo")}
                 </h3>
                 <p className="text-gray-600">
                   {t("organizationSignup.startWithBasics")}
@@ -571,6 +808,51 @@ export default function OrganizationSignup() {
               </div>
 
               <div className="space-y-4">
+                {/* NEW: Organization Type Selector - Hidden if pre-selected */}
+                {!isPreSelected && (
+                  <div>
+                    <Label
+                      htmlFor="organization_type"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Organization Type *
+                    </Label>
+                    <Select
+                      value={orgType}
+                      onValueChange={(value) => setOrgType(value)}
+                    >
+                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                        <SelectValue placeholder="Select your organization type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(flow === "brand" || !flow) && (
+                          <>
+                            <SelectItem value="brand_company">
+                              Brand / Company
+                            </SelectItem>
+                            <SelectItem value="production_studio">
+                              Production Studio
+                            </SelectItem>
+                          </>
+                        )}
+                        {(flow === "agency" || !flow) && (
+                          <>
+                            <SelectItem value="marketing_agency">
+                              Marketing Agency
+                            </SelectItem>
+                            <SelectItem value="talent_agency">
+                              Talent Agency
+                            </SelectItem>
+                            <SelectItem value="sports_agency">
+                              Sports Agency
+                            </SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div>
                   <Label
                     htmlFor="email"
@@ -664,7 +946,10 @@ export default function OrganizationSignup() {
                     htmlFor="organization_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    {t("organizationSignup.organizationName")}
+                    {flow === "agency"
+                      ? t("organizationSignup.agencyName")
+                      : t("organizationSignup.organizationName")}{" "}
+                    *
                   </Label>
                   <Input
                     id="organization_name"
@@ -676,7 +961,11 @@ export default function OrganizationSignup() {
                       })
                     }
                     className="border-2 border-gray-300 rounded-none"
-                    placeholder={t("common.companyNamePlaceholder")}
+                    placeholder={
+                      flow === "agency"
+                        ? "e.g., Elite Sports Management"
+                        : t("common.companyNamePlaceholder")
+                    }
                   />
                 </div>
 
@@ -686,7 +975,10 @@ export default function OrganizationSignup() {
                       htmlFor="contact_name"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("organizationSignup.contactName")}
+                      {flow === "agency"
+                        ? t("organizationSignup.agentName")
+                        : t("organizationSignup.contactName")}{" "}
+                      *
                     </Label>
                     <Input
                       id="contact_name"
@@ -707,7 +999,9 @@ export default function OrganizationSignup() {
                       htmlFor="contact_title"
                       className="text-sm font-medium text-gray-700 mb-2 block"
                     >
-                      {t("organizationSignup.contactTitle")}
+                      {flow === "agency"
+                        ? t("organizationSignup.agentTitle")
+                        : t("organizationSignup.contactTitle")}
                     </Label>
                     <Input
                       id="contact_title"
@@ -1736,6 +2030,262 @@ export default function OrganizationSignup() {
               </div>
             </div>
           )}
+          {/* Step 2: Sports Agency */}
+          {step === 2 && orgType === "sports_agency" && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {t("organizationSignup.sportsAgency.title")}
+                </h3>
+                <p className="text-gray-600">
+                  {t("organizationSignup.sportsAgency.subtitle")}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label
+                    htmlFor="talent_count"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    {t("organizationSignup.sportsAgency.athleteCount")}
+                  </Label>
+                  <Input
+                    id="talent_count"
+                    type="number"
+                    value={formData.talent_count}
+                    onChange={(e) =>
+                      setFormData({ ...formData, talent_count: e.target.value })
+                    }
+                    className="border-2 border-gray-300 rounded-none"
+                    placeholder="e.g., 25"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    {t(
+                      "organizationSignup.sportsAgency.licenseAthletesQuestion",
+                    )}
+                  </Label>
+                  <RadioGroup
+                    value={formData.licenses_likeness}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, licenses_likeness: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["Yes", "No"].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option.toLowerCase()}
+                            id={`license_${option}`}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={`license_${option}`}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    {t("organizationSignup.sportsAgency.openToAiQuestion")}
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                        <Checkbox
+                          id="select_all_open_to_ai"
+                          checked={getOpenToAiOptions(t).every((option) =>
+                            formData.open_to_ai.includes(option.value),
+                          )}
+                          onCheckedChange={() =>
+                            toggleSelectAll(
+                              "open_to_ai",
+                              getOpenToAiOptions(t).map((o) => o.value),
+                            )
+                          }
+                          className="border-2 border-gray-900"
+                        />
+                        <label
+                          htmlFor="select_all_open_to_ai"
+                          className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                        >
+                          {t("organizationSignup.selectAll")}
+                        </label>
+                      </div>
+                      {getOpenToAiOptions(t).map((option) => (
+                        <div
+                          key={option.value}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={option.value}
+                            checked={formData.open_to_ai.includes(option.value)}
+                            onCheckedChange={() =>
+                              toggleArrayItem("open_to_ai", option.value)
+                            }
+                            className="border-2 border-gray-400"
+                          />
+                          <label
+                            htmlFor={option.value}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                    {t("organizationSignup.sportsAgency.campaignTypesQuestion")}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
+                      <Checkbox
+                        id="select_all_campaign_types"
+                        checked={getCampaignTypes(t).every((type) =>
+                          formData.campaign_types.includes(type.value),
+                        )}
+                        onCheckedChange={() =>
+                          toggleSelectAll(
+                            "campaign_types",
+                            getCampaignTypes(t).map((c) => c.value),
+                          )
+                        }
+                        className="border-2 border-gray-900"
+                      />
+                      <label
+                        htmlFor="select_all_campaign_types"
+                        className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
+                      >
+                        {t("organizationSignup.selectAll")}
+                      </label>
+                    </div>
+                    {getCampaignTypes(t).map((type) => (
+                      <div
+                        key={type.value}
+                        className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      >
+                        <Checkbox
+                          id={type.value}
+                          checked={formData.campaign_types.includes(type.value)}
+                          onCheckedChange={() =>
+                            toggleArrayItem("campaign_types", type.value)
+                          }
+                          className="border-2 border-gray-400"
+                        />
+                        <label
+                          htmlFor={type.value}
+                          className="text-sm text-gray-700 cursor-pointer flex-1"
+                        >
+                          {type.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    {t("organizationSignup.sportsAgency.bulkOnboardQuestion")}
+                  </Label>
+                  <RadioGroup
+                    value={formData.bulk_onboard}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, bulk_onboard: value })
+                    }
+                  >
+                    <div className="space-y-2">
+                      {["Yes", "No", "Maybe later"].map((option) => (
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                        >
+                          <RadioGroupItem
+                            value={option.toLowerCase()}
+                            id={`bulk_${option}`}
+                            className="border-2 border-gray-400"
+                          />
+                          <Label
+                            htmlFor={`bulk_${option}`}
+                            className="text-sm text-gray-700 cursor-pointer flex-1"
+                          >
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleBack}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={updateProfileMutation.isPending} // Disable while submitting
+                  className={`flex-1 h-12 ${colors.button} text-white border-2 border-black rounded-none`}
+                >
+                  {updateProfileMutation.isPending
+                    ? "Submitting..."
+                    : "Complete Sign Up"}{" "}
+                  {/* Dynamic text */}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+          {/* Fallback for invalid state */}
+          {step === 2 &&
+            ![
+              "brand_company",
+              "production_studio",
+              "marketing_agency",
+              "talent_agency",
+              "sports_agency",
+            ].includes(orgType) && (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-bold text-red-600 mb-2">
+                  Error: Invalid Organization Type
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  We could not determine your organization type. Please try
+                  refreshing the page or contacting support.
+                </p>
+                <p className="text-sm text-gray-400">
+                  Debug Info: orgType="{orgType}", step={step}, profileId="
+                  {profileId}"
+                </p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            )}
         </Card>
       </div>
     </div>

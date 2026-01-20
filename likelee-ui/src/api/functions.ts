@@ -69,11 +69,11 @@ export const sitemapXml = () => base44Client.get("/sitemap.xml");
 export const staticPages = () => base44Client.get("/static-pages");
 
 // Owner (user) KYC
-export const createKycSession = (data: { user_id: string }) =>
-  base44Client.post<KycSessionResponse>("/api/kyc/session", data);
+export const createKycSession = () =>
+  base44Client.post<KycSessionResponse>("/api/kyc/session", {});
 
-export const getKycStatus = (user_id: string) =>
-  base44Client.get<KycStatusResponse>(`/api/kyc/status?user_id=${user_id}`);
+export const getKycStatus = () =>
+  base44Client.get<KycStatusResponse>(`/api/kyc/status`);
 
 // Organization (profile) KYC
 export const createOrganizationKycSession = (data: {
@@ -86,23 +86,27 @@ export const getOrganizationKycStatus = (organization_id: string) =>
     `/api/kyc/organization/status?organization_id=${organization_id}`,
   );
 
-export const getOrganizationProfileByUserId = (user_id: string) =>
-  base44Client.get(`/api/organization-profile/user/${user_id}`);
+export const getOrganizationProfileByUserId = () =>
+  base44Client.get(`/api/organization-profile/user`);
+
+export const getBrandProfile = () =>
+  base44Client.get(`/api/brand-profile/user`);
+
+export const getAgencyProfile = () =>
+  base44Client.get(`/api/agency-profile/user`);
 
 // Organization profile CRUD
-export const createOrganizationProfile = (data: any, userId?: string) =>
-  base44Client.post(`/api/organization-profile`, data, {
-    headers: userId ? { "x-user-id": userId } : {},
-  });
+export const createOrganizationProfile = (data: any) =>
+  base44Client.post(`/api/organization-profile`, data);
 
-export const updateOrganizationProfile = (
-  id: string,
-  data: any,
-  userId?: string,
-) =>
-  base44Client.post(`/api/organization-profile/${id}`, data, {
-    headers: userId ? { "x-user-id": userId } : {},
-  });
+export const updateOrganizationProfile = (id: string, data: any) =>
+  base44Client.post(`/api/organization-profile/${id}`, data);
+
+export const updateBrandProfile = (data: any) =>
+  base44Client.post(`/api/brand-profile`, data);
+
+export const updateAgencyProfile = (data: any) =>
+  base44Client.post(`/api/agency-profile`, data);
 
 // Organization registration (creates user + organization and links ownership)
 export const registerOrganization = (
@@ -122,49 +126,47 @@ export const registerOrganization = (
     headers: userId ? { "x-user-id": userId } : {},
   });
 
-// Dashboard data for a specific user
-export const getDashboard = (user_id: string) =>
-  base44Client.get(`/api/dashboard`, { params: { user_id } });
+export const registerBrand = (data: any) =>
+  base44Client.post(`/api/brand-register`, data);
 
-// Payouts
-export const createPayoutsOnboardingLink = (profile_id: string) =>
-  base44Client.post<{ url: string }>(
+export const registerAgency = (data: any) =>
+  base44Client.post(`/api/agency-register`, data);
+
+// Dashboard data for the authenticated user
+export const getDashboard = () => base44Client.get(`/api/dashboard`);
+
+// Payouts (Stripe Connect)
+export const getPayoutsAccountStatus = async (profileId: string) => {
+  const resp = await base44Client.get(`/api/payouts/account_status`, {
+    params: { profile_id: profileId },
+  });
+  return { data: resp } as any;
+};
+
+export const getPayoutBalance = async (profileId: string) => {
+  const resp = await base44Client.get(`/api/payouts/balance`, {
+    params: { profile_id: profileId },
+  });
+  return { data: resp } as any;
+};
+
+export const getStripeOAuthUrl = async (profileId: string) => {
+  const resp = await base44Client.post(
     `/api/payouts/onboarding_link`,
-    undefined,
-    { params: { profile_id } },
+    {},
+    {
+      params: { profile_id: profileId },
+    },
   );
+  // Backend returns { url }, adapt to UI expectations
+  return { data: { status: "ok", url: (resp as any)?.url } } as any;
+};
 
-export const getPayoutsAccountStatus = (profile_id: string) =>
-  base44Client.get<{
-    connected: boolean;
-    payouts_enabled: boolean;
-    stripe_payouts_enabled: boolean;
-    preference: string;
-    paypal_configured: boolean;
-    wise_configured: boolean;
-    settings: any;
-    transfers_enabled: boolean;
-    last_error?: string;
-  }>(`/api/payouts/account_status`, { params: { profile_id } });
-
-export const updatePayoutSettings = (data: {
-  profile_id: string;
-  preference: string;
-  paypal_email?: string;
-  wise_details?: any;
-}) => base44Client.post("/api/payouts/settings", data);
-
-export const getPayoutBalance = (profile_id: string) =>
-  base44Client.get<{
-    balances: Array<{
-      creator_id: string;
-      currency: string;
-      available_cents: number;
-    }>;
-  }>("/api/payouts/balance", { params: { profile_id } });
-
-export const requestPayout = (data: {
-  profile_id: string;
-  amount_cents: number;
-  payout_method?: string;
-}) => base44Client.post("/api/payouts/request", data);
+// Some flows may reference an OAuth code exchange; backend currently uses account links.
+// Provide a safe placeholder to avoid runtime import errors if called.
+export const exchangeStripeOAuthCode = async (
+  _code: string,
+  _profileId: string,
+) => {
+  return { data: { status: "error", error: "not_supported" } } as any;
+};

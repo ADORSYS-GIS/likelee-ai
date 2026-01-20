@@ -1,3 +1,4 @@
+use crate::auth::AuthUser;
 use crate::config::AppState;
 use aws_sdk_rekognition as rekognition;
 use axum::{
@@ -13,16 +14,12 @@ use tracing::{debug, error, info};
 #[derive(Deserialize)]
 pub struct ModerationBytesQuery {
     #[serde(default)]
-    pub user_id: Option<String>,
-    #[serde(default)]
     pub image_role: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct ModerationRequest {
     pub image_url: String,
-    #[serde(default)]
-    pub user_id: Option<String>,
     #[serde(default)]
     pub image_role: Option<String>,
 }
@@ -48,6 +45,7 @@ pub struct ModerationResponse {
 
 pub async fn moderate_image_bytes(
     State(state): State<AppState>,
+    user: AuthUser,
     headers: HeaderMap,
     Query(q): Query<ModerationBytesQuery>,
     body: Bytes,
@@ -64,7 +62,7 @@ pub async fn moderate_image_bytes(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("")
         .to_string();
-    info!(bytes_len = body.len(), content_type = %ct, user_id = ?q.user_id, role = ?q.image_role, "moderation-bytes: start");
+    info!(bytes_len = body.len(), content_type = %ct, user_id = %user.id, role = ?q.image_role, "moderation-bytes: start");
 
     if body.len() > 20_000_000 {
         return Err((
@@ -119,6 +117,7 @@ pub async fn moderate_image_bytes(
 
 pub async fn moderate_image(
     State(state): State<AppState>,
+    user: AuthUser,
     Json(req): Json<ModerationRequest>,
 ) -> Result<Json<ModerationResponse>, (StatusCode, String)> {
     if state.rekog.is_none() {
@@ -128,7 +127,7 @@ pub async fn moderate_image(
         ));
     }
     let client = state.rekog.as_ref().unwrap();
-    info!(image_url = %req.image_url, user_id = ?req.user_id, role = ?req.image_role, "moderation: start");
+    info!(image_url = %req.image_url, user_id = %user.id, role = ?req.image_role, "moderation: start");
 
     let http = reqwest::Client::new();
     let resp = http
@@ -193,7 +192,7 @@ pub async fn moderate_image(
 
     let payload = serde_json::json!({
         "image_url": req.image_url,
-        "user_id": req.user_id,
+        "user_id": user.id,
         "image_role": req.image_role,
         "flagged": flagged,
         "labels": labels_out,

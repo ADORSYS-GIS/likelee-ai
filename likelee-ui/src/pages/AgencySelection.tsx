@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Users, Trophy, Megaphone } from "lucide-react";
+import { Users, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function AgencySelection() {
@@ -23,12 +23,6 @@ export default function AgencySelection() {
       icon: Trophy,
       to: createPageUrl("SportsAgency"),
     },
-    {
-      title: t("marketingAgency"),
-      desc: t("marketingAgencyMessage"),
-      icon: Megaphone,
-      to: createPageUrl("MarketingAgency"),
-    },
   ];
 
   return (
@@ -44,7 +38,7 @@ export default function AgencySelection() {
         </div>
       </section>
       <section className="px-6 pb-24">
-        <div className="max-w-6xl mx-auto grid gap-8 md:grid-cols-3">
+        <div className="max-w-4xl mx-auto grid gap-8 md:grid-cols-2 justify-center">
           {items.map(({ title, desc, icon: Icon, to }) => (
             <Card
               key={title}
@@ -58,10 +52,9 @@ export default function AgencySelection() {
                 <p className="text-gray-600 text-sm md:text-base">{desc}</p>
                 <Button
                   onClick={() => navigate(to)}
-                  variant="outline"
-                  className="mt-2 border-2 border-black rounded-none"
+                  className="mt-4 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-2 border-black rounded-none w-full font-bold h-12"
                 >
-                  {t("learnMore")}
+                  {t("organizationSignup.selectAndContinue")}
                 </Button>
               </div>
             </Card>

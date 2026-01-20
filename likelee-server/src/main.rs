@@ -82,6 +82,7 @@ async fn main() {
         rekog,
         supabase_url: cfg.supabase_url.clone(),
         supabase_service_key: cfg.supabase_service_key.clone(),
+        supabase_jwt_secret: cfg.supabase_jwt_secret.clone(),
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
@@ -93,21 +94,15 @@ async fn main() {
         tavus_base_url: cfg.tavus_base_url.clone(),
         tavus_webhook_secret: cfg.tavus_webhook_secret.clone(),
         tavus_callback_url: cfg.tavus_callback_url.clone(),
-        smtp_host: cfg.smtp_host.clone(),
-        smtp_port: cfg.smtp_port,
-        smtp_user: cfg.smtp_user.clone(),
-        smtp_password: cfg.smtp_password.clone(),
-        email_from: cfg.email_from.clone(),
-        email_contact_to: cfg.email_contact_to.clone(),
-        // Stripe / Payouts
         stripe_secret_key: cfg.stripe_secret_key.clone(),
+        stripe_client_id: cfg.stripe_client_id.clone(),
+        stripe_return_url: cfg.stripe_return_url.clone(),
+        stripe_refresh_url: cfg.stripe_refresh_url.clone(),
         stripe_webhook_secret: cfg.stripe_webhook_secret.clone(),
-        stripe_connect_client_id: cfg.stripe_connect_client_id.clone(),
-        stripe_onboarding_return_url: cfg.stripe_onboarding_return_url.clone(),
-        stripe_onboarding_refresh_url: cfg.stripe_onboarding_refresh_url.clone(),
-        payouts_enabled: cfg.payouts_enabled != "0",
-        min_payout_amount_cents: cfg.min_payout_amount_cents,
+        payouts_enabled: cfg.payouts_enabled,
         payout_auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
+        min_payout_amount_cents: cfg.min_payout_amount_cents,
+        instant_payouts_enabled: cfg.instant_payouts_enabled,
         payout_fee_bps: cfg.payout_fee_bps,
         payout_currency: cfg.payout_currency.clone(),
         payout_allowed_currencies: cfg
@@ -116,7 +111,13 @@ async fn main() {
             .map(|s| s.trim().to_uppercase())
             .filter(|s| !s.is_empty())
             .collect(),
-        instant_payouts_enabled: cfg.instant_payouts_enabled != "0",
+
+        smtp_host: cfg.smtp_host.clone(),
+        smtp_port: cfg.smtp_port,
+        smtp_user: cfg.smtp_user.clone(),
+        smtp_password: cfg.smtp_password.clone(),
+        email_from: cfg.email_from.clone(),
+        email_contact_to: cfg.email_contact_to.clone(),
     };
 
     let app = likelee_server::router::build_router(state);

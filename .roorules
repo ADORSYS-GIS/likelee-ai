@@ -1,46 +1,55 @@
 # Repository Rules
 
 ## General
-
-- **Automatic Formatting (MANDATORY)**: You MUST ALWAYS format your code changes before finishing a task. 
-  - For Frontend: Run `npx prettier --write .`
-  - For Backend: Run `cargo fmt`
-  - **Do this proactively**. Do not wait for the user to ask or for CI to fail.
-- Always implement based on the design.md file located at `./docs/design.md`. If anything is unclear, ask questions.
-- **Workflow**: Always run and check the Local CI Pre-Push Checklist automatically after completion of an issue or task.
+- Always implement based on the design.md file located at `./docs/design.md`. If anything is unclear, ask questions in the PR and propose options.
 
 ## Code
-
 - Follow `docs/design.md` for architecture, configuration, and integration details.
-- Keep code changes minimal and cohesive.
+- Keep code changes minimal and cohesive. Avoid adding files that aren’t necessary to the task.
 - Do not add or delete comments/documentation unless requested.
 - Include request IDs and label counts/results where helpful. Avoid logging sensitive data.
-- Always update this file when a milestone is hit and also update `docs/design.md`.
-
+- always update this file when a milestone is hit and also update the design.md doc
+  
 ## Configuration Management (Server)
+- Centralize all runtime config in `likelee-server/src/config.rs` using the Rust `envconfig` crate with `#[derive(Envconfig)]`.
+- Do NOT read environment variables directly in application code (`std::env::var`) outside the configuration module.
+- Keep `likelee-server/.env.example` in sync with `ServerConfig` fields and defaults.
+- `.env` files must be one `KEY=VALUE` per line (no commas, no inline comments).
 
-- Centralize all runtime config in `likelee-server/src/config.rs`.
-- Do NOT read environment variables directly in application code.
+## AWS Rekognition – Moderation & Face Liveness
+- Use only valid and supported AWS regions. INVALID examples: `eu-east-1`, `us-central-1`.
+- Region alignment is mandatory across:
+  - Backend: `AWS_REGION`
+  - Frontend: `VITE_AWS_REGION`
+  - Cognito Identity Pool region
+  All three MUST match (e.g., `us-east-1` or `eu-west-1`).
+- IAM (server credentials used by likelee-server):
+  - Allow `rekognition:CreateFaceLivenessSession`
+  - Allow `rekognition:GetFaceLivenessSessionResults`
+- IAM (browser via Cognito Identity Pool role):
+  - Allow `rekognition:StartFaceLivenessSession`
+  - Trust policy must restrict to your Identity Pool and amr:
+    - `"cognito-identity.amazonaws.com:aud": "<IDENTITY_POOL_ID>"`
+    - `"ForAnyValue:StringLike": { "cognito-identity.amazonaws.com:amr": "unauthenticated" }` (or `authenticated` if using the auth role)
+- Ensure Rekognition service‑linked role (AWSServiceRoleForRekognition) exists or allow `iam:CreateServiceLinkedRole`.
+- Image moderation request limits: max 5MB payloads.
 
-## AWS Rekognition & Face Liveness
+## Frontend – Face Liveness Integration
+- Use `@aws-amplify/ui-react-liveness` FaceLivenessDetector.
+- Import CSS in `src/main.tsx`:
+  - `@aws-amplify/ui-react/styles.css`
+  - `@aws-amplify/ui-react-liveness/styles.css`
+- Provide Cognito Identity Pool credentials at runtime; the Identity Pool must be in the same region as `VITE_AWS_REGION`.
+- Render the detector inside a portal‑based modal (e.g., React `createPortal`) to avoid stacking/overflow issues.
+- On completion, call `/api/liveness/result` and evaluate `passed` vs `LIVENESS_MIN_SCORE`.
 
-- Ensure Region alignment (Backend == Frontend == Cognito Identity Pool).
-- Use `@aws-amplify/ui-react-liveness` for frontend.
-- Import CSS in `src/main.tsx` explicitly.
+## Security
+- Never commit real secrets. Rotate keys immediately if they appear in logs or commits.
+- Prefer IAM roles over long‑lived access keys where feasible.
 
-## Local CI Pre‑Push Checklist
+## Database/Migrations
+- When adding migrations (`supabase/migrations/*.sql`), generate a Mermaid ER diagram for table relations and include it in the PR.
 
-- **Backend (likelee-server)**
-  - Format: `cargo fmt`
-  - Lint: `cargo clippy -- -D warnings`
-  - Test: `cargo test`
-
-- **Frontend (likelee-ui)**
-  - **Format (Write)**: `npx prettier --write .` (Run this FIRST)
-  - Lint: `npm run lint`
-  - Build: `npm run build`
-  - Test: `npm run test`
-  - Audit: `npm audit`
-
-- **Push gate**
-  - Only push when all steps above pass locally.
+## Logging/Diagnostics
+- Log effective AWS region at startup and warn on non‑supported or mismatched regions.
+- Include request IDs and label counts/results where helpful. Avoid logging sensitive data.

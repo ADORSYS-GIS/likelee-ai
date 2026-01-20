@@ -25,7 +25,7 @@ export default function LicensingSettings() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from("profiles")
+          .from("creators")
           .select("base_monthly_price_cents, currency_code")
           .eq("id", user.id)
           .maybeSingle();
@@ -64,7 +64,7 @@ export default function LicensingSettings() {
         pricing_updated_at: new Date().toISOString(),
       };
       const { error } = await supabase
-        .from("profiles")
+        .from("creators")
         .upsert(payload, { onConflict: "id" });
       if (error) throw error;
       toast({

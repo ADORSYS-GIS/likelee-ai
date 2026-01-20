@@ -1,46 +1,16 @@
-# Repository Rules
+# General
+This is the most important series of rules for the AI to follow.
+- always implement based on the design.md file located at [./docs/design.md], and ask questions if you find something to be 
+unclear or have a better proposal.
 
-## General
+# Code
+- always implement based on the design.md file located at [./docs/design.md], and ask questions if you find something to be 
+unclear or have a better proposal.
+- if you have a migration file, [./supabase/migrations/*.sql], please generate a mermaid ER diagram for the table relations and include it in the pull request.
 
-- **Automatic Formatting (MANDATORY)**: You MUST ALWAYS format your code changes before finishing a task. 
-  - For Frontend: Run `npx prettier --write .`
-  - For Backend: Run `cargo fmt`
-  - **Do this proactively**. Do not wait for the user to ask or for CI to fail.
-- Always implement based on the design.md file located at `./docs/design.md`. If anything is unclear, ask questions.
-- **Workflow**: Always run and check the Local CI Pre-Push Checklist automatically after completion of an issue or task.
-
-## Code
-
-- Follow `docs/design.md` for architecture, configuration, and integration details.
-- Keep code changes minimal and cohesive.
-- Do not add or delete comments/documentation unless requested.
-- Include request IDs and label counts/results where helpful. Avoid logging sensitive data.
-- Always update this file when a milestone is hit and also update `docs/design.md`.
-
-## Configuration Management (Server)
-
-- Centralize all runtime config in `likelee-server/src/config.rs`.
-- Do NOT read environment variables directly in application code.
-
-## AWS Rekognition & Face Liveness
-
-- Ensure Region alignment (Backend == Frontend == Cognito Identity Pool).
-- Use `@aws-amplify/ui-react-liveness` for frontend.
-- Import CSS in `src/main.tsx` explicitly.
-
-## Local CI Pre‑Push Checklist
-
-- **Backend (likelee-server)**
-  - Format: `cargo fmt`
-  - Lint: `cargo clippy -- -D warnings`
-  - Test: `cargo test`
-
-- **Frontend (likelee-ui)**
-  - **Format (Write)**: `npx prettier --write .` (Run this FIRST)
-  - Lint: `npm run lint`
-  - Build: `npm run build`
-  - Test: `npm run test`
-  - Audit: `npm audit`
-
-- **Push gate**
-  - Only push when all steps above pass locally.
+# Configuration
+- All runtime configuration MUST be centralized in [likelee-server/src/config.rs](likelee-server/src/config.rs) using the Rust `envconfig` crate with `#[derive(Envconfig)]`.
+- Do NOT read environment variables directly in application code (`std::env::var`) outside the configuration module.
+- Keep [.env.example](likelee-server/.env.example) in sync with [ServerConfig](likelee-server/src/config.rs) fields and defaults.
+- Document new/changed environment variables in [docs/design.md](docs/design.md) under “Configuration Management”.
+EOF

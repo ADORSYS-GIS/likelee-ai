@@ -74,8 +74,18 @@ export default function SportsAgency() {
               {t("bookDemo")}
             </Button>
             <Button
+              onClick={() =>
+                navigate(
+                  `${createPageUrl("OrganizationSignup")}?type=sports_agency`,
+                )
+              }
+              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
+            >
+              {t("getStarted")}
+            </Button>
+            <Button
               onClick={scrollToHowItWorks}
-              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all"
+              className="h-12 px-10 text-lg font-medium bg-transparent hover:bg-white/10 text-white rounded-md transition-all border-2 border-white"
             >
               {t("seeHowItWorks")}
             </Button>
