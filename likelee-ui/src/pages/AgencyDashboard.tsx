@@ -1,5 +1,6 @@
 import { scoutingService } from "@/services/scoutingService";
-import { ScoutingProspect } from "@/types/scouting";
+import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
+import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -400,11 +401,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1284,19 +1284,19 @@ const ClientProfileModal = ({
                   {(searchQuery ||
                     statusFilter !== "all" ||
                     consentFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                        setConsentFilter("all");
-                      }}
-                      className="text-gray-600"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear Filters
-                    </Button>
-                  )}
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("all");
+                          setConsentFilter("all");
+                        }}
+                        className="text-gray-600"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear Filters
+                      </Button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1475,8 +1475,8 @@ const ClientProfileModal = ({
                               >
                                 {talent.license_expiry !== "—"
                                   ? new Date(
-                                      talent.license_expiry,
-                                    ).toLocaleDateString()
+                                    talent.license_expiry,
+                                  ).toLocaleDateString()
                                   : "—"}
                               </span>
                               {isLicenseExpiring(talent.license_expiry) && (
@@ -3329,11 +3329,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -3807,11 +3806,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3819,11 +3817,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -4377,11 +4374,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -5452,6 +5448,8 @@ const ScoutingHubView = ({
   const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
     null,
   );
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
 
   const tabs = [
     "Prospect Pipeline",
@@ -5488,8 +5486,12 @@ const ScoutingHubView = ({
           <Button
             variant="default"
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
+            onClick={() => {
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
           >
-            <MapPin className="w-4 h-4" /> Plan Scouting Trip
+            <Calendar className="w-4 h-4" /> Create Event
           </Button>
         </div>
       </div>
@@ -5499,11 +5501,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -5527,13 +5528,32 @@ const ScoutingHubView = ({
         {activeTab === "Marketplace" && <MarketplaceTab />}
         {activeTab === "Scouting Map" && <ScoutingMapTab />}
         {activeTab === "Submissions" && <SubmissionsTab />}
-        {activeTab === "Open Calls" && <OpenCallsTab />}
+        {activeTab === "Open Calls" && (
+          <OpenCallsTab
+            onCreateEvent={() => {
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
+            onEditEvent={(event) => {
+              setEventToEdit(event);
+              setIsEventModalOpen(true);
+            }}
+          />
+        )}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
       <ProspectModal
         open={isProspectModalOpen}
         onOpenChange={setIsProspectModalOpen}
         prospect={prospectToEdit}
+      />
+      <CreateEventModal
+        open={isEventModalOpen}
+        onOpenChange={setIsEventModalOpen}
+        event={eventToEdit}
+        onSuccess={() => {
+          // useQuery will automatically refetch if we use the right query key
+        }}
       />
     </div>
   );
@@ -6287,35 +6307,129 @@ const SubmissionsTab = () => (
   </Card>
 );
 
-const OpenCallsTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">
-          Open Calls & Casting Events
-        </h2>
-      </div>
-      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-lg shadow-sm">
-        <Plus className="w-4 h-4" /> Create Event
-      </Button>
-    </div>
+const OpenCallsTab = ({
+  onCreateEvent,
+  onEditEvent,
+}: {
+  onCreateEvent: () => void;
+  onEditEvent: (event: ScoutingEvent) => void;
+}) => {
+  const { user } = useAuth();
+  const { data: events, isLoading } = useQuery({
+    queryKey: ["scouting-events", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getEvents(agencyId);
+    },
+    enabled: !!user,
+  });
 
-    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
-      <div className="p-8 bg-gray-50 rounded-full mb-6">
-        <Calendar className="w-12 h-12 text-gray-400" />
+  return (
+    <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            Open Calls & Casting Events
+          </h2>
+          <p className="text-xs text-gray-500 font-medium">
+            Manage your upcoming talent search events
+          </p>
+        </div>
+        <Button
+          onClick={onCreateEvent}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-9 px-4 rounded-lg shadow-sm text-xs"
+        >
+          <Plus className="w-3.5 h-3.5" /> Create Event
+        </Button>
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">
-        No upcoming events
-      </h3>
-      <p className="text-gray-500 max-w-sm font-medium mb-6">
-        Organize open calls and virtual castings
-      </p>
-      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm">
-        <Plus className="w-4 h-4" /> Create First Event
-      </Button>
-    </div>
-  </Card>
-);
+
+      {isLoading ? (
+        <div className="text-center py-12 text-xs text-gray-500">Loading events...</div>
+      ) : !events || events.length === 0 ? (
+        <div className="border border-dashed border-gray-200 rounded-xl p-16 flex flex-col items-center justify-center text-center">
+          <div className="p-6 bg-gray-50 rounded-full mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">
+            No upcoming events
+          </h3>
+          <p className="text-xs text-gray-500 max-w-sm font-medium mb-4">
+            Organize open calls and virtual castings to find new talent
+          </p>
+          <Button
+            onClick={onCreateEvent}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-9 px-6 rounded-lg shadow-sm text-xs"
+          >
+            <Plus className="w-3.5 h-3.5" /> Create First Event
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {events.map((event) => (
+            <Card
+              key={event.id}
+              className="overflow-hidden border border-gray-100 hover:shadow-md transition-all group cursor-pointer rounded-xl"
+              onClick={() => onEditEvent(event)}
+            >
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <Badge
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] ${event.status === "published"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : "bg-gray-50 text-gray-600 border-gray-100"
+                      }`}
+                  >
+                    {event.status.toUpperCase()}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-[10px] font-bold">
+                      {event.start_time || "TBD"}
+                    </span>
+                  </div>
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors">
+                  {event.name}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-3">
+                  {event.description || "No description provided."}
+                </p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">
+                      {new Date(event.event_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold truncate">
+                      {event.location}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-50 flex justify-between items-center">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                  {event.event_type || "EVENT"}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-50 text-[11px] px-2"
+                >
+                  Edit Details
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+};
 
 const ScoutingAnalyticsTab = () => {
   const stats = [
@@ -7234,13 +7348,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -7359,16 +7473,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -8209,9 +8322,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -9023,11 +9136,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -11198,7 +11310,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -11361,11 +11473,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -11858,11 +11969,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -12744,11 +12854,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -13877,92 +13986,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14015,16 +14124,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14045,11 +14152,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (

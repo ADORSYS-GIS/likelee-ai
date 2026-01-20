@@ -61,7 +61,28 @@ export interface ScoutingEvent {
   event_date: string;
   location: string;
   description?: string;
-  status: "scheduled" | "completed" | "cancelled";
+  status: "draft" | "scheduled" | "completed" | "cancelled" | "published";
+
+  event_type?: string;
+  casting_for?: string;
+  start_time?: string;
+  end_time?: string;
+  looking_for?: string[];
+  min_age?: number;
+  max_age?: number;
+  gender_preference?: string;
+  special_skills?: string;
+  what_to_bring?: string;
+  dress_code?: string;
+  location_details?: string;
+  virtual_link?: string;
+  max_attendees?: number;
+  registration_required?: boolean;
+  internal_notes?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+
   created_at: string;
   updated_at: string;
 }

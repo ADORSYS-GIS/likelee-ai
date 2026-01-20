@@ -158,6 +158,43 @@ export const scoutingService = {
     return data as ScoutingEvent[];
   },
 
+  async createEvent(
+    event: Omit<ScoutingEvent, "id" | "created_at" | "updated_at">,
+  ) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_events")
+      .insert(event)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingEvent;
+  },
+
+  async updateEvent(id: string, updates: Partial<ScoutingEvent>) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_events")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingEvent;
+  },
+
+  async deleteEvent(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { error } = await supabase.from("scouting_events").delete().eq("id", id);
+
+    if (error) throw error;
+  },
+
   // --- Analytics ---
 
   async getAnalytics(agencyId: string) {
