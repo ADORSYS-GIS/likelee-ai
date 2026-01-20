@@ -57,7 +57,7 @@ Likelee AI builds the world’s first AI-creation ecosystem keeping humans at th
   - Payments (Stripe Connect): split payments Brand → Platform → Face + Creator; Stripe Express payouts.
   - Likelee Studio: Model Router (Replicate/HF/Together) + Simple Prompt UI.
   - i18n: Default EN; ES and FR prioritized for MVP.
-  - Authentication/Authorization: Keycloak (OIDC/OAuth2) for identities, realms/clients/roles.
+  - Authentication/Authorization: Supabase Auth (OIDC/OAuth2/Email).
 
 ## 5. Tech Stack
 
@@ -95,7 +95,7 @@ Reference images storage model (Supabase):
 - Verification: KYC + liveness for Faces and before agency creation.
 - Privacy-first: consented uploads, minimization, encryption in transit/at rest, DSRs.
 - Trust & Traceability: invisible watermarking; C2PA manifest (P2) for attribution.
-- AuthN/AuthZ: Keycloak (OIDC/OAuth2); roles for Faces, Creators, Brands, Admins.
+- AuthN/AuthZ: Supabase Auth; roles for Faces, Creators, Brands, Admins.
 - Moderation: automated image checks (Rekognition) + policy guardrails.
 
 ## 9. Monetization Model
