@@ -86,20 +86,17 @@ export const getOrganizationKycStatus = (organization_id: string) =>
     `/api/kyc/organization/status?organization_id=${organization_id}`,
   );
 
-
 export const getBrandProfile = () =>
   base44Client.get(`/api/brand-profile/user`);
 
 export const getAgencyProfile = () =>
   base44Client.get(`/api/agency-profile/user`);
 
-
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/api/brand-profile`, data);
 
 export const updateAgencyProfile = (data: any) =>
   base44Client.post(`/api/agency-profile`, data);
-
 
 export const registerBrand = (data: any) =>
   base44Client.post(`/api/brand-register`, data);
@@ -126,15 +123,22 @@ export const getPayoutBalance = async (profileId: string) => {
 };
 
 export const getStripeOAuthUrl = async (profileId: string) => {
-  const resp = await base44Client.post(`/api/payouts/onboarding_link`, {}, {
-    params: { profile_id: profileId },
-  });
+  const resp = await base44Client.post(
+    `/api/payouts/onboarding_link`,
+    {},
+    {
+      params: { profile_id: profileId },
+    },
+  );
   // Backend returns { url }, adapt to UI expectations
   return { data: { status: "ok", url: (resp as any)?.url } } as any;
 };
 
 // Some flows may reference an OAuth code exchange; backend currently uses account links.
 // Provide a safe placeholder to avoid runtime import errors if called.
-export const exchangeStripeOAuthCode = async (_code: string, _profileId: string) => {
+export const exchangeStripeOAuthCode = async (
+  _code: string,
+  _profileId: string,
+) => {
   return { data: { status: "error", error: "not_supported" } } as any;
 };
