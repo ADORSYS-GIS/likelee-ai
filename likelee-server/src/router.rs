@@ -155,8 +155,16 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::bookings::list).post(crate::bookings::create),
         )
         .route(
+            "/api/bookings/with-files",
+            post(crate::bookings::create_with_files),
+        )
+        .route(
             "/api/bookings/:id",
             post(crate::bookings::update),
+        )
+        .route(
+            "/api/bookings/:id/files/upload",
+            post(crate::bookings::upload_booking_file),
         )
         .route(
             "/api/bookings/:id/cancel",

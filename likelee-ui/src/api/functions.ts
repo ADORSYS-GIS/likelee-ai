@@ -187,6 +187,19 @@ export const cancelBooking = (id: string) =>
 export const getAgencyTalents = (params?: { q?: string }) =>
   base44Client.get(`/api/agency/talents`, { params: params || {} });
 
+// Create booking with files (multipart)
+export const createBookingWithFiles = async (
+  data: any,
+  files: File[],
+) => {
+  const fd = new FormData();
+  fd.append("data", JSON.stringify(data));
+  for (const f of files) fd.append("files", f);
+  return base44Client.post(`/api/bookings/with-files`, fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
 // Agency clients
 export const getAgencyClients = () => base44Client.get(`/api/agency/clients`);
 export const createAgencyClient = (data: any) =>

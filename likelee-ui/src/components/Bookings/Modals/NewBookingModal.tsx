@@ -9,6 +9,7 @@ import {
   Plus,
   Search,
   Upload,
+  File as FileIcon,
   User,
   X,
 } from "lucide-react";
@@ -34,7 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
-import { getAgencyTalents, getAgencyClients, createAgencyClient } from "@/api/functions";
+import { getAgencyTalents, getAgencyClients, createAgencyClient, createBookingWithFiles } from "@/api/functions";
 
 export const NewBookingModal = ({
   open,
@@ -77,12 +78,23 @@ export const NewBookingModal = ({
   const [usageDuration, setUsageDuration] = useState("1");
   const [exclusive, setExclusive] = useState(false);
   const [notes, setNotes] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [saving, setSaving] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     sms: false,
     push: false,
     calendar: true,
   });
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // When all-day is enabled, normalize times to full-day window
+  useEffect(() => {
+    if (allDay) {
+      setCallTime("00:00");
+      setWrapTime("23:59");
+    }
+  }, [allDay]);
 
   // Load talents when modal opens
   useEffect(() => {
@@ -259,7 +271,26 @@ export const NewBookingModal = ({
               >
                 Preview
               </Button>
+            {uploadSuccess && (
+              <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Files uploaded
+              </span>
+            )}
             </div>
+          {files.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {files.map((f, idx) => (
+                <div
+                  key={`${f.name}-${idx}`}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 text-xs text-gray-700 bg-white"
+                  title={f.name}
+                >
+                  <FileIcon className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="max-w-[180px] truncate">{f.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
           </div>
 
           <div className="space-y-2">
@@ -684,13 +715,16 @@ export const NewBookingModal = ({
               <span className="text-sm text-gray-600 font-medium">
                 Browse...
               </span>
-              <span className="text-sm text-gray-400">No files selected.</span>
+              <span className="text-sm text-gray-400">
+                {files.length === 0 ? "No files selected." : `${files.length} file(s) selected`}
+              </span>
               <input
                 type="file"
                 multiple
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={(e) => {
-                  console.log(e.target.files);
+                  const f = Array.from(e.target.files || []);
+                  setFiles(f);
                 }}
               />
             </div>
@@ -787,47 +821,59 @@ export const NewBookingModal = ({
                   ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
                   : ""
               }`}
-              onClick={() => {
-                if (selectedTalents.length === 0 || !selectedClient) return;
-
-                // For each selected talent, create a separate booking entry
-                selectedTalents.forEach((talent, index) => {
-                  const isOriginalEntry = mode === "edit" && index === 0;
-                  const booking = {
-                    id: isOriginalEntry
-                      ? initialData.id
-                      : `booking-${Date.now()}-${talent.id}-${index}`,
-                    talentName: talent.name,
-                    date: date,
-                    type: bookingType,
-                    clientName: selectedClient.company,
-                    notes: notes,
-                  };
-                  onSave(booking);
-                });
-
-                toast({
-                  title:
-                    mode === "edit" ? "Booking Updated" : "Booking Created",
-                  description: `Successfully ${
-                    mode === "edit" ? "updated" : "scheduled"
-                  } ${bookingType} for ${selectedTalents
-                    .map((t) => t.name)
-                    .join(", ")} on ${date}.`,
-                });
-
-                onOpenChange(false);
+              onClick={async () => {
+                if (selectedTalents.length === 0 || !selectedClient || saving) return;
+                setSaving(true);
+                try {
+                  for (let index = 0; index < selectedTalents.length; index++) {
+                    const talent = selectedTalents[index];
+                    const payload: any = {
+                      booking_type: bookingType,
+                      status: "pending",
+                      talent_id: talent.id,
+                      talent_name: talent.name,
+                      client_name: selectedClient.company,
+                      date: date,
+                      all_day: allDay,
+                      call_time: allDay ? "00:00" : callTime,
+                      wrap_time: allDay ? "23:59" : wrapTime,
+                      location: undefined,
+                      location_notes: undefined,
+                      rate_cents: rate > 0 ? Math.round(rate * 100) : undefined,
+                      currency: currency,
+                      rate_type: rateType,
+                      usage_terms: usageTerms || undefined,
+                      usage_duration: usageDuration || undefined,
+                      exclusive: exclusive,
+                      notes: notes || undefined,
+                    };
+                    await createBookingWithFiles(payload, files);
+                  }
+                  setUploadSuccess(true);
+                  toast({
+                    title: "Booking Created",
+                    description: `Scheduled ${bookingType} for ${selectedTalents
+                      .map((t) => t.name)
+                      .join(", ")} on ${date}.`,
+                  });
+                  // Briefly show success indicator/icon before closing
+                  setTimeout(() => onOpenChange(false), 800);
+                } catch (_e) {
+                  toast({ title: "Failed to create booking", description: "Please try again.", variant: "destructive" as any });
+                } finally {
+                  setSaving(false);
+                }
               }}
-              disabled={selectedTalents.length === 0 || !selectedClient}
+              disabled={selectedTalents.length === 0 || !selectedClient || saving}
             >
-              {mode === "edit"
+              {saving ? "Saving..." : (mode === "edit"
                 ? "Update Booking"
                 : `Save as ${
                     bookingType === "test-shoot"
                       ? "Test Shoot"
                       : bookingType.charAt(0).toUpperCase() +
                         bookingType.slice(1)
-                  }`}
+                  }`)}
             </Button>
           </div>
         </DialogFooter>
