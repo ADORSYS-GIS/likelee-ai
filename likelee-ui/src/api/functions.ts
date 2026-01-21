@@ -184,7 +184,8 @@ export const cancelBooking = (id: string) =>
   base44Client.post(`/api/bookings/${id}/cancel`, {});
 
 // Agency talents
-export const getAgencyTalents = () => base44Client.get(`/api/agency/talents`);
+export const getAgencyTalents = (params?: { q?: string }) =>
+  base44Client.get(`/api/agency/talents`, { params: params || {} });
 
 // Agency clients
 export const getAgencyClients = () => base44Client.get(`/api/agency/clients`);

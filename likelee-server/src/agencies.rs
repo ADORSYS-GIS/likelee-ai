@@ -1,6 +1,7 @@
 use crate::{auth::AuthUser, config::AppState};
 use axum::{extract::State, http::StatusCode, Json};
 use axum::extract::Multipart;
+use axum::extract::Query;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -306,41 +307,30 @@ pub struct TalentItem {
 }
 
 // List talents associated to the agency's organization via agency_users
+#[derive(Deserialize)]
+pub struct TalentQuery {
+    pub q: Option<String>,
+}
+
 pub async fn list_talents(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(params): Query<TalentQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // 1) Find the organization owned by this agency user
-    let org_resp = state
-        .pg
-        .from("organization_profiles")
-        .select("id")
-        .eq("owner_user_id", &user.id)
-        .single()
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let org_text = org_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let org_json: serde_json::Value = serde_json::from_str(&org_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let org_id = match org_json.get("id").and_then(|v| v.as_str()) {
-        Some(s) => s.to_string(),
-        None => return Ok(Json(json!([]))),
-    };
+    // Agency id is the authenticated agency user's id
+    let org_id = user.id.clone();
 
-    // 2) Query agency_users joined to creators; only role='talent' and status='active'
-    // Use PostgREST embedded resource via FK agency_users.user_id -> creators.id
-    let sel = "creators:user_id(id,full_name,profile_photo_url)";
-    let resp = state
+    // Query agency_users within this agency; select the columns we know exist
+    let mut req = state
         .pg
         .from("agency_users")
-        .select(sel)
-        .eq("agency_id", &org_id)
-        .eq("role", "talent")
-        .eq("status", "active")
+        .select("user_id,name")
+        .eq("agency_id", &org_id);
+    if let Some(q) = params.q.as_ref().filter(|s| !s.is_empty()) {
+        let enc = format!("%25{}%25", q);
+        req = req.ilike("name", enc.as_str());
+    }
+    let resp = req
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -351,13 +341,16 @@ pub async fn list_talents(
     let rows: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // 3) Flatten to array of creators
+    // Map to array with fallback to agency_users name/user_id
     let talents: Vec<TalentItem> = rows
         .as_array()
         .unwrap_or(&vec![])
         .iter()
-        .filter_map(|r| r.get("creators"))
-        .filter_map(|c| serde_json::from_value::<TalentItem>(c.clone()).ok())
+        .map(|r| TalentItem {
+            id: r.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            full_name: r.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            profile_photo_url: None,
+        })
         .collect();
 
     Ok(Json(json!(talents)))

@@ -151,9 +151,28 @@ export const NewBookingModal = ({
     }
   }, [open, initialData, clients]);
 
-  const filteredTalents = talents.filter((t) =>
-    t.name.toLowerCase().includes(talentSearch.toLowerCase()),
-  );
+  // Server-side filtering of talents via q param
+  useEffect(() => {
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const rows = await getAgencyTalents(
+          talentSearch ? { q: talentSearch } : undefined,
+        );
+        if (cancelled) return;
+        const mapped = Array.isArray(rows)
+          ? rows.map((r: any) => ({ id: r.id, name: r.full_name || "Unnamed", img: r.profile_photo_url }))
+          : [];
+        setTalents(mapped);
+      } catch (_e) {}
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [talentSearch, open]);
+
+  const filteredTalents = talents;
 
   const filteredClients = clients.filter((c) =>
     c.company.toLowerCase().includes(clientSearch.toLowerCase()),

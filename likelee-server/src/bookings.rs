@@ -86,17 +86,21 @@ pub async fn list(
     user: AuthUser,
     Query(params): Query<ListParams>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let mut req = state
+    let req = state
         .pg
         .from("bookings")
         .select("*")
         .eq("agency_user_id", &user.id);
-    if let Some(ds) = params.date_start.as_ref() {
-        req = req.gte("date", ds);
-    }
-    if let Some(de) = params.date_end.as_ref() {
-        req = req.lte("date", de);
-    }
+    let req = if let Some(ds) = params.date_start.as_ref() {
+        req.gte("date", ds)
+    } else {
+        req
+    };
+    let req = if let Some(de) = params.date_end.as_ref() {
+        req.lte("date", de)
+    } else {
+        req
+    };
     let resp = req
         .order("date.desc")
         .execute()
@@ -153,7 +157,7 @@ pub async fn update(
             map.remove(&k);
         }
     }
-    let mut req = state
+    let req = state
         .pg
         .from("bookings")
         .eq("id", &id)
