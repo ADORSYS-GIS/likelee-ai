@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
-import { TALENT_DATA, CLIENT_DATA } from "@/data/mockData";
+import { getAgencyTalents, getAgencyClients, createAgencyClient } from "@/api/functions";
 
 export const NewBookingModal = ({
   open,
@@ -50,6 +50,7 @@ export const NewBookingModal = ({
   mode?: "new" | "edit" | "duplicate";
 }) => {
   const { toast } = useToast();
+  const [talents, setTalents] = useState<any[]>([]);
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
   const [talentSearch, setTalentSearch] = useState("");
@@ -57,7 +58,7 @@ export const NewBookingModal = ({
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [showAddClient, setShowAddClient] = useState(false);
-  const [clients, setClients] = useState(CLIENT_DATA);
+  const [clients, setClients] = useState<any[]>([]);
   const [newClient, setNewClient] = useState({
     company: "",
     contact: "",
@@ -83,6 +84,47 @@ export const NewBookingModal = ({
     calendar: true,
   });
 
+  // Load talents when modal opens
+  useEffect(() => {
+    const loadTalents = async () => {
+      if (!open) return;
+      try {
+        const rows = await getAgencyTalents();
+        const mapped = Array.isArray(rows)
+          ? rows.map((r: any) => ({ id: r.id, name: r.full_name || "Unnamed", img: r.profile_photo_url }))
+          : [];
+        setTalents(mapped);
+      } catch (_e) {}
+    };
+    loadTalents();
+  }, [open]);
+
+  // Load clients when modal opens
+  useEffect(() => {
+    const loadClients = async () => {
+      if (!open) return;
+      try {
+        const rows = await getAgencyClients();
+        const mapped = Array.isArray(rows)
+          ? rows.map((r: any) => ({
+              id: r.id,
+              company: r.company,
+              contact: r.contact_name || "",
+              email: r.email || "",
+              phone: r.phone || "",
+              terms: r.terms || "Net 30",
+              // Defaults to satisfy UI typing used elsewhere
+              industryTags: [],
+              revenue: 0,
+              bookings_count: 0,
+            }))
+          : [];
+        if (mapped.length > 0) setClients(mapped);
+      } catch (_e) {}
+    };
+    loadClients();
+  }, [open]);
+
   // Pre-fill data for Edit or Duplicate modes
   useEffect(() => {
     if (open && initialData) {
@@ -90,8 +132,8 @@ export const NewBookingModal = ({
       setDate(initialData.date || "2026-01-12");
       setNotes(initialData.notes || "");
 
-      // Try to find talent in TALENT_DATA
-      const talent = TALENT_DATA.find((t) => t.name === initialData.talentName);
+      // Try to find talent in current talents list
+      const talent = talents.find((t: any) => t.name === initialData.talentName);
       if (talent) setSelectedTalents([talent]);
 
       // Try to find client in clients
@@ -109,7 +151,7 @@ export const NewBookingModal = ({
     }
   }, [open, initialData, clients]);
 
-  const filteredTalents = TALENT_DATA.filter((t) =>
+  const filteredTalents = talents.filter((t) =>
     t.name.toLowerCase().includes(talentSearch.toLowerCase()),
   );
 
@@ -130,12 +172,34 @@ export const NewBookingModal = ({
     setTalentSearch("");
   };
 
-  const handleAddClient = () => {
-    const client = { id: `client-${Date.now()}`, ...newClient };
-    setClients([...clients, client]);
-    setSelectedClient(client);
-    setShowAddClient(false);
-    setClientSearch("");
+  const handleAddClient = async () => {
+    try {
+      const created = await createAgencyClient({
+        company: newClient.company,
+        contact_name: newClient.contact,
+        email: newClient.email,
+        phone: newClient.phone,
+        terms: newClient.terms,
+      });
+      const row = Array.isArray(created) ? created[0] : created;
+      const client = {
+        id: row.id,
+        company: row.company,
+        contact: row.contact_name || "",
+        email: row.email || "",
+        phone: row.phone || "",
+        terms: row.terms || "Net 30",
+        industryTags: [],
+        revenue: 0,
+        bookings_count: 0,
+      };
+      setClients([...clients, client]);
+      setSelectedClient(client);
+      setShowAddClient(false);
+      setClientSearch("");
+    } catch (_e) {
+      toast({ title: "Failed to create client", description: "Please try again.", variant: "destructive" as any });
+    }
   };
 
   const commission = rate * 0.2;

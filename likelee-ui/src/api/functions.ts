@@ -170,3 +170,23 @@ export const exchangeStripeOAuthCode = async (
 ) => {
   return { data: { status: "error", error: "not_supported" } } as any;
 };
+
+// Bookings (Agency Dashboard)
+export const listBookings = (params?: { date_start?: string; date_end?: string }) =>
+  base44Client.get(`/api/bookings`, { params: params || {} });
+
+export const createBooking = (data: any) => base44Client.post(`/api/bookings`, data);
+
+export const updateBooking = (id: string, data: any) =>
+  base44Client.post(`/api/bookings/${id}`, data);
+
+export const cancelBooking = (id: string) =>
+  base44Client.post(`/api/bookings/${id}/cancel`, {});
+
+// Agency talents
+export const getAgencyTalents = () => base44Client.get(`/api/agency/talents`);
+
+// Agency clients
+export const getAgencyClients = () => base44Client.get(`/api/agency/clients`);
+export const createAgencyClient = (data: any) =>
+  base44Client.post(`/api/agency/clients`, data);

@@ -36,6 +36,18 @@ pub fn build_router(state: AppState) -> Router {
             "/api/organization-profile/user/:user_id",
             get(crate::organization_profiles::get_by_user),
         )
+        .route(
+            "/api/agency/talents",
+            get(crate::agencies::list_talents),
+        )
+        .route(
+            "/api/agency/clients",
+            get(crate::agencies::list_clients).post(crate::agencies::create_client),
+        )
+        .route(
+            "/api/agency/files/upload",
+            post(crate::agencies::upload_agency_file),
+        )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
@@ -136,6 +148,19 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/webhooks/creatify",
             post(crate::creatify::creatify_webhook),
+        )
+        // Bookings (Agency Dashboard)
+        .route(
+            "/api/bookings",
+            get(crate::bookings::list).post(crate::bookings::create),
+        )
+        .route(
+            "/api/bookings/:id",
+            post(crate::bookings::update),
+        )
+        .route(
+            "/api/bookings/:id/cancel",
+            post(crate::bookings::cancel),
         )
         // Payouts
         .route(

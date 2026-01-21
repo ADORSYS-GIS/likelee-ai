@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -103,6 +103,12 @@ import {
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import {
+  listBookings,
+  createBooking as apiCreateBooking,
+  updateBooking as apiUpdateBooking,
+  cancelBooking as apiCancelBooking,
+} from "@/api/functions";
 
 const AddProspectModal = ({
   open,
@@ -13018,14 +13024,60 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
 
-  const onAddBooking = (booking: any) => {
-    setBookings([...bookings, booking]);
+  // Load persisted bookings on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await listBookings();
+        setBookings(Array.isArray(data) ? data : []);
+      } catch (e) {
+        // noop for now
+      }
+    })();
+  }, []);
+
+  const onAddBooking = async (booking: any) => {
+    try {
+      const payload = {
+        booking_type: booking.type || booking.bookingType,
+        status: booking.status,
+        talent_name: booking.talentName,
+        client_name: booking.clientName,
+        date: booking.date,
+        notes: booking.notes,
+      };
+      const created = await apiCreateBooking(payload);
+      // API returns array with inserted row (postgrest default)
+      const row = Array.isArray(created) ? created[0] : created;
+      setBookings([...bookings, row]);
+    } catch (e) {
+      // Optimistically append fallback if API fails (dev mode)
+      setBookings([...bookings, booking]);
+    }
   };
-  const onUpdateBooking = (booking: any) => {
-    setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+  const onUpdateBooking = async (booking: any) => {
+    try {
+      const id = booking.id;
+      const payload: any = {
+        booking_type: booking.type || booking.bookingType,
+        status: booking.status,
+        date: booking.date,
+        notes: booking.notes,
+      };
+      const updated = await apiUpdateBooking(id, payload);
+      const row = Array.isArray(updated) ? updated[0] : updated;
+      setBookings(bookings.map((b) => (b.id === row.id ? row : b)));
+    } catch (e) {
+      setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+    }
   };
-  const onCancelBooking = (id: string) => {
-    setBookings(bookings.filter((b) => b.id !== id));
+  const onCancelBooking = async (id: string) => {
+    try {
+      await apiCancelBooking(id);
+      setBookings(bookings.filter((b) => b.id !== id));
+    } catch (e) {
+      setBookings(bookings.filter((b) => b.id !== id));
+    }
   };
   const onAddBookOut = (bookOut: any) => {
     setBookOuts([...bookOuts, bookOut]);

@@ -1,5 +1,6 @@
 use crate::{auth::AuthUser, config::AppState};
 use axum::{extract::State, http::StatusCode, Json};
+use axum::extract::Multipart;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -195,6 +196,235 @@ pub async fn update(
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    Ok(Json(v))
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct AgencyFileUploadResponse {
+    pub id: String,
+    pub file_name: String,
+    pub public_url: Option<String>,
+    pub storage_bucket: String,
+    pub storage_path: String,
+}
+
+// Upload an agency file (contracts, call sheets, references) to Supabase Storage and record it.
+pub async fn upload_agency_file(
+    State(state): State<AppState>,
+    user: AuthUser,
+    mut multipart: Multipart,
+) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    // Expect a single part named "file"
+    let mut file_name = None;
+    let mut bytes: Vec<u8> = vec![];
+    while let Some(field) = multipart.next_field().await.map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))? {
+        let name = field.name().map(|s| s.to_string());
+        if name.as_deref() == Some("file") {
+            file_name = field.file_name().map(|s| s.to_string());
+            let data = field.bytes().await.map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+            bytes = data.to_vec();
+            break;
+        }
+    }
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' { c } else { '_' })
+        .collect::<String>();
+
+    // Storage target
+    let bucket = state.supabase_bucket_private.clone();
+    let path = format!(
+        "agencies/{}/files/{}_{}",
+        user.id,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    // Upload to Supabase Storage using service key
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((StatusCode::BAD_GATEWAY, format!("storage upload failed: {msg}")));
+    }
+
+    // For private bucket, no public URL; keep None
+    let public_url = None;
+
+    // Insert row into agency_files
+    let insert = serde_json::json!({
+        "agency_id": user.id,
+        "file_name": fname,
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "public_url": public_url,
+    });
+    let resp = state
+        .pg
+        .from("agency_files")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let rec = arr.get(0).cloned().unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    Ok(Json(AgencyFileUploadResponse {
+        id,
+        file_name: fname,
+        public_url,
+        storage_bucket: bucket,
+        storage_path: path,
+    }))
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct TalentItem {
+    pub id: String,
+    pub full_name: Option<String>,
+    pub profile_photo_url: Option<String>,
+}
+
+// List talents associated to the agency's organization via agency_users
+pub async fn list_talents(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1) Find the organization owned by this agency user
+    let org_resp = state
+        .pg
+        .from("organization_profiles")
+        .select("id")
+        .eq("owner_user_id", &user.id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let org_text = org_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let org_json: serde_json::Value = serde_json::from_str(&org_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let org_id = match org_json.get("id").and_then(|v| v.as_str()) {
+        Some(s) => s.to_string(),
+        None => return Ok(Json(json!([]))),
+    };
+
+    // 2) Query agency_users joined to creators; only role='talent' and status='active'
+    // Use PostgREST embedded resource via FK agency_users.user_id -> creators.id
+    let sel = "creators:user_id(id,full_name,profile_photo_url)";
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select(sel)
+        .eq("agency_id", &org_id)
+        .eq("role", "talent")
+        .eq("status", "active")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3) Flatten to array of creators
+    let talents: Vec<TalentItem> = rows
+        .as_array()
+        .unwrap_or(&vec![])
+        .iter()
+        .filter_map(|r| r.get("creators"))
+        .filter_map(|c| serde_json::from_value::<TalentItem>(c.clone()).ok())
+        .collect();
+
+    Ok(Json(json!(talents)))
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct AgencyClientPayload {
+    pub company: String,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub terms: Option<String>,
+}
+
+pub async fn list_clients(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_clients")
+        .select("id,agency_id,company,contact_name,email,phone,terms,created_at,updated_at")
+        .eq("agency_id", &user.id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn create_client(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<AgencyClientPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = json!({
+        "agency_id": user.id,
+        "company": payload.company,
+        "contact_name": payload.contact_name,
+        "email": payload.email,
+        "phone": payload.phone,
+        "terms": payload.terms,
+    });
+    let resp = state
+        .pg
+        .from("agency_clients")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
