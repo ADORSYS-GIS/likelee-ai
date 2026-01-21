@@ -1,9 +1,9 @@
 pub mod agencies;
+pub mod agency_dashboard;
 pub mod auth;
 pub mod avatar;
 pub mod brands;
 pub mod config;
-pub mod agency_dashboard;
 mod creatify;
 pub mod creator_rates;
 pub mod creators;

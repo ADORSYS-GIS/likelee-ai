@@ -1,5 +1,9 @@
 use crate::{auth::AuthUser, config::AppState};
-use axum::{extract::{Query, State}, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use chrono::{Datelike, Duration, TimeZone, Utc};
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -8,7 +12,7 @@ use tracing::warn;
 #[derive(Deserialize, Debug)]
 pub struct AgencyDashboardQuery {
     pub agency_id: String,
-    pub month: Option<String>, 
+    pub month: Option<String>,
 }
 
 fn month_bounds(month: Option<String>) -> (chrono::DateTime<Utc>, chrono::DateTime<Utc>) {
@@ -35,7 +39,10 @@ fn month_bounds(month: Option<String>) -> (chrono::DateTime<Utc>, chrono::DateTi
     (start, end)
 }
 
-async fn fetch_json(pg: &postgrest::Postgrest, req: postgrest::Builder) -> Result<Vec<Value>, String> {
+async fn fetch_json(
+    pg: &postgrest::Postgrest,
+    req: postgrest::Builder,
+) -> Result<Vec<Value>, String> {
     match req.execute().await {
         Ok(resp) => match resp.text().await {
             Ok(t) => serde_json::from_str::<Vec<Value>>(&t).map_err(|e| e.to_string()),
@@ -138,9 +145,7 @@ pub async fn get_agency_dashboard(
     for (tid, _) in &top3_ids {
         need_names.insert(tid.clone());
     }
-    let mut recent5: Vec<(String, String)> = by_talent_last_paid
-        .into_iter()
-        .collect();
+    let mut recent5: Vec<(String, String)> = by_talent_last_paid.into_iter().collect();
     recent5.sort_by(|a, b| b.1.cmp(&a.1));
     let recent5_ids: Vec<(String, String)> = recent5.into_iter().take(5).collect();
     for (tid, _) in &recent5_ids {
@@ -223,7 +228,9 @@ pub async fn get_agency_dashboard(
             r.get("talent_user_id").and_then(|v| v.as_str()),
             r.get("paid_at").and_then(|v| v.as_str()),
         ) {
-            let entry = first_paid_map.entry(tid.to_string()).or_insert(paid_at.to_string());
+            let entry = first_paid_map
+                .entry(tid.to_string())
+                .or_insert(paid_at.to_string());
             if &paid_at.to_string() < entry {
                 *entry = paid_at.to_string();
             }
@@ -377,7 +384,11 @@ pub async fn get_agency_dashboard(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        let reg = c.get("region").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let reg = c
+            .get("region")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         *by_type.entry(t).or_insert(0) += 1;
         *by_vert.entry(bv).or_insert(0) += 1;
         *by_region.entry(reg).or_insert(0) += 1;
@@ -391,7 +402,11 @@ pub async fn get_agency_dashboard(
     let mut by_region_vec: Vec<Value> = vec![];
     let mut used_pct = 0.0;
     for (i, (name, c)) in region_sorted.iter().take(2).enumerate() {
-        let pct = if base > 0.0 { (*c as f64 * 100.0 / base).round() } else { 0.0 };
+        let pct = if base > 0.0 {
+            (*c as f64 * 100.0 / base).round()
+        } else {
+            0.0
+        };
         used_pct += pct;
         by_region_vec.push(json!({"name": name, "pct": pct}));
     }
