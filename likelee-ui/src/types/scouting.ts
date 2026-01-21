@@ -30,6 +30,23 @@ export interface ScoutingProspect {
   discovery_date?: string; // ISO date string
   discovery_location?: string;
   referred_by?: string;
+  is_signed?: boolean;
+  neighborhood?: string;
+  social_activity_concentration?: number;
+  competition_presence?: string;
+  demographics?: {
+    age_range?: string;
+    income_level?: string;
+    ethnicity?: string;
+    style_trends?: string[];
+  };
+  social_post_locations?: {
+    lat: number;
+    lng: number;
+    platform: string;
+    post_url: string;
+  }[];
+  trending_score?: number;
 
   assigned_agent_id?: string;
   assigned_agent_name?: string;
@@ -50,6 +67,18 @@ export interface ScoutingTrip {
   end_date?: string;
   status: "planned" | "ongoing" | "completed";
   description?: string;
+  scout_ids?: string[];
+  route?: any[];
+  prospects_approached?: number;
+  prospects_agreed?: number;
+  prospects_added?: number;
+  conversion_rate?: number;
+  total_cost?: number;
+  photos?: string[];
+  weather?: string;
+  best_locations?: any[];
+  weather_forecast?: any;
+  historical_weather_success_correlation?: number;
   created_at: string;
   updated_at: string;
 }
@@ -82,6 +111,12 @@ export interface ScoutingEvent {
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
+  expected_attendance?: number;
+  is_attending?: boolean;
+  prospects_to_meet?: string[];
+  past_success_rate?: number;
+  calendar_event_id?: string;
+  sync_with_calendar?: boolean;
 
   created_at: string;
   updated_at: string;
@@ -96,6 +131,27 @@ export interface ScoutingSubmission {
   instagram?: string;
   status: "pending" | "reviewed" | "contacted" | "rejected";
   submitted_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScoutingAnalytics {
+  id: string;
+  agency_id: string;
+  metric_name: string;
+  metric_value: any;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+}
+
+export interface ScoutingTerritory {
+  id: string;
+  agency_id: string;
+  name: string;
+  boundary: any; // GeoJSON polygon
+  assigned_scout_id?: string;
+  color?: string;
   created_at: string;
   updated_at: string;
 }
