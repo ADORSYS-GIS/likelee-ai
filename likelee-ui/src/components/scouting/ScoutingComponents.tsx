@@ -54,6 +54,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
+import { ScoutingTrips } from "./ScoutingTrips";
 
 export const CreateEventModal = ({
   open,

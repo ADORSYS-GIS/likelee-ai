@@ -12,7 +12,6 @@ import { MapPin, RefreshCw, Navigation, Plus, Calendar, History, Share2, Link, L
 import { MapStats } from "./MapStats";
 import { MapFilters } from "./MapFilters";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AddLocationModal } from "./AddLocationModal";
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
@@ -56,7 +55,6 @@ export const ScoutingMap = ({
     });
 
     // Modal states
-    const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
 
     // Layer states
     const [layers, setLayers] = useState({
@@ -171,20 +169,6 @@ export const ScoutingMap = ({
                     <p className="text-sm text-gray-500 font-medium">Track discoveries, plan trips, and analyze scouting activity</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                        variant="outline"
-                        onClick={fetchData}
-                        className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2"
-                    >
-                        <RefreshCw className="w-4 h-4" /> Refresh
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => setIsAddLocationModalOpen(true)}
-                        className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2"
-                    >
-                        <Plus className="w-4 h-4" /> Add Location
-                    </Button>
                     <Button
                         variant="outline"
                         onClick={onAddEvent}
@@ -345,7 +329,7 @@ export const ScoutingMap = ({
                     )}
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl h-[600px] border border-gray-200 relative overflow-hidden group">
+                <div className="bg-gray-50 rounded-2xl h-[800px] border border-gray-200 relative overflow-hidden group">
                     {loading && (
                         <div className="absolute inset-0 z-[1000] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6">
                             <div className="p-6 bg-white rounded-full mb-4 shadow-sm">
@@ -430,16 +414,6 @@ export const ScoutingMap = ({
                 </div>
             </Card>
 
-            <AddLocationModal
-                isOpen={isAddLocationModalOpen}
-                onClose={() => setIsAddLocationModalOpen(false)}
-                onAdd={async (loc) => {
-                    // Handle add location
-                    console.log("Adding location:", loc);
-                    setIsAddLocationModalOpen(false);
-                    fetchData();
-                }}
-            />
 
         </div>
     );

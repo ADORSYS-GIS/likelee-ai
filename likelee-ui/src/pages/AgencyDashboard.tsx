@@ -3,6 +3,7 @@ import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
 import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
 import { PlanTripModal } from "@/components/scouting/map/PlanTripModal";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
+import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5461,14 +5462,15 @@ const ScoutingHubView = ({
     "Social Discovery",
     "Marketplace",
     "Scouting Map",
+    "Plan Trip",
     "Submissions",
     "Open Calls",
     "Analytics",
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-7xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             Scouting Hub
@@ -5501,13 +5503,13 @@ const ScoutingHubView = ({
           <Button
             onClick={() => setIsPlanTripModalOpen(true)}
             className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
-            >
-            <Navigation className="w-4 h-4" /> Plan Trip
-            </Button>
+          >
+            <MapPin className="w-4 h-4" /> Plan Scouting Trip
+          </Button>
         </div>
       </div>
 
-      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto max-w-full">
+      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto max-w-full max-w-7xl mx-auto">
         {tabs.map((tab) => (
           <button
             key={tab}
@@ -5522,7 +5524,7 @@ const ScoutingHubView = ({
         ))}
       </div>
 
-      <div className="mt-8">
+      <div className={`mt-8 ${activeTab !== 'Scouting Map' ? 'max-w-7xl mx-auto' : ''}`}>
         {activeTab === "Prospect Pipeline" && (
           <ProspectPipelineTab
             onAddProspect={() => {
@@ -5553,6 +5555,7 @@ const ScoutingHubView = ({
             }}
           />
         )}
+        {activeTab === "Plan Trip" && <ScoutingTrips />}
         {activeTab === "Submissions" && <SubmissionsTab />}
         {activeTab === "Open Calls" && (
           <OpenCallsTab
@@ -6280,13 +6283,11 @@ const ScoutingMapTab = ({
   onViewProspect: (prospect: ScoutingProspect) => void;
   onAddEvent: () => void;
 }) => (
-  <Card className="p-0 overflow-hidden">
-    <ScoutingMap
-      onEditEvent={onEditEvent}
-      onViewProspect={onViewProspect}
-      onAddEvent={onAddEvent}
-    />
-  </Card>
+  <ScoutingMap
+    onEditEvent={onEditEvent}
+    onViewProspect={onViewProspect}
+    onAddEvent={onAddEvent}
+  />
 );
 
 const SubmissionsTab = () => (
