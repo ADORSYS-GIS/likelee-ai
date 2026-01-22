@@ -262,7 +262,7 @@ export const ScoutingMap = ({
                             { id: 'discoveries', label: 'Total Discoveries', count: rawCounts.totalDiscoveries, icon: Layers, color: 'orange' },
                             { id: 'signedTalent', label: 'Signed Talent', count: rawCounts.signed, icon: User, color: 'blue' },
                             { id: 'prospects', label: 'Prospects', count: rawCounts.prospects, icon: Clock, color: 'amber' },
-                            { id: 'declined', label: 'Declined', count: rawCounts.declined, icon: Clock, color: 'red' },
+                            { id: 'declined', label: 'Declined prospect', count: rawCounts.declined, icon: Clock, color: 'red' },
                             { id: 'plannedTrips', label: 'Planned Trips', count: rawCounts.trips, icon: Plane, color: 'purple' },
                             { id: 'events', label: 'Events', count: rawCounts.events, icon: Calendar, color: 'pink' }
                         ].map((layer) => {
@@ -467,7 +467,7 @@ export const ScoutingMap = ({
                                 <div className="p-1.5 rounded-lg bg-red-100 text-red-700">
                                     <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
                                 </div>
-                                <span className="text-[11px] font-bold text-gray-700">Declined Prospect</span>
+                                <span className="text-[11px] font-bold text-gray-700">Declined prospect</span>
                             </div>
                         </div>
                     </div>

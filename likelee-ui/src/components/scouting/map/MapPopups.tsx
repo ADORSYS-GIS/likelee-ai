@@ -61,7 +61,10 @@ export const ProspectPopup = ({
             <div className="flex items-center gap-2">
                 <button
                     onClick={() => onDelete?.(prospect)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className={`p-1.5 rounded-lg transition-colors ${prospect.status === 'declined'
+                            ? 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                        }`}
                     title="Delete Prospect"
                 >
                     <Trash2 className="w-3.5 h-3.5" />
