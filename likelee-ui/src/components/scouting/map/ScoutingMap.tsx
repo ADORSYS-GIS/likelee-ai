@@ -220,16 +220,6 @@ export const ScoutingMap = ({
                     <p className="text-sm text-gray-500 font-medium">Track discoveries, plan trips, and analyze scouting activity</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                        variant="outline"
-                        onClick={onAddEvent}
-                        className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2"
-                    >
-                        <Calendar className="w-4 h-4" /> Add Event
-                    </Button>
-                    <Button variant="outline" className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2">
-                        <History className="w-4 h-4" /> Trip History (3)
-                    </Button>
                 </div>
             </div>
 
