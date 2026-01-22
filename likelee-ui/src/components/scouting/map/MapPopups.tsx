@@ -1,7 +1,7 @@
 import React from "react";
 import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, User, Instagram, Mail, Phone } from "lucide-react";
+import { Calendar, MapPin, User, Instagram, Mail, Phone, Trash2 } from "lucide-react";
 
 // Format prospect status for display
 const formatProspectStatus = (status: string): string => {
@@ -23,6 +23,7 @@ export const ProspectPopup = ({
 }: {
     prospect: ScoutingProspect;
     onView?: (prospect: ScoutingProspect) => void;
+    onDelete?: (prospect: ScoutingProspect) => void;
 }) => (
     <div className="p-1 min-w-[200px]">
         <div className="flex items-center gap-2 mb-2">
@@ -57,7 +58,16 @@ export const ProspectPopup = ({
         </div>
 
         <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
-            <span className="text-[10px] text-gray-400 font-medium">Prospect</span>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={() => onDelete?.(prospect)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Prospect"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] text-gray-400 font-medium">Prospect</span>
+            </div>
             <button
                 onClick={() => onView?.(prospect)}
                 className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700"

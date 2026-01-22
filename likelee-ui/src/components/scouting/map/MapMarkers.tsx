@@ -75,9 +75,10 @@ interface MapMarkersProps {
     declinedProspects?: (ScoutingProspect & { coords: { lat: number; lng: number } })[];
     onEditEvent?: (event: ScoutingEvent) => void;
     onViewProspect?: (prospect: ScoutingProspect) => void;
+    onDeleteProspect?: (prospect: ScoutingProspect) => void;
 }
 
-export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = [], events, trips = [], declinedProspects = [], onEditEvent, onViewProspect }: MapMarkersProps) => {
+export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = [], events, trips = [], declinedProspects = [], onEditEvent, onViewProspect, onDeleteProspect }: MapMarkersProps) => {
     return (
         <>
             {prospects.map((prospect) => (
@@ -90,6 +91,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                         <ProspectPopup
                             prospect={prospect}
                             onView={onViewProspect}
+                            onDelete={onDeleteProspect}
                         />
                     </Popup>
                 </Marker>
@@ -105,6 +107,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                         <ProspectPopup
                             prospect={prospect}
                             onView={onViewProspect}
+                            onDelete={onDeleteProspect}
                         />
                     </Popup>
                 </Marker>
