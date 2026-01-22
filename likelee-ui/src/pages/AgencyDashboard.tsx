@@ -6455,33 +6455,67 @@ const OpenCallsTab = ({
 };
 
 const ScoutingAnalyticsTab = () => {
+  const { user } = useAuth();
+  const { data: analytics, isLoading, error } = useQuery({
+    queryKey: ["scouting-analytics", user?.id],
+    queryFn: async () => {
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return null;
+      return scoutingService.getAnalytics(agencyId);
+    },
+    enabled: !!user?.id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error || !analytics) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
+        <p>Failed to load analytics data.</p>
+      </div>
+    );
+  }
+
   const stats = [
     {
       label: "TOTAL PROSPECTS",
-      value: "127",
-      sub: "+23 this month",
-      subColor: "text-green-600",
+      value: analytics.totalProspects.toString(),
+      sub: "All time",
+      subColor: "text-gray-500",
     },
     {
       label: "CONVERSION RATE",
-      value: "18%",
+      value: `${analytics.conversionRate}%`,
       sub: "Prospects → Signed",
       subColor: "text-gray-500",
     },
     {
       label: "AVG. TIME TO SIGN",
-      value: "34d",
+      value: `${analytics.avgTimeToSign}d`,
       sub: "From discovery",
       subColor: "text-gray-500",
     },
   ];
 
-  const sources = [
-    { name: "Instagram", value: 42 },
-    { name: "Street Scouting", value: 28 },
-    { name: "Referrals", value: 18 },
-    { name: "Website Submissions", value: 12 },
-  ];
+  const sourceLabels: Record<string, string> = {
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    street: "Street Scouting",
+    referral: "Referral",
+    website: "Website Submissions",
+  };
+
+  const sources = Object.entries(analytics.sources).map(([key, count]) => ({
+    name: sourceLabels[key] || key,
+    value: Math.round((count / analytics.totalProspects) * 100),
+  })).sort((a, b) => b.value - a.value);
 
   return (
     <div className="space-y-6">
@@ -6509,24 +6543,28 @@ const ScoutingAnalyticsTab = () => {
           Discovery Sources
         </h3>
         <div className="space-y-6">
-          {sources.map((source) => (
-            <div key={source.name}>
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-sm font-semibold text-gray-900">
-                  {source.name}
-                </span>
-                <span className="text-xs font-bold text-gray-900">
-                  {source.value}%
-                </span>
+          {sources.length > 0 ? (
+            sources.map((source) => (
+              <div key={source.name}>
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-sm font-semibold text-gray-900">
+                    {source.name}
+                  </span>
+                  <span className="text-xs font-bold text-gray-900">
+                    {source.value}%
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: `${source.value}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gray-900 rounded-full"
-                  style={{ width: `${source.value}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-4">No source data available.</p>
+          )}
         </div>
       </Card>
     </div>

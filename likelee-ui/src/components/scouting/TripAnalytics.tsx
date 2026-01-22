@@ -26,25 +26,71 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         : 0;
     const totalInvestment = trips.reduce((acc, trip) => acc + (trip.total_cost || 0), 0);
 
-    // Scout Performance (Mocked/Calculated)
-    const scoutStats = [
-        { name: "Sarah Johnson", trips: 2, prospects: 32, conversion: "33.0%", rank: 1 },
-        { name: "Michael Lee", trips: 2, prospects: 22, conversion: "30.1%", rank: 2 }
-    ];
+    // Scout Performance (Calculated)
+    const scoutMap: Record<string, { trips: number, prospects: number, totalConversion: number }> = {};
+    trips.forEach(trip => {
+        const scouts = trip.scout_names || trip.scout_ids || [];
+        scouts.forEach(name => {
+            if (!scoutMap[name]) {
+                scoutMap[name] = { trips: 0, prospects: 0, totalConversion: 0 };
+            }
+            scoutMap[name].trips += 1;
+            // Distribute prospects among scouts for this trip? 
+            // For now, let's attribute full trip prospects to each scout on the trip
+            scoutMap[name].prospects += (trip.prospects_added || 0);
+            scoutMap[name].totalConversion += (trip.conversion_rate || 0);
+        });
+    });
 
-    // Productive Locations (Mocked/Calculated)
-    const locations = [
-        { name: "Chicago Fashion Week Venue", visits: 1, rate: "12.0/visit", total: 12 },
-        { name: "Downtown Shopping District", visits: 1, rate: "9.0/visit", total: 9 },
-        { name: "SoHo Shopping District", visits: 1, rate: "8.0/visit", total: 8 }
-    ];
+    const scoutStats = Object.entries(scoutMap).map(([name, stats]) => ({
+        name,
+        trips: stats.trips,
+        prospects: stats.prospects,
+        conversion: stats.trips > 0 ? (stats.totalConversion / stats.trips).toFixed(1) + "%" : "0%",
+    })).sort((a, b) => b.prospects - a.prospects)
+        .map((stat, index) => ({ ...stat, rank: index + 1 }))
+        .slice(0, 5);
 
-    // ROI by Trip Type (Mocked/Calculated)
-    const roiStats = [
-        { type: "Open Scouting", trips: 1, prospects: 14, costPer: "$168/prospect" },
-        { type: "Specific Casting", trips: 1, prospects: 8, costPer: "$178/prospect" },
-        { type: "Event Coverage", trips: 1, prospects: 18, costPer: "$238/prospect" }
-    ];
+    // Productive Locations (Calculated)
+    const locationMap: Record<string, { visits: number, prospects: number }> = {};
+    trips.forEach(trip => {
+        trip.locations_visited?.forEach(loc => {
+            if (!locationMap[loc.name]) {
+                locationMap[loc.name] = { visits: 0, prospects: 0 };
+            }
+            locationMap[loc.name].visits += 1;
+            locationMap[loc.name].prospects += (loc.prospects_found || 0);
+        });
+    });
+
+    const locations = Object.entries(locationMap).map(([name, stats]) => ({
+        name,
+        visits: stats.visits,
+        total: stats.prospects,
+        rate: stats.visits > 0 ? (stats.prospects / stats.visits).toFixed(1) + "/visit" : "0/visit"
+    })).sort((a, b) => b.total - a.total)
+        .slice(0, 5);
+
+    // ROI by Trip Type (Calculated)
+    const roiMap: Record<string, { trips: number, prospects: number, totalCost: number }> = {};
+    trips.forEach(trip => {
+        const type = trip.trip_type || "Other";
+        if (!roiMap[type]) {
+            roiMap[type] = { trips: 0, prospects: 0, totalCost: 0 };
+        }
+        roiMap[type].trips += 1;
+        roiMap[type].prospects += (trip.prospects_added || 0);
+        roiMap[type].totalCost += (trip.total_cost || 0);
+    });
+
+    const roiStats = Object.entries(roiMap).map(([type, stats]) => ({
+        type,
+        trips: stats.trips,
+        prospects: stats.prospects,
+        costPer: stats.prospects > 0
+            ? `$${Math.round(stats.totalCost / stats.prospects)}/prospect`
+            : "N/A"
+    })).sort((a, b) => b.prospects - a.prospects);
 
     return (
         <Card className="p-6 bg-indigo-50/30 border-indigo-100 shadow-sm rounded-[32px] space-y-6">

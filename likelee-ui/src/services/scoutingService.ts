@@ -278,29 +278,32 @@ export const scoutingService = {
   async getAnalytics(agencyId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    // For now, we'll fetch all prospects and calculate stats client-side
-    // In the future, this should be replaced by a database view or RPC call
     const { data: prospects, error } = await supabase
       .from("scouting_prospects")
-      .select("status")
+      .select("status, source, discovery_date, updated_at")
       .eq("agency_id", agencyId);
 
     if (error) throw error;
 
     const stats = {
-      new_leads: 0,
+      totalProspects: prospects?.length || 0,
+      newLeads: 0,
       contacted: 0,
       meeting: 0,
       signed: 0,
-      rejected: 0,
-      total: 0,
+      declined: 0,
+      conversionRate: 0,
+      avgTimeToSign: 0,
+      sources: {} as Record<string, number>,
     };
 
-    prospects?.forEach((p: { status: string }) => {
-      stats.total++;
+    let totalDaysToSign = 0;
+    let signedCountForAvg = 0;
+
+    prospects?.forEach((p) => {
       switch (p.status) {
         case "new":
-          stats.new_leads++;
+          stats.newLeads++;
           break;
         case "contacted":
           stats.contacted++;
@@ -310,12 +313,32 @@ export const scoutingService = {
           break;
         case "signed":
           stats.signed++;
+          if (p.discovery_date && p.updated_at) {
+            const start = new Date(p.discovery_date);
+            const end = new Date(p.updated_at);
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            totalDaysToSign += diffDays;
+            signedCountForAvg++;
+          }
           break;
-        case "rejected":
-          stats.rejected++;
+        case "declined":
+          stats.declined++;
           break;
       }
+
+      if (p.source) {
+        stats.sources[p.source] = (stats.sources[p.source] || 0) + 1;
+      }
     });
+
+    if (stats.totalProspects > 0) {
+      stats.conversionRate = Math.round((stats.signed / stats.totalProspects) * 100);
+    }
+
+    if (signedCountForAvg > 0) {
+      stats.avgTimeToSign = Math.round(totalDaysToSign / signedCountForAvg);
+    }
 
     return stats;
   },
