@@ -5556,7 +5556,9 @@ const ScoutingHubView = ({
             isVisible={activeTab === "Scouting Map"}
           />
         </div>
-        {activeTab === "Plan Trip" && <ScoutingTrips />}
+        <div className={activeTab === "Plan Trip" ? "block" : "hidden"}>
+          <ScoutingTrips />
+        </div>
         {activeTab === "Submissions" && <SubmissionsTab />}
         {activeTab === "Open Calls" && (
           <OpenCallsTab
