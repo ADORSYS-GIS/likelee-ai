@@ -30,6 +30,27 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency-profile/user",
             get(crate::agencies::get_by_user),
         )
+        // Agency Dashboard
+        .route(
+            "/api/agency/dashboard/overview",
+            get(crate::agency_dashboard::get_dashboard_overview),
+        )
+        .route(
+            "/api/agency/dashboard/talent-performance",
+            get(crate::agency_dashboard::get_talent_performance),
+        )
+        .route(
+            "/api/agency/dashboard/revenue-breakdown",
+            get(crate::agency_dashboard::get_revenue_breakdown),
+        )
+        .route(
+            "/api/agency/dashboard/licensing-pipeline",
+            get(crate::agency_dashboard::get_licensing_pipeline),
+        )
+        .route(
+            "/api/agency/dashboard/recent-activity",
+            get(crate::agency_dashboard::get_recent_activity),
+        )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

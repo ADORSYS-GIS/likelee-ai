@@ -1,4 +1,5 @@
 pub mod agencies;
+pub mod agency_dashboard;
 pub mod auth;
 pub mod avatar;
 pub mod brands;

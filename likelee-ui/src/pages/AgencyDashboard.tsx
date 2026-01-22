@@ -110,6 +110,13 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import {
+  getAgencyDashboardOverview,
+  getAgencyTalentPerformance,
+  getAgencyRevenueBreakdown,
+  getAgencyLicensingPipeline,
+  getAgencyRecentActivity,
+} from "@/api/functions";
 
 const STATUS_MAP = {
   new: "New Lead",
@@ -400,11 +407,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1284,19 +1290,19 @@ const ClientProfileModal = ({
                   {(searchQuery ||
                     statusFilter !== "all" ||
                     consentFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                        setConsentFilter("all");
-                      }}
-                      className="text-gray-600"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear Filters
-                    </Button>
-                  )}
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("all");
+                          setConsentFilter("all");
+                        }}
+                        className="text-gray-600"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear Filters
+                      </Button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1475,8 +1481,8 @@ const ClientProfileModal = ({
                               >
                                 {talent.license_expiry !== "—"
                                   ? new Date(
-                                      talent.license_expiry,
-                                    ).toLocaleDateString()
+                                    talent.license_expiry,
+                                  ).toLocaleDateString()
                                   : "—"}
                               </span>
                               {isLicenseExpiring(talent.license_expiry) && (
@@ -3329,11 +3335,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -3807,11 +3812,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3819,11 +3823,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -4377,11 +4380,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -5499,11 +5501,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -6396,437 +6397,478 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
-  <div className="space-y-8">
-    {/* KYC Verification Alert */}
-    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-white rounded-xl shadow-sm">
-          <ShieldAlert className="w-6 h-6 text-indigo-600" />
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
-          </h3>
-          <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
-          </p>
-        </div>
+const DashboardView = ({ onKYC, data }: { onKYC: () => void; data: any }) => {
+  if (data.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
-      <Button
-        variant="default"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-        onClick={onKYC}
-      >
-        Complete KYC
-      </Button>
-    </div>
+    );
+  }
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {/* Roster Health */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-indigo-500">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-indigo-50 rounded-lg">
-            <Users className="w-5 h-5 text-indigo-600" />
+  const overview = data.overview;
+  const performance = data.performance;
+  const breakdown = data.breakdown;
+  const pipeline = data.pipeline;
+  const activity = data.activity?.activities || [];
+
+  return (
+    <div className="space-y-8">
+      {/* KYC Verification Alert */}
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white rounded-xl shadow-sm">
+            <ShieldAlert className="w-6 h-6 text-indigo-600" />
           </div>
-          <TrendingUp className="w-4 h-4 text-green-500" />
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Roster Health
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">9/10</span>
-        </div>
-        <p className="text-xs text-green-600 font-medium mt-1">90% active</p>
-      </Card>
-
-      {/* Revenue */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-green-500">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-green-50 rounded-lg">
-            <DollarSign className="w-5 h-5 text-green-600" />
-          </div>
-          <TrendingUp className="w-4 h-4 text-green-500" />
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Revenue This Month
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">$37.7K</span>
-        </div>
-        <p className="text-xs text-green-600 font-medium mt-1">
-          +12% vs last month
-        </p>
-      </Card>
-
-      {/* Pending Actions */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-red-500 relative">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-red-50 rounded-lg">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-          </div>
-          <Badge
-            variant="default"
-            className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-          >
-            3
-          </Badge>
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Pending Actions
-        </h3>
-        <div className="space-y-1">
-          <p className="text-xs text-gray-600">• 3 licensing requests</p>
-          <p className="text-xs text-gray-600">• 1 expiring license</p>
-          <p className="text-xs text-gray-600">• 1 compliance issue</p>
-        </div>
-      </Card>
-
-      {/* Platform Ranking */}
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-blue-400">
-        <div className="flex justify-between items-start mb-2">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Trophy className="w-5 h-5 text-blue-600" />
-          </div>
-        </div>
-        <h3 className="text-sm font-medium text-gray-500 mb-1">
-          Platform Ranking
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-blue-600">top 15%</span>
-        </div>
-        <p className="text-xs text-gray-500 font-medium mt-1">Top performer</p>
-      </Card>
-    </div>
-
-    {/* Section 2: Talent Performance Summary (Screenshot 3 Layout) */}
-    <Card className="p-8 rounded-xl border border-gray-200 shadow-sm bg-white">
-      <h2 className="text-xl font-bold text-gray-900 mb-8">
-        Talent Performance Summary
-      </h2>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Top 3 Revenue Generators */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Trophy className="w-5 h-5 text-yellow-500" />
-            <h3 className="text-sm font-bold text-gray-900">
-              Top 3 Revenue Generators
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">
+              KYC Verification Required
             </h3>
-          </div>
-
-          {[
-            {
-              rank: "#1",
-              talent: TALENT_DATA.find((t) => t.id === "carla")!,
-              amount: "$6,800",
-              color: "text-green-600",
-            },
-            {
-              rank: "#2",
-              talent: TALENT_DATA.find((t) => t.id === "clemence")!,
-              amount: "$5,400",
-              color: "text-green-600",
-            },
-            {
-              rank: "#3",
-              talent: TALENT_DATA.find((t) => t.id === "julia")!,
-              amount: "$5,200",
-              color: "text-green-600",
-            },
-          ].map((item) => (
-            <div
-              key={item.rank}
-              className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
-            >
-              <span className={`font-bold text-2xl w-10 ${item.color}`}>
-                {item.rank}
-              </span>
-              <img
-                src={item.talent.img}
-                alt={item.talent.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-gray-900 text-sm">
-                  {item.talent.name}
-                </p>
-                <p className="text-xs text-gray-500">{item.amount}</p>
-              </div>
-              <TrendingUp className="w-4 h-4 text-green-500" />
-            </div>
-          ))}
-        </div>
-
-        {/* Needs Activation */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className="w-5 h-5 text-orange-500" />
-            <h3 className="text-sm font-bold text-gray-900">
-              Needs Activation (0)
-            </h3>
-          </div>
-          <p className="text-sm text-gray-500 italic">
-            All talent actively earning!
-          </p>
-        </div>
-
-        {/* New Talent Performance */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            <h3 className="text-sm font-bold text-gray-900">
-              New Talent Performance
-            </h3>
-          </div>
-
-          <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Onboarded in last 30 days
+            <p className="text-sm text-gray-500">
+              To enable payouts and licensing for your talent, please complete
+              your agency's ID verification.
             </p>
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-gray-900 text-sm">Aaron</span>
+          </div>
+        </div>
+        <Button
+          variant="default"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
+          onClick={onKYC}
+        >
+          Complete KYC
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Roster Health */}
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-indigo-500">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-indigo-50 rounded-lg">
+              <Users className="w-5 h-5 text-indigo-600" />
+            </div>
+            {overview?.roster_health.percentage >= 90 ? (
+              <TrendingUp className="w-4 h-4 text-green-500" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-red-500" />
+            )}
+          </div>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">
+            Roster Health
+          </h3>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">
+              {overview?.roster_health.active_count}/{overview?.roster_health.total_count}
+            </span>
+          </div>
+          <p className={`text-xs ${overview?.roster_health.percentage >= 90 ? "text-green-600" : "text-yellow-600"} font-medium mt-1`}>
+            {overview?.roster_health.percentage.toFixed(0)}% active
+          </p>
+        </Card>
+
+        {/* Revenue */}
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-green-500">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <DollarSign className="w-5 h-5 text-green-600" />
+            </div>
+            {overview?.monthly_revenue.growth_percentage >= 0 ? (
+              <TrendingUp className="w-4 h-4 text-green-500" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-red-500" />
+            )}
+          </div>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">
+            Revenue This Month
+          </h3>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">
+              {overview?.monthly_revenue.amount_formatted}
+            </span>
+          </div>
+          <p className={`text-xs ${overview?.monthly_revenue.growth_percentage >= 0 ? "text-green-600" : "text-red-600"} font-medium mt-1`}>
+            {overview?.monthly_revenue.growth_percentage >= 0 ? "+" : ""}{overview?.monthly_revenue.growth_percentage}% vs last month
+          </p>
+        </Card>
+
+        {/* Pending Actions */}
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-red-500 relative">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-red-50 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            </div>
+            {(overview?.pending_actions.licensing_requests + overview?.pending_actions.expiring_licenses + overview?.pending_actions.compliance_issues) > 0 && (
               <Badge
                 variant="default"
-                className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
+                className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
               >
-                Pending
+                {overview?.pending_actions.licensing_requests + overview?.pending_actions.expiring_licenses + overview?.pending_actions.compliance_issues}
               </Badge>
-            </div>
-            <p className="text-xs text-gray-500">
-              Average time to First booking: 12 days
-            </p>
+            )}
           </div>
-        </div>
-      </div>
-    </Card>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">
+            Pending Actions
+          </h3>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600">• {overview?.pending_actions.licensing_requests} licensing requests</p>
+            <p className="text-xs text-gray-600">• {overview?.pending_actions.expiring_licenses} expiring license</p>
+            <p className="text-xs text-gray-600">• {overview?.pending_actions.compliance_issues} compliance issue</p>
+          </div>
+        </Card>
 
-    {/* Section 3: Revenue Breakdown (Detailed) */}
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
+        {/* Platform Ranking */}
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-blue-400">
+          <div className="flex justify-between items-start mb-2">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Trophy className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">
+            Platform Ranking
+          </h3>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-blue-600">
+              {overview?.platform_ranking.rank_text}
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            {overview?.platform_ranking.rank_description}
+          </p>
+        </Card>
       </div>
-      <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* By Campaign Type */}
-        <div className="p-6 border border-gray-100 rounded-xl">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-            By Campaign Type
-          </h3>
-          <div className="space-y-4">
-            {[
-              { label: "Social Media", value: "45%" },
-              { label: "E-commerce", value: "35%" },
-              { label: "Traditional", value: "20%" },
-            ].map((item) => (
+
+      {/* Section 2: Talent Performance Summary (Screenshot 3 Layout) */}
+      <Card className="p-8 rounded-xl border border-gray-200 shadow-sm bg-white">
+        <h2 className="text-xl font-bold text-gray-900 mb-8">
+          Talent Performance Summary
+        </h2>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Top 3 Revenue Generators */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              <h3 className="text-sm font-bold text-gray-900">
+                Top 3 Revenue Generators
+              </h3>
+            </div>
+
+            {performance?.top_revenue_generators.map((item: any, index: number) => (
               <div
-                key={item.label}
-                className="flex justify-between items-center"
+                key={item.id}
+                className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
               >
-                <span className="text-sm font-medium text-gray-600">
-                  {item.label}
+                <span className={`font-bold text-2xl w-10 text-green-600`}>
+                  #{index + 1}
                 </span>
-                <span className="text-sm font-bold text-gray-900">
-                  {item.value}
-                </span>
+                {item.photo_url ? (
+                  <img
+                    src={item.photo_url}
+                    alt={item.name}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-gray-500">{item.earnings_formatted}</p>
+                </div>
+                <TrendingUp className="w-4 h-4 text-green-500" />
               </div>
             ))}
+            {performance?.top_revenue_generators.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No revenue generators yet this month.</p>
+            )}
+          </div>
+
+          {/* Actively Earning */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="w-5 h-5 text-orange-500" />
+              <h3 className="text-sm font-bold text-gray-900">
+                Actively Earning ({performance?.actively_earning.length})
+              </h3>
+            </div>
+            {performance?.actively_earning.length > 0 ? (
+              performance.actively_earning.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm"
+                >
+                  {item.photo_url ? (
+                    <img
+                      src={item.photo_url}
+                      alt={item.name}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <User className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-900 text-sm">{item.name}</p>
+                    <p className="text-xs text-gray-500">Last: {item.payment_formatted}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 italic">
+                All talent actively earning!
+              </p>
+            )}
+          </div>
+
+          {/* New Talent Performance */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <h3 className="text-sm font-bold text-gray-900">
+                New Talent Performance
+              </h3>
+            </div>
+
+            {performance?.new_talent_performance.map((item: any) => (
+              <div key={item.id} className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Onboarded {item.days_since_added} days ago
+                </p>
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-gray-900 text-sm">{item.name}</span>
+                  <Badge
+                    variant="default"
+                    className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
+                  >
+                    {item.status}
+                  </Badge>
+                </div>
+                {typeof item.avg_days_to_first_booking === 'number' && (
+                  <p className="text-xs text-gray-500">
+                    Average time to First booking: {item.avg_days_to_first_booking} days
+                  </p>
+                )}
+              </div>
+            ))}
+            {performance?.new_talent_performance.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No new talent in the last 30 days.</p>
+            )}
           </div>
         </div>
-        {/* By Brand Vertical */}
-        <div className="p-6 border border-gray-100 rounded-xl">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-            By Brand Vertical
-          </h3>
-          <div className="space-y-4">
-            {[
-              { label: "Beauty", value: "40%" },
-              { label: "Fashion", value: "35%" },
-              { label: "Lifestyle", value: "25%" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex justify-between items-center"
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-gray-900">
-                  {item.value}
-                </span>
-              </div>
-            ))}
+      </Card>
+
+      {/* Section 3: Revenue Breakdown (Detailed) */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
+        </div>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* By Campaign Type */}
+          <div className="p-6 border border-gray-100 rounded-xl">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+              By Campaign Type
+            </h3>
+            <div className="space-y-4">
+              {breakdown?.by_campaign_type.map((item: any) => (
+                <div
+                  key={item.name}
+                  className="flex justify-between items-center"
+                >
+                  <span className="text-sm font-medium text-gray-600">
+                    {item.name}
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {item.percentage}%
+                  </span>
+                </div>
+              ))}
+              {breakdown?.by_campaign_type.length === 0 && (
+                <p className="text-sm text-gray-500 italic">No data yet.</p>
+              )}
+            </div>
+          </div>
+          {/* By Brand Vertical */}
+          <div className="p-6 border border-gray-100 rounded-xl">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+              By Brand Vertical
+            </h3>
+            <div className="space-y-4">
+              {breakdown?.by_brand_vertical.map((item: any) => (
+                <div
+                  key={item.name}
+                  className="flex justify-between items-center"
+                >
+                  <span className="text-sm font-medium text-gray-600">
+                    {item.name}
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {item.percentage}%
+                  </span>
+                </div>
+              ))}
+              {breakdown?.by_brand_vertical.length === 0 && (
+                <p className="text-sm text-gray-500 italic">No data yet.</p>
+              )}
+            </div>
+          </div>
+          {/* By Region */}
+          <div className="p-6 border border-gray-100 rounded-xl">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+              By Region
+            </h3>
+            <div className="space-y-4">
+              {breakdown?.by_region.map((item: any) => (
+                <div
+                  key={item.name}
+                  className="flex justify-between items-center"
+                >
+                  <span className="text-sm font-medium text-gray-600">
+                    {item.name}
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {item.percentage}%
+                  </span>
+                </div>
+              ))}
+              {breakdown?.by_region.length === 0 && (
+                <p className="text-sm text-gray-500 italic">No data yet.</p>
+              )}
+            </div>
           </div>
         </div>
-        {/* By Region */}
-        <div className="p-6 border border-gray-100 rounded-xl">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-            By Region
-          </h3>
-          <div className="space-y-4">
-            {[
-              { label: "North America", value: "60%" },
-              { label: "Europe", value: "30%" },
-              { label: "Other", value: "10%" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex justify-between items-center"
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  {item.label}
-                </span>
-                <span className="text-sm font-bold text-gray-900">
-                  {item.value}
-                </span>
+      </div>
+
+      {/* Section 4: Licensing Pipeline (Detailed) */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">Licensing Pipeline</h2>
+        </div>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
+            <div className="mb-4">
+              <div className="w-8 h-8 rounded-full border border-yellow-400 flex items-center justify-center text-yellow-500 mb-2">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
               </div>
-            ))}
-          </div>
+              <span className="text-xs font-medium text-gray-500">
+                Pending Approval
+              </span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 mb-4">{pipeline?.pending_approval || 0}</div>
+            <Button
+              variant="default"
+              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+            >
+              Review Now
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border border-green-200 shadow-sm rounded-xl">
+            <div className="mb-4">
+              <div className="w-8 h-8 rounded-full border border-green-400 flex items-center justify-center text-green-500 mb-2">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <span className="text-xs font-medium text-gray-500">Active</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 mb-4">{pipeline?.active || 0}</div>
+          </Card>
+          <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
+            <div className="mb-4">
+              <div className="w-8 h-8 rounded-full border border-orange-400 flex items-center justify-center text-orange-500 mb-2 text-lg">
+                !
+              </div>
+              <span className="text-xs font-medium text-gray-500">
+                Expiring Soon (30d)
+              </span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 mb-4">{pipeline?.expiring_soon || 0}</div>
+            <Button
+              variant="outline"
+              className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
+            >
+              Review
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
+            <div className="mb-4">
+              <div className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center text-gray-400 mb-2">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <span className="text-xs font-medium text-gray-500">
+                Total This Month
+              </span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900 mb-4">{pipeline?.total_this_month || 0}</div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Section 5: Recent Activity (Detailed) */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+        </div>
+        <div className="p-8 space-y-10">
+          {activity.map((item: any, i: number) => (
+            <div key={item.id || i} className="flex gap-4">
+              <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 bg-indigo-600`} />
+              <div>
+                <p className="text-gray-900 font-bold text-sm">
+                  {item.title}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-400">{item.relative_time}</span>
+                  <span className="text-xs text-gray-300">•</span>
+                  <span className="text-xs text-gray-400 font-medium">{item.subtitle}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          {activity.length === 0 && (
+            <p className="text-sm text-gray-500 italic">No recent activity.</p>
+          )}
         </div>
       </div>
     </div>
-
-    {/* Section 4: Licensing Pipeline (Detailed) */}
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">Licensing Pipeline</h2>
-      </div>
-      <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-yellow-400 flex items-center justify-center text-yellow-500 mb-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-medium text-gray-500">
-              Pending Approval
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">3</div>
-          <Button
-            variant="default"
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
-          >
-            Review Now
-          </Button>
-        </Card>
-        <Card className="p-6 bg-white border border-green-200 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-green-400 flex items-center justify-center text-green-500 mb-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-medium text-gray-500">Active</span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">9</div>
-        </Card>
-        <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-orange-400 flex items-center justify-center text-orange-500 mb-2 text-lg">
-              !
-            </div>
-            <span className="text-xs font-medium text-gray-500">
-              Expiring Soon (30d)
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">1</div>
-          <Button
-            variant="outline"
-            className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
-          >
-            Review
-          </Button>
-        </Card>
-        <Card className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
-          <div className="mb-4">
-            <div className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center text-gray-400 mb-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-            <span className="text-xs font-medium text-gray-500">
-              Total This Month
-            </span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">13</div>
-        </Card>
-      </div>
-    </div>
-
-    {/* Section 5: Recent Activity (Detailed) */}
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-      </div>
-      <div className="p-8 space-y-10">
-        {[
-          {
-            text: "License approved for Emma - Glossier Beauty",
-            time: "2 hours ago",
-            color: "bg-blue-600",
-          },
-          {
-            text: "Payment received: $5,200 from & Other Stories",
-            time: "5 hours ago",
-            color: "bg-green-600",
-          },
-          {
-            text: "Aaron added to roster (pending verification)",
-            time: "1 day ago",
-            color: "bg-purple-600",
-          },
-          {
-            text: "License renewed for Milan - Carhartt WIP",
-            time: "2 days ago",
-            color: "bg-blue-600",
-          },
-        ].map((item, i) => (
-          <div key={i} className="flex gap-4">
-            <div
-              className={`mt-1.5 w-2.5 h-2.5 rounded-full ${item.color} flex-shrink-0`}
-            />
-            <div>
-              <p className="text-sm font-bold text-gray-900">{item.text}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.time}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const RosterView = ({
   searchTerm,
@@ -7234,13 +7276,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -7359,16 +7401,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -8209,9 +8250,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -9023,11 +9064,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -11198,7 +11238,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -11361,11 +11401,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -11858,11 +11897,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -12744,11 +12782,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -13717,10 +13754,69 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
+const useAgencyDashboard = () => {
+  const { user } = useAuth();
+
+  const overviewQuery = useQuery({
+    queryKey: ["agency-dashboard-overview", user?.id],
+    queryFn: async () => {
+      return await getAgencyDashboardOverview();
+    },
+    enabled: !!user?.id,
+  });
+
+  const performanceQuery = useQuery({
+    queryKey: ["agency-dashboard-performance", user?.id],
+    queryFn: async () => {
+      return await getAgencyTalentPerformance();
+    },
+    enabled: !!user?.id,
+  });
+
+  const breakdownQuery = useQuery({
+    queryKey: ["agency-dashboard-breakdown", user?.id],
+    queryFn: async () => {
+      return await getAgencyRevenueBreakdown();
+    },
+    enabled: !!user?.id,
+  });
+
+  const pipelineQuery = useQuery({
+    queryKey: ["agency-dashboard-pipeline", user?.id],
+    queryFn: async () => {
+      return await getAgencyLicensingPipeline();
+    },
+    enabled: !!user?.id,
+  });
+
+  const activityQuery = useQuery({
+    queryKey: ["agency-dashboard-activity", user?.id],
+    queryFn: async () => {
+      return await getAgencyRecentActivity();
+    },
+    enabled: !!user?.id,
+  });
+
+  return {
+    overview: overviewQuery.data,
+    performance: performanceQuery.data,
+    breakdown: breakdownQuery.data,
+    pipeline: pipelineQuery.data,
+    activity: activityQuery.data,
+    isLoading:
+      overviewQuery.isLoading ||
+      performanceQuery.isLoading ||
+      breakdownQuery.isLoading ||
+      pipelineQuery.isLoading ||
+      activityQuery.isLoading,
+  };
+};
+
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const dashboardData = useAgencyDashboard();
 
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
@@ -13877,92 +13973,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14015,16 +14111,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14045,11 +14139,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -14270,7 +14363,9 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
-          {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
+          {activeTab === "dashboard" && (
+            <DashboardView onKYC={handleKYC} data={dashboardData} />
+          )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
               searchTerm={searchTerm}
