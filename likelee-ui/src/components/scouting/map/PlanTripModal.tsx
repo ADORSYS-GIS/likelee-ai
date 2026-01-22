@@ -123,6 +123,36 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
         }
     }, [initialData, isOpen]);
 
+    const compressImage = (base64Str: string, maxWidth = 1200, maxHeight = 1200, quality = 0.7): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+        });
+    };
+
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length > 0) {
@@ -131,7 +161,11 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                 const uploadPromises = Array.from(files).map(file => {
                     return new Promise<string>((resolve, reject) => {
                         const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onloadend = async () => {
+                            const base64 = reader.result as string;
+                            const compressed = await compressImage(base64);
+                            resolve(compressed);
+                        };
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
