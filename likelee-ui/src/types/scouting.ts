@@ -114,6 +114,8 @@ export interface ScoutingEvent {
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
+  targeted_talent_goal?: number;
+  registration_fee?: number;
   expected_attendance?: number;
   is_attending?: boolean;
   prospects_to_meet?: string[];

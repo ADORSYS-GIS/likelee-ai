@@ -375,14 +375,26 @@ export const CreateEventModal = ({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Dress Code</Label>
-                <Input
-                  placeholder="e.g., Fitted black clothing, minimal makeup"
-                  value={formData.dress_code || ""}
-                  onChange={(e) => handleInputChange("dress_code", e.target.value)}
-                  className="h-10 rounded-lg border-gray-200 text-sm"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Dress Code</Label>
+                  <Input
+                    placeholder="e.g., Fitted black clothing, minimal makeup"
+                    value={formData.dress_code || ""}
+                    onChange={(e) => handleInputChange("dress_code", e.target.value)}
+                    className="h-10 rounded-lg border-gray-200 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Targeted Talent Goal</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 20"
+                    value={formData.targeted_talent_goal || ""}
+                    onChange={(e) => handleInputChange("targeted_talent_goal", parseInt(e.target.value))}
+                    className="h-10 rounded-lg border-gray-200 text-sm"
+                  />
+                </div>
               </div>
             </TabsContent>
 
@@ -438,6 +450,24 @@ export const CreateEventModal = ({
                   <Label htmlFor="reg-required" className="text-xs font-semibold text-gray-800 cursor-pointer">Registration Required</Label>
                 </div>
               </div>
+
+              {formData.registration_required && (
+                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Registration Fee ($)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      step="0.01"
+                      value={formData.registration_fee || ""}
+                      onChange={(e) => handleInputChange("registration_fee", parseFloat(e.target.value))}
+                      className="h-10 rounded-lg border-gray-200 text-sm pl-9"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium italic">Leave at 0.00 for free registration</p>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Internal Notes</Label>

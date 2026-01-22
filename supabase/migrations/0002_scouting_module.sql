@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS public.scouting_events (
   contact_name text,
   contact_email text,
   contact_phone text,
+  targeted_talent_goal integer,
+  registration_fee numeric(10,2),
   
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
