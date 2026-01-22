@@ -143,10 +143,10 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                 </Marker>
             ))}
 
-            {trips.map((trip) => (
+            {trips.filter(t => t.latitude && t.longitude).map((trip) => (
                 <Marker
                     key={`trip-${trip.id}`}
-                    position={[trip.latitude || 40.7128, trip.longitude || -74.0060]}
+                    position={[trip.latitude, trip.longitude]}
                     icon={ScoutingTripIcon}
                 >
                     <Popup autoClose={false} closeOnClick={false}>

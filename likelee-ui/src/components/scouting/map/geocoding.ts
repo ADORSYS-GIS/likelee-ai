@@ -48,3 +48,35 @@ export async function geocode(address: string): Promise<Coordinates | null> {
 
     return null;
 }
+
+export async function searchLocations(query: string): Promise<{ name: string; lat: number; lng: number }[]> {
+    if (!query || query.length < 3) return [];
+
+    try {
+        // Adding a delay to respect Nominatim's usage policy
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+            {
+                headers: {
+                    'User-Agent': 'Likelee-AI-Scouting-Map/1.0'
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (data && Array.isArray(data)) {
+            return data.map((item: any) => ({
+                name: item.display_name,
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon)
+            }));
+        }
+    } catch (error) {
+        console.error("Location search error:", error);
+    }
+
+    return [];
+}

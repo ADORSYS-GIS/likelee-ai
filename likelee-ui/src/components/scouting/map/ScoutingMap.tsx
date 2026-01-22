@@ -10,7 +10,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, RefreshCw, Navigation, Plus, Calendar, History, Share2, Link, Layers, Eye, EyeOff, TrendingUp, User, CheckCircle, Check, Plane, Diamond, Clock, Trash2 } from "lucide-react";
 import { MapStats } from "./MapStats";
-import { MapFilters } from "./MapFilters";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -243,7 +242,6 @@ export const ScoutingMap = ({
                 upcomingEvents={rawCounts.events}
             />
 
-            <MapFilters />
 
             <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-3xl">
                 <div className="mb-6">

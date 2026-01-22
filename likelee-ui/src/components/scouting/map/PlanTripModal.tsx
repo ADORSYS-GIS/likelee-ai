@@ -42,6 +42,21 @@ import {
     Loader2
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { searchLocations } from "./geocoding";
+import { cn } from "@/lib/utils";
 
 interface PlanTripModalProps {
     isOpen: boolean;
@@ -67,8 +82,8 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
     const [startTime, setStartTime] = React.useState(initialData?.start_time || "09:00");
     const [endDate, setEndDate] = React.useState(initialData?.end_date || "");
     const [endTime, setEndTime] = useState(initialData?.end_time || "18:00");
-    const [lat, setLat] = useState(initialData?.latitude?.toString() || "40.7128");
-    const [lng, setLng] = useState(initialData?.longitude?.toString() || "-74.0060");
+    const [lat, setLat] = useState(initialData?.latitude?.toString() || "");
+    const [lng, setLng] = useState(initialData?.longitude?.toString() || "");
     const [tripType, setTripType] = useState<"Open Scouting" | "Specific Casting" | "Event Coverage" | "Other">(initialData?.trip_type || "Open Scouting");
     const [status, setStatus] = useState<"planned" | "ongoing" | "completed">(initialData?.status || "planned");
     const [goal, setGoal] = useState(initialData?.prospects_added?.toString() || "10");
@@ -79,6 +94,23 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
     const [conversion, setConversion] = useState(initialData?.conversion_rate?.toString() || "0");
     const [notes, setNotes] = useState(initialData?.description || "");
 
+    const [locationOpen, setLocationOpen] = useState(false);
+    const [locationSearch, setLocationSearch] = useState("");
+    const [locationResults, setLocationResults] = useState<{ name: string; lat: number; lng: number }[]>([]);
+
+    useEffect(() => {
+        const search = async () => {
+            if (locationSearch.length >= 3) {
+                const results = await searchLocations(locationSearch);
+                setLocationResults(results);
+            } else {
+                setLocationResults([]);
+            }
+        };
+        const debounce = setTimeout(search, 500);
+        return () => clearTimeout(debounce);
+    }, [locationSearch]);
+
     React.useEffect(() => {
         if (initialData) {
             setName(initialData.name || "");
@@ -87,8 +119,8 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
             setStartTime(initialData.start_time || "09:00");
             setEndDate(initialData.end_date || "");
             setEndTime(initialData.end_time || "18:00");
-            setLat(initialData.latitude?.toString() || "40.7128");
-            setLng(initialData.longitude?.toString() || "-74.0060");
+            setLat(initialData.latitude?.toString() || "");
+            setLng(initialData.longitude?.toString() || "");
             setTripType(initialData.trip_type || "Open Scouting");
             setStatus(initialData.status || "planned");
             setGoal(initialData.prospects_added?.toString() || "10");
@@ -107,8 +139,8 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
             setStartTime("09:00");
             setEndDate("");
             setEndTime("18:00");
-            setLat("40.7128");
-            setLng("-74.0060");
+            setLat("");
+            setLng("");
             setTripType("Open Scouting");
             setStatus("planned");
             setGoal("10");
@@ -242,13 +274,75 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                 <Label htmlFor="destination" className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
                                     <MapPin className="w-3 h-3" /> Destination *
                                 </Label>
-                                <Input
-                                    id="destination"
-                                    placeholder="e.g., Los Angeles, CA"
-                                    className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
-                                    value={destination}
-                                    onChange={(e) => setDestination(e.target.value)}
-                                />
+                                <Popover open={locationOpen} onOpenChange={setLocationOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={locationOpen}
+                                            className="w-full justify-between rounded-xl border-gray-200 bg-gray-50/50 h-10 px-4 font-bold text-gray-900 hover:bg-white hover:border-indigo-300"
+                                        >
+                                            {destination || "Search for a location..."}
+                                            <MapPin className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[400px] p-0" align="start">
+                                        <Command>
+                                            <CommandInput
+                                                placeholder="Search location..."
+                                                value={locationSearch}
+                                                onValueChange={setLocationSearch}
+                                            />
+                                            <CommandList>
+                                                <CommandEmpty>No location found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {locationResults.map((result, index) => (
+                                                        <CommandItem
+                                                            key={`${result.name}-${index}`}
+                                                            value={result.name}
+                                                            onSelect={(currentValue) => {
+                                                                setDestination(currentValue);
+                                                                setLat(result.lat.toString());
+                                                                setLng(result.lng.toString());
+                                                                setLocationOpen(false);
+                                                            }}
+                                                        >
+                                                            <MapPin className="mr-2 h-4 w-4" />
+                                                            {result.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="latitude" className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                        <MapPin className="w-3 h-3" /> Latitude
+                                    </Label>
+                                    <Input
+                                        id="latitude"
+                                        placeholder="e.g., 34.0522"
+                                        className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                        value={lat}
+                                        onChange={(e) => setLat(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="longitude" className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                        <MapPin className="w-3 h-3" /> Longitude
+                                    </Label>
+                                    <Input
+                                        id="longitude"
+                                        placeholder="e.g., -118.2437"
+                                        className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                        value={lng}
+                                        onChange={(e) => setLng(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
