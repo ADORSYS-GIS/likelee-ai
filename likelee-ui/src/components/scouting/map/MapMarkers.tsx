@@ -2,7 +2,7 @@ import React from "react";
 import { Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
-import { ProspectPopup, EventPopup } from "./MapPopups";
+import { ProspectPopup, EventPopup, TripPopup } from "./MapPopups";
 import { Star, Clock } from "lucide-react";
 
 const createCustomIcon = (color: string, iconType: 'prospect' | 'event' | 'signed' | 'trip' | 'prospect-only') => {
@@ -150,11 +150,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                     icon={ScoutingTripIcon}
                 >
                     <Popup autoClose={false} closeOnClick={false}>
-                        <div className="p-2">
-                            <h4 className="font-bold text-sm">{trip.name}</h4>
-                            <p className="text-xs text-gray-500">{trip.destination}</p>
-                            <p className="text-[10px] text-indigo-600 mt-1">{trip.start_date} - {trip.end_date}</p>
-                        </div>
+                        <TripPopup trip={trip} />
                     </Popup>
                 </Marker>
             ))}
