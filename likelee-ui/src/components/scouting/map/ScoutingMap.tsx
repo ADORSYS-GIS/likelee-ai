@@ -274,7 +274,7 @@ export const ScoutingMap = ({
                                 <button
                                     key={layer.id}
                                     onClick={() => toggleLayer(layer.id as keyof typeof layers)}
-                                    className={`flex items-center justify-between p-2 rounded-xl border transition-all duration-300 ${colorClasses.bg} ${isSelected ? 'shadow-md ring-1' : 'hover:border-gray-200 hover:shadow-sm'}`}
+                                    className={`flex items-center justify-between p-2 rounded-xl border transition-all duration-300 cursor-pointer ${colorClasses.bg} ${isSelected ? 'shadow-md ring-1 hover:shadow-lg hover:scale-[1.02]' : 'hover:border-gray-300 hover:shadow-md hover:scale-[1.02]'} active:scale-[0.98]`}
                                 >
                                     <div className="flex items-center gap-2 overflow-hidden">
                                         <div className={`p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 ${colorClasses.iconBg} ${isSelected ? 'shadow-lg' : ''}`}>
