@@ -63,7 +63,7 @@ const ProspectIcon = createCustomIcon("#ea580c", "prospect"); // Orange-600
 const SignedIcon = createCustomIcon("#2563eb", "signed");     // Blue-600
 const ProspectOnlyIcon = createCustomIcon("#d97706", "prospect-only"); // Amber-600
 const EventIcon = createCustomIcon("#db2777", "event"); // Pink-600 - Single icon for all events
-const PlannedTripIcon = createCustomIcon("#7c3aed", "trip");   // Purple-600
+const ScoutingTripIcon = createCustomIcon("#7c3aed", "trip");   // Purple-600
 const DeclinedIcon = createCustomIcon("#dc2626", "prospect-only"); // Red-600
 
 interface MapMarkersProps {
@@ -147,7 +147,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                 <Marker
                     key={`trip-${trip.id}`}
                     position={[trip.latitude || 40.7128, trip.longitude || -74.0060]}
-                    icon={PlannedTripIcon}
+                    icon={ScoutingTripIcon}
                 >
                     <Popup autoClose={false} closeOnClick={false}>
                         <div className="p-2">

@@ -26,11 +26,11 @@ interface MapStatsProps {
     totalDiscoveries: number;
     signed: number;
     prospects: number;
-    plannedTrips: number;
+    scoutingTrips: number;
     upcomingEvents: number;
 }
 
-export const MapStats = ({ totalDiscoveries, signed, prospects, plannedTrips, upcomingEvents }: MapStatsProps) => {
+export const MapStats = ({ totalDiscoveries, signed, prospects, scoutingTrips, upcomingEvents }: MapStatsProps) => {
     return (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             <StatCard
@@ -55,8 +55,8 @@ export const MapStats = ({ totalDiscoveries, signed, prospects, plannedTrips, up
                 bgColor="bg-amber-50"
             />
             <StatCard
-                label="Planned Trips"
-                value={plannedTrips}
+                label="Scouting Trips"
+                value={scoutingTrips}
                 icon={Plane}
                 iconColor="text-purple-600"
                 bgColor="bg-purple-50"

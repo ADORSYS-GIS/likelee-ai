@@ -64,11 +64,14 @@ export interface ScoutingTrip {
   name: string;
   location: string;
   start_date?: string;
+  start_time?: string;
   end_date?: string;
+  end_time?: string;
   status: "planned" | "ongoing" | "completed";
   trip_type?: "Open Scouting" | "Specific Casting" | "Event Coverage" | "Other";
   description?: string;
   scout_ids?: string[];
+  scout_names?: string[];
   route?: any[];
   prospects_approached?: number;
   prospects_submitted?: number;
@@ -77,6 +80,8 @@ export interface ScoutingTrip {
   conversion_rate?: number;
   total_cost?: number;
   photos?: string[];
+  latitude?: number;
+  longitude?: number;
   weather?: string;
   best_locations?: ScoutingTripLocation[];
   locations_visited?: ScoutingTripLocation[];

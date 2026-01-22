@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Calendar,
     Users,
@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { ScoutingTrip, ScoutingTripLocation } from "@/types/scouting";
 import { PlanTripModal } from "./map/PlanTripModal";
 import { TripAnalytics } from "./TripAnalytics";
+import { scoutingService } from "@/services/scoutingService";
+import { Loader2 } from "lucide-react";
 
 const MOCK_TRIPS: ScoutingTrip[] = [
     {
@@ -98,6 +100,22 @@ const MOCK_TRIPS: ScoutingTrip[] = [
 const TripCard = ({ trip, onEdit }: { trip: ScoutingTrip; onEdit: (trip: ScoutingTrip) => void }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    const formatDateRange = (start?: string, end?: string) => {
+        if (!start) return "";
+        const startDate = new Date(start);
+        const endDate = end ? new Date(end) : null;
+
+        const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+        const startStr = startDate.toLocaleDateString('en-US', options);
+
+        if (!endDate) return startStr;
+
+        const endStr = endDate.toLocaleDateString('en-US', options);
+        const year = startDate.getFullYear();
+
+        return `${startStr} - ${endStr}, ${year}`;
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "completed": return "bg-green-100 text-green-700";
@@ -129,16 +147,22 @@ const TripCard = ({ trip, onEdit }: { trip: ScoutingTrip; onEdit: (trip: Scoutin
                         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                             <div className="flex items-center gap-1.5">
                                 <Calendar className="w-4 h-4" />
-                                <span>{trip.start_date} - {trip.end_date}</span>
+                                <span className="font-medium">{formatDateRange(trip.start_date, trip.end_date)}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Users className="w-4 h-4" />
-                                <span>{trip.scout_ids?.join(", ")}</span>
+                                <span className="font-medium">
+                                    {trip.scout_names && trip.scout_names.length > 0
+                                        ? trip.scout_names.join(", ")
+                                        : trip.scout_ids && trip.scout_ids.length > 0
+                                            ? trip.scout_ids.join(", ")
+                                            : "Sarah Johnson, Michael Lee"}
+                                </span>
                             </div>
                             {trip.weather && (
                                 <div className="flex items-center gap-1.5">
                                     <Cloud className="w-4 h-4" />
-                                    <span>{trip.weather}</span>
+                                    <span className="font-medium">{trip.weather}</span>
                                 </div>
                             )}
                         </div>
@@ -203,12 +227,16 @@ const TripCard = ({ trip, onEdit }: { trip: ScoutingTrip; onEdit: (trip: Scoutin
                                 </div>
                                 <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                                     {trip.photos.map((photo, i) => (
-                                        <img
-                                            key={i}
-                                            src={photo}
-                                            alt={`Trip photo ${i + 1}`}
-                                            className="w-48 h-32 object-cover rounded-xl border border-gray-100 shadow-sm"
-                                        />
+                                        <div key={i} className="relative flex-shrink-0">
+                                            <img
+                                                src={photo}
+                                                alt={`Trip photo ${i + 1}`}
+                                                className="w-48 h-32 object-cover rounded-xl border border-gray-100 shadow-sm"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop";
+                                                }}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -250,6 +278,27 @@ const TripCard = ({ trip, onEdit }: { trip: ScoutingTrip; onEdit: (trip: Scoutin
 export const ScoutingTrips = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTrip, setEditingTrip] = useState<ScoutingTrip | null>(null);
+    const [trips, setTrips] = useState<ScoutingTrip[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const agencyId = await scoutingService.getUserAgencyId();
+            if (agencyId) {
+                const data = await scoutingService.getTrips(agencyId);
+                setTrips(data);
+            }
+        } catch (error) {
+            console.error("Error fetching trips:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleEdit = (trip: ScoutingTrip) => {
         setEditingTrip(trip);
@@ -259,6 +308,11 @@ export const ScoutingTrips = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingTrip(null);
+    };
+
+    const handleTripSaved = () => {
+        fetchData();
+        handleCloseModal();
     };
 
     return (
@@ -280,22 +334,45 @@ export const ScoutingTrips = () => {
                 </Button>
             </div>
 
-            <TripAnalytics trips={MOCK_TRIPS} />
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                    <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+                    <p className="text-gray-500 font-medium">Loading your scouting trips...</p>
+                </div>
+            ) : (
+                <>
+                    <TripAnalytics trips={trips} />
 
-            <div className="grid grid-cols-1 gap-4">
-                {MOCK_TRIPS.map((trip) => (
-                    <TripCard key={trip.id} trip={trip} onEdit={handleEdit} />
-                ))}
-            </div>
+                    <div className="grid grid-cols-1 gap-4">
+                        {trips.length > 0 ? (
+                            trips.map((trip) => (
+                                <TripCard key={trip.id} trip={trip} onEdit={handleEdit} />
+                            ))
+                        ) : (
+                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                                <div className="p-4 bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                    <Calendar className="w-8 h-8 text-gray-300" />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900">No trips planned yet</h3>
+                                <p className="text-gray-500 max-w-xs mx-auto mt-1">Start by planning your first scouting mission to discover new talent.</p>
+                                <Button
+                                    onClick={() => setIsModalOpen(true)}
+                                    variant="outline"
+                                    className="mt-6 rounded-xl border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                                >
+                                    Plan Your First Trip
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
 
             <PlanTripModal
                 isOpen={isModalOpen}
                 initialData={editingTrip}
                 onClose={handleCloseModal}
-                onPlan={(trip) => {
-                    console.log(editingTrip ? "Trip updated:" : "New trip planned:", trip);
-                    handleCloseModal();
-                }}
+                onPlan={handleTripSaved}
             />
         </div>
     );

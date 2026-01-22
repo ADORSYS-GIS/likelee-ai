@@ -81,7 +81,7 @@ export const ScoutingMap = ({
         discoveries: true,
         signedTalent: true,
         prospects: true,
-        plannedTrips: true,
+        scoutingTrips: true,
         events: true,
         heatmapDensity: false,
         heatmapSuccess: false,
@@ -109,27 +109,14 @@ export const ScoutingMap = ({
             ]);
 
             console.log(`Fetched ${prospectData.length} prospects, ${eventData.length} events, and ${tripData.length} trips`);
-            setTrips(tripData);
 
-            const signed = prospectData.filter(p => p.status === 'signed' || p.is_signed).length;
-            const declined = prospectData.filter(p => p.status === 'declined').length;
-            const prospectsCount = prospectData.length - signed - declined;
-
-            setRawCounts({
-                totalDiscoveries: prospectData.length,
-                signed,
-                prospects: prospectsCount,
-                events: eventData.length,
-                trips: tripData.length,
-                declined
-            });
-
-            const totalItems = prospectData.length + eventData.length;
+            const totalItems = prospectData.length + eventData.length + tripData.length;
             let processedItems = 0;
 
             // Clear previous geocoded data to start fresh
             setProspects([]);
             setEvents([]);
+            setTrips([]);
 
             for (const p of prospectData) {
                 const location = p.discovery_location;
@@ -150,22 +137,44 @@ export const ScoutingMap = ({
             for (const e of eventData) {
                 const location = e.location;
                 if (location) {
-                    console.log(`Geocoding event ${e.id} at location: ${location}`);
                     const coords = await geocode(location);
                     if (coords) {
-                        console.log(`Successfully geocoded event ${e.id} to:`, coords);
                         const jitteredCoords = {
                             lat: coords.lat + (Math.random() - 0.5) * 0.0001,
                             lng: coords.lng + (Math.random() - 0.5) * 0.0001,
                         };
                         setEvents(prev => [...prev, { ...e, coords: jitteredCoords }]);
-                    } else {
-                        console.warn(`Failed to geocode event ${e.id} location: ${location}`);
                     }
                 }
                 processedItems++;
                 setGeocodingProgress(Math.round((processedItems / totalItems) * 100));
             }
+
+            for (const t of tripData) {
+                if (t.latitude && t.longitude) {
+                    setTrips(prev => [...prev, t]);
+                } else if (t.location) {
+                    const coords = await geocode(t.location);
+                    if (coords) {
+                        setTrips(prev => [...prev, { ...t, latitude: coords.lat, longitude: coords.lng }]);
+                    }
+                }
+                processedItems++;
+                setGeocodingProgress(Math.round((processedItems / totalItems) * 100));
+            }
+
+            const signed = prospectData.filter(p => p.status === 'signed' || p.is_signed).length;
+            const declined = prospectData.filter(p => p.status === 'declined').length;
+            const prospectsCount = prospectData.length - signed - declined;
+
+            setRawCounts({
+                totalDiscoveries: prospectData.length,
+                signed,
+                prospects: prospectsCount,
+                events: eventData.length,
+                trips: tripData.length,
+                declined
+            });
         } catch (error) {
             console.error("Failed to fetch map data:", error);
         } finally {
@@ -240,7 +249,7 @@ export const ScoutingMap = ({
                 totalDiscoveries={rawCounts.totalDiscoveries}
                 signed={rawCounts.signed}
                 prospects={rawCounts.prospects}
-                plannedTrips={rawCounts.trips}
+                scoutingTrips={rawCounts.trips}
                 upcomingEvents={rawCounts.events}
             />
 
@@ -269,7 +278,7 @@ export const ScoutingMap = ({
                             { id: 'signedTalent', label: 'Signed Talent', count: rawCounts.signed, icon: User, color: 'blue' },
                             { id: 'prospects', label: 'Prospects', count: rawCounts.prospects, icon: Clock, color: 'amber' },
                             { id: 'declined', label: 'Declined prospect', count: rawCounts.declined, icon: Clock, color: 'red' },
-                            { id: 'plannedTrips', label: 'Planned Trips', count: rawCounts.trips, icon: Plane, color: 'purple' },
+                            { id: 'scoutingTrips', label: 'Scouting Trips', count: rawCounts.trips, icon: Plane, color: 'purple' },
                             { id: 'events', label: 'Events', count: rawCounts.events, icon: Calendar, color: 'pink' }
                         ].map((layer) => {
                             const isSelected = layers[layer.id as keyof typeof layers];
@@ -426,7 +435,7 @@ export const ScoutingMap = ({
                                 prospectsOnly={layers.prospects ? prospectsOnly : []}
                                 declinedProspects={layers.declined ? declinedProspects : []}
                                 events={layers.events ? events : []}
-                                trips={layers.plannedTrips ? trips : []}
+                                trips={layers.scoutingTrips ? trips : []}
                                 onEditEvent={onEditEvent}
                                 onViewProspect={onViewProspect}
                                 onDeleteProspect={handleDeleteProspect}
@@ -461,7 +470,7 @@ export const ScoutingMap = ({
                                 <div className="p-1.5 rounded-lg bg-purple-100 text-purple-700">
                                     <Plane className="w-3.5 h-3.5 stroke-[2.5px]" />
                                 </div>
-                                <span className="text-[11px] font-bold text-gray-700">Planned Trip</span>
+                                <span className="text-[11px] font-bold text-gray-700">Scouting Trip</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="p-1.5 rounded-lg bg-pink-100 text-pink-700">

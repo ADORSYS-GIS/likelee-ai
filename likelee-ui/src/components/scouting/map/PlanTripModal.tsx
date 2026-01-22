@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -6,6 +6,9 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
+import { ScoutingTrip } from "@/types/scouting";
+import { scoutingService } from "@/services/scoutingService";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,42 +38,46 @@ import {
     Users,
     BarChart3,
     ArrowUpRight,
-    Info
+    Info,
+    Loader2
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface PlanTripModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onPlan: (trip: any) => void;
-    initialData?: any;
+    onPlan: () => void;
+    initialData?: ScoutingTrip;
 }
 
 export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTripModalProps) => {
-    const [scouts, setScouts] = React.useState<string[]>(initialData?.scout_ids || ["Sarah Johnson", "Michael Lee"]);
-    const [photos, setPhotos] = React.useState<string[]>(initialData?.photos || []);
-    const [newScoutName, setNewScoutName] = React.useState("");
-    const [isAddingScout, setIsAddingScout] = React.useState(false);
+    const [scouts, setScouts] = useState<string[]>(initialData?.scout_names || initialData?.scout_ids || ["Sarah Johnson", "Michael Lee"]);
+    const [photos, setPhotos] = useState<string[]>(initialData?.photos || []);
+    const [newScoutName, setNewScoutName] = useState("");
+    const [isAddingScout, setIsAddingScout] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const { toast } = useToast();
 
     // Form states
-    const [name, setName] = React.useState(initialData?.name || "");
-    const [destination, setDestination] = React.useState(initialData?.location || "");
+    const [name, setName] = useState(initialData?.name || "");
+    const [destination, setDestination] = useState(initialData?.location || "");
     const [startDate, setStartDate] = React.useState(initialData?.start_date || "");
     const [startTime, setStartTime] = React.useState(initialData?.start_time || "09:00");
     const [endDate, setEndDate] = React.useState(initialData?.end_date || "");
-    const [endTime, setEndTime] = React.useState(initialData?.end_time || "18:00");
-    const [lat, setLat] = React.useState(initialData?.lat?.toString() || "40.7128");
-    const [lng, setLng] = React.useState(initialData?.lng?.toString() || "-74.0060");
-    const [tripType, setTripType] = React.useState(initialData?.trip_type || "Open Scouting");
-    const [status, setStatus] = React.useState(initialData?.status || "planned");
-    const [goal, setGoal] = React.useState(initialData?.prospects_added?.toString() || "10");
-    const [budget, setBudget] = React.useState(initialData?.total_cost?.toString() || "0");
-    const [approached, setApproached] = React.useState(initialData?.prospects_approached?.toString() || "0");
-    const [submitted, setSubmitted] = React.useState(initialData?.prospects_submitted?.toString() || "0");
-    const [added, setAdded] = React.useState(initialData?.prospects_added?.toString() || "0");
-    const [conversion, setConversion] = React.useState(initialData?.conversion_rate?.toString() || "0");
-    const [notes, setNotes] = React.useState(initialData?.description || "");
+    const [endTime, setEndTime] = useState(initialData?.end_time || "18:00");
+    const [lat, setLat] = useState(initialData?.latitude?.toString() || "40.7128");
+    const [lng, setLng] = useState(initialData?.longitude?.toString() || "-74.0060");
+    const [tripType, setTripType] = useState<"Open Scouting" | "Specific Casting" | "Event Coverage" | "Other">(initialData?.trip_type || "Open Scouting");
+    const [status, setStatus] = useState<"planned" | "ongoing" | "completed">(initialData?.status || "planned");
+    const [goal, setGoal] = useState(initialData?.prospects_added?.toString() || "10");
+    const [budget, setBudget] = useState(initialData?.total_cost?.toString() || "0");
+    const [approached, setApproached] = useState(initialData?.prospects_approached?.toString() || "0");
+    const [submitted, setSubmitted] = useState(initialData?.prospects_agreed?.toString() || "0");
+    const [added, setAdded] = useState(initialData?.prospects_added?.toString() || "0");
+    const [conversion, setConversion] = useState(initialData?.conversion_rate?.toString() || "0");
+    const [notes, setNotes] = useState(initialData?.description || "");
 
     React.useEffect(() => {
         if (initialData) {
@@ -80,18 +87,18 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
             setStartTime(initialData.start_time || "09:00");
             setEndDate(initialData.end_date || "");
             setEndTime(initialData.end_time || "18:00");
-            setLat(initialData.lat?.toString() || "40.7128");
-            setLng(initialData.lng?.toString() || "-74.0060");
+            setLat(initialData.latitude?.toString() || "40.7128");
+            setLng(initialData.longitude?.toString() || "-74.0060");
             setTripType(initialData.trip_type || "Open Scouting");
             setStatus(initialData.status || "planned");
             setGoal(initialData.prospects_added?.toString() || "10");
             setBudget(initialData.total_cost?.toString() || "0");
             setApproached(initialData.prospects_approached?.toString() || "0");
-            setSubmitted(initialData.prospects_submitted?.toString() || "0");
+            setSubmitted(initialData.prospects_agreed?.toString() || "0");
             setAdded(initialData.prospects_added?.toString() || "0");
             setConversion(initialData.conversion_rate?.toString() || "0");
             setNotes(initialData.description || "");
-            setScouts(initialData.scout_ids || []);
+            setScouts(initialData.scout_names || initialData.scout_ids || []);
             setPhotos(initialData.photos || []);
         } else {
             setName("");
@@ -116,11 +123,32 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
         }
     }, [initialData, isOpen]);
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (files) {
-            const newPhotos = Array.from(files).map(file => URL.createObjectURL(file));
-            setPhotos([...photos, ...newPhotos]);
+        if (files && files.length > 0) {
+            try {
+                setIsUploading(true);
+                const uploadPromises = Array.from(files).map(file => {
+                    return new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                });
+
+                const newBase64Photos = await Promise.all(uploadPromises);
+                setPhotos(prev => [...prev, ...newBase64Photos]);
+            } catch (error) {
+                console.error("Error uploading photos:", error);
+                toast({
+                    title: "Upload failed",
+                    description: "Could not process one or more images.",
+                    variant: "destructive"
+                });
+            } finally {
+                setIsUploading(false);
+            }
         }
     };
 
@@ -169,8 +197,8 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                 </Label>
                                 <Input
                                     id="trip-name"
-                                    placeholder="e.g., LA Fashion Week Scouting"
-                                    className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                    placeholder="e.g., NYC SoHo Holiday Scouting"
+                                    className="rounded-xl border-gray-200 bg-gray-50/50 h-12 px-4 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900 shadow-inner"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                 />
@@ -194,7 +222,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                     <Label htmlFor="trip-type" className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
                                         <Briefcase className="w-3 h-3" /> Trip Type *
                                     </Label>
-                                    <Select value={tripType} onValueChange={setTripType}>
+                                    <Select value={tripType} onValueChange={(val: any) => setTripType(val)}>
                                         <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900">
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
@@ -210,7 +238,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                     <Label htmlFor="status" className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
                                         <Activity className="w-3 h-3" /> Status *
                                     </Label>
-                                    <Select value={status} onValueChange={setStatus}>
+                                    <Select value={status} onValueChange={(val: any) => setStatus(val)}>
                                         <SelectTrigger className={`rounded-xl h-10 transition-all font-black border-2 ${getStatusColor(status)} shadow-sm`}>
                                             <SelectValue placeholder="Select status" />
                                         </SelectTrigger>
@@ -504,30 +532,70 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                         Cancel
                     </Button>
                     <Button
-                        onClick={() => onPlan({
-                            name,
-                            location: destination,
-                            start_date: startDate,
-                            start_time: startTime,
-                            end_date: endDate,
-                            end_time: endTime,
-                            lat: parseFloat(lat),
-                            lng: parseFloat(lng),
-                            trip_type: tripType,
-                            status,
-                            prospects_added: parseInt(added),
-                            total_cost: parseFloat(budget),
-                            prospects_approached: parseInt(approached),
-                            prospects_submitted: parseInt(submitted),
-                            conversion_rate: parseFloat(conversion),
-                            description: notes,
-                            scout_ids: scouts,
-                            photos
-                        })}
+                        disabled={isSaving || isUploading}
+                        onClick={async () => {
+                            try {
+                                setIsSaving(true);
+                                const agencyId = await scoutingService.getUserAgencyId();
+                                if (!agencyId) throw new Error("No agency ID found");
+
+                                const tripData = {
+                                    agency_id: agencyId,
+                                    name,
+                                    location: destination,
+                                    start_date: startDate,
+                                    start_time: startTime,
+                                    end_date: endDate,
+                                    end_time: endTime,
+                                    latitude: parseFloat(lat) || null,
+                                    longitude: parseFloat(lng) || null,
+                                    trip_type: tripType as any,
+                                    status: status as any,
+                                    prospects_added: parseInt(added) || 0,
+                                    total_cost: parseFloat(budget) || 0,
+                                    prospects_approached: parseInt(approached) || 0,
+                                    prospects_agreed: parseInt(submitted) || 0,
+                                    conversion_rate: parseFloat(conversion) || 0,
+                                    description: notes,
+                                    scout_names: scouts,
+                                    photos
+                                };
+
+                                if (initialData?.id) {
+                                    await scoutingService.updateTrip(initialData.id, tripData);
+                                    toast({
+                                        title: "Trip updated",
+                                        description: `${name} has been successfully updated.`,
+                                    });
+                                } else {
+                                    await scoutingService.createTrip(tripData);
+                                    toast({
+                                        title: "Trip created",
+                                        description: `${name} has been successfully planned.`,
+                                    });
+                                }
+                                onPlan();
+                            } catch (error) {
+                                console.error("Error saving trip:", error);
+                                toast({
+                                    title: "Error saving trip",
+                                    description: "There was a problem saving your trip. Please try again.",
+                                    variant: "destructive"
+                                });
+                            } finally {
+                                setIsSaving(false);
+                            }
+                        }}
                         className="rounded-xl h-10 px-10 font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 hover:shadow-indigo-300 transition-all flex items-center gap-2"
                     >
-                        {initialData ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                        {initialData ? "Update Trip" : "Create Trip"}
+                        {isSaving ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : initialData ? (
+                            <Check className="w-5 h-5" />
+                        ) : (
+                            <Plus className="w-5 h-5" />
+                        )}
+                        {isSaving ? "Saving..." : initialData ? "Update Trip" : "Create Trip"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
