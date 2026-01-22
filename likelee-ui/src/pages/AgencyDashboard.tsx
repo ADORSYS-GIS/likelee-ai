@@ -6415,29 +6415,31 @@ const DashboardView = ({ onKYC, data }: { onKYC: () => void; data: any }) => {
   return (
     <div className="space-y-8">
       {/* KYC Verification Alert */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white rounded-xl shadow-sm">
-            <ShieldAlert className="w-6 h-6 text-indigo-600" />
+      {overview?.kyc_status !== "approved" && overview?.kyc_status !== "verified" && (
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white rounded-xl shadow-sm">
+              <ShieldAlert className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                KYC Verification Required
+              </h3>
+              <p className="text-sm text-gray-500">
+                To enable payouts and licensing for your talent, please complete
+                your agency's ID verification.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">
-              KYC Verification Required
-            </h3>
-            <p className="text-sm text-gray-500">
-              To enable payouts and licensing for your talent, please complete
-              your agency's ID verification.
-            </p>
-          </div>
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
+            onClick={onKYC}
+          >
+            Complete KYC
+          </Button>
         </div>
-        <Button
-          variant="default"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-          onClick={onKYC}
-        >
-          Complete KYC
-        </Button>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Roster Health */}
@@ -13813,7 +13815,7 @@ const useAgencyDashboard = () => {
 };
 
 export default function AgencyDashboard() {
-  const { logout, user, authenticated } = useAuth();
+  const { logout, user, authenticated, token } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const dashboardData = useAgencyDashboard();
@@ -13926,15 +13928,22 @@ export default function AgencyDashboard() {
 
       const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          return_url: window.location.href,
+        }),
       });
 
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
       if (data.session_url) {
-        window.open(data.session_url, "_blank");
+        // Redirection in-app (same tab) as requested
+        window.location.href = data.session_url;
       } else {
         throw new Error("No session URL returned");
       }

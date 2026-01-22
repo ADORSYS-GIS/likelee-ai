@@ -17,6 +17,7 @@ pub struct DashboardOverview {
     pub monthly_revenue: MonthlyRevenue,
     pub pending_actions: PendingActions,
     pub platform_ranking: PlatformRanking,
+    pub kyc_status: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -142,11 +143,25 @@ pub async fn get_dashboard_overview(
         rank_description: "Top performer".to_string(),
     };
 
+    // Fetch KYC Status
+    let kyc_status = match state.pg.from("agencies")
+        .select("kyc_status")
+        .eq("id", agency_id)
+        .execute().await {
+            Ok(res) => {
+                let text = res.text().await.unwrap_or_default();
+                let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+                data.get(0).and_then(|v| v.get("kyc_status")).and_then(|v| v.as_str()).unwrap_or("not_started").to_string()
+            },
+            Err(_) => "not_started".to_string(),
+        };
+
     Ok(Json(DashboardOverview {
         roster_health,
         monthly_revenue,
         pending_actions,
         platform_ranking,
+        kyc_status,
     }))
 }
 
