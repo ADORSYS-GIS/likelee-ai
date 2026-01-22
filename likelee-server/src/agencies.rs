@@ -3,6 +3,7 @@ use axum::{extract::State, http::StatusCode, Json};
 use axum::extract::Multipart;
 use axum::extract::Query;
 use reqwest::Client;
+use tracing::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -319,16 +320,21 @@ pub async fn list_talents(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // Agency id is the authenticated agency user's id
     let org_id = user.id.clone();
+    info!(agency_user_id = %org_id, "list_talents request");
 
-    // Query agency_users within this agency; select the columns we know exist
+    // Query agency_users within this agency; select columns per schema
     let mut req = state
         .pg
         .from("agency_users")
-        .select("user_id,name")
-        .eq("agency_id", &org_id);
+        .select("id,agency_id,creator_id,full_legal_name,stage_name,profile_photo_url,status,role")
+        .eq("agency_id", &org_id)
+        .eq("role", "talent")
+        .eq("status", "active");
     if let Some(q) = params.q.as_ref().filter(|s| !s.is_empty()) {
         let enc = format!("%25{}%25", q);
-        req = req.ilike("name", enc.as_str());
+        // Filter by stage_name OR full_legal_name
+        let or_expr = format!("stage_name.ilike.{},full_legal_name.ilike.{}", enc, enc);
+        req = req.or(or_expr.as_str());
     }
     let resp = req
         .execute()
@@ -340,16 +346,26 @@ pub async fn list_talents(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let rows: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let count = rows.as_array().map(|a| a.len()).unwrap_or(0);
+    info!(agency_user_id = %org_id, count, "list_talents result");
 
-    // Map to array with fallback to agency_users name/user_id
+    // Map to array with fallback to names per schema
     let talents: Vec<TalentItem> = rows
         .as_array()
         .unwrap_or(&vec![])
         .iter()
-        .map(|r| TalentItem {
-            id: r.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            full_name: r.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            profile_photo_url: None,
+        .map(|r| {
+            let id = r.get("creator_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_else(|| r.get("id").and_then(|v| v.as_str()).unwrap_or(""))
+                .to_string();
+            let full_name = r
+                .get("stage_name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .or_else(|| r.get("full_legal_name").and_then(|v| v.as_str()).map(|s| s.to_string()));
+            let photo = r.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+            TalentItem { id, full_name, profile_photo_url: photo }
         })
         .collect();
 

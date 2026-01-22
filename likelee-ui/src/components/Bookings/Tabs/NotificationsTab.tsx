@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   Mail,
@@ -25,11 +25,37 @@ import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-export const NotificationsTab = () => {
+import { format, parseISO } from "date-fns";
+
+type BookingLike = {
+  id?: string;
+  date?: string;
+  callTime?: string;
+  location?: string;
+  clientName?: string;
+  client?: string;
+  talentName?: string;
+  talent_name?: string;
+};
+
+export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?: BookingLike[] }) => {
   const { toast } = useToast();
   const [activeSubNav, setActiveSubNav] = useState("logs");
   const [testNotificationType, setTestNotificationType] = useState("");
   const [testTargetTalent, setTestTargetTalent] = useState("");
+
+  // Controlled settings for Booking Created/Confirmed channels
+  const [createdChannels, setCreatedChannels] = useState<{ email: boolean; sms: boolean; push: boolean }>(() => {
+    const raw = localStorage.getItem("likelee.notifications.createdChannels");
+    return raw ? JSON.parse(raw) : { email: true, sms: false, push: false };
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "likelee.notifications.createdChannels",
+      JSON.stringify(createdChannels),
+    );
+  }, [createdChannels]);
 
   const testTalents = [
     "Emma",
@@ -75,54 +101,59 @@ export const NotificationsTab = () => {
     },
   ];
 
-  const notifications = [
-    {
-      type: "EMAIL",
-      title: "Booking Created",
-      recipient: "Emma (emma@example.com)",
-      message: "New Booking: Glossier Beauty on Jan 15, 2026",
-      time: "Jan 12, 2025 10:35 AM",
-      status: "success",
-      detail: "Opened 10:55 AM",
-    },
-    {
-      type: "SMS",
-      title: "24h Reminder",
-      recipient: "Milan (+1-555-0102)",
-      message: "Reminder: Booking tomorrow with CarNext WIP at 9:00 AM",
-      time: "Jan 11, 2025 9:00 PM",
-      status: "success",
-      detail: "48 chars",
-    },
-    {
-      type: "PUSH",
-      title: "Booking Confirmed",
-      recipient: "Julia",
-      message:
-        "Your booking with Esther Skincare has been confirmed for Jan 20",
-      time: "Jan 10, 2025 2:03 PM",
-      status: "success",
-      detail: "Clicked",
-    },
-    {
-      type: "EMAIL",
-      title: "Booking Updated",
-      recipient: "Carla (carla@example.com)",
-      message: "Booking Updated: Reformation on Jan 25, 2026",
-      time: "Jan 9, 2026 4:15 PM",
-      status: "success",
-      detail: "",
-    },
-    {
-      type: "EMAIL",
-      title: "Booking Cancelled",
-      recipient: "Matt (matt@example.com)",
-      message: "Booking Cancelled: Aesop Skincare on Jan 22, 2026",
-      time: "Jan 8, 2025 11:00 AM",
-      status: "error",
-      detail: "Error: Invalid email address",
-    },
-  ];
+  // Build notification logs for "Booking Created" from bookings based on channel toggles
+  const notifications = useMemo(() => {
+    const enabledTypes: ("EMAIL" | "SMS" | "PUSH")[] = [];
+    if (createdChannels.email) enabledTypes.push("EMAIL");
+    if (createdChannels.sms) enabledTypes.push("SMS");
+    if (createdChannels.push) enabledTypes.push("PUSH");
+
+    const items: {
+      type: "EMAIL" | "SMS" | "PUSH";
+      title: string;
+      recipient: string;
+      message: string;
+      time: string;
+      status: "success" | "error";
+      detail: string;
+    }[] = [];
+
+    const sorted = [...(bookings || [])]
+      .filter((b) => !!b.date)
+      .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+      .slice(0, 25);
+
+    for (const b of sorted) {
+      const dateStr = b.date ? format(parseISO(b.date), "MMM d, yyyy") : "TBD";
+      const timeStr = b.callTime || "";
+      const client = (b.clientName || b.client || "Client").toString();
+      const talent = (b.talentName || b.talent_name || "Talent").toString();
+      const location = b.location || "";
+      const baseMsg = `New Booking: ${client} on ${dateStr}${timeStr ? ` at ${timeStr}` : ""}${
+        location ? `. Location: ${location}` : ""
+      }`;
+      const recEmail = `${talent.toLowerCase().split(" ")[0] || "talent"}@example.com`;
+      const recPhone = "+1-555-0100";
+
+      for (const t of enabledTypes) {
+        items.push({
+          type: t,
+          title: "Booking Created",
+          recipient:
+            t === "EMAIL"
+              ? `${talent} (${recEmail})`
+              : t === "SMS"
+                ? `${talent} (${recPhone})`
+                : talent,
+          message: t === "SMS" ? baseMsg.replace("New Booking: ", "Reminder: ") : baseMsg,
+          time: `${dateStr} ${timeStr || ""}`.trim(),
+          status: "success",
+          detail: t === "EMAIL" ? "Opened" : t === "SMS" ? `${baseMsg.length} chars` : "",
+        });
+      }
+    }
+    return items;
+  }, [bookings, createdChannels]);
 
   return (
     <div className="space-y-6">
@@ -292,7 +323,10 @@ export const NotificationsTab = () => {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      defaultChecked
+                      checked={createdChannels.email}
+                      onChange={(e) =>
+                        setCreatedChannels((prev) => ({ ...prev, email: e.target.checked }))
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -308,7 +342,10 @@ export const NotificationsTab = () => {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      defaultChecked
+                      checked={createdChannels.sms}
+                      onChange={(e) =>
+                        setCreatedChannels((prev) => ({ ...prev, sms: e.target.checked }))
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -324,7 +361,10 @@ export const NotificationsTab = () => {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      defaultChecked
+                      checked={createdChannels.push}
+                      onChange={(e) =>
+                        setCreatedChannels((prev) => ({ ...prev, push: e.target.checked }))
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>

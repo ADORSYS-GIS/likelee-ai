@@ -170,6 +170,15 @@ pub fn build_router(state: AppState) -> Router {
             "/api/bookings/:id/cancel",
             post(crate::bookings::cancel),
         )
+        // Book-Outs (Availability)
+        .route(
+            "/api/book-outs",
+            get(crate::book_outs::list).post(crate::book_outs::create),
+        )
+        .route(
+            "/api/book-outs/:id",
+            delete(crate::book_outs::delete_book_out),
+        )
         // Payouts
         .route(
             "/api/payouts/onboarding_link",

@@ -10,6 +10,7 @@ pub mod dashboard;
 pub mod email;
 pub mod face_profiles;
 pub mod bookings;
+pub mod book_outs;
 pub mod kyc;
 pub mod licenses;
 pub mod moderation;

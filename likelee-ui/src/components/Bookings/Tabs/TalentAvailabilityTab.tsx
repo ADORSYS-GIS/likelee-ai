@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { TALENT_DATA } from "@/data/mockData";
 import { AddBookOutModal } from "../Modals/AddBookOutModal";
+import { getAgencyTalents } from "@/api/functions";
 
 export const TalentAvailabilityTab = ({
   bookOuts = [],
@@ -19,9 +19,44 @@ export const TalentAvailabilityTab = ({
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
   const { toast, dismiss } = useToast();
 
-  // Helper to find talent name
-  const getTalentName = (id: string) =>
-    TALENT_DATA.find((t) => t.id === id)?.name || "Unknown Talent";
+  // Load real talents and map id -> name
+  const [talents, setTalents] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await getAgencyTalents();
+        if (cancelled) return;
+        const arr = Array.isArray(rows) ? rows : [];
+        setTalents(
+          arr.map((r: any) => ({
+            id: r.id || r.user_id || r.creator_id,
+            name: r.full_name || r.name || r.stage_name || "Unnamed",
+          })),
+        );
+      } catch (_) {
+        setTalents([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const nameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of talents) m.set(String(t.id), String(t.name));
+    return m;
+  }, [talents]);
+  const getTalentName = (id: string) => nameById.get(String(id)) || "Unknown Talent";
+
+  const fmtDate = (v?: string) => {
+    if (!v) return "";
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v; // show raw if not ISO parseable
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+  const fmtReason = (r?: string) => String(r || "personal").replace("_", " ").toLowerCase();
 
   return (
     <div className="space-y-6">
@@ -56,63 +91,59 @@ export const TalentAvailabilityTab = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {bookOuts.map((bo) => (
-            <Card
-              key={bo.id}
-              className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#FFF9F5] border-orange-200"
-            >
-              <div className="flex flex-col gap-1">
-                <h4 className="font-bold text-gray-900 text-lg">
-                  {getTalentName(bo.talentId)}
-                </h4>
-                <p className="text-sm text-gray-500 font-medium mb-2">
-                  {new Date(bo.startDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}{" "}
-                  -{" "}
-                  {new Date(bo.endDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                <div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-100 text-orange-800 capitalize">
-                    {bo.reason.replace("_", " ")}
-                  </span>
+          {bookOuts.map((bo) => {
+            const talentId = bo.talentId || bo.talent_id;
+            const start = bo.startDate || bo.start_date;
+            const end = bo.endDate || bo.end_date || start;
+            const reason = fmtReason(bo.reason);
+            return (
+              <Card
+                key={bo.id}
+                className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#FFF9F5] border-orange-200"
+              >
+                <div className="flex flex-col gap-1">
+                  <h4 className="font-bold text-gray-900 text-lg">
+                    {getTalentName(talentId)}
+                  </h4>
+                  <p className="text-sm text-gray-500 font-medium mb-2">
+                    {fmtDate(start)} - {fmtDate(end)}
+                  </p>
+                  <div>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-orange-100 text-orange-800 capitalize">
+                      {reason}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
-                  onClick={() => {
-                    toast({
-                      title: "Delete Book-Out?",
-                      description: "This action cannot be undone.",
-                      action: (
-                        <ToastAction
-                          altText="Delete"
-                          onClick={() => {
-                            onRemoveBookOut(bo.id);
-                            dismiss();
-                          }}
-                          className="font-bold bg-red-600 text-white hover:bg-red-700 hover:text-white border-none"
-                        >
-                          Delete
-                        </ToastAction>
-                      ),
-                    });
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-            </Card>
-          ))}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
+                    onClick={() => {
+                      toast({
+                        title: "Delete Book-Out?",
+                        description: "This action cannot be undone.",
+                        action: (
+                          <ToastAction
+                            altText="Delete"
+                            onClick={() => {
+                              onRemoveBookOut(bo.id);
+                              dismiss();
+                            }}
+                            className="font-bold bg-red-600 text-white hover:bg-red-700 hover:text-white border-none"
+                          >
+                            Delete
+                          </ToastAction>
+                        ),
+                      });
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 

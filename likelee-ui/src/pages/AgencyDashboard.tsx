@@ -108,6 +108,8 @@ import {
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
   cancelBooking as apiCancelBooking,
+  listBookOuts,
+  createBookOut,
 } from "@/api/functions";
 
 const AddProspectModal = ({
@@ -13036,23 +13038,51 @@ export default function AgencyDashboard() {
     })();
   }, []);
 
+  // Load book-outs on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const rows = await listBookOuts();
+        setBookOuts(Array.isArray(rows) ? rows : []);
+      } catch (e) {
+        // noop for now
+      }
+    })();
+  }, []);
+
   const onAddBooking = async (booking: any) => {
     try {
+      // If booking already has an id, it was created upstream (e.g., multipart with files).
+      // Append directly to state to reflect immediately and avoid duplicate API call.
+      if (booking && booking.id) {
+        setBookings([...bookings, booking]);
+        return;
+      }
       const payload = {
         booking_type: booking.type || booking.bookingType,
         status: booking.status,
-        talent_name: booking.talentName,
-        client_name: booking.clientName,
+        client_id: booking.clientId || booking.client_id,
+        talent_name: booking.talentName || booking.talent_name,
+        client_name: booking.clientName || booking.client_name,
         date: booking.date,
+        industries: booking.industries || booking.industryTags || booking.clientIndustries,
         notes: booking.notes,
       };
       const created = await apiCreateBooking(payload);
-      // API returns array with inserted row (postgrest default)
       const row = Array.isArray(created) ? created[0] : created;
       setBookings([...bookings, row]);
-    } catch (e) {
-      // Optimistically append fallback if API fails (dev mode)
-      setBookings([...bookings, booking]);
+    } catch (e: any) {
+      const msg = typeof e === "string" ? e : e?.message || "Failed to create booking";
+      if (/409/.test(msg) || /unavailable/i.test(msg)) {
+        toast({
+          title: "Talent unavailable",
+          description:
+            "This talent is booked out during the selected date. Please choose another date or talent.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      toast({ title: "Create booking failed", description: msg });
     }
   };
   const onUpdateBooking = async (booking: any) => {
@@ -13079,11 +13109,32 @@ export default function AgencyDashboard() {
       setBookings(bookings.filter((b) => b.id !== id));
     }
   };
-  const onAddBookOut = (bookOut: any) => {
-    setBookOuts([...bookOuts, bookOut]);
+  const onAddBookOut = async (bookOut: any) => {
+    try {
+      const payload = {
+        talent_id: bookOut.talentId || bookOut.talent_id,
+        start_date: bookOut.startDate || bookOut.start_date,
+        end_date: bookOut.endDate || bookOut.end_date,
+        reason: bookOut.reason,
+        notes: bookOut.notes,
+      };
+      const created = await createBookOut(payload);
+      const row = Array.isArray(created) ? created[0] : created;
+      setBookOuts([...bookOuts, row]);
+    } catch (e) {
+      // optimistic fallback
+      setBookOuts([...bookOuts, bookOut]);
+    }
   };
-  const onRemoveBookOut = (id: string) => {
-    setBookOuts(bookOuts.filter((b) => b.id !== id));
+  const onRemoveBookOut = async (id: string) => {
+    try {
+      // Use fetch DELETE against API base
+      const res = await fetch(api(`/api/book-outs/${id}`), { method: "DELETE" });
+      if (!res.ok) throw new Error(await res.text());
+      setBookOuts(bookOuts.filter((b) => b.id !== id));
+    } catch (e) {
+      setBookOuts(bookOuts.filter((b) => b.id !== id));
+    }
   };
 
   // Helper for API URLs

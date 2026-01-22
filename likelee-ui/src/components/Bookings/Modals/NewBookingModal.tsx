@@ -87,6 +87,7 @@ export const NewBookingModal = ({
     calendar: true,
   });
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // When all-day is enabled, normalize times to full-day window
   useEffect(() => {
@@ -103,7 +104,11 @@ export const NewBookingModal = ({
       try {
         const rows = await getAgencyTalents();
         const mapped = Array.isArray(rows)
-          ? rows.map((r: any) => ({ id: r.id, name: r.full_name || "Unnamed", img: r.profile_photo_url }))
+          ? rows.map((r: any) => ({
+              id: r.id || r.user_id,
+              name: r.full_name || r.name || "Unnamed",
+              img: r.profile_photo_url || null,
+            }))
           : [];
         setTalents(mapped);
       } catch (_e) {}
@@ -173,7 +178,11 @@ export const NewBookingModal = ({
         );
         if (cancelled) return;
         const mapped = Array.isArray(rows)
-          ? rows.map((r: any) => ({ id: r.id, name: r.full_name || "Unnamed", img: r.profile_photo_url }))
+          ? rows.map((r: any) => ({
+              id: r.id || r.user_id,
+              name: r.full_name || r.name || "Unnamed",
+              img: r.profile_photo_url || null,
+            }))
           : [];
         setTalents(mapped);
       } catch (_e) {}
@@ -235,7 +244,85 @@ export const NewBookingModal = ({
 
   const commission = rate * 0.2;
 
+  // Shared submit routine for Save button and Preview -> Confirm
+  const submitBookings = async () => {
+    if (selectedTalents.length === 0 || !selectedClient || saving) return;
+    setSaving(true);
+    try {
+      for (let index = 0; index < selectedTalents.length; index++) {
+        const talent = selectedTalents[index];
+        const payload: any = {
+          booking_type: bookingType,
+          status: "pending",
+          client_id: selectedClient?.id,
+          talent_id: talent.id,
+          talent_name: talent.name,
+          client_name: selectedClient.company,
+          date: date,
+          all_day: allDay,
+          call_time: allDay ? "00:00" : callTime,
+          wrap_time: allDay ? "23:59" : wrapTime,
+          location: undefined,
+          location_notes: undefined,
+          rate_cents: rate > 0 ? Math.round(rate * 100) : undefined,
+          currency: currency,
+          rate_type: rateType,
+          usage_terms: usageTerms || undefined,
+          usage_duration: usageDuration || undefined,
+          exclusive: exclusive,
+          notes: notes || undefined,
+          notify_email: notifications.email,
+          notify_sms: notifications.sms,
+          notify_push: notifications.push,
+          notify_calendar: notifications.calendar,
+        };
+        const created = await createBookingWithFiles(payload, files);
+        const row = Array.isArray(created) ? created[0] : created;
+        if (row) {
+          const normalized = {
+            ...row,
+            status: row.status || payload.status,
+            type: row.type || payload.booking_type,
+            date: row.date || payload.date,
+            talent_name: row.talent_name || payload.talent_name,
+          };
+          onSave(normalized);
+        }
+      }
+      setUploadSuccess(true);
+      toast({
+        title: "Booking Created",
+        description: `Scheduled ${bookingType} for ${selectedTalents
+          .map((t) => t.name)
+          .join(", ")} on ${date}.`,
+      });
+      setTimeout(() => onOpenChange(false), 800);
+    } catch (e: any) {
+      const status = e?.status || e?.response?.status || e?.statusCode;
+      const body = e?.response?.data || e?.data || {};
+      const msg =
+        (typeof body === "string" && body) ||
+        (typeof e === "string" ? e : e?.message) ||
+        "Failed to create booking";
+      const isUnavailable =
+        status === 409 || /409/.test(String(msg)) || /unavailable/i.test(String(msg));
+      if (isUnavailable) {
+        toast({
+          title: "Talent unavailable",
+          description:
+            "This talent is booked out during the selected date. Please choose another date or talent.",
+          variant: "destructive" as any,
+        });
+      } else {
+        toast({ title: "Failed to create booking", description: msg, variant: "destructive" as any });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -268,6 +355,7 @@ export const NewBookingModal = ({
               <Button
                 variant="outline"
                 className="text-green-600 border-green-200 bg-green-50"
+                onClick={() => setPreviewOpen(true)}
               >
                 Preview
               </Button>
@@ -333,11 +421,17 @@ export const NewBookingModal = ({
                       : ""
                   }`}
                 >
-                  <img
-                    src={t.img}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-100"
-                    alt={t.name}
-                  />
+                  {t.img ? (
+                    <img
+                      src={t.img}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                      alt={t.name}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
+                      <User className="w-5 h-5" />
+                    </div>
+                  )}
                   <div className="flex-1">
                     <p className="text-sm font-bold text-gray-900">{t.name}</p>
                     <div className="flex items-center gap-1.5">
@@ -356,7 +450,9 @@ export const NewBookingModal = ({
               ))}
               {filteredTalents.length === 0 && (
                 <div className="p-8 text-center text-gray-500 text-sm">
-                  No talent found matching "{talentSearch}"
+                  {talentSearch
+                    ? `No talent found matching "${talentSearch}"`
+                    : "No talent found"}
                 </div>
               )}
             </div>
@@ -368,11 +464,13 @@ export const NewBookingModal = ({
                   className="flex items-center justify-between p-2 bg-indigo-50 border border-indigo-100 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <img
-                      src={t.img}
-                      className="w-8 h-8 rounded-full"
-                      alt={t.name}
-                    />
+                    {t.img ? (
+                      <img src={t.img} className="w-8 h-8 rounded-full" alt={t.name} />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
+                        <User className="w-4 h-4" />
+                      </div>
+                    )}
                     <p className="text-sm font-bold text-indigo-900">
                       Selected: {t.name}
                     </p>
@@ -821,49 +919,7 @@ export const NewBookingModal = ({
                   ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
                   : ""
               }`}
-              onClick={async () => {
-                if (selectedTalents.length === 0 || !selectedClient || saving) return;
-                setSaving(true);
-                try {
-                  for (let index = 0; index < selectedTalents.length; index++) {
-                    const talent = selectedTalents[index];
-                    const payload: any = {
-                      booking_type: bookingType,
-                      status: "pending",
-                      talent_id: talent.id,
-                      talent_name: talent.name,
-                      client_name: selectedClient.company,
-                      date: date,
-                      all_day: allDay,
-                      call_time: allDay ? "00:00" : callTime,
-                      wrap_time: allDay ? "23:59" : wrapTime,
-                      location: undefined,
-                      location_notes: undefined,
-                      rate_cents: rate > 0 ? Math.round(rate * 100) : undefined,
-                      currency: currency,
-                      rate_type: rateType,
-                      usage_terms: usageTerms || undefined,
-                      usage_duration: usageDuration || undefined,
-                      exclusive: exclusive,
-                      notes: notes || undefined,
-                    };
-                    await createBookingWithFiles(payload, files);
-                  }
-                  setUploadSuccess(true);
-                  toast({
-                    title: "Booking Created",
-                    description: `Scheduled ${bookingType} for ${selectedTalents
-                      .map((t) => t.name)
-                      .join(", ")} on ${date}.`,
-                  });
-                  // Briefly show success indicator/icon before closing
-                  setTimeout(() => onOpenChange(false), 800);
-                } catch (_e) {
-                  toast({ title: "Failed to create booking", description: "Please try again.", variant: "destructive" as any });
-                } finally {
-                  setSaving(false);
-                }
-              }}
+              onClick={submitBookings}
               disabled={selectedTalents.length === 0 || !selectedClient || saving}
             >
               {saving ? "Saving..." : (mode === "edit"
@@ -879,5 +935,35 @@ export const NewBookingModal = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Preview Dialog */}
+    <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-bold">Preview Booking</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between"><span className="text-gray-500">Type</span><span className="font-bold">{bookingType}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Talent</span><span className="font-bold">{selectedTalents.map(t=>t.name).join(", ") || "—"}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Client</span><span className="font-bold">{selectedClient?.company || "—"}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Date</span><span className="font-bold">{date}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">All Day</span><span className="font-bold">{allDay ? "Yes" : "No"}</span></div>
+          {!allDay && (
+            <div className="flex justify-between"><span className="text-gray-500">Time</span><span className="font-bold">{callTime} - {wrapTime}</span></div>
+          )}
+          <div className="flex justify-between"><span className="text-gray-500">Rate</span><span className="font-bold">{rate > 0 ? `${currency} ${rate}` : "—"}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Notifications</span><span className="font-bold">{[notifications.email&&"Email", notifications.sms&&"SMS", notifications.push&&"Push", notifications.calendar&&"Calendar"].filter(Boolean).join(", ") || "None"}</span></div>
+          {files.length > 0 && (
+            <div><span className="text-gray-500">Files</span><div className="mt-1 text-gray-800">{files.map(f=>f.name).join(", ")}</div></div>
+          )}
+          {notes && (<div><span className="text-gray-500">Notes</span><div className="mt-1 text-gray-800 whitespace-pre-wrap">{notes}</div></div>)}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={()=>setPreviewOpen(false)}>Back</Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" onClick={async ()=>{ await submitBookings(); setPreviewOpen(false); }}>Confirm & Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };

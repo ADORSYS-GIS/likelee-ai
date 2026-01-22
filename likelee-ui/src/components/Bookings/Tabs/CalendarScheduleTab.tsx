@@ -33,11 +33,17 @@ export const CalendarScheduleTab = ({
   onAddBooking,
   onUpdateBooking,
   onCancelBooking,
+  bookOuts = [],
+  onAddBookOut,
+  onRemoveBookOut,
 }: {
   bookings: any[];
   onAddBooking: (booking: any) => void;
   onUpdateBooking: (booking: any) => void;
   onCancelBooking: (id: string) => void;
+  bookOuts?: any[];
+  onAddBookOut: (bookOut: any) => void;
+  onRemoveBookOut: (id: string) => void;
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
@@ -88,11 +94,23 @@ export const CalendarScheduleTab = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const monthStr = format(currentDate, "yyyy-MM");
+  const safeStr = (v?: any) => (typeof v === "string" ? v : "");
+  const totalCount = Array.isArray(bookings) ? bookings.length : 0;
+  const thisMonthCount = Array.isArray(bookings)
+    ? bookings.filter((b: any) => safeStr(b.date).startsWith(monthStr)).length
+    : 0;
+  const confirmedCount = Array.isArray(bookings)
+    ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "confirmed").length
+    : 0;
+  const pendingCount = Array.isArray(bookings)
+    ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "pending").length
+    : 0;
   const stats = [
-    { label: "Total Bookings", value: "1" },
-    { label: "This Month", value: "1" },
-    { label: "Confirmed", value: "1" },
-    { label: "Pending", value: "0" },
+    { label: "Total Bookings", value: String(totalCount) },
+    { label: "This Month", value: String(thisMonthCount) },
+    { label: "Confirmed", value: String(confirmedCount) },
+    { label: "Pending", value: String(pendingCount) },
   ];
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -106,6 +124,16 @@ export const CalendarScheduleTab = ({
   });
 
   const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const countBookOutsOnDate = (dateStr: string) => {
+    if (!Array.isArray(bookOuts) || bookOuts.length === 0) return 0;
+    return bookOuts.filter((bo: any) => {
+      const s = bo.startDate || bo.start_date;
+      const e = bo.endDate || bo.end_date || s;
+      if (typeof s !== "string" || typeof e !== "string") return false;
+      return s <= dateStr && dateStr <= e;
+    }).length;
+  };
 
   return (
     <div className="space-y-6">
@@ -256,6 +284,8 @@ export const CalendarScheduleTab = ({
                   selected={currentDate}
                   onSelect={(date) => date && setCurrentDate(date)}
                   initialFocus
+                  className=""
+                  classNames={{}}
                 />
               </PopoverContent>
             </Popover>
@@ -341,23 +371,33 @@ export const CalendarScheduleTab = ({
               const month = currentDate.getMonth() + 1;
               const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
               const dayBookings = bookings.filter((b) => b.date === dayString);
+              const dayBookOutsCount = countBookOutsOnDate(dayString);
 
-              const getTypeColor = (type: string) => {
-                switch (type) {
+              const getEventColor = (type?: string, status?: string) => {
+                const s = (status || "").toLowerCase();
+                const t = (type || "").toLowerCase();
+                // Status overrides
+                if (s === "cancelled") return "bg-red-200 text-gray-900";
+                if (s === "completed") return "bg-purple-200 text-gray-900";
+                if (s === "confirmed") return "bg-green-200 text-gray-900";
+                // Otherwise color by type (legend)
+                switch (t) {
                   case "casting":
-                    return "bg-blue-100 text-blue-800";
+                    return "bg-blue-100 text-gray-900";
                   case "option":
-                    return "bg-yellow-100 text-yellow-800";
+                    return "bg-yellow-100 text-gray-900";
                   case "confirmed":
-                    return "bg-green-100 text-green-800";
+                    return "bg-green-200 text-gray-900";
                   case "test-shoot":
-                    return "bg-orange-100 text-orange-800";
+                    return "bg-orange-100 text-gray-900";
                   case "fitting":
-                    return "bg-yellow-50 text-yellow-700";
+                    return "bg-yellow-50 text-gray-900";
                   case "rehearsal":
-                    return "bg-gray-200 text-gray-800";
+                    return "bg-gray-200 text-gray-900";
                   default:
-                    return "bg-indigo-100 text-indigo-800";
+                    // Fall back to status pending or generic
+                    if (s === "pending") return "bg-gray-200 text-gray-900";
+                    return "bg-indigo-200 text-gray-900";
                 }
               };
 
@@ -387,19 +427,46 @@ export const CalendarScheduleTab = ({
                     {d}
                   </span>
                   <div className="mt-1 space-y-1">
-                    {dayBookings.map((b, idx) => (
+                    {dayBookings.map((b, idx) => {
+                      const statusVal = (b.status || b.booking_status) as string | undefined;
+                      const typeVal = (b.type || b.bookingType || b.booking_type) as string | undefined;
+                      const pick = (v?: any) =>
+                        typeof v === "string" && v.trim().length > 0 ? v.trim() : undefined;
+                      const displayName =
+                        pick(b.talent_name) ||
+                        pick(b.talentName) ||
+                        pick(b?.talent?.full_name) ||
+                        pick(b?.talent?.name) ||
+                        pick(b.client_name) ||
+                        "Untitled";
+                      // TEMP: debug what drives color (remove after validation)
+                      // console.debug("calendar booking", { date: dayString, status: statusVal, type: typeVal, name: displayName, id: b.id });
+                      return (
+                        <div
+                          key={`${b.id} - ${idx}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBooking(b);
+                            setDetailsModalOpen(true);
+                          }}
+                          className={
+                            getEventColor(typeVal, statusVal) +
+                            " w-full h-7 flex items-center text-sm px-3 rounded-md font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer hover:opacity-90 border border-black/5 shadow-sm"
+                          }
+                          title={displayName}
+                        >
+                          {displayName}
+                        </div>
+                      );
+                    })}
+                    {dayBookOutsCount > 0 && (
                       <div
-                        key={`${b.id} - ${idx}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedBooking(b);
-                          setDetailsModalOpen(true);
-                        }}
-                        className={`${getTypeColor(b.type)} text-[10px] p-1 rounded font-bold truncate border-l-2 border-current cursor-pointer hover:opacity-80 transition-opacity`}
+                        className="bg-red-100 text-red-700 w-full h-7 flex items-center text-xs px-3 rounded-md font-bold whitespace-nowrap overflow-hidden text-ellipsis border border-red-200"
+                        title={`${dayBookOutsCount} unavailable`}
                       >
-                        {b.talentName}
+                        ✕ {dayBookOutsCount} unavailable
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               );
@@ -416,6 +483,9 @@ export const CalendarScheduleTab = ({
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-green-100 rounded-sm"></div> Confirmed
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-gray-100 rounded-sm"></div> Pending
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-purple-100 rounded-sm"></div> Completed
@@ -447,7 +517,13 @@ export const CalendarScheduleTab = ({
         </div>
       </Card>
 
-      <ManageAvailabilityModal open={modalOpen} onOpenChange={setModalOpen} />
+      <ManageAvailabilityModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        bookOuts={bookOuts}
+        onAddBookOut={onAddBookOut}
+        onRemoveBookOut={onRemoveBookOut}
+      />
       <NewBookingModal
         open={newBookingOpen}
         onOpenChange={setNewBookingOpen}

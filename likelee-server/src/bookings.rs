@@ -8,6 +8,7 @@ use serde_json::json;
 pub struct CreateBookingPayload {
     pub booking_type: Option<String>,
     pub status: Option<String>,
+    pub client_id: Option<String>,
     pub talent_id: Option<String>,
     pub talent_name: Option<String>,
     pub client_name: Option<String>,
@@ -24,6 +25,12 @@ pub struct CreateBookingPayload {
     pub usage_duration: Option<String>,
     pub exclusive: Option<bool>,
     pub notes: Option<String>,
+    pub industries: Option<Vec<String>>, // text[]
+    // Notifications
+    pub notify_email: Option<bool>,
+    pub notify_sms: Option<bool>,
+    pub notify_push: Option<bool>,
+    pub notify_calendar: Option<bool>,
 }
 
 // Create a booking and attach uploaded files (multipart):
@@ -76,8 +83,35 @@ pub async fn create_with_files(
         (payload.call_time.clone(), payload.wrap_time.clone())
     };
 
+    // Validate: if talent is booked out on this date, block the booking
+    if let (Some(tid), date) = (payload.talent_id.as_ref(), &payload.date) {
+        // Overlap when date is within [start_date, end_date]
+        let resp = state
+            .pg
+            .from("book_outs")
+            .select("id")
+            .eq("agency_user_id", &user.id)
+            .eq("talent_id", tid)
+            .lte("start_date", date)
+            .gte("end_date", date)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let rows: serde_json::Value = serde_json::from_str(&text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+            return Err((StatusCode::CONFLICT, "Talent is unavailable during the selected date".to_string()));
+        }
+    }
+
     let row = json!({
         "agency_user_id": user.id,
+        "client_id": payload.client_id,
         "talent_id": payload.talent_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
@@ -96,6 +130,11 @@ pub async fn create_with_files(
         "type": payload.booking_type.unwrap_or_else(|| "confirmed".to_string()),
         "status": payload.status.unwrap_or_else(|| "pending".to_string()),
         "notes": payload.notes,
+        "industries": payload.industries,
+        "notify_email": payload.notify_email.unwrap_or(true),
+        "notify_sms": payload.notify_sms.unwrap_or(false),
+        "notify_push": payload.notify_push.unwrap_or(false),
+        "notify_calendar": payload.notify_calendar.unwrap_or(true),
     });
 
     // Insert booking and return generated id
@@ -197,9 +236,35 @@ pub async fn create(
         (payload.call_time.clone(), payload.wrap_time.clone())
     };
 
+    // Validate: if talent is booked out on this date, block the booking
+    if let (Some(tid), date) = (payload.talent_id.as_ref(), &payload.date) {
+        let resp = state
+            .pg
+            .from("book_outs")
+            .select("id")
+            .eq("agency_user_id", &user.id)
+            .eq("talent_id", tid)
+            .lte("start_date", date)
+            .gte("end_date", date)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let rows: serde_json::Value = serde_json::from_str(&text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+            return Err((StatusCode::CONFLICT, "Talent is unavailable during the selected date".to_string()));
+        }
+    }
+
     // Compose row
     let row = json!({
         "agency_user_id": user.id,
+        "client_id": payload.client_id,
         "talent_id": payload.talent_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
@@ -218,6 +283,7 @@ pub async fn create(
         "type": payload.booking_type.unwrap_or_else(|| "confirmed".to_string()),
         "status": payload.status.unwrap_or_else(|| "pending".to_string()),
         "notes": payload.notes,
+        "industries": payload.industries,
     });
 
     let resp = state
@@ -388,6 +454,7 @@ pub async fn list(
 pub struct UpdateBookingPayload {
     pub booking_type: Option<String>,
     pub status: Option<String>,
+    pub client_id: Option<String>,
     pub date: Option<String>,
     pub all_day: Option<bool>,
     pub call_time: Option<String>,
@@ -401,6 +468,12 @@ pub struct UpdateBookingPayload {
     pub usage_duration: Option<String>,
     pub exclusive: Option<bool>,
     pub notes: Option<String>,
+    pub industries: Option<Vec<String>>,
+    // Notifications
+    pub notify_email: Option<bool>,
+    pub notify_sms: Option<bool>,
+    pub notify_push: Option<bool>,
+    pub notify_calendar: Option<bool>,
 }
 
 pub async fn update(

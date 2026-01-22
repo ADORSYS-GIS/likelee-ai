@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   BarChart2,
   Calendar,
@@ -77,12 +77,6 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
   // Calculate dynamic stats
   const now = new Date();
 
-  // Helper to parse currency string "$1,500" -> 1500
-  const parseCurrency = (str: string) => {
-    if (!str) return 0;
-    return Number(str.replace(/[^0-9.-]+/g, ""));
-  };
-
   const overviewStats = bookings.reduce(
     (acc, b) => {
       const bDate = parseISO(b.date);
@@ -91,9 +85,9 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
 
       if (isThisMonth) acc.monthCount++;
       if (isThisWeek) acc.weekCount++;
-      if (isThisMonth && (b.type === "confirmed" || b.status === "confirmed")) {
-        const amount = parseCurrency(b.rate || b.fee || "0");
-        acc.monthRevenue += amount;
+      if (isThisMonth && ((b.type || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed")) {
+        const cents = typeof b.rate_cents === "number" ? b.rate_cents : 0;
+        acc.monthRevenue += Math.max(0, cents) / 100;
       }
 
       // Type counts
@@ -109,6 +103,32 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
       typeCounts: {} as Record<string, number>,
     },
   );
+
+  const totalBookings = bookings?.length || 0;
+
+  // Recompute type counts more robustly (prefer booking.type else status)
+  const typeCounts: Record<string, number> = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const b of bookings || []) {
+      const t = String(b.type || b.booking_type || b.status || "").toLowerCase() || "other";
+      m[t] = (m[t] || 0) + 1;
+    }
+    return m;
+  }, [bookings]);
+
+  // Compute top booked talent from current bookings
+  const topTalent = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const b of bookings || []) {
+      const name = b.talent_name || b.talentName || "Unknown";
+      m[name] = (m[name] || 0) + 1;
+    }
+    let best: { name: string; count: number } = { name: "—", count: 0 };
+    for (const [name, count] of Object.entries(m)) {
+      if (count > best.count) best = { name, count };
+    }
+    return best;
+  }, [bookings]);
 
   const stats = [
     {
@@ -145,8 +165,6 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
     },
   ];
 
-  const totalBookings = bookings.length || 1;
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-4 gap-4">
@@ -176,8 +194,8 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
             Bookings by Type
           </h3>
           <div className="space-y-4">
-            {Object.entries(overviewStats.typeCounts).length > 0 ? (
-              Object.entries(overviewStats.typeCounts).map(([type, count]) => (
+            {Object.entries(typeCounts).length > 0 ? (
+              (Object.entries(typeCounts) as [string, number][]).map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700 capitalize">
                     {type}
@@ -192,7 +210,7 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
                               ? "bg-red-500"
                               : "bg-indigo-600"
                         }`}
-                        style={{ width: `${(count / totalBookings) * 100}%` }}
+                        style={{ width: `${totalBookings > 0 ? (count / totalBookings) * 100 : 0}%` }}
                       />
                     </div>
                     <span className="text-sm font-bold text-gray-900">
@@ -217,10 +235,10 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
             <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-bold text-gray-400">#1</span>
-                <span className="text-sm font-bold text-gray-900">Emma</span>
+                <span className="text-sm font-bold text-gray-900">{topTalent.name}</span>
               </div>
               <Badge variant="secondary" className="font-bold">
-                1 bookings
+                {topTalent.count} bookings
               </Badge>
             </div>
           </div>
