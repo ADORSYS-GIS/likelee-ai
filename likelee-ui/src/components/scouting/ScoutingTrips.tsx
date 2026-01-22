@@ -10,7 +10,10 @@ import {
     FileText,
     Star,
     Plus,
-    ArrowUpRight
+    ArrowUpRight,
+    X,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,85 +23,95 @@ import { PlanTripModal } from "./map/PlanTripModal";
 import { TripAnalytics } from "./TripAnalytics";
 import { scoutingService } from "@/services/scoutingService";
 import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-const MOCK_TRIPS: ScoutingTrip[] = [
-    {
-        id: "1",
-        agency_id: "agency_1",
-        name: "NYC SoHo Holiday Scouting",
-        status: "completed",
-        trip_type: "Open Scouting",
-        start_date: "2025-12-15",
-        start_time: "10:00",
-        end_date: "2025-12-17",
-        end_time: "17:00",
-        location: "New York, NY",
-        scout_ids: ["Sarah Johnson", "Michael Lee"],
-        weather: "Clear, 35°F",
-        prospects_approached: 45,
-        prospects_added: 14,
-        prospects_agreed: 17, // Using this for "Submitted" in the UI
-        conversion_rate: 31.1,
-        total_cost: 2350,
-        description: "Holiday shopping season proved excellent for foot traffic. SoHo was especially productive with fashion-forward crowds. Weather was cold but clear.",
-        locations_visited: [
-            { id: "l1", name: "SoHo Shopping District", date: "Dec 15", time: "10:00 AM", prospects_found: 8 },
-            { id: "l2", name: "NYU Campus Area", date: "Dec 15", time: "2:30 PM", prospects_found: 5 },
-            { id: "l3", name: "Chelsea Fitness Centers", date: "Dec 16", time: "11:00 AM", prospects_found: 4 },
-        ],
-        photos: [
-            "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&h=200&fit=crop",
-            "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&h=200&fit=crop"
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: "2",
-        agency_id: "agency_1",
-        name: "Brooklyn Art District Tour",
-        status: "completed",
-        trip_type: "Specific Casting",
-        start_date: "2025-11-20",
-        start_time: "09:00",
-        end_date: "2025-11-21",
-        end_time: "18:00",
-        location: "Brooklyn, NY",
-        scout_ids: ["Michael Lee"],
-        weather: "Partly cloudy, 52°F",
-        prospects_approached: 28,
-        prospects_added: 8,
-        prospects_agreed: 10,
-        conversion_rate: 28.6,
-        total_cost: 1420,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: "3",
-        agency_id: "agency_1",
-        name: "Chicago Fashion Week",
-        status: "completed",
-        trip_type: "Event Coverage",
-        start_date: "2025-10-05",
-        start_time: "08:00",
-        end_date: "2025-10-08",
-        end_time: "20:00",
-        location: "Chicago, IL",
-        scout_ids: ["Sarah Johnson"],
-        weather: "Sunny, 65°F",
-        prospects_approached: 52,
-        prospects_added: 18,
-        prospects_agreed: 21,
-        conversion_rate: 34.6,
-        total_cost: 4280,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    }
-];
+const PhotoLightbox = ({
+    photos,
+    initialIndex,
+    isOpen,
+    onClose
+}: {
+    photos: string[];
+    initialIndex: number;
+    isOpen: boolean;
+    onClose: () => void;
+}) => {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+    useEffect(() => {
+        setCurrentIndex(initialIndex);
+    }, [initialIndex]);
+
+    const handlePrevious = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCurrentIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+    };
+
+    const handleNext = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCurrentIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-4xl p-0 bg-black/95 border-none text-white overflow-hidden">
+                <div className="relative w-full h-[80vh] flex items-center justify-center group">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 z-50 text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                        onClick={onClose}
+                    >
+                        <X className="w-6 h-6" />
+                    </Button>
+
+                    {photos.length > 1 && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute left-4 z-50 text-white/70 hover:text-white hover:bg-white/10 rounded-full w-12 h-12"
+                                onClick={handlePrevious}
+                            >
+                                <ChevronLeft className="w-8 h-8" />
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-4 z-50 text-white/70 hover:text-white hover:bg-white/10 rounded-full w-12 h-12"
+                                onClick={handleNext}
+                            >
+                                <ChevronRight className="w-8 h-8" />
+                            </Button>
+                        </>
+                    )}
+
+                    <div className="relative w-full h-full flex items-center justify-center p-8">
+                        <img
+                            src={photos[currentIndex]}
+                            alt={`Photo ${currentIndex + 1}`}
+                            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                        />
+                    </div>
+
+                    <div className="absolute bottom-4 left-0 right-0 text-center">
+                        <p className="text-sm font-medium text-white/80 bg-black/50 inline-block px-4 py-1 rounded-full backdrop-blur-sm">
+                            {currentIndex + 1} / {photos.length}
+                        </p>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 const TripCard = ({ trip, onEdit }: { trip: ScoutingTrip; onEdit: (trip: ScoutingTrip) => void }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [photoIndex, setPhotoIndex] = useState(0);
 
     const formatDateRange = (start?: string, end?: string) => {
         if (!start) return "";
@@ -125,153 +138,175 @@ const TripCard = ({ trip, onEdit }: { trip: ScoutingTrip; onEdit: (trip: Scoutin
         }
     };
 
+    const openLightbox = (index: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setPhotoIndex(index);
+        setLightboxOpen(true);
+    };
+
     return (
-        <Card
-            className={`mb-4 overflow-hidden transition-all duration-300 border-gray-200 shadow-sm hover:shadow-md cursor-pointer ${isExpanded ? 'ring-1 ring-indigo-100' : ''}`}
-            onClick={() => setIsExpanded(!isExpanded)}
-        >
-            <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-bold text-gray-900">{trip.name}</h3>
-                            <Badge className={`${getStatusColor(trip.status)} hover:${getStatusColor(trip.status)} border-none capitalize`}>
-                                {trip.status}
-                            </Badge>
-                            {trip.trip_type && (
-                                <Badge variant="outline" className="text-gray-600 border-gray-200 font-medium">
-                                    {trip.trip_type}
+        <>
+            <Card
+                className={`mb-4 overflow-hidden transition-all duration-300 border-gray-200 shadow-sm hover:shadow-md cursor-pointer ${isExpanded ? 'ring-1 ring-indigo-100' : ''}`}
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-bold text-gray-900">{trip.name}</h3>
+                                <Badge className={`${getStatusColor(trip.status)} hover:${getStatusColor(trip.status)} border-none capitalize`}>
+                                    {trip.status}
                                 </Badge>
-                            )}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                            <div className="flex items-center gap-1.5">
-                                <Calendar className="w-4 h-4" />
-                                <span className="font-medium">{formatDateRange(trip.start_date, trip.end_date)}</span>
+                                {trip.trip_type && (
+                                    <Badge variant="outline" className="text-gray-600 border-gray-200 font-medium">
+                                        {trip.trip_type}
+                                    </Badge>
+                                )}
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <Users className="w-4 h-4" />
-                                <span className="font-medium">
-                                    {trip.scout_names && trip.scout_names.length > 0
-                                        ? trip.scout_names.join(", ")
-                                        : trip.scout_ids && trip.scout_ids.length > 0
-                                            ? trip.scout_ids.join(", ")
-                                            : "Sarah Johnson, Michael Lee"}
-                                </span>
-                            </div>
-                            {trip.weather && (
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                                 <div className="flex items-center gap-1.5">
-                                    <Cloud className="w-4 h-4" />
-                                    <span className="font-medium">{trip.weather}</span>
+                                    <Calendar className="w-4 h-4" />
+                                    <span className="font-medium">{formatDateRange(trip.start_date, trip.end_date)}</span>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="text-gray-400">
-                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Approached</p>
-                        <p className="text-xl font-bold text-gray-900">{trip.prospects_approached}</p>
-                    </div>
-                    <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Submitted</p>
-                        <p className="text-xl font-bold text-indigo-600">{trip.prospects_agreed}</p>
-                    </div>
-                    <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Added to Pipeline</p>
-                        <p className="text-xl font-bold text-green-600">{trip.prospects_added}</p>
-                    </div>
-                    <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Conversion Rate</p>
-                        <p className="text-xl font-bold text-purple-600">{trip.conversion_rate}%</p>
-                    </div>
-                    <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
-                        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Total Cost</p>
-                        <p className="text-xl font-bold text-gray-900">${trip.total_cost?.toLocaleString()}</p>
-                    </div>
-                </div>
-
-                {isExpanded && (
-                    <div className="mt-8 space-y-8 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {/* Locations Visited */}
-                        <div>
-                            <div className="flex items-center gap-2 mb-4 text-orange-600">
-                                <MapPin className="w-4 h-4" />
-                                <h4 className="font-bold text-sm uppercase tracking-wider">Locations Visited ({trip.locations_visited?.length || 0})</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {trip.locations_visited?.map((loc) => (
-                                    <div key={loc.id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
-                                        <div>
-                                            <p className="font-bold text-gray-900 text-sm">{loc.name}</p>
-                                            <p className="text-[10px] text-gray-400">{loc.date}, {loc.time}</p>
-                                        </div>
-                                        <Badge className="bg-green-50 text-green-700 border-green-100 hover:bg-green-50">
-                                            {loc.prospects_found} found
-                                        </Badge>
+                                <div className="flex items-center gap-1.5">
+                                    <Users className="w-4 h-4" />
+                                    <span className="font-medium">
+                                        {trip.scout_names && trip.scout_names.length > 0
+                                            ? trip.scout_names.join(", ")
+                                            : trip.scout_ids && trip.scout_ids.length > 0
+                                                ? trip.scout_ids.join(", ")
+                                                : "Sarah Johnson, Michael Lee"}
+                                    </span>
+                                </div>
+                                {trip.weather && (
+                                    <div className="flex items-center gap-1.5">
+                                        <Cloud className="w-4 h-4" />
+                                        <span className="font-medium">{trip.weather}</span>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
+                        <div className="text-gray-400">
+                            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        </div>
+                    </div>
 
-                        {/* Trip Photos */}
-                        {trip.photos && trip.photos.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+                            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Approached</p>
+                            <p className="text-xl font-bold text-gray-900">{trip.prospects_approached}</p>
+                        </div>
+                        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+                            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Submitted</p>
+                            <p className="text-xl font-bold text-indigo-600">{trip.prospects_agreed}</p>
+                        </div>
+                        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+                            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Added to Pipeline</p>
+                            <p className="text-xl font-bold text-green-600">{trip.prospects_added}</p>
+                        </div>
+                        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+                            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Conversion Rate</p>
+                            <p className="text-xl font-bold text-purple-600">{trip.conversion_rate}%</p>
+                        </div>
+                        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+                            <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Total Cost</p>
+                            <p className="text-xl font-bold text-gray-900">${trip.total_cost?.toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    {isExpanded && (
+                        <div className="mt-8 space-y-8 animate-in fade-in slide-in-from-top-2 duration-300">
+                            {/* Locations Visited */}
                             <div>
-                                <div className="flex items-center gap-2 mb-4 text-blue-600">
-                                    <Camera className="w-4 h-4" />
-                                    <h4 className="font-bold text-sm uppercase tracking-wider">Trip Photos ({trip.photos.length})</h4>
+                                <div className="flex items-center gap-2 mb-4 text-orange-600">
+                                    <MapPin className="w-4 h-4" />
+                                    <h4 className="font-bold text-sm uppercase tracking-wider">Locations Visited ({trip.locations_visited?.length || 0})</h4>
                                 </div>
-                                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                                    {trip.photos.map((photo, i) => (
-                                        <div key={i} className="relative flex-shrink-0">
-                                            <img
-                                                src={photo}
-                                                alt={`Trip photo ${i + 1}`}
-                                                className="w-48 h-32 object-cover rounded-xl border border-gray-100 shadow-sm"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop";
-                                                }}
-                                            />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {trip.locations_visited?.map((loc) => (
+                                        <div key={loc.id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+                                            <div>
+                                                <p className="font-bold text-gray-900 text-sm">{loc.name}</p>
+                                                <p className="text-[10px] text-gray-400">{loc.date}, {loc.time}</p>
+                                            </div>
+                                            <Badge className="bg-green-50 text-green-700 border-green-100 hover:bg-green-50">
+                                                {loc.prospects_found} found
+                                            </Badge>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        )}
 
-                        {/* Notes */}
-                        {trip.description && (
-                            <div>
-                                <div className="flex items-center gap-2 mb-4 text-gray-600">
-                                    <FileText className="w-4 h-4" />
-                                    <h4 className="font-bold text-sm uppercase tracking-wider">Notes & Observations</h4>
+                            {/* Trip Photos */}
+                            {trip.photos && trip.photos.length > 0 && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4 text-blue-600">
+                                        <Camera className="w-4 h-4" />
+                                        <h4 className="font-bold text-sm uppercase tracking-wider">Trip Photos ({trip.photos.length})</h4>
+                                    </div>
+                                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                                        {trip.photos.map((photo, i) => (
+                                            <div
+                                                key={i}
+                                                className="relative flex-shrink-0 cursor-pointer group"
+                                                onClick={(e) => openLightbox(i, e)}
+                                            >
+                                                <img
+                                                    src={photo}
+                                                    alt={`Trip photo ${i + 1}`}
+                                                    className="w-48 h-32 object-cover rounded-xl border border-gray-100 shadow-sm transition-transform group-hover:scale-[1.02]"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop";
+                                                    }}
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-xl flex items-center justify-center">
+                                                    <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="p-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm text-gray-600 leading-relaxed">
-                                    {trip.description}
+                            )}
+
+                            {/* Notes */}
+                            {trip.description && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4 text-gray-600">
+                                        <FileText className="w-4 h-4" />
+                                        <h4 className="font-bold text-sm uppercase tracking-wider">Notes & Observations</h4>
+                                    </div>
+                                    <div className="p-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm text-gray-600 leading-relaxed">
+                                        {trip.description}
+                                    </div>
                                 </div>
+                            )}
+
+                            {/* Edit Button */}
+                            <div className="pt-4 border-t border-gray-100 flex justify-end">
+                                <Button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit(trip);
+                                    }}
+                                    className="bg-white hover:bg-gray-50 text-indigo-600 border border-indigo-100 rounded-xl px-6 flex items-center gap-2 font-bold"
+                                >
+                                    <ArrowUpRight className="w-4 h-4" />
+                                    View Details & Update
+                                </Button>
                             </div>
-                        )}
-
-                        {/* Edit Button */}
-                        <div className="pt-4 border-t border-gray-100 flex justify-end">
-                            <Button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEdit(trip);
-                                }}
-                                className="bg-white hover:bg-gray-50 text-indigo-600 border border-indigo-100 rounded-xl px-6 flex items-center gap-2 font-bold"
-                            >
-                                <ArrowUpRight className="w-4 h-4" />
-                                View Details & Update
-                            </Button>
                         </div>
-                    </div>
-                )}
-            </div>
-        </Card>
+                    )}
+                </div>
+            </Card>
+
+            <PhotoLightbox
+                photos={trip.photos || []}
+                initialIndex={photoIndex}
+                isOpen={lightboxOpen}
+                onClose={() => setLightboxOpen(false)}
+            />
+        </>
     );
 };
 

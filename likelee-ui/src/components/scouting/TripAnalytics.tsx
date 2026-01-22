@@ -54,13 +54,22 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
     // Productive Locations (Calculated)
     const locationMap: Record<string, { visits: number, prospects: number }> = {};
     trips.forEach(trip => {
-        trip.locations_visited?.forEach(loc => {
-            if (!locationMap[loc.name]) {
-                locationMap[loc.name] = { visits: 0, prospects: 0 };
+        if (trip.locations_visited && trip.locations_visited.length > 0) {
+            trip.locations_visited.forEach(loc => {
+                if (!locationMap[loc.name]) {
+                    locationMap[loc.name] = { visits: 0, prospects: 0 };
+                }
+                locationMap[loc.name].visits += 1;
+                locationMap[loc.name].prospects += (loc.prospects_found || 0);
+            });
+        } else if (trip.location) {
+            // Fallback to main location if no specific locations visited
+            if (!locationMap[trip.location]) {
+                locationMap[trip.location] = { visits: 0, prospects: 0 };
             }
-            locationMap[loc.name].visits += 1;
-            locationMap[loc.name].prospects += (loc.prospects_found || 0);
-        });
+            locationMap[trip.location].visits += 1;
+            locationMap[trip.location].prospects += (trip.prospects_added || 0);
+        }
     });
 
     const locations = Object.entries(locationMap).map(([name, stats]) => ({

@@ -249,15 +249,6 @@ export const ScoutingMap = ({
                         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                             <Layers className="w-4 h-4 text-gray-400" /> Map Layers
                         </h3>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="text-[11px] font-bold text-gray-500 hover:text-gray-900 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gray-50"
-                        >
-                            {showAdvanced ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            {showAdvanced ? "Hide Advanced" : "Show Advanced"}
-                        </Button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
@@ -340,40 +331,6 @@ export const ScoutingMap = ({
                         })}
                     </div>
 
-                    {showAdvanced && (
-                        <div className="mt-8 pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div>
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Heatmap Overlays</h4>
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 'heatmapDensity', label: 'Talent Density' },
-                                        { id: 'heatmapSuccess', label: 'Discovery Success Rate' },
-                                        { id: 'heatmapSocial', label: 'Social Media Activity' },
-                                        { id: 'heatmapCompetition', label: 'Competition Territory' }
-                                    ].map((overlay) => (
-                                        <div key={overlay.id} className="flex items-center space-x-2">
-                                            <Checkbox id={overlay.id} checked={layers[overlay.id as keyof typeof layers]} onCheckedChange={() => toggleLayer(overlay.id as keyof typeof layers)} />
-                                            <label htmlFor={overlay.id} className="text-xs font-medium text-gray-600 cursor-pointer">{overlay.label}</label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Additional Layers</h4>
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 'demographics', label: 'Demographics & Trends' },
-                                        { id: 'optimizedRoutes', label: 'Optimized Routes' }
-                                    ].map((layer) => (
-                                        <div key={layer.id} className="flex items-center space-x-2">
-                                            <Checkbox id={layer.id} checked={layers[layer.id as keyof typeof layers]} onCheckedChange={() => toggleLayer(layer.id as keyof typeof layers)} />
-                                            <label htmlFor={layer.id} className="text-xs font-medium text-gray-600 cursor-pointer">{layer.label}</label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 <div className="bg-gray-50 rounded-2xl h-[800px] border border-gray-200 relative overflow-hidden group">
