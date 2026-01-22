@@ -5539,7 +5539,7 @@ const ScoutingHubView = ({
         )}
         {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
         {activeTab === "Marketplace" && <MarketplaceTab />}
-        {activeTab === "Scouting Map" && (
+        <div className={activeTab === "Scouting Map" ? "block" : "hidden"}>
           <ScoutingMapTab
             onEditEvent={(event) => {
               setEventToEdit(event);
@@ -5553,8 +5553,9 @@ const ScoutingHubView = ({
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
+            isVisible={activeTab === "Scouting Map"}
           />
-        )}
+        </div>
         {activeTab === "Plan Trip" && <ScoutingTrips />}
         {activeTab === "Submissions" && <SubmissionsTab />}
         {activeTab === "Open Calls" && (
@@ -6278,15 +6279,18 @@ const ScoutingMapTab = ({
   onEditEvent,
   onViewProspect,
   onAddEvent,
+  isVisible = true,
 }: {
   onEditEvent: (event: ScoutingEvent) => void;
   onViewProspect: (prospect: ScoutingProspect) => void;
   onAddEvent: () => void;
+  isVisible?: boolean;
 }) => (
   <ScoutingMap
     onEditEvent={onEditEvent}
     onViewProspect={onViewProspect}
     onAddEvent={onAddEvent}
+    isVisible={isVisible}
   />
 );
 

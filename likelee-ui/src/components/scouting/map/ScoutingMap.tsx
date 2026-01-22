@@ -27,18 +27,33 @@ const RecenterMap = ({ coords }: { coords: { lat: number; lng: number }[] }) => 
     return null;
 };
 
+// Helper component to handle map resizing when visibility changes
+const ResizeMap = ({ isVisible }: { isVisible: boolean }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (isVisible) {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+    }, [isVisible, map]);
+    return null;
+};
+
 import MarkerClusterGroup from 'react-leaflet-cluster';
 
 export const ScoutingMap = ({
     onEditEvent,
     onViewProspect,
     onAddEvent,
-    refreshData
+    refreshData,
+    isVisible = true
 }: {
     onEditEvent?: (event: ScoutingEvent) => void;
     onViewProspect?: (prospect: ScoutingProspect) => void;
     onAddEvent?: () => void;
     refreshData?: () => void;
+    isVisible?: boolean;
 }) => {
     const [prospects, setProspects] = useState<(ScoutingProspect & { coords: { lat: number; lng: number } })[]>([]);
     const [events, setEvents] = useState<(ScoutingEvent & { coords: { lat: number; lng: number } })[]>([]);
@@ -374,6 +389,7 @@ export const ScoutingMap = ({
                             />
                         </MarkerClusterGroup>
                         <RecenterMap coords={allCoords} />
+                        <ResizeMap isVisible={isVisible} />
                     </MapContainer>
 
                     <div className="absolute bottom-6 right-6 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200 shadow-xl">
