@@ -84,7 +84,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                     position={[prospect.coords.lat, prospect.coords.lng]}
                     icon={ProspectIcon}
                 >
-                    <Popup>
+                    <Popup autoClose={false} closeOnClick={false}>
                         <ProspectPopup
                             prospect={prospect}
                             onView={onViewProspect}
@@ -99,7 +99,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                     position={[prospect.coords.lat, prospect.coords.lng]}
                     icon={SignedIcon}
                 >
-                    <Popup>
+                    <Popup autoClose={false} closeOnClick={false}>
                         <ProspectPopup
                             prospect={prospect}
                             onView={onViewProspect}
@@ -114,7 +114,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                     position={[prospect.coords.lat, prospect.coords.lng]}
                     icon={ProspectOnlyIcon}
                 >
-                    <Popup>
+                    <Popup autoClose={false} closeOnClick={false}>
                         <ProspectPopup
                             prospect={prospect}
                             onView={onViewProspect}
@@ -129,7 +129,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                     position={[event.coords.lat, event.coords.lng]}
                     icon={EventIcon}
                 >
-                    <Popup>
+                    <Popup autoClose={false} closeOnClick={false}>
                         <EventPopup
                             event={event}
                             onEdit={onEditEvent}
@@ -144,7 +144,7 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                     position={[trip.latitude || 40.7128, trip.longitude || -74.0060]}
                     icon={PlannedTripIcon}
                 >
-                    <Popup>
+                    <Popup autoClose={false} closeOnClick={false}>
                         <div className="p-2">
                             <h4 className="font-bold text-sm">{trip.name}</h4>
                             <p className="text-xs text-gray-500">{trip.destination}</p>

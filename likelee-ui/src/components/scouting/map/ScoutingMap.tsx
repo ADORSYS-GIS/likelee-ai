@@ -379,7 +379,12 @@ export const ScoutingMap = ({
                             showCoverageOnHover={false}
                         >
                             <MapMarkers
-                                prospects={layers.discoveries ? prospects : []}
+                                prospects={layers.discoveries ? prospects.filter(p => {
+                                    const isSigned = p.status === 'signed' || p.is_signed;
+                                    if (isSigned && layers.signedTalent) return false;
+                                    if (!isSigned && layers.prospects) return false;
+                                    return true;
+                                }) : []}
                                 signedProspects={layers.signedTalent ? signedProspects : []}
                                 prospectsOnly={layers.prospects ? prospectsOnly : []}
                                 events={layers.events ? events : []}
