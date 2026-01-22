@@ -64,6 +64,7 @@ const SignedIcon = createCustomIcon("#2563eb", "signed");     // Blue-600
 const ProspectOnlyIcon = createCustomIcon("#d97706", "prospect-only"); // Amber-600
 const EventIcon = createCustomIcon("#db2777", "event"); // Pink-600 - Single icon for all events
 const PlannedTripIcon = createCustomIcon("#7c3aed", "trip");   // Purple-600
+const DeclinedIcon = createCustomIcon("#dc2626", "prospect-only"); // Red-600
 
 interface MapMarkersProps {
     prospects: (ScoutingProspect & { coords: { lat: number; lng: number } })[];
@@ -71,11 +72,12 @@ interface MapMarkersProps {
     prospectsOnly?: (ScoutingProspect & { coords: { lat: number; lng: number } })[];
     events: (ScoutingEvent & { coords: { lat: number; lng: number } })[];
     trips?: any[];
+    declinedProspects?: (ScoutingProspect & { coords: { lat: number; lng: number } })[];
     onEditEvent?: (event: ScoutingEvent) => void;
     onViewProspect?: (prospect: ScoutingProspect) => void;
 }
 
-export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = [], events, trips = [], onEditEvent, onViewProspect }: MapMarkersProps) => {
+export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = [], events, trips = [], declinedProspects = [], onEditEvent, onViewProspect }: MapMarkersProps) => {
     return (
         <>
             {prospects.map((prospect) => (
@@ -150,6 +152,21 @@ export const MapMarkers = ({ prospects, signedProspects = [], prospectsOnly = []
                             <p className="text-xs text-gray-500">{trip.destination}</p>
                             <p className="text-[10px] text-indigo-600 mt-1">{trip.start_date} - {trip.end_date}</p>
                         </div>
+                    </Popup>
+                </Marker>
+            ))}
+
+            {declinedProspects.map((prospect) => (
+                <Marker
+                    key={`declined-${prospect.id}`}
+                    position={[prospect.coords.lat, prospect.coords.lng]}
+                    icon={DeclinedIcon}
+                >
+                    <Popup autoClose={false} closeOnClick={false}>
+                        <ProspectPopup
+                            prospect={prospect}
+                            onView={onViewProspect}
+                        />
                     </Popup>
                 </Marker>
             ))}

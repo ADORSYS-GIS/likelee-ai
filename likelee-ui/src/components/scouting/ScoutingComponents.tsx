@@ -15,6 +15,7 @@ import {
   Globe,
   CheckCircle2,
   RefreshCw,
+  DollarSign,
 } from "lucide-react";
 
 // Format prospect status for display
