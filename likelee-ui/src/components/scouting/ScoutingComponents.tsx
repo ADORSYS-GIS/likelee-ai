@@ -21,13 +21,13 @@ import {
 // Format prospect status for display
 const formatProspectStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
-    'new': 'New Lead',
-    'contacted': 'Contacted',
-    'meeting': 'Meeting Scheduled',
-    'test_shoot': 'Test Shoot',
-    'offer_sent': 'Offer Sent',
-    'signed': 'Signed',
-    'declined': 'Declined'
+    new: "New Lead",
+    contacted: "Contacted",
+    meeting: "Meeting Scheduled",
+    test_shoot: "Test Shoot",
+    offer_sent: "Offer Sent",
+    signed: "Signed",
+    declined: "Declined",
   };
   return statusMap[status] || status;
 };
@@ -152,7 +152,7 @@ export const CreateEventModal = ({
       if (onSuccess) onSuccess();
       toast({
         title: "Success",
-        description: `Event ${event ? "updated" : "created"} successfully`
+        description: `Event ${event ? "updated" : "created"} successfully`,
       });
       onOpenChange(false);
     } catch (error) {
@@ -180,7 +180,11 @@ export const CreateEventModal = ({
             </p>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="grid grid-cols-4 w-full bg-gray-50 p-1 rounded-xl mb-6">
               <TabsTrigger
                 value="basics"
@@ -211,7 +215,9 @@ export const CreateEventModal = ({
             <TabsContent value="basics" className="space-y-4 mt-0">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Event Title *</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Event Title *
+                  </Label>
                   <Input
                     placeholder="Winter 2026 Model Search"
                     value={formData.name || ""}
@@ -220,18 +226,26 @@ export const CreateEventModal = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Event Type *</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Event Type *
+                  </Label>
                   <Select
                     value={formData.event_type}
-                    onValueChange={(val) => handleInputChange("event_type", val)}
+                    onValueChange={(val) =>
+                      handleInputChange("event_type", val)
+                    }
                   >
                     <SelectTrigger className="h-10 rounded-lg border-gray-200 text-sm">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Open Call">Open Call</SelectItem>
-                      <SelectItem value="Private Casting">Private Casting</SelectItem>
-                      <SelectItem value="Virtual Audition">Virtual Audition</SelectItem>
+                      <SelectItem value="Private Casting">
+                        Private Casting
+                      </SelectItem>
+                      <SelectItem value="Virtual Audition">
+                        Virtual Audition
+                      </SelectItem>
                       <SelectItem value="Go-See">Go-See</SelectItem>
                       <SelectItem value="Test Shoot">Test Shoot</SelectItem>
                       <SelectItem value="Model Search">Model Search</SelectItem>
@@ -241,50 +255,70 @@ export const CreateEventModal = ({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Casting For</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Casting For
+                </Label>
                 <Input
                   placeholder="Spring Campaign for Nike"
                   value={formData.casting_for || ""}
-                  onChange={(e) => handleInputChange("casting_for", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("casting_for", e.target.value)
+                  }
                   className="h-10 rounded-lg border-gray-200 text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Event Description</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Event Description
+                </Label>
                 <Textarea
                   placeholder="We're looking for fresh faces for our upcoming campaign..."
                   value={formData.description || ""}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
                   className="min-h-[100px] rounded-lg border-gray-200 text-sm"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Event Date *</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Event Date *
+                  </Label>
                   <Input
                     type="date"
                     value={formData.event_date}
-                    onChange={(e) => handleInputChange("event_date", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("event_date", e.target.value)
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Start Time</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Start Time
+                  </Label>
                   <Input
                     type="time"
                     value={formData.start_time || ""}
-                    onChange={(e) => handleInputChange("start_time", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("start_time", e.target.value)
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">End Time</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    End Time
+                  </Label>
                   <Input
                     type="time"
                     value={formData.end_time || ""}
-                    onChange={(e) => handleInputChange("end_time", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("end_time", e.target.value)
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
@@ -293,17 +327,28 @@ export const CreateEventModal = ({
 
             <TabsContent value="requirements" className="space-y-4 mt-0">
               <div className="space-y-3">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Looking For (Select all that apply)</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Looking For (Select all that apply)
+                </Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    "Model", "Actor", "Dancer", "Singer", "Influencer", "Athlete", "Child Talent", "Plus Size", "Fitness"
+                    "Model",
+                    "Actor",
+                    "Dancer",
+                    "Singer",
+                    "Influencer",
+                    "Athlete",
+                    "Child Talent",
+                    "Plus Size",
+                    "Fitness",
                   ].map((cat) => (
                     <div
                       key={cat}
-                      className={`flex items-center space-x-2.5 p-2.5 rounded-lg border transition-all cursor-pointer hover:border-indigo-200 ${formData.looking_for?.includes(cat)
-                        ? "border-indigo-500 bg-indigo-50/30"
-                        : "border-gray-100 bg-white"
-                        }`}
+                      className={`flex items-center space-x-2.5 p-2.5 rounded-lg border transition-all cursor-pointer hover:border-indigo-200 ${
+                        formData.looking_for?.includes(cat)
+                          ? "border-indigo-500 bg-indigo-50/30"
+                          : "border-gray-100 bg-white"
+                      }`}
                       onClick={() => handleLookingForToggle(cat)}
                     >
                       <Checkbox
@@ -311,7 +356,9 @@ export const CreateEventModal = ({
                         onCheckedChange={() => handleLookingForToggle(cat)}
                         className="h-4 w-4 rounded border-gray-300 data-[state=checked]:bg-indigo-600"
                       />
-                      <span className="text-xs font-semibold text-gray-800">{cat}</span>
+                      <span className="text-xs font-semibold text-gray-800">
+                        {cat}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -319,36 +366,52 @@ export const CreateEventModal = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Minimum Age</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Minimum Age
+                  </Label>
                   <Input
                     type="number"
                     value={formData.min_age || ""}
-                    onChange={(e) => handleInputChange("min_age", parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange("min_age", parseInt(e.target.value))
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Maximum Age</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Maximum Age
+                  </Label>
                   <Input
                     type="number"
                     value={formData.max_age || ""}
-                    onChange={(e) => handleInputChange("max_age", parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange("max_age", parseInt(e.target.value))
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Gender Preference</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Gender Preference
+                </Label>
                 <div className="grid grid-cols-4 gap-2">
                   {["All", "Female", "Male", "Non-binary"].map((gender) => (
                     <div
                       key={gender}
-                      className={`flex items-center justify-center p-2.5 rounded-lg border font-semibold text-xs transition-all cursor-pointer ${formData.gender_preference === gender.toLowerCase()
-                        ? "border-indigo-500 bg-indigo-50/30 text-indigo-700"
-                        : "border-gray-100 bg-white text-gray-600 hover:border-gray-200"
-                        }`}
-                      onClick={() => handleInputChange("gender_preference", gender.toLowerCase())}
+                      className={`flex items-center justify-center p-2.5 rounded-lg border font-semibold text-xs transition-all cursor-pointer ${
+                        formData.gender_preference === gender.toLowerCase()
+                          ? "border-indigo-500 bg-indigo-50/30 text-indigo-700"
+                          : "border-gray-100 bg-white text-gray-600 hover:border-gray-200"
+                      }`}
+                      onClick={() =>
+                        handleInputChange(
+                          "gender_preference",
+                          gender.toLowerCase(),
+                        )
+                      }
                     >
                       {gender}
                     </div>
@@ -357,42 +420,61 @@ export const CreateEventModal = ({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Special Skills / Requirements</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Special Skills / Requirements
+                </Label>
                 <Textarea
                   placeholder="e.g., Must be able to swim, Bilingual in Spanish, Dancing experience"
                   value={formData.special_skills || ""}
-                  onChange={(e) => handleInputChange("special_skills", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("special_skills", e.target.value)
+                  }
                   className="rounded-lg border-gray-200 text-sm min-h-[60px]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">What to Bring</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  What to Bring
+                </Label>
                 <Textarea
                   placeholder="e.g., Comp card, headshot, comfortable clothing"
                   value={formData.what_to_bring || ""}
-                  onChange={(e) => handleInputChange("what_to_bring", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("what_to_bring", e.target.value)
+                  }
                   className="rounded-lg border-gray-200 text-sm min-h-[60px]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Dress Code</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Dress Code
+                  </Label>
                   <Input
                     placeholder="e.g., Fitted black clothing, minimal makeup"
                     value={formData.dress_code || ""}
-                    onChange={(e) => handleInputChange("dress_code", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dress_code", e.target.value)
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Targeted Talent Goal</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Targeted Talent Goal
+                  </Label>
                   <Input
                     type="number"
                     placeholder="e.g., 20"
                     value={formData.targeted_talent_goal || ""}
-                    onChange={(e) => handleInputChange("targeted_talent_goal", parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "targeted_talent_goal",
+                        parseInt(e.target.value),
+                      )
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
@@ -401,43 +483,62 @@ export const CreateEventModal = ({
 
             <TabsContent value="logistics" className="space-y-4 mt-0">
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Location Address</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Location Address
+                </Label>
                 <Input
                   placeholder="123 Main St, New York, NY 10001"
                   value={formData.location || ""}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("location", e.target.value)
+                  }
                   className="h-10 rounded-lg border-gray-200 text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Location Details / Instructions</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Location Details / Instructions
+                </Label>
                 <Textarea
                   placeholder="Enter through side entrance, take elevator to 3rd floor"
                   value={formData.location_details || ""}
-                  onChange={(e) => handleInputChange("location_details", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("location_details", e.target.value)
+                  }
                   className="rounded-lg border-gray-200 text-sm min-h-[80px]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Virtual Meeting Link (if applicable)</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Virtual Meeting Link (if applicable)
+                </Label>
                 <Input
                   placeholder="https://zoom.us/j/..."
                   value={formData.virtual_link || ""}
-                  onChange={(e) => handleInputChange("virtual_link", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("virtual_link", e.target.value)
+                  }
                   className="h-10 rounded-lg border-gray-200 text-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4 items-end">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Maximum Attendees</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Maximum Attendees
+                  </Label>
                   <Input
                     type="number"
                     placeholder="50"
                     value={formData.max_attendees || ""}
-                    onChange={(e) => handleInputChange("max_attendees", parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "max_attendees",
+                        parseInt(e.target.value),
+                      )
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
@@ -445,16 +546,25 @@ export const CreateEventModal = ({
                   <Checkbox
                     id="reg-required"
                     checked={formData.registration_required}
-                    onCheckedChange={(val) => handleInputChange("registration_required", val)}
+                    onCheckedChange={(val) =>
+                      handleInputChange("registration_required", val)
+                    }
                     className="h-4 w-4 rounded border-gray-300"
                   />
-                  <Label htmlFor="reg-required" className="text-xs font-semibold text-gray-800 cursor-pointer">Registration Required</Label>
+                  <Label
+                    htmlFor="reg-required"
+                    className="text-xs font-semibold text-gray-800 cursor-pointer"
+                  >
+                    Registration Required
+                  </Label>
                 </div>
               </div>
 
               {formData.registration_required && (
                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Registration Fee ($)</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Registration Fee ($)
+                  </Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                     <Input
@@ -462,20 +572,31 @@ export const CreateEventModal = ({
                       placeholder="0.00"
                       step="0.01"
                       value={formData.registration_fee || ""}
-                      onChange={(e) => handleInputChange("registration_fee", parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "registration_fee",
+                          parseFloat(e.target.value),
+                        )
+                      }
                       className="h-10 rounded-lg border-gray-200 text-sm pl-9"
                     />
                   </div>
-                  <p className="text-[10px] text-gray-400 font-medium italic">Leave at 0.00 for free registration</p>
+                  <p className="text-[10px] text-gray-400 font-medium italic">
+                    Leave at 0.00 for free registration
+                  </p>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Internal Notes</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Internal Notes
+                </Label>
                 <Textarea
                   placeholder="Internal notes about the event..."
                   value={formData.internal_notes || ""}
-                  onChange={(e) => handleInputChange("internal_notes", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("internal_notes", e.target.value)
+                  }
                   className="rounded-lg border-gray-200 text-sm min-h-[80px]"
                 />
               </div>
@@ -483,38 +604,52 @@ export const CreateEventModal = ({
 
             <TabsContent value="contact" className="space-y-4 mt-0">
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Contact Name</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Contact Name
+                </Label>
                 <Input
                   placeholder="Jane Smith"
                   value={formData.contact_name || ""}
-                  onChange={(e) => handleInputChange("contact_name", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("contact_name", e.target.value)
+                  }
                   className="h-10 rounded-lg border-gray-200 text-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Contact Email</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Contact Email
+                  </Label>
                   <Input
                     placeholder="casting@agency.com"
                     value={formData.contact_email || ""}
-                    onChange={(e) => handleInputChange("contact_email", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("contact_email", e.target.value)
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Contact Phone</Label>
+                  <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Contact Phone
+                  </Label>
                   <Input
                     placeholder="+1 (555) 123-4567"
                     value={formData.contact_phone || ""}
-                    onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("contact_phone", e.target.value)
+                    }
                     className="h-10 rounded-lg border-gray-200 text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Event Status</Label>
+                <Label className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                  Event Status
+                </Label>
                 <Select
                   value={formData.status}
                   onValueChange={(val) => handleInputChange("status", val)}
@@ -524,7 +659,9 @@ export const CreateEventModal = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft (Not Visible)</SelectItem>
-                    <SelectItem value="published">Published (Visible)</SelectItem>
+                    <SelectItem value="published">
+                      Published (Visible)
+                    </SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
@@ -731,10 +868,11 @@ export const AddProspectModal = ({
                 <button
                   key={cat}
                   type="button"
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${formData.categories?.includes(cat)
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    }`}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                    formData.categories?.includes(cat)
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -854,10 +992,11 @@ export const AddProspectModal = ({
                   }}
                 >
                   <Star
-                    className={`w-8 h-8 pointer-events-none ${(formData.rating || 0) >= i
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                      }`}
+                    className={`w-8 h-8 pointer-events-none ${
+                      (formData.rating || 0) >= i
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    }`}
                   />
                 </button>
               ))}

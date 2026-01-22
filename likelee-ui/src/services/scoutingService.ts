@@ -127,7 +127,9 @@ export const scoutingService = {
     return data as ScoutingTrip[];
   },
 
-  async createTrip(trip: Omit<ScoutingTrip, "id" | "created_at" | "updated_at">) {
+  async createTrip(
+    trip: Omit<ScoutingTrip, "id" | "created_at" | "updated_at">,
+  ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
     const { data, error } = await supabase
@@ -268,7 +270,10 @@ export const scoutingService = {
   async deleteEvent(id: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { error } = await supabase.from("scouting_events").delete().eq("id", id);
+    const { error } = await supabase
+      .from("scouting_events")
+      .delete()
+      .eq("id", id);
 
     if (error) throw error;
   },
@@ -333,7 +338,9 @@ export const scoutingService = {
     });
 
     if (stats.totalProspects > 0) {
-      stats.conversionRate = Math.round((stats.signed / stats.totalProspects) * 100);
+      stats.conversionRate = Math.round(
+        (stats.signed / stats.totalProspects) * 100,
+      );
     }
 
     if (signedCountForAvg > 0) {
