@@ -16,6 +16,20 @@ import {
   CheckCircle2,
   RefreshCw,
 } from "lucide-react";
+
+// Format prospect status for display
+const formatProspectStatus = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'new': 'New Lead',
+    'contacted': 'Contacted',
+    'meeting': 'Meeting Scheduled',
+    'test_shoot': 'Test Shoot',
+    'offer_sent': 'Offer Sent',
+    'signed': 'Signed',
+    'declined': 'Declined'
+  };
+  return statusMap[status] || status;
+};
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1029,7 +1043,7 @@ export const ProspectPipelineTab = ({
                       variant="secondary"
                       className="bg-gray-100 text-gray-600 font-medium text-[10px]"
                     >
-                      {prospect.status}
+                      {formatProspectStatus(prospect.status)}
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-2">

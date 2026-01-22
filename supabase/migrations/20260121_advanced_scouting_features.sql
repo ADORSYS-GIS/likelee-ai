@@ -71,4 +71,30 @@ DROP POLICY IF EXISTS "Agency members can all territories" ON public.scouting_te
 CREATE POLICY "Agency members can all territories" ON public.scouting_territories
   FOR ALL USING (agency_id = auth.uid());
 
+-- 6. Scouting Locations (Specific venues/spots)
+CREATE TABLE IF NOT EXISTS public.scouting_locations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  location_type text,
+  rating integer DEFAULT 3,
+  address text,
+  latitude numeric(10,7) NOT NULL,
+  longitude numeric(10,7) NOT NULL,
+  frequency text,
+  best_days text[],
+  best_times text[],
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scouting_locations_agency_id ON public.scouting_locations(agency_id);
+
+-- RLS for Locations
+ALTER TABLE public.scouting_locations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Agency members can all locations" ON public.scouting_locations;
+CREATE POLICY "Agency members can all locations" ON public.scouting_locations
+  FOR ALL USING (agency_id = auth.uid());
+
 COMMIT;

@@ -114,7 +114,6 @@ export const scoutingService = {
   },
 
   // --- Trips ---
-
   async getTrips(agencyId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
@@ -126,6 +125,85 @@ export const scoutingService = {
 
     if (error) throw error;
     return data as ScoutingTrip[];
+  },
+
+  async createTrip(trip: Omit<ScoutingTrip, "id" | "created_at" | "updated_at">) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_trips")
+      .insert(trip)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingTrip;
+  },
+
+  async updateTrip(id: string, updates: Partial<ScoutingTrip>) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_trips")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingTrip;
+  },
+
+  // --- Territories ---
+  async getTerritories(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_territories")
+      .select("*")
+      .eq("agency_id", agencyId);
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createTerritory(territory: any) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_territories")
+      .insert(territory)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // --- Locations ---
+  async getLocations(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_locations")
+      .select("*")
+      .eq("agency_id", agencyId);
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createLocation(location: any) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_locations")
+      .insert(location)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   // --- Submissions ---

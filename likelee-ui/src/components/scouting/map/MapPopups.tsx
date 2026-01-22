@@ -3,6 +3,20 @@ import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, User, Instagram, Mail, Phone } from "lucide-react";
 
+// Format prospect status for display
+const formatProspectStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+        'new': 'New Lead',
+        'contacted': 'Contacted',
+        'meeting': 'Meeting Scheduled',
+        'test_shoot': 'Test Shoot',
+        'offer_sent': 'Offer Sent',
+        'signed': 'Signed',
+        'declined': 'Declined'
+    };
+    return statusMap[status] || status;
+};
+
 export const ProspectPopup = ({
     prospect,
     onView
@@ -18,7 +32,7 @@ export const ProspectPopup = ({
             <div>
                 <h4 className="font-bold text-gray-900 text-sm leading-tight">{prospect.full_name}</h4>
                 <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-gray-100 text-gray-600">
-                    {prospect.status}
+                    {formatProspectStatus(prospect.status)}
                 </Badge>
             </div>
         </div>

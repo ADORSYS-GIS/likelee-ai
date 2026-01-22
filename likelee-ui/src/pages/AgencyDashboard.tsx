@@ -5538,6 +5538,10 @@ const ScoutingHubView = ({
               setProspectToEdit(prospect);
               setIsProspectModalOpen(true);
             }}
+            onAddEvent={() => {
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
           />
         )}
         {activeTab === "Submissions" && <SubmissionsTab />}
@@ -6252,10 +6256,12 @@ const MarketplaceTab = () => (
 const ScoutingMapTab = ({
   onEditEvent,
   onViewProspect,
+  onAddEvent,
 }: {
   onEditEvent?: (event: ScoutingEvent) => void;
   onViewProspect?: (prospect: ScoutingProspect) => void;
-}) => <ScoutingMap onEditEvent={onEditEvent} onViewProspect={onViewProspect} />;
+  onAddEvent?: () => void;
+}) => <ScoutingMap onEditEvent={onEditEvent} onViewProspect={onViewProspect} onAddEvent={onAddEvent} />;
 
 const SubmissionsTab = () => (
   <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
