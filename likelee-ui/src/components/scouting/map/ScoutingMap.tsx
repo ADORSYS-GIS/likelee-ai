@@ -8,7 +8,7 @@ import { geocode } from "./geocoding";
 import { MapMarkers } from "./MapMarkers";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, RefreshCw, Navigation, Plus, Calendar, History, Share2, Link, Layers, Eye, EyeOff, TrendingUp, User, CheckCircle, Check, Plane, Diamond, Clock } from "lucide-react";
+import { MapPin, RefreshCw, Navigation, Plus, Calendar, History, Share2, Link, Layers, Eye, EyeOff, TrendingUp, User, CheckCircle, Check, Plane, Diamond, Clock, Trash2 } from "lucide-react";
 import { MapStats } from "./MapStats";
 import { MapFilters } from "./MapFilters";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,7 +66,8 @@ export const ScoutingMap = ({
         signed: 0,
         prospects: 0,
         events: 0,
-        trips: 0
+        trips: 0,
+        declined: 0
     });
 
     // Modal states
@@ -83,7 +84,8 @@ export const ScoutingMap = ({
         heatmapSocial: false,
         heatmapCompetition: false,
         demographics: false,
-        optimizedRoutes: false
+        optimizedRoutes: false,
+        declined: true
     });
 
     const toggleLayer = (layer: keyof typeof layers) => {
@@ -105,13 +107,17 @@ export const ScoutingMap = ({
             console.log(`Fetched ${prospectData.length} prospects, ${eventData.length} events, and ${tripData.length} trips`);
             setTrips(tripData);
 
-            const signedCount = prospectData.filter(p => p.status === 'signed' || p.is_signed).length;
+            const signed = prospectData.filter(p => p.status === 'signed' || p.is_signed).length;
+            const declined = prospectData.filter(p => p.status === 'declined').length;
+            const prospectsCount = prospectData.length - signed - declined;
+
             setRawCounts({
                 totalDiscoveries: prospectData.length,
-                signed: signedCount,
-                prospects: prospectData.length - signedCount,
+                signed,
+                prospects: prospectsCount,
                 events: eventData.length,
-                trips: tripData.length
+                trips: tripData.length,
+                declined
             });
 
             const totalItems = prospectData.length + eventData.length;
@@ -174,7 +180,8 @@ export const ScoutingMap = ({
     ];
 
     const signedProspects = prospects.filter(p => p.status === 'signed' || p.is_signed);
-    const prospectsOnly = prospects.filter(p => p.status !== 'signed' && !p.is_signed);
+    const declinedProspects = prospects.filter(p => p.status === 'declined');
+    const prospectsOnly = prospects.filter(p => p.status !== 'signed' && !p.is_signed && p.status !== 'declined');
 
     return (
         <div className="space-y-6">
@@ -241,6 +248,7 @@ export const ScoutingMap = ({
                             { id: 'discoveries', label: 'Total Discoveries', count: rawCounts.totalDiscoveries, icon: Layers, color: 'orange' },
                             { id: 'signedTalent', label: 'Signed Talent', count: rawCounts.signed, icon: User, color: 'blue' },
                             { id: 'prospects', label: 'Prospects', count: rawCounts.prospects, icon: Clock, color: 'amber' },
+                            { id: 'declined', label: 'Declined', count: rawCounts.declined, icon: Trash2, color: 'red' },
                             { id: 'plannedTrips', label: 'Planned Trips', count: rawCounts.trips, icon: Plane, color: 'purple' },
                             { id: 'events', label: 'Events', count: rawCounts.events, icon: Calendar, color: 'pink' }
                         ].map((layer) => {
@@ -282,8 +290,15 @@ export const ScoutingMap = ({
                                     text: isSelected ? 'text-pink-900' : 'text-gray-700',
                                     subtext: isSelected ? 'text-pink-700' : 'text-gray-400',
                                     check: isSelected ? 'bg-pink-600 border-pink-600' : 'bg-white border-gray-200'
+                                },
+                                red: {
+                                    bg: isSelected ? 'bg-red-50 border-red-200 ring-red-100' : 'bg-white border-gray-100',
+                                    iconBg: isSelected ? 'bg-red-600 text-white shadow-red-200' : 'bg-red-100 text-red-700',
+                                    text: isSelected ? 'text-red-900' : 'text-gray-700',
+                                    subtext: isSelected ? 'text-red-700' : 'text-gray-400',
+                                    check: isSelected ? 'bg-red-600 border-red-600' : 'bg-white border-gray-200'
                                 }
-                            }[layer.color as 'orange' | 'blue' | 'purple' | 'pink' | 'amber'];
+                            }[layer.color as 'orange' | 'blue' | 'purple' | 'pink' | 'amber' | 'red'];
 
                             return (
                                 <button
@@ -381,12 +396,15 @@ export const ScoutingMap = ({
                             <MapMarkers
                                 prospects={layers.discoveries ? prospects.filter(p => {
                                     const isSigned = p.status === 'signed' || p.is_signed;
+                                    const isDeclined = p.status === 'declined';
                                     if (isSigned && layers.signedTalent) return false;
-                                    if (!isSigned && layers.prospects) return false;
+                                    if (isDeclined && layers.declined) return false;
+                                    if (!isSigned && !isDeclined && layers.prospects) return false;
                                     return true;
                                 }) : []}
                                 signedProspects={layers.signedTalent ? signedProspects : []}
                                 prospectsOnly={layers.prospects ? prospectsOnly : []}
+                                declinedProspects={layers.declined ? declinedProspects : []}
                                 events={layers.events ? events : []}
                                 trips={layers.plannedTrips ? trips : []}
                                 onEditEvent={onEditEvent}
@@ -429,6 +447,12 @@ export const ScoutingMap = ({
                                     <Calendar className="w-3.5 h-3.5 stroke-[2.5px]" />
                                 </div>
                                 <span className="text-[11px] font-bold text-gray-700">Event</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-lg bg-red-100 text-red-700">
+                                    <Trash2 className="w-3.5 h-3.5 stroke-[2.5px]" />
+                                </div>
+                                <span className="text-[11px] font-bold text-gray-700">Declined Prospect</span>
                             </div>
                         </div>
                     </div>
