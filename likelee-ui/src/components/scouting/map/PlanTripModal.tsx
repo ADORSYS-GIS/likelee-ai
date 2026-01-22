@@ -170,7 +170,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                 <Input
                                     id="trip-name"
                                     placeholder="e.g., LA Fashion Week Scouting"
-                                    className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                    className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                 />
@@ -183,7 +183,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                 <Input
                                     id="destination"
                                     placeholder="e.g., Los Angeles, CA"
-                                    className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                    className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                                     value={destination}
                                     onChange={(e) => setDestination(e.target.value)}
                                 />
@@ -195,10 +195,10 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                         <Briefcase className="w-3 h-3" /> Trip Type *
                                     </Label>
                                     <Select value={tripType} onValueChange={setTripType}>
-                                        <SelectTrigger className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900">
+                                        <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900">
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-2xl border-gray-200 shadow-xl">
+                                        <SelectContent className="rounded-xl border-gray-200 shadow-xl">
                                             <SelectItem value="Open Scouting">Open Scouting</SelectItem>
                                             <SelectItem value="Specific Casting">Specific Casting</SelectItem>
                                             <SelectItem value="Event Coverage">Event Coverage</SelectItem>
@@ -211,10 +211,10 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                         <Activity className="w-3 h-3" /> Status *
                                     </Label>
                                     <Select value={status} onValueChange={setStatus}>
-                                        <SelectTrigger className={`rounded-2xl h-12 transition-all font-black border-2 ${getStatusColor(status)} shadow-sm`}>
+                                        <SelectTrigger className={`rounded-xl h-10 transition-all font-black border-2 ${getStatusColor(status)} shadow-sm`}>
                                             <SelectValue placeholder="Select status" />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-2xl border-gray-200 shadow-xl">
+                                        <SelectContent className="rounded-xl border-gray-200 shadow-xl">
                                             <SelectItem value="planned">Planned</SelectItem>
                                             <SelectItem value="ongoing">Ongoing</SelectItem>
                                             <SelectItem value="completed">Completed</SelectItem>
@@ -241,7 +241,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                     <Input
                                         id="start-date"
                                         type="date"
-                                        className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                        className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                     />
@@ -253,7 +253,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                     <Input
                                         id="start-time"
                                         type="time"
-                                        className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                        className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                                         value={startTime}
                                         onChange={(e) => setStartTime(e.target.value)}
                                     />
@@ -268,7 +268,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                     <Input
                                         id="end-date"
                                         type="date"
-                                        className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                        className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                     />
@@ -280,7 +280,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                                     <Input
                                         id="end-time"
                                         type="time"
-                                        className="rounded-2xl border-gray-200 bg-gray-50/50 h-12 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
+                                        className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                                         value={endTime}
                                         onChange={(e) => setEndTime(e.target.value)}
                                     />
@@ -297,74 +297,74 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-2 shadow-sm">
+                            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 space-y-1 shadow-sm">
                                 <Label htmlFor="goal" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <Target className="w-3 h-3" /> Target Goal
                                 </Label>
                                 <Input
                                     id="goal"
                                     type="number"
-                                    className="border-none bg-transparent p-0 h-auto text-xl font-black text-indigo-900 focus-visible:ring-0"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-indigo-900 focus-visible:ring-0"
                                     value={goal}
                                     onChange={(e) => setGoal(e.target.value)}
                                 />
                             </div>
-                            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2 shadow-sm">
+                            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1 shadow-sm">
                                 <Label htmlFor="budget" className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <DollarSign className="w-3 h-3" /> Budget ($)
                                 </Label>
                                 <Input
                                     id="budget"
                                     type="number"
-                                    className="border-none bg-transparent p-0 h-auto text-xl font-black text-emerald-900 focus-visible:ring-0"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-emerald-900 focus-visible:ring-0"
                                     value={budget}
                                     onChange={(e) => setBudget(e.target.value)}
                                 />
                             </div>
-                            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2 shadow-sm">
+                            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1 shadow-sm">
                                 <Label htmlFor="approached" className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <Users className="w-3 h-3" /> Approached
                                 </Label>
                                 <Input
                                     id="approached"
                                     type="number"
-                                    className="border-none bg-transparent p-0 h-auto text-xl font-black text-amber-900 focus-visible:ring-0"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-amber-900 focus-visible:ring-0"
                                     value={approached}
                                     onChange={(e) => setApproached(e.target.value)}
                                 />
                             </div>
-                            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-2 shadow-sm">
+                            <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 space-y-1 shadow-sm">
                                 <Label htmlFor="submitted" className="text-[10px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <ArrowUpRight className="w-3 h-3" /> Submitted
                                 </Label>
                                 <Input
                                     id="submitted"
                                     type="number"
-                                    className="border-none bg-transparent p-0 h-auto text-xl font-black text-purple-900 focus-visible:ring-0"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-purple-900 focus-visible:ring-0"
                                     value={submitted}
                                     onChange={(e) => setSubmitted(e.target.value)}
                                 />
                             </div>
-                            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2 shadow-sm">
+                            <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 space-y-1 shadow-sm">
                                 <Label htmlFor="added" className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <Plus className="w-3 h-3" /> Added
                                 </Label>
                                 <Input
                                     id="added"
                                     type="number"
-                                    className="border-none bg-transparent p-0 h-auto text-xl font-black text-blue-900 focus-visible:ring-0"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-blue-900 focus-visible:ring-0"
                                     value={added}
                                     onChange={(e) => setAdded(e.target.value)}
                                 />
                             </div>
-                            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-2 shadow-sm">
+                            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 space-y-1 shadow-sm">
                                 <Label htmlFor="conversion" className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <Activity className="w-3 h-3" /> Rate (%)
                                 </Label>
                                 <Input
                                     id="conversion"
                                     type="number"
-                                    className="border-none bg-transparent p-0 h-auto text-xl font-black text-rose-900 focus-visible:ring-0"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-rose-900 focus-visible:ring-0"
                                     value={conversion}
                                     onChange={(e) => setConversion(e.target.value)}
                                 />
@@ -488,7 +488,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                         </div>
                         <Textarea
                             placeholder="Describe trip objectives, focus areas, or specific results..."
-                            className="rounded-[24px] border-gray-200 bg-gray-50/50 min-h-[120px] p-6 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900 resize-none shadow-inner"
+                            className="rounded-xl border-gray-200 bg-gray-50/50 min-h-[80px] p-4 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900 resize-none shadow-inner"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                         />
@@ -499,7 +499,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                     <Button
                         variant="outline"
                         onClick={onClose}
-                        className="rounded-2xl h-14 px-10 font-black text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900 transition-all"
+                        className="rounded-xl h-10 px-8 font-black text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900 transition-all"
                     >
                         Cancel
                     </Button>
@@ -524,7 +524,7 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                             scout_ids: scouts,
                             photos
                         })}
-                        className="rounded-2xl h-14 px-12 font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 hover:shadow-indigo-300 transition-all flex items-center gap-2"
+                        className="rounded-xl h-10 px-10 font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 hover:shadow-indigo-300 transition-all flex items-center gap-2"
                     >
                         {initialData ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                         {initialData ? "Update Trip" : "Create Trip"}
