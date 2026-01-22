@@ -16,9 +16,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, FileText, Camera, UserPlus, Image as ImageIcon, Check } from "lucide-react";
+import {
+    Plus,
+    X,
+    FileText,
+    Camera,
+    UserPlus,
+    Image as ImageIcon,
+    Check,
+    MapPin,
+    Calendar,
+    Clock,
+    Tag,
+    Briefcase,
+    Activity,
+    Target,
+    DollarSign,
+    Users,
+    BarChart3,
+    ArrowUpRight,
+    Info
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PlanTripModalProps {
     isOpen: boolean;
@@ -38,7 +57,9 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
     const [name, setName] = React.useState(initialData?.name || "");
     const [destination, setDestination] = React.useState(initialData?.location || "");
     const [startDate, setStartDate] = React.useState(initialData?.start_date || "");
+    const [startTime, setStartTime] = React.useState(initialData?.start_time || "09:00");
     const [endDate, setEndDate] = React.useState(initialData?.end_date || "");
+    const [endTime, setEndTime] = React.useState(initialData?.end_time || "18:00");
     const [lat, setLat] = React.useState(initialData?.lat?.toString() || "40.7128");
     const [lng, setLng] = React.useState(initialData?.lng?.toString() || "-74.0060");
     const [tripType, setTripType] = React.useState(initialData?.trip_type || "Open Scouting");
@@ -56,7 +77,9 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
             setName(initialData.name || "");
             setDestination(initialData.location || "");
             setStartDate(initialData.start_date || "");
+            setStartTime(initialData.start_time || "09:00");
             setEndDate(initialData.end_date || "");
+            setEndTime(initialData.end_time || "18:00");
             setLat(initialData.lat?.toString() || "40.7128");
             setLng(initialData.lng?.toString() || "-74.0060");
             setTripType(initialData.trip_type || "Open Scouting");
@@ -71,11 +94,12 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
             setScouts(initialData.scout_ids || []);
             setPhotos(initialData.photos || []);
         } else {
-            // Reset to defaults for new trip
             setName("");
             setDestination("");
             setStartDate("");
+            setStartTime("09:00");
             setEndDate("");
+            setEndTime("18:00");
             setLat("40.7128");
             setLng("-74.0060");
             setTripType("Open Scouting");
@@ -104,300 +128,389 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
         setPhotos(photos.filter((_, i) => i !== index));
     };
 
+    const getStatusColor = (s: string) => {
+        switch (s) {
+            case "completed": return "text-green-600 bg-green-50 border-green-100";
+            case "ongoing": return "text-blue-600 bg-blue-50 border-blue-100";
+            case "planned": return "text-amber-600 bg-amber-50 border-amber-100";
+            default: return "text-gray-600 bg-gray-50 border-gray-100";
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[650px] max-h-[90vh] rounded-3xl p-0 overflow-hidden flex flex-col">
-                <DialogHeader className="p-8 pb-4 flex-shrink-0">
-                    <DialogTitle className="text-2xl font-black text-gray-900">
-                        {initialData ? "Update Scouting Trip" : "Plan Scouting Trip"}
-                    </DialogTitle>
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] rounded-[32px] p-0 overflow-hidden flex flex-col border-none shadow-2xl">
+                <DialogHeader className="p-8 pb-6 flex-shrink-0 bg-white border-b border-gray-50">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <Briefcase className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-2xl font-black text-gray-900">
+                                {initialData ? "Update Scouting Trip" : "Plan Scouting Trip"}
+                            </DialogTitle>
+                            <p className="text-sm text-gray-500 font-medium">Configure your field mission details</p>
+                        </div>
+                    </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto px-8 pb-8">
-                    <div className="grid gap-6 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="trip-name" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Trip Name *</Label>
-                            <Input
-                                id="trip-name"
-                                placeholder="e.g., LA Fashion Week Scouting"
-                                className="rounded-xl border-gray-200 h-11"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
+                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-10">
+                    {/* Section 1: Trip Essentials */}
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                            <Info className="w-4 h-4" />
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em]">Trip Essentials</h3>
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="destination" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Destination *</Label>
-                            <Input
-                                id="destination"
-                                placeholder="e.g., Los Angeles, CA"
-                                className="rounded-xl border-gray-200 h-11"
-                                value={destination}
-                                onChange={(e) => setDestination(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="start-date" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Start Date *</Label>
+                                <Label htmlFor="trip-name" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <Tag className="w-3 h-3" /> Trip Name *
+                                </Label>
                                 <Input
-                                    id="start-date"
-                                    type="date"
-                                    className="rounded-xl border-gray-200 h-11"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    id="trip-name"
+                                    placeholder="e.g., LA Fashion Week Scouting"
+                                    className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
                                 />
                             </div>
+
                             <div className="grid gap-2">
-                                <Label htmlFor="end-date" className="text-xs font-bold text-gray-700 uppercase tracking-wider">End Date *</Label>
+                                <Label htmlFor="destination" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <MapPin className="w-3 h-3" /> Destination *
+                                </Label>
                                 <Input
-                                    id="end-date"
-                                    type="date"
-                                    className="rounded-xl border-gray-200 h-11"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
+                                    id="destination"
+                                    placeholder="e.g., Los Angeles, CA"
+                                    className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium"
+                                    value={destination}
+                                    onChange={(e) => setDestination(e.target.value)}
                                 />
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="lat" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Latitude *</Label>
-                                <Input
-                                    id="lat"
-                                    className="rounded-xl border-gray-200 h-11"
-                                    value={lat}
-                                    onChange={(e) => setLat(e.target.value)}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="lng" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Longitude *</Label>
-                                <Input
-                                    id="lng"
-                                    className="rounded-xl border-gray-200 h-11"
-                                    value={lng}
-                                    onChange={(e) => setLng(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="trip-type" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Trip Type *</Label>
-                                <Select value={tripType} onValueChange={setTripType}>
-                                    <SelectTrigger className="rounded-xl border-gray-200 h-11">
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Open Scouting">Open Scouting</SelectItem>
-                                        <SelectItem value="Specific Casting">Specific Casting</SelectItem>
-                                        <SelectItem value="Event Coverage">Event Coverage</SelectItem>
-                                        <SelectItem value="Other">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="status" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Status *</Label>
-                                <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="rounded-xl border-gray-200 h-11">
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="planned">Planned</SelectItem>
-                                        <SelectItem value="ongoing">Ongoing</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="trip-type" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Briefcase className="w-3 h-3" /> Trip Type *
+                                    </Label>
+                                    <Select value={tripType} onValueChange={setTripType}>
+                                        <SelectTrigger className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
+                                            <SelectItem value="Open Scouting">Open Scouting</SelectItem>
+                                            <SelectItem value="Specific Casting">Specific Casting</SelectItem>
+                                            <SelectItem value="Event Coverage">Event Coverage</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="status" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Activity className="w-3 h-3" /> Status *
+                                    </Label>
+                                    <Select value={status} onValueChange={setStatus}>
+                                        <SelectTrigger className={`rounded-2xl h-12 transition-all font-bold border ${getStatusColor(status)}`}>
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
+                                            <SelectItem value="planned">Planned</SelectItem>
+                                            <SelectItem value="ongoing">Ongoing</SelectItem>
+                                            <SelectItem value="completed">Completed</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
+                    </section>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="goal" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Target Discovery Goal</Label>
+                    {/* Section 2: Schedule */}
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                            <Calendar className="w-4 h-4" />
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em]">Schedule</h3>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="start-date" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Calendar className="w-3 h-3" /> Start Date *
+                                    </Label>
+                                    <Input
+                                        id="start-date"
+                                        type="date"
+                                        className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="start-time" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Clock className="w-3 h-3" /> Start Time
+                                    </Label>
+                                    <Input
+                                        id="start-time"
+                                        type="time"
+                                        className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="end-date" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Calendar className="w-3 h-3" /> End Date *
+                                    </Label>
+                                    <Input
+                                        id="end-date"
+                                        type="date"
+                                        className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="end-time" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Clock className="w-3 h-3" /> End Time
+                                    </Label>
+                                    <Input
+                                        id="end-time"
+                                        type="time"
+                                        className="rounded-2xl border-gray-100 bg-gray-50/30 h-12 focus:bg-white transition-all font-medium"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Section 3: Performance Metrics */}
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                            <BarChart3 className="w-4 h-4" />
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em]">Performance Metrics</h3>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/50 space-y-2">
+                                <Label htmlFor="goal" className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Target className="w-3 h-3" /> Target Goal
+                                </Label>
                                 <Input
                                     id="goal"
                                     type="number"
-                                    className="rounded-xl border-gray-200 h-11"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-indigo-700 focus-visible:ring-0"
                                     value={goal}
                                     onChange={(e) => setGoal(e.target.value)}
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="budget" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Budget Allocated ($)</Label>
+                            <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100/50 space-y-2">
+                                <Label htmlFor="budget" className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <DollarSign className="w-3 h-3" /> Budget ($)
+                                </Label>
                                 <Input
                                     id="budget"
                                     type="number"
-                                    className="rounded-xl border-gray-200 h-11"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-emerald-700 focus-visible:ring-0"
                                     value={budget}
                                     onChange={(e) => setBudget(e.target.value)}
                                 />
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="approached" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Prospects Approached</Label>
+                            <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100/50 space-y-2">
+                                <Label htmlFor="approached" className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Users className="w-3 h-3" /> Approached
+                                </Label>
                                 <Input
                                     id="approached"
                                     type="number"
-                                    className="rounded-xl border-gray-200 h-11"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-amber-700 focus-visible:ring-0"
                                     value={approached}
                                     onChange={(e) => setApproached(e.target.value)}
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="submitted" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Prospects Submitted</Label>
+                            <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100/50 space-y-2">
+                                <Label htmlFor="submitted" className="text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <ArrowUpRight className="w-3 h-3" /> Submitted
+                                </Label>
                                 <Input
                                     id="submitted"
                                     type="number"
-                                    className="rounded-xl border-gray-200 h-11"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-purple-700 focus-visible:ring-0"
                                     value={submitted}
                                     onChange={(e) => setSubmitted(e.target.value)}
                                 />
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="added" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Added to Pipeline</Label>
+                            <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100/50 space-y-2">
+                                <Label htmlFor="added" className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Plus className="w-3 h-3" /> Added
+                                </Label>
                                 <Input
                                     id="added"
                                     type="number"
-                                    className="rounded-xl border-gray-200 h-11"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-blue-700 focus-visible:ring-0"
                                     value={added}
                                     onChange={(e) => setAdded(e.target.value)}
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="conversion" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Conversion Rate (%)</Label>
+                            <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-100/50 space-y-2">
+                                <Label htmlFor="conversion" className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Activity className="w-3 h-3" /> Rate (%)
+                                </Label>
                                 <Input
                                     id="conversion"
                                     type="number"
-                                    className="rounded-xl border-gray-200 h-11"
+                                    className="border-none bg-transparent p-0 h-auto text-lg font-black text-rose-700 focus-visible:ring-0"
                                     value={conversion}
                                     onChange={(e) => setConversion(e.target.value)}
                                 />
                             </div>
                         </div>
+                    </section>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="notes" className="text-xs font-bold text-gray-700 uppercase tracking-wider">Notes & Observations</Label>
-                            <Textarea
-                                id="notes"
-                                placeholder="Describe the trip objectives, specific areas to focus on, or any other relevant details..."
-                                className="rounded-xl border-gray-200 min-h-[100px] resize-none"
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                            />
+                    {/* Section 4: Team & Assets */}
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                            <Users className="w-4 h-4" />
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em]">Team & Assets</h3>
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Trip Photos</Label>
-                            <div className="grid grid-cols-4 gap-3">
-                                {photos.map((photo, index) => (
-                                    <div key={index} className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 group">
-                                        <img src={photo} alt="Preview" className="w-full h-full object-cover" />
-                                        <button
-                                            onClick={() => removePhoto(index)}
-                                            className="absolute top-1 right-1 p-1 bg-white/80 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="aspect-video rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-all bg-gray-50/50"
-                                >
-                                    <Camera className="w-5 h-5 mb-1" />
-                                    <span className="text-[10px] font-bold uppercase">Add Photo</span>
-                                </button>
-                            </div>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handlePhotoUpload}
-                                multiple
-                                accept="image/*"
-                                className="hidden"
-                            />
-                        </div>
+                        <div className="space-y-6">
+                            <div className="grid gap-3">
+                                <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <UserPlus className="w-3 h-3" /> Assigned Scouts
+                                </Label>
+                                <div className="flex flex-wrap gap-2 items-center p-4 bg-gray-50/50 rounded-[24px] border border-gray-100 min-h-[60px]">
+                                    {scouts.map(scout => (
+                                        <div key={scout} className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 rounded-xl text-xs font-bold shadow-sm border border-indigo-50 animate-in fade-in slide-in-from-left-2">
+                                            {scout}
+                                            <button onClick={() => setScouts(scouts.filter(s => s !== scout))} className="hover:text-red-500 transition-colors">
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
 
-                        <div className="grid gap-2">
-                            <Label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Assign Scouts</Label>
-                            <div className="flex flex-wrap gap-2 items-center">
-                                {scouts.map(scout => (
-                                    <div key={scout} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-[11px] font-bold border border-indigo-100">
-                                        <UserPlus className="w-3 h-3" />
-                                        {scout}
-                                        <button onClick={() => setScouts(scouts.filter(s => s !== scout))} className="hover:text-red-500 ml-1">
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-
-                                {isAddingScout ? (
-                                    <div className="flex items-center gap-2 bg-white border border-indigo-200 rounded-lg px-2 py-1 shadow-sm animate-in fade-in zoom-in duration-200">
-                                        <Input
-                                            autoFocus
-                                            value={newScoutName}
-                                            onChange={(e) => setNewScoutName(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
+                                    {isAddingScout ? (
+                                        <div className="flex items-center gap-2 bg-white border-2 border-indigo-200 rounded-xl px-3 py-1.5 shadow-md animate-in fade-in zoom-in duration-200">
+                                            <Input
+                                                autoFocus
+                                                value={newScoutName}
+                                                onChange={(e) => setNewScoutName(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        if (newScoutName.trim()) {
+                                                            setScouts([...scouts, newScoutName.trim()]);
+                                                            setNewScoutName("");
+                                                            setIsAddingScout(false);
+                                                        }
+                                                    } else if (e.key === 'Escape') {
+                                                        setIsAddingScout(false);
+                                                    }
+                                                }}
+                                                placeholder="Enter name..."
+                                                className="h-6 w-28 text-xs border-none focus-visible:ring-0 p-0 font-bold"
+                                            />
+                                            <div className="flex items-center gap-1 border-l border-gray-100 pl-2">
+                                                <button onClick={() => {
                                                     if (newScoutName.trim()) {
                                                         setScouts([...scouts, newScoutName.trim()]);
                                                         setNewScoutName("");
                                                         setIsAddingScout(false);
                                                     }
-                                                } else if (e.key === 'Escape') {
-                                                    setIsAddingScout(false);
-                                                }
-                                            }}
-                                            placeholder="Scout name..."
-                                            className="h-7 w-32 text-[11px] border-none focus-visible:ring-0 p-0"
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                if (newScoutName.trim()) {
-                                                    setScouts([...scouts, newScoutName.trim()]);
-                                                    setNewScoutName("");
-                                                    setIsAddingScout(false);
-                                                }
-                                            }}
-                                            className="text-indigo-600 hover:text-indigo-700"
+                                                }} className="text-indigo-600 hover:text-indigo-700">
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => setIsAddingScout(false)} className="text-gray-400 hover:text-gray-500">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-indigo-600 hover:text-indigo-700 text-xs font-black flex items-center gap-2 h-10 px-4 bg-indigo-50/50 hover:bg-indigo-50 rounded-xl border border-dashed border-indigo-200"
+                                            onClick={() => setIsAddingScout(true)}
                                         >
-                                            <Check className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                            onClick={() => setIsAddingScout(false)}
-                                            className="text-gray-400 hover:text-gray-500"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-indigo-600 hover:text-indigo-700 text-[11px] font-bold flex items-center gap-1 h-8 px-2 bg-gray-50 rounded-lg"
-                                        onClick={() => setIsAddingScout(true)}
+                                            <Plus className="w-4 h-4" /> Add Scout
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3">
+                                <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <Camera className="w-3 h-3" /> Trip Photos
+                                </Label>
+                                <div className="grid grid-cols-4 gap-4">
+                                    {photos.map((photo, index) => (
+                                        <div key={index} className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-gray-100 group shadow-sm">
+                                            <img src={photo} alt="Preview" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button
+                                                    onClick={() => removePhoto(index)}
+                                                    className="p-2 bg-white rounded-full text-red-500 hover:scale-110 transition-transform"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="aspect-[4/3] rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-indigo-300 hover:text-indigo-400 transition-all bg-gray-50/50 hover:bg-indigo-50/30 group"
                                     >
-                                        <Plus className="w-3.5 h-3.5" /> Add Scout
-                                    </Button>
-                                )}
+                                        <Camera className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Upload</span>
+                                    </button>
+                                </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handlePhotoUpload}
+                                    multiple
+                                    accept="image/*"
+                                    className="hidden"
+                                />
                             </div>
                         </div>
-                    </div>
+                    </section>
+
+                    {/* Section 5: Notes */}
+                    <section className="space-y-6">
+                        <div className="flex items-center gap-2 text-indigo-600 mb-2">
+                            <FileText className="w-4 h-4" />
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em]">Notes & Observations</h3>
+                        </div>
+                        <Textarea
+                            placeholder="Describe trip objectives, focus areas, or specific results..."
+                            className="rounded-[24px] border-gray-100 bg-gray-50/30 min-h-[120px] p-6 focus:bg-white transition-all font-medium resize-none"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                        />
+                    </section>
                 </div>
 
-                <DialogFooter className="p-8 pt-4 border-t border-gray-100 gap-3 flex-shrink-0">
-                    <Button variant="outline" onClick={onClose} className="rounded-xl h-11 px-8 font-bold border-gray-200">Cancel</Button>
+                <DialogFooter className="p-8 bg-white border-t border-gray-50 gap-4 flex-shrink-0">
+                    <Button
+                        variant="outline"
+                        onClick={onClose}
+                        className="rounded-2xl h-14 px-10 font-black text-gray-500 border-gray-100 hover:bg-gray-50 transition-all"
+                    >
+                        Cancel
+                    </Button>
                     <Button
                         onClick={() => onPlan({
                             name,
                             location: destination,
                             start_date: startDate,
+                            start_time: startTime,
                             end_date: endDate,
+                            end_time: endTime,
                             lat: parseFloat(lat),
                             lng: parseFloat(lng),
                             trip_type: tripType,
@@ -411,8 +524,9 @@ export const PlanTripModal = ({ isOpen, onClose, onPlan, initialData }: PlanTrip
                             scout_ids: scouts,
                             photos
                         })}
-                        className="rounded-xl h-11 px-8 font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
+                        className="rounded-2xl h-14 px-12 font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-100 hover:shadow-indigo-200 transition-all flex items-center gap-2"
                     >
+                        {initialData ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                         {initialData ? "Update Trip" : "Create Trip"}
                     </Button>
                 </DialogFooter>
