@@ -13,7 +13,6 @@ import { MapStats } from "./MapStats";
 import { MapFilters } from "./MapFilters";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AddLocationModal } from "./AddLocationModal";
-import { PlanTripModal } from "./PlanTripModal";
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
@@ -34,11 +33,13 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 export const ScoutingMap = ({
     onEditEvent,
     onViewProspect,
-    onAddEvent
+    onAddEvent,
+    refreshData
 }: {
     onEditEvent?: (event: ScoutingEvent) => void;
     onViewProspect?: (prospect: ScoutingProspect) => void;
     onAddEvent?: () => void;
+    refreshData?: () => void;
 }) => {
     const [prospects, setProspects] = useState<(ScoutingProspect & { coords: { lat: number; lng: number } })[]>([]);
     const [events, setEvents] = useState<(ScoutingEvent & { coords: { lat: number; lng: number } })[]>([]);
@@ -56,7 +57,6 @@ export const ScoutingMap = ({
 
     // Modal states
     const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
-    const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
 
     // Layer states
     const [layers, setLayers] = useState({
@@ -173,6 +173,13 @@ export const ScoutingMap = ({
                 <div className="flex flex-wrap items-center gap-3">
                     <Button
                         variant="outline"
+                        onClick={fetchData}
+                        className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" /> Refresh
+                    </Button>
+                    <Button
+                        variant="outline"
                         onClick={() => setIsAddLocationModalOpen(true)}
                         className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2"
                     >
@@ -184,12 +191,6 @@ export const ScoutingMap = ({
                         className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2"
                     >
                         <Calendar className="w-4 h-4" /> Add Event
-                    </Button>
-                    <Button
-                        onClick={() => setIsPlanTripModalOpen(true)}
-                        className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
-                    >
-                        <Navigation className="w-4 h-4" /> Plan Trip
                     </Button>
                     <Button variant="outline" className="h-10 rounded-xl border-gray-200 font-bold text-gray-700 flex items-center gap-2">
                         <History className="w-4 h-4" /> Trip History (3)
@@ -440,16 +441,6 @@ export const ScoutingMap = ({
                 }}
             />
 
-            <PlanTripModal
-                isOpen={isPlanTripModalOpen}
-                onClose={() => setIsPlanTripModalOpen(false)}
-                onPlan={async (trip) => {
-                    // Handle plan trip
-                    console.log("Planning trip:", trip);
-                    setIsPlanTripModalOpen(false);
-                    fetchData();
-                }}
-            />
         </div>
     );
 };

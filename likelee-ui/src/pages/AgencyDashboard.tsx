@@ -1,6 +1,7 @@
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
 import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
+import { PlanTripModal } from "@/components/scouting/map/PlanTripModal";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -11,6 +12,7 @@ import {
   Users,
   FileText,
   Shield,
+  Navigation,
   BarChart2,
   Settings,
   LogOut,
@@ -5452,6 +5454,7 @@ const ScoutingHubView = ({
   );
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
+  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
 
   const tabs = [
     "Prospect Pipeline",
@@ -5495,6 +5498,12 @@ const ScoutingHubView = ({
           >
             <Calendar className="w-4 h-4" /> Create Event
           </Button>
+          <Button
+            onClick={() => setIsPlanTripModalOpen(true)}
+            className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
+            >
+            <Navigation className="w-4 h-4" /> Plan Trip
+            </Button>
         </div>
       </div>
 
@@ -5570,6 +5579,15 @@ const ScoutingHubView = ({
         event={eventToEdit}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
+        }}
+      />
+      <PlanTripModal
+        isOpen={isPlanTripModalOpen}
+        onClose={() => setIsPlanTripModalOpen(false)}
+        onPlan={async (trip) => {
+          console.log("Planning trip:", trip);
+          setIsPlanTripModalOpen(false);
+          refreshScoutingData();
         }}
       />
     </div>
@@ -6258,10 +6276,18 @@ const ScoutingMapTab = ({
   onViewProspect,
   onAddEvent,
 }: {
-  onEditEvent?: (event: ScoutingEvent) => void;
-  onViewProspect?: (prospect: ScoutingProspect) => void;
-  onAddEvent?: () => void;
-}) => <ScoutingMap onEditEvent={onEditEvent} onViewProspect={onViewProspect} onAddEvent={onAddEvent} />;
+  onEditEvent: (event: ScoutingEvent) => void;
+  onViewProspect: (prospect: ScoutingProspect) => void;
+  onAddEvent: () => void;
+}) => (
+  <Card className="p-0 overflow-hidden">
+    <ScoutingMap
+      onEditEvent={onEditEvent}
+      onViewProspect={onViewProspect}
+      onAddEvent={onAddEvent}
+    />
+  </Card>
+);
 
 const SubmissionsTab = () => (
   <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
