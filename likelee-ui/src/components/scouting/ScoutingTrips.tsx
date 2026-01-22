@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScoutingTrip, ScoutingTripLocation } from "@/types/scouting";
 import { PlanTripModal } from "./map/PlanTripModal";
+import { TripAnalytics } from "./TripAnalytics";
 
 const MOCK_TRIPS: ScoutingTrip[] = [
     {
@@ -278,6 +279,8 @@ export const ScoutingTrips = () => {
                     Plan New Trip
                 </Button>
             </div>
+
+            <TripAnalytics trips={MOCK_TRIPS} />
 
             <div className="grid grid-cols-1 gap-4">
                 {MOCK_TRIPS.map((trip) => (
