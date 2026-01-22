@@ -12,6 +12,7 @@ import { MapPin, RefreshCw, Navigation, Plus, Calendar, History, Share2, Link, L
 import { MapStats } from "./MapStats";
 import { MapFilters } from "./MapFilters";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
@@ -61,6 +62,7 @@ export const ScoutingMap = ({
     const [events, setEvents] = useState<(ScoutingEvent & { coords: { lat: number; lng: number } })[]>([]);
     const [trips, setTrips] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
     const [geocodingProgress, setGeocodingProgress] = useState(0);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [rawCounts, setRawCounts] = useState({
@@ -177,6 +179,10 @@ export const ScoutingMap = ({
         try {
             await scoutingService.deleteProspect(prospect.id);
             fetchData();
+            toast({
+                title: "Prospect deleted",
+                description: `${prospect.full_name} has been removed from the map.`,
+            });
             if (onDeleteProspect) onDeleteProspect(prospect);
         } catch (error) {
             console.error("Error deleting prospect:", error);

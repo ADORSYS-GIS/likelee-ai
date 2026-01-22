@@ -19,7 +19,8 @@ const formatProspectStatus = (status: string): string => {
 
 export const ProspectPopup = ({
     prospect,
-    onView
+    onView,
+    onDelete
 }: {
     prospect: ScoutingProspect;
     onView?: (prospect: ScoutingProspect) => void;
@@ -62,8 +63,8 @@ export const ProspectPopup = ({
                 <button
                     onClick={() => onDelete?.(prospect)}
                     className={`p-1.5 rounded-lg transition-colors ${prospect.status === 'declined'
-                            ? 'text-red-500 hover:text-red-700 hover:bg-red-50'
-                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                        ? 'text-red-500 hover:text-red-700 hover:bg-red-50'
+                        : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
                         }`}
                     title="Delete Prospect"
                 >
