@@ -12,6 +12,7 @@ pub fn build_router(state: AppState) -> Router {
         .allow_methods(Any)
         .allow_headers(Any);
     Router::new()
+        .route("/api/health", get(crate::health::health))
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
