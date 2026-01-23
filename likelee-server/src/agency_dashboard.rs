@@ -241,7 +241,7 @@ pub async fn get_licensing_pipeline(
         .eq("agency_id", agency_id)
         .eq("status", "active")
         .lte("end_at", &thirty_days_hence)
-        .gte("end_at", &now.to_rfc3339())
+        .gte("end_at", now.to_rfc3339())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -263,7 +263,7 @@ pub async fn get_licensing_pipeline(
         .select("id")
         .eq("agency_id", agency_id)
         .eq("status", "active")
-        .gt("end_at", &now.to_rfc3339())
+        .gt("end_at", now.to_rfc3339())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -531,7 +531,7 @@ async fn get_pending_actions(
         .eq("agency_id", agency_id)
         .eq("status", "active")
         .lte("end_at", &thirty_days_hence)
-        .gte("end_at", &now.to_rfc3339())
+        .gte("end_at", now.to_rfc3339())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -779,7 +779,7 @@ async fn get_new_talent_performance(
             let avg_days = if let Ok(pr) = pay_resp {
                 let p_text = pr.text().await.unwrap_or_else(|_| "[]".to_string());
                 let p_data: serde_json::Value = serde_json::from_str(&p_text).unwrap_or(json!([]));
-                if let Some(first_pay) = p_data.as_array().and_then(|a| a.get(0)) {
+                if let Some(first_pay) = p_data.as_array().and_then(|a| a.first()) {
                     let paid_at_str = first_pay
                         .get("paid_at")
                         .and_then(|v| v.as_str())
