@@ -6052,7 +6052,7 @@ const ProspectPipelineTab = ({
               {searchInput && (
                 <button
                   onClick={() => setSearchInput("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-800"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -6088,7 +6088,7 @@ const ProspectPipelineTab = ({
               <Button
                 variant="ghost"
                 onClick={clearFilters}
-                className="h-10 text-gray-600 hover:text-gray-900"
+                className="h-10 text-red-600 hover:text-red-800 font-bold"
               >
                 <X className="w-4 h-4 mr-2" />
                 Clear Filters
