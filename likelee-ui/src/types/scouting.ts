@@ -1,8 +1,9 @@
 export type ScoutingStatus =
-  | "new"
-  | "contacted"
-  | "meeting"
-  | "test_shoot"
+  | "new_lead"
+  | "in_contact"
+  | "test_shoot_pending"
+  | "test_shoot_success"
+  | "test_shoot_failed"
   | "offer_sent"
   | "signed"
   | "declined";
@@ -26,8 +27,6 @@ export interface ScoutingProspect {
   engagement_rate?: number;
 
   status: ScoutingStatus;
-  // Outcome used when status is 'test_shoot'
-  test_shoot_outcome?: "pending" | "success" | "failed";
   source?: ScoutingSource;
   discovery_date?: string; // ISO date string
   discovery_location?: string;

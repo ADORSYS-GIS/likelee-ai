@@ -32,14 +32,59 @@ export const scoutingService = {
 
   // --- Prospects ---
 
-  async getProspects(agencyId: string) {
+  async getProspects(
+    agencyId: string,
+    options?: {
+      searchQuery?: string;
+      statusFilter?: string;
+      sourceFilter?: string;
+      categoryFilter?: string[];
+      minRating?: number;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    }
+  ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("scouting_prospects")
       .select("*")
-      .eq("agency_id", agencyId)
-      .order("created_at", { ascending: false });
+      .eq("agency_id", agencyId);
+
+    // Apply search filter (case-insensitive search across multiple fields)
+    if (options?.searchQuery && options.searchQuery.trim()) {
+      const searchTerm = `%${options.searchQuery.trim()}%`;
+      query = query.or(
+        `full_name.ilike.${searchTerm},email.ilike.${searchTerm},instagram_handle.ilike.${searchTerm},notes.ilike.${searchTerm}`
+      );
+    }
+
+    // Apply status filter
+    if (options?.statusFilter && options.statusFilter !== "all") {
+      query = query.eq("status", options.statusFilter);
+    }
+
+    // Apply source filter
+    if (options?.sourceFilter && options.sourceFilter !== "all") {
+      query = query.eq("source", options.sourceFilter);
+    }
+
+    // Apply category filter (array contains)
+    if (options?.categoryFilter && options.categoryFilter.length > 0) {
+      query = query.contains("categories", options.categoryFilter);
+    }
+
+    // Apply minimum rating filter
+    if (options?.minRating && options.minRating > 0) {
+      query = query.gte("rating", options.minRating);
+    }
+
+    // Apply sorting
+    const sortBy = options?.sortBy || "created_at";
+    const sortOrder = options?.sortOrder || "desc";
+    query = query.order(sortBy, { ascending: sortOrder === "asc" });
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data as ScoutingProspect[];
