@@ -6145,7 +6145,33 @@ const ProspectPipelineTab = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="hidden lg:flex items-stretch gap-0 mb-8">
+          {stats.map((stat, idx) => (
+            <React.Fragment key={stat.label}>
+              <div
+                className={`flex-1 p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
+              >
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
+                  {stat.label}
+                </p>
+                <p className="text-4xl font-black text-gray-900 tracking-tight">
+                  {stat.count}
+                </p>
+              </div>
+              {idx < stats.length - 1 && (
+                <div className="flex items-center justify-center px-4">
+                  <svg width="32" height="32" viewBox="0 0 24 24">
+                    <path
+                      d="M4 11h12.17l-5.58-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H4v-2z"
+                      fill="#d1d5db"
+                    />
+                  </svg>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-8">
           {stats.map((stat) => (
             <div
               key={stat.label}
