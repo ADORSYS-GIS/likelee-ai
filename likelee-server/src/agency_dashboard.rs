@@ -1,15 +1,10 @@
-use std::collections::{HashMap, HashSet};
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-};
+use crate::auth::AuthUser;
+use crate::config::AppState;
+use axum::{extract::State, http::StatusCode, Json};
+use chrono::Datelike;
 use serde::Serialize;
 use serde_json::json;
-use chrono::Datelike;
-use crate::config::AppState;
-use crate::auth::AuthUser;
-
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Serialize)]
 pub struct DashboardOverview {
@@ -120,7 +115,6 @@ pub struct ActivityItem {
     pub relative_time: String,
 }
 
-
 /// GET /api/agency/dashboard/overview
 pub async fn get_dashboard_overview(
     State(state): State<AppState>,
@@ -144,17 +138,25 @@ pub async fn get_dashboard_overview(
     };
 
     // Fetch KYC Status
-    let kyc_status = match state.pg.from("agencies")
+    let kyc_status = match state
+        .pg
+        .from("agencies")
         .select("kyc_status")
         .eq("id", agency_id)
-        .execute().await {
-            Ok(res) => {
-                let text = res.text().await.unwrap_or_default();
-                let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
-                data.get(0).and_then(|v| v.get("kyc_status")).and_then(|v| v.as_str()).unwrap_or("not_started").to_string()
-            },
-            Err(_) => "not_started".to_string(),
-        };
+        .execute()
+        .await
+    {
+        Ok(res) => {
+            let text = res.text().await.unwrap_or_default();
+            let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+            data.get(0)
+                .and_then(|v| v.get("kyc_status"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("not_started")
+                .to_string()
+        }
+        Err(_) => "not_started".to_string(),
+    };
 
     Ok(Json(DashboardOverview {
         roster_health,
@@ -218,8 +220,11 @@ pub async fn get_licensing_pipeline(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
-    let pending_text = pending_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+
+    let pending_text = pending_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
     let pending_data: serde_json::Value = serde_json::from_str(&pending_text).unwrap_or(json!([]));
     let pending_approval = pending_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
 
@@ -229,44 +234,88 @@ pub async fn get_licensing_pipeline(
     let thirty_days_hence = (now + chrono::Duration::days(30)).to_rfc3339();
 
     // Expiring Soon
-    let expiring_resp = state.pg.from("brand_licenses")
+    let expiring_resp = state
+        .pg
+        .from("brand_licenses")
         .select("id")
         .eq("agency_id", agency_id)
         .eq("status", "active")
         .lte("end_at", &thirty_days_hence)
         .gte("end_at", &now.to_rfc3339())
-        .execute().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let expiring_text = expiring_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let expiring_data: serde_json::Value = serde_json::from_str(&expiring_text).unwrap_or(json!([]));
-    let expiring_soon = expiring_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let expiring_text = expiring_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let expiring_data: serde_json::Value =
+        serde_json::from_str(&expiring_text).unwrap_or(json!([]));
+    let expiring_soon = expiring_data
+        .as_array()
+        .map(|a| a.len() as i64)
+        .unwrap_or(0);
 
     // Active
-    let active_resp = state.pg.from("brand_licenses")
+    let active_resp = state
+        .pg
+        .from("brand_licenses")
         .select("id")
         .eq("agency_id", agency_id)
         .eq("status", "active")
         .gt("end_at", &now.to_rfc3339())
-        .execute().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let active_text = active_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let active_text = active_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
     let active_data: serde_json::Value = serde_json::from_str(&active_text).unwrap_or(json!([]));
     let active = active_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
 
     // Total This Month (New requests + licenses created this month)
-    let total_req_month_resp = state.pg.from("licensing_requests")
+    let total_req_month_resp = state
+        .pg
+        .from("licensing_requests")
         .select("id")
         .eq("agency_id", agency_id)
         .gte("created_at", &month_start)
-        .execute().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let total_req_month_data: serde_json::Value = serde_json::from_str(&total_req_month_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
-    let total_requests_this_month = total_req_month_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let total_req_month_data: serde_json::Value = serde_json::from_str(
+        &total_req_month_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string()),
+    )
+    .unwrap_or(json!([]));
+    let total_requests_this_month = total_req_month_data
+        .as_array()
+        .map(|a| a.len() as i64)
+        .unwrap_or(0);
 
-    let total_lic_month_resp = state.pg.from("brand_licenses")
+    let total_lic_month_resp = state
+        .pg
+        .from("brand_licenses")
         .select("id")
         .eq("agency_id", agency_id)
         .gte("created_at", &month_start)
-        .execute().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let total_lic_month_data: serde_json::Value = serde_json::from_str(&total_lic_month_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
-    let total_licenses_this_month = total_lic_month_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let total_lic_month_data: serde_json::Value = serde_json::from_str(
+        &total_lic_month_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string()),
+    )
+    .unwrap_or(json!([]));
+    let total_licenses_this_month = total_lic_month_data
+        .as_array()
+        .map(|a| a.len() as i64)
+        .unwrap_or(0);
 
     let total_this_month = total_requests_this_month + total_licenses_this_month;
 
@@ -296,9 +345,11 @@ pub async fn get_recent_activity(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await
+    let text = resp
+        .text()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     let data: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -322,7 +373,6 @@ pub async fn get_recent_activity(
     Ok(Json(ActivityFeed { activities }))
 }
 
-
 async fn get_roster_health(
     state: &AppState,
     agency_id: &str,
@@ -338,9 +388,11 @@ async fn get_roster_health(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await
+    let text = resp
+        .text()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     let data: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -371,7 +423,7 @@ async fn get_monthly_revenue(
 ) -> Result<MonthlyRevenue, (StatusCode, String)> {
     let now = chrono::Utc::now();
     let month_start = format!("{}-{:02}-01", now.year(), now.month());
-    
+
     // Get current month revenue
     let resp = state
         .pg
@@ -384,7 +436,9 @@ async fn get_monthly_revenue(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await
+    let text = resp
+        .text()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let data: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -418,7 +472,8 @@ async fn get_monthly_revenue(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let last_text = last_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let last_data: serde_json::Value = serde_json::from_str(&last_text).unwrap_or(serde_json::Value::Array(vec![]));
+    let last_data: serde_json::Value =
+        serde_json::from_str(&last_text).unwrap_or(serde_json::Value::Array(vec![]));
     let last_payments = last_data.as_array().unwrap_or(&empty_vec);
     let last_amount_cents: i64 = last_payments
         .iter()
@@ -457,14 +512,18 @@ async fn get_pending_actions(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let licensing_requests = data.as_array().map(|a| a.len() as i64).unwrap_or(0);
 
     // 2. Get expiring licenses count
     let now = chrono::Utc::now();
     let thirty_days_hence = (now + chrono::Duration::days(30)).to_rfc3339();
-    
+
     let licenses_resp = state
         .pg
         .from("brand_licenses")
@@ -477,9 +536,16 @@ async fn get_pending_actions(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let licenses_text = licenses_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let licenses_data: serde_json::Value = serde_json::from_str(&licenses_text).unwrap_or(json!([]));
-    let expiring_licenses = licenses_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
+    let licenses_text = licenses_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let licenses_data: serde_json::Value =
+        serde_json::from_str(&licenses_text).unwrap_or(json!([]));
+    let expiring_licenses = licenses_data
+        .as_array()
+        .map(|a| a.len() as i64)
+        .unwrap_or(0);
 
     // 3. Mock compliance issues
     let compliance_issues = 0i64;
@@ -510,18 +576,39 @@ async fn get_top_revenue_generators(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let payments = data.as_array().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Invalid payments data".to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let payments = data.as_array().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Invalid payments data".to_string(),
+    ))?;
 
     let mut talent_map: HashMap<String, (i64, String, Option<String>)> = HashMap::new();
 
     for p in payments {
-        let talent_id = p.get("talent_id").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
-        let cents = p.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        let talent_id = p
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let cents = p
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let talent = p.get("agency_users");
-        let name = talent.and_then(|v| v.get("stage_name")).and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-        let photo = talent.and_then(|v| v.get("profile_photo_url")).and_then(|v| v.as_str()).map(|s| s.to_string());
+        let name = talent
+            .and_then(|v| v.get("stage_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let photo = talent
+            .and_then(|v| v.get("profile_photo_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         let entry = talent_map.entry(talent_id).or_insert((0, name, photo));
         entry.0 += cents;
@@ -570,16 +657,34 @@ async fn get_actively_earning(
     let mut active_talents = vec![];
 
     for p in payments {
-        let talent_id = p.get("talent_id").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+        let talent_id = p
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
         if seen_talents.contains(&talent_id) {
             continue;
         }
 
-        let cents = p.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let cents = p
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let paid_at = p
+            .get("paid_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         let talent = p.get("agency_users");
-        let name = talent.and_then(|v| v.get("stage_name")).and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-        let photo = talent.and_then(|v| v.get("profile_photo_url")).and_then(|v| v.as_str()).map(|s| s.to_string());
+        let name = talent
+            .and_then(|v| v.get("stage_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let photo = talent
+            .and_then(|v| v.get("profile_photo_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         active_talents.push(ActiveTalent {
             id: talent_id.clone(),
@@ -618,41 +723,80 @@ async fn get_new_talent_performance(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let data: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut talents = vec![];
     if let Some(arr) = data.as_array() {
         for item in arr {
-            let id = item.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            let created_at_str = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
-            let created_date = chrono::DateTime::parse_from_rfc3339(created_at_str).ok().map(|dt| dt.with_timezone(&chrono::Utc)).unwrap_or(chrono::Utc::now());
+            let id = item
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let created_at_str = item
+                .get("created_at")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let created_date = chrono::DateTime::parse_from_rfc3339(created_at_str)
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or(chrono::Utc::now());
             let days_since_added = (chrono::Utc::now() - created_date).num_days();
 
-            let name = item.get("stage_name").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-            let photo = item.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let status = item.get("status").and_then(|v| v.as_str()).unwrap_or("pending").to_uppercase();
+            let name = item
+                .get("stage_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+            let photo = item
+                .get("profile_photo_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let status = item
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("pending")
+                .to_uppercase();
 
             // Calculate REAL avg time to first booking for this specific talent
             // We find their earliest succeeded payment
-            let pay_resp = state.pg.from("payments")
+            let pay_resp = state
+                .pg
+                .from("payments")
                 .select("paid_at")
                 .eq("talent_id", &id)
                 .eq("status", "succeeded")
                 .order("paid_at.asc")
                 .limit(1)
-                .execute().await;
+                .execute()
+                .await;
 
             let avg_days = if let Ok(pr) = pay_resp {
                 let p_text = pr.text().await.unwrap_or_else(|_| "[]".to_string());
                 let p_data: serde_json::Value = serde_json::from_str(&p_text).unwrap_or(json!([]));
                 if let Some(first_pay) = p_data.as_array().and_then(|a| a.get(0)) {
-                    let paid_at_str = first_pay.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
-                    let paid_date = chrono::DateTime::parse_from_rfc3339(paid_at_str).ok().map(|dt| dt.with_timezone(&chrono::Utc));
-                    paid_date.map(|pd| {
-                        let diff = (pd - created_date).num_days();
-                        if diff < 0 { 0.0 } else { diff as f64 }
-                    }).unwrap_or(0.0)
+                    let paid_at_str = first_pay
+                        .get("paid_at")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let paid_date = chrono::DateTime::parse_from_rfc3339(paid_at_str)
+                        .ok()
+                        .map(|dt| dt.with_timezone(&chrono::Utc));
+                    paid_date
+                        .map(|pd| {
+                            let diff = (pd - created_date).num_days();
+                            if diff < 0 {
+                                0.0
+                            } else {
+                                diff as f64
+                            }
+                        })
+                        .unwrap_or(0.0)
                 } else {
                     0.0
                 }
@@ -701,18 +845,37 @@ async fn get_breakdown_by_campaign_type(
     let mut total_cents = 0i64;
 
     for p in payments {
-        let campaign_type = p.get("campaigns").and_then(|v| v.get("campaign_type")).and_then(|v| v.as_str()).unwrap_or("Other").to_string();
-        let cents = p.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        let campaign_type = p
+            .get("campaigns")
+            .and_then(|v| v.get("campaign_type"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Other")
+            .to_string();
+        let cents = p
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let entry = map.entry(campaign_type).or_insert((0, 0));
         entry.0 += cents;
         entry.1 += 1;
         total_cents += cents;
     }
 
-    Ok(map.into_iter().map(|(name, (cents, count))| {
-        let percentage = if total_cents > 0 { (cents as f64 / total_cents as f64) * 100.0 } else { 0.0 };
-        BreakdownItem { name, percentage: (percentage * 10.0).round() / 10.0, count }
-    }).collect())
+    Ok(map
+        .into_iter()
+        .map(|(name, (cents, count))| {
+            let percentage = if total_cents > 0 {
+                (cents as f64 / total_cents as f64) * 100.0
+            } else {
+                0.0
+            };
+            BreakdownItem {
+                name,
+                percentage: (percentage * 10.0).round() / 10.0,
+                count,
+            }
+        })
+        .collect())
 }
 
 async fn get_breakdown_by_brand_vertical(
@@ -742,18 +905,37 @@ async fn get_breakdown_by_brand_vertical(
     let mut total_cents = 0i64;
 
     for p in payments {
-        let vertical = p.get("campaigns").and_then(|v| v.get("brand_vertical")).and_then(|v| v.as_str()).unwrap_or("Other").to_string();
-        let cents = p.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        let vertical = p
+            .get("campaigns")
+            .and_then(|v| v.get("brand_vertical"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Other")
+            .to_string();
+        let cents = p
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let entry = map.entry(vertical).or_insert((0, 0));
         entry.0 += cents;
         entry.1 += 1;
         total_cents += cents;
     }
 
-    Ok(map.into_iter().map(|(name, (cents, count))| {
-        let percentage = if total_cents > 0 { (cents as f64 / total_cents as f64) * 100.0 } else { 0.0 };
-        BreakdownItem { name, percentage: (percentage * 10.0).round() / 10.0, count }
-    }).collect())
+    Ok(map
+        .into_iter()
+        .map(|(name, (cents, count))| {
+            let percentage = if total_cents > 0 {
+                (cents as f64 / total_cents as f64) * 100.0
+            } else {
+                0.0
+            };
+            BreakdownItem {
+                name,
+                percentage: (percentage * 10.0).round() / 10.0,
+                count,
+            }
+        })
+        .collect())
 }
 
 async fn get_breakdown_by_region(
@@ -783,16 +965,35 @@ async fn get_breakdown_by_region(
     let mut total_cents = 0i64;
 
     for p in payments {
-        let region = p.get("campaigns").and_then(|v| v.get("region")).and_then(|v| v.as_str()).unwrap_or("Other").to_string();
-        let cents = p.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        let region = p
+            .get("campaigns")
+            .and_then(|v| v.get("region"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Other")
+            .to_string();
+        let cents = p
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         let entry = map.entry(region).or_insert((0, 0));
         entry.0 += cents;
         entry.1 += 1;
         total_cents += cents;
     }
 
-    Ok(map.into_iter().map(|(name, (cents, count))| {
-        let percentage = if total_cents > 0 { (cents as f64 / total_cents as f64) * 100.0 } else { 0.0 };
-        BreakdownItem { name, percentage: (percentage * 10.0).round() / 10.0, count }
-    }).collect())
+    Ok(map
+        .into_iter()
+        .map(|(name, (cents, count))| {
+            let percentage = if total_cents > 0 {
+                (cents as f64 / total_cents as f64) * 100.0
+            } else {
+                0.0
+            };
+            BreakdownItem {
+                name,
+                percentage: (percentage * 10.0).round() / 10.0,
+                count,
+            }
+        })
+        .collect())
 }
