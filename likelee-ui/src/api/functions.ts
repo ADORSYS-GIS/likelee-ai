@@ -219,3 +219,10 @@ export const createBookOut = (data: {
 // Note: base44Client doesn't expose DELETE; use a POST shim if imported elsewhere.
 export const deleteBookOut = (id: string) =>
   base44Client.post(`/api/book-outs/${id}`, { _method: "DELETE" });
+
+// Notifications
+export const notifyBookingCreatedEmail = (booking_id: string) =>
+  base44Client.post(`/api/notifications/booking-created-email`, { booking_id });
+
+export const listBookingNotifications = (params?: { limit?: number }) =>
+  base44Client.get(`/api/notifications/booking-notifications`, { params: params || {} });

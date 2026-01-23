@@ -1,11 +1,11 @@
 use crate::{auth::AuthUser, config::AppState};
-use axum::{extract::State, http::StatusCode, Json};
 use axum::extract::Multipart;
 use axum::extract::Query;
+use axum::{extract::State, http::StatusCode, Json};
 use reqwest::Client;
-use tracing::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::info;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AgencyProfilePayload {
@@ -219,11 +219,18 @@ pub async fn upload_agency_file(
     // Expect a single part named "file"
     let mut file_name = None;
     let mut bytes: Vec<u8> = vec![];
-    while let Some(field) = multipart.next_field().await.map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))? {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
         let name = field.name().map(|s| s.to_string());
         if name.as_deref() == Some("file") {
             file_name = field.file_name().map(|s| s.to_string());
-            let data = field.bytes().await.map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+            let data = field
+                .bytes()
+                .await
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
             bytes = data.to_vec();
             break;
         }
@@ -234,7 +241,13 @@ pub async fn upload_agency_file(
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
     let sanitized = fname
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect::<String>();
 
     // Storage target
@@ -265,7 +278,10 @@ pub async fn upload_agency_file(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !up.status().is_success() {
         let msg = up.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("storage upload failed: {msg}")));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
     }
 
     // For private bucket, no public URL; keep None
@@ -286,10 +302,17 @@ pub async fn upload_agency_file(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let txt = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let rec = arr.get(0).cloned().unwrap_or(serde_json::json!({"id": ""}));
-    let id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let rec = arr.first().cloned().unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     Ok(Json(AgencyFileUploadResponse {
         id,
@@ -355,7 +378,8 @@ pub async fn list_talents(
         .unwrap_or(&vec![])
         .iter()
         .map(|r| {
-            let id = r.get("creator_id")
+            let id = r
+                .get("creator_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or_else(|| r.get("id").and_then(|v| v.as_str()).unwrap_or(""))
                 .to_string();
@@ -363,9 +387,20 @@ pub async fn list_talents(
                 .get("stage_name")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
-                .or_else(|| r.get("full_legal_name").and_then(|v| v.as_str()).map(|s| s.to_string()));
-            let photo = r.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
-            TalentItem { id, full_name, profile_photo_url: photo }
+                .or_else(|| {
+                    r.get("full_legal_name")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                });
+            let photo = r
+                .get("profile_photo_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            TalentItem {
+                id,
+                full_name,
+                profile_photo_url: photo,
+            }
         })
         .collect();
 
@@ -379,6 +414,7 @@ pub struct AgencyClientPayload {
     pub email: Option<String>,
     pub phone: Option<String>,
     pub terms: Option<String>,
+    pub industry: Option<String>,
 }
 
 pub async fn list_clients(
@@ -388,7 +424,9 @@ pub async fn list_clients(
     let resp = state
         .pg
         .from("agency_clients")
-        .select("id,agency_id,company,contact_name,email,phone,terms,created_at,updated_at")
+        .select(
+            "id,agency_id,company,contact_name,email,phone,terms,industry,created_at,updated_at",
+        )
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .execute()
@@ -415,6 +453,7 @@ pub async fn create_client(
         "email": payload.email,
         "phone": payload.phone,
         "terms": payload.terms,
+        "industry": payload.industry,
     });
     let resp = state
         .pg
@@ -429,7 +468,8 @@ pub async fn create_client(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)

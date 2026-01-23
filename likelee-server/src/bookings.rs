@@ -1,6 +1,10 @@
 use crate::{auth::AuthUser, config::AppState};
-use axum::{extract::{Path, Query, State}, http::StatusCode, Json};
 use axum::extract::Multipart;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -62,7 +66,10 @@ pub async fn create_with_files(
                 payload = Some(p);
             }
             Some("files") | Some("file") => {
-                let fname = field.file_name().map(|s| s.to_string()).unwrap_or_else(|| "upload.bin".to_string());
+                let fname = field
+                    .file_name()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "upload.bin".to_string());
                 let data = field
                     .bytes()
                     .await
@@ -105,7 +112,10 @@ pub async fn create_with_files(
         let rows: serde_json::Value = serde_json::from_str(&text)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
-            return Err((StatusCode::CONFLICT, "Talent is unavailable during the selected date".to_string()));
+            return Err((
+                StatusCode::CONFLICT,
+                "Talent is unavailable during the selected date".to_string(),
+            ));
         }
     }
 
@@ -151,13 +161,24 @@ pub async fn create_with_files(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
     let created: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let booking = created.get(0).and_then(|v| v.as_object()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "create returned empty".to_string()))?;
-    let booking_id = booking.get("id").and_then(|v| v.as_str()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing booking id".to_string()))?.to_string();
+    let booking = created.first().and_then(|v| v.as_object()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "create returned empty".to_string(),
+    ))?;
+    let booking_id = booking
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "missing booking id".to_string(),
+        ))?
+        .to_string();
 
     // Upload files and insert booking_files rows
     let http = reqwest::Client::new();
@@ -166,7 +187,13 @@ pub async fn create_with_files(
     for (fname, data) in files.into_iter() {
         let sanitized = fname
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect::<String>();
         let path = format!(
             "agencies/{}/bookings/{}/files/{}_{}",
@@ -181,7 +208,10 @@ pub async fn create_with_files(
         );
         let up = http
             .post(&storage_url)
-            .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+            .header(
+                "Authorization",
+                format!("Bearer {}", state.supabase_service_key),
+            )
             .header("apikey", state.supabase_service_key.clone())
             .body(data)
             .send()
@@ -189,7 +219,10 @@ pub async fn create_with_files(
             .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
         if !up.status().is_success() {
             let msg = up.text().await.unwrap_or_default();
-            return Err((StatusCode::BAD_GATEWAY, format!("storage upload failed: {}", msg)));
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                format!("storage upload failed: {}", msg),
+            ));
         }
 
         let rec_body = json!({
@@ -206,14 +239,21 @@ pub async fn create_with_files(
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let txt = ins.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let txt = ins
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-        if let Some(v) = arr.get(0) { uploaded.push(v.clone()); }
+        if let Some(v) = arr.first() {
+            uploaded.push(v.clone());
+        }
     }
 
     // Return booking + files summary
     let mut out = serde_json::Map::new();
-    for (k, v) in booking.iter() { out.insert(k.clone(), v.clone()); }
+    for (k, v) in booking.iter() {
+        out.insert(k.clone(), v.clone());
+    }
     out.insert("files".to_string(), serde_json::Value::Array(uploaded));
     Ok(Json(serde_json::Value::Object(out)))
 }
@@ -257,7 +297,10 @@ pub async fn create(
         let rows: serde_json::Value = serde_json::from_str(&text)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
-            return Err((StatusCode::CONFLICT, "Talent is unavailable during the selected date".to_string()));
+            return Err((
+                StatusCode::CONFLICT,
+                "Talent is unavailable during the selected date".to_string(),
+            ));
         }
     }
 
@@ -349,7 +392,13 @@ pub async fn upload_booking_file(
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
     let sanitized = fname
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect::<String>();
 
     // Storage target (private bucket)
@@ -381,7 +430,10 @@ pub async fn upload_booking_file(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !up.status().is_success() {
         let msg = up.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("storage upload failed: {msg}")));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
     }
 
     // No public URL for private bucket
@@ -402,10 +454,17 @@ pub async fn upload_booking_file(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let txt = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let rec = arr.get(0).cloned().unwrap_or(serde_json::json!({"id": ""}));
-    let id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let rec = arr.first().cloned().unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     Ok(Json(BookingFileUploadResponse {
         id,
@@ -483,13 +542,19 @@ pub async fn update(
     Json(payload): Json<UpdateBookingPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // Only update fields that are Some
-    let mut v = serde_json::to_value(&payload)
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let mut v =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if let serde_json::Value::Object(ref mut map) = v {
         // If all_day=true in update, enforce full-day times
         if map.get("all_day").and_then(|x| x.as_bool()) == Some(true) {
-            map.insert("call_time".into(), serde_json::Value::String("00:00".into()));
-            map.insert("wrap_time".into(), serde_json::Value::String("23:59".into()));
+            map.insert(
+                "call_time".into(),
+                serde_json::Value::String("00:00".into()),
+            );
+            map.insert(
+                "wrap_time".into(),
+                serde_json::Value::String("23:59".into()),
+            );
         }
         // Map booking_type -> type for DB column
         if let Some(bt) = map.remove("booking_type") {

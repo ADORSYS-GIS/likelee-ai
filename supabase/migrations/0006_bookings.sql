@@ -112,13 +112,24 @@ CREATE POLICY "booking_files insert own" ON public.booking_files
 
 -- Book-Outs (Talent Availability) merged into this migration for a single unit
 -- Enum for book-out reason
-CREATE TYPE IF NOT EXISTS public.book_out_reason AS ENUM (
-  'personal',
-  'medical',
-  'vacation',
-  'other_booking',
-  'other'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'book_out_reason' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.book_out_reason AS ENUM (
+      'personal',
+      'medical',
+      'vacation',
+      'other_booking',
+      'other'
+    );
+  END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS public.book_outs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

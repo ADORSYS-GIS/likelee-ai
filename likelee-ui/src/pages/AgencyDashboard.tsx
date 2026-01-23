@@ -110,6 +110,7 @@ import {
   cancelBooking as apiCancelBooking,
   listBookOuts,
   createBookOut,
+  notifyBookingCreatedEmail,
 } from "@/api/functions";
 
 const AddProspectModal = ({
@@ -13056,6 +13057,13 @@ export default function AgencyDashboard() {
       // Append directly to state to reflect immediately and avoid duplicate API call.
       if (booking && booking.id) {
         setBookings([...bookings, booking]);
+        try {
+          await notifyBookingCreatedEmail(booking.id);
+          toast({ title: "Talent notified via email" });
+        } catch (e) {
+          const msg = (e as any)?.message || "Email notification failed";
+          toast({ title: "Email notification", description: msg });
+        }
         return;
       }
       const payload = {
@@ -13071,6 +13079,15 @@ export default function AgencyDashboard() {
       const created = await apiCreateBooking(payload);
       const row = Array.isArray(created) ? created[0] : created;
       setBookings([...bookings, row]);
+      try {
+        if (row?.id) {
+          await notifyBookingCreatedEmail(row.id);
+          toast({ title: "Talent notified via email" });
+        }
+      } catch (e) {
+        const msg = (e as any)?.message || "Email notification failed";
+        toast({ title: "Email notification", description: msg });
+      }
     } catch (e: any) {
       const msg = typeof e === "string" ? e : e?.message || "Failed to create booking";
       if (/409/.test(msg) || /unavailable/i.test(msg)) {

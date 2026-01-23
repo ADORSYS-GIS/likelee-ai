@@ -36,10 +36,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/organization-profile/user/:user_id",
             get(crate::organization_profiles::get_by_user),
         )
-        .route(
-            "/api/agency/talents",
-            get(crate::agencies::list_talents),
-        )
+        .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
             "/api/agency/clients",
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
@@ -158,18 +155,12 @@ pub fn build_router(state: AppState) -> Router {
             "/api/bookings/with-files",
             post(crate::bookings::create_with_files),
         )
-        .route(
-            "/api/bookings/:id",
-            post(crate::bookings::update),
-        )
+        .route("/api/bookings/:id", post(crate::bookings::update))
         .route(
             "/api/bookings/:id/files/upload",
             post(crate::bookings::upload_booking_file),
         )
-        .route(
-            "/api/bookings/:id/cancel",
-            post(crate::bookings::cancel),
-        )
+        .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
         // Book-Outs (Availability)
         .route(
             "/api/book-outs",
@@ -201,6 +192,15 @@ pub fn build_router(state: AppState) -> Router {
             "/api/creator-rates",
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
+        )
+        // Notifications
+        .route(
+            "/api/notifications/booking-created-email",
+            post(crate::notifications::booking_created_email),
+        )
+        .route(
+            "/api/notifications/booking-notifications",
+            get(crate::notifications::list_booking_notifications),
         )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit

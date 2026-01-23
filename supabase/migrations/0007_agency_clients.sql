@@ -9,9 +9,13 @@ CREATE TABLE IF NOT EXISTS public.agency_clients (
   email text,
   phone text,
   terms text,
+  industry text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.agency_clients
+  ADD COLUMN IF NOT EXISTS industry text;
 
 CREATE INDEX IF NOT EXISTS idx_agency_clients_agency_id ON public.agency_clients(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_clients_company ON public.agency_clients(company);

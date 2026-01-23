@@ -66,6 +66,7 @@ export const NewBookingModal = ({
     email: "",
     phone: "",
     terms: "Net 30",
+    industry: "",
   });
   const [date, setDate] = useState("2026-01-12");
   const [allDay, setAllDay] = useState(false);
@@ -130,6 +131,7 @@ export const NewBookingModal = ({
               email: r.email || "",
               phone: r.phone || "",
               terms: r.terms || "Net 30",
+              industry: r.industry || "",
               // Defaults to satisfy UI typing used elsewhere
               industryTags: [],
               revenue: 0,
@@ -220,6 +222,7 @@ export const NewBookingModal = ({
         email: newClient.email,
         phone: newClient.phone,
         terms: newClient.terms,
+        industry: newClient.industry || undefined,
       });
       const row = Array.isArray(created) ? created[0] : created;
       const client = {
@@ -229,6 +232,7 @@ export const NewBookingModal = ({
         email: row.email || "",
         phone: row.phone || "",
         terms: row.terms || "Net 30",
+        industry: row.industry || newClient.industry || "",
         industryTags: [],
         revenue: 0,
         bookings_count: 0,
@@ -510,6 +514,16 @@ export const NewBookingModal = ({
                       value={newClient.company}
                       onChange={(e) =>
                         setNewClient({ ...newClient, company: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Industry</Label>
+                    <Input
+                      placeholder="e.g. Fashion, Retail, Media"
+                      value={newClient.industry}
+                      onChange={(e) =>
+                        setNewClient({ ...newClient, industry: e.target.value })
                       }
                     />
                   </div>
