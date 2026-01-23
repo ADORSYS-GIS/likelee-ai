@@ -7,6 +7,7 @@ import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/useDebounce";
 
 import {
   LayoutDashboard,
@@ -115,22 +116,27 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import { useAuth } from "../auth/AuthProvider";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
   in_contact: "In Contact",
-  test_shoot: "Test Shoot",
+  test_shoot_pending: "Test Shoot (Pending)",
+  test_shoot_success: "Test Shoot (Success)",
+  test_shoot_failed: "Test Shoot (Failed)",
   offer_sent: "Offer Sent",
   signed: "Signed",
   declined: "Declined",
 };
 
-const MANUAL_STATUSES = ["new_lead", "in_contact", "test_shoot", "offer_sent"];
+const MANUAL_STATUSES = ["new_lead", "in_contact", "test_shoot_pending", "test_shoot_success", "test_shoot_failed", "offer_sent"];
 
 const STATUS_COLORS: { [key: string]: string } = {
   new_lead: "bg-blue-50 text-blue-700 border-blue-200",
   in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
+  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
+  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
+  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
   offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
   signed: "bg-green-50 text-green-700 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
@@ -139,17 +145,14 @@ const STATUS_COLORS: { [key: string]: string } = {
 const STATUS_DOT_COLORS: { [key: string]: string } = {
   new_lead: "bg-blue-500",
   in_contact: "bg-yellow-500",
-  test_shoot: "bg-orange-500",
+  test_shoot_pending: "bg-orange-500",
+  test_shoot_success: "bg-teal-500",
+  test_shoot_failed: "bg-rose-500",
   offer_sent: "bg-purple-500",
   signed: "bg-green-500",
   declined: "bg-red-500",
 };
 
-const TEST_SHOOT_OUTCOME_MAP: { [key: string]: { label: string; color: string } } = {
-  pending: { label: "Pending", color: "bg-gray-100 text-gray-600" },
-  success: { label: "Success", color: "bg-green-100 text-green-700" },
-  failed: { label: "Failed", color: "bg-red-100 text-red-700" },
-};
 
 const ProspectModal = ({
   open,
@@ -420,11 +423,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -503,11 +505,14 @@ const ProspectModal = ({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(STATUS_MAP).map(([value, label]) => (
-                      <SelectItem key={value} value={value} disabled={value === "offer_sent"}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="new_lead">{STATUS_MAP.new_lead}</SelectItem>
+                    <SelectItem value="in_contact">{STATUS_MAP.in_contact}</SelectItem>
+                    <SelectGroup>
+                      <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">Test Shoot</SelectLabel>
+                      <SelectItem value="test_shoot_pending" className="bg-gray-50/50 pl-8">Pending</SelectItem>
+                      <SelectItem value="test_shoot_success" className="bg-gray-50/50 pl-8">Success</SelectItem>
+                      <SelectItem value="test_shoot_failed" className="bg-gray-50/50 pl-8">Failed</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
@@ -615,7 +620,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -641,7 +648,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "../auth/AuthProvider";
+
 
 // --- Mock Data (Based on Reference) ---
 const mockAgency = {
@@ -1304,19 +1311,19 @@ const ClientProfileModal = ({
                   {(searchQuery ||
                     statusFilter !== "all" ||
                     consentFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                        setConsentFilter("all");
-                      }}
-                      className="text-gray-600"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear Filters
-                    </Button>
-                  )}
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("all");
+                          setConsentFilter("all");
+                        }}
+                        className="text-gray-600"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear Filters
+                      </Button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1495,8 +1502,8 @@ const ClientProfileModal = ({
                               >
                                 {talent.license_expiry !== "—"
                                   ? new Date(
-                                      talent.license_expiry,
-                                    ).toLocaleDateString()
+                                    talent.license_expiry,
+                                  ).toLocaleDateString()
                                   : "—"}
                               </span>
                               {isLicenseExpiring(talent.license_expiry) && (
@@ -3349,11 +3356,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -3827,11 +3833,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3839,11 +3844,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -4397,11 +4401,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -5534,11 +5537,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
           >
             {tab}
           </button>
@@ -5648,20 +5650,6 @@ const ProspectDetailsSheet = ({
     }
   };
 
-  const handleOutcomeChange = async (newOutcome: string) => {
-    if (!prospect) return;
-    try {
-      await scoutingService.updateProspect(prospect.id, { test_shoot_outcome: newOutcome });
-      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
-      toast({
-        title: "Test Shoot Outcome Updated",
-        description: `Outcome set to ${TEST_SHOOT_OUTCOME_MAP[newOutcome]?.label || newOutcome}.`,
-      });
-    } catch (error) {
-      console.error("Error updating outcome:", error);
-      toast({ title: "Error", description: "Failed to update outcome." });
-    }
-  };
 
   if (!prospect) return null;
 
@@ -5674,7 +5662,7 @@ const ProspectDetailsSheet = ({
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-gray-600">Status</Label>
                 <Badge className={`capitalize border ${STATUS_COLORS[prospect.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
-                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] || prospect.status.replace('_',' ')}
+                  {STATUS_MAP[prospect.status] || prospect.status}
                 </Badge>
               </div>
               <Select
@@ -5689,39 +5677,42 @@ const ProspectDetailsSheet = ({
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {MANUAL_STATUSES.map((value) => (
-                    <SelectItem
-                      key={value}
-                      value={value}
-                      disabled={value === "offer_sent"}
-                      className="text-sm font-semibold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[value] || 'bg-gray-400'}`}></span>
-                        <span>{STATUS_MAP[value]}</span>
+                  <SelectItem value="new_lead" className="text-sm font-semibold">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}></span>
+                      <span>{STATUS_MAP.new_lead}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="in_contact" className="text-sm font-semibold">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}></span>
+                      <span>{STATUS_MAP.in_contact}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectGroup>
+                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">Test Shoot</SelectLabel>
+                    <SelectItem value="test_shoot_pending" className="text-sm font-semibold bg-gray-50/50">
+                      <div className="flex items-center gap-2 pl-6">
+                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}></span>
+                        <span>Pending</span>
                       </div>
                     </SelectItem>
-                  ))}
+                    <SelectItem value="test_shoot_success" className="text-sm font-semibold bg-gray-50/50">
+                      <div className="flex items-center gap-2 pl-6">
+                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}></span>
+                        <span>Success</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="test_shoot_failed" className="text-sm font-semibold bg-gray-50/50">
+                      <div className="flex items-center gap-2 pl-6">
+                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}></span>
+                        <span>Failed</span>
+                      </div>
+                    </SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
-            {prospect.status === 'test_shoot' && (
-              <div className="flex-1">
-                <Label className="text-xs font-bold text-gray-500">Test Shoot Outcome</Label>
-                <Select onValueChange={handleOutcomeChange} defaultValue={prospect.test_shoot_outcome || 'pending'}>
-                  <SelectTrigger className="w-full h-9 text-xs font-bold mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(TEST_SHOOT_OUTCOME_MAP).map(([value, { label }]) => (
-                      <SelectItem key={value} value={value} className="text-xs font-bold">
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
         </SheetHeader>
 
@@ -5934,10 +5925,27 @@ const ProspectPipelineTab = ({
   onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedProspect, setSelectedProspect] =
     useState<ScoutingProspect | null>(null);
-  const { data: prospects, isLoading } = useQuery({
-    queryKey: ["prospects", user?.id],
+
+  // Filter states - initialize from URL
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || ""
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "all"
+  );
+  const [sourceFilter, setSourceFilter] = useState(
+    searchParams.get("source") || "all"
+  );
+
+  // Debounce search input
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  // Fetch all prospects for stats (unfiltered)
+  const { data: allProspects } = useQuery({
+    queryKey: ["prospects-all", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const agencyId = await scoutingService.getUserAgencyId();
@@ -5947,6 +5955,37 @@ const ProspectPipelineTab = ({
     enabled: !!user,
   });
 
+  // Fetch filtered prospects
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: [
+      "prospects",
+      user?.id,
+      debouncedSearch,
+      statusFilter,
+      sourceFilter,
+    ],
+    queryFn: async () => {
+      if (!user) return [];
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getProspects(agencyId, {
+        searchQuery: debouncedSearch,
+        statusFilter,
+        sourceFilter,
+      });
+    },
+    enabled: !!user,
+  });
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (sourceFilter !== "all") params.set("source", sourceFilter);
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch, statusFilter, sourceFilter, setSearchParams]);
+
   useEffect(() => {
     if (selectedProspect && prospects) {
       const updated = prospects.find((p) => p.id === selectedProspect.id);
@@ -5954,32 +5993,47 @@ const ProspectPipelineTab = ({
     }
   }, [prospects]);
 
+  // Calculate stats from all prospects (not filtered)
   const stats = [
     {
       label: "New Leads",
-      count: prospects?.filter((p) => p.status === "new").length || 0,
+      count: allProspects?.filter((p) => p.status === "new_lead").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: prospects?.filter((p) => p.status === "contacted").length || 0,
+      count:
+        allProspects?.filter((p) => p.status === "in_contact").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
-      color: "border-purple-200 bg-purple-50/30",
+      count:
+        allProspects?.filter((p) => p.status.startsWith("test_shoot")).length ||
+        0,
+      color: "border-orange-200 bg-orange-50/30",
     },
     {
       label: "Offers",
       count:
-        prospects?.filter(
+        allProspects?.filter(
           (p) =>
-            p.status === "offer_sent" || p.status === "signed" || p.status === "declined"
+            p.status === "offer_sent" ||
+            p.status === "signed" ||
+            p.status === "declined"
         ).length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
+
+  const hasActiveFilters =
+    debouncedSearch || statusFilter !== "all" || sourceFilter !== "all";
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setStatusFilter("all");
+    setSourceFilter("all");
+  };
 
   return (
     <div className="space-y-6">
@@ -5991,10 +6045,20 @@ const ProspectPipelineTab = ({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 placeholder="Search prospects..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 h-10 border-gray-200 bg-white"
               />
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <Select defaultValue="all">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px] h-10 border-gray-200">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -6007,8 +6071,79 @@ const ProspectPipelineTab = ({
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[140px] h-10 border-gray-200">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="tiktok">TikTok</SelectItem>
+                <SelectItem value="street">Street Scouting</SelectItem>
+                <SelectItem value="referral">Referral</SelectItem>
+                <SelectItem value="website">Website</SelectItem>
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                className="h-10 text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear Filters
+              </Button>
+            )}
           </div>
         </div>
+
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {debouncedSearch && (
+              <Badge
+                variant="secondary"
+                className="bg-indigo-50 text-indigo-700 border-indigo-200 px-3 py-1 flex items-center gap-2"
+              >
+                Search: "{debouncedSearch}"
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="hover:text-indigo-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+            {statusFilter !== "all" && (
+              <Badge
+                variant="secondary"
+                className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 flex items-center gap-2"
+              >
+                Status: {STATUS_MAP[statusFilter]}
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="hover:text-blue-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+            {sourceFilter !== "all" && (
+              <Badge
+                variant="secondary"
+                className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 flex items-center gap-2"
+              >
+                Source: {sourceFilter}
+                <button
+                  onClick={() => setSourceFilter("all")}
+                  className="hover:text-purple-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
@@ -6025,6 +6160,13 @@ const ProspectPipelineTab = ({
             </div>
           ))}
         </div>
+
+        {/* Results count */}
+        {hasActiveFilters && prospects && (
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {prospects.length} of {allProspects?.length || 0} prospects
+          </div>
+        )}
 
         {isLoading ? (
           <div className="text-center py-24">Loading prospects...</div>
@@ -6101,26 +6243,21 @@ const ProspectPipelineTab = ({
                       <div className="text-xs">{p.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "new" ? (
+                      {p.status === "new_lead" ? (
                         <CheckCircle2 className="w-5 h-5 text-blue-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "contacted" ? (
+                      {p.status === "in_contact" ? (
                         <CheckCircle2 className="w-5 h-5 text-yellow-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "test_shoot" ? (
-                        <Badge
-                          className={`capitalize border ${
-                            TEST_SHOOT_OUTCOME_MAP[p.test_shoot_outcome || 'pending']
-                              ?.color
-                          }`}
-                        >
-                          {TEST_SHOOT_OUTCOME_MAP[p.test_shoot_outcome || 'pending']?.label}
+                      {p.status.startsWith("test_shoot") && (
+                        <Badge className={`capitalize border ${STATUS_COLORS[p.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                          {p.status.replace('test_shoot_', '')}
                         </Badge>
-                      ) : null}
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {p.status === "signed" ? (
@@ -6148,8 +6285,9 @@ const ProspectPipelineTab = ({
               </tbody>
             </table>
           </div>
-        )}
-      </Card>
+        )
+        }
+      </Card >
       <ProspectDetailsSheet
         prospect={selectedProspect}
         onClose={() => setSelectedProspect(null)}
@@ -6158,7 +6296,7 @@ const ProspectPipelineTab = ({
           onEditProspect(p);
         }}
       />
-    </div>
+    </div >
   );
 };
 
@@ -6473,19 +6611,18 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      event.status === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : event.status === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : event.status === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : event.status === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : event.status === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
-                    }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${event.status === "published"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : event.status === "draft"
+                        ? "bg-gray-50 text-gray-600 border-gray-100"
+                        : event.status === "scheduled"
+                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          : event.status === "completed"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            : event.status === "cancelled"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-gray-50 text-gray-600 border-gray-100"
+                      }`}
                   >
                     {event.status.toUpperCase()}
                   </Badge>
@@ -7503,13 +7640,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -7628,16 +7765,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -8478,9 +8614,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -9292,11 +9428,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -11467,7 +11602,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -11630,11 +11765,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -12127,11 +12261,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -13013,11 +13146,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -14146,92 +14278,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14284,16 +14416,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14314,11 +14444,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
