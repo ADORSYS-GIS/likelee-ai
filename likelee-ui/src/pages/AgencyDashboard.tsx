@@ -116,24 +116,39 @@ import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 
-const STATUS_MAP = {
-  new: "New Lead",
-  contacted: "In Contact",
-  meeting: "Meeting Scheduled",
-  test_shoot: "Test Shoots",
+const STATUS_MAP: { [key: string]: string } = {
+  new_lead: "New Lead",
+  in_contact: "In Contact",
+  test_shoot: "Test Shoot",
   offer_sent: "Offer Sent",
   signed: "Signed",
   declined: "Declined",
 };
 
-const STATUS_COLORS = {
-  new: "bg-blue-50 text-blue-700 border-blue-200",
-  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  meeting: "bg-purple-50 text-purple-700 border-purple-200",
+const MANUAL_STATUSES = ["new_lead", "in_contact", "test_shoot", "offer_sent"];
+
+const STATUS_COLORS: { [key: string]: string } = {
+  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
+  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
   test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
-  offer_sent: "bg-green-50 text-green-700 border-green-200",
+  offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
   signed: "bg-green-50 text-green-700 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const STATUS_DOT_COLORS: { [key: string]: string } = {
+  new_lead: "bg-blue-500",
+  in_contact: "bg-yellow-500",
+  test_shoot: "bg-orange-500",
+  offer_sent: "bg-purple-500",
+  signed: "bg-green-500",
+  declined: "bg-red-500",
+};
+
+const TEST_SHOOT_OUTCOME_MAP: { [key: string]: { label: string; color: string } } = {
+  pending: { label: "Pending", color: "bg-gray-100 text-gray-600" },
+  success: { label: "Success", color: "bg-green-100 text-green-700" },
+  failed: { label: "Failed", color: "bg-red-100 text-red-700" },
 };
 
 const ProspectModal = ({
@@ -489,7 +504,7 @@ const ProspectModal = ({
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_MAP).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
+                      <SelectItem key={value} value={value} disabled={value === "offer_sent"}>
                         {label}
                       </SelectItem>
                     ))}
@@ -5474,8 +5489,8 @@ const ScoutingHubView = ({
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-8xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             Scouting Hub
@@ -5514,7 +5529,7 @@ const ScoutingHubView = ({
         </div>
       </div>
 
-      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto max-w-full max-w-7xl mx-auto">
+      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto w-full">
         {tabs.map((tab) => (
           <button
             key={tab}
@@ -5530,9 +5545,7 @@ const ScoutingHubView = ({
         ))}
       </div>
 
-      <div
-        className={`mt-8 ${activeTab !== "Scouting Map" ? "max-w-7xl mx-auto" : ""}`}
-      >
+      <div className={`mt-8 w-full`}>
         {activeTab === "Prospect Pipeline" && (
           <ProspectPipelineTab
             onAddProspect={() => {
@@ -5617,16 +5630,13 @@ const ProspectDetailsSheet = ({
   onClose: () => void;
   onEdit: (prospect: ScoutingProspect) => void;
 }) => {
-  if (!prospect) return null;
-
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const handleStatusChange = async (newStatus: string) => {
+    if (!prospect) return;
     try {
-      await scoutingService.updateProspect(prospect.id, {
-        status: newStatus as any,
-      });
+      await scoutingService.updateProspect(prospect.id, { status: newStatus });
       await queryClient.invalidateQueries({ queryKey: ["prospects"] });
       toast({
         title: "Status Updated",
@@ -5634,21 +5644,85 @@ const ProspectDetailsSheet = ({
       });
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update status." });
     }
   };
 
+  const handleOutcomeChange = async (newOutcome: string) => {
+    if (!prospect) return;
+    try {
+      await scoutingService.updateProspect(prospect.id, { test_shoot_outcome: newOutcome });
+      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
+      toast({
+        title: "Test Shoot Outcome Updated",
+        description: `Outcome set to ${TEST_SHOOT_OUTCOME_MAP[newOutcome]?.label || newOutcome}.`,
+      });
+    } catch (error) {
+      console.error("Error updating outcome:", error);
+      toast({ title: "Error", description: "Failed to update outcome." });
+    }
+  };
+
+  if (!prospect) return null;
+
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
-        <SheetHeader className="p-6 border-b">
-          <SheetTitle className="text-xl font-bold">
-            Prospect Details
-          </SheetTitle>
+      <SheetContent className="max-w-none sm:max-w-none md:max-w-none lg:max-w-none w-[75vw] lg:w-[860px] xl:w-[960px] p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-gray-600">Status</Label>
+                <Badge className={`capitalize border ${STATUS_COLORS[prospect.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] || prospect.status.replace('_',' ')}
+                </Badge>
+              </div>
+              <Select
+                onValueChange={handleStatusChange}
+                defaultValue={prospect.status}
+                disabled={["offer_sent", "signed", "declined"].includes(prospect.status)}
+              >
+                <SelectTrigger className="w-full h-10 text-sm font-semibold mt-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || 'bg-gray-400'}`}></span>
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {MANUAL_STATUSES.map((value) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      disabled={value === "offer_sent"}
+                      className="text-sm font-semibold"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[value] || 'bg-gray-400'}`}></span>
+                        <span>{STATUS_MAP[value]}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {prospect.status === 'test_shoot' && (
+              <div className="flex-1">
+                <Label className="text-xs font-bold text-gray-500">Test Shoot Outcome</Label>
+                <Select onValueChange={handleOutcomeChange} defaultValue={prospect.test_shoot_outcome || 'pending'}>
+                  <SelectTrigger className="w-full h-9 text-xs font-bold mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TEST_SHOOT_OUTCOME_MAP).map(([value, { label }]) => (
+                      <SelectItem key={value} value={value} className="text-xs font-bold">
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         </SheetHeader>
 
         {/* Scrollable content */}
@@ -5688,36 +5762,6 @@ const ProspectDetailsSheet = ({
                   </span>
                 </div>
               </div>
-            </div>
-            <div className="p-4 rounded-xl border bg-gray-50/70">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-gray-700">Status</h3>
-                <Badge
-                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
-                >
-                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
-                    prospect.status.replace("_", " ")}
-                </Badge>
-              </div>
-              <Select
-                defaultValue={prospect.status}
-                onValueChange={handleStatusChange}
-              >
-                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(STATUS_MAP).map(([value, label]) => (
-                    <SelectItem
-                      key={value}
-                      value={value}
-                      className="font-medium"
-                    >
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
@@ -5927,8 +5971,12 @@ const ProspectPipelineTab = ({
       color: "border-purple-200 bg-purple-50/30",
     },
     {
-      label: "Offers Sent",
-      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
+      label: "Offers",
+      count:
+        prospects?.filter(
+          (p) =>
+            p.status === "offer_sent" || p.status === "signed" || p.status === "declined"
+        ).length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -6022,7 +6070,7 @@ const ProspectPipelineTab = ({
                     TEST SHOOTS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                    OFFERS SENT
+                    OFFERS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
                     SOURCE
@@ -6064,12 +6112,29 @@ const ProspectPipelineTab = ({
                     </td>
                     <td className="px-4 py-3">
                       {p.status === "test_shoot" ? (
-                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                        <Badge
+                          className={`capitalize border ${
+                            TEST_SHOOT_OUTCOME_MAP[p.test_shoot_outcome || 'pending']
+                              ?.color
+                          }`}
+                        >
+                          {TEST_SHOOT_OUTCOME_MAP[p.test_shoot_outcome || 'pending']?.label}
+                        </Badge>
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "offer_sent" ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      {p.status === "signed" ? (
+                        <Badge className={`capitalize border ${STATUS_COLORS.signed}`}>
+                          {STATUS_MAP.signed}
+                        </Badge>
+                      ) : p.status === "declined" ? (
+                        <Badge className={`capitalize border ${STATUS_COLORS.declined}`}>
+                          {STATUS_MAP.declined}
+                        </Badge>
+                      ) : p.status === "offer_sent" ? (
+                        <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">
+                          Awaiting
+                        </Badge>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-gray-600 font-medium">

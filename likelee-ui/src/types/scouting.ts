@@ -26,6 +26,8 @@ export interface ScoutingProspect {
   engagement_rate?: number;
 
   status: ScoutingStatus;
+  // Outcome used when status is 'test_shoot'
+  test_shoot_outcome?: "pending" | "success" | "failed";
   source?: ScoutingSource;
   discovery_date?: string; // ISO date string
   discovery_location?: string;
