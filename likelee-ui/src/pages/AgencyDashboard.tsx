@@ -5713,6 +5713,17 @@ const ProspectDetailsSheet = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Conditional Send Offer Button */}
+            {prospect.status === "test_shoot_success" && (
+              <Button
+                onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Send Offer
+              </Button>
+            )}
           </div>
         </SheetHeader>
 

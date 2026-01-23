@@ -176,3 +176,30 @@ export interface ScoutingTripLocation {
   lat?: number;
   lng?: number;
 }
+
+export type OfferStatus = "pending" | "sent" | "signed" | "declined" | "voided";
+
+export interface ScoutingTemplate {
+  id: string;
+  agency_id: string;
+  docuseal_template_id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScoutingOffer {
+  id: string;
+  prospect_id: string;
+  agency_id: string;
+  template_id: string;
+  docuseal_submission_id?: number;
+  status: OfferStatus;
+  signing_url?: string;
+  signed_document_url?: string;
+  sent_at?: string;
+  signed_at?: string;
+  created_at: string;
+  updated_at: string;
+}

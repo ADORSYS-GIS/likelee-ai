@@ -4,6 +4,8 @@ import {
   ScoutingTrip,
   ScoutingSubmission,
   ScoutingEvent,
+  ScoutingTemplate,
+  ScoutingOffer,
 } from "@/types/scouting";
 
 export const scoutingService = {
@@ -393,5 +395,214 @@ export const scoutingService = {
     }
 
     return stats;
+  },
+
+  // --- Templates ---
+
+  async getTemplates(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_templates")
+      .select("*")
+      .eq("agency_id", agencyId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data as ScoutingTemplate[];
+  },
+
+  async createTemplate(
+    template: Omit<ScoutingTemplate, "id" | "created_at" | "updated_at">
+  ) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_templates")
+      .insert(template)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingTemplate;
+  },
+
+  async updateTemplate(id: string, updates: Partial<ScoutingTemplate>) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_templates")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingTemplate;
+  },
+
+  async deleteTemplate(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { error } = await supabase
+      .from("scouting_templates")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  },
+
+  // --- Offers ---
+
+  async getOffers(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_offers")
+      .select(`
+        *,
+        prospect:scouting_prospects(full_name, email, status),
+        template:scouting_templates(name)
+      `)
+      .eq("agency_id", agencyId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data as ScoutingOffer[];
+  },
+
+  async getOffer(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_offers")
+      .select(`
+        *,
+        prospect:scouting_prospects(*),
+        template:scouting_templates(*)
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingOffer;
+  },
+
+  async createOffer(
+    offer: Omit<ScoutingOffer, "id" | "created_at" | "updated_at">
+  ) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_offers")
+      .insert(offer)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingOffer;
+  },
+
+  async updateOffer(id: string, updates: Partial<ScoutingOffer>) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_offers")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingOffer;
+  },
+
+  async deleteOffer(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { error } = await supabase
+      .from("scouting_offers")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  },
+
+  async getBuilderToken(agencyId: string, templateId?: number) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    // Call our backend API endpoint
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/builder-token`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ agency_id: agencyId, template_id: templateId }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to get builder token: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.token;
+  },
+
+  async syncTemplates(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/templates/sync`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ agency_id: agencyId }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to sync templates: ${response.statusText}`);
+    }
+  },
+
+  async createTemplateFromPdf(agencyId: string, file: File) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    const formData = new FormData();
+    formData.append("agency_id", agencyId);
+    formData.append("file", file);
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/templates/upload`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload template: ${response.statusText}`);
+    }
+
+    return await response.json();
   },
 };

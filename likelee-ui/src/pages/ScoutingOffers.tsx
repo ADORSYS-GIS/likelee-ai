@@ -1,0 +1,511 @@
+import React, { useState, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { scoutingService } from "@/services/scoutingService";
+import { useAuth } from "../auth/AuthProvider";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    FileText,
+    Plus,
+    ArrowLeft,
+    Send,
+    CheckCircle2,
+    XCircle,
+    Clock,
+    AlertCircle,
+    Search,
+    Filter,
+    Download,
+    Copy,
+    Eye,
+    MoreHorizontal,
+    RefreshCw,
+    Upload,
+} from "lucide-react";
+import { ScoutingTemplate, ScoutingOffer } from "@/types/scouting";
+
+export default function ScoutingOffers() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const prospectId = searchParams.get("prospectId");
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const [showSendOfferDialog, setShowSendOfferDialog] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<ScoutingTemplate | null>(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+
+    // Builder state
+    const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
+    const [builderToken, setBuilderToken] = useState<string>("");
+    const [builderTemplateId, setBuilderTemplateId] = useState<number | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Load DocuSeal builder script
+    React.useEffect(() => {
+        if (showTemplateBuilder) {
+            const script = document.createElement("script");
+            script.src = "https://cdn.docuseal.com/js/builder.js";
+            script.async = true;
+            document.body.appendChild(script);
+
+            return () => {
+                document.body.removeChild(script);
+            };
+        }
+    }, [showTemplateBuilder]);
+
+    // Fetch agency templates
+    const { data: templates, isLoading: templatesLoading } = useQuery({
+        queryKey: ["templates", user?.id],
+        queryFn: async () => {
+            if (!user) return [];
+            const agencyId = await scoutingService.getUserAgencyId();
+            if (!agencyId) return [];
+            return scoutingService.getTemplates(agencyId);
+        },
+        enabled: !!user,
+    });
+
+    // Fetch agency offers
+    const { data: offers, isLoading: offersLoading } = useQuery({
+        queryKey: ["offers", user?.id],
+        queryFn: async () => {
+            if (!user) return [];
+            const agencyId = await scoutingService.getUserAgencyId();
+            if (!agencyId) return [];
+            return scoutingService.getOffers(agencyId);
+        },
+        enabled: !!user,
+    });
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const agencyId = await scoutingService.getUserAgencyId();
+            if (!agencyId) throw new Error("Agency not found");
+
+            // 1. Upload PDF and create template
+            const template = await scoutingService.createTemplateFromPdf(agencyId, file);
+
+            // 2. Get builder token
+            const token = await scoutingService.getBuilderToken(agencyId, template.id);
+
+            // 3. Open builder with new template
+            setBuilderToken(token);
+            setBuilderTemplateId(template.id); // This ID is the DocuSeal ID
+            setShowTemplateBuilder(true);
+
+            toast({
+                title: "Template Created",
+                description: "PDF uploaded successfully. You can now add fields.",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["templates"] });
+        } catch (error) {
+            console.error("Error uploading template:", error);
+            toast({
+                title: "Upload Failed",
+                description: "Failed to upload PDF. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
+
+    const handleSyncTemplates = async () => {
+        setIsSyncing(true);
+        try {
+            const agencyId = await scoutingService.getUserAgencyId();
+            if (!agencyId) throw new Error("Agency not found");
+
+            await scoutingService.syncTemplates(agencyId);
+
+            toast({
+                title: "Templates Synced",
+                description: "Successfully synced templates from DocuSeal.",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["templates"] });
+        } catch (error) {
+            console.error("Error syncing templates:", error);
+            toast({
+                title: "Sync Failed",
+                description: "Failed to sync templates. Please check your connection.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const handleSendOffer = async () => {
+        if (!selectedTemplate || !prospectId) return;
+
+        try {
+            const agencyId = await scoutingService.getUserAgencyId();
+            if (!agencyId) throw new Error("Agency not found");
+
+            await scoutingService.createOffer({
+                prospect_id: prospectId,
+                agency_id: agencyId,
+                template_id: selectedTemplate.id,
+                status: "pending",
+            });
+
+            toast({
+                title: "Offer Sent",
+                description: "The offer has been sent to the prospect.",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["offers"] });
+            setShowSendOfferDialog(false);
+            navigate("/AgencyDashboard");
+        } catch (error) {
+            console.error("Error sending offer:", error);
+            toast({
+                title: "Error",
+                description: "Failed to send offer. Please try again.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "signed":
+                return "bg-green-100 text-green-700 border-green-200";
+            case "declined":
+            case "voided":
+                return "bg-red-100 text-red-700 border-red-200";
+            case "sent":
+                return "bg-blue-100 text-blue-700 border-blue-200";
+            default:
+                return "bg-gray-100 text-gray-700 border-gray-200";
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-8 font-sans">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate("/AgencyDashboard")}
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Back
+                        </Button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Offer Management</h1>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Manage your contract templates and track submissions
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Templates Section */}
+                <section>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900">Templates</h2>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={handleSyncTemplates}
+                                disabled={isSyncing}
+                                className="bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm"
+                            >
+                                <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
+                                Sync Templates
+                            </Button>
+
+                            <input
+                                type="file"
+                                accept=".pdf,.docx,.doc"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                            />
+                            <Button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm"
+                            >
+                                {isUploading ? (
+                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                    <Upload className="w-4 h-4 mr-2" />
+                                )}
+                                Upload Contract
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {templatesLoading ? (
+                            [1, 2].map((i) => (
+                                <div key={i} className="h-48 bg-gray-100 rounded-xl animate-pulse" />
+                            ))
+                        ) : templates?.map((template) => (
+                            <div
+                                key={template.id}
+                                className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col"
+                            >
+                                <div className="h-32 bg-gray-50 border-b border-gray-100 flex items-center justify-center relative">
+                                    <FileText className="w-12 h-12 text-gray-300" />
+                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 backdrop-blur-sm">
+                                            <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="p-4 flex-1 flex flex-col">
+                                    <h3 className="font-semibold text-gray-900 truncate">{template.name}</h3>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Created {new Date(template.created_at).toLocaleDateString()}
+                                    </p>
+                                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 text-xs h-8"
+                                            onClick={() => {
+                                                setSelectedTemplate(template);
+                                                setShowSendOfferDialog(true);
+                                            }}
+                                            disabled={!prospectId}
+                                        >
+                                            <Send className="w-3 h-3 mr-1.5" />
+                                            Use Template
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-xs h-8 px-2"
+                                            onClick={async () => {
+                                                // Edit template
+                                                try {
+                                                    const agencyId = await scoutingService.getUserAgencyId();
+                                                    if (!agencyId) return;
+                                                    const token = await scoutingService.getBuilderToken(agencyId, template.docuseal_template_id);
+                                                    setBuilderToken(token);
+                                                    setBuilderTemplateId(template.docuseal_template_id);
+                                                    setShowTemplateBuilder(true);
+                                                } catch (e) {
+                                                    console.error(e);
+                                                }
+                                            }}
+                                        >
+                                            <Eye className="w-3 h-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Empty State Placeholder */}
+                        {(!templates || templates.length === 0) && !templatesLoading && (
+                            <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                <h3 className="text-sm font-medium text-gray-900">No templates yet</h3>
+                                <p className="text-sm text-gray-500 mt-1 mb-4">
+                                    Upload a PDF contract to create your first template.
+                                </p>
+                                <div className="flex items-center justify-center gap-3">
+                                    <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm" disabled={isUploading}>
+                                        <Upload className="w-3 h-3 mr-2" />
+                                        Upload PDF
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* Submissions Section */}
+                <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gray-100 rounded-lg">
+                                <FileText className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900">Submissions</h2>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <Input
+                                    placeholder="Search submissions..."
+                                    className="pl-9 h-9 w-64 bg-gray-50 border-gray-200"
+                                />
+                            </div>
+                            <Button variant="outline" size="sm" className="h-9">
+                                <Filter className="w-4 h-4 mr-2" />
+                                Filter
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                                <tr>
+                                    <th className="px-6 py-3 w-1/3">Document Name</th>
+                                    <th className="px-6 py-3">Status</th>
+                                    <th className="px-6 py-3">Recipient</th>
+                                    <th className="px-6 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {offersLoading ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                            Loading submissions...
+                                        </td>
+                                    </tr>
+                                ) : !offers || offers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                            No submissions found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    offers.map((offer: any) => (
+                                        <tr key={offer.id} className="hover:bg-gray-50/50 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-blue-50 rounded text-blue-600">
+                                                        <FileText className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-gray-900">
+                                                            {offer.template?.name || "Untitled Document"}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mt-0.5">
+                                                            {new Date(offer.created_at).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <Badge className={`uppercase text-[10px] tracking-wider font-bold px-2 py-0.5 border-0 ${getStatusColor(offer.status)}`}>
+                                                    {offer.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-gray-900 font-medium">
+                                                        {offer.prospect?.full_name}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {offer.prospect?.email}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {offer.status === "signed" ? (
+                                                        <Button variant="outline" size="sm" className="h-8 text-xs">
+                                                            <Download className="w-3 h-3 mr-1.5" />
+                                                            Download
+                                                        </Button>
+                                                    ) : (
+                                                        <Button variant="outline" size="sm" className="h-8 text-xs">
+                                                            <Copy className="w-3 h-3 mr-1.5" />
+                                                            Copy Link
+                                                        </Button>
+                                                    )}
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <Eye className="w-4 h-4 text-gray-500" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            {/* Send Offer Dialog */}
+            <Dialog open={showSendOfferDialog} onOpenChange={setShowSendOfferDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Send Offer</DialogTitle>
+                        <DialogDescription>
+                            Send a contract offer using the selected template
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-gray-700">
+                            Template: <span className="font-semibold">{selectedTemplate?.name}</span>
+                        </p>
+                        <p className="text-sm text-gray-500 mt-2">
+                            This will create a DocuSeal submission and send it to the prospect for signing.
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSendOfferDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSendOffer} className="bg-indigo-600 hover:bg-indigo-700">
+                            Send Offer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Template Builder Modal */}
+            {showTemplateBuilder && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col bg-white shadow-2xl rounded-2xl">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+                            <h2 className="text-lg font-bold text-gray-900">Edit Template</h2>
+                            <Button variant="ghost" size="icon" onClick={() => setShowTemplateBuilder(false)}>
+                                <XCircle className="w-5 h-5 text-gray-500" />
+                            </Button>
+                        </div>
+                        <div className="flex-1 bg-gray-50 relative">
+                            {/* DocuSeal Builder Component */}
+                            <docuseal-builder
+                                data-token={builderToken}
+                                data-template-id={builderTemplateId}
+                                data-autosave={false}
+                                data-save-button-text="Save Template"
+                                className="w-full h-full absolute inset-0"
+                            ></docuseal-builder>
+                        </div>
+                    </Card>
+                </div>
+            )}
+        </div>
+    );
+}
