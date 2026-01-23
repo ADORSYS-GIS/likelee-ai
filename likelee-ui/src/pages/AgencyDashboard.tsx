@@ -13073,7 +13073,10 @@ export default function AgencyDashboard() {
         talent_name: booking.talentName || booking.talent_name,
         client_name: booking.clientName || booking.client_name,
         date: booking.date,
-        industries: booking.industries || booking.industryTags || booking.clientIndustries,
+        industries:
+          booking.industries ||
+          booking.industryTags ||
+          booking.clientIndustries,
         notes: booking.notes,
       };
       const created = await apiCreateBooking(payload);
@@ -13089,7 +13092,8 @@ export default function AgencyDashboard() {
         toast({ title: "Email notification", description: msg });
       }
     } catch (e: any) {
-      const msg = typeof e === "string" ? e : e?.message || "Failed to create booking";
+      const msg =
+        typeof e === "string" ? e : e?.message || "Failed to create booking";
       if (/409/.test(msg) || /unavailable/i.test(msg)) {
         toast({
           title: "Talent unavailable",
@@ -13146,7 +13150,9 @@ export default function AgencyDashboard() {
   const onRemoveBookOut = async (id: string) => {
     try {
       // Use fetch DELETE against API base
-      const res = await fetch(api(`/api/book-outs/${id}`), { method: "DELETE" });
+      const res = await fetch(api(`/api/book-outs/${id}`), {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error(await res.text());
       setBookOuts(bookOuts.filter((b) => b.id !== id));
     } catch (e) {

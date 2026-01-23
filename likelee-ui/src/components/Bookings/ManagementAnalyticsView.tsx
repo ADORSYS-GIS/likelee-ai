@@ -68,60 +68,116 @@ export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
       {activeTab === "Manage Bookings" && (
         <ManageBookingsTab bookings={bookings} />
       )}
-      {activeTab === "Reports & Export" && <ReportsExportTab />}
+      {activeTab === "Reports & Export" && (
+        <ReportsExportTab bookings={bookings} />
+      )}
     </div>
   );
 };
 
 const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
-  // Calculate dynamic stats
   const now = new Date();
 
-  const overviewStats = bookings.reduce(
-    (acc, b) => {
-      const bDate = parseISO(b.date);
-      const isThisMonth = isSameMonth(bDate, now);
-      const isThisWeek = isSameWeek(bDate, now);
+  const safeParseDate = (v: any) => {
+    if (typeof v !== "string" || v.trim().length === 0) return null;
+    try {
+      const d = parseISO(v);
+      return isNaN(d.getTime()) ? null : d;
+    } catch (_e) {
+      return null;
+    }
+  };
 
-      if (isThisMonth) acc.monthCount++;
-      if (isThisWeek) acc.weekCount++;
-      if (isThisMonth && ((b.type || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed")) {
-        const cents = typeof b.rate_cents === "number" ? b.rate_cents : 0;
-        acc.monthRevenue += Math.max(0, cents) / 100;
-      }
+  const pickString = (...vals: any[]) => {
+    for (const v of vals) {
+      if (typeof v === "string" && v.trim().length > 0) return v;
+    }
+    return "";
+  };
 
-      // Type counts
-      const type = (b.type || b.status || "confirmed").toLowerCase();
-      acc.typeCounts[type] = (acc.typeCounts[type] || 0) + 1;
+  const normalizeType = (v: any) => {
+    const raw = String(v || "")
+      .trim()
+      .toLowerCase();
+    return raw.length > 0 ? raw : "other";
+  };
 
-      return acc;
-    },
-    {
+  const normalizeStatus = (v: any) => {
+    const raw = String(v || "")
+      .trim()
+      .toLowerCase();
+    return raw.length > 0 ? raw : "";
+  };
+
+  const formatTypeLabel = (type: string) => {
+    const t = normalizeType(type);
+    if (t === "test-shoot") return "Test Shoot";
+    return t
+      .split("-")
+      .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
+      .join(" ");
+  };
+
+  const overviewStats = useMemo(() => {
+    const acc = {
       monthCount: 0,
       weekCount: 0,
       monthRevenue: 0,
       typeCounts: {} as Record<string, number>,
-    },
-  );
+      castingCountMonth: 0,
+      confirmedCountMonth: 0,
+    };
 
-  const totalBookings = bookings?.length || 0;
+    for (const b of bookings || []) {
+      const bDate = safeParseDate(b?.date);
+      if (!bDate) continue;
 
-  // Recompute type counts more robustly (prefer booking.type else status)
-  const typeCounts: Record<string, number> = useMemo(() => {
+      const isThisMonth = isSameMonth(bDate, now);
+      const isThisWeek = isSameWeek(bDate, now);
+      const type = normalizeType(b?.type || b?.booking_type);
+      const status = normalizeStatus(b?.status);
+
+      if (isThisMonth) acc.monthCount++;
+      if (isThisWeek) acc.weekCount++;
+
+      acc.typeCounts[type] = (acc.typeCounts[type] || 0) + 1;
+
+      if (isThisMonth) {
+        if (type === "casting") acc.castingCountMonth++;
+        if (status === "confirmed" || status === "completed")
+          acc.confirmedCountMonth++;
+      }
+
+      if (isThisMonth && (status === "confirmed" || status === "completed")) {
+        const cents = typeof b?.rate_cents === "number" ? b.rate_cents : 0;
+        acc.monthRevenue += Math.max(0, cents) / 100;
+      }
+    }
+    return acc;
+  }, [bookings, now]);
+
+  const totalBookings = Array.isArray(bookings) ? bookings.length : 0;
+
+  const typeCounts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const b of bookings || []) {
-      const t = String(b.type || b.booking_type || b.status || "").toLowerCase() || "other";
+      const t = normalizeType(b?.type || b?.booking_type);
       m[t] = (m[t] || 0) + 1;
     }
     return m;
   }, [bookings]);
 
-  // Compute top booked talent from current bookings
   const topTalent = useMemo(() => {
     const m: Record<string, number> = {};
     for (const b of bookings || []) {
-      const name = b.talent_name || b.talentName || "Unknown";
-      m[name] = (m[name] || 0) + 1;
+      const name = pickString(
+        b?.talent_name,
+        b?.talentName,
+        b?.talent?.full_name,
+        b?.talent?.name,
+      );
+      const key = name || "Unknown";
+      m[key] = (m[key] || 0) + 1;
     }
     let best: { name: string; count: number } = { name: "—", count: 0 };
     for (const [name, count] of Object.entries(m)) {
@@ -129,6 +185,14 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
     }
     return best;
   }, [bookings]);
+
+  const conversionPct = useMemo(() => {
+    const denom =
+      overviewStats.castingCountMonth + overviewStats.confirmedCountMonth;
+    if (denom <= 0) return "—";
+    const pct = Math.round((overviewStats.confirmedCountMonth / denom) * 100);
+    return `${pct}%`;
+  }, [overviewStats]);
 
   const stats = [
     {
@@ -157,8 +221,8 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
     },
     {
       label: "Conversion",
-      value: "85%", // Keeping static for now as we don't have distinct casting/lead data
-      subtext: "Castings → Confirmed",
+      value: conversionPct,
+      subtext: "This month",
       icon: TrendingUp,
       color: "text-purple-600",
       bg: "bg-purple-50",
@@ -195,30 +259,34 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
           </h3>
           <div className="space-y-4">
             {Object.entries(typeCounts).length > 0 ? (
-              (Object.entries(typeCounts) as [string, number][]).map(([type, count]) => (
-                <div key={type} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 capitalize">
-                    {type}
-                  </span>
-                  <div className="flex items-center gap-4 flex-1 mx-4">
-                    <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          type === "confirmed"
-                            ? "bg-green-500"
-                            : type === "cancelled"
-                              ? "bg-red-500"
-                              : "bg-indigo-600"
-                        }`}
-                        style={{ width: `${totalBookings > 0 ? (count / totalBookings) * 100 : 0}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-bold text-gray-900">
-                      {count}
+              (Object.entries(typeCounts) as [string, number][]).map(
+                ([type, count]) => (
+                  <div key={type} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700 capitalize">
+                      {formatTypeLabel(type)}
                     </span>
+                    <div className="flex items-center gap-4 flex-1 mx-4">
+                      <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            type === "confirmed"
+                              ? "bg-green-500"
+                              : type === "cancelled"
+                                ? "bg-red-500"
+                                : "bg-indigo-600"
+                          }`}
+                          style={{
+                            width: `${totalBookings > 0 ? (count / totalBookings) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {count}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))
+                ),
+              )
             ) : (
               <p className="text-sm text-gray-500">No bookings yet</p>
             )}
@@ -235,7 +303,9 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
             <div className="flex items-center justify-between py-2 border-b last:border-0 border-gray-100">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-bold text-gray-400">#1</span>
-                <span className="text-sm font-bold text-gray-900">{topTalent.name}</span>
+                <span className="text-sm font-bold text-gray-900">
+                  {topTalent.name}
+                </span>
               </div>
               <Badge variant="secondary" className="font-bold">
                 {topTalent.count} bookings
@@ -257,10 +327,26 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
   const [sortKey, setSortKey] = useState("bookingDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  // Helper to parse currency
-  const parseCurrency = (str: string) => {
-    if (!str) return 0;
-    return Number(str.replace(/[^0-9.-]+/g, ""));
+  const pickString = (...vals: any[]) => {
+    for (const v of vals) {
+      if (typeof v === "string" && v.trim().length > 0) return v;
+    }
+    return "";
+  };
+
+  const safeParseDate = (v: any) => {
+    if (typeof v !== "string" || v.trim().length === 0) return null;
+    try {
+      const d = parseISO(v);
+      return isNaN(d.getTime()) ? null : d;
+    } catch (_e) {
+      return null;
+    }
+  };
+
+  const bookingRateDollars = (b: any) => {
+    const cents = typeof b?.rate_cents === "number" ? b.rate_cents : 0;
+    return Math.max(0, cents) / 100;
   };
 
   // Filter and sort bookings
@@ -269,12 +355,15 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesTalent = (b.talentName || "")
-          .toLowerCase()
-          .includes(query);
-        const matchesClient = (b.clientName || b.client || "")
-          .toLowerCase()
-          .includes(query);
+        const talentName = pickString(
+          b?.talent_name,
+          b?.talentName,
+          b?.talent?.full_name,
+          b?.talent?.name,
+        );
+        const clientName = pickString(b?.client_name, b?.clientName, b?.client);
+        const matchesTalent = talentName.toLowerCase().includes(query);
+        const matchesClient = clientName.toLowerCase().includes(query);
         const matchesLocation = (b.location || "")
           .toLowerCase()
           .includes(query);
@@ -290,15 +379,19 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
       }
 
       // Date range filter
-      if (dateStart && b.date) {
-        if (new Date(b.date) < new Date(dateStart)) return false;
+      if (dateStart && b?.date) {
+        const d = safeParseDate(b.date);
+        const ds = safeParseDate(dateStart);
+        if (d && ds && d < ds) return false;
       }
-      if (dateEnd && b.date) {
-        if (new Date(b.date) > new Date(dateEnd)) return false;
+      if (dateEnd && b?.date) {
+        const d = safeParseDate(b.date);
+        const de = safeParseDate(dateEnd);
+        if (d && de && d > de) return false;
       }
 
       // Rate range filter
-      const rate = parseCurrency(b.rate || b.fee || "0");
+      const rate = bookingRateDollars(b);
       if (rateMin && rate < Number(rateMin)) return false;
       if (rateMax && rate > Number(rateMax)) return false;
 
@@ -309,24 +402,38 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
 
       switch (sortKey) {
         case "bookingDate":
-          aVal = new Date(a.date || 0).getTime();
-          bVal = new Date(b.date || 0).getTime();
+          aVal = safeParseDate(a?.date)?.getTime() ?? 0;
+          bVal = safeParseDate(b?.date)?.getTime() ?? 0;
           break;
         case "talentName":
-          aVal = (a.talentName || "").toLowerCase();
-          bVal = (b.talentName || "").toLowerCase();
+          aVal = pickString(a?.talent_name, a?.talentName).toLowerCase();
+          bVal = pickString(b?.talent_name, b?.talentName).toLowerCase();
           break;
         case "clientName":
-          aVal = (a.clientName || a.client || "").toLowerCase();
-          bVal = (b.clientName || b.client || "").toLowerCase();
+          aVal = pickString(
+            a?.client_name,
+            a?.clientName,
+            a?.client,
+          ).toLowerCase();
+          bVal = pickString(
+            b?.client_name,
+            b?.clientName,
+            b?.client,
+          ).toLowerCase();
           break;
         case "rateAmount":
-          aVal = parseCurrency(a.rate || a.fee || "0");
-          bVal = parseCurrency(b.rate || b.fee || "0");
+          aVal = bookingRateDollars(a);
+          bVal = bookingRateDollars(b);
           break;
         case "createdDate":
-          aVal = new Date(a.createdAt || a.date || 0).getTime();
-          bVal = new Date(b.createdAt || b.date || 0).getTime();
+          aVal =
+            safeParseDate(
+              a?.created_at || a?.createdAt || a?.date,
+            )?.getTime() ?? 0;
+          bVal =
+            safeParseDate(
+              b?.created_at || b?.createdAt || b?.date,
+            )?.getTime() ?? 0;
           break;
         default:
           return 0;
@@ -543,15 +650,24 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
             >
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
-                  {(booking.talentName || "?")[0].toUpperCase()}
+                  {pickString(
+                    booking?.talent_name,
+                    booking?.talentName,
+                    "?",
+                  )[0].toUpperCase()}
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900">
-                    {booking.talentName || "Unknown"}
+                    {pickString(booking?.talent_name, booking?.talentName) ||
+                      "Unknown"}
                   </h4>
                   <p className="text-xs text-gray-500">
-                    {booking.status || booking.type || "Pending"} •{" "}
-                    {booking.bookingType || "Booking"}
+                    {pickString(booking?.status, booking?.type) || "Pending"} •{" "}
+                    {pickString(
+                      booking?.type,
+                      booking?.bookingType,
+                      booking?.booking_type,
+                    ) || "Booking"}
                   </p>
                 </div>
               </div>
@@ -563,14 +679,21 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
                       : "No date"}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {booking.callTime || "--:--"}
+                    {pickString(booking?.call_time, booking?.callTime) ||
+                      "--:--"}
                   </p>
                 </div>
                 <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-3">
-                  {booking.status || booking.type || "Pending"}
+                  {pickString(booking?.status, booking?.type) || "Pending"}
                 </Badge>
                 <p className="font-bold text-gray-900">
-                  {booking.rate || booking.fee || "$0"}
+                  {(() => {
+                    const dollars = bookingRateDollars(booking);
+                    const currency =
+                      pickString(booking?.currency, "USD") || "USD";
+                    if (dollars <= 0) return "—";
+                    return `${currency} ${dollars.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+                  })()}
                 </p>
               </div>
             </div>
@@ -585,12 +708,14 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
   );
 };
 
-const ReportsExportTab = () => {
+const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
   const { toast } = useToast();
+
+  const bookingsCount = Array.isArray(bookings) ? bookings.length : 0;
 
   const handleExport = (format: string) => {
     const { dismiss } = toast({
-      title: `Exporting 1 bookings as ${format}...`,
+      title: `Exporting ${bookingsCount} bookings as ${format}...`,
       action: (
         <Button
           variant="outline"
@@ -628,7 +753,7 @@ const ReportsExportTab = () => {
         <div className="mb-6">
           <h3 className="text-lg font-bold text-gray-900">Export Bookings</h3>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Export 1 filtered bookings to your preferred format
+            Export {bookingsCount} filtered bookings to your preferred format
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   addDays,
   addMonths,
@@ -27,6 +27,7 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { ManageAvailabilityModal } from "../Modals/ManageAvailabilityModal";
 import { NewBookingModal } from "../Modals/NewBookingModal";
 import { BookingDetailsModal } from "../Modals/BookingDetailsModal";
+import { getAgencyTalents } from "@/api/functions";
 
 export const CalendarScheduleTab = ({
   bookings,
@@ -54,6 +55,38 @@ export const CalendarScheduleTab = ({
   );
   // Ensure currentDate starts at today, resolving 13th vs 14th issue
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+
+  const [talentViewMode, setTalentViewMode] = useState<
+    "single" | "all" | "selected"
+  >("single");
+  const [selectedTalentId, setSelectedTalentId] = useState<string>("");
+  const [talents, setTalents] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await getAgencyTalents();
+        if (cancelled) return;
+        const arr = Array.isArray(rows) ? rows : [];
+        const mapped = arr
+          .map((r: any) => ({
+            id: String(r.id || r.user_id || r.creator_id || ""),
+            name: String(r.full_name || r.name || r.stage_name || "Unnamed"),
+          }))
+          .filter((t: any) => t.id);
+        setTalents(mapped);
+        if (!selectedTalentId && mapped.length > 0) {
+          setSelectedTalentId(mapped[0].id);
+        }
+      } catch (_e) {
+        if (!cancelled) setTalents([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTalentId]);
 
   const handlePrevDay = () => setCurrentDate((prev) => subDays(prev, 1));
   const handleNextDay = () => setCurrentDate((prev) => addDays(prev, 1));
@@ -96,15 +129,42 @@ export const CalendarScheduleTab = ({
 
   const monthStr = format(currentDate, "yyyy-MM");
   const safeStr = (v?: any) => (typeof v === "string" ? v : "");
+
+  const bookingTalentId = (b: any) => {
+    const v = b?.talent_id || b?.talentId || b?.talent?.id;
+    return typeof v === "string" ? v : v ? String(v) : "";
+  };
+
+  const activeTalentId = talentViewMode === "all" ? "" : selectedTalentId;
+
+  const visibleBookings = useMemo(() => {
+    if (!Array.isArray(bookings)) return [];
+    if (!activeTalentId) return bookings;
+    return bookings.filter((b: any) => bookingTalentId(b) === activeTalentId);
+  }, [bookings, activeTalentId]);
+
+  const visibleBookOuts = useMemo(() => {
+    if (!Array.isArray(bookOuts)) return [];
+    if (!activeTalentId) return bookOuts;
+    return bookOuts.filter((bo: any) => {
+      const v = bo?.talent_id || bo?.talentId;
+      const id = typeof v === "string" ? v : v ? String(v) : "";
+      return id === activeTalentId;
+    });
+  }, [bookOuts, activeTalentId]);
+
   const totalCount = Array.isArray(bookings) ? bookings.length : 0;
   const thisMonthCount = Array.isArray(bookings)
     ? bookings.filter((b: any) => safeStr(b.date).startsWith(monthStr)).length
     : 0;
   const confirmedCount = Array.isArray(bookings)
-    ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "confirmed").length
+    ? bookings.filter(
+        (b: any) => safeStr(b.status).toLowerCase() === "confirmed",
+      ).length
     : 0;
   const pendingCount = Array.isArray(bookings)
-    ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "pending").length
+    ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "pending")
+        .length
     : 0;
   const stats = [
     { label: "Total Bookings", value: String(totalCount) },
@@ -126,14 +186,21 @@ export const CalendarScheduleTab = ({
   const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const countBookOutsOnDate = (dateStr: string) => {
-    if (!Array.isArray(bookOuts) || bookOuts.length === 0) return 0;
-    return bookOuts.filter((bo: any) => {
+    if (!Array.isArray(visibleBookOuts) || visibleBookOuts.length === 0)
+      return 0;
+    return visibleBookOuts.filter((bo: any) => {
       const s = bo.startDate || bo.start_date;
       const e = bo.endDate || bo.end_date || s;
       if (typeof s !== "string" || typeof e !== "string") return false;
       return s <= dateStr && dateStr <= e;
     }).length;
   };
+
+  const selectedTalentName = useMemo(() => {
+    if (!selectedTalentId) return "";
+    const t = talents.find((x) => x.id === selectedTalentId);
+    return t?.name || "";
+  }, [talents, selectedTalentId]);
 
   return (
     <div className="space-y-6">
@@ -304,7 +371,10 @@ export const CalendarScheduleTab = ({
                 <SelectItem value="agenda">Agenda</SelectItem>
               </SelectContent>
             </Select>
-            <Select defaultValue="single">
+            <Select
+              value={talentViewMode}
+              onValueChange={(v) => setTalentViewMode(v as any)}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -314,6 +384,24 @@ export const CalendarScheduleTab = ({
                 <SelectItem value="selected">Selected Talent</SelectItem>
               </SelectContent>
             </Select>
+
+            {talentViewMode !== "all" && (
+              <Select
+                value={selectedTalentId}
+                onValueChange={setSelectedTalentId}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select talent" />
+                </SelectTrigger>
+                <SelectContent>
+                  {talents.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               onClick={() => {
@@ -370,7 +458,9 @@ export const CalendarScheduleTab = ({
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth() + 1;
               const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-              const dayBookings = bookings.filter((b) => b.date === dayString);
+              const dayBookings = visibleBookings.filter(
+                (b) => b.date === dayString,
+              );
               const dayBookOutsCount = countBookOutsOnDate(dayString);
 
               const getEventColor = (type?: string, status?: string) => {
@@ -414,7 +504,22 @@ export const CalendarScheduleTab = ({
                   onClick={() => {
                     const newDate = new Date(currentDate);
                     newDate.setDate(d);
+                    // First click selects the day; clicking the already-selected day opens New Booking
+                    const wasSelected = d === currentDate.getDate();
                     setCurrentDate(newDate);
+                    if (wasSelected) {
+                      setBookingMode("new");
+                      setSelectedBooking({
+                        date: dayString,
+                        ...(selectedTalentName
+                          ? {
+                              talentName: selectedTalentName,
+                              talent_name: selectedTalentName,
+                            }
+                          : {}),
+                      });
+                      setNewBookingOpen(true);
+                    }
                   }}
                 >
                   <span
@@ -428,10 +533,16 @@ export const CalendarScheduleTab = ({
                   </span>
                   <div className="mt-1 space-y-1">
                     {dayBookings.map((b, idx) => {
-                      const statusVal = (b.status || b.booking_status) as string | undefined;
-                      const typeVal = (b.type || b.bookingType || b.booking_type) as string | undefined;
+                      const statusVal = (b.status || b.booking_status) as
+                        | string
+                        | undefined;
+                      const typeVal = (b.type ||
+                        b.bookingType ||
+                        b.booking_type) as string | undefined;
                       const pick = (v?: any) =>
-                        typeof v === "string" && v.trim().length > 0 ? v.trim() : undefined;
+                        typeof v === "string" && v.trim().length > 0
+                          ? v.trim()
+                          : undefined;
                       const displayName =
                         pick(b.talent_name) ||
                         pick(b.talentName) ||
@@ -520,7 +631,7 @@ export const CalendarScheduleTab = ({
       <ManageAvailabilityModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        bookOuts={bookOuts}
+        bookOuts={visibleBookOuts}
         onAddBookOut={onAddBookOut}
         onRemoveBookOut={onRemoveBookOut}
       />
@@ -534,7 +645,7 @@ export const CalendarScheduleTab = ({
             onAddBooking(b);
           }
         }}
-        initialData={bookingMode === "new" ? undefined : selectedBooking}
+        initialData={selectedBooking}
         mode={bookingMode}
       />
 

@@ -195,62 +195,62 @@ export const ClientDatabaseTab = () => {
                         .includes(search.trim().toLowerCase()),
                     )
                     .map((client) => (
-                    <tr
-                      key={client.id}
-                      className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
-                      onClick={() => setSelectedClient(client)}
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="font-bold text-gray-900">
-                          {client.company}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {client.email}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-700">
-                          {client.contact}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex gap-1">
-                          {(client.industryTags || [])
-                            .slice(0, 2)
-                            .map((t: string) => (
+                      <tr
+                        key={client.id}
+                        className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                        onClick={() => setSelectedClient(client)}
+                      >
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="font-bold text-gray-900">
+                            {client.company}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {client.email}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-700">
+                            {client.contact}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex gap-1">
+                            {(client.industryTags || [])
+                              .slice(0, 2)
+                              .map((t: string) => (
+                                <Badge
+                                  key={t}
+                                  variant="secondary"
+                                  className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                                >
+                                  {t}
+                                </Badge>
+                              ))}
+                            {(client.industryTags || []).length > 2 && (
                               <Badge
-                                key={t}
                                 variant="secondary"
-                                className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                                className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
                               >
-                                {t}
+                                +{(client.industryTags || []).length - 2}
                               </Badge>
-                            ))}
-                          {(client.industryTags || []).length > 2 && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
-                            >
-                              +{(client.industryTags || []).length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-gray-900">
-                          {client.bookings_count || 0}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-extrabold text-green-600">
-                          ${(client.revenue || 0).toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right">
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
-                      </td>
-                    </tr>
-                  ))}
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">
+                            {client.bookings_count || 0}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-extrabold text-green-600">
+                            ${(client.revenue || 0).toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

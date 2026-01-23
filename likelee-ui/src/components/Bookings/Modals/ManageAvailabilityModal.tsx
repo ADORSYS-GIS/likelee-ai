@@ -62,7 +62,9 @@ export const ManageAvailabilityModal = ({
   };
 
   const fmtReason = (r?: string) =>
-    String(r || "personal").replace("_", " ").toLowerCase();
+    String(r || "personal")
+      .replace("_", " ")
+      .toLowerCase();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,8 +90,12 @@ export const ManageAvailabilityModal = ({
               <div className="p-4 bg-gray-50 rounded-full mb-4">
                 <Calendar className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="font-bold text-gray-900 mb-1">No book-outs scheduled</h3>
-              <p className="text-sm text-gray-500">Talent will appear available for all dates</p>
+              <h3 className="font-bold text-gray-900 mb-1">
+                No book-outs scheduled
+              </h3>
+              <p className="text-sm text-gray-500">
+                Talent will appear available for all dates
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -98,11 +104,17 @@ export const ManageAvailabilityModal = ({
                 const end = bo.endDate || bo.end_date || start;
                 const reason = fmtReason(bo.reason);
                 return (
-                  <Card key={bo.id} className="p-4 flex items-center justify-between">
+                  <Card
+                    key={bo.id}
+                    className="p-4 flex items-center justify-between"
+                  >
                     <div className="text-sm">
-                      <div className="font-bold text-gray-900">{getTalentName(bo)}</div>
+                      <div className="font-bold text-gray-900">
+                        {getTalentName(bo)}
+                      </div>
                       <div className="text-gray-500">
-                        {start} – {end} · <span className="capitalize">{reason}</span>
+                        {start} – {end} ·{" "}
+                        <span className="capitalize">{reason}</span>
                       </div>
                     </div>
                     <Button

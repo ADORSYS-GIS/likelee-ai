@@ -22,8 +22,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { ToastAction } from "@/components/ui/toast";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import { listBookingNotifications } from "@/api/functions";
 
@@ -52,20 +50,39 @@ type BookingNotificationRow = {
   created_at: string;
 };
 
-export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?: BookingLike[] }) => {
+export const NotificationsTab = ({
+  bookings = [] as BookingLike[],
+}: {
+  bookings?: BookingLike[];
+}) => {
   const { toast } = useToast();
   const [activeSubNav, setActiveSubNav] = useState("logs");
   const [testNotificationType, setTestNotificationType] = useState("");
   const [testTargetTalent, setTestTargetTalent] = useState("");
 
-  const [bookingNotifications, setBookingNotifications] = useState<BookingNotificationRow[]>([]);
+  const [bookingNotifications, setBookingNotifications] = useState<
+    BookingNotificationRow[]
+  >([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Controlled settings for Booking Created/Confirmed channels
-  const [createdChannels, setCreatedChannels] = useState<{ email: boolean; sms: boolean; push: boolean }>(() => {
+  const [createdChannels, setCreatedChannels] = useState<{
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+  }>(() => {
     const raw = localStorage.getItem("likelee.notifications.createdChannels");
     const parsed = raw ? JSON.parse(raw) : {};
-    return { email: true, sms: false, push: false, ...parsed, sms: false, push: false, email: true };
+    const v: { email: boolean; sms: boolean; push: boolean } = {
+      email: true,
+      sms: false,
+      push: false,
+      ...(parsed || {}),
+    };
+    v.email = true;
+    v.sms = false;
+    v.push = false;
+    return v;
   });
 
   useEffect(() => {
@@ -117,7 +134,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
     const emailRows = bookingNotifications.filter(
       (n) => (n.channel || "").toLowerCase() === "email",
     );
-    const ok = emailRows.filter((n) => (n.meta_json as any)?.smtp_status === "ok").length;
+    const ok = emailRows.filter(
+      (n) => (n.meta_json as any)?.smtp_status === "ok",
+    ).length;
     const failed = emailRows.length - ok;
     return [
       {
@@ -169,7 +188,10 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
 
     const rows = bookingNotifications
       .slice()
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
       .slice(0, 50);
 
     for (const r of rows) {
@@ -177,7 +199,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
       if (ch !== "EMAIL" && ch !== "SMS" && ch !== "PUSH") continue;
       if (!enabledTypes.includes(ch as any)) continue;
 
-      const ts = r.created_at ? format(parseISO(r.created_at), "MMM d, yyyy") : "";
+      const ts = r.created_at
+        ? format(parseISO(r.created_at), "MMM d, yyyy")
+        : "";
       const ok = (r.meta_json as any)?.smtp_status === "ok";
       items.push({
         type: ch as any,
@@ -264,7 +288,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
 
             <div className="space-y-3">
               {loadingLogs && (
-                <div className="p-6 text-center text-sm text-gray-500">Loading…</div>
+                <div className="p-6 text-center text-sm text-gray-500">
+                  Loading…
+                </div>
               )}
               {!loadingLogs && notifications.length === 0 && (
                 <div className="p-6 text-center text-sm text-gray-500">
@@ -370,7 +396,10 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                       type="checkbox"
                       checked={createdChannels.email}
                       onChange={(e) =>
-                        setCreatedChannels((prev) => ({ ...prev, email: e.target.checked }))
+                        setCreatedChannels((prev) => ({
+                          ...prev,
+                          email: e.target.checked,
+                        }))
                       }
                       className="sr-only peer"
                     />
@@ -383,7 +412,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                     <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                    <span className="text-xs text-gray-400 font-bold">
+                      Coming Soon
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -401,7 +432,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                     <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                    <span className="text-xs text-gray-400 font-bold">
+                      Coming Soon
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -444,10 +477,18 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                     <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                    <span className="text-xs text-gray-400 font-bold">
+                      Coming Soon
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" disabled checked={false} readOnly />
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      disabled
+                      checked={false}
+                      readOnly
+                    />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
@@ -457,7 +498,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                     <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                    <span className="text-xs text-gray-400 font-bold">
+                      Coming Soon
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -501,7 +544,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                     <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                    <span className="text-xs text-gray-400 font-bold">
+                      Coming Soon
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -520,7 +565,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                     <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                    <span className="text-xs text-gray-400 font-bold">
+                      Coming Soon
+                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -570,7 +617,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                         <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -589,7 +638,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                         <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -628,10 +679,18 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                         <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" disabled checked={false} readOnly />
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          disabled
+                          checked={false}
+                          readOnly
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -641,10 +700,18 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                         <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" disabled checked={false} readOnly />
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          disabled
+                          checked={false}
+                          readOnly
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -674,10 +741,18 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                         <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" disabled checked={false} readOnly />
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          disabled
+                          checked={false}
+                          readOnly
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -687,10 +762,18 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                         <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                        <span className="text-xs text-gray-400 font-bold">
+                          Coming Soon
+                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" disabled checked={false} readOnly />
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          disabled
+                          checked={false}
+                          readOnly
+                        />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -794,12 +877,19 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                   className="p-4 border border-gray-200 bg-white rounded-xl"
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={talent.image || ""} alt={talent.name} />
-                      <AvatarFallback className="bg-gray-100 text-gray-600 font-bold">
-                        {talent.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
+                      {talent.image ? (
+                        <img
+                          src={talent.image}
+                          alt={talent.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-600 font-bold text-xs">
+                          {talent.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
                     <div>
                       <h4 className="font-bold text-gray-900">{talent.name}</h4>
                       <p className="text-sm text-gray-500">{talent.email}</p>
@@ -824,7 +914,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                       <span className="text-sm font-bold text-gray-900">
                         SMS
                       </span>
-                      <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                      <span className="text-xs text-gray-400 font-bold">
+                        Coming Soon
+                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
@@ -840,7 +932,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                       <span className="text-sm font-bold text-gray-900">
                         Push
                       </span>
-                      <span className="text-xs text-gray-400 font-bold">Coming Soon</span>
+                      <span className="text-xs text-gray-400 font-bold">
+                        Coming Soon
+                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
@@ -941,9 +1035,9 @@ export const NotificationsTab = ({ bookings = [] as BookingLike[] }: { bookings?
                   title: "Notification Sent",
                   description: `Test ${testNotificationType} notification sent to ${talentName}!`,
                   action: (
-                    <ToastAction altText="OK" onClick={() => {}}>
+                    <Button variant="outline" size="sm" onClick={() => {}}>
                       OK
-                    </ToastAction>
+                    </Button>
                   ),
                 });
               }}

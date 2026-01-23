@@ -172,10 +172,13 @@ export const exchangeStripeOAuthCode = async (
 };
 
 // Bookings (Agency Dashboard)
-export const listBookings = (params?: { date_start?: string; date_end?: string }) =>
-  base44Client.get(`/api/bookings`, { params: params || {} });
+export const listBookings = (params?: {
+  date_start?: string;
+  date_end?: string;
+}) => base44Client.get(`/api/bookings`, { params: params || {} });
 
-export const createBooking = (data: any) => base44Client.post(`/api/bookings`, data);
+export const createBooking = (data: any) =>
+  base44Client.post(`/api/bookings`, data);
 
 export const updateBooking = (id: string, data: any) =>
   base44Client.post(`/api/bookings/${id}`, data);
@@ -188,10 +191,7 @@ export const getAgencyTalents = (params?: { q?: string }) =>
   base44Client.get(`/api/agency/talents`, { params: params || {} });
 
 // Create booking with files (multipart)
-export const createBookingWithFiles = async (
-  data: any,
-  files: File[],
-) => {
+export const createBookingWithFiles = async (data: any, files: File[]) => {
   const fd = new FormData();
   fd.append("data", JSON.stringify(data));
   for (const f of files) fd.append("files", f);
@@ -205,8 +205,10 @@ export const createAgencyClient = (data: any) =>
   base44Client.post(`/api/agency/clients`, data);
 
 // Book-Outs (Availability)
-export const listBookOuts = (params?: { date_start?: string; date_end?: string }) =>
-  base44Client.get(`/api/book-outs`, { params: params || {} });
+export const listBookOuts = (params?: {
+  date_start?: string;
+  date_end?: string;
+}) => base44Client.get(`/api/book-outs`, { params: params || {} });
 
 export const createBookOut = (data: {
   talent_id: string;
@@ -225,4 +227,6 @@ export const notifyBookingCreatedEmail = (booking_id: string) =>
   base44Client.post(`/api/notifications/booking-created-email`, { booking_id });
 
 export const listBookingNotifications = (params?: { limit?: number }) =>
-  base44Client.get(`/api/notifications/booking-notifications`, { params: params || {} });
+  base44Client.get(`/api/notifications/booking-notifications`, {
+    params: params || {},
+  });

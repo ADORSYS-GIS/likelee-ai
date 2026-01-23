@@ -48,15 +48,23 @@ export const TalentAvailabilityTab = ({
     for (const t of talents) m.set(String(t.id), String(t.name));
     return m;
   }, [talents]);
-  const getTalentName = (id: string) => nameById.get(String(id)) || "Unknown Talent";
+  const getTalentName = (id: string) =>
+    nameById.get(String(id)) || "Unknown Talent";
 
   const fmtDate = (v?: string) => {
     if (!v) return "";
     const d = new Date(v);
     if (isNaN(d.getTime())) return v; // show raw if not ISO parseable
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
-  const fmtReason = (r?: string) => String(r || "personal").replace("_", " ").toLowerCase();
+  const fmtReason = (r?: string) =>
+    String(r || "personal")
+      .replace("_", " ")
+      .toLowerCase();
 
   return (
     <div className="space-y-6">

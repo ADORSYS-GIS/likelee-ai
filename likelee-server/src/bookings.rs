@@ -459,7 +459,10 @@ pub async fn upload_booking_file(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let rec = arr.first().cloned().unwrap_or(serde_json::json!({"id": ""}));
+    let rec = arr
+        .first()
+        .cloned()
+        .unwrap_or(serde_json::json!({"id": ""}));
     let id = rec
         .get("id")
         .and_then(|v| v.as_str())

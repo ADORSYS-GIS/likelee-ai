@@ -60,7 +60,8 @@ export const BookingsView = ({
         onRemoveBookOut={onRemoveBookOut}
       />
     );
-  if (activeSubTab === "Notifications") return <NotificationsTab bookings={bookings} />;
+  if (activeSubTab === "Notifications")
+    return <NotificationsTab bookings={bookings} />;
   if (activeSubTab === "Management & Analytics")
     return <ManagementAnalyticsView bookings={bookings} />;
 
