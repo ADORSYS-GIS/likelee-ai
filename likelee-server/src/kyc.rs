@@ -50,7 +50,14 @@ async fn update_verification_status(
     };
 
     let body = serde_json::to_string(payload).map_err(|e| e.to_string())?;
-    match state.pg.from(table).eq("id", profile_id).update(body).execute().await {
+    match state
+        .pg
+        .from(table)
+        .eq("id", profile_id)
+        .update(body)
+        .execute()
+        .await
+    {
         Ok(_) => {}
         Err(e) => {
             let msg = e.to_string();
@@ -102,7 +109,10 @@ pub async fn create_session(
         if url.starts_with("https://") {
             Some(url)
         } else {
-            warn!("Skipping Veriff return_url because it is not HTTPS: {}", url);
+            warn!(
+                "Skipping Veriff return_url because it is not HTTPS: {}",
+                url
+            );
             None
         }
     });
@@ -313,7 +323,8 @@ pub async fn get_status(
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
-                    let _ = update_verification_status(&state, profile_id, &user.role, &payload).await;
+                    let _ =
+                        update_verification_status(&state, profile_id, &user.role, &payload).await;
                     let resp2 = state
                         .pg
                         .from(table)
