@@ -45,7 +45,7 @@
     "@tanstack/react-query": "^5.90.9",
     "@types/leaflet": "^1.9.12",
     "@types/leaflet.markercluster": "^1.5.6",
-    "aws-amplify": "^6.15.10",
+    "aws-amplify": "^6.16.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -80,7 +80,12 @@
   },
   "overrides": {
     "@smithy/config-resolver": "^4.4.5",
-    "@smithy/util-defaults-mode-node": "^4.2.20"
+    "@smithy/util-defaults-mode-node": "^4.2.20",
+    "@tensorflow/tfjs-core": "4.11.0",
+    "@tensorflow/tfjs-converter": "4.11.0",
+    "@tensorflow/tfjs-backend-cpu": "4.11.0",
+    "@tensorflow/tfjs-backend-webgl": "4.11.0",
+    "@tensorflow/tfjs-backend-wasm": "4.11.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -101,7 +106,7 @@
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.17",
-    "ts-node": "^1.7.1",
+    "ts-node": "^10.9.2",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
     "uuid": "^13.0.0",
