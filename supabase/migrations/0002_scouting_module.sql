@@ -54,6 +54,23 @@ CREATE TABLE IF NOT EXISTS public.scouting_trips (
   end_date date,
   status text DEFAULT 'planned', -- planned, ongoing, completed
   description text,
+
+  -- Consolidated fields
+  trip_type text,
+  start_time text,
+  end_time text,
+  scout_ids text[],
+  scout_names text[],
+  weather text,
+  prospects_approached integer DEFAULT 0,
+  prospects_added integer DEFAULT 0,
+  prospects_agreed integer DEFAULT 0, -- Number of prospects who agreed/submitted during the trip
+  conversion_rate numeric(5,2) DEFAULT 0,
+  total_cost numeric(12,2) DEFAULT 0,
+  photos text[],
+  latitude numeric(10,7),
+  longitude numeric(10,7),
+  locations_visited jsonb DEFAULT '[]'::jsonb,
   
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -156,5 +173,6 @@ CREATE POLICY "Agency members can all events" ON public.scouting_events
 DROP POLICY IF EXISTS "Agency members can all submissions" ON public.scouting_submissions;
 CREATE POLICY "Agency members can all submissions" ON public.scouting_submissions
   FOR ALL USING (agency_id = auth.uid());
+
 
 COMMIT;
