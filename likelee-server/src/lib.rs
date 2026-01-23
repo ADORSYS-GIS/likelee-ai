@@ -15,4 +15,6 @@ pub mod moderation;
 pub mod payouts;
 pub mod reference_images;
 pub mod router;
+pub mod scouting;
+pub mod services;
 pub mod voice;

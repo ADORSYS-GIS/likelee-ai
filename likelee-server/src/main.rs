@@ -118,6 +118,11 @@ async fn main() {
         smtp_password: cfg.smtp_password.clone(),
         email_from: cfg.email_from.clone(),
         email_contact_to: cfg.email_contact_to.clone(),
+
+        docuseal_api_key: cfg.docuseal_api_key.clone(),
+        docuseal_api_url: cfg.docuseal_api_url.clone(),
+        docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
+        docuseal_user_email: cfg.docuseal_user_email.clone(),
     };
 
     let app = likelee_server::router::build_router(state);
