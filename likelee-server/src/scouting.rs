@@ -530,11 +530,9 @@ pub struct SyncTemplatesRequest {
 /// POST /api/scouting/templates/sync
 pub async fn sync_templates(
     State(state): State<AppState>,
-    user: AuthUser,
     Json(payload): Json<SyncTemplatesRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     info!(
-        user_id = %user.id,
         agency_id = %payload.agency_id,
         "Syncing templates from DocuSeal"
     );
@@ -588,24 +586,42 @@ pub async fn sync_templates(
             "updated_at": chrono::Utc::now().to_rfc3339(),
         });
 
-        // We use upsert (insert with on_conflict)
-        // Note: PostgREST upsert requires ON CONFLICT column.
-        // Our table has (agency_id, docuseal_template_id) unique constraint?
-        // Let's check migration.
-        // Migration 0008 says: UNIQUE(agency_id, docuseal_template_id)
-        
-        let _ = pg
+        // Check if template already exists for this agency
+        let exists_response = pg
             .from("scouting_templates")
-            .insert(template_data.to_string())
-            .upsert("true") // Enable upsert
-            .on_conflict("agency_id,docuseal_template_id") // Specify conflict columns
+            .select("id")
+            .eq("agency_id", &payload.agency_id)
+            .eq("docuseal_template_id", template.id.to_string())
             .execute()
-            .await
-            .map_err(|e| {
-                error!(error = %e, "Failed to upsert template {}", template.id);
-                // Continue even if one fails
-            });
-            
+            .await;
+
+        let exists = match exists_response {
+            Ok(resp) => {
+                let text = resp.text().await.unwrap_or_default();
+                let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+                rows.as_array().map(|a| !a.is_empty()).unwrap_or(false)
+            }
+            Err(_) => false,
+        };
+
+        if exists {
+            info!(template_id = template.id, name = %template.name, "Updating existing template");
+            let _ = pg
+                .from("scouting_templates")
+                .update(template_data.to_string())
+                .eq("agency_id", &payload.agency_id)
+                .eq("docuseal_template_id", template.id.to_string())
+                .execute()
+                .await;
+        } else {
+            info!(template_id = template.id, name = %template.name, "Inserting new template");
+            let _ = pg
+                .from("scouting_templates")
+                .insert(template_data.to_string())
+                .execute()
+                .await;
+        }
+
         synced_count += 1;
     }
 
@@ -723,4 +739,105 @@ pub async fn create_template_from_pdf(
         slug: template.slug,
         name: template.name,
     }))
+}
+
+/// PUT /api/scouting/templates/:id/upload
+pub async fn update_template_from_pdf(
+    State(state): State<AppState>,
+    user: AuthUser,
+    axum::extract::Path(template_id): axum::extract::Path<i32>,
+    mut multipart: axum::extract::Multipart,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    use base64::{engine::general_purpose, Engine as _};
+
+    info!(user_id = %user.id, template_id, "Processing PDF upload for template update");
+
+    let mut file_name = String::new();
+    let mut file_content = Vec::new();
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        error!(error = %e, "Failed to read multipart field");
+        (StatusCode::BAD_REQUEST, e.to_string())
+    })? {
+        let name = field.name().unwrap_or_default().to_string();
+
+        if name == "file" {
+            file_name = field.file_name().unwrap_or("document.pdf").to_string();
+            file_content = field.bytes().await.map_err(|e| {
+                error!(error = %e, "Failed to read file content");
+                (StatusCode::BAD_REQUEST, e.to_string())
+            })?.to_vec();
+        }
+    }
+
+    if file_content.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Missing file".to_string()));
+    }
+
+    // Convert to base64 with Data URI prefix
+    let base64_content = format!(
+        "data:application/pdf;base64,{}",
+        general_purpose::STANDARD.encode(&file_content)
+    );
+
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_api_url.clone(),
+    );
+
+    // Get agency_id from database first
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+
+    let response = pg
+        .from("scouting_templates")
+        .select("agency_id")
+        .eq("docuseal_template_id", template_id.to_string())
+        .single()
+        .execute()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to fetch template from database");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    let body = response.text().await.unwrap_or_default();
+    let template_record: serde_json::Value = serde_json::from_str(&body).map_err(|e| {
+        error!(error = %e, body = %body, "Failed to parse template record");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let _agency_id = template_record["agency_id"].as_str().ok_or_else(|| {
+        error!("Missing agency_id in template record");
+        (StatusCode::INTERNAL_SERVER_ERROR, "Missing agency_id".to_string())
+    })?;
+
+    // 1. Delete old template in DocuSeal
+    let _ = docuseal_client.delete_template(template_id).await.map_err(|e| {
+        error!(error = %e, template_id, "Failed to delete old template in DocuSeal (continuing)");
+    });
+
+    // 2. Create new template in DocuSeal
+    let new_template = docuseal_client
+        .create_template(file_name.clone(), file_name.clone(), base64_content)
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to create new template in DocuSeal");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    // 3. Update database record with new template ID and name
+    let _ = pg
+        .from("scouting_templates")
+        .update(json!({ 
+            "docuseal_template_id": new_template.id,
+            "name": new_template.name,
+            "updated_at": chrono::Utc::now().to_rfc3339() 
+        }).to_string())
+        .eq("docuseal_template_id", template_id.to_string())
+        .execute()
+        .await;
+
+    Ok(StatusCode::OK)
 }

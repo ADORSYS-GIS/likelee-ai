@@ -51,6 +51,9 @@ export default function ScoutingOffers() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [isSyncingOffers, setIsSyncingOffers] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isReplacing, setIsReplacing] = useState(false);
+    const [replacingTemplateId, setReplacingTemplateId] = useState<number | null>(null);
+    const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
     // Builder state
     const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
@@ -106,6 +109,34 @@ export default function ScoutingOffers() {
         },
         enabled: !!prospectId,
     });
+
+    const handleReplacePdf = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !replacingTemplateId) return;
+
+        setIsReplacing(true);
+        try {
+            await scoutingService.updateTemplateFromPdf(replacingTemplateId, file);
+
+            toast({
+                title: "Template Updated",
+                description: "The contract document has been replaced successfully.",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["templates"] });
+        } catch (error) {
+            console.error("Error replacing PDF:", error);
+            toast({
+                title: "Update Failed",
+                description: "Failed to replace the contract document.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsReplacing(false);
+            setReplacingTemplateId(null);
+            if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
+        }
+    };
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -180,12 +211,17 @@ export default function ScoutingOffers() {
         }
     };
 
-    const handleSyncTemplates = async () => {
+    const handleSyncTemplates = async (delayMs: number = 0) => {
+        if (delayMs > 0) {
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+
         setIsSyncing(true);
         try {
             const agencyId = await scoutingService.getUserAgencyId();
             if (!agencyId) throw new Error("Agency not found");
 
+            console.log("Syncing templates from DocuSeal...");
             await scoutingService.syncTemplates(agencyId);
 
             toast({
@@ -323,6 +359,13 @@ export default function ScoutingOffers() {
                                 )}
                                 Upload Contract
                             </Button>
+                            <input
+                                type="file"
+                                accept=".pdf,.docx,.doc"
+                                className="hidden"
+                                ref={replaceFileInputRef}
+                                onChange={handleReplacePdf}
+                            />
                         </div>
                     </div>
 
@@ -362,6 +405,19 @@ export default function ScoutingOffers() {
                                         >
                                             <Send className="w-3 h-3 mr-1.5" />
                                             Use Template
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-xs h-8 px-2"
+                                            title="Replace PDF"
+                                            disabled={isReplacing}
+                                            onClick={() => {
+                                                setReplacingTemplateId(template.docuseal_template_id);
+                                                replaceFileInputRef.current?.click();
+                                            }}
+                                        >
+                                            <Upload className="w-3 h-3" />
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -596,6 +652,20 @@ export default function ScoutingOffers() {
                                 data-autosave={false}
                                 data-save-button-text="Save Template"
                                 className="w-full h-full absolute inset-0"
+                                ref={(el: any) => {
+                                    if (el && !el._hasSaveListener) {
+                                        console.log("Attaching save listener to DocuSeal builder");
+                                        el.addEventListener("save", () => {
+                                            console.log("DocuSeal builder 'save' event captured!");
+                                            handleSyncTemplates(2000); // 2 second delay for API consistency
+                                            toast({
+                                                title: "Template Saved",
+                                                description: "Your changes are being synchronized...",
+                                            });
+                                        });
+                                        el._hasSaveListener = true;
+                                    }
+                                }}
                             ></docuseal-builder>
                         </div>
                     </Card>

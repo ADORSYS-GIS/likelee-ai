@@ -306,7 +306,154 @@ impl DocuSealClient {
 
         Ok(template)
     }
+
+    /// Get template details
+    pub async fn get_template(
+        &self,
+        template_id: i32,
+    ) -> Result<TemplateDetails, Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/{}", self.base_url, template_id);
+
+        info!(template_id, url = %url, "Fetching DocuSeal template details");
+
+        let response = self
+            .client
+            .get(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        let template = response.json::<TemplateDetails>().await?;
+        info!(template_id = template.id, "DocuSeal template details fetched");
+
+        Ok(template)
+    }
+
+    /// Update an existing template's documents
+    pub async fn update_template_documents(
+        &self,
+        template_id: i32,
+        document_name: String,
+        document_base64: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/{}/documents", self.base_url, template_id);
+
+        let request_body = json!({
+            "documents": vec![TemplateDocument {
+                name: document_name,
+                file: document_base64,
+            }],
+        });
+
+        info!(template_id, url = %url, "Updating DocuSeal template documents");
+
+        let response = self
+            .client
+            .put(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        info!(template_id, "DocuSeal template documents updated");
+        Ok(())
+    }
+
+    /// Update an existing template's metadata (e.g. name)
+    pub async fn update_template(
+        &self,
+        template_id: i32,
+        name: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/{}", self.base_url, template_id);
+
+        let request_body = json!({
+            "name": name,
+        });
+
+        info!(template_id, name = %name, url = %url, "Updating DocuSeal template metadata");
+
+        let response = self
+            .client
+            .patch(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        info!(template_id, "DocuSeal template metadata updated");
+        Ok(())
+    }
+
+    /// Delete a template
+    pub async fn delete_template(
+        &self,
+        template_id: i32,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/{}", self.base_url, template_id);
+
+        info!(template_id, url = %url, "Deleting DocuSeal template");
+
+        let response = self
+            .client
+            .delete(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .query(&[("permanently", "true")])
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        info!(template_id, "DocuSeal template deleted");
+        Ok(())
+    }
 }
+
+use serde_json::json;
 
 #[derive(Debug, Deserialize)]
 pub struct ListTemplatesResponse {
@@ -319,6 +466,19 @@ pub struct Template {
     pub name: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TemplateDetails {
+    pub id: i32,
+    pub name: String,
+    pub documents: Vec<TemplateDocumentDetails>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TemplateDocumentDetails {
+    pub id: i32,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize)]

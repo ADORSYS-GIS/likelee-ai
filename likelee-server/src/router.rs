@@ -170,7 +170,8 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/scouting/templates/:id",
-            delete(crate::scouting::delete_template),
+            delete(crate::scouting::delete_template)
+                .put(crate::scouting::update_template_from_pdf),
         )
         .route(
             "/api/scouting/offers",

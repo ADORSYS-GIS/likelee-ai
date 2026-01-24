@@ -454,6 +454,31 @@ export const scoutingService = {
     return data as ScoutingTemplate;
   },
 
+  async updateTemplateFromPdf(docusealTemplateId: number, file: File) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/templates/${docusealTemplateId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to update template: ${response.statusText}`);
+    }
+  },
+
   async deleteTemplate(id: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
