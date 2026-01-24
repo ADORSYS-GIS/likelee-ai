@@ -17,6 +17,14 @@ pub struct Submitter {
     pub role: Option<String>,
 }
 
+// Represents the actual object returned inside the array from DocuSeal's submission API
+#[derive(Debug, Deserialize, Clone)]
+pub struct DocuSealSubmitter {
+    pub submission_id: i32,
+    pub slug: String,
+}
+
+// This remains our internal representation, which we will construct manually
 #[derive(Debug, Deserialize)]
 pub struct CreateSubmissionResponse {
     pub id: i32,
@@ -99,21 +107,42 @@ impl DocuSealClient {
             .send()
             .await?;
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body_text = response.text().await?;
+
+        if !status.is_success() {
             error!(
                 status = %status,
-                error = %error_text,
+                error = %body_text,
                 "DocuSeal API error"
             );
-            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+            return Err(format!("DocuSeal API error: {} - {}", status, body_text).into());
         }
 
-        let submission = response.json::<CreateSubmissionResponse>().await?;
-        info!(submission_id = submission.id, "DocuSeal submission created");
-
-        Ok(submission)
+        // The API returns an array of submitters. We need to parse it as such.
+        match serde_json::from_str::<Vec<DocuSealSubmitter>>(&body_text) {
+            Ok(submitters) => {
+                if let Some(first_submitter) = submitters.first() {
+                    // Construct our internal response type from the API response.
+                    let submission = CreateSubmissionResponse {
+                        id: first_submitter.submission_id,
+                        slug: first_submitter.slug.clone(),
+                        submitters: vec![], // Not needed for this step
+                    };
+                    info!(submission_id = submission.id, "DocuSeal submission created");
+                    Ok(submission)
+                } else {
+                    let err_msg = "DocuSeal response was an empty array";
+                    error!(body = %body_text, err_msg);
+                    Err(err_msg.into())
+                }
+            }
+            Err(e) => {
+                error!(error = %e, body = %body_text, "Failed to decode DocuSeal response");
+                Err(Box::new(e))
+            }
+        }
     }
 
     /// Get submission status
