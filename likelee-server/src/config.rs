@@ -150,14 +150,15 @@ pub struct ServerConfig {
     #[envconfig(from = "DOCUSEAL_API_KEY", default = "")]
     pub docuseal_api_key: String,
 
-    #[envconfig(from = "DOCUSEAL_API_URL", default = "https://www.docuseal.com/api/v1")]
+    #[envconfig(from = "DOCUSEAL_API_URL", default = "https://api.docuseal.co")]
     pub docuseal_api_url: String,
+
+    #[envconfig(from = "DOCUSEAL_APP_URL", default = "https://docuseal.co")]
+    pub docuseal_app_url: String,
 
     #[envconfig(from = "DOCUSEAL_WEBHOOK_URL", default = "")]
     pub docuseal_webhook_url: String,
 
-    #[envconfig(from = "DOCUSEAL_USER_EMAIL", default = "")]
-    pub docuseal_user_email: String,
 }
 
 #[derive(Clone)]
@@ -206,6 +207,6 @@ pub struct AppState {
     // DocuSeal
     pub docuseal_api_key: String,
     pub docuseal_api_url: String,
+    pub docuseal_app_url: String,
     pub docuseal_webhook_url: String,
-    pub docuseal_user_email: String,
 }

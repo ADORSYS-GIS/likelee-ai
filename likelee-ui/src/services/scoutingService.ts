@@ -497,11 +497,13 @@ export const scoutingService = {
 
     const { data, error } = await supabase
       .from("scouting_offers")
-      .select(`
+      .select(
+        `
         *,
         prospect:scouting_prospects(full_name, email, status),
         template:scouting_templates(name)
-      `)
+      `,
+      )
       .eq("agency_id", agencyId)
       .order("created_at", { ascending: false });
 
@@ -509,21 +511,26 @@ export const scoutingService = {
     return data as ScoutingOffer[];
   },
 
-  async getOffer(id: string) {
+  async getOffer(offerId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data, error } = await supabase
-      .from("scouting_offers")
-      .select(`
-        *,
-        prospect:scouting_prospects(*),
-        template:scouting_templates(*)
-      `)
-      .eq("id", id)
-      .single();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
 
-    if (error) throw error;
-    return data as ScoutingOffer;
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/${offerId}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch offer: ${response.statusText}`);
+    }
+
+    return await response.json() as ScoutingOffer;
   },
 
   async createOffer(

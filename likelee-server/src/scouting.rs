@@ -284,12 +284,14 @@ pub async fn create_offer(
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
-    // Get signing URL from first submitter
-    let signing_url = submission
-        .submitters
-        .first()
-        .map(|s| s.url.clone())
-        .unwrap_or_default();
+    // Get signing URL by fetching submission details (DocuSeal create response doesn't include URLs)
+    let signing_url = match docuseal_client.get_submission(submission.id).await {
+        Ok(details) => details.submitters.first().and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug))),
+        Err(e) => {
+            error!(error = %e, submission_id = submission.id, "Failed to fetch DocuSeal submission details");
+            None
+        }
+    };
 
     // Save offer to database
     let pg3 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
@@ -392,6 +394,9 @@ pub async fn refresh_offer_status(
         None
     };
 
+    // Capture latest signing URL as well
+    let latest_signing_url = submission.submitters.first().and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug)));
+
     // Update offer in database
     let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
@@ -400,6 +405,7 @@ pub async fn refresh_offer_status(
     let update_data = json!({
         "status": status,
         "signed_document_url": signed_document_url,
+        "signing_url": latest_signing_url,
         "signed_at": if status == "completed" {
             Some(chrono::Utc::now().to_rfc3339())
         } else {
@@ -420,7 +426,7 @@ pub async fn refresh_offer_status(
     let response = OfferResponse {
         id: query.offer_id.clone(),
         status: status.to_string(),
-        signing_url: submission.submitters.first().map(|s| s.url.clone()),
+        signing_url: submission.submitters.first().and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug))),
         signed_document_url,
     };
 
@@ -482,21 +488,15 @@ pub async fn create_builder_token(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
-    // Use configured DocuSeal user email if set (required for builder token to match account owner)
-    // Otherwise fallback to agency contact email (which might fail if not a user in DocuSeal)
-    let user_email = if !state.docuseal_user_email.is_empty() {
-        state.docuseal_user_email.clone()
-    } else {
-        agency["contact_email"]
-            .as_str()
-            .unwrap_or("agency@example.com")
-            .to_string()
-    };
-
-    let integration_email = agency["contact_email"]
+    let user_email = agency["contact_email"]
         .as_str()
-        .unwrap_or("agency@example.com")
+        .ok_or_else(|| {
+            error!("Agency contact_email is missing for builder token");
+            (StatusCode::BAD_REQUEST, "Agency email not found".to_string())
+        })? 
         .to_string();
+
+    let integration_email = user_email.clone();
 
     let name = agency["name"]
         .as_str()
@@ -580,8 +580,6 @@ pub async fn sync_templates(
     //
     // Let's implement a simple sync that upserts based on docuseal_template_id.
     
-    let mut synced_count = 0;
-
     for template in templates_response.data {
         let template_data = json!({
             "agency_id": payload.agency_id,
@@ -626,17 +624,9 @@ pub async fn sync_templates(
                 .execute()
                 .await;
         }
-
-        synced_count += 1;
     }
-
-    info!(synced_count, "Templates synced successfully");
     Ok(StatusCode::OK)
 }
-
-// ============================================================================
-// PDF Upload Handler
-// ============================================================================
 
 #[derive(Debug, Serialize)]
 pub struct CreateTemplateFromPdfResponse {
@@ -845,4 +835,80 @@ pub async fn update_template_from_pdf(
         .await;
 
     Ok(StatusCode::OK)
+}
+
+/// GET /api/scouting/offers/:offer_id
+pub async fn get_offer_details(
+    State(state): State<AppState>,
+    Path(offer_id): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    info!(offer_id = %offer_id, "Fetching offer details");
+
+    let pg_client = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+
+    // Fetch the offer from our database
+    let offer_response = pg_client
+        .from("scouting_offers")
+        .select("*, prospect:scouting_prospects(*), template:scouting_templates(*)")
+        .eq("id", &offer_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to fetch offer from DB");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    if !offer_response.status().is_success() {
+        let error_body = offer_response.text().await.unwrap_or_default();
+        error!(error = %error_body, "Offer not found in database");
+        return Err((
+            StatusCode::NOT_FOUND,
+            format!("Offer not found: {}", error_body),
+        ));
+    }
+
+    let offer_text = offer_response.text().await.map_err(|e| {
+        error!(error = %e, "Failed to read offer from DB");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let mut offer: serde_json::Value = serde_json::from_str(&offer_text).map_err(|e| {
+        error!(error = %e, "Failed to parse offer from DB");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    // If there's a DocuSeal submission ID, fetch its details
+    if let Some(submission_id) = offer.get("docuseal_submission_id").and_then(|id| id.as_i64()) {
+        let docuseal_client = DocuSealClient::new(
+            state.docuseal_api_key.clone(),
+            state.docuseal_api_url.clone(),
+        );
+
+        match docuseal_client.get_submission(submission_id as i32).await {
+            Ok(docuseal_details) => {
+                // Construct the signing URL
+                let signing_url = docuseal_details.submitters.first().map(|s| {
+                    format!("{}/s/{}", state.docuseal_app_url, s.slug)
+                });
+
+                if let Some(obj) = offer.as_object_mut() {
+                    // Insert the constructed URL into the main offer object
+                    obj.insert("signing_url".to_string(), json!(signing_url));
+
+                    // Also include the full details for context
+                    if let Ok(details_json) = serde_json::to_value(docuseal_details) {
+                        obj.insert("docuseal_details".to_string(), details_json);
+                    }
+                }
+            }
+            Err(e) => {
+                error!(error = %e, submission_id, "Failed to fetch details from DocuSeal");
+            }
+        }
+    }
+
+    Ok(Json(offer))
 }

@@ -331,7 +331,7 @@ export default function ScoutingOffers() {
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="outline"
-                                onClick={handleSyncTemplates}
+                                onClick={() => handleSyncTemplates()}
                                 disabled={isSyncing}
                                 className="bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm"
                             >
@@ -569,7 +569,24 @@ export default function ScoutingOffers() {
                                                         variant="outline"
                                                         size="sm"
                                                         className="h-8 text-xs"
-                                                        onClick={() => window.open(offer.signing_url, "_blank")}
+                                                        onClick={async () => {
+                                                            const direct = offer.signing_url && offer.signing_url.trim() !== "" ? offer.signing_url : undefined;
+                                                            if (direct) {
+                                                                window.location.href = direct;
+                                                                return;
+                                                            }
+                                                            try {
+                                                                const updated = await scoutingService.getOffer(offer.id);
+                                                                const link = (updated.signing_url && updated.signing_url.trim() !== "" ? updated.signing_url : undefined) || (updated as any)?.docuseal_details?.submitters?.[0]?.url;
+                                                                if (link) {
+                                                                    window.location.href = link;
+                                                                } else {
+                                                                    toast({ title: "No signing link", description: "No signing URL available yet. Try Refresh Status and retry." });
+                                                                }
+                                                            } catch (e: any) {
+                                                                toast({ title: "Failed to fetch offer", description: e?.message || String(e) });
+                                                            }
+                                                        }}
                                                     >
                                                         <Eye className="w-3 h-3 mr-1.5" />
                                                         View

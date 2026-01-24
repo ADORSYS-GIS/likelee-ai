@@ -32,16 +32,15 @@ pub struct CreateSubmissionResponse {
     pub submitters: Vec<SubmitterResponse>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SubmitterResponse {
     pub id: i32,
     pub slug: String,
     pub email: String,
-    pub url: String,
     pub status: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct GetSubmissionResponse {
     pub id: i32,
     pub slug: String,
@@ -51,7 +50,7 @@ pub struct GetSubmissionResponse {
     pub documents: Vec<Document>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Document {
     pub url: String,
     pub name: String,
@@ -108,7 +107,6 @@ impl DocuSealClient {
             .await?;
 
         let status = response.status();
-        let headers = response.headers().clone();
         let body_text = response.text().await?;
 
         if !status.is_success() {
@@ -161,18 +159,25 @@ impl DocuSealClient {
             .send()
             .await?;
 
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response.text().await.unwrap_or_default();
+        let status = response.status();
+        let body_text = response.text().await?;
+
+        if !status.is_success() {
             error!(
                 status = %status,
-                error = %error_text,
-                "DocuSeal API error"
+                error = %body_text,
+                "DocuSeal API error on get_submission"
             );
-            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+            return Err(format!("DocuSeal API error: {} - {}", status, body_text).into());
         }
 
-        let submission = response.json::<GetSubmissionResponse>().await?;
+        let submission = match serde_json::from_str::<GetSubmissionResponse>(&body_text) {
+            Ok(s) => s,
+            Err(e) => {
+                error!(error = %e, body = %body_text, "Failed to decode DocuSeal get_submission response");
+                return Err(Box::new(e));
+            }
+        };
         info!(
             submission_id = submission.id,
             status = %submission.status,

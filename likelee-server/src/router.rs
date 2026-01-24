@@ -178,6 +178,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::scouting::list_offers).post(crate::scouting::create_offer),
         )
         .route(
+            "/api/scouting/offers/:offer_id",
+            get(crate::scouting::get_offer_details),
+        )
+        .route(
             "/api/scouting/offers/refresh-status",
             post(crate::scouting::refresh_offer_status),
         )
