@@ -223,18 +223,21 @@ pub async fn get_status(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let should_poll = rows
-        .get(0)
+        .as_array()
+        .and_then(|a| a.first())
         .and_then(|r| r.get("kyc_status").and_then(|s| s.as_str()))
         .map(|s| s == "pending")
         .unwrap_or(false)
         && rows
-            .get(0)
+            .as_array()
+            .and_then(|a| a.first())
             .and_then(|r| r.get("kyc_session_id").and_then(|s| s.as_str()))
             .is_some();
 
     if should_poll {
         let session_id = rows
-            .get(0)
+            .as_array()
+            .and_then(|a| a.first())
             .and_then(|r| r.get("kyc_session_id").and_then(|s| s.as_str()))
             .unwrap_or("")
             .to_string();
