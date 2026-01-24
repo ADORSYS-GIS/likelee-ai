@@ -195,6 +195,7 @@ export interface ScoutingOffer {
   agency_id: string;
   template_id: string;
   docuseal_submission_id?: number;
+  document_name?: string;
   status: OfferStatus;
   signing_url?: string;
   signed_document_url?: string;

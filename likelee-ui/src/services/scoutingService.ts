@@ -527,18 +527,41 @@ export const scoutingService = {
   },
 
   async createOffer(
-    offer: Omit<ScoutingOffer, "id" | "created_at" | "updated_at">
+    offer: Pick<ScoutingOffer, "prospect_id" | "agency_id" | "template_id">
   ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data, error } = await supabase
-      .from("scouting_offers")
-      .insert(offer)
-      .select()
-      .single();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
 
-    if (error) throw error;
-    return data as ScoutingOffer;
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          prospect_id: offer.prospect_id,
+          agency_id: offer.agency_id,
+          template_id: offer.template_id,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to create offer: ${response.statusText} ${text}`);
+    }
+
+    // The backend returns the inserted row(s) as text; best-effort JSON parse
+    const text = await response.text();
+    try {
+      return JSON.parse(text) as ScoutingOffer;
+    } catch {
+      return undefined as unknown as ScoutingOffer;
+    }
   },
 
   async updateOffer(id: string, updates: Partial<ScoutingOffer>) {

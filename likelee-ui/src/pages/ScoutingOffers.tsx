@@ -253,7 +253,6 @@ export default function ScoutingOffers() {
                 prospect_id: prospectId,
                 agency_id: agencyId,
                 template_id: selectedTemplate.id,
-                status: "pending",
             });
 
             toast({
@@ -530,7 +529,7 @@ export default function ScoutingOffers() {
                                                     </div>
                                                     <div>
                                                         <p className="font-medium text-gray-900">
-                                                            {offer.template?.name || "Untitled Document"}
+                                                            {offer.document_name || offer.template?.name || "Untitled Document"}
                                                         </p>
                                                         <p className="text-xs text-gray-500 mt-0.5">
                                                             {new Date(offer.created_at).toLocaleString()}

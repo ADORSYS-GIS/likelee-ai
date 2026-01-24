@@ -233,7 +233,7 @@ pub async fn create_offer(
 
     let template_response = pg2
         .from("scouting_templates")
-        .select("docuseal_template_id")
+        .select("docuseal_template_id,name")
         .eq("id", &payload.template_id)
         .single()
         .execute()
@@ -262,6 +262,10 @@ pub async fn create_offer(
     let docuseal_template_id = template["docuseal_template_id"]
         .as_i64()
         .ok_or((StatusCode::BAD_REQUEST, "Invalid template ID".to_string()))? as i32;
+    let document_name = template["name"]
+        .as_str()
+        .unwrap_or("Untitled Document")
+        .to_string();
 
     let prospect_name = prospect["full_name"]
         .as_str()
@@ -297,6 +301,7 @@ pub async fn create_offer(
         "agency_id": payload.agency_id,
         "template_id": payload.template_id,
         "docuseal_submission_id": submission.id,
+        "document_name": document_name,
         "status": "sent",
         "signing_url": signing_url,
         "sent_at": chrono::Utc::now().to_rfc3339(),
