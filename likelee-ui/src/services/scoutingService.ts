@@ -149,6 +149,19 @@ export const scoutingService = {
     return data as ScoutingProspect;
   },
 
+  async getProspect(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_prospects")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingProspect;
+  },
+
   async deleteProspect(id: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
@@ -526,6 +539,31 @@ export const scoutingService = {
       .eq("id", id);
 
     if (error) throw error;
+  },
+
+  async refreshOfferStatus(offerId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/refresh-status`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ offer_id: offerId }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to refresh offer status: ${response.statusText}`);
+    }
+
+    return await response.json();
   },
 
   async getBuilderToken(agencyId: string, templateId?: number) {

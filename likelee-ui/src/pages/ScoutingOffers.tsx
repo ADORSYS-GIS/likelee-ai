@@ -33,6 +33,8 @@ import {
     MoreHorizontal,
     RefreshCw,
     Upload,
+    Trash2,
+    Archive,
 } from "lucide-react";
 import { ScoutingTemplate, ScoutingOffer } from "@/types/scouting";
 
@@ -47,6 +49,7 @@ export default function ScoutingOffers() {
     const [showSendOfferDialog, setShowSendOfferDialog] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<ScoutingTemplate | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isSyncingOffers, setIsSyncingOffers] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
     // Builder state
@@ -94,6 +97,16 @@ export default function ScoutingOffers() {
         enabled: !!user,
     });
 
+    // Fetch prospect details
+    const { data: prospect, isLoading: prospectLoading } = useQuery({
+        queryKey: ["prospect", prospectId],
+        queryFn: async () => {
+            if (!prospectId) return null;
+            return scoutingService.getProspect(prospectId);
+        },
+        enabled: !!prospectId,
+    });
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -132,6 +145,38 @@ export default function ScoutingOffers() {
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
+        }
+    };
+
+    const handleSyncOffers = async () => {
+        setIsSyncingOffers(true);
+        try {
+            const pendingOffers = offers?.filter(o => o.status === "sent" || o.status === "pending") || [];
+            if (pendingOffers.length === 0) {
+                toast({
+                    title: "No pending offers",
+                    description: "All offers are already up to date.",
+                });
+                return;
+            }
+
+            await Promise.all(pendingOffers.map(o => scoutingService.refreshOfferStatus(o.id)));
+
+            toast({
+                title: "Offers Synced",
+                description: "Successfully updated offer statuses.",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["offers"] });
+        } catch (error) {
+            console.error("Error syncing offers:", error);
+            toast({
+                title: "Sync Failed",
+                description: "Failed to sync offers. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSyncingOffers(false);
         }
     };
 
@@ -195,6 +240,7 @@ export default function ScoutingOffers() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
+            case "completed":
             case "signed":
                 return "bg-green-100 text-green-700 border-green-200";
             case "declined":
@@ -228,6 +274,19 @@ export default function ScoutingOffers() {
                             </p>
                         </div>
                     </div>
+                    {prospect && (
+                        <div className="flex items-center gap-4 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-lg">
+                            <div className="p-2 bg-indigo-100 rounded-full">
+                                <Send className="w-4 h-4 text-indigo-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wider">Recipient</p>
+                                <p className="text-sm font-medium text-indigo-700">
+                                    {prospect.full_name} <span className="text-indigo-400 font-normal">({prospect.email})</span>
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Templates Section */}
@@ -365,6 +424,16 @@ export default function ScoutingOffers() {
                                     className="pl-9 h-9 w-64 bg-gray-50 border-gray-200"
                                 />
                             </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleSyncOffers}
+                                disabled={isSyncingOffers}
+                                className="h-9 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm"
+                            >
+                                <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingOffers ? "animate-spin" : ""}`} />
+                                Sync Status
+                            </Button>
                             <Button variant="outline" size="sm" className="h-9">
                                 <Filter className="w-4 h-4 mr-2" />
                                 Filter
@@ -430,19 +499,39 @@ export default function ScoutingOffers() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {offer.status === "signed" ? (
-                                                        <Button variant="outline" size="sm" className="h-8 text-xs">
+                                                    {(offer.status === "completed" || offer.status === "signed") && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 text-xs bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100"
+                                                            onClick={() => window.open(offer.signed_document_url, "_blank")}
+                                                        >
                                                             <Download className="w-3 h-3 mr-1.5" />
                                                             Download
                                                         </Button>
-                                                    ) : (
-                                                        <Button variant="outline" size="sm" className="h-8 text-xs">
-                                                            <Copy className="w-3 h-3 mr-1.5" />
-                                                            Copy Link
-                                                        </Button>
                                                     )}
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                        <Eye className="w-4 h-4 text-gray-500" />
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8 text-xs"
+                                                        onClick={() => window.open(offer.signing_url, "_blank")}
+                                                    >
+                                                        <Eye className="w-3 h-3 mr-1.5" />
+                                                        View
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                        onClick={() => {
+                                                            // Archive logic would go here
+                                                            toast({
+                                                                title: "Coming Soon",
+                                                                description: "Archiving submissions will be available in the next update.",
+                                                            });
+                                                        }}
+                                                    >
+                                                        <Archive className="w-4 h-4" />
                                                     </Button>
                                                 </div>
                                             </td>
@@ -464,11 +553,17 @@ export default function ScoutingOffers() {
                             Send a contract offer using the selected template
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-sm text-gray-700">
-                            Template: <span className="font-semibold">{selectedTemplate?.name}</span>
-                        </p>
-                        <p className="text-sm text-gray-500 mt-2">
+                    <div className="py-4 space-y-4">
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Template</p>
+                            <p className="text-sm font-medium text-gray-900">{selectedTemplate?.name}</p>
+                        </div>
+                        <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                            <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-1">Recipient</p>
+                            <p className="text-sm font-medium text-indigo-900">{prospect?.full_name}</p>
+                            <p className="text-xs text-indigo-600">{prospect?.email}</p>
+                        </div>
+                        <p className="text-xs text-gray-500">
                             This will create a DocuSeal submission and send it to the prospect for signing.
                         </p>
                     </div>

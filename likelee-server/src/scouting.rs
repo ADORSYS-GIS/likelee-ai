@@ -374,14 +374,14 @@ pub async fn refresh_offer_status(
 
     // Map DocuSeal status to our status
     let status = match submission.status.as_str() {
-        "completed" => "signed",
+        "completed" => "completed",
         "declined" => "declined",
         "expired" => "voided",
         _ => "sent",
     };
 
     // Get signed document URL if completed
-    let signed_document_url = if status == "signed" {
+    let signed_document_url = if status == "completed" {
         submission.documents.first().map(|d| d.url.clone())
     } else {
         None
@@ -395,7 +395,7 @@ pub async fn refresh_offer_status(
     let update_data = json!({
         "status": status,
         "signed_document_url": signed_document_url,
-        "signed_at": if status == "signed" {
+        "signed_at": if status == "completed" {
             Some(chrono::Utc::now().to_rfc3339())
         } else {
             None
