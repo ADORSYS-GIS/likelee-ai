@@ -75,7 +75,8 @@
   },
   "overrides": {
     "@smithy/config-resolver": "^4.4.5",
-    "@smithy/util-defaults-mode-node": "^4.2.20"
+    "@smithy/util-defaults-mode-node": "^4.2.20",
+    "lodash": "^4.17.22"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
