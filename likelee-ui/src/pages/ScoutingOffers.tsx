@@ -310,36 +310,36 @@ export default function ScoutingOffers() {
         <div className="min-h-screen bg-gray-50 p-8 font-sans">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="outline"
-                            onClick={() => navigate("/AgencyDashboard")}
-                            className="flex items-center gap-2 bg-white shadow-sm"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            Back
-                        </Button>
+                <div>
+                    <Button
+                        variant="outline"
+                        onClick={() => navigate("/AgencyDashboard")}
+                        className="flex items-center gap-2 bg-white shadow-sm mb-4"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                    </Button>
+                    <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">Offer Management</h1>
                             <p className="text-sm text-gray-500 mt-1">
                                 Manage your contract templates and track submissions
                             </p>
                         </div>
+                        {prospect && (
+                            <div className="flex items-center gap-4 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-lg">
+                                <div className="p-2 bg-indigo-100 rounded-full">
+                                    <Send className="w-4 h-4 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wider">Recipient</p>
+                                    <p className="text-sm font-medium text-indigo-700">
+                                        {prospect.full_name} <span className="text-indigo-400 font-normal">({prospect.email})</span>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    {prospect && (
-                        <div className="flex items-center gap-4 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-lg">
-                            <div className="p-2 bg-indigo-100 rounded-full">
-                                <Send className="w-4 h-4 text-indigo-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-indigo-900 uppercase tracking-wider">Recipient</p>
-                                <p className="text-sm font-medium text-indigo-700">
-                                    {prospect.full_name} <span className="text-indigo-400 font-normal">({prospect.email})</span>
-                                </p>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Templates Section */}
@@ -642,7 +642,7 @@ export default function ScoutingOffers() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center justify-end gap-2 transition-opacity">
                                                     {(offer.status === "completed" || offer.status === "signed") && (
                                                         <Button
                                                             variant="outline"
