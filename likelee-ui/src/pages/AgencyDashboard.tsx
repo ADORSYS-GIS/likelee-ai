@@ -13823,8 +13823,8 @@ const useAgencyDashboard = () => {
       return await getAgencyDashboardOverview();
     },
     enabled: !!user?.id,
-    refetchInterval: (data) => {
-      const status = data?.kyc_status;
+    refetchInterval: (query: any) => {
+      const status = query.state.data?.kyc_status;
       return status === "pending" || status === "waiting" ? 5000 : false;
     },
   });
@@ -13922,7 +13922,7 @@ export default function AgencyDashboard() {
   const [kycLoading, setKycLoading] = useState(false);
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [showKycSuccessModal, setShowKycSuccessModal] = useState(false);
-  const [prevKycStatus, setPrevKycStatus] = useState<string | null>(null);
+  const prevStatusRef = useRef<string | null>(null);
 
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
@@ -14130,17 +14130,20 @@ export default function AgencyDashboard() {
   useEffect(() => {
     const currentStatus = dashboardData?.overview?.kyc_status;
     if (
-      (currentStatus === "approved" || currentStatus === "verified") &&
-      prevKycStatus &&
-      prevKycStatus !== "approved" &&
-      prevKycStatus !== "verified"
+      (currentStatus === "approved" ||
+        currentStatus === "verified" ||
+        currentStatus === "active") &&
+      prevStatusRef.current &&
+      prevStatusRef.current !== "approved" &&
+      prevStatusRef.current !== "verified" &&
+      prevStatusRef.current !== "active"
     ) {
       setShowKycSuccessModal(true);
     }
     if (currentStatus) {
-      setPrevKycStatus(currentStatus);
+      prevStatusRef.current = currentStatus;
     }
-  }, [dashboardData?.overview?.kyc_status, prevKycStatus]);
+  }, [dashboardData?.overview?.kyc_status]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
