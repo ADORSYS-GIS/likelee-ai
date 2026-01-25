@@ -42,6 +42,7 @@ import {
     Trash2,
     Archive,
     ChevronDown,
+    FilePenLine,
 } from "lucide-react";
 import { ScoutingTemplate, ScoutingOffer } from "@/types/scouting";
 
@@ -74,6 +75,8 @@ export default function ScoutingOffers() {
     const [filterMode, setFilterMode] = useState<'active' | 'archived' | 'all'>('active');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [offerToDelete, setOfferToDelete] = useState<ScoutingOffer | null>(null);
+    const [showDeleteTemplateDialog, setShowDeleteTemplateDialog] = useState(false);
+    const [templateToDelete, setTemplateToDelete] = useState<ScoutingTemplate | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -310,9 +313,9 @@ export default function ScoutingOffers() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button
-                            variant="ghost"
+                            variant="outline"
                             onClick={() => navigate("/AgencyDashboard")}
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                            className="flex items-center gap-2 bg-white shadow-sm"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Back
@@ -391,14 +394,27 @@ export default function ScoutingOffers() {
                         ) : templates?.map((template) => (
                             <div
                                 key={template.id}
-                                className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col"
+                                className="group bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col"
                             >
-                                <div className="h-32 bg-gray-50 border-b border-gray-100 flex items-center justify-center relative">
-                                    <FileText className="w-12 h-12 text-gray-300" />
+                                <div className="h-32 bg-indigo-100 border-b border-indigo-200 flex items-center justify-center relative">
+                                    <FilePenLine className="w-12 h-12 text-indigo-300" />
                                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 backdrop-blur-sm">
-                                            <MoreHorizontal className="w-4 h-4 text-gray-600" />
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 backdrop-blur-sm">
+                                                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => {
+                                                    setTemplateToDelete(template);
+                                                    setShowDeleteTemplateDialog(true);
+                                                }} className="text-red-600">
+                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                                 <div className="p-4 flex-1 flex flex-col">
@@ -743,6 +759,38 @@ export default function ScoutingOffers() {
                             }}
                         >
                             Archive
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Template Confirmation Dialog */}
+            <Dialog open={showDeleteTemplateDialog} onOpenChange={setShowDeleteTemplateDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Template?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this template? This will also delete it from DocuSeal and cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowDeleteTemplateDialog(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                if (!templateToDelete) return;
+                                try {
+                                    await scoutingService.deleteTemplate(templateToDelete.id);
+                                    toast({ title: "Template Deleted", description: "The template has been permanently deleted." });
+                                    queryClient.invalidateQueries({ queryKey: ["templates"] });
+                                    setShowDeleteTemplateDialog(false);
+                                } catch (error) {
+                                    console.error("Error deleting template:", error);
+                                    toast({ title: "Error", description: "Failed to delete template.", variant: "destructive" });
+                                }
+                            }}
+                        >
+                            Delete Template
                         </Button>
                     </DialogFooter>
                 </DialogContent>
