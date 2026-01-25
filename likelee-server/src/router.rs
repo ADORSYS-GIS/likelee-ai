@@ -179,7 +179,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/scouting/offers/:offer_id",
-            get(crate::scouting::get_offer_details),
+            get(crate::scouting::get_offer_details).delete(crate::scouting::delete_offer),
         )
         .route(
             "/api/scouting/offers/refresh-status",

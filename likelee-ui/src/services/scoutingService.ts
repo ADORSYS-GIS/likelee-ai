@@ -492,23 +492,31 @@ export const scoutingService = {
 
   // --- Offers ---
 
-  async getOffers(agencyId: string) {
+  async getOffers(agencyId: string, filter: 'active' | 'archived' | 'all' = 'active') {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data, error } = await supabase
-      .from("scouting_offers")
-      .select(
-        `
-        *,
-        prospect:scouting_prospects(full_name, email, status),
-        template:scouting_templates(name)
-      `,
-      )
-      .eq("agency_id", agencyId)
-      .order("created_at", { ascending: false });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
 
-    if (error) throw error;
-    return data as ScoutingOffer[];
+    const params = new URLSearchParams({
+      agency_id: agencyId,
+      filter: filter,
+    });
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers?${params}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch offers: ${response.statusText}`);
+    }
+
+    return response.json() as Promise<ScoutingOffer[]>;
   },
 
   async getOffer(offerId: string) {
@@ -585,15 +593,46 @@ export const scoutingService = {
     return data as ScoutingOffer;
   },
 
-  async deleteOffer(id: string) {
+  async deleteOffer(offerId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { error } = await supabase
-      .from("scouting_offers")
-      .delete()
-      .eq("id", id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
 
-    if (error) throw error;
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/${offerId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete offer: ${response.statusText}`);
+    }
+  },
+
+  async permanentlyDeleteOffer(offerId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No active session");
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/${offerId}?permanent=true`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to permanently delete offer: ${response.statusText}`);
+    }
   },
 
   async refreshOfferStatus(offerId: string) {

@@ -152,7 +152,7 @@ pub async fn delete_template(
 // Offer Handlers
 // ============================================================================
 
-/// GET /api/scouting/offers?agency_id=xxx
+/// GET /api/scouting/offers?agency_id=xxx&include_archived=false
 pub async fn list_offers(
     State(state): State<AppState>,
     Query(params): Query<std::collections::HashMap<String, String>>,
@@ -161,16 +161,37 @@ pub async fn list_offers(
         .get("agency_id")
         .ok_or((StatusCode::BAD_REQUEST, "agency_id required".to_string()))?;
 
-    info!(agency_id = %agency_id, "Fetching offers");
+    let filter = params
+        .get("filter")
+        .map(|s| s.as_str())
+        .unwrap_or("active");
+
+    info!(agency_id = %agency_id, filter, "Fetching offers");
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
         .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
 
-    let response = pg
+    let mut query = pg
         .from("scouting_offers")
         .select("*,prospect:scouting_prospects(full_name,email,status),template:scouting_templates(name)")
-        .eq("agency_id", agency_id)
+        .eq("agency_id", agency_id);
+
+    // Apply filter
+    match filter {
+        "archived" => {
+            query = query.eq("status", "archived");
+        },
+        "all" => {
+            // No status filter - show everything
+        },
+        _ => {
+            // Default: "active" - show everything EXCEPT archived
+            query = query.neq("status", "archived");
+        }
+    }
+
+    let response = query
         .order("created_at.desc")
         .execute()
         .await
@@ -433,6 +454,105 @@ pub async fn refresh_offer_status(
     Ok(Json(response))
 }
 
+/// DELETE /api/scouting/offers/:id?permanent=false
+pub async fn delete_offer(
+    State(state): State<AppState>,
+    Path(offer_id): Path<String>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let permanent = params
+        .get("permanent")
+        .and_then(|v| v.parse::<bool>().ok())
+        .unwrap_or(false);
+
+    info!(offer_id = %offer_id, permanent, "Processing offer deletion");
+
+    // 1. Get offer from database to find the submission ID and status
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+
+    let offer_response = pg
+        .from("scouting_offers")
+        .select("docuseal_submission_id,status")
+        .eq("id", &offer_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to fetch offer for deletion");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    let offer_body = offer_response.text().await.map_err(|e| {
+        error!(error = %e, "Failed to read offer response");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let offer: serde_json::Value = serde_json::from_str(&offer_body).map_err(|e| {
+        error!(error = %e, "Failed to parse offer for deletion");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let current_status = offer["status"].as_str().unwrap_or("");
+
+    // Safety check: only allow permanent deletion if already archived
+    if permanent && current_status != "archived" {
+        error!(offer_id = %offer_id, status = %current_status, "Attempted to permanently delete non-archived offer");
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Cannot permanently delete an offer that is not archived. Archive it first.".to_string(),
+        ));
+    }
+
+    if let Some(submission_id) = offer["docuseal_submission_id"].as_i64() {
+        // 2. Archive in DocuSeal (for both archive and permanent delete)
+        let docuseal_client = DocuSealClient::new(
+            state.docuseal_api_key.clone(),
+            state.docuseal_api_url.clone(),
+        );
+        
+        if let Err(e) = docuseal_client.archive_submission(submission_id as i32).await {
+            // Log the error but continue, as we still want to archive/delete it in our system
+            error!(error = %e, submission_id, "Failed to archive submission in DocuSeal, but proceeding locally.");
+        }
+    }
+
+    // 3. Either permanently delete or archive in our database
+    let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+
+    if permanent {
+        // Permanent deletion from database
+        info!(offer_id = %offer_id, "Permanently deleting offer from database");
+        pg2.from("scouting_offers")
+            .delete()
+            .eq("id", &offer_id)
+            .execute()
+            .await
+            .map_err(|e| {
+                error!(error = %e, "Failed to permanently delete offer");
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?;
+    } else {
+        // Archive (soft delete)
+        info!(offer_id = %offer_id, "Archiving offer (soft delete)");
+        let update_data = json!({ "status": "archived" });
+        pg2.from("scouting_offers")
+            .update(update_data.to_string())
+            .eq("id", &offer_id)
+            .execute()
+            .await
+            .map_err(|e| {
+                error!(error = %e, "Failed to update offer status to archived");
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 // ============================================================================
 // Builder Token Handler
 // ============================================================================
@@ -488,15 +608,21 @@ pub async fn create_builder_token(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
-    let user_email = agency["contact_email"]
-        .as_str()
-        .ok_or_else(|| {
-            error!("Agency contact_email is missing for builder token");
-            (StatusCode::BAD_REQUEST, "Agency email not found".to_string())
-        })? 
-        .to_string();
+    // Use configured DocuSeal user email if set (required for builder token to match account owner)
+    // Otherwise fallback to agency contact email (which might fail if not a user in DocuSeal)
+    let user_email = if !state.docuseal_user_email.is_empty() {
+        state.docuseal_user_email.clone()
+    } else {
+        agency["contact_email"]
+            .as_str()
+            .unwrap_or("agency@example.com")
+            .to_string()
+    };
 
-    let integration_email = user_email.clone();
+    let integration_email = agency["contact_email"]
+        .as_str()
+        .unwrap_or("agency@example.com")
+        .to_string();
 
     let name = agency["name"]
         .as_str()

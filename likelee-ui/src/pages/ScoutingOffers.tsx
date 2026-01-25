@@ -17,6 +17,12 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
     FileText,
     Plus,
     ArrowLeft,
@@ -35,6 +41,7 @@ import {
     Upload,
     Trash2,
     Archive,
+    ChevronDown,
 } from "lucide-react";
 import { ScoutingTemplate, ScoutingOffer } from "@/types/scouting";
 
@@ -59,6 +66,14 @@ export default function ScoutingOffers() {
     const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
     const [builderToken, setBuilderToken] = useState<string>("");
     const [builderTemplateId, setBuilderTemplateId] = useState<number | null>(null);
+    const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+    const [offerToArchive, setOfferToArchive] = useState<ScoutingOffer | null>(null);
+
+    // Archive filtering and permanent delete state
+    // Archive filtering and permanent delete state
+    const [filterMode, setFilterMode] = useState<'active' | 'archived' | 'all'>('active');
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [offerToDelete, setOfferToDelete] = useState<ScoutingOffer | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,12 +105,12 @@ export default function ScoutingOffers() {
 
     // Fetch agency offers
     const { data: offers, isLoading: offersLoading } = useQuery({
-        queryKey: ["offers", user?.id],
+        queryKey: ["offers", user?.id, filterMode],
         queryFn: async () => {
             if (!user) return [];
             const agencyId = await scoutingService.getUserAgencyId();
             if (!agencyId) return [];
-            return scoutingService.getOffers(agencyId);
+            return scoutingService.getOffers(agencyId, filterMode);
         },
         enabled: !!user,
     });
@@ -479,6 +494,50 @@ export default function ScoutingOffers() {
                                     className="pl-9 h-9 w-64 bg-gray-50 border-gray-200"
                                 />
                             </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm"
+                                    >
+                                        <Filter className="w-4 h-4 mr-2" />
+                                        {filterMode === 'active' && 'Active Only'}
+                                        {filterMode === 'archived' && 'Archived Only'}
+                                        {filterMode === 'all' && 'All Submissions'}
+                                        <ChevronDown className="w-4 h-4 ml-2" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem
+                                        onClick={() => setFilterMode('active')}
+                                        className={filterMode === 'active' ? "bg-indigo-50 text-indigo-700" : ""}
+                                    >
+                                        <div className="flex items-center justify-between w-full">
+                                            <span>Active Only</span>
+                                            {filterMode === 'active' && <CheckCircle2 className="w-4 h-4" />}
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => setFilterMode('archived')}
+                                        className={filterMode === 'archived' ? "bg-indigo-50 text-indigo-700" : ""}
+                                    >
+                                        <div className="flex items-center justify-between w-full">
+                                            <span>Archived Only</span>
+                                            {filterMode === 'archived' && <CheckCircle2 className="w-4 h-4" />}
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => setFilterMode('all')}
+                                        className={filterMode === 'all' ? "bg-indigo-50 text-indigo-700" : ""}
+                                    >
+                                        <div className="flex items-center justify-between w-full">
+                                            <span>All Submissions</span>
+                                            {filterMode === 'all' && <CheckCircle2 className="w-4 h-4" />}
+                                        </div>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -488,10 +547,6 @@ export default function ScoutingOffers() {
                             >
                                 <RefreshCw className={`w-4 h-4 mr-2 ${isSyncingOffers ? "animate-spin" : ""}`} />
                                 Sync Status
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-9">
-                                <Filter className="w-4 h-4 mr-2" />
-                                Filter
                             </Button>
                         </div>
                     </div>
@@ -591,20 +646,31 @@ export default function ScoutingOffers() {
                                                         <Eye className="w-3 h-3 mr-1.5" />
                                                         View
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                                                        onClick={() => {
-                                                            // Archive logic would go here
-                                                            toast({
-                                                                title: "Coming Soon",
-                                                                description: "Archiving submissions will be available in the next update.",
-                                                            });
-                                                        }}
-                                                    >
-                                                        <Archive className="w-4 h-4" />
-                                                    </Button>
+                                                    {offer.status === 'archived' ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                            onClick={() => {
+                                                                setOfferToDelete(offer);
+                                                                setShowDeleteDialog(true);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                            onClick={() => {
+                                                                setOfferToArchive(offer);
+                                                                setShowArchiveDialog(true);
+                                                            }}
+                                                        >
+                                                            <Archive className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -645,6 +711,77 @@ export default function ScoutingOffers() {
                         </Button>
                         <Button onClick={handleSendOffer} className="bg-indigo-600 hover:bg-indigo-700">
                             Send Offer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Archive Confirmation Dialog */}
+            <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Archive Submission?</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to archive this submission? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowArchiveDialog(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                if (!offerToArchive) return;
+                                try {
+                                    await scoutingService.deleteOffer(offerToArchive.id);
+                                    toast({ title: "Submission Archived", description: "The offer has been successfully archived." });
+                                    queryClient.invalidateQueries({ queryKey: ["offers"] });
+                                    setShowArchiveDialog(false);
+                                } catch (error) {
+                                    console.error("Error archiving offer:", error);
+                                    toast({ title: "Error", description: "Failed to archive submission.", variant: "destructive" });
+                                }
+                            }}
+                        >
+                            Archive
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Permanent Delete Confirmation Dialog */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Permanently Delete Submission?</DialogTitle>
+                        <DialogDescription>
+                            This will permanently delete this submission from the database. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                if (!offerToDelete) return;
+                                try {
+                                    await scoutingService.permanentlyDeleteOffer(offerToDelete.id);
+                                    toast({
+                                        title: "Submission Deleted",
+                                        description: "The submission has been permanently deleted."
+                                    });
+                                    queryClient.invalidateQueries({ queryKey: ["offers"] });
+                                    setShowDeleteDialog(false);
+                                } catch (error) {
+                                    console.error("Error deleting offer:", error);
+                                    toast({
+                                        title: "Error",
+                                        description: "Failed to delete submission.",
+                                        variant: "destructive"
+                                    });
+                                }
+                            }}
+                        >
+                            Permanently Delete
                         </Button>
                     </DialogFooter>
                 </DialogContent>

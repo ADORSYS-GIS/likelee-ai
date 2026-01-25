@@ -123,6 +123,7 @@ async fn main() {
         docuseal_api_url: cfg.docuseal_api_url.clone(),
         docuseal_app_url: cfg.docuseal_app_url.clone(),
         docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
+        docuseal_user_email: cfg.docuseal_user_email.clone(),
     };
 
     let app = likelee_server::router::build_router(state);
