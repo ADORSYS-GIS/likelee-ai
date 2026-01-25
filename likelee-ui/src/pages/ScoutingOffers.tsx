@@ -401,9 +401,21 @@ export default function ScoutingOffers() {
                                 <div key={i} className="h-48 bg-gray-100 rounded-xl animate-pulse" />
                             ))
                         ) : templates?.map((template) => (
-                            <div
+                            <button
                                 key={template.id}
-                                className="group bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col"
+                                className="group bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col text-left"
+                                onClick={async () => {
+                                    try {
+                                        const agencyId = await scoutingService.getUserAgencyId();
+                                        if (!agencyId) return;
+                                        const token = await scoutingService.getBuilderToken(agencyId, template.docuseal_template_id);
+                                        setBuilderToken(token);
+                                        setBuilderTemplateId(template.docuseal_template_id);
+                                        setShowTemplateBuilder(true);
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                }}
                             >
                                 <div className="h-32 bg-indigo-100 border-b border-indigo-200 flex items-center justify-center relative">
                                     <FilePenLine className="w-12 h-12 text-indigo-300" />
@@ -462,25 +474,13 @@ export default function ScoutingOffers() {
                                             variant="ghost"
                                             size="sm"
                                             className="text-xs h-8 px-2"
-                                            onClick={async () => {
-                                                // Edit template
-                                                try {
-                                                    const agencyId = await scoutingService.getUserAgencyId();
-                                                    if (!agencyId) return;
-                                                    const token = await scoutingService.getBuilderToken(agencyId, template.docuseal_template_id);
-                                                    setBuilderToken(token);
-                                                    setBuilderTemplateId(template.docuseal_template_id);
-                                                    setShowTemplateBuilder(true);
-                                                } catch (e) {
-                                                    console.error(e);
-                                                }
-                                            }}
+                                            onClick={(e) => e.stopPropagation()} // Let the parent button handle the click
                                         >
                                             <Eye className="w-3 h-3" />
                                         </Button>
                                     </div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
 
                         {/* Empty State Placeholder */}
