@@ -203,4 +203,8 @@ export interface ScoutingOffer {
   signed_at?: string;
   created_at: string;
   updated_at: string;
+
+  // Joined data
+  prospect?: Pick<ScoutingProspect, 'full_name' | 'email' | 'status'>;
+  template?: Pick<ScoutingTemplate, 'name'>;
 }

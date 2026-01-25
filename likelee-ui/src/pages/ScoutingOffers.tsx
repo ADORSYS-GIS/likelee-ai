@@ -21,6 +21,9 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
     FileText,
@@ -77,8 +80,20 @@ export default function ScoutingOffers() {
     const [offerToDelete, setOfferToDelete] = useState<ScoutingOffer | null>(null);
     const [showDeleteTemplateDialog, setShowDeleteTemplateDialog] = useState(false);
     const [templateToDelete, setTemplateToDelete] = useState<ScoutingTemplate | null>(null);
+    const [statusFilters, setStatusFilters] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const ALL_STATUSES = ['completed', 'declined', 'opened', 'sent'];
+
+    const handleStatusFilterChange = (status: string) => {
+        setStatusFilters(prev =>
+            prev.includes(status)
+                ? prev.filter(s => s !== status)
+                : [...prev, status]
+        );
+    };
 
     // Load DocuSeal builder script
     React.useEffect(() => {
@@ -117,6 +132,27 @@ export default function ScoutingOffers() {
         },
         enabled: !!user,
     });
+
+    const filteredOffers = React.useMemo(() => {
+        if (!offers) return [];
+        return offers.filter(offer => {
+            const searchMatch = searchQuery
+                ? offer.template?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  offer.prospect?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  offer.prospect?.email?.toLowerCase().includes(searchQuery.toLowerCase()) 
+                : true;
+
+            const statusMatch = statusFilters.length > 0
+                ? statusFilters.some(filter => {
+                    if (filter === 'completed') return ['completed', 'signed'].includes(offer.status);
+                    if (filter === 'declined') return ['declined', 'voided'].includes(offer.status);
+                    return offer.status === filter;
+                })
+                : true;
+
+            return searchMatch && statusMatch;
+        });
+    }, [offers, searchQuery, statusFilters]);
 
     // Fetch prospect details
     const { data: prospect, isLoading: prospectLoading } = useQuery({
@@ -299,6 +335,8 @@ export default function ScoutingOffers() {
             case "declined":
             case "voided":
                 return "bg-red-100 text-red-700 border-red-200";
+            case "opened":
+                return "bg-yellow-100 text-yellow-700 border-yellow-200";
             case "sent":
                 return "bg-blue-100 text-blue-700 border-blue-200";
             default:
@@ -526,52 +564,61 @@ export default function ScoutingOffers() {
                                 <Input
                                     placeholder="Search submissions..."
                                     className="pl-9 h-9 w-64 bg-gray-50 border-gray-200"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-9 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm"
-                                    >
-                                        <Filter className="w-4 h-4 mr-2" />
-                                        {filterMode === 'active' && 'Active Only'}
-                                        {filterMode === 'archived' && 'Archived Only'}
-                                        {filterMode === 'all' && 'All Submissions'}
+                                    <Button variant="outline" size="sm" className="h-9 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm">
+                                        <Archive className="w-4 h-4 mr-2" />
+                                        {filterMode === 'active' && 'Active'}
+                                        {filterMode === 'archived' && 'Archived'}
+                                        {filterMode === 'all' && 'All'}
                                         <ChevronDown className="w-4 h-4 ml-2" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem
-                                        onClick={() => setFilterMode('active')}
-                                        className={filterMode === 'active' ? "bg-indigo-50 text-indigo-700" : ""}
-                                    >
-                                        <div className="flex items-center justify-between w-full">
-                                            <span>Active Only</span>
-                                            {filterMode === 'active' && <CheckCircle2 className="w-4 h-4" />}
-                                        </div>
+                                    <DropdownMenuItem onClick={() => setFilterMode('active')} className={filterMode === 'active' ? "bg-indigo-50 text-indigo-700" : ""}>
+                                        <div className="flex items-center justify-between w-full"><span>Active</span>{filterMode === 'active' && <CheckCircle2 className="w-4 h-4" />}</div>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => setFilterMode('archived')}
-                                        className={filterMode === 'archived' ? "bg-indigo-50 text-indigo-700" : ""}
-                                    >
-                                        <div className="flex items-center justify-between w-full">
-                                            <span>Archived Only</span>
-                                            {filterMode === 'archived' && <CheckCircle2 className="w-4 h-4" />}
-                                        </div>
+                                    <DropdownMenuItem onClick={() => setFilterMode('archived')} className={filterMode === 'archived' ? "bg-indigo-50 text-indigo-700" : ""}>
+                                        <div className="flex items-center justify-between w-full"><span>Archived</span>{filterMode === 'archived' && <CheckCircle2 className="w-4 h-4" />}</div>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => setFilterMode('all')}
-                                        className={filterMode === 'all' ? "bg-indigo-50 text-indigo-700" : ""}
-                                    >
-                                        <div className="flex items-center justify-between w-full">
-                                            <span>All Submissions</span>
-                                            {filterMode === 'all' && <CheckCircle2 className="w-4 h-4" />}
-                                        </div>
+                                    <DropdownMenuItem onClick={() => setFilterMode('all')} className={filterMode === 'all' ? "bg-indigo-50 text-indigo-700" : ""}>
+                                        <div className="flex items-center justify-between w-full"><span>All</span>{filterMode === 'all' && <CheckCircle2 className="w-4 h-4" />}</div>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-9 bg-white hover:bg-gray-50 text-gray-700 font-medium shadow-sm">
+                                        <Filter className="w-4 h-4 mr-2" />
+                                        Status
+                                        {statusFilters.length > 0 && <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full text-xs">{statusFilters.length}</span>}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {ALL_STATUSES.map(status => (
+                                        <DropdownMenuCheckboxItem key={status} checked={statusFilters.includes(status)} onCheckedChange={() => handleStatusFilterChange(status)} className="capitalize">
+                                            {status}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                    {statusFilters.length > 0 && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => setStatusFilters([])} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                                                Clear Filters
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -609,7 +656,7 @@ export default function ScoutingOffers() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    offers.map((offer: any) => (
+                                    filteredOffers.map((offer: any) => (
                                         <tr key={offer.id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
