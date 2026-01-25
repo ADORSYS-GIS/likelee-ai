@@ -365,7 +365,16 @@ export default function ScoutingOffers() {
                                 onChange={handleFileUpload}
                             />
                             <Button
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => {
+                                    if (templates && templates.length >= 2) {
+                                        toast({
+                                            title: "Template Limit Reached",
+                                            description: "You can only have up to 2 templates. Please replace an existing one.",
+                                        });
+                                    } else {
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
                                 disabled={isUploading}
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm"
                             >
@@ -483,7 +492,16 @@ export default function ScoutingOffers() {
                                     Upload a PDF contract to create your first template.
                                 </p>
                                 <div className="flex items-center justify-center gap-3">
-                                    <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm" disabled={isUploading}>
+                                    <Button onClick={() => {
+                                        if (templates && templates.length >= 2) {
+                                            toast({
+                                                title: "Template Limit Reached",
+                                                description: "You can only have up to 2 templates. Please replace an existing one.",
+                                            });
+                                        } else {
+                                            fileInputRef.current?.click();
+                                        }
+                                    }} variant="outline" size="sm" disabled={isUploading}>
                                         <Upload className="w-3 h-3 mr-2" />
                                         Upload PDF
                                     </Button>
