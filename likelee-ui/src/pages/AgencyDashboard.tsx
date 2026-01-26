@@ -101,6 +101,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { BookingsView } from "@/components/Bookings/BookingsView";
+import { GenerateInvoiceViewApi } from "@/components/accounting/GenerateInvoiceView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import {
@@ -13699,7 +13700,7 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "accounting" && (
             <div>
-              {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
+              {activeSubTab === "Invoice Generation" && <GenerateInvoiceViewApi />}
               {activeSubTab === "Invoice Management" && (
                 <InvoiceManagementView setActiveSubTab={setActiveSubTab} />
               )}

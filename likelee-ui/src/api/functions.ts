@@ -204,6 +204,29 @@ export const getAgencyClients = () => base44Client.get(`/api/agency/clients`);
 export const createAgencyClient = (data: any) =>
   base44Client.post(`/api/agency/clients`, data);
 
+// Invoices (Agency Dashboard)
+export const listInvoices = (params?: {
+  status?: string;
+  date_start?: string;
+  date_end?: string;
+}) => base44Client.get(`/api/invoices`, { params: params || {} });
+
+export const getInvoice = (id: string) => base44Client.get(`/api/invoices/${id}`);
+
+export const createInvoice = (data: any) => base44Client.post(`/api/invoices`, data);
+
+export const updateInvoice = (id: string, data: any) =>
+  base44Client.post(`/api/invoices/${id}`, data);
+
+export const markInvoiceSent = (id: string) =>
+  base44Client.post(`/api/invoices/${id}/mark-sent`, {});
+
+export const markInvoicePaid = (id: string) =>
+  base44Client.post(`/api/invoices/${id}/mark-paid`, {});
+
+export const voidInvoice = (id: string) =>
+  base44Client.post(`/api/invoices/${id}/void`, {});
+
 // Book-Outs (Availability)
 export const listBookOuts = (params?: {
   date_start?: string;

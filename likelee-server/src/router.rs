@@ -13,6 +13,21 @@ pub fn build_router(state: AppState) -> Router {
         .allow_headers(Any);
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // Invoices (Agency Dashboard)
+        .route(
+            "/api/invoices",
+            get(crate::invoices::list).post(crate::invoices::create),
+        )
+        .route("/api/invoices/:id", get(crate::invoices::get).post(crate::invoices::update))
+        .route(
+            "/api/invoices/:id/mark-sent",
+            post(crate::invoices::mark_sent),
+        )
+        .route(
+            "/api/invoices/:id/mark-paid",
+            post(crate::invoices::mark_paid),
+        )
+        .route("/api/invoices/:id/void", post(crate::invoices::void_invoice))
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
