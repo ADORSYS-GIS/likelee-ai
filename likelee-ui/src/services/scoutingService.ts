@@ -463,8 +463,9 @@ export const scoutingService = {
     const formData = new FormData();
     formData.append("file", file);
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/templates/${docusealTemplateId}`,
+      `${baseUrl}/api/scouting/templates/${docusealTemplateId}`,
       {
         method: "PUT",
         headers: {
@@ -503,8 +504,10 @@ export const scoutingService = {
       filter: filter,
     });
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+    console.log(`scoutingService: Fetching offers from ${baseUrl}/api/scouting/offers?${params}`);
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers?${params}`,
+      `${baseUrl}/api/scouting/offers?${params}`,
       {
         headers: {
           "Authorization": `Bearer ${session.access_token}`,
@@ -525,8 +528,9 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/${offerId}`,
+      `${baseUrl}/api/scouting/offers/${offerId}`,
       {
         headers: {
           "Authorization": `Bearer ${session.access_token}`,
@@ -549,8 +553,9 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers`,
+      `${baseUrl}/api/scouting/offers`,
       {
         method: "POST",
         headers: {
@@ -599,8 +604,9 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/${offerId}`,
+      `${baseUrl}/api/scouting/offers/${offerId}`,
       {
         method: "DELETE",
         headers: {
@@ -620,8 +626,9 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/${offerId}?permanent=true`,
+      `${baseUrl}/api/scouting/offers/${offerId}?permanent=true`,
       {
         method: "DELETE",
         headers: {
@@ -641,8 +648,9 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/offers/refresh-status`,
+      `${baseUrl}/api/scouting/offers/refresh-status`,
       {
         method: "POST",
         headers: {
@@ -666,9 +674,10 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     // Call our backend API endpoint
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/builder-token`,
+      `${baseUrl}/api/scouting/builder-token`,
       {
         method: "POST",
         headers: {
@@ -693,8 +702,9 @@ export const scoutingService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/templates/sync`,
+      `${baseUrl}/api/scouting/templates/sync`,
       {
         method: "POST",
         headers: {
@@ -720,8 +730,9 @@ export const scoutingService = {
     formData.append("agency_id", agencyId);
     formData.append("file", file);
 
+    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8787"}/api/scouting/templates/upload`,
+      `${baseUrl}/api/scouting/templates/upload`,
       {
         method: "POST",
         headers: {

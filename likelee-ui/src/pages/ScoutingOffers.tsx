@@ -131,6 +131,7 @@ export default function ScoutingOffers() {
             return scoutingService.getOffers(agencyId, filterMode);
         },
         enabled: !!user,
+        refetchInterval: 5000, // Poll every 5 seconds to sync with webhook updates
     });
 
     const filteredOffers = React.useMemo(() => {
@@ -138,8 +139,8 @@ export default function ScoutingOffers() {
         return offers.filter(offer => {
             const searchMatch = searchQuery
                 ? offer.template?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  offer.prospect?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  offer.prospect?.email?.toLowerCase().includes(searchQuery.toLowerCase()) 
+                offer.prospect?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                offer.prospect?.email?.toLowerCase().includes(searchQuery.toLowerCase())
                 : true;
 
             const statusMatch = statusFilters.length > 0

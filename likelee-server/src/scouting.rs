@@ -352,7 +352,7 @@ pub async fn create_offer(
 pub async fn refresh_offer_status(
     State(state): State<AppState>,
     Json(query): Json<RefreshOfferStatusQuery>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> Result<Json<OfferResponse>, (StatusCode, String)> {
     info!(offer_id = %query.offer_id, "Refreshing offer status");
 
     // Get offer from database
@@ -392,31 +392,37 @@ pub async fn refresh_offer_status(
         state.docuseal_api_url.clone(),
     );
 
-    let submission = docuseal_client
-        .get_submission(submission_id)
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to fetch DocuSeal submission");
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
-
-    // Map DocuSeal status to our status
-    let status = match submission.status.as_str() {
-        "completed" => "completed",
-        "declined" => "declined",
-        "expired" => "voided",
-        _ => "sent",
+    let (status, signed_document_url, latest_signing_url) = {
+        let submission_result = docuseal_client.get_submission(submission_id).await;
+        
+        match submission_result {
+            Ok(submission) => {
+                let status = match submission.status.as_str() {
+                    "completed" => "completed",
+                    "declined" => "declined",
+                    "expired" => "voided",
+                    _ => "sent",
+                };
+                let signed_url = if status == "completed" {
+                    submission.documents.first().map(|d| d.url.clone())
+                } else {
+                    None
+                };
+                let signing_url = submission.submitters.first().map(|s| format!("{}/s/{}", state.docuseal_app_url, s.slug));
+                (status, signed_url, signing_url)
+            },
+            Err(e) => {
+                let err_str = e.to_string();
+                if err_str.contains("404") {
+                    info!(submission_id, "Submission not found in DocuSeal, marking as voided");
+                    ("voided", None, None)
+                } else {
+                    error!(error = %err_str, "Failed to fetch DocuSeal submission");
+                    return Err((StatusCode::INTERNAL_SERVER_ERROR, err_str));
+                }
+            }
+        }
     };
-
-    // Get signed document URL if completed
-    let signed_document_url = if status == "completed" {
-        submission.documents.first().map(|d| d.url.clone())
-    } else {
-        None
-    };
-
-    // Capture latest signing URL as well
-    let latest_signing_url = submission.submitters.first().and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug)));
 
     // Update offer in database
     let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
@@ -447,7 +453,7 @@ pub async fn refresh_offer_status(
     let response = OfferResponse {
         id: query.offer_id.clone(),
         status: status.to_string(),
-        signing_url: submission.submitters.first().and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug))),
+        signing_url: latest_signing_url,
         signed_document_url,
     };
 
@@ -967,7 +973,7 @@ pub async fn update_template_from_pdf(
 pub async fn get_offer_details(
     State(state): State<AppState>,
     Path(offer_id): Path<String>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     info!(offer_id = %offer_id, "Fetching offer details");
 
     let pg_client = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
@@ -1019,11 +1025,11 @@ pub async fn get_offer_details(
                 let signing_url = docuseal_details.submitters.first().map(|s| {
                     format!("{}/s/{}", state.docuseal_app_url, s.slug)
                 });
-
+ 
                 if let Some(obj) = offer.as_object_mut() {
                     // Insert the constructed URL into the main offer object
                     obj.insert("signing_url".to_string(), json!(signing_url));
-
+ 
                     // Also include the full details for context
                     if let Ok(details_json) = serde_json::to_value(docuseal_details) {
                         obj.insert("docuseal_details".to_string(), details_json);
@@ -1031,7 +1037,12 @@ pub async fn get_offer_details(
                 }
             }
             Err(e) => {
-                error!(error = %e, submission_id, "Failed to fetch details from DocuSeal");
+                let err_str = e.to_string();
+                if err_str.contains("404") {
+                    info!(submission_id, "Submission not found in DocuSeal for offer details");
+                } else {
+                    error!(error = %err_str, submission_id, "Failed to fetch details from DocuSeal");
+                }
             }
         }
     }
@@ -1054,22 +1065,38 @@ pub struct DocuSealWebhookEvent {
 pub async fn handle_webhook(
     State(state): State<AppState>,
     Json(payload): Json<DocuSealWebhookEvent>,
-) -> Result<impl IntoResponse, (StatusCode, String)> {
-    info!(event_type = %payload.event_type, "Received DocuSeal webhook");
+) -> Result<StatusCode, (StatusCode, String)> {
+    info!(
+        event_type = %payload.event_type,
+        payload = ?payload,
+        "Received DocuSeal webhook"
+    );
 
-    // We are primarily interested in submission.completed
-    if payload.event_type != "submission.completed" {
+    // Map DocuSeal events to our statuses
+    // submission.started -> opened
+    // submission.completed -> completed/signed
+    // submission.declined -> declined
+    
+    let status_update = match payload.event_type.as_str() {
+        "submission.started" | "submission.opened" | "submission.viewed" => Some("opened"),
+        "submission.completed" => Some("completed"),
+        "submission.declined" => Some("declined"),
+        _ => None,
+    };
+
+    if status_update.is_none() {
+        // Ignore other events
         return Ok(StatusCode::OK);
     }
+
+    let new_status = status_update.unwrap();
 
     let submission_id = payload.data["id"].as_i64().ok_or_else(|| {
         error!("Missing submission id in webhook payload");
         (StatusCode::BAD_REQUEST, "Missing submission id".to_string())
     })?;
 
-    let status = payload.data["status"].as_str().unwrap_or("completed");
-
-    info!(submission_id, status, "Processing submission completion");
+    info!(submission_id, new_status, "Processing submission update");
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
@@ -1089,6 +1116,8 @@ pub async fn handle_webhook(
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
+    info!(status = ?offer_response.status(), "Offer lookup response status");
+
     if !offer_response.status().is_success() {
         // It's possible we don't have this offer (e.g. created outside of our app or deleted)
         // Just log and ignore
@@ -1097,18 +1126,19 @@ pub async fn handle_webhook(
     }
 
     let offer_body = offer_response.text().await.unwrap_or_default();
+    info!(body = %offer_body, "Offer lookup response body");
     let offer: serde_json::Value = serde_json::from_str(&offer_body).map_err(|e| {
-        error!(error = %e, "Failed to parse offer");
+        error!(error = %e, body = %offer_body, "Failed to parse offer");
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
     let offer_id = offer["id"].as_str().unwrap();
     let prospect_id = offer["prospect_id"].as_str().unwrap();
 
-    // Update offer status
+    // Update offer status (Exact DocuSeal status for the submission UI)
     let _ = pg
         .from("scouting_offers")
-        .update(json!({ "status": status }).to_string())
+        .update(json!({ "status": new_status }).to_string())
         .eq("id", offer_id)
         .execute()
         .await
@@ -1116,8 +1146,9 @@ pub async fn handle_webhook(
             error!(error = %e, "Failed to update offer status");
         });
 
-    // 2. Update prospect status if signed/completed
-    if status == "completed" || status == "signed" {
+    // 2. Update prospect status (Pipeline logic)
+    // Only move the prospect card for significant events
+    if new_status == "completed" || new_status == "signed" {
         let _ = pg
             .from("scouting_prospects")
             .update(json!({ "status": "signed" }).to_string())
@@ -1125,9 +1156,21 @@ pub async fn handle_webhook(
             .execute()
             .await
             .map_err(|e| {
-                error!(error = %e, "Failed to update prospect status");
+                error!(error = %e, "Failed to update prospect status to signed");
+            });
+    } else if new_status == "declined" {
+        let _ = pg
+            .from("scouting_prospects")
+            .update(json!({ "status": "declined" }).to_string())
+            .eq("id", prospect_id)
+            .execute()
+            .await
+            .map_err(|e| {
+                error!(error = %e, "Failed to update prospect status to declined");
             });
     }
+    // Note: We do NOT update prospect status for "opened". 
+    // It stays as "offer_sent" in the pipeline until signed or declined.
 
     Ok(StatusCode::OK)
 }
