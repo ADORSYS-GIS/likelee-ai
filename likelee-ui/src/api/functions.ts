@@ -196,20 +196,6 @@ export const listInvoices = (params?: {
 
 export const getInvoice = (id: string) => base44Client.get(`/api/invoices/${id}`);
 
-// Talent Statements (Agency Dashboard)
-export const listTalentStatements = (params?: { talent_id?: string; year?: number }) =>
-  base44Client.get(`/api/talent-statements`, { params: params || {} });
-
-// Expenses (Agency Dashboard)
-export const listExpenses = (params?: {
-  date_start?: string;
-  date_end?: string;
-  category?: string;
-  status?: string;
-}) => base44Client.get(`/api/expenses`, { params: params || {} });
-
-export const createExpense = (data: any) => base44Client.post(`/api/expenses`, data);
-
 export const createInvoice = (data: any) => base44Client.post(`/api/invoices`, data);
 
 export const updateInvoice = (id: string, data: any) =>

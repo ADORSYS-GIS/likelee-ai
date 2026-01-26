@@ -480,5 +480,4 @@ erDiagram
   BOOKINGS ||--o{ AGENCY_INVOICES : booking_id
   AGENCY_INVOICES ||--o{ AGENCY_INVOICE_ITEMS : invoice_id
   AGENCY_INVOICES ||--o{ AGENCY_INVOICE_EXPENSES : invoice_id
-
 ```

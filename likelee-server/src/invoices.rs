@@ -4,10 +4,9 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::{NaiveDate, Utc};
+use chrono::{Datelike, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct InvoiceListParams {
@@ -113,11 +112,7 @@ fn compute_totals(
 ) -> (i64, i64, i64, i64, i64, i64) {
     let subtotal_cents: i64 = items
         .iter()
-        .map(|it| {
-            it.get("line_total_cents")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0)
-        })
+        .map(|it| it.get("line_total_cents").and_then(|v| v.as_i64()).unwrap_or(0))
         .sum();
 
     let expenses_cents: i64 = expenses
@@ -220,8 +215,7 @@ async fn get_client_snapshot(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -252,8 +246,7 @@ async fn get_booking(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -284,8 +277,7 @@ async fn ensure_invoice_owned(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -299,17 +291,6 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CreateInvoicePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if payload
-        .invoice_number
-        .as_ref()
-        .is_some_and(|s| !s.trim().is_empty())
-    {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "invoice_number is system-generated and cannot be provided".to_string(),
-        ));
-    }
-
     let client = get_client_snapshot(&state, &user, &payload.client_id).await?;
 
     let booking = if let Some(bid) = payload.source_booking_id.as_ref() {
@@ -339,23 +320,11 @@ pub async fn create(
     let mut items_in: Vec<CreateInvoiceItemInput> = payload.items.unwrap_or_default();
     if items_in.is_empty() {
         if let Some(b) = booking.as_ref() {
-            let date_of_service = b
-                .get("date")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+            let date_of_service = b.get("date").and_then(|v| v.as_str()).map(|s| s.to_string());
             let rate_cents = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-            let rate_type = b
-                .get("rate_type")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            let talent_id = b
-                .get("talent_id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            let talent_name = b
-                .get("talent_name")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+            let rate_type = b.get("rate_type").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let talent_id = b.get("talent_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let talent_name = b.get("talent_name").and_then(|v| v.as_str()).map(|s| s.to_string());
 
             items_in.push(CreateInvoiceItemInput {
                 description: "Booking services".to_string(),
@@ -372,61 +341,47 @@ pub async fn create(
     let items_norm = normalize_items(&items_in);
     let expenses_norm = normalize_expenses(&payload.expenses.unwrap_or_default());
 
-    let (
-        subtotal_cents,
-        expenses_cents,
-        tax_cents,
-        total_cents,
-        agency_fee_cents,
-        talent_net_cents,
-    ) = compute_totals(
-        &items_norm,
-        &expenses_norm,
-        agency_commission_bps,
-        tax_rate_bps,
-        tax_exempt,
-        discount_cents,
-    );
+    let (subtotal_cents, expenses_cents, tax_cents, total_cents, agency_fee_cents, talent_net_cents) =
+        compute_totals(
+            &items_norm,
+            &expenses_norm,
+            agency_commission_bps,
+            tax_rate_bps,
+            tax_exempt,
+            discount_cents,
+        );
 
-    // Invoice number is always system-generated
-    let body = json!({ "p_agency_id": user.id });
-    let resp = state
-        .pg
-        .rpc("next_invoice_number", body.to_string())
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let status = resp.status();
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
-    }
-    // Postgrest returns JSON; accept either {"next_invoice_number":"..."} or string
-    let v: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let invoice_number = v
-        .as_str()
-        .map(|s| s.to_string())
-        .or_else(|| {
-            v.get("next_invoice_number")
-                .and_then(|x| x.as_str())
-                .map(|s| s.to_string())
-        })
-        .unwrap_or_else(|| {
-            // Fallback only (should be generated by DB RPC). Keep format consistent:
-            // INVC + [A-Z] + 7 digits
-            let id = Uuid::new_v4();
-            let b = *id.as_bytes();
-            let letter = (b'A' + (b[0] % 26)) as char;
-            let seed = u32::from_be_bytes([b[1], b[2], b[3], b[4]]);
-            let digits = seed % 10_000_000;
-            format!("INVC{}{:07}", letter, digits)
-        });
+    // Generate invoice number if not supplied
+    let invoice_number = if let Some(s) = payload.invoice_number.as_ref().filter(|s| !s.is_empty()) {
+        s.clone()
+    } else {
+        let body = json!({ "p_agency_id": user.id });
+        let resp = state
+            .pg
+            .rpc("next_invoice_number", body.to_string())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            return Err((code, text));
+        }
+        // Postgrest returns JSON; accept either {"next_invoice_number":"..."} or string
+        let v: serde_json::Value = serde_json::from_str(&text)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        v.as_str()
+            .map(|s| s.to_string())
+            .or_else(|| v.get("next_invoice_number").and_then(|x| x.as_str()).map(|s| s.to_string()))
+            .unwrap_or_else(|| {
+                let yr = Utc::now().year();
+                format!("INV-{}-0001", yr)
+            })
+    };
 
     let inv_row = json!({
         "agency_id": user.id,
@@ -481,8 +436,7 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -496,10 +450,7 @@ pub async fn create(
     let invoice_id = invoice
         .get("id")
         .and_then(|v| v.as_str())
-        .ok_or((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "missing invoice id".to_string(),
-        ))?
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing invoice id".to_string()))?
         .to_string();
 
     // Insert items
@@ -621,17 +572,6 @@ pub async fn update(
     Path(id): Path<String>,
     Json(payload): Json<UpdateInvoicePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if payload
-        .invoice_number
-        .as_ref()
-        .is_some_and(|s| !s.trim().is_empty())
-    {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "invoice_number is system-generated and cannot be provided".to_string(),
-        ));
-    }
-
     let current = ensure_invoice_owned(&state, &user, &id).await?;
 
     let status = current
@@ -647,22 +587,12 @@ pub async fn update(
 
     let agency_commission_bps = payload
         .agency_commission_bps
-        .or_else(|| {
-            current
-                .get("agency_commission_bps")
-                .and_then(|v| v.as_i64())
-                .map(|v| v as i32)
-        })
+        .or_else(|| current.get("agency_commission_bps").and_then(|v| v.as_i64()).map(|v| v as i32))
         .unwrap_or(2000) as i64;
 
     let tax_rate_bps = payload
         .tax_rate_bps
-        .or_else(|| {
-            current
-                .get("tax_rate_bps")
-                .and_then(|v| v.as_i64())
-                .map(|v| v as i32)
-        })
+        .or_else(|| current.get("tax_rate_bps").and_then(|v| v.as_i64()).map(|v| v as i32))
         .unwrap_or(0) as i64;
 
     let tax_exempt = payload
@@ -672,12 +602,7 @@ pub async fn update(
 
     let discount_cents = payload
         .discount_cents
-        .or_else(|| {
-            current
-                .get("discount_cents")
-                .and_then(|v| v.as_i64())
-                .map(|v| v as i32)
-        })
+        .or_else(|| current.get("discount_cents").and_then(|v| v.as_i64()).map(|v| v as i32))
         .unwrap_or(0) as i64;
 
     // Replace items/expenses if provided
@@ -780,23 +705,18 @@ pub async fn update(
         expenses_norm = serde_json::from_str(&txt).unwrap_or_default();
     }
 
-    let (
-        subtotal_cents,
-        expenses_cents,
-        tax_cents,
-        total_cents,
-        agency_fee_cents,
-        talent_net_cents,
-    ) = compute_totals(
-        &items_norm,
-        &expenses_norm,
-        agency_commission_bps,
-        tax_rate_bps,
-        tax_exempt,
-        discount_cents,
-    );
+    let (subtotal_cents, expenses_cents, tax_cents, total_cents, agency_fee_cents, talent_net_cents) =
+        compute_totals(
+            &items_norm,
+            &expenses_norm,
+            agency_commission_bps,
+            tax_rate_bps,
+            tax_exempt,
+            discount_cents,
+        );
 
     let body = json!({
+        "invoice_number": payload.invoice_number,
         "invoice_date": payload.invoice_date,
         "due_date": payload.due_date,
         "payment_terms": payload.payment_terms,
@@ -839,8 +759,7 @@ pub async fn update(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -888,8 +807,7 @@ pub async fn mark_sent(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -937,8 +855,7 @@ pub async fn mark_paid(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
@@ -975,8 +892,7 @@ pub async fn void_invoice(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 

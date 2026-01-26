@@ -18,10 +18,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/invoices",
             get(crate::invoices::list).post(crate::invoices::create),
         )
-        .route(
-            "/api/invoices/:id",
-            get(crate::invoices::get).post(crate::invoices::update),
-        )
+        .route("/api/invoices/:id", get(crate::invoices::get).post(crate::invoices::update))
         .route(
             "/api/invoices/:id/mark-sent",
             post(crate::invoices::mark_sent),
@@ -30,20 +27,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/invoices/:id/mark-paid",
             post(crate::invoices::mark_paid),
         )
-        .route(
-            "/api/invoices/:id/void",
-            post(crate::invoices::void_invoice),
-        )
-        // Talent Statements (Agency Dashboard)
-        .route(
-            "/api/talent-statements",
-            get(crate::talent_statements::list),
-        )
-        // Expenses (Agency Dashboard)
-        .route(
-            "/api/expenses",
-            get(crate::expenses::list).post(crate::expenses::create),
-        )
+        .route("/api/invoices/:id/void", post(crate::invoices::void_invoice))
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
