@@ -198,9 +198,12 @@ export default function Login() {
 
           <CardContent className="space-y-6">
             <Tabs
-              defaultValue="creator"
+              value={userType}
               className="w-full"
-              onValueChange={setUserType}
+              onValueChange={(value) => {
+                setUserType(value);
+                setError(null);
+              }}
             >
               <TabsList className="grid w-full grid-cols-3 mb-8 p-1 bg-gray-100 rounded-xl">
                 <TabsTrigger

@@ -16,7 +16,6 @@ export default function ForgotPassword() {
   const [loading, setLoading] = React.useState(false);
 
   return (
-    <Layout currentPageName="Forgot Password">
       <div className="max-w-md mx-auto px-6 py-16">
         <h1 className="text-2xl font-bold mb-4">
           {t("forgotPasswordPage.title")}
@@ -99,6 +98,5 @@ export default function ForgotPassword() {
           </div>
         </form>
       </div>
-    </Layout>
   );
 }
