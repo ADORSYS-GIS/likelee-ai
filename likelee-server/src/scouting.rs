@@ -1038,3 +1038,96 @@ pub async fn get_offer_details(
 
     Ok(Json(offer))
 }
+
+// ============================================================================
+// Webhook Handler
+// ============================================================================
+
+#[derive(Debug, Deserialize)]
+pub struct DocuSealWebhookEvent {
+    pub event_type: String,
+    pub timestamp: String,
+    pub data: serde_json::Value,
+}
+
+/// POST /webhooks/docuseal
+pub async fn handle_webhook(
+    State(state): State<AppState>,
+    Json(payload): Json<DocuSealWebhookEvent>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    info!(event_type = %payload.event_type, "Received DocuSeal webhook");
+
+    // We are primarily interested in submission.completed
+    if payload.event_type != "submission.completed" {
+        return Ok(StatusCode::OK);
+    }
+
+    let submission_id = payload.data["id"].as_i64().ok_or_else(|| {
+        error!("Missing submission id in webhook payload");
+        (StatusCode::BAD_REQUEST, "Missing submission id".to_string())
+    })?;
+
+    let status = payload.data["status"].as_str().unwrap_or("completed");
+
+    info!(submission_id, status, "Processing submission completion");
+
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+
+    // 1. Update scouting_offers status
+    // We need to find the offer associated with this submission_id
+    let offer_response = pg
+        .from("scouting_offers")
+        .select("id, prospect_id")
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .single()
+        .execute()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to find offer for submission");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    if !offer_response.status().is_success() {
+        // It's possible we don't have this offer (e.g. created outside of our app or deleted)
+        // Just log and ignore
+        info!("No offer found for submission_id: {}", submission_id);
+        return Ok(StatusCode::OK);
+    }
+
+    let offer_body = offer_response.text().await.unwrap_or_default();
+    let offer: serde_json::Value = serde_json::from_str(&offer_body).map_err(|e| {
+        error!(error = %e, "Failed to parse offer");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let offer_id = offer["id"].as_str().unwrap();
+    let prospect_id = offer["prospect_id"].as_str().unwrap();
+
+    // Update offer status
+    let _ = pg
+        .from("scouting_offers")
+        .update(json!({ "status": status }).to_string())
+        .eq("id", offer_id)
+        .execute()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to update offer status");
+        });
+
+    // 2. Update prospect status if signed/completed
+    if status == "completed" || status == "signed" {
+        let _ = pg
+            .from("scouting_prospects")
+            .update(json!({ "status": "signed" }).to_string())
+            .eq("id", prospect_id)
+            .execute()
+            .await
+            .map_err(|e| {
+                error!(error = %e, "Failed to update prospect status");
+            });
+    }
+
+    Ok(StatusCode::OK)
+}

@@ -189,6 +189,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/scouting/builder-token",
             post(crate::scouting::create_builder_token),
         )
+        .route(
+            "/webhooks/docuseal",
+            post(crate::scouting::handle_webhook),
+        )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit
         .layer(cors)
