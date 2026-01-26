@@ -1,4 +1,5 @@
 import React from "react";
+import Layout from "@/pages/Layout";
 
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
