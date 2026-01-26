@@ -94,10 +94,7 @@ export default function ProductionStudio() {
             </p>
             <Button
               onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") +
-                    "?type=production_studio",
-                )
+                navigate(`${createPageUrl("ComingSoon")}?feature=Brand%20signup`)
               }
               className="h-14 px-10 text-base font-medium bg-gradient-to-r from-slate-700 to-gray-800 hover:from-slate-800 hover:to-gray-900 text-white border-2 border-black shadow-lg transition-all hover:shadow-xl hover:scale-105 rounded-none"
             >

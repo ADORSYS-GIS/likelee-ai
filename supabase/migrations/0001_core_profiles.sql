@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.creators (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name text,
   email text,
+  role text DEFAULT 'creator',
   city text,
   state text,
   profile_photo_url text,

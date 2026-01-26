@@ -38,6 +38,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { base44 } from "@/api/base44Client";
 import { toast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -864,28 +865,15 @@ export default function ReserveProfile() {
 
   const startVerification = async () => {
     const targetId = user?.id || profileId;
-    if (!targetId) {
-      toast({
-        title: t("reserveProfile.toasts.kycErrorTitle"),
-        description:
-          "Please complete the previous steps before starting verification.",
-        className: "bg-cyan-50 border-2 border-cyan-400",
-      });
-      return;
-    }
+    if (!targetId) return;
     try {
       setKycLoading(true);
       const u = new URL(window.location.href);
-      u.searchParams.set("step", "4");
       u.searchParams.set("verified", "1");
       const returnUrl = u.toString();
-      const res = await fetch(api(`/api/kyc/session`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
+      const data = await base44.post(api(`/api/kyc/session`), {
+        return_url: returnUrl,
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
       setKycProvider(data.provider || "veriff");
       setKycSessionUrl(data.session_url);
       setKycStatus("pending");
@@ -906,11 +894,7 @@ export default function ReserveProfile() {
     if (!targetId) return;
     try {
       setKycLoading(true);
-      const res = await fetch(
-        api(`/api/kyc/status?user_id=${encodeURIComponent(targetId)}`),
-      );
-      if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
+      const rows = await base44.get(api(`/api/kyc/status`));
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row) {
         if (row.kyc_status) setKycStatus(row.kyc_status);

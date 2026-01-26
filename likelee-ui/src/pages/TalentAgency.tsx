@@ -71,9 +71,7 @@ export default function TalentAgency() {
             </Button>
             <Button
               onClick={() =>
-                navigate(
-                  `${createPageUrl("OrganizationSignup")}?type=talent_agency`,
-                )
+                navigate(`${createPageUrl("ComingSoon")}?feature=Agency%20signup`)
               }
               className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
             >

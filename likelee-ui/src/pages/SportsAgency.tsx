@@ -75,11 +75,9 @@ export default function SportsAgency() {
             </Button>
             <Button
               onClick={() =>
-                navigate(
-                  `${createPageUrl("OrganizationSignup")}?type=sports_agency`,
-                )
+                navigate(`${createPageUrl("ComingSoon")}?feature=Agency%20signup`)
               }
-              className="h-12 px-10 text-lg font-medium bg-white hover:bg-gray-100 text-gray-900 rounded-md transition-all border-2 border-gray-200"
+              className="h-12 px-10 text-lg font-medium bg-transparent hover:bg-white/10 text-white rounded-md transition-all border-2 border-white"
             >
               {t("getStarted")}
             </Button>

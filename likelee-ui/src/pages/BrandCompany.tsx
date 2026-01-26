@@ -75,9 +75,7 @@ export default function BrandCompany() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={() =>
-                navigate(
-                  createPageUrl("OrganizationSignup") + "?type=brand_company",
-                )
+                navigate(`${createPageUrl("ComingSoon")}?feature=Brand%20signup`)
               }
               className="h-12 sm:h-14 px-8 sm:px-10 font-medium bg-gradient-to-r from-[#F7B750] to-[#FAD54C] text-white border-2 border-black shadow-xl rounded-none"
             >

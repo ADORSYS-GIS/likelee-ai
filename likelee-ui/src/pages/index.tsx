@@ -94,6 +94,8 @@ import CreatorSignupOptions from "./CreatorSignupOptions";
 
 import SAGAFTRAAlignment from "./SAGAFTRAAlignment";
 
+import ComingSoon from "./ComingSoon";
+
 import AboutUs from "./AboutUs";
 
 import CommercialRights from "./CommercialRights";
@@ -308,7 +310,12 @@ function PagesContent() {
 
         <Route path="/MarketingAgency" element={<MarketingAgency />} />
 
-        <Route path="/AgencySelection" element={<AgencySelection />} />
+        <Route path="/ComingSoon" element={<ComingSoon />} />
+
+        <Route
+          path="/AgencySelection"
+          element={<ComingSoon />}
+        />
 
         <Route path="/TalentAgency" element={<TalentAgency />} />
 

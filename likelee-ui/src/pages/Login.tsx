@@ -108,8 +108,14 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Agency login is now enabled
-    // if (userType === "agency") return; // Agency is coming soon
+    if (userType === "brand") {
+      navigate("/ComingSoon?feature=Brand%20login", { replace: true });
+      return;
+    }
+    if (userType === "agency") {
+      navigate("/ComingSoon?feature=Agency%20login", { replace: true });
+      return;
+    }
 
     setError(null);
     setLoading(true);
@@ -131,8 +137,8 @@ export default function Login() {
 
   const getSignupLink = () => {
     if (userType === "creator") return "/CreatorSignupOptions";
-    if (userType === "brand") return "/OrganizationSignup?type=brand_company";
-    if (userType === "agency") return "/AgencySelection";
+    if (userType === "brand") return "/ComingSoon?feature=Brand%20signup";
+    if (userType === "agency") return "/ComingSoon?feature=Agency%20signup";
     return "/Register";
   };
 
@@ -186,7 +192,21 @@ export default function Login() {
             <Tabs
               defaultValue="creator"
               className="w-full"
-              onValueChange={setUserType}
+              onValueChange={(v) => {
+                if (v === "agency") {
+                  navigate("/ComingSoon?feature=Agency%20login", {
+                    replace: true,
+                  });
+                  return;
+                }
+                if (v === "brand") {
+                  navigate("/ComingSoon?feature=Brand%20login", {
+                    replace: true,
+                  });
+                  return;
+                }
+                setUserType(v);
+              }}
             >
               <TabsList className="grid w-full grid-cols-3 mb-8 p-1 bg-gray-100 rounded-xl">
                 <TabsTrigger
@@ -197,12 +217,14 @@ export default function Login() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="brand"
+                  disabled
                   className="rounded-lg data-[state=active]:bg-[#32C8D1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 font-bold"
                 >
                   {t("auth.login.tabs.brand", "Brand")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="agency"
+                  disabled
                   className="rounded-lg data-[state=active]:bg-[#32C8D1] data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 font-bold"
                 >
                   {t("auth.login.tabs.agency", "Agency")}

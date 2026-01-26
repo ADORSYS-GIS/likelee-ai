@@ -40,6 +40,7 @@ import {
   getAgencyProfile,
   createOrganizationKycSession,
 } from "@/api/functions";
+import { useNavigate } from "react-router-dom";
 
 const getProductionTypes = (t: any) => [
   {
@@ -198,6 +199,7 @@ export default function OrganizationSignup() {
   const { t } = useTranslation();
   const { user, login, resendEmailConfirmation } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [orgType, setOrgType] = useState("");
   const [isPreSelected, setIsPreSelected] = useState(false);
@@ -276,6 +278,15 @@ export default function OrganizationSignup() {
       return "agency";
     return null;
   }, [orgType]);
+
+  useEffect(() => {
+    if (flow === "brand") {
+      navigate("/ComingSoon?feature=Brand%20signup", { replace: true });
+    }
+    if (flow === "agency") {
+      navigate("/ComingSoon?feature=Agency%20signup", { replace: true });
+    }
+  }, [flow, navigate]);
 
   // Check for existing session and onboarding step
   // This effect handles the user's return after email verification.
