@@ -317,7 +317,6 @@ export default function ScoutingOffers() {
 
             queryClient.invalidateQueries({ queryKey: ["offers"] });
             setShowSendOfferDialog(false);
-            navigate("/AgencyDashboard");
         } catch (error) {
             console.error("Error sending offer:", error);
             toast({
