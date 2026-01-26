@@ -351,7 +351,7 @@ export default function ScoutingOffers() {
                 <div>
                     <Button
                         variant="outline"
-                        onClick={() => navigate("/AgencyDashboard")}
+                        onClick={() => navigate("/AgencyDashboard?tab=scouting")}
                         className="flex items-center gap-2 bg-white shadow-sm mb-4"
                     >
                         <ArrowLeft className="w-4 h-4" />

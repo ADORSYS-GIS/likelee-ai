@@ -5660,8 +5660,8 @@ const ProspectDetailsSheet = ({
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-gray-600">Status</Label>
-                <Badge className={`capitalize border ${STATUS_COLORS[prospect.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                <Label className="text-sm font-bold text-gray-600">Status</Label>
+                <Badge className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
                   {STATUS_MAP[prospect.status] || prospect.status}
                 </Badge>
               </div>
@@ -5714,16 +5714,6 @@ const ProspectDetailsSheet = ({
               </Select>
             </div>
 
-            {/* Conditional Send Offer Button */}
-            {prospect.status === "test_shoot_success" && (
-              <Button
-                onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                Send Offer
-              </Button>
-            )}
           </div>
         </SheetHeader>
 
@@ -5742,9 +5732,20 @@ const ProspectDetailsSheet = ({
                 </div>
               </div>
               <div className="flex-1 pt-2">
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {prospect.full_name}
-                </h2>
+                <div className="flex justify-between items-start">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    {prospect.full_name}
+                  </h2>
+                  {prospect.status === "test_shoot_success" && (
+                    <Button
+                      onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Send Offer
+                    </Button>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {prospect.categories?.map((cat) => (
                     <Badge key={cat} variant="outline" className="font-medium">
