@@ -59,21 +59,34 @@ export default function Login() {
 
   // Track if we're about to redirect
   const [isRedirecting, setIsRedirecting] = React.useState(false);
+  // Guard against race conditions during logout/tab switch
+  const [accessDenied, setAccessDenied] = React.useState(false);
 
   React.useEffect(() => {
+    // Reset accessDenied once we are fully logged out
+    if (!authenticated) {
+      setAccessDenied(false);
+      return;
+    }
+
     if (initialized && authenticated && profile) {
+      // If we already detected a mismatch, don't do anything until logout finishes
+      if (accessDenied) return;
+
       // Enforce role-based login
       const normalizedRole = (profile.role || "").toLowerCase().trim();
       const normalizedUserType = (userType || "").toLowerCase().trim();
 
       if (!normalizedRole) {
         setError("Account role not found. Please contact support.");
+        setAccessDenied(true);
         logout();
         return;
       }
 
       if (normalizedRole !== normalizedUserType) {
         setError("Account does not exist under this tab, try another");
+        setAccessDenied(true);
         logout();
         return;
       }
@@ -104,6 +117,7 @@ export default function Login() {
     creatorType,
     userType,
     logout,
+    accessDenied,
   ]);
 
   const handleLogin = async (e: React.FormEvent) => {
