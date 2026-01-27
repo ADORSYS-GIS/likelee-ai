@@ -86,45 +86,17 @@ export const getOrganizationKycStatus = (organization_id: string) =>
     `/api/kyc/organization/status?organization_id=${organization_id}`,
   );
 
-export const getOrganizationProfileByUserId = () =>
-  base44Client.get(`/api/organization-profile/user`);
-
 export const getBrandProfile = () =>
   base44Client.get(`/api/brand-profile/user`);
 
 export const getAgencyProfile = () =>
   base44Client.get(`/api/agency-profile/user`);
 
-// Organization profile CRUD
-export const createOrganizationProfile = (data: any) =>
-  base44Client.post(`/api/organization-profile`, data);
-
-export const updateOrganizationProfile = (id: string, data: any) =>
-  base44Client.post(`/api/organization-profile/${id}`, data);
-
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/api/brand-profile`, data);
 
 export const updateAgencyProfile = (data: any) =>
   base44Client.post(`/api/agency-profile`, data);
-
-// Organization registration (creates user + organization and links ownership)
-export const registerOrganization = (
-  data: {
-    email: string;
-    password: string;
-    organization_name: string;
-    contact_name?: string;
-    contact_title?: string;
-    organization_type?: string;
-    website?: string;
-    phone_number?: string;
-  },
-  userId?: string,
-) =>
-  base44Client.post(`/api/organization-register`, data, {
-    headers: userId ? { "x-user-id": userId } : {},
-  });
 
 export const registerBrand = (data: any) =>
   base44Client.post(`/api/brand-register`, data);
@@ -170,63 +142,3 @@ export const exchangeStripeOAuthCode = async (
 ) => {
   return { data: { status: "error", error: "not_supported" } } as any;
 };
-
-// Bookings (Agency Dashboard)
-export const listBookings = (params?: {
-  date_start?: string;
-  date_end?: string;
-}) => base44Client.get(`/api/bookings`, { params: params || {} });
-
-export const createBooking = (data: any) =>
-  base44Client.post(`/api/bookings`, data);
-
-export const updateBooking = (id: string, data: any) =>
-  base44Client.post(`/api/bookings/${id}`, data);
-
-export const cancelBooking = (id: string) =>
-  base44Client.post(`/api/bookings/${id}/cancel`, {});
-
-// Agency talents
-export const getAgencyTalents = (params?: { q?: string }) =>
-  base44Client.get(`/api/agency/talents`, { params: params || {} });
-
-// Create booking with files (multipart)
-export const createBookingWithFiles = async (data: any, files: File[]) => {
-  const fd = new FormData();
-  fd.append("data", JSON.stringify(data));
-  for (const f of files) fd.append("files", f);
-  // Do NOT set Content-Type manually; let the browser add the multipart boundary
-  return base44Client.post(`/api/bookings/with-files`, fd);
-};
-
-// Agency clients
-export const getAgencyClients = () => base44Client.get(`/api/agency/clients`);
-export const createAgencyClient = (data: any) =>
-  base44Client.post(`/api/agency/clients`, data);
-
-// Book-Outs (Availability)
-export const listBookOuts = (params?: {
-  date_start?: string;
-  date_end?: string;
-}) => base44Client.get(`/api/book-outs`, { params: params || {} });
-
-export const createBookOut = (data: {
-  talent_id: string;
-  start_date: string;
-  end_date: string;
-  reason?: string;
-  notes?: string;
-}) => base44Client.post(`/api/book-outs`, data);
-
-// Note: base44Client doesn't expose DELETE; use a POST shim if imported elsewhere.
-export const deleteBookOut = (id: string) =>
-  base44Client.post(`/api/book-outs/${id}`, { _method: "DELETE" });
-
-// Notifications
-export const notifyBookingCreatedEmail = (booking_id: string) =>
-  base44Client.post(`/api/notifications/booking-created-email`, { booking_id });
-
-export const listBookingNotifications = (params?: { limit?: number }) =>
-  base44Client.get(`/api/notifications/booking-notifications`, {
-    params: params || {},
-  });

@@ -18,8 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
-import { getAgencyTalents } from "@/api/functions";
+import { TALENT_DATA } from "@/data/mockData";
 
 export const AddBookOutModal = ({
   open,
@@ -35,30 +34,6 @@ export const AddBookOutModal = ({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
-  const [talents, setTalents] = useState<any[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const rows = await getAgencyTalents();
-        if (cancelled) return;
-        const mapped = Array.isArray(rows)
-          ? rows.map((r: any) => ({
-              id: r.id || r.user_id || r.creator_id,
-              name: r.full_name || r.name || r.stage_name || "Unnamed",
-            }))
-          : [];
-        setTalents(mapped);
-      } catch (_) {
-        setTalents([]);
-      }
-    };
-    if (open) load();
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
 
   const handleSave = () => {
     if (!talentId || !startDate || !endDate) {
@@ -124,7 +99,7 @@ export const AddBookOutModal = ({
                 <SelectValue placeholder="Select talent" />
               </SelectTrigger>
               <SelectContent>
-                {talents.map((talent) => (
+                {TALENT_DATA.map((talent) => (
                   <SelectItem key={talent.id} value={talent.id}>
                     {talent.name}
                   </SelectItem>
