@@ -20,22 +20,16 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::kyc::create_session),
         )
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
-        // Organization Profiles
+        // Brands
+        .route("/api/brand-register", post(crate::brands::register))
+        .route("/api/brand-profile", post(crate::brands::update))
+        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        // Agencies
+        .route("/api/agency-register", post(crate::agencies::register))
+        .route("/api/agency-profile", post(crate::agencies::update))
         .route(
-            "/api/organization-register",
-            post(crate::organization_profiles::register),
-        )
-        .route(
-            "/api/organization-profile",
-            post(crate::organization_profiles::create),
-        )
-        .route(
-            "/api/organization-profile/:id",
-            post(crate::organization_profiles::update),
-        )
-        .route(
-            "/api/organization-profile/user/:user_id",
-            get(crate::organization_profiles::get_by_user),
+            "/api/agency-profile/user",
+            get(crate::agencies::get_by_user),
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
