@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
 import { useNavigate, useSearchParams } from "react-router-dom";

@@ -315,8 +315,8 @@ export default function OrganizationSignup() {
               setProfileId(profile.id);
               setOrgType(
                 profile.organization_type ||
-                profile.agency_type ||
-                (isBrand ? "brand_company" : "marketing_agency"),
+                  profile.agency_type ||
+                  (isBrand ? "brand_company" : "marketing_agency"),
               );
               setFormData((prev) => ({
                 ...prev,
@@ -376,8 +376,8 @@ export default function OrganizationSignup() {
               setProfileId(orgProfile.id);
               setOrgType(
                 orgProfile.organization_type ||
-                orgProfile.agency_type ||
-                (brandProfile ? "brand_company" : "marketing_agency"),
+                  orgProfile.agency_type ||
+                  (brandProfile ? "brand_company" : "marketing_agency"),
               );
               setFormData((prev) => ({
                 ...prev,

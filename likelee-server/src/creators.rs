@@ -23,7 +23,7 @@ pub async fn upsert_profile(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::BAD_REQUEST, "missing email".to_string()))?
         .to_string();
-    
+
     // Debug logging to inspect incoming payload
     tracing::info!(?body, "upsert_profile payload");
 
@@ -90,7 +90,7 @@ pub async fn upsert_profile(
         if body.get("created_date").is_some() {
             body.as_object_mut().unwrap().remove("created_date");
         }
-        
+
         let body_str =
             serde_json::to_string(&body).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         let resp = state
