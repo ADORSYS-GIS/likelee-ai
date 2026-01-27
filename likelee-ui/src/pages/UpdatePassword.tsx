@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Layout from "./Layout";
 
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
@@ -19,7 +20,6 @@ export default function UpdatePassword() {
   const navigate = useNavigate();
 
   return (
-    <Layout currentPageName="Update Password">
       <div className="max-w-md mx-auto px-6 py-16">
         <h1 className="text-2xl font-bold mb-4">Update your password</h1>
         <form
@@ -112,6 +112,5 @@ export default function UpdatePassword() {
           </div>
         </form>
       </div>
-    </Layout>
   );
 }

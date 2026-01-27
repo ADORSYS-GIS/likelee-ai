@@ -289,77 +289,107 @@ export default function OrganizationSignup() {
         onboardingStep: profile?.onboarding_step,
       });
 
-      // We need both the user object and their profile to proceed.
-      if (user && profile) {
-        // Use the profile from useAuth directly if it's an organization profile
-        const isBrand = profile.role === "brand";
-        const isAgency = profile.role === "agency";
+      // We need the user object to proceed.
+      if (user) {
+        // If we already have the profile from useAuth, use it.
+        if (profile) {
+          const isBrand = profile.role === "brand";
+          const isAgency = profile.role === "agency";
 
-        if (isBrand || isAgency) {
-          if (
-            profile.status === "complete" ||
-            profile.onboarding_step === "complete"
-          ) {
-            console.log("Onboarding complete, redirecting to dashboard");
-            if (isBrand) {
-              window.location.href = "/BrandDashboard";
-            } else {
-              window.location.href = "/AgencyDashboard";
+          if (isBrand || isAgency) {
+            if (
+              profile.status === "complete" ||
+              profile.onboarding_step === "complete"
+            ) {
+              console.log("Onboarding complete, redirecting to dashboard");
+              if (isBrand) {
+                window.location.href = "/BrandDashboard";
+              } else {
+                window.location.href = "/AgencyDashboard";
+              }
+              return;
             }
-            return;
-          }
 
-          if (profile.onboarding_step === "email_verification") {
-            console.log("Advancing to Step 2 based on AuthProvider profile");
-            setProfileId(profile.id);
-            setOrgType(
-              profile.organization_type ||
+            if (profile.onboarding_step === "email_verification") {
+              console.log("Advancing to Step 2 based on AuthProvider profile");
+              setProfileId(profile.id);
+              setOrgType(
+                profile.organization_type ||
                 profile.agency_type ||
                 (isBrand ? "brand_company" : "marketing_agency"),
-            );
-            setFormData((prev) => ({
-              ...prev,
-              email: profile.email || user.email || "",
-            }));
-            setStep(2);
-            return;
+              );
+              setFormData((prev) => ({
+                ...prev,
+                email: profile.email || user.email || "",
+              }));
+              setStep(2);
+              return;
+            }
           }
         }
 
-        // Fallback to direct API calls if profile role is not yet set or synced
-        console.log("Profile role not yet synced, falling back to API calls");
-        let brandProfile = await getBrandProfile().catch(() => null);
-        let agencyProfile = await getAgencyProfile().catch(() => null);
+        // Fallback to direct API calls if profile is not in context or role is not yet set
+        console.log(
+          "Profile not in context or incomplete, falling back to API calls",
+        );
+        try {
+          const [brandProfile, agencyProfile] = await Promise.all([
+            getBrandProfile().catch((err) => {
+              if (
+                err.name === "AbortError" ||
+                err.message?.includes("aborted")
+              ) {
+                console.log("getBrandProfile aborted");
+              }
+              return null;
+            }),
+            getAgencyProfile().catch((err) => {
+              if (
+                err.name === "AbortError" ||
+                err.message?.includes("aborted")
+              ) {
+                console.log("getAgencyProfile aborted");
+              }
+              return null;
+            }),
+          ]);
 
-        const orgProfile = brandProfile || agencyProfile;
+          const orgProfile = brandProfile || agencyProfile;
 
-        if (orgProfile) {
-          console.log("Found orgProfile via API fallback:", orgProfile);
-          if (
-            orgProfile.status === "complete" ||
-            orgProfile.onboarding_step === "complete"
-          ) {
-            if (profile.role === "brand" || brandProfile) {
-              window.location.href = "/BrandDashboard";
-            } else {
-              window.location.href = "/AgencyDashboard";
+          if (orgProfile) {
+            console.log("Found orgProfile via API fallback:", orgProfile);
+            if (
+              orgProfile.status === "complete" ||
+              orgProfile.onboarding_step === "complete"
+            ) {
+              console.log("Onboarding complete via fallback, redirecting");
+              if (brandProfile) {
+                window.location.href = "/BrandDashboard";
+              } else {
+                window.location.href = "/AgencyDashboard";
+              }
+              return;
             }
-            return;
-          }
 
-          if (orgProfile.onboarding_step === "email_verification") {
-            setProfileId(orgProfile.id);
-            setOrgType(
-              orgProfile.organization_type ||
+            if (orgProfile.onboarding_step === "email_verification") {
+              console.log("Advancing to Step 2 via API fallback");
+              setProfileId(orgProfile.id);
+              setOrgType(
+                orgProfile.organization_type ||
                 orgProfile.agency_type ||
                 (brandProfile ? "brand_company" : "marketing_agency"),
-            );
-            setFormData((prev) => ({
-              ...prev,
-              email: orgProfile.email || user.email || "",
-            }));
-            setStep(2);
+              );
+              setFormData((prev) => ({
+                ...prev,
+                email: orgProfile.email || user.email || "",
+              }));
+              setStep(2);
+            }
+          } else {
+            console.log("No organization profile found via API fallback yet");
           }
+        } catch (err) {
+          console.error("Error in handleVerifiedUser API fallback:", err);
         }
       }
     };
@@ -744,7 +774,7 @@ export default function OrganizationSignup() {
               {/* Added Go to Dashboard button */}
               <Button
                 onClick={() => {
-                  if (orgType === "brand" || orgType === "production_studio") {
+                  if (flow === "brand") {
                     window.location.href = "/BrandDashboard";
                   } else {
                     window.location.href = "/AgencyDashboard";
