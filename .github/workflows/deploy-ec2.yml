@@ -168,17 +168,12 @@ jobs:
 
             # No certbot services in ALB/ACM mode
 
-            sleep 10
+            sleep 5
             set +e
-            # Web check (single attempt is fine; UI is usually instant)
-            curl -sS --max-time 15 http://localhost/ >/dev/null
+            curl -sS --max-time 10 http://localhost/ >/dev/null
             WEB_OK=$?
-            # API check: hit explicit health endpoint with retries to allow for cold start
-            API_OK=1
-            for i in 1 2 3 4 5 6; do
-              curl -sS --max-time 15 http://localhost/api/health >/dev/null && { API_OK=0; break; }
-              sleep 5
-            done
+            curl -sS --max-time 10 http://localhost/api/ >/dev/null
+            API_OK=$?
             set -e
 
             if [ "$WEB_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
