@@ -6,6 +6,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
+import Layout from "./Layout";
 
 export default function UpdatePassword() {
   const { t } = useTranslation();
