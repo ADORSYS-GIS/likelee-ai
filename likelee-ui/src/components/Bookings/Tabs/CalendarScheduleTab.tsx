@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   addDays,
   addMonths,
@@ -27,24 +27,17 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { ManageAvailabilityModal } from "../Modals/ManageAvailabilityModal";
 import { NewBookingModal } from "../Modals/NewBookingModal";
 import { BookingDetailsModal } from "../Modals/BookingDetailsModal";
-import { getAgencyTalents } from "@/api/functions";
 
 export const CalendarScheduleTab = ({
   bookings,
   onAddBooking,
   onUpdateBooking,
   onCancelBooking,
-  bookOuts = [],
-  onAddBookOut,
-  onRemoveBookOut,
 }: {
   bookings: any[];
   onAddBooking: (booking: any) => void;
   onUpdateBooking: (booking: any) => void;
   onCancelBooking: (id: string) => void;
-  bookOuts?: any[];
-  onAddBookOut: (bookOut: any) => void;
-  onRemoveBookOut: (id: string) => void;
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
@@ -55,38 +48,6 @@ export const CalendarScheduleTab = ({
   );
   // Ensure currentDate starts at today, resolving 13th vs 14th issue
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-
-  const [talentViewMode, setTalentViewMode] = useState<
-    "single" | "all" | "selected"
-  >("single");
-  const [selectedTalentId, setSelectedTalentId] = useState<string>("");
-  const [talents, setTalents] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const rows = await getAgencyTalents();
-        if (cancelled) return;
-        const arr = Array.isArray(rows) ? rows : [];
-        const mapped = arr
-          .map((r: any) => ({
-            id: String(r.id || r.user_id || r.creator_id || ""),
-            name: String(r.full_name || r.name || r.stage_name || "Unnamed"),
-          }))
-          .filter((t: any) => t.id);
-        setTalents(mapped);
-        if (!selectedTalentId && mapped.length > 0) {
-          setSelectedTalentId(mapped[0].id);
-        }
-      } catch (_e) {
-        if (!cancelled) setTalents([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedTalentId]);
 
   const handlePrevDay = () => setCurrentDate((prev) => subDays(prev, 1));
   const handleNextDay = () => setCurrentDate((prev) => addDays(prev, 1));
@@ -127,50 +88,11 @@ export const CalendarScheduleTab = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const monthStr = format(currentDate, "yyyy-MM");
-  const safeStr = (v?: any) => (typeof v === "string" ? v : "");
-
-  const bookingTalentId = (b: any) => {
-    const v = b?.talent_id || b?.talentId || b?.talent?.id;
-    return typeof v === "string" ? v : v ? String(v) : "";
-  };
-
-  const activeTalentId = talentViewMode === "all" ? "" : selectedTalentId;
-
-  const visibleBookings = useMemo(() => {
-    if (!Array.isArray(bookings)) return [];
-    if (!activeTalentId) return bookings;
-    return bookings.filter((b: any) => bookingTalentId(b) === activeTalentId);
-  }, [bookings, activeTalentId]);
-
-  const visibleBookOuts = useMemo(() => {
-    if (!Array.isArray(bookOuts)) return [];
-    if (!activeTalentId) return bookOuts;
-    return bookOuts.filter((bo: any) => {
-      const v = bo?.talent_id || bo?.talentId;
-      const id = typeof v === "string" ? v : v ? String(v) : "";
-      return id === activeTalentId;
-    });
-  }, [bookOuts, activeTalentId]);
-
-  const totalCount = Array.isArray(bookings) ? bookings.length : 0;
-  const thisMonthCount = Array.isArray(bookings)
-    ? bookings.filter((b: any) => safeStr(b.date).startsWith(monthStr)).length
-    : 0;
-  const confirmedCount = Array.isArray(bookings)
-    ? bookings.filter(
-        (b: any) => safeStr(b.status).toLowerCase() === "confirmed",
-      ).length
-    : 0;
-  const pendingCount = Array.isArray(bookings)
-    ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "pending")
-        .length
-    : 0;
   const stats = [
-    { label: "Total Bookings", value: String(totalCount) },
-    { label: "This Month", value: String(thisMonthCount) },
-    { label: "Confirmed", value: String(confirmedCount) },
-    { label: "Pending", value: String(pendingCount) },
+    { label: "Total Bookings", value: "1" },
+    { label: "This Month", value: "1" },
+    { label: "Confirmed", value: "1" },
+    { label: "Pending", value: "0" },
   ];
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -184,23 +106,6 @@ export const CalendarScheduleTab = ({
   });
 
   const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  const countBookOutsOnDate = (dateStr: string) => {
-    if (!Array.isArray(visibleBookOuts) || visibleBookOuts.length === 0)
-      return 0;
-    return visibleBookOuts.filter((bo: any) => {
-      const s = bo.startDate || bo.start_date;
-      const e = bo.endDate || bo.end_date || s;
-      if (typeof s !== "string" || typeof e !== "string") return false;
-      return s <= dateStr && dateStr <= e;
-    }).length;
-  };
-
-  const selectedTalentName = useMemo(() => {
-    if (!selectedTalentId) return "";
-    const t = talents.find((x) => x.id === selectedTalentId);
-    return t?.name || "";
-  }, [talents, selectedTalentId]);
 
   return (
     <div className="space-y-6">
@@ -351,8 +256,6 @@ export const CalendarScheduleTab = ({
                   selected={currentDate}
                   onSelect={(date) => date && setCurrentDate(date)}
                   initialFocus
-                  className=""
-                  classNames={{}}
                 />
               </PopoverContent>
             </Popover>
@@ -371,10 +274,7 @@ export const CalendarScheduleTab = ({
                 <SelectItem value="agenda">Agenda</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={talentViewMode}
-              onValueChange={(v) => setTalentViewMode(v as any)}
-            >
+            <Select defaultValue="single">
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -384,24 +284,6 @@ export const CalendarScheduleTab = ({
                 <SelectItem value="selected">Selected Talent</SelectItem>
               </SelectContent>
             </Select>
-
-            {talentViewMode !== "all" && (
-              <Select
-                value={selectedTalentId}
-                onValueChange={setSelectedTalentId}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select talent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {talents.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               onClick={() => {
@@ -458,36 +340,24 @@ export const CalendarScheduleTab = ({
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth() + 1;
               const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-              const dayBookings = visibleBookings.filter(
-                (b) => b.date === dayString,
-              );
-              const dayBookOutsCount = countBookOutsOnDate(dayString);
+              const dayBookings = bookings.filter((b) => b.date === dayString);
 
-              const getEventColor = (type?: string, status?: string) => {
-                const s = (status || "").toLowerCase();
-                const t = (type || "").toLowerCase();
-                // Status overrides
-                if (s === "cancelled") return "bg-red-200 text-gray-900";
-                if (s === "completed") return "bg-purple-200 text-gray-900";
-                if (s === "confirmed") return "bg-green-200 text-gray-900";
-                // Otherwise color by type (legend)
-                switch (t) {
+              const getTypeColor = (type: string) => {
+                switch (type) {
                   case "casting":
-                    return "bg-blue-100 text-gray-900";
+                    return "bg-blue-100 text-blue-800";
                   case "option":
-                    return "bg-yellow-100 text-gray-900";
+                    return "bg-yellow-100 text-yellow-800";
                   case "confirmed":
-                    return "bg-green-200 text-gray-900";
+                    return "bg-green-100 text-green-800";
                   case "test-shoot":
-                    return "bg-orange-100 text-gray-900";
+                    return "bg-orange-100 text-orange-800";
                   case "fitting":
-                    return "bg-yellow-50 text-gray-900";
+                    return "bg-yellow-50 text-yellow-700";
                   case "rehearsal":
-                    return "bg-gray-200 text-gray-900";
+                    return "bg-gray-200 text-gray-800";
                   default:
-                    // Fall back to status pending or generic
-                    if (s === "pending") return "bg-gray-200 text-gray-900";
-                    return "bg-indigo-200 text-gray-900";
+                    return "bg-indigo-100 text-indigo-800";
                 }
               };
 
@@ -504,22 +374,7 @@ export const CalendarScheduleTab = ({
                   onClick={() => {
                     const newDate = new Date(currentDate);
                     newDate.setDate(d);
-                    // First click selects the day; clicking the already-selected day opens New Booking
-                    const wasSelected = d === currentDate.getDate();
                     setCurrentDate(newDate);
-                    if (wasSelected) {
-                      setBookingMode("new");
-                      setSelectedBooking({
-                        date: dayString,
-                        ...(selectedTalentName
-                          ? {
-                              talentName: selectedTalentName,
-                              talent_name: selectedTalentName,
-                            }
-                          : {}),
-                      });
-                      setNewBookingOpen(true);
-                    }
                   }}
                 >
                   <span
@@ -532,52 +387,19 @@ export const CalendarScheduleTab = ({
                     {d}
                   </span>
                   <div className="mt-1 space-y-1">
-                    {dayBookings.map((b, idx) => {
-                      const statusVal = (b.status || b.booking_status) as
-                        | string
-                        | undefined;
-                      const typeVal = (b.type ||
-                        b.bookingType ||
-                        b.booking_type) as string | undefined;
-                      const pick = (v?: any) =>
-                        typeof v === "string" && v.trim().length > 0
-                          ? v.trim()
-                          : undefined;
-                      const displayName =
-                        pick(b.talent_name) ||
-                        pick(b.talentName) ||
-                        pick(b?.talent?.full_name) ||
-                        pick(b?.talent?.name) ||
-                        pick(b.client_name) ||
-                        "Untitled";
-                      // TEMP: debug what drives color (remove after validation)
-                      // console.debug("calendar booking", { date: dayString, status: statusVal, type: typeVal, name: displayName, id: b.id });
-                      return (
-                        <div
-                          key={`${b.id} - ${idx}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedBooking(b);
-                            setDetailsModalOpen(true);
-                          }}
-                          className={
-                            getEventColor(typeVal, statusVal) +
-                            " w-full h-7 flex items-center text-sm px-3 rounded-md font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer hover:opacity-90 border border-black/5 shadow-sm"
-                          }
-                          title={displayName}
-                        >
-                          {displayName}
-                        </div>
-                      );
-                    })}
-                    {dayBookOutsCount > 0 && (
+                    {dayBookings.map((b, idx) => (
                       <div
-                        className="bg-red-100 text-red-700 w-full h-7 flex items-center text-xs px-3 rounded-md font-bold whitespace-nowrap overflow-hidden text-ellipsis border border-red-200"
-                        title={`${dayBookOutsCount} unavailable`}
+                        key={`${b.id} - ${idx}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedBooking(b);
+                          setDetailsModalOpen(true);
+                        }}
+                        className={`${getTypeColor(b.type)} text-[10px] p-1 rounded font-bold truncate border-l-2 border-current cursor-pointer hover:opacity-80 transition-opacity`}
                       >
-                        ✕ {dayBookOutsCount} unavailable
+                        {b.talentName}
                       </div>
-                    )}
+                    ))}
                   </div>
                 </div>
               );
@@ -594,9 +416,6 @@ export const CalendarScheduleTab = ({
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-green-100 rounded-sm"></div> Confirmed
-          </span>
-          <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-gray-100 rounded-sm"></div> Pending
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-purple-100 rounded-sm"></div> Completed
@@ -628,13 +447,7 @@ export const CalendarScheduleTab = ({
         </div>
       </Card>
 
-      <ManageAvailabilityModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        bookOuts={visibleBookOuts}
-        onAddBookOut={onAddBookOut}
-        onRemoveBookOut={onRemoveBookOut}
-      />
+      <ManageAvailabilityModal open={modalOpen} onOpenChange={setModalOpen} />
       <NewBookingModal
         open={newBookingOpen}
         onOpenChange={setNewBookingOpen}
@@ -645,7 +458,7 @@ export const CalendarScheduleTab = ({
             onAddBooking(b);
           }
         }}
-        initialData={selectedBooking}
+        initialData={bookingMode === "new" ? undefined : selectedBooking}
         mode={bookingMode}
       />
 

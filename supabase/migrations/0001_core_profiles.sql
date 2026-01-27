@@ -176,26 +176,4 @@ CREATE POLICY "Users can update their own agency profile" ON public.agencies
 
 
 
--- 4.6. Agency Users adjustments (merged from 0009)
--- If agency_users table exists, add a human-readable name and an index for lookups
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'agency_users'
-  ) THEN
-    -- Add name column if missing
-    EXECUTE 'ALTER TABLE public.agency_users ADD COLUMN IF NOT EXISTS name text';
-
-    -- Create composite index (agency_id, name) if missing
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_class c
-      JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE c.relname = 'idx_agency_users_agency_name' AND n.nspname = 'public'
-    ) THEN
-      EXECUTE 'CREATE INDEX idx_agency_users_agency_name ON public.agency_users(agency_id, name)';
-    END IF;
-  END IF;
-END $$;
-
 COMMIT;

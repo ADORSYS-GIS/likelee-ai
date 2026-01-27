@@ -8348,7 +8348,7 @@ export default function CreatorDashboard() {
 
       {/* Payout Settings Modal */}
       <Dialog open={showPayoutSettings} onOpenChange={setShowPayoutSettings}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl relative">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               Payout Settings
@@ -8633,7 +8633,7 @@ export default function CreatorDashboard() {
         open={showRequestPayoutModal}
         onOpenChange={setShowRequestPayoutModal}
       >
-        <DialogContent className="max-w-md ">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Cash Out</DialogTitle>
             <DialogDescription>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Bell,
   Mail,
@@ -22,75 +22,14 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-import { listBookingNotifications } from "@/api/functions";
-
-import { format, parseISO } from "date-fns";
-
-type BookingLike = {
-  id?: string;
-  date?: string;
-  callTime?: string;
-  location?: string;
-  clientName?: string;
-  client?: string;
-  talentName?: string;
-  talent_name?: string;
-};
-
-type BookingNotificationRow = {
-  id: string;
-  booking_id: string;
-  channel: string;
-  recipient_type: string;
-  to_email?: string | null;
-  subject?: string | null;
-  message: string;
-  meta_json?: any;
-  created_at: string;
-};
-
-export const NotificationsTab = ({
-  bookings = [] as BookingLike[],
-}: {
-  bookings?: BookingLike[];
-}) => {
+export const NotificationsTab = () => {
   const { toast } = useToast();
   const [activeSubNav, setActiveSubNav] = useState("logs");
   const [testNotificationType, setTestNotificationType] = useState("");
   const [testTargetTalent, setTestTargetTalent] = useState("");
-
-  const [bookingNotifications, setBookingNotifications] = useState<
-    BookingNotificationRow[]
-  >([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
-
-  // Controlled settings for Booking Created/Confirmed channels
-  const [createdChannels, setCreatedChannels] = useState<{
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-  }>(() => {
-    const raw = localStorage.getItem("likelee.notifications.createdChannels");
-    const parsed = raw ? JSON.parse(raw) : {};
-    const v: { email: boolean; sms: boolean; push: boolean } = {
-      email: true,
-      sms: false,
-      push: false,
-      ...(parsed || {}),
-    };
-    v.email = true;
-    v.sms = false;
-    v.push = false;
-    return v;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(
-      "likelee.notifications.createdChannels",
-      JSON.stringify(createdChannels),
-    );
-  }, [createdChannels]);
 
   const testTalents = [
     "Emma",
@@ -105,116 +44,85 @@ export const NotificationsTab = ({
     "Aaron",
   ];
 
-  useEffect(() => {
-    if (activeSubNav !== "logs") return;
-    let cancelled = false;
-    setLoadingLogs(true);
-    (async () => {
-      try {
-        const rows = await listBookingNotifications({ limit: 100 });
-        const arr = Array.isArray(rows) ? rows : [];
-        if (!cancelled) setBookingNotifications(arr as any);
-      } catch (e: any) {
-        if (!cancelled) setBookingNotifications([]);
-        toast({
-          title: "Failed to load notifications",
-          description: e?.message || "Please try again.",
-          variant: "destructive" as any,
-        });
-      } finally {
-        if (!cancelled) setLoadingLogs(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeSubNav, toast]);
+  const stats = [
+    {
+      label: "Emails Sent",
+      value: "127",
+      subtitle: "100% delivered",
+      icon: Mail,
+      color: "text-blue-600",
+    },
+    {
+      label: "SMS Sent",
+      value: "84",
+      subtitle: "100% delivered",
+      icon: Phone,
+      color: "text-green-600",
+    },
+    {
+      label: "Push Sent",
+      value: "56",
+      subtitle: "65% clicked",
+      icon: Bell,
+      color: "text-purple-600",
+    },
+    {
+      label: "Failed",
+      value: "3",
+      subtitle: "Last 30 days",
+      icon: XCircle,
+      color: "text-red-600",
+    },
+  ];
 
-  const stats = useMemo(() => {
-    const emailRows = bookingNotifications.filter(
-      (n) => (n.channel || "").toLowerCase() === "email",
-    );
-    const ok = emailRows.filter(
-      (n) => (n.meta_json as any)?.smtp_status === "ok",
-    ).length;
-    const failed = emailRows.length - ok;
-    return [
-      {
-        label: "Emails Sent",
-        value: String(ok),
-        subtitle: "",
-        icon: Mail,
-        color: "text-blue-600",
-      },
-      {
-        label: "SMS Sent",
-        value: "0",
-        subtitle: "Coming Soon",
-        icon: Phone,
-        color: "text-green-600",
-      },
-      {
-        label: "Push Sent",
-        value: "0",
-        subtitle: "Coming Soon",
-        icon: Bell,
-        color: "text-purple-600",
-      },
-      {
-        label: "Failed",
-        value: String(failed),
-        subtitle: "",
-        icon: XCircle,
-        color: "text-red-600",
-      },
-    ];
-  }, [bookingNotifications]);
-
-  const notifications = useMemo(() => {
-    const items: {
-      type: "EMAIL" | "SMS" | "PUSH";
-      title: string;
-      recipient: string;
-      message: string;
-      time: string;
-      status: "success" | "error";
-      detail: string;
-    }[] = [];
-
-    const enabledTypes: ("EMAIL" | "SMS" | "PUSH")[] = [];
-    if (createdChannels.email) enabledTypes.push("EMAIL");
-    if (createdChannels.sms) enabledTypes.push("SMS");
-    if (createdChannels.push) enabledTypes.push("PUSH");
-
-    const rows = bookingNotifications
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
-      .slice(0, 50);
-
-    for (const r of rows) {
-      const ch = (r.channel || "").toUpperCase();
-      if (ch !== "EMAIL" && ch !== "SMS" && ch !== "PUSH") continue;
-      if (!enabledTypes.includes(ch as any)) continue;
-
-      const ts = r.created_at
-        ? format(parseISO(r.created_at), "MMM d, yyyy")
-        : "";
-      const ok = (r.meta_json as any)?.smtp_status === "ok";
-      items.push({
-        type: ch as any,
-        title: "Booking Created",
-        recipient: r.to_email || "",
-        message: r.subject || r.message,
-        time: ts,
-        status: ok ? "success" : "error",
-        detail: ok ? "Sent" : "Failed",
-      });
-    }
-    return items;
-  }, [bookingNotifications, createdChannels]);
+  const notifications = [
+    {
+      type: "EMAIL",
+      title: "Booking Created",
+      recipient: "Emma (emma@example.com)",
+      message: "New Booking: Glossier Beauty on Jan 15, 2026",
+      time: "Jan 12, 2025 10:35 AM",
+      status: "success",
+      detail: "Opened 10:55 AM",
+    },
+    {
+      type: "SMS",
+      title: "24h Reminder",
+      recipient: "Milan (+1-555-0102)",
+      message: "Reminder: Booking tomorrow with CarNext WIP at 9:00 AM",
+      time: "Jan 11, 2025 9:00 PM",
+      status: "success",
+      detail: "48 chars",
+    },
+    {
+      type: "PUSH",
+      title: "Booking Confirmed",
+      recipient: "Julia",
+      message:
+        "Your booking with Esther Skincare has been confirmed for Jan 20",
+      time: "Jan 10, 2025 2:03 PM",
+      status: "success",
+      detail: "Clicked",
+    },
+    {
+      type: "EMAIL",
+      title: "Booking Updated",
+      recipient: "Carla (carla@example.com)",
+      message: "Booking Updated: Reformation on Jan 25, 2026",
+      time: "Jan 9, 2026 4:15 PM",
+      status: "success",
+      detail: "",
+    },
+    {
+      type: "EMAIL",
+      title: "Booking Cancelled",
+      recipient: "Matt (matt@example.com)",
+      message: "Booking Cancelled: Aesop Skincare on Jan 22, 2026",
+      time: "Jan 8, 2025 11:00 AM",
+      status: "error",
+      detail: "Error: Invalid email address",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -287,16 +195,6 @@ export const NotificationsTab = ({
             </div>
 
             <div className="space-y-3">
-              {loadingLogs && (
-                <div className="p-6 text-center text-sm text-gray-500">
-                  Loading…
-                </div>
-              )}
-              {!loadingLogs && notifications.length === 0 && (
-                <div className="p-6 text-center text-sm text-gray-500">
-                  No notification logs yet.
-                </div>
-              )}
               {notifications.map((notif, idx) => (
                 <Card
                   key={idx}
@@ -394,13 +292,7 @@ export const NotificationsTab = ({
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={createdChannels.email}
-                      onChange={(e) =>
-                        setCreatedChannels((prev) => ({
-                          ...prev,
-                          email: e.target.checked,
-                        }))
-                      }
+                      defaultChecked
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -412,15 +304,11 @@ export const NotificationsTab = ({
                     <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
-                      Coming Soon
-                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={false}
-                      disabled
+                      defaultChecked
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -432,15 +320,11 @@ export const NotificationsTab = ({
                     <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
-                      Coming Soon
-                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={false}
-                      disabled
+                      defaultChecked
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -477,18 +361,9 @@ export const NotificationsTab = ({
                     <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
-                      Coming Soon
-                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      disabled
-                      checked={false}
-                      readOnly
-                    />
+                    <input type="checkbox" className="sr-only peer" />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                   </label>
                 </div>
@@ -498,16 +373,11 @@ export const NotificationsTab = ({
                     <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
-                      Coming Soon
-                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      disabled
-                      checked={false}
-                      readOnly
+                      defaultChecked
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -544,16 +414,11 @@ export const NotificationsTab = ({
                     <span className="text-sm font-medium text-gray-900">
                       SMS
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
-                      Coming Soon
-                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      disabled
-                      checked={false}
-                      readOnly
+                      defaultChecked
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -565,16 +430,11 @@ export const NotificationsTab = ({
                     <span className="text-sm font-medium text-gray-900">
                       Push
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
-                      Coming Soon
-                    </span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      disabled
-                      checked={false}
-                      readOnly
+                      defaultChecked
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -617,16 +477,11 @@ export const NotificationsTab = ({
                         <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">
-                          Coming Soon
-                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
+                          defaultChecked
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -638,16 +493,11 @@ export const NotificationsTab = ({
                         <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">
-                          Coming Soon
-                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
+                          defaultChecked
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -679,18 +529,9 @@ export const NotificationsTab = ({
                         <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">
-                          Coming Soon
-                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          disabled
-                          checked={false}
-                          readOnly
-                        />
+                        <input type="checkbox" className="sr-only peer" />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -700,18 +541,9 @@ export const NotificationsTab = ({
                         <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">
-                          Coming Soon
-                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          disabled
-                          checked={false}
-                          readOnly
-                        />
+                        <input type="checkbox" className="sr-only peer" />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -741,18 +573,9 @@ export const NotificationsTab = ({
                         <span className="text-sm font-medium text-gray-900">
                           SMS
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">
-                          Coming Soon
-                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          disabled
-                          checked={false}
-                          readOnly
-                        />
+                        <input type="checkbox" className="sr-only peer" />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -762,18 +585,9 @@ export const NotificationsTab = ({
                         <span className="text-sm font-medium text-gray-900">
                           Push
                         </span>
-                        <span className="text-xs text-gray-400 font-bold">
-                          Coming Soon
-                        </span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          disabled
-                          checked={false}
-                          readOnly
-                        />
+                        <input type="checkbox" className="sr-only peer" />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
                       </label>
                     </div>
@@ -877,19 +691,12 @@ export const NotificationsTab = ({
                   className="p-4 border border-gray-200 bg-white rounded-xl"
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
-                      {talent.image ? (
-                        <img
-                          src={talent.image}
-                          alt={talent.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-600 font-bold text-xs">
-                          {talent.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={talent.image || ""} alt={talent.name} />
+                      <AvatarFallback className="bg-gray-100 text-gray-600 font-bold">
+                        {talent.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <h4 className="font-bold text-gray-900">{talent.name}</h4>
                       <p className="text-sm text-gray-500">{talent.email}</p>
@@ -914,15 +721,10 @@ export const NotificationsTab = ({
                       <span className="text-sm font-bold text-gray-900">
                         SMS
                       </span>
-                      <span className="text-xs text-gray-400 font-bold">
-                        Coming Soon
-                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
+                          defaultChecked
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -932,15 +734,10 @@ export const NotificationsTab = ({
                       <span className="text-sm font-bold text-gray-900">
                         Push
                       </span>
-                      <span className="text-xs text-gray-400 font-bold">
-                        Coming Soon
-                      </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          disabled
-                          checked={false}
-                          readOnly
+                          defaultChecked
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
@@ -1035,9 +832,9 @@ export const NotificationsTab = ({
                   title: "Notification Sent",
                   description: `Test ${testNotificationType} notification sent to ${talentName}!`,
                   action: (
-                    <Button variant="outline" size="sm" onClick={() => {}}>
+                    <ToastAction altText="OK" onClick={() => {}}>
                       OK
-                    </Button>
+                    </ToastAction>
                   ),
                 });
               }}
