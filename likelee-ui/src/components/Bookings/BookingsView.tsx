@@ -8,7 +8,7 @@ import { TalentAvailabilityTab } from "./Tabs/TalentAvailabilityTab";
 import { ManagementAnalyticsView } from "./ManagementAnalyticsView";
 import { NotificationsTab } from "./Tabs/NotificationsTab";
 
-// We keep PlaceholderView for fallback
+// We keep PlaceholderView for fallback.
 const PlaceholderView = ({ activeSubTab }: { activeSubTab: string }) => (
   <div className="flex flex-col items-center justify-center h-[60vh] text-center">
     <div className="p-6 bg-gray-100 rounded-full mb-4">
