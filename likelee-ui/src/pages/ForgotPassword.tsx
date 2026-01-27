@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import Layout from "./Layout";
 
 export default function ForgotPassword() {
   const { t } = useTranslation();
