@@ -340,6 +340,14 @@ pub async fn create_offer(
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
+    // Update prospect status in pipeline
+    let _ = pg3
+        .from("scouting_prospects")
+        .update(json!({ "status": "offer_sent" }).to_string())
+        .eq("id", &payload.prospect_id)
+        .execute()
+        .await;
+
     let body = response.text().await.map_err(|e| {
         error!(error = %e, "Failed to read response");
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
@@ -362,7 +370,7 @@ pub async fn refresh_offer_status(
 
     let offer_response = pg
         .from("scouting_offers")
-        .select("docuseal_submission_id")
+        .select("docuseal_submission_id, prospect_id")
         .eq("id", &query.offer_id)
         .single()
         .execute()
@@ -401,6 +409,7 @@ pub async fn refresh_offer_status(
                     "completed" => "completed",
                     "declined" => "declined",
                     "expired" => "voided",
+                    "viewed" | "started" => "opened",
                     _ => "sent",
                 };
                 let signed_url = if status == "completed" {
@@ -449,6 +458,24 @@ pub async fn refresh_offer_status(
             error!(error = %e, "Failed to update offer");
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
+
+    // Update prospect status in pipeline
+    if let Some(prospect_id) = offer["prospect_id"].as_str() {
+        let prospect_status = match status {
+            "completed" | "signed" => Some("signed"),
+            "declined" => Some("declined"),
+            _ => None,
+        };
+
+        if let Some(new_p_status) = prospect_status {
+            let _ = pg2
+                .from("scouting_prospects")
+                .update(json!({ "status": new_p_status }).to_string())
+                .eq("id", prospect_id)
+                .execute()
+                .await;
+        }
+    }
 
     let response = OfferResponse {
         id: query.offer_id.clone(),
@@ -1078,9 +1105,9 @@ pub async fn handle_webhook(
     // submission.declined -> declined
     
     let status_update = match payload.event_type.as_str() {
-        "submission.started" | "submission.opened" | "submission.viewed" => Some("opened"),
-        "submission.completed" => Some("completed"),
-        "submission.declined" => Some("declined"),
+        "submission.started" | "submission.opened" | "submission.viewed" | "form.started" | "form.viewed" => Some("opened"),
+        "submission.completed" | "form.completed" => Some("completed"),
+        "submission.declined" | "form.declined" => Some("declined"),
         _ => None,
     };
 
@@ -1091,10 +1118,13 @@ pub async fn handle_webhook(
 
     let new_status = status_update.unwrap();
 
-    let submission_id = payload.data["id"].as_i64().ok_or_else(|| {
-        error!("Missing submission id in webhook payload");
-        (StatusCode::BAD_REQUEST, "Missing submission id".to_string())
-    })?;
+    let submission_id = payload.data["submission_id"]
+        .as_i64()
+        .or_else(|| payload.data["id"].as_i64())
+        .ok_or_else(|| {
+            error!("Missing submission id in webhook payload");
+            (StatusCode::BAD_REQUEST, "Missing submission id".to_string())
+        })?;
 
     info!(submission_id, new_status, "Processing submission update");
 
