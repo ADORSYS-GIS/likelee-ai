@@ -5,10 +5,10 @@ import { CalendarScheduleTab } from "./Tabs/CalendarScheduleTab";
 import { BookingRequestsTab } from "./Tabs/BookingRequestsTab";
 import { ClientDatabaseTab } from "./Tabs/ClientDatabaseTab";
 import { TalentAvailabilityTab } from "./Tabs/TalentAvailabilityTab";
-import { NotificationsTab } from "./Tabs/NotificationsTab";
 import { ManagementAnalyticsView } from "./ManagementAnalyticsView";
+import { NotificationsTab } from "./Tabs/NotificationsTab";
 
-// We keep PlaceholderView for fallback
+// We keep PlaceholderView for fallback.
 const PlaceholderView = ({ activeSubTab }: { activeSubTab: string }) => (
   <div className="flex flex-col items-center justify-center h-[60vh] text-center">
     <div className="p-6 bg-gray-100 rounded-full mb-4">
@@ -45,6 +45,9 @@ export const BookingsView = ({
         onAddBooking={onAddBooking}
         onUpdateBooking={onUpdateBooking}
         onCancelBooking={onCancelBooking}
+        bookOuts={bookOuts}
+        onAddBookOut={onAddBookOut}
+        onRemoveBookOut={onRemoveBookOut}
       />
     );
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
@@ -57,7 +60,8 @@ export const BookingsView = ({
         onRemoveBookOut={onRemoveBookOut}
       />
     );
-  if (activeSubTab === "Notifications") return <NotificationsTab />;
+  if (activeSubTab === "Notifications")
+    return <NotificationsTab bookings={bookings} />;
   if (activeSubTab === "Management & Analytics")
     return <ManagementAnalyticsView bookings={bookings} />;
 
