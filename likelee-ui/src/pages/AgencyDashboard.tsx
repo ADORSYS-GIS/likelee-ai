@@ -125,6 +125,7 @@ const STATUS_MAP: { [key: string]: string } = {
   test_shoot_success: "Test Shoot (Success)",
   test_shoot_failed: "Test Shoot (Failed)",
   offer_sent: "Offer Sent",
+  opened: "Offer Opened",
   signed: "Signed",
   declined: "Declined",
 };
@@ -138,6 +139,7 @@ const STATUS_COLORS: { [key: string]: string } = {
   test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
   test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
   offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
+  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
   signed: "bg-green-50 text-green-700 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
 };
@@ -5987,6 +5989,7 @@ const ProspectPipelineTab = ({
       });
     },
     enabled: !!user,
+    refetchInterval: 5000, // Poll every 5 seconds for real-time pipeline updates
   });
 
   // Update URL when filters change
@@ -6305,6 +6308,10 @@ const ProspectPipelineTab = ({
                       ) : p.status === "declined" ? (
                         <Badge className={`capitalize border ${STATUS_COLORS.declined}`}>
                           {STATUS_MAP.declined}
+                        </Badge>
+                      ) : p.status === "opened" ? (
+                        <Badge className={`capitalize border ${STATUS_COLORS.opened}`}>
+                          Opened
                         </Badge>
                       ) : p.status === "offer_sent" ? (
                         <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">

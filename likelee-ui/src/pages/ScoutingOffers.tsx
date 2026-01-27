@@ -297,9 +297,12 @@ export default function ScoutingOffers() {
         }
     };
 
+    const [isSendingOffer, setIsSendingOffer] = useState(false);
+
     const handleSendOffer = async () => {
         if (!selectedTemplate || !prospectId) return;
 
+        setIsSendingOffer(true);
         try {
             const agencyId = await scoutingService.getUserAgencyId();
             if (!agencyId) throw new Error("Agency not found");
@@ -324,6 +327,8 @@ export default function ScoutingOffers() {
                 description: "Failed to send offer. Please try again.",
                 variant: "destructive",
             });
+        } finally {
+            setIsSendingOffer(false);
         }
     };
 
@@ -790,8 +795,19 @@ export default function ScoutingOffers() {
                         <Button variant="outline" onClick={() => setShowSendOfferDialog(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSendOffer} className="bg-indigo-600 hover:bg-indigo-700">
-                            Send Offer
+                        <Button
+                            onClick={handleSendOffer}
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            disabled={isSendingOffer}
+                        >
+                            {isSendingOffer ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                    Sending...
+                                </>
+                            ) : (
+                                "Send Offer"
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

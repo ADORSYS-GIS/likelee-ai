@@ -405,12 +405,25 @@ pub async fn refresh_offer_status(
         
         match submission_result {
             Ok(submission) => {
+                info!(
+                    submission_id,
+                    status = %submission.status,
+                    submitter_statuses = ?submission.submitters.iter().map(|s| &s.status).collect::<Vec<_>>(),
+                    "Fetched DocuSeal submission for refresh"
+                );
                 let status = match submission.status.as_str() {
                     "completed" => "completed",
                     "declined" => "declined",
                     "expired" => "voided",
                     "viewed" | "started" => "opened",
-                    _ => "sent",
+                    _ => {
+                        // Check if any submitter has viewed it
+                        if submission.submitters.iter().any(|s| s.status == "viewed" || s.status == "started") {
+                            "opened"
+                        } else {
+                            "sent"
+                        }
+                    }
                 };
                 let signed_url = if status == "completed" {
                     submission.documents.first().map(|d| d.url.clone())
