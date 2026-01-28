@@ -205,6 +205,6 @@ export interface ScoutingOffer {
   updated_at: string;
 
   // Joined data
-  prospect?: Pick<ScoutingProspect, 'full_name' | 'email' | 'status'>;
-  template?: Pick<ScoutingTemplate, 'name'>;
+  prospect?: Pick<ScoutingProspect, "full_name" | "email" | "status">;
+  template?: Pick<ScoutingTemplate, "name">;
 }

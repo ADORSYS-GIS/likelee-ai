@@ -131,7 +131,14 @@ const STATUS_MAP: { [key: string]: string } = {
   declined: "Declined",
 };
 
-const MANUAL_STATUSES = ["new_lead", "in_contact", "test_shoot_pending", "test_shoot_success", "test_shoot_failed", "offer_sent"];
+const MANUAL_STATUSES = [
+  "new_lead",
+  "in_contact",
+  "test_shoot_pending",
+  "test_shoot_success",
+  "test_shoot_failed",
+  "offer_sent",
+];
 
 const STATUS_COLORS: { [key: string]: string } = {
   new_lead: "bg-blue-50 text-blue-700 border-blue-200",
@@ -156,7 +163,6 @@ const STATUS_DOT_COLORS: { [key: string]: string } = {
   declined: "bg-red-500",
 };
 
-
 const ProspectModal = ({
   open,
   onOpenChange,
@@ -170,7 +176,9 @@ const ProspectModal = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [starRating, setStarRating] = useState(3);
   const [isSaving, setIsSaving] = useState(false);
-  const [locationSuggestions, setLocationSuggestions] = useState<{ name: string; lat: number; lng: number }[]>([]);
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    { name: string; lat: number; lng: number }[]
+  >([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -448,10 +456,11 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${selectedCategories.includes(cat)
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    } font-medium`}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -499,8 +508,13 @@ const ProspectModal = ({
                     placeholder="New York, NY"
                     value={formData.discoveryLocation}
                     onChange={(e) => handleLocationSearch(e.target.value)}
-                    onFocus={() => formData.discoveryLocation.length >= 3 && setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onFocus={() =>
+                      formData.discoveryLocation.length >= 3 &&
+                      setShowSuggestions(true)
+                    }
+                    onBlur={() =>
+                      setTimeout(() => setShowSuggestions(false), 200)
+                    }
                   />
                   {isSearchingLocation && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -515,7 +529,10 @@ const ProspectModal = ({
                         key={index}
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b last:border-0"
                         onClick={() => {
-                          handleInputChange("discoveryLocation", suggestion.name);
+                          handleInputChange(
+                            "discoveryLocation",
+                            suggestion.name,
+                          );
                           setShowSuggestions(false);
                         }}
                       >
@@ -553,13 +570,34 @@ const ProspectModal = ({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new_lead">{STATUS_MAP.new_lead}</SelectItem>
-                    <SelectItem value="in_contact">{STATUS_MAP.in_contact}</SelectItem>
+                    <SelectItem value="new_lead">
+                      {STATUS_MAP.new_lead}
+                    </SelectItem>
+                    <SelectItem value="in_contact">
+                      {STATUS_MAP.in_contact}
+                    </SelectItem>
                     <SelectGroup>
-                      <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">Test Shoot</SelectLabel>
-                      <SelectItem value="test_shoot_pending" className="bg-gray-50/50 pl-8">Pending</SelectItem>
-                      <SelectItem value="test_shoot_success" className="bg-gray-50/50 pl-8">Success</SelectItem>
-                      <SelectItem value="test_shoot_failed" className="bg-gray-50/50 pl-8">Failed</SelectItem>
+                      <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                        Test Shoot
+                      </SelectLabel>
+                      <SelectItem
+                        value="test_shoot_pending"
+                        className="bg-gray-50/50 pl-8"
+                      >
+                        Pending
+                      </SelectItem>
+                      <SelectItem
+                        value="test_shoot_success"
+                        className="bg-gray-50/50 pl-8"
+                      >
+                        Success
+                      </SelectItem>
+                      <SelectItem
+                        value="test_shoot_failed"
+                        className="bg-gray-50/50 pl-8"
+                      >
+                        Failed
+                      </SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -696,7 +734,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 
 // --- Mock Data (Based on Reference) ---
 const mockAgency = {
@@ -1359,19 +1396,19 @@ const ClientProfileModal = ({
                   {(searchQuery ||
                     statusFilter !== "all" ||
                     consentFilter !== "all") && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setStatusFilter("all");
-                          setConsentFilter("all");
-                        }}
-                        className="text-gray-600"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Clear Filters
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setStatusFilter("all");
+                        setConsentFilter("all");
+                      }}
+                      className="text-gray-600"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear Filters
+                    </Button>
+                  )}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1550,8 +1587,8 @@ const ClientProfileModal = ({
                               >
                                 {talent.license_expiry !== "—"
                                   ? new Date(
-                                    talent.license_expiry,
-                                  ).toLocaleDateString()
+                                      talent.license_expiry,
+                                    ).toLocaleDateString()
                                   : "—"}
                               </span>
                               {isLicenseExpiring(talent.license_expiry) && (
@@ -3404,10 +3441,11 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
             >
               {tab.label}
             </button>
@@ -3881,10 +3919,11 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3892,10 +3931,11 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -4449,10 +4489,11 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -5585,10 +5626,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === tab
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+            }`}
           >
             {tab}
           </button>
@@ -5699,7 +5741,6 @@ const ProspectDetailsSheet = ({
     }
   };
 
-
   if (!prospect) return null;
 
   return (
@@ -5709,52 +5750,87 @@ const ProspectDetailsSheet = ({
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-bold text-gray-600">Status</Label>
-                <Badge className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                <Label className="text-sm font-bold text-gray-600">
+                  Status
+                </Label>
+                <Badge
+                  className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                >
                   {STATUS_MAP[prospect.status] || prospect.status}
                 </Badge>
               </div>
               <Select
                 onValueChange={handleStatusChange}
                 defaultValue={prospect.status}
-                disabled={["offer_sent", "signed", "declined"].includes(prospect.status)}
+                disabled={["offer_sent", "signed", "declined"].includes(
+                  prospect.status,
+                )}
               >
                 <SelectTrigger className="w-full h-10 text-sm font-semibold mt-2 bg-white">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || 'bg-gray-400'}`}></span>
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || "bg-gray-400"}`}
+                    ></span>
                     <SelectValue />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="new_lead" className="text-sm font-semibold">
+                  <SelectItem
+                    value="new_lead"
+                    className="text-sm font-semibold"
+                  >
                     <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}></span>
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}
+                      ></span>
                       <span>{STATUS_MAP.new_lead}</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="in_contact" className="text-sm font-semibold">
+                  <SelectItem
+                    value="in_contact"
+                    className="text-sm font-semibold"
+                  >
                     <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}></span>
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}
+                      ></span>
                       <span>{STATUS_MAP.in_contact}</span>
                     </div>
                   </SelectItem>
                   <SelectGroup>
-                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">Test Shoot</SelectLabel>
-                    <SelectItem value="test_shoot_pending" className="text-sm font-semibold bg-gray-50/50">
+                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                      Test Shoot
+                    </SelectLabel>
+                    <SelectItem
+                      value="test_shoot_pending"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
                       <div className="flex items-center gap-2 pl-6">
-                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}></span>
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}
+                        ></span>
                         <span>Pending</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="test_shoot_success" className="text-sm font-semibold bg-gray-50/50">
+                    <SelectItem
+                      value="test_shoot_success"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
                       <div className="flex items-center gap-2 pl-6">
-                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}></span>
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}
+                        ></span>
                         <span>Success</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="test_shoot_failed" className="text-sm font-semibold bg-gray-50/50">
+                    <SelectItem
+                      value="test_shoot_failed"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
                       <div className="flex items-center gap-2 pl-6">
-                        <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}></span>
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}
+                        ></span>
                         <span>Failed</span>
                       </div>
                     </SelectItem>
@@ -5762,7 +5838,6 @@ const ProspectDetailsSheet = ({
                 </SelectContent>
               </Select>
             </div>
-
           </div>
         </SheetHeader>
 
@@ -5787,16 +5862,22 @@ const ProspectDetailsSheet = ({
                   </h2>
                   {prospect.status === "test_shoot_success" ? (
                     <Button
-                      onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
+                      onClick={() =>
+                        (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
+                      }
                       className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
                     >
                       <FileText className="w-4 h-4" />
                       Send Offer
                     </Button>
-                  ) : ["offer_sent", "opened", "signed", "declined"].includes(prospect.status) ? (
+                  ) : ["offer_sent", "opened", "signed", "declined"].includes(
+                      prospect.status,
+                    ) ? (
                     <div className="flex items-center gap-3">
                       <Button
-                        onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
+                        onClick={() =>
+                          (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
+                        }
                         className="bg-white hover:bg-gray-50 border text-gray-700 font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
                       >
                         <FileText className="w-4 h-4" />
@@ -5804,7 +5885,9 @@ const ProspectDetailsSheet = ({
                       </Button>
                       {prospect.status === "signed" && (
                         <Button
-                          onClick={() => navigate("/addtalent", { state: { prospect } })}
+                          onClick={() =>
+                            navigate("/addtalent", { state: { prospect } })
+                          }
                           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
                         >
                           <Plus className="w-4 h-4" />
@@ -6011,13 +6094,13 @@ const ProspectPipelineTab = ({
 
   // Filter states - initialize from URL
   const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") || ""
+    searchParams.get("search") || "",
   );
   const [statusFilter, setStatusFilter] = useState(
-    searchParams.get("status") || "all"
+    searchParams.get("status") || "all",
   );
   const [sourceFilter, setSourceFilter] = useState(
-    searchParams.get("source") || "all"
+    searchParams.get("source") || "all",
   );
 
   // Debounce search input
@@ -6089,8 +6172,7 @@ const ProspectPipelineTab = ({
     },
     {
       label: "In Contact",
-      count:
-        allProspects?.filter((p) => p.status === "in_contact").length || 0,
+      count: allProspects?.filter((p) => p.status === "in_contact").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
@@ -6107,7 +6189,7 @@ const ProspectPipelineTab = ({
           (p) =>
             p.status === "offer_sent" ||
             p.status === "signed" ||
-            p.status === "declined"
+            p.status === "declined",
         ).length || 0,
       color: "border-green-200 bg-green-50/30",
     },
@@ -6367,22 +6449,30 @@ const ProspectPipelineTab = ({
                     </td>
                     <td className="px-4 py-3">
                       {p.status.startsWith("test_shoot") && (
-                        <Badge className={`capitalize border ${STATUS_COLORS[p.status] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
-                          {p.status.replace('test_shoot_', '')}
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                        >
+                          {p.status.replace("test_shoot_", "")}
                         </Badge>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {p.status === "signed" ? (
-                        <Badge className={`capitalize border ${STATUS_COLORS.signed}`}>
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.signed}`}
+                        >
                           {STATUS_MAP.signed}
                         </Badge>
                       ) : p.status === "declined" ? (
-                        <Badge className={`capitalize border ${STATUS_COLORS.declined}`}>
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.declined}`}
+                        >
                           {STATUS_MAP.declined}
                         </Badge>
                       ) : p.status === "opened" ? (
-                        <Badge className={`capitalize border ${STATUS_COLORS.opened}`}>
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.opened}`}
+                        >
                           Opened
                         </Badge>
                       ) : p.status === "offer_sent" ? (
@@ -6402,9 +6492,8 @@ const ProspectPipelineTab = ({
               </tbody>
             </table>
           </div>
-        )
-        }
-      </Card >
+        )}
+      </Card>
       <ProspectDetailsSheet
         prospect={selectedProspect}
         onClose={() => setSelectedProspect(null)}
@@ -6413,7 +6502,7 @@ const ProspectPipelineTab = ({
           onEditProspect(p);
         }}
       />
-    </div >
+    </div>
   );
 };
 
@@ -6728,18 +6817,19 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${event.status === "published"
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : event.status === "draft"
-                        ? "bg-gray-50 text-gray-600 border-gray-100"
-                        : event.status === "scheduled"
-                          ? "bg-blue-50 text-blue-700 border-blue-100"
-                          : event.status === "completed"
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                            : event.status === "cancelled"
-                              ? "bg-red-50 text-red-700 border-red-100"
-                              : "bg-gray-50 text-gray-600 border-gray-100"
-                      }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
+                      event.status === "published"
+                        ? "bg-green-50 text-green-700 border-green-100"
+                        : event.status === "draft"
+                          ? "bg-gray-50 text-gray-600 border-gray-100"
+                          : event.status === "scheduled"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : event.status === "completed"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                              : event.status === "cancelled"
+                                ? "bg-red-50 text-red-700 border-red-100"
+                                : "bg-gray-50 text-gray-600 border-gray-100"
+                    }`}
                   >
                     {event.status.toUpperCase()}
                   </Badge>
@@ -7757,13 +7847,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -7882,15 +7972,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -8731,9 +8822,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -9545,10 +9636,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -11719,7 +11811,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -11882,10 +11974,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -12378,10 +12471,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -13263,10 +13357,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -14395,92 +14490,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14533,14 +14628,16 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14561,10 +14658,11 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (

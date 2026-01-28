@@ -44,7 +44,7 @@ export const scoutingService = {
       minRating?: number;
       sortBy?: string;
       sortOrder?: "asc" | "desc";
-    }
+    },
   ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
@@ -57,7 +57,7 @@ export const scoutingService = {
     if (options?.searchQuery && options.searchQuery.trim()) {
       const searchTerm = `%${options.searchQuery.trim()}%`;
       query = query.or(
-        `full_name.ilike.${searchTerm},email.ilike.${searchTerm},instagram_handle.ilike.${searchTerm},notes.ilike.${searchTerm}`
+        `full_name.ilike.${searchTerm},email.ilike.${searchTerm},instagram_handle.ilike.${searchTerm},notes.ilike.${searchTerm}`,
       );
     }
 
@@ -426,7 +426,7 @@ export const scoutingService = {
   },
 
   async createTemplate(
-    template: Omit<ScoutingTemplate, "id" | "created_at" | "updated_at">
+    template: Omit<ScoutingTemplate, "id" | "created_at" | "updated_at">,
   ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
@@ -457,22 +457,27 @@ export const scoutingService = {
   async updateTemplateFromPdf(docusealTemplateId: number, file: File) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
     const response = await fetch(
       `${baseUrl}/api/scouting/templates/${docusealTemplateId}`,
       {
         method: "PUT",
         headers: {
-          "Authorization": `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {
@@ -493,10 +498,15 @@ export const scoutingService = {
 
   // --- Offers ---
 
-  async getOffers(agencyId: string, filter: 'active' | 'archived' | 'all' = 'active') {
+  async getOffers(
+    agencyId: string,
+    filter: "active" | "archived" | "all" = "active",
+  ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
     const params = new URLSearchParams({
@@ -504,16 +514,18 @@ export const scoutingService = {
       filter: filter,
     });
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-    console.log(`scoutingService: Fetching offers from ${baseUrl}/api/scouting/offers?${params}`);
-    const response = await fetch(
-      `${baseUrl}/api/scouting/offers?${params}`,
-      {
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-      }
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
+    console.log(
+      `scoutingService: Fetching offers from ${baseUrl}/api/scouting/offers?${params}`,
     );
+    const response = await fetch(`${baseUrl}/api/scouting/offers?${params}`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch offers: ${response.statusText}`);
@@ -525,50 +537,54 @@ export const scoutingService = {
   async getOffer(offerId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/offers/${offerId}`,
-      {
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-      }
-    );
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
+    const response = await fetch(`${baseUrl}/api/scouting/offers/${offerId}`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch offer: ${response.statusText}`);
     }
 
-    return await response.json() as ScoutingOffer;
+    return (await response.json()) as ScoutingOffer;
   },
 
   async createOffer(
-    offer: Pick<ScoutingOffer, "prospect_id" | "agency_id" | "template_id">
+    offer: Pick<ScoutingOffer, "prospect_id" | "agency_id" | "template_id">,
   ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/offers`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          prospect_id: offer.prospect_id,
-          agency_id: offer.agency_id,
-          template_id: offer.template_id,
-        }),
-      }
-    );
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
+    const response = await fetch(`${baseUrl}/api/scouting/offers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        prospect_id: offer.prospect_id,
+        agency_id: offer.agency_id,
+        template_id: offer.template_id,
+      }),
+    });
 
     if (!response.ok) {
       const text = await response.text();
@@ -601,19 +617,21 @@ export const scoutingService = {
   async deleteOffer(offerId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/offers/${offerId}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-      }
-    );
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
+    const response = await fetch(`${baseUrl}/api/scouting/offers/${offerId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to delete offer: ${response.statusText}`);
@@ -623,42 +641,54 @@ export const scoutingService = {
   async permanentlyDeleteOffer(offerId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
     const response = await fetch(
       `${baseUrl}/api/scouting/offers/${offerId}?permanent=true`,
       {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to permanently delete offer: ${response.statusText}`);
+      throw new Error(
+        `Failed to permanently delete offer: ${response.statusText}`,
+      );
     }
   },
 
   async refreshOfferStatus(offerId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
     const response = await fetch(
       `${baseUrl}/api/scouting/offers/refresh-status`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ offer_id: offerId }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -671,22 +701,24 @@ export const scoutingService = {
   async getBuilderToken(agencyId: string, templateId?: number) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
     // Call our backend API endpoint
-    const response = await fetch(
-      `${baseUrl}/api/scouting/builder-token`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ agency_id: agencyId, template_id: templateId }),
-      }
-    );
+    const response = await fetch(`${baseUrl}/api/scouting/builder-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ agency_id: agencyId, template_id: templateId }),
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to get builder token: ${response.statusText}`);
@@ -699,21 +731,23 @@ export const scoutingService = {
   async syncTemplates(agencyId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/templates/sync`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ agency_id: agencyId }),
-      }
-    );
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
+    const response = await fetch(`${baseUrl}/api/scouting/templates/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ agency_id: agencyId }),
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to sync templates: ${response.statusText}`);
@@ -723,24 +757,26 @@ export const scoutingService = {
   async createTemplateFromPdf(agencyId: string, file: File) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw new Error("No active session");
 
     const formData = new FormData();
     formData.append("agency_id", agencyId);
     formData.append("file", file);
 
-    const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/templates/upload`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      }
-    );
+    const baseUrl =
+      import.meta.env.VITE_API_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "http://localhost:8787";
+    const response = await fetch(`${baseUrl}/api/scouting/templates/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: formData,
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to upload template: ${response.statusText}`);
