@@ -5794,11 +5794,10 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(prospect.status) ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Button
                         onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
-                        variant="outline"
-                        className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                        className="bg-white hover:bg-gray-50 border text-gray-700 font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
                       >
                         <FileText className="w-4 h-4" />
                         View Offers
@@ -5806,7 +5805,7 @@ const ProspectDetailsSheet = ({
                       {prospect.status === "signed" && (
                         <Button
                           onClick={() => navigate("/addtalent", { state: { prospect } })}
-                          className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
                         >
                           <Plus className="w-4 h-4" />
                           Add Talent
