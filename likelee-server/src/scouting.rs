@@ -654,16 +654,15 @@ pub async fn create_builder_token(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
-    // Use configured DocuSeal user email if set (required for builder token to match account owner)
-    // Otherwise fallback to agency contact email (which might fail if not a user in DocuSeal)
-    let user_email = if !state.docuseal_user_email.is_empty() {
-        state.docuseal_user_email.clone()
-    } else {
-        agency["contact_email"]
-            .as_str()
-            .unwrap_or("agency@example.com")
-            .to_string()
-    };
+    // Use configured DocuSeal user email (required for builder token to match account owner)
+    if state.docuseal_user_email.is_empty() {
+        error!("DOCUSEAL_USER_EMAIL is not configured. This is required for DocuSeal integration.");
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "DocuSeal admin email not configured on server".to_string(),
+        ));
+    }
+    let user_email = state.docuseal_user_email.clone();
 
     let integration_email = agency["contact_email"]
         .as_str()
