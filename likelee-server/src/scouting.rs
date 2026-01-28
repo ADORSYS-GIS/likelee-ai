@@ -7,7 +7,7 @@ use axum::{
 use postgrest::Postgrest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::auth::AuthUser;
 use crate::config::AppState;
@@ -440,6 +440,22 @@ pub async fn refresh_offer_status(
                     submitter_statuses = ?submission.submitters.iter().map(|s| &s.status).collect::<Vec<_>>(),
                     "Fetched DocuSeal submission for refresh"
                 );
+
+                // Log document information for debugging
+                info!(
+                    submission_id,
+                    documents_count = submission.documents.len(),
+                    "Documents in submission"
+                );
+                for (idx, doc) in submission.documents.iter().enumerate() {
+                    info!(
+                        submission_id,
+                        doc_index = idx,
+                        doc_name = %doc.name,
+                        doc_url = %doc.url,
+                        "Document details"
+                    );
+                }
                 let status = match submission.status.as_str() {
                     "completed" => "completed",
                     "declined" => "declined",
@@ -459,7 +475,14 @@ pub async fn refresh_offer_status(
                     }
                 };
                 let signed_url = if status == "completed" {
-                    submission.documents.first().map(|d| d.url.clone())
+                    let url = submission.documents.first().map(|d| d.url.clone());
+                    if url.is_none() {
+                        warn!(
+                            submission_id,
+                            "Completed submission has no documents in response - signed document URL will be unavailable"
+                        );
+                    }
+                    url
                 } else {
                     None
                 };
@@ -1267,10 +1290,45 @@ pub async fn handle_webhook(
     let offer_id = offer["id"].as_str().unwrap();
     let prospect_id = offer["prospect_id"].as_str().unwrap();
 
-    // Update offer status (Exact DocuSeal status for the submission UI)
+    // Extract signed document URL from webhook payload if submission is completed
+    let signed_document_url = if new_status == "completed" {
+        // Try to get the document URL from payload.data.documents[0].url
+        let url = payload.data["documents"]
+            .as_array()
+            .and_then(|docs| docs.first())
+            .and_then(|doc| doc["url"].as_str())
+            .map(|s| s.to_string());
+
+        if url.is_some() {
+            info!(
+                submission_id,
+                url = ?url,
+                "Extracted signed document URL from webhook payload"
+            );
+        } else {
+            warn!(
+                submission_id,
+                payload_data = ?payload.data,
+                "No signed document URL found in webhook payload"
+            );
+        }
+        url
+    } else {
+        None
+    };
+
+    // Update offer status and signed_document_url
+    let mut update_json = json!({ "status": new_status });
+    if let Some(url) = signed_document_url {
+        update_json["signed_document_url"] = json!(url);
+        if new_status == "completed" {
+            update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+        }
+    }
+
     let _ = pg
         .from("scouting_offers")
-        .update(json!({ "status": new_status }).to_string())
+        .update(update_json.to_string())
         .eq("id", offer_id)
         .execute()
         .await
