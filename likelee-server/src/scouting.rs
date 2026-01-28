@@ -9,9 +9,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{error, info};
 
+use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::services::docuseal::DocuSealClient;
-use crate::auth::AuthUser;
 
 // ============================================================================
 // Request/Response Types
@@ -62,7 +62,10 @@ pub async fn list_templates(
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let response = pg
         .from("scouting_templates")
@@ -97,7 +100,10 @@ pub async fn create_template(
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let template_data = json!({
         "agency_id": payload.agency_id,
@@ -133,7 +139,10 @@ pub async fn delete_template(
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     pg.from("scouting_templates")
         .delete()
@@ -161,16 +170,16 @@ pub async fn list_offers(
         .get("agency_id")
         .ok_or((StatusCode::BAD_REQUEST, "agency_id required".to_string()))?;
 
-    let filter = params
-        .get("filter")
-        .map(|s| s.as_str())
-        .unwrap_or("active");
+    let filter = params.get("filter").map(|s| s.as_str()).unwrap_or("active");
 
     info!(agency_id = %agency_id, filter, "Fetching offers");
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let mut query = pg
         .from("scouting_offers")
@@ -181,10 +190,10 @@ pub async fn list_offers(
     match filter {
         "archived" => {
             query = query.eq("status", "archived");
-        },
+        }
         "all" => {
             // No status filter - show everything
-        },
+        }
         _ => {
             // Default: "active" - show everything EXCEPT archived
             query = query.neq("status", "archived");
@@ -222,7 +231,10 @@ pub async fn create_offer(
     // First, fetch prospect and template details
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     // Get prospect details
     let prospect_response = pg
@@ -250,7 +262,10 @@ pub async fn create_offer(
     // Get template details
     let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let template_response = pg2
         .from("scouting_templates")
@@ -282,7 +297,8 @@ pub async fn create_offer(
 
     let docuseal_template_id = template["docuseal_template_id"]
         .as_i64()
-        .ok_or((StatusCode::BAD_REQUEST, "Invalid template ID".to_string()))? as i32;
+        .ok_or((StatusCode::BAD_REQUEST, "Invalid template ID".to_string()))?
+        as i32;
     let document_name = template["name"]
         .as_str()
         .unwrap_or("Untitled Document")
@@ -294,7 +310,10 @@ pub async fn create_offer(
         .to_string();
     let prospect_email = prospect["email"]
         .as_str()
-        .ok_or((StatusCode::BAD_REQUEST, "Prospect email required".to_string()))?
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "Prospect email required".to_string(),
+        ))?
         .to_string();
 
     let submission = docuseal_client
@@ -307,7 +326,10 @@ pub async fn create_offer(
 
     // Get signing URL by fetching submission details (DocuSeal create response doesn't include URLs)
     let signing_url = match docuseal_client.get_submission(submission.id).await {
-        Ok(details) => details.submitters.first().and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug))),
+        Ok(details) => details
+            .submitters
+            .first()
+            .and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug))),
         Err(e) => {
             error!(error = %e, submission_id = submission.id, "Failed to fetch DocuSeal submission details");
             None
@@ -317,7 +339,10 @@ pub async fn create_offer(
     // Save offer to database
     let pg3 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let offer_data = json!({
         "prospect_id": payload.prospect_id,
@@ -366,7 +391,10 @@ pub async fn refresh_offer_status(
     // Get offer from database
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let offer_response = pg
         .from("scouting_offers")
@@ -392,7 +420,8 @@ pub async fn refresh_offer_status(
 
     let submission_id = offer["docuseal_submission_id"]
         .as_i64()
-        .ok_or((StatusCode::BAD_REQUEST, "Invalid submission ID".to_string()))? as i32;
+        .ok_or((StatusCode::BAD_REQUEST, "Invalid submission ID".to_string()))?
+        as i32;
 
     // Fetch status from DocuSeal
     let docuseal_client = DocuSealClient::new(
@@ -402,7 +431,7 @@ pub async fn refresh_offer_status(
 
     let (status, signed_document_url, latest_signing_url) = {
         let submission_result = docuseal_client.get_submission(submission_id).await;
-        
+
         match submission_result {
             Ok(submission) => {
                 info!(
@@ -418,7 +447,11 @@ pub async fn refresh_offer_status(
                     "viewed" | "started" => "opened",
                     _ => {
                         // Check if any submitter has viewed it
-                        if submission.submitters.iter().any(|s| s.status == "viewed" || s.status == "started") {
+                        if submission
+                            .submitters
+                            .iter()
+                            .any(|s| s.status == "viewed" || s.status == "started")
+                        {
                             "opened"
                         } else {
                             "sent"
@@ -430,13 +463,19 @@ pub async fn refresh_offer_status(
                 } else {
                     None
                 };
-                let signing_url = submission.submitters.first().map(|s| format!("{}/s/{}", state.docuseal_app_url, s.slug));
+                let signing_url = submission
+                    .submitters
+                    .first()
+                    .map(|s| format!("{}/s/{}", state.docuseal_app_url, s.slug));
                 (status, signed_url, signing_url)
-            },
+            }
             Err(e) => {
                 let err_str = e.to_string();
                 if err_str.contains("404") {
-                    info!(submission_id, "Submission not found in DocuSeal, marking as voided");
+                    info!(
+                        submission_id,
+                        "Submission not found in DocuSeal, marking as voided"
+                    );
                     ("voided", None, None)
                 } else {
                     error!(error = %err_str, "Failed to fetch DocuSeal submission");
@@ -449,7 +488,10 @@ pub async fn refresh_offer_status(
     // Update offer in database
     let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let update_data = json!({
         "status": status,
@@ -516,7 +558,10 @@ pub async fn delete_offer(
     // 1. Get offer from database to find the submission ID and status
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let offer_response = pg
         .from("scouting_offers")
@@ -547,7 +592,8 @@ pub async fn delete_offer(
         error!(offer_id = %offer_id, status = %current_status, "Attempted to permanently delete non-archived offer");
         return Err((
             StatusCode::BAD_REQUEST,
-            "Cannot permanently delete an offer that is not archived. Archive it first.".to_string(),
+            "Cannot permanently delete an offer that is not archived. Archive it first."
+                .to_string(),
         ));
     }
 
@@ -557,8 +603,11 @@ pub async fn delete_offer(
             state.docuseal_api_key.clone(),
             state.docuseal_api_url.clone(),
         );
-        
-        if let Err(e) = docuseal_client.archive_submission(submission_id as i32).await {
+
+        if let Err(e) = docuseal_client
+            .archive_submission(submission_id as i32)
+            .await
+        {
             // Log the error but continue, as we still want to archive/delete it in our system
             error!(error = %e, submission_id, "Failed to archive submission in DocuSeal, but proceeding locally.");
         }
@@ -567,7 +616,10 @@ pub async fn delete_offer(
     // 3. Either permanently delete or archive in our database
     let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     if permanent {
         // Permanent deletion from database
@@ -630,7 +682,10 @@ pub async fn create_builder_token(
     // In a real app, we would fetch the agency owner's email
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let agency_response = pg
         .from("agencies")
@@ -669,10 +724,7 @@ pub async fn create_builder_token(
         .unwrap_or("agency@example.com")
         .to_string();
 
-    let name = agency["name"]
-        .as_str()
-        .unwrap_or("Agency User")
-        .to_string();
+    let name = agency["name"].as_str().unwrap_or("Agency User").to_string();
 
     let docuseal_client = DocuSealClient::new(
         state.docuseal_api_key.clone(),
@@ -680,12 +732,7 @@ pub async fn create_builder_token(
     );
 
     let token = docuseal_client
-        .create_builder_token(
-            user_email,
-            name,
-            integration_email,
-            payload.template_id,
-        )
+        .create_builder_token(user_email, name, integration_email, payload.template_id)
         .map_err(|e| {
             error!(error = %e, "Failed to create builder token");
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
@@ -719,14 +766,20 @@ pub async fn sync_templates(
     );
 
     // 1. Fetch templates from DocuSeal
-    let templates_response = docuseal_client.list_templates(Some(100)).await.map_err(|e| {
-        error!(error = %e, "Failed to fetch templates from DocuSeal");
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
+    let templates_response = docuseal_client
+        .list_templates(Some(100))
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to fetch templates from DocuSeal");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     // 2. Upsert each template into our database
     // Note: In a real app, we might want to filter by integration_email or similar if possible,
@@ -750,7 +803,7 @@ pub async fn sync_templates(
     // If sharing one account, we really need metadata.
     //
     // Let's implement a simple sync that upserts based on docuseal_template_id.
-    
+
     for template in templates_response.data {
         let template_data = json!({
             "agency_id": payload.agency_id,
@@ -833,10 +886,14 @@ pub async fn create_template_from_pdf(
             })?;
         } else if name == "file" {
             file_name = field.file_name().unwrap_or("document.pdf").to_string();
-            file_content = field.bytes().await.map_err(|e| {
-                error!(error = %e, "Failed to read file content");
-                (StatusCode::BAD_REQUEST, e.to_string())
-            })?.to_vec();
+            file_content = field
+                .bytes()
+                .await
+                .map_err(|e| {
+                    error!(error = %e, "Failed to read file content");
+                    (StatusCode::BAD_REQUEST, e.to_string())
+                })?
+                .to_vec();
         }
     }
 
@@ -870,7 +927,10 @@ pub async fn create_template_from_pdf(
     // Save to database
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let template_data = json!({
         "agency_id": agency_id,
@@ -895,7 +955,10 @@ pub async fn create_template_from_pdf(
 
     if !status.is_success() {
         error!(status = %status, error = %body, "Database error");
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", body)));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Database error: {}", body),
+        ));
     }
 
     info!(status = %status, body = %body, "Template saved to database successfully");
@@ -929,10 +992,14 @@ pub async fn update_template_from_pdf(
 
         if name == "file" {
             file_name = field.file_name().unwrap_or("document.pdf").to_string();
-            file_content = field.bytes().await.map_err(|e| {
-                error!(error = %e, "Failed to read file content");
-                (StatusCode::BAD_REQUEST, e.to_string())
-            })?.to_vec();
+            file_content = field
+                .bytes()
+                .await
+                .map_err(|e| {
+                    error!(error = %e, "Failed to read file content");
+                    (StatusCode::BAD_REQUEST, e.to_string())
+                })?
+                .to_vec();
         }
     }
 
@@ -954,7 +1021,10 @@ pub async fn update_template_from_pdf(
     // Get agency_id from database first
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     let response = pg
         .from("scouting_templates")
@@ -976,7 +1046,10 @@ pub async fn update_template_from_pdf(
 
     let _agency_id = template_record["agency_id"].as_str().ok_or_else(|| {
         error!("Missing agency_id in template record");
-        (StatusCode::INTERNAL_SERVER_ERROR, "Missing agency_id".to_string())
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Missing agency_id".to_string(),
+        )
     })?;
 
     // 1. Delete old template in DocuSeal
@@ -996,11 +1069,14 @@ pub async fn update_template_from_pdf(
     // 3. Update database record with new template ID and name
     let _ = pg
         .from("scouting_templates")
-        .update(json!({ 
-            "docuseal_template_id": new_template.id,
-            "name": new_template.name,
-            "updated_at": chrono::Utc::now().to_rfc3339() 
-        }).to_string())
+        .update(
+            json!({
+                "docuseal_template_id": new_template.id,
+                "name": new_template.name,
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
         .eq("docuseal_template_id", template_id.to_string())
         .execute()
         .await;
@@ -1017,7 +1093,10 @@ pub async fn get_offer_details(
 
     let pg_client = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     // Fetch the offer from our database
     let offer_response = pg_client
@@ -1052,7 +1131,10 @@ pub async fn get_offer_details(
     })?;
 
     // If there's a DocuSeal submission ID, fetch its details
-    if let Some(submission_id) = offer.get("docuseal_submission_id").and_then(|id| id.as_i64()) {
+    if let Some(submission_id) = offer
+        .get("docuseal_submission_id")
+        .and_then(|id| id.as_i64())
+    {
         let docuseal_client = DocuSealClient::new(
             state.docuseal_api_key.clone(),
             state.docuseal_api_url.clone(),
@@ -1061,14 +1143,15 @@ pub async fn get_offer_details(
         match docuseal_client.get_submission(submission_id as i32).await {
             Ok(docuseal_details) => {
                 // Construct the signing URL
-                let signing_url = docuseal_details.submitters.first().map(|s| {
-                    format!("{}/s/{}", state.docuseal_app_url, s.slug)
-                });
- 
+                let signing_url = docuseal_details
+                    .submitters
+                    .first()
+                    .map(|s| format!("{}/s/{}", state.docuseal_app_url, s.slug));
+
                 if let Some(obj) = offer.as_object_mut() {
                     // Insert the constructed URL into the main offer object
                     obj.insert("signing_url".to_string(), json!(signing_url));
- 
+
                     // Also include the full details for context
                     if let Ok(details_json) = serde_json::to_value(docuseal_details) {
                         obj.insert("docuseal_details".to_string(), details_json);
@@ -1078,7 +1161,10 @@ pub async fn get_offer_details(
             Err(e) => {
                 let err_str = e.to_string();
                 if err_str.contains("404") {
-                    info!(submission_id, "Submission not found in DocuSeal for offer details");
+                    info!(
+                        submission_id,
+                        "Submission not found in DocuSeal for offer details"
+                    );
                 } else {
                     error!(error = %err_str, submission_id, "Failed to fetch details from DocuSeal");
                 }
@@ -1115,9 +1201,10 @@ pub async fn handle_webhook(
     // submission.started -> opened
     // submission.completed -> completed/signed
     // submission.declined -> declined
-    
+
     let status_update = match payload.event_type.as_str() {
-        "submission.started" | "submission.opened" | "submission.viewed" | "form.started" | "form.viewed" => Some("opened"),
+        "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
+        | "form.viewed" => Some("opened"),
         "submission.completed" | "form.completed" => Some("completed"),
         "submission.declined" | "form.declined" => Some("declined"),
         _ => None,
@@ -1142,7 +1229,10 @@ pub async fn handle_webhook(
 
     let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
 
     // 1. Update scouting_offers status
     // We need to find the offer associated with this submission_id
@@ -1211,7 +1301,7 @@ pub async fn handle_webhook(
                 error!(error = %e, "Failed to update prospect status to declined");
             });
     }
-    // Note: We do NOT update prospect status for "opened". 
+    // Note: We do NOT update prospect status for "opened".
     // It stays as "offer_sent" in the pipeline until signed or declined.
 
     Ok(StatusCode::OK)

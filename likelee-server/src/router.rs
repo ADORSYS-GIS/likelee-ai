@@ -191,8 +191,7 @@ pub fn build_router(state: AppState) -> Router {
         // Scouting (DocuSeal)
         .route(
             "/api/scouting/templates",
-            get(crate::scouting::list_templates)
-                .post(crate::scouting::create_template),
+            get(crate::scouting::list_templates).post(crate::scouting::create_template),
         )
         .route(
             "/api/scouting/templates/sync",
@@ -204,8 +203,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/scouting/templates/:id",
-            delete(crate::scouting::delete_template)
-                .put(crate::scouting::update_template_from_pdf),
+            delete(crate::scouting::delete_template).put(crate::scouting::update_template_from_pdf),
         )
         .route(
             "/api/scouting/offers",
@@ -223,10 +221,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/scouting/builder-token",
             post(crate::scouting::create_builder_token),
         )
-        .route(
-            "/webhooks/docuseal",
-            post(crate::scouting::handle_webhook),
-        )
+        .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         // Notifications
         .route(
             "/api/notifications/booking-created-email",

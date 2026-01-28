@@ -369,7 +369,10 @@ impl DocuSealClient {
         }
 
         let template = response.json::<TemplateDetails>().await?;
-        info!(template_id = template.id, "DocuSeal template details fetched");
+        info!(
+            template_id = template.id,
+            "DocuSeal template details fetched"
+        );
 
         Ok(template)
     }
