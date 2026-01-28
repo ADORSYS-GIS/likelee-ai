@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
 import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
@@ -118,6 +119,15 @@ import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import { useAuth } from "../auth/AuthProvider";
+import {
+  listBookings,
+  createBooking as apiCreateBooking,
+  updateBooking as apiUpdateBooking,
+  cancelBooking as apiCancelBooking,
+  listBookOuts,
+  createBookOut,
+  notifyBookingCreatedEmail,
+} from "@/api/functions";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -14365,20 +14375,137 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
 
-  const onAddBooking = (booking: any) => {
-    setBookings([...bookings, booking]);
+  // Load persisted bookings on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await listBookings();
+        setBookings(Array.isArray(data) ? data : []);
+      } catch (e) {
+        // noop for now
+      }
+    })();
+  }, []);
+
+  // Load book-outs on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const rows = await listBookOuts();
+        setBookOuts(Array.isArray(rows) ? rows : []);
+      } catch (e) {
+        // noop for now
+      }
+    })();
+  }, []);
+
+  const onAddBooking = async (booking: any) => {
+    try {
+      // If booking already has an id, it was created upstream (e.g., multipart with files).
+      // Append directly to state to reflect immediately and avoid duplicate API call.
+      if (booking && booking.id) {
+        setBookings([...bookings, booking]);
+        try {
+          await notifyBookingCreatedEmail(booking.id);
+          toast({ title: "Talent notified via email" });
+        } catch (e) {
+          const msg = (e as any)?.message || "Email notification failed";
+          toast({ title: "Email notification", description: msg });
+        }
+        return;
+      }
+      const payload = {
+        booking_type: booking.type || booking.bookingType,
+        status: booking.status,
+        client_id: booking.clientId || booking.client_id,
+        talent_name: booking.talentName || booking.talent_name,
+        client_name: booking.clientName || booking.client_name,
+        date: booking.date,
+        industries:
+          booking.industries ||
+          booking.industryTags ||
+          booking.clientIndustries,
+        notes: booking.notes,
+      };
+      const created = await apiCreateBooking(payload);
+      const row = Array.isArray(created) ? created[0] : created;
+      setBookings([...bookings, row]);
+      try {
+        if (row?.id) {
+          await notifyBookingCreatedEmail(row.id);
+          toast({ title: "Talent notified via email" });
+        }
+      } catch (e) {
+        const msg = (e as any)?.message || "Email notification failed";
+        toast({ title: "Email notification", description: msg });
+      }
+    } catch (e: any) {
+      const msg =
+        typeof e === "string" ? e : e?.message || "Failed to create booking";
+      if (/409/.test(msg) || /unavailable/i.test(msg)) {
+        toast({
+          title: "Talent unavailable",
+          description:
+            "This talent is booked out during the selected date. Please choose another date or talent.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      toast({ title: "Create booking failed", description: msg });
+    }
   };
-  const onUpdateBooking = (booking: any) => {
-    setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+  const onUpdateBooking = async (booking: any) => {
+    try {
+      const id = booking.id;
+      const payload: any = {
+        booking_type: booking.type || booking.bookingType,
+        status: booking.status,
+        date: booking.date,
+        notes: booking.notes,
+      };
+      const updated = await apiUpdateBooking(id, payload);
+      const row = Array.isArray(updated) ? updated[0] : updated;
+      setBookings(bookings.map((b) => (b.id === row.id ? row : b)));
+    } catch (e) {
+      setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+    }
   };
-  const onCancelBooking = (id: string) => {
-    setBookings(bookings.filter((b) => b.id !== id));
+  const onCancelBooking = async (id: string) => {
+    try {
+      await apiCancelBooking(id);
+      setBookings(bookings.filter((b) => b.id !== id));
+    } catch (e) {
+      setBookings(bookings.filter((b) => b.id !== id));
+    }
   };
-  const onAddBookOut = (bookOut: any) => {
-    setBookOuts([...bookOuts, bookOut]);
+  const onAddBookOut = async (bookOut: any) => {
+    try {
+      const payload = {
+        talent_id: bookOut.talentId || bookOut.talent_id,
+        start_date: bookOut.startDate || bookOut.start_date,
+        end_date: bookOut.endDate || bookOut.end_date,
+        reason: bookOut.reason,
+        notes: bookOut.notes,
+      };
+      const created = await createBookOut(payload);
+      const row = Array.isArray(created) ? created[0] : created;
+      setBookOuts([...bookOuts, row]);
+    } catch (e) {
+      // optimistic fallback
+      setBookOuts([...bookOuts, bookOut]);
+    }
   };
-  const onRemoveBookOut = (id: string) => {
-    setBookOuts(bookOuts.filter((b) => b.id !== id));
+  const onRemoveBookOut = async (id: string) => {
+    try {
+      // Use fetch DELETE against API base
+      const res = await fetch(api(`/api/book-outs/${id}`), {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setBookOuts(bookOuts.filter((b) => b.id !== id));
+    } catch (e) {
+      setBookOuts(bookOuts.filter((b) => b.id !== id));
+    }
   };
 
   // Wrapper functions to update both state and URL params

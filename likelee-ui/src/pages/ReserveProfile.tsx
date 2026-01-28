@@ -879,9 +879,13 @@ export default function ReserveProfile() {
       u.searchParams.set("step", "4");
       u.searchParams.set("verified", "1");
       const returnUrl = u.toString();
+      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -906,8 +910,14 @@ export default function ReserveProfile() {
     if (!targetId) return;
     try {
       setKycLoading(true);
+      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(
         api(`/api/kyc/status?user_id=${encodeURIComponent(targetId)}`),
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        },
       );
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();

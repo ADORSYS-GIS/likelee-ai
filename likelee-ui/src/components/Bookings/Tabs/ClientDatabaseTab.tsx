@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Plus,
@@ -31,27 +31,53 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { CLIENT_DATA } from "@/data/mockData";
+import { getAgencyClients } from "@/api/functions";
 import { AddClientModal } from "../Modals/AddClientModal";
 import { MergeClientsModal } from "../Modals/MergeClientsModal";
 
 export const ClientDatabaseTab = () => {
-  const [clients, setClients] = useState(CLIENT_DATA);
+  const [clients, setClients] = useState<any[]>([]);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [selectedClientForEdit, setSelectedClientForEdit] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
+  // Load clients from backend on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const rows = await getAgencyClients();
+        const arr = Array.isArray(rows) ? rows : [];
+        const mapped = arr.map((r: any) => ({
+          id: r.id,
+          company: r.company,
+          contact: r.contact_name || "",
+          email: r.email || "",
+          phone: r.phone || "",
+          terms: r.terms || "Net 30",
+          industryTags: r.industry_tags || [],
+          revenue: r.revenue || 0,
+          bookings_count: r.bookings_count || 0,
+        }));
+        setClients(mapped);
+      } catch (_e) {
+        setClients([]);
+      }
+    })();
+  }, []);
+
+  const totalRevenue = useMemo(
+    () => clients.reduce((acc, c: any) => acc + (c.revenue || 0), 0),
+    [clients],
+  );
   const stats = [
     { label: "Total Clients", value: clients.length.toString() },
     { label: "Active This Month", value: "1" },
-    {
-      label: "Total Revenue",
-      value: `$${clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3}`,
-    },
+    { label: "Total Revenue", value: `$${totalRevenue}` },
     {
       label: "Avg. Booking Value",
-      value: `$${(clients.reduce((acc, c) => acc + (c.revenue || 0), 0) + 3) / (clients.length || 1)}`,
+      value: `$${(totalRevenue / (clients.length || 1)).toFixed(0)}`,
     },
   ];
 
@@ -94,7 +120,12 @@ export const ClientDatabaseTab = () => {
         <div className="flex gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input placeholder="Search by company name..." className="pl-9" />
+            <Input
+              placeholder="Search by company name..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <Select defaultValue="all">
             <SelectTrigger className="w-[180px]">
@@ -157,63 +188,69 @@ export const ClientDatabaseTab = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {clients.map((client) => (
-                    <tr
-                      key={client.id}
-                      className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
-                      onClick={() => setSelectedClient(client)}
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="font-bold text-gray-900">
-                          {client.company}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {client.email}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-700">
-                          {client.contact}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex gap-1">
-                          {(client.industryTags || [])
-                            .slice(0, 2)
-                            .map((t: string) => (
+                  {clients
+                    .filter((c) =>
+                      c.company
+                        ?.toLowerCase()
+                        .includes(search.trim().toLowerCase()),
+                    )
+                    .map((client) => (
+                      <tr
+                        key={client.id}
+                        className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                        onClick={() => setSelectedClient(client)}
+                      >
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="font-bold text-gray-900">
+                            {client.company}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {client.email}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-700">
+                            {client.contact}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex gap-1">
+                            {(client.industryTags || [])
+                              .slice(0, 2)
+                              .map((t: string) => (
+                                <Badge
+                                  key={t}
+                                  variant="secondary"
+                                  className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                                >
+                                  {t}
+                                </Badge>
+                              ))}
+                            {(client.industryTags || []).length > 2 && (
                               <Badge
-                                key={t}
                                 variant="secondary"
-                                className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                                className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
                               >
-                                {t}
+                                +{(client.industryTags || []).length - 2}
                               </Badge>
-                            ))}
-                          {(client.industryTags || []).length > 2 && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
-                            >
-                              +{(client.industryTags || []).length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-gray-900">
-                          {client.bookings_count || 0}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-extrabold text-green-600">
-                          ${(client.revenue || 0).toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right">
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
-                      </td>
-                    </tr>
-                  ))}
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-bold text-gray-900">
+                            {client.bookings_count || 0}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm font-extrabold text-green-600">
+                            ${(client.revenue || 0).toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right">
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
