@@ -226,6 +226,7 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/webhooks/docuseal",
             post(crate::scouting::handle_webhook),
+        )
         // Notifications
         .route(
             "/api/notifications/booking-created-email",
