@@ -933,6 +933,8 @@ export default function ScoutingOffers() {
                                 data-template-id={builderTemplateId}
                                 data-autosave={false}
                                 data-save-button-text="Save Template"
+                                data-with-send-button={false}
+                                data-with-sign-yourself-button={false}
                                 className="w-full h-full absolute inset-0"
                                 ref={(el: any) => {
                                     if (el && !el._hasSaveListener) {
