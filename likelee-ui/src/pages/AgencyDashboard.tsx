@@ -5682,6 +5682,7 @@ const ProspectDetailsSheet = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleStatusChange = async (newStatus: string) => {
     if (!prospect) return;
@@ -5793,14 +5794,25 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(prospect.status) ? (
-                    <Button
-                      onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
-                      variant="outline"
-                      className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      View Offers
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
+                        variant="outline"
+                        className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        View Offers
+                      </Button>
+                      {prospect.status === "signed" && (
+                        <Button
+                          onClick={() => navigate("/addtalent", { state: { prospect } })}
+                          className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Talent
+                        </Button>
+                      )}
+                    </div>
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
