@@ -199,3 +199,23 @@ BEGIN
 END $$;
 
 COMMIT;
+
+
+
+
+ALTER TABLE public.agencies
+  ADD COLUMN IF NOT EXISTS legal_entity_name text,
+  ADD COLUMN IF NOT EXISTS address text,
+  ADD COLUMN IF NOT EXISTS city text,
+  ADD COLUMN IF NOT EXISTS state text,
+  ADD COLUMN IF NOT EXISTS zip_postal_code text,
+  ADD COLUMN IF NOT EXISTS country text,
+  ADD COLUMN IF NOT EXISTS time_zone text,
+  ADD COLUMN IF NOT EXISTS tax_id_ein text,
+  ADD COLUMN IF NOT EXISTS logo_url text,
+  ADD COLUMN IF NOT EXISTS email_signature text,
+  ADD COLUMN IF NOT EXISTS primary_color text,
+  ADD COLUMN IF NOT EXISTS secondary_color text;
+
+COMMIT;
+
