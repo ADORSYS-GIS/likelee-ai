@@ -6835,6 +6835,7 @@ const RosterView = ({
   setConsentFilter,
   sortConfig,
   setSortConfig,
+  profile,
 }: {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
@@ -6844,6 +6845,7 @@ const RosterView = ({
   setConsentFilter: (s: string) => void;
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
+  profile: any;
 }) => {
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
@@ -6916,7 +6918,7 @@ const RosterView = ({
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm">
               <span className="font-serif text-2xl font-bold text-gray-900">
-                {profile?.agency_name?.substring(0, 2).toUpperCase() || "AG"}
+                {profile?.agency_name?.substring(0, 2)?.toUpperCase() || "AG"}
               </span>
             </div>
             <div>
@@ -14411,6 +14413,7 @@ export default function AgencyDashboard() {
               setConsentFilter={setConsentFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
+              profile={profile}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
