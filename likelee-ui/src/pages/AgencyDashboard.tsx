@@ -6916,10 +6916,18 @@ const RosterView = ({
       <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm">
-              <span className="font-serif text-2xl font-bold text-gray-900">
-                {profile?.agency_name?.substring(0, 2)?.toUpperCase() || "AG"}
-              </span>
+            <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm overflow-hidden">
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={profile.agency_name || "Agency"}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="font-serif text-2xl font-bold text-gray-900">
+                  {profile?.agency_name?.substring(0, 2)?.toUpperCase() || "AG"}
+                </span>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-3">

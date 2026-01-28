@@ -430,13 +430,13 @@ const GeneralSettingsView = () => {
       const filePath = `agency-logos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("likelee-public")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
+        .from("likelee-public")
         .getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
