@@ -8,6 +8,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
+import { searchLocations } from "@/components/scouting/map/geocoding";
 
 import {
   LayoutDashboard,
@@ -169,6 +170,28 @@ const ProspectModal = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [starRating, setStarRating] = useState(3);
   const [isSaving, setIsSaving] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<{ name: string; lat: number; lng: number }[]>([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleLocationSearch = async (query: string) => {
+    handleInputChange("discoveryLocation", query);
+    if (query.length >= 3) {
+      setIsSearchingLocation(true);
+      try {
+        const results = await searchLocations(query);
+        setLocationSuggestions(results);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error("Location search error:", error);
+      } finally {
+        setIsSearchingLocation(false);
+      }
+    } else {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -469,15 +492,38 @@ const ProspectModal = ({
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label>Discovery Location</Label>
-                <Input
-                  placeholder="New York, NY"
-                  value={formData.discoveryLocation}
-                  onChange={(e) =>
-                    handleInputChange("discoveryLocation", e.target.value)
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    placeholder="New York, NY"
+                    value={formData.discoveryLocation}
+                    onChange={(e) => handleLocationSearch(e.target.value)}
+                    onFocus={() => formData.discoveryLocation.length >= 3 && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  />
+                  {isSearchingLocation && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                    </div>
+                  )}
+                </div>
+                {showSuggestions && locationSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {locationSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b last:border-0"
+                        onClick={() => {
+                          handleInputChange("discoveryLocation", suggestion.name);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        {suggestion.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Referred By</Label>
@@ -5738,7 +5784,7 @@ const ProspectDetailsSheet = ({
                   <h2 className="text-3xl font-bold text-gray-900">
                     {prospect.full_name}
                   </h2>
-                  {prospect.status === "test_shoot_success" && (
+                  {prospect.status === "test_shoot_success" ? (
                     <Button
                       onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
@@ -5746,7 +5792,16 @@ const ProspectDetailsSheet = ({
                       <FileText className="w-4 h-4" />
                       Send Offer
                     </Button>
-                  )}
+                  ) : ["offer_sent", "opened", "signed", "declined"].includes(prospect.status) ? (
+                    <Button
+                      onClick={() => window.location.href = `/scoutingoffers?prospectId=${prospect.id}`}
+                      variant="outline"
+                      className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      View Offers
+                    </Button>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {prospect.categories?.map((cat) => (
@@ -5994,10 +6049,16 @@ const ProspectPipelineTab = ({
 
   // Update URL when filters change
   useEffect(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(window.location.search);
     if (debouncedSearch) params.set("search", debouncedSearch);
+    else params.delete("search");
+
     if (statusFilter !== "all") params.set("status", statusFilter);
+    else params.delete("status");
+
     if (sourceFilter !== "all") params.set("source", sourceFilter);
+    else params.delete("source");
+
     setSearchParams(params, { replace: true });
   }, [debouncedSearch, statusFilter, sourceFilter, setSearchParams]);
 
