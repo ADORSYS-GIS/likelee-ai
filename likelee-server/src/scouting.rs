@@ -329,7 +329,7 @@ pub async fn create_offer(
         Ok(details) => details
             .submitters
             .first()
-            .and_then(|s| Some(format!("{}/s/{}", state.docuseal_app_url, s.slug))),
+            .map(|s| format!("{}/s/{}", state.docuseal_app_url, s.slug)),
         Err(e) => {
             error!(error = %e, submission_id = submission.id, "Failed to fetch DocuSeal submission details");
             None

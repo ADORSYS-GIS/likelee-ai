@@ -479,7 +479,7 @@ pub async fn start_lipsync(
                         })
                 };
                 out_id = if let Some(arr2) = val2.as_array() {
-                    arr2.first().and_then(&try_obj)
+                    arr2.first().and_then(try_obj)
                 } else {
                     try_obj(&val2)
                 };
