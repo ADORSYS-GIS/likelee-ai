@@ -222,10 +222,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         if (error) throw error;
 
-        // Profile creation deferred until email verification and subsequent login/session refresh
-        // if (data.user) {
-        //   await fetchProfile(data.user.id, data.user.email, displayName);
-        // }
+        // Profile creation is now handled immediately after signup to capture full_name.
+        if (data.user) {
+          await fetchProfile(data.user.id, data.user.email, displayName);
+        }
 
         return { user: data.user, session: data.session };
       },

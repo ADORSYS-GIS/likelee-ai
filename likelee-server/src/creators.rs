@@ -23,9 +23,17 @@ pub async fn upsert_profile(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::BAD_REQUEST, "missing email".to_string()))?
         .to_string();
+
+    // Debug logging to inspect incoming payload
+    tracing::info!(?body, "upsert_profile payload");
+
     let now = chrono::Utc::now().to_rfc3339();
-    if body.get("updated_date").is_none() {
-        body["updated_date"] = serde_json::Value::String(now.clone());
+    if body.get("updated_at").is_none() {
+        body["updated_at"] = serde_json::Value::String(now.clone());
+    }
+    // Remove legacy field if present to avoid DB errors if strict
+    if body.get("updated_date").is_some() {
+        body.as_object_mut().unwrap().remove("updated_date");
     }
 
     let exists = match state
@@ -75,9 +83,14 @@ pub async fn upsert_profile(
         let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
         Ok(Json(v))
     } else {
-        if body.get("created_date").is_none() {
-            body["created_date"] = serde_json::Value::String(now);
+        if body.get("created_at").is_none() {
+            body["created_at"] = serde_json::Value::String(now);
         }
+        // Remove legacy field if present
+        if body.get("created_date").is_some() {
+            body.as_object_mut().unwrap().remove("created_date");
+        }
+
         let body_str =
             serde_json::to_string(&body).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         let resp = state

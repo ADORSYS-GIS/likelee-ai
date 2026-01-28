@@ -1,29 +1,3 @@
-# Database ER Diagram
-
-This ER diagram reflects the current schema defined by the Supabase migrations in `/supabase/migrations` as of the latest change. It is derived from the following files:
-
-- 20251118_profiles.sql
-- 20251118_profiles_verification.sql
-- 20251119_profiles_fields.sql
-- 20251120_profiles_avatar_canonical.sql
-- 20251120_profiles_cameo_images.sql
-- 20251121_profiles_id_default.sql
-- 2025-11-21_royalty_wallet_mvp.sql
-- 2025-11-21_consolidated_profiles_wallet.sql
-- 2025-11-23_moderation_events.sql
-- 20251127_create_org_and_agency_users.sql
-- 2025-12-04_add_profile_photo_url.sql
-- 2025-11-29_reference_images.sql
-- 2025-12-04_voice_assets.sql
-- 20251204101400_add_creator_custom_rates.sql
-- 20251205160000_add_negotiations_and_restrictions.sql
-- 20251219213500_rename_rates_column.sql
-- 20260101_profiles_physical_attributes.sql
-
-Currently, the schema includes `profiles`, `royalty_ledger`, `creator_custom_rates` (FK → profiles), plus a read-only aggregation view `v_face_payouts`.
-
-## Mermaid ER Diagram
-
 ```mermaid
 erDiagram
   PROFILES {
@@ -366,3 +340,72 @@ erDiagram
 - Earnings Attribution
   - Bookings/payments produce `ROYALTY_LEDGER` entries tied to a Face (in `PROFILES`).
   - `V_FACE_PAYOUTS` aggregates for dashboards.
+
+
+I’ll append the new tables and relationships directly to docs/er-diagram.md. My previous automated patch failed due to anchoring issues, so I’ll add the section at the end of the file text you have open. Here is the exact block to paste at the end of docs/er-diagram.md.
+
+## Bookings and Agency Clients Addendum (2026-01)
+
+```mermaid
+erDiagram
+  ORGANIZATION_PROFILES {
+    uuid id PK
+    uuid owner_user_id
+    text organization_name
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  AGENCY_CLIENTS {
+    uuid id PK
+    uuid agency_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
+    text company
+    text contact_name
+    text email
+    text phone
+    text terms
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  BOOKINGS {
+    uuid id PK
+    uuid agency_user_id "REFERENCES auth.users(id) ON DELETE CASCADE"
+    uuid talent_id FK "REFERENCES creators(id) ON DELETE SET NULL"
+    text talent_name
+    text client_name
+    booking_type type "casting|option|confirmed|test-shoot|fitting|rehearsal"
+    booking_status status "pending|confirmed|completed|cancelled"
+    date date
+    boolean all_day
+    text call_time
+    text wrap_time
+    text location
+    text location_notes
+    integer rate_cents
+    text currency "default 'USD'"
+    booking_rate_type rate_type "day|hourly|flat|tbd"
+    text usage_terms
+    text usage_duration
+    boolean exclusive
+    text notes
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  ORGANIZATION_PROFILES ||--o{ AGENCY_CLIENTS : agency_id
+  CREATORS ||--o{ BOOKINGS : talent_id
+```
+
+Notes
+- Enums
+  - booking_type: casting | option | confirmed | test-shoot | fitting | rehearsal
+  - booking_status: pending | confirmed | completed | cancelled
+  - booking_rate_type: day | hourly | flat | tbd
+- RLS
+  - bookings: owned by agency_user_id (auth.uid())
+  - agency_clients: ownership via organization_profiles.owner_user_id = auth.uid()
+- Optional normalization
+  - bookings.client_name is denormalized; can add client_id → agency_clients(id) if you want strict FK linkage.
+
+If you want, I can try another patch to commit this to docs/er-diagram.md now; otherwise, you can paste it manually.

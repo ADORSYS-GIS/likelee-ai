@@ -59,23 +59,36 @@ export default function Login() {
 
   // Track if we're about to redirect
   const [isRedirecting, setIsRedirecting] = React.useState(false);
+  // Guard against race conditions during logout/tab switch
+  const [accessDenied, setAccessDenied] = React.useState(false);
 
   React.useEffect(() => {
+    // Reset accessDenied once we are fully logged out
+    if (!authenticated) {
+      setAccessDenied(false);
+      return;
+    }
+
     if (initialized && authenticated && profile) {
+      // If we already detected a mismatch, don't do anything until logout finishes
+      if (accessDenied) return;
+
       // Enforce role-based login
       const normalizedRole = (profile.role || "").toLowerCase().trim();
       const normalizedUserType = (userType || "").toLowerCase().trim();
 
       if (!normalizedRole) {
         setError("Account role not found. Please contact support.");
-        // Do not logout; allow navigation based on available profile data
+        setAccessDenied(true);
+        logout();
+        return;
       }
 
       if (normalizedRole !== normalizedUserType) {
-        setError(
-          "This account is not registered on this tab. Please switch to the correct tab.",
-        );
-        // Do not logout; continue to navigate to the appropriate dashboard by role
+        setError("Account does not exist under this tab, try another");
+        setAccessDenied(true);
+        logout();
+        return;
       }
 
       // Set redirecting state to hide content during navigation
@@ -104,6 +117,7 @@ export default function Login() {
     creatorType,
     userType,
     logout,
+    accessDenied,
   ]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -184,9 +198,12 @@ export default function Login() {
 
           <CardContent className="space-y-6">
             <Tabs
-              defaultValue="creator"
+              value={userType}
               className="w-full"
-              onValueChange={setUserType}
+              onValueChange={(value) => {
+                setUserType(value);
+                setError(null);
+              }}
             >
               <TabsList className="grid w-full grid-cols-3 mb-8 p-1 bg-gray-100 rounded-xl">
                 <TabsTrigger

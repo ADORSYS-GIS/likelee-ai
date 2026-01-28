@@ -774,7 +774,7 @@ export default function OrganizationSignup() {
               {/* Added Go to Dashboard button */}
               <Button
                 onClick={() => {
-                  if (orgType === "brand" || orgType === "production_studio") {
+                  if (flow === "brand") {
                     window.location.href = "/BrandDashboard";
                   } else {
                     window.location.href = "/AgencyDashboard";
