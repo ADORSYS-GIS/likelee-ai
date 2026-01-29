@@ -96,6 +96,9 @@ export default function ScoutingOffers() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"templates" | "submissions">(
+    "templates",
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -364,11 +367,14 @@ export default function ScoutingOffers() {
 
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       setShowSendOfferDialog(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending offer:", error);
+      const msg = error?.message || "";
       toast({
         title: "Error",
-        description: "Failed to send offer. Please try again.",
+        description: msg.includes("Template does not contain fields")
+          ? "This template has no DocuSeal fields. Open the builder and add at least one role/signature field, then try again."
+          : "Failed to send offer. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -435,8 +441,35 @@ export default function ScoutingOffers() {
             )}
           </div>
         </div>
+        
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab("templates")}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "templates"
+                  ? "border-indigo-500 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Templates
+            </button>
+            <button
+              onClick={() => setActiveTab("submissions")}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "submissions"
+                  ? "border-indigo-500 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Submissions
+            </button>
+          </nav>
+        </div>
 
         {/* Templates Section */}
+        {activeTab === "templates" && (
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -624,8 +657,10 @@ export default function ScoutingOffers() {
         )}
       </div>
     </section>
+        )}
 
         {/* Submissions Section */ }
+  {activeTab === "submissions" && (
   <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
     <div className="p-6 border-b border-gray-200 flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -928,7 +963,8 @@ export default function ScoutingOffers() {
       </table>
     </div>
   </section>
-      </div >
+  )}
+      </div>
 
     {/* Send Offer Dialog */ }
     < Dialog open = { showSendOfferDialog } onOpenChange = { setShowSendOfferDialog } >
