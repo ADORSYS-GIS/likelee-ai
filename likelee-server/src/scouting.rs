@@ -106,7 +106,7 @@ pub async fn create_template(
         "Creating template"
     );
 
-    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+    let _pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
         .insert_header("apikey", &state.supabase_service_key)
         .insert_header(
             "Authorization",
