@@ -110,6 +110,14 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import DashboardView from "@/components/agency/DashboardView";
+import RosterView from "@/components/agency/RosterView";
+
+import {
+  getAgencyRoster,
+  getAgencyProfile,
+  createOrganizationKycSession,
+} from "@/api/functions";
 
 const STATUS_MAP = {
   new: "New Lead",
@@ -1269,27 +1277,12 @@ const ClientProfileModal = ({
                     </select>
                   </div>
 
-                  <div className="w-40 border-2 border-gray-300">
-                    <select
-                      value={consentFilter}
-                      onChange={(e) => setConsentFilter(e.target.value)}
-                    >
-                      <option value="all">All Consent</option>
-                      <option value="complete">Complete</option>
-                      <option value="expiring">Expiring</option>
-                      <option value="missing">Missing</option>
-                    </select>
-                  </div>
-
-                  {(searchQuery ||
-                    statusFilter !== "all" ||
-                    consentFilter !== "all") && (
+                  {(searchQuery || statusFilter !== "all") && (
                     <Button
                       variant="ghost"
                       onClick={() => {
                         setSearchQuery("");
                         setStatusFilter("all");
-                        setConsentFilter("all");
                       }}
                       className="text-gray-600"
                     >
@@ -1318,15 +1311,6 @@ const ClientProfileModal = ({
                             className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
                           >
                             Status
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("consent")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            Consent
                             <ArrowUpDown className="w-3 h-3" />
                           </button>
                         </th>
@@ -1412,26 +1396,6 @@ const ClientProfileModal = ({
                               }
                             >
                               {talent.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span
-                              className={
-                                talent.consent === "complete"
-                                  ? "bg-green-100 text-green-800"
-                                  : talent.consent === "expiring"
-                                    ? "bg-orange-100 text-orange-800"
-                                    : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {talent.consent === "expiring" ? (
-                                <Clock className="w-3 h-3 mr-1" />
-                              ) : talent.consent === "missing" ? (
-                                <XCircle className="w-3 h-3 mr-1" />
-                              ) : (
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                              )}
-                              {talent.consent}
                             </span>
                           </td>
                           <td className="px-4 py-4">
@@ -6396,7 +6360,7 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
+const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
   <div className="space-y-8">
     {/* KYC Verification Alert */}
     <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
@@ -6828,13 +6792,11 @@ const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
   </div>
 );
 
-const RosterView = ({
+const InlineRosterView = ({
   searchTerm,
   setSearchTerm,
   statusFilter,
   setStatusFilter,
-  consentFilter,
-  setConsentFilter,
   sortConfig,
   setSortConfig,
 }: {
@@ -6842,8 +6804,6 @@ const RosterView = ({
   setSearchTerm: (s: string) => void;
   statusFilter: string;
   setStatusFilter: (s: string) => void;
-  consentFilter: string;
-  setConsentFilter: (s: string) => void;
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
 }) => {
@@ -6879,13 +6839,6 @@ const RosterView = ({
       );
     }
 
-    // Consent
-    if (consentFilter !== "All Consent") {
-      data = data.filter(
-        (t) => t.consent.toLowerCase() === consentFilter.toLowerCase(),
-      );
-    }
-
     // Sort
     if (sortConfig) {
       data.sort((a, b) => {
@@ -6901,12 +6854,11 @@ const RosterView = ({
     }
 
     return data;
-  }, [searchTerm, statusFilter, consentFilter, sortConfig]);
+  }, [searchTerm, statusFilter, sortConfig]);
 
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("All Status");
-    setConsentFilter("All Consent");
     setSortConfig(null);
   };
 
@@ -6923,7 +6875,9 @@ const RosterView = ({
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">CM Models</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {agencyName}
+                </h1>
                 {/* Verified Badge */}
                 <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
                   <svg
@@ -7073,7 +7027,7 @@ const RosterView = ({
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-gray-400" />
             <span className="font-medium">
-              {TALENT_DATA.length} / 15 seats used
+              {(rosterQuery.data || []).length} / {seatsLimit || 0} seats used
             </span>
           </div>
         </div>
@@ -7217,28 +7171,15 @@ const RosterView = ({
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-                <div className="relative">
-                  <select
-                    value={consentFilter}
-                    onChange={(e) => setConsentFilter(e.target.value)}
-                    className="appearance-none px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-10 w-48 pr-10 hover:border-gray-400"
-                  >
-                    <option>All Consent</option>
-                    <option>Complete</option>
-                    <option>Missing</option>
-                    <option>Expiring</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
                 {(searchTerm ||
                   statusFilter !== "All Status" ||
-                  consentFilter !== "All Consent" ||
                   sortConfig) && (
                   <button
                     onClick={clearFilters}
                     className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
                   >
-                    <X className="w-4 h-4" /> Clear Filters
+                    <X className="w-4 h-4" />
+                    Clear Filters
                   </button>
                 )}
               </div>
@@ -7263,14 +7204,6 @@ const RosterView = ({
                         className="flex items-center gap-1 hover:text-gray-600 transition-colors uppercase"
                       >
                         Status <ArrowUpDown className="w-3 h-3" />
-                      </button>
-                    </th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      <button
-                        onClick={() => handleSort("consent")}
-                        className="flex items-center gap-1 hover:text-gray-600 transition-colors uppercase"
-                      >
-                        Consent <ArrowUpDown className="w-3 h-3" />
                       </button>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -7355,49 +7288,6 @@ const RosterView = ({
                           className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${talent.status === "active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
                         >
                           {talent.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
-                        >
-                          {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.3}
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.3}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          )}
-                          {talent.consent}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -13741,7 +13631,7 @@ export default function AgencyDashboard() {
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [consentFilter, setConsentFilter] = useState("All Consent");
+  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -13751,6 +13641,40 @@ export default function AgencyDashboard() {
   const [kycLoading, setKycLoading] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
+
+  const rosterQuery = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || null;
+    },
+    enabled: !!user?.id,
+  });
+
+  const rosterTalents = ((rosterQuery.data as any)?.talents ??
+    (Array.isArray(rosterQuery.data) ? rosterQuery.data : [])) as any[];
+  const activeCampaigns = Number(
+    (rosterQuery.data as any)?.active_campaigns ?? 0,
+  );
+  const earnings30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_30d_total_cents ?? 0,
+  );
+  const earningsPrev30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_prev_30d_total_cents ?? 0,
+  );
+
+  const agencyProfileQuery = useQuery({
+    queryKey: ["agency-profile", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyProfile();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+  });
+
+  const agencyName =
+    (agencyProfileQuery.data as any)?.agency_name || "Cult Management";
+  const seatsLimit = Number((agencyProfileQuery.data as any)?.seats_limit || 0);
 
   const onAddBooking = (booking: any) => {
     setBookings([...bookings, booking]);
@@ -13991,10 +13915,13 @@ export default function AgencyDashboard() {
           </div>
           <div className="flex flex-col min-w-0">
             <h2 className="font-bold text-gray-900 text-base leading-tight">
-              CM Models
+              {agencyName}
             </h2>
-            <p className="text-sm text-gray-500 font-medium">
-              admin@cmmodels.com
+            <p
+              className="text-sm text-gray-500 font-medium truncate"
+              title={user?.email}
+            >
+              {user?.email}
             </p>
           </div>
         </div>
@@ -14189,9 +14116,16 @@ export default function AgencyDashboard() {
                           className="w-full h-full object-contain"
                         />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">CM Models</h3>
-                        <p className="text-xs text-gray-500">Agency Account</p>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-gray-900">
+                          {agencyName}
+                        </h3>
+                        <p
+                          className="text-xs text-gray-500 truncate"
+                          title={user?.email || ""}
+                        >
+                          {user?.email || "Agency Account"}
+                        </p>
                       </div>
                     </div>
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
@@ -14270,17 +14204,31 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
-          {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
+          {activeTab === "dashboard" && (
+            <DashboardView
+              onKYC={handleKYC}
+              agencyName={agencyName}
+              rosterData={rosterTalents}
+            />
+          )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
-              consentFilter={consentFilter}
-              setConsentFilter={setConsentFilter}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
+              agencyMode={agencyMode}
+              rosterData={rosterTalents}
+              activeCampaigns={activeCampaigns}
+              earnings30dTotalCents={earnings30dTotalCents}
+              earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+              agencyName={agencyName}
+              seatsLimit={seatsLimit}
+              onRosterChanged={() => rosterQuery.refetch()}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
@@ -14301,12 +14249,7 @@ export default function AgencyDashboard() {
           {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
             <ComplianceHubView />
           )}
-          {activeTab === "analytics" &&
-            activeSubTab === "Analytics Dashboard" && (
-              <AnalyticsDashboardView />
-            )}
-          {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
+          {activeTab === "analytics" && <PlaceholderView title="Analytics" />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
           )}

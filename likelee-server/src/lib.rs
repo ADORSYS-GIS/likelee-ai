@@ -1,12 +1,16 @@
 pub mod agencies;
+pub mod agency_clients;
+pub mod agency_roster;
 pub mod auth;
 pub mod avatar;
 pub mod brands;
+pub mod campaigns;
 pub mod config;
 mod creatify;
 pub mod creator_rates;
 pub mod creators;
 pub mod dashboard;
+pub mod digitals;
 pub mod email;
 pub mod face_profiles;
 pub mod kyc;

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,6 +33,10 @@ import {
   Play,
 } from "lucide-react";
 
+import { createAgencyTalent } from "@/api/functions";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/auth/AuthProvider";
+
 const ethnicities = [
   "Asian",
   "Black / African American",
@@ -60,10 +64,16 @@ const skinTones = [
 export default function AddTalent() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
   const totalSteps = 3;
+
+  const [profilePhotoIndex, setProfilePhotoIndex] = useState<number | null>(
+    null,
+  );
 
   const [formData, setFormData] = useState({
     // Basic Info
@@ -72,6 +82,7 @@ export default function AddTalent() {
     email: "",
     phone: "",
     birthdate: "",
+    role_types: [],
 
     // Physical Attributes
     gender: "",
@@ -79,8 +90,13 @@ export default function AddTalent() {
     hair_color: "",
     eye_color: "",
     skin_tone: "",
+    tattoos: "unknown",
+    piercings: "unknown",
     height_feet: "",
     height_inches: "",
+    bust_inches: "",
+    waist_inches: "",
+    hips_inches: "",
 
     // Location
     city: "",
@@ -100,6 +116,18 @@ export default function AddTalent() {
     bio: "",
     special_skills: "",
   });
+
+  useEffect(() => {
+    setProfilePhotoIndex((prev) => {
+      const len = Array.isArray(formData.photos) ? formData.photos.length : 0;
+      if (len === 0) return null;
+      if (prev === null) return 0;
+      if (prev >= len) return 0;
+      return prev;
+    });
+  }, [formData.photos]);
+
+  const roleCategories = ["Model", "Actor", "Creator", "Voice", "Athlete"];
 
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
@@ -124,17 +152,26 @@ export default function AddTalent() {
   };
 
   const handlePhotosUpload = (e) => {
-    const files = Array.from(e.target.files);
+    const input = e?.target;
+    const files = Array.from((input?.files || []) as any);
+    if (input) {
+      input.value = "";
+    }
     if (files.length > 0) {
       setUploading(true);
       setTimeout(() => {
         const newPhotos = files.map((file) => ({
           url: URL.createObjectURL(file),
           name: file.name,
+          file,
         }));
-        setFormData({
-          ...formData,
-          photos: [...formData.photos, ...newPhotos],
+        setFormData((prev) => ({
+          ...prev,
+          photos: [...prev.photos, ...newPhotos],
+        }));
+        setProfilePhotoIndex((prev) => {
+          if (prev !== null) return prev;
+          return 0;
         });
         setUploading(false);
       }, 1000);
@@ -163,6 +200,32 @@ export default function AddTalent() {
       ...formData,
       photos: formData.photos.filter((_, i) => i !== index),
     });
+    setProfilePhotoIndex((prev) => {
+      if (prev === null) return null;
+      if (prev === index) {
+        const nextLen = formData.photos.length - 1;
+        return nextLen > 0 ? 0 : null;
+      }
+      if (prev > index) return prev - 1;
+      return prev;
+    });
+  };
+
+  const getAgeYears = (dob: string) => {
+    if (!dob) return null;
+    const d = new Date(dob);
+    if (Number.isNaN(d.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age -= 1;
+    return age;
+  };
+
+  const isAtLeast18 = (dob: string) => {
+    const age = getAgeYears(dob);
+    if (age === null) return false;
+    return age >= 18;
   };
 
   const handleConnectInstagram = () => {
@@ -190,18 +253,176 @@ export default function AddTalent() {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Submitting talent data:", formData);
-    toast({
-      title: "Success",
-      description: "Talent added successfully! (Demo mode)",
-    });
-    navigate(createPageUrl("AgencyDashboard"));
+  const toggleRoleCategory = (category) => {
+    const current = Array.isArray(formData.role_types)
+      ? formData.role_types
+      : [];
+    if (current.includes(category)) {
+      setFormData({
+        ...formData,
+        role_types: current.filter((c) => c !== category),
+      });
+    } else {
+      setFormData({
+        ...formData,
+        role_types: [...current, category],
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    try {
+      setIsSubmitting(true);
+      console.log("Submitting talent data:", formData);
+
+      if (!isAtLeast18(formData.birthdate)) {
+        toast({
+          title: "Invalid date of birth",
+          description: "Talent must be at least 18 years old.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let profilePhotoUrl = "";
+      let galleryPhotoUrls: string[] = [];
+      const photoFiles: File[] = Array.isArray(formData.photos)
+        ? (formData.photos
+            .map((p: any) => p?.file)
+            .filter((f: any) => !!f) as File[])
+        : [];
+      if (photoFiles.length > 0 && supabase && user?.id) {
+        try {
+          const urls: string[] = [];
+          for (const file of photoFiles) {
+            const safeName = (file.name || "photo")
+              .toString()
+              .replace(/[^a-zA-Z0-9_.-]/g, "_");
+            const ext = safeName.includes(".")
+              ? safeName.split(".").pop()
+              : file.type?.includes("png")
+                ? "png"
+                : "jpg";
+            const rand =
+              (globalThis as any)?.crypto?.randomUUID?.() ||
+              `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+            const path = `agency/${user.id}/talents/gallery_${rand}.${ext}`;
+            const { error } = await supabase.storage
+              .from("likelee-public")
+              .upload(path, file, {
+                upsert: true,
+                contentType: file.type || "image/jpeg",
+              });
+            if (error) throw error;
+            const { data } = supabase.storage
+              .from("likelee-public")
+              .getPublicUrl(path);
+            const publicUrl = data.publicUrl || "";
+            if (publicUrl) urls.push(publicUrl);
+          }
+          galleryPhotoUrls = urls;
+          const idx = profilePhotoIndex ?? 0;
+          profilePhotoUrl = urls[idx] || urls[0] || "";
+        } catch (e: any) {
+          console.error("Photo upload failed:", e);
+          toast({
+            title: "Upload failed",
+            description:
+              "Could not upload photos. Talent will be created without photos.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Map frontend form data to backend expected format
+      // Note: Ideally we upload images to S3/Storage first and get a URL.
+      // For this demo, we'll use a placeholder if it's a local blob URL.
+      const payload = {
+        full_name: formData.full_name,
+        stage_name: formData.stage_name,
+        email: formData.email,
+        phone: formData.phone,
+        birthdate: formData.birthdate,
+        role_type: formData.role_types,
+        status: "inactive",
+        instagram_handle: formData.instagram_handle,
+        instagram_followers: 0,
+        engagement_rate: 0,
+        profile_photo_url: profilePhotoUrl,
+        photo_urls: galleryPhotoUrls,
+        bio: formData.bio,
+        special_skills: formData.special_skills,
+
+        // Physicals
+        height_feet: parseInt(formData.height_feet) || 0,
+        height_inches: parseInt(formData.height_inches) || 0,
+        bust_inches: formData.bust_inches
+          ? parseInt(formData.bust_inches)
+          : undefined,
+        waist_inches: formData.waist_inches
+          ? parseInt(formData.waist_inches)
+          : undefined,
+        hips_inches: formData.hips_inches
+          ? parseInt(formData.hips_inches)
+          : undefined,
+        gender_identity: formData.gender,
+        race_ethnicity: formData.ethnicity,
+        hair_color: formData.hair_color,
+        eye_color: formData.eye_color,
+        skin_tone: formData.skin_tone,
+        tattoos:
+          formData.tattoos === "yes"
+            ? true
+            : formData.tattoos === "no"
+              ? false
+              : undefined,
+        piercings:
+          formData.piercings === "yes"
+            ? true
+            : formData.piercings === "no"
+              ? false
+              : undefined,
+
+        // Location
+        city: formData.city,
+        state_province: formData.state,
+        country: formData.country,
+      };
+
+      await createAgencyTalent(payload);
+
+      toast({
+        title: "Success",
+        description: "Talent added successfully!",
+      });
+      {
+        const base = createPageUrl("AgencyDashboard");
+        const hasQuery = base.includes("?");
+        navigate(`${base}${hasQuery ? "&" : "?"}tab=roster`, { replace: true });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to create talent. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const canProceedStep1 =
-    formData.full_name && formData.email && formData.birthdate;
-  const canProceedStep2 = formData.gender && formData.ethnicity.length > 0;
+    formData.full_name &&
+    formData.email &&
+    formData.birthdate &&
+    isAtLeast18(formData.birthdate);
+  const canProceedStep2 =
+    formData.gender &&
+    formData.ethnicity.length > 0 &&
+    Array.isArray(formData.role_types) &&
+    formData.role_types.length > 0;
 
   const progress = (step / totalSteps) * 100;
 
@@ -212,11 +433,15 @@ export default function AddTalent() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => navigate(createPageUrl("AgencyDashboard"))}
+            onClick={() => {
+              const base = createPageUrl("AgencyDashboard");
+              const hasQuery = base.includes("?");
+              navigate(`${base}${hasQuery ? "&" : "?"}tab=roster`);
+            }}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            Back to All Talent
           </Button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -285,16 +510,17 @@ export default function AddTalent() {
                     htmlFor="full_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Full Legal Name *
+                    Full Legal Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="full_name"
+                    type="text"
                     value={formData.full_name}
                     onChange={(e) =>
                       setFormData({ ...formData, full_name: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="Jane Marie Doe"
+                    placeholder="Full legal name"
                   />
                 </div>
 
@@ -303,37 +529,36 @@ export default function AddTalent() {
                     htmlFor="stage_name"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Stage Name / Professional Name
+                    Stage Name
                   </Label>
                   <Input
                     id="stage_name"
+                    type="text"
                     value={formData.stage_name}
                     onChange={(e) =>
                       setFormData({ ...formData, stage_name: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="Jane Doe"
+                    placeholder="Optional"
                   />
                 </div>
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label
                     htmlFor="email"
                     className="text-sm font-medium text-gray-700 mb-2 block"
                   >
-                    Email Address *
+                    Email Address <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="email"
                     type="email"
+                    placeholder="talent@example.com"
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
                     className="border-2 border-gray-300"
-                    placeholder="jane@example.com"
                   />
                 </div>
 
@@ -362,7 +587,7 @@ export default function AddTalent() {
                   htmlFor="birthdate"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Date of Birth *
+                  Date of Birth <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="birthdate"
@@ -373,6 +598,11 @@ export default function AddTalent() {
                   }
                   className="border-2 border-gray-300"
                 />
+                {formData.birthdate && !isAtLeast18(formData.birthdate) && (
+                  <p className="text-sm text-red-600 mt-2 font-medium">
+                    Talent must be at least 18 years old.
+                  </p>
+                )}
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
@@ -474,7 +704,7 @@ export default function AddTalent() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  Gender Identity *
+                  Gender Identity <span className="text-red-500">*</span>
                 </Label>
                 <div className="grid md:grid-cols-3 gap-3">
                   {[
@@ -510,7 +740,8 @@ export default function AddTalent() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Race / Ethnicity * (Select all that apply)
+                  Race / Ethnicity <span className="text-red-500">*</span>{" "}
+                  (Select all that apply)
                 </Label>
                 <div className="grid md:grid-cols-2 gap-3">
                   {ethnicities.map((ethnicity) => (
@@ -533,6 +764,40 @@ export default function AddTalent() {
                       </div>
                     </Card>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-900 mb-3 block">
+                  Role Type <span className="text-red-500">*</span> (Select all
+                  that apply)
+                </Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {roleCategories.map((category) => {
+                    const selected = Array.isArray(formData.role_types)
+                      ? formData.role_types.includes(category)
+                      : false;
+                    return (
+                      <Card
+                        key={category}
+                        onClick={() => toggleRoleCategory(category)}
+                        className={`p-5 min-h-[56px] cursor-pointer transition-all flex items-center ${
+                          selected
+                            ? "border-2 border-indigo-600 bg-indigo-50"
+                            : "border-2 border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="w-full flex items-center justify-between">
+                          <span className="font-semibold text-gray-900">
+                            {category}
+                          </span>
+                          {selected && (
+                            <CheckCircle2 className="w-5 h-5 text-indigo-600" />
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -616,6 +881,56 @@ export default function AddTalent() {
                 </div>
               </div>
 
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label
+                    htmlFor="tattoos"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Tattoos
+                  </Label>
+                  <Select
+                    value={formData.tattoos}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, tattoos: value })
+                    }
+                  >
+                    <SelectTrigger className="border-2 border-gray-300">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unknown">Unknown</SelectItem>
+                      <SelectItem value="yes">Has tattoos</SelectItem>
+                      <SelectItem value="no">No tattoos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="piercings"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Piercings
+                  </Label>
+                  <Select
+                    value={formData.piercings}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, piercings: value })
+                    }
+                  >
+                    <SelectTrigger className="border-2 border-gray-300">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unknown">Unknown</SelectItem>
+                      <SelectItem value="yes">Has piercings</SelectItem>
+                      <SelectItem value="no">No piercings</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   Height
@@ -663,11 +978,73 @@ export default function AddTalent() {
               </div>
 
               <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Measurements (in)
+                </Label>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Input
+                      type="number"
+                      value={formData.bust_inches}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bust_inches: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="Bust"
+                      min="0"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Bust
+                    </span>
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      value={formData.waist_inches}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          waist_inches: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="Waist"
+                      min="0"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Waist
+                    </span>
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      value={formData.hips_inches}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          hips_inches: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="Hips"
+                      min="0"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Hips
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
                 <Label
                   htmlFor="special_skills"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Special Skills / Tags
+                  Special Skills / Tags (separated by comma)
                 </Label>
                 <Input
                   id="special_skills"
@@ -780,16 +1157,16 @@ export default function AddTalent() {
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Photo Gallery ({formData.photos.length}/10)
                 </Label>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotosUpload}
+                  className="hidden"
+                />
                 {formData.photos.length === 0 ? (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotosUpload}
-                      className="hidden"
-                    />
                     <button
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
@@ -819,6 +1196,21 @@ export default function AddTalent() {
                             alt={photo.name}
                             className="w-full h-24 object-cover border-2 border-gray-200 rounded-lg"
                           />
+                          {formData.photos.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setProfilePhotoIndex(index)}
+                              className={`absolute bottom-1 left-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                profilePhotoIndex === index
+                                  ? "bg-indigo-600 text-white"
+                                  : "bg-white/90 text-gray-700 border border-gray-200"
+                              }`}
+                            >
+                              {profilePhotoIndex === index
+                                ? "Profile"
+                                : "Set as profile"}
+                            </button>
+                          )}
                           <Button
                             onClick={() => handleDeletePhoto(index)}
                             variant="outline"
@@ -958,10 +1350,20 @@ export default function AddTalent() {
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white"
+                  disabled={isSubmitting}
+                  className={`flex-1 h-12 bg-green-600 hover:bg-green-700 text-white ${isSubmitting ? "opacity-80 blur-[0.3px] cursor-not-allowed" : ""}`}
                 >
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Add Talent to Roster
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Adding talent...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                      Add Talent to Roster
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

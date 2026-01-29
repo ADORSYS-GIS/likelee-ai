@@ -30,6 +30,47 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency-profile/user",
             get(crate::agencies::get_by_user),
         )
+        .route("/api/agency/roster", get(crate::agency_roster::get_roster))
+        .route(
+            "/api/agency/talent",
+            post(crate::agency_roster::create_talent),
+        )
+        .route(
+            "/api/agency/talent/:id",
+            post(crate::agency_roster::update_talent),
+        )
+        .route(
+            "/api/agency/talent/:id/campaigns",
+            get(crate::agency_roster::list_talent_campaigns),
+        )
+        .route(
+            "/api/agency/campaigns/:id",
+            post(crate::campaigns::update_campaign_split),
+        )
+        .route(
+            "/api/agency/digitals",
+            get(crate::digitals::list_agency_digitals),
+        )
+        .route(
+            "/api/agency/talent/:id/digitals",
+            get(crate::digitals::list_talent_digitals).post(crate::digitals::create_talent_digital),
+        )
+        .route(
+            "/api/agency/digitals/:id",
+            post(crate::digitals::update_digital),
+        )
+        .route(
+            "/api/agency/digitals/reminders",
+            post(crate::digitals::send_digitals_reminders),
+        )
+        .route(
+            "/api/agency/clients",
+            get(crate::agency_clients::list_agency_clients),
+        )
+        .route(
+            "/api/agency/comp-cards/share",
+            post(crate::agency_clients::share_comp_card),
+        )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

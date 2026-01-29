@@ -142,3 +142,62 @@ export const exchangeStripeOAuthCode = async (
 ) => {
   return { data: { status: "error", error: "not_supported" } } as any;
 };
+
+// Agency Roster
+export const getAgencyRoster = () => base44Client.get("/api/agency/roster");
+
+export const createAgencyTalent = (data: any) =>
+  base44Client.post("/api/agency/talent", data);
+
+export const updateAgencyTalent = (id: string, data: any) =>
+  base44Client.post(`/api/agency/talent/${id}`, data);
+
+export const getAgencyDigitals = () => base44Client.get("/api/agency/digitals");
+
+export const getTalentDigitals = (talentId: string) =>
+  base44Client.get(`/api/agency/talent/${talentId}/digitals`);
+
+export const getTalentCampaigns = (talentId: string) =>
+  base44Client.get(`/api/agency/talent/${talentId}/campaigns`);
+
+export const updateCampaignSplit = (
+  campaignId: string,
+  data: {
+    payment_amount?: number;
+    agency_percent?: number;
+    talent_percent?: number;
+  },
+) => base44Client.post(`/api/agency/campaigns/${campaignId}`, data);
+
+export const createTalentDigitals = (talentId: string, data: any) =>
+  base44Client.post(`/api/agency/talent/${talentId}/digitals`, data);
+
+export const updateDigitals = (id: string, data: any) =>
+  base44Client.post(`/api/agency/digitals/${id}`, data);
+
+export const sendDigitalsReminders = (
+  talentIds: string[],
+  opts?: { subject?: string; body?: string },
+) =>
+  base44Client.post(`/api/agency/digitals/reminders`, {
+    talent_ids: talentIds,
+    subject: opts?.subject,
+    body: opts?.body,
+  });
+
+export const listAgencyClients = () => base44Client.get("/api/agency/clients");
+
+export const shareCompCard = (data: {
+  client_ids: string[];
+  subject?: string;
+  message?: string;
+  comp_card_url: string;
+  talent_name?: string;
+}) => base44Client.post("/api/agency/comp-cards/share", data);
+
+export const sendCoreEmail = (data: {
+  to: string;
+  subject: string;
+  body: string;
+  from_name?: string;
+}) => base44Client.post("/api/integrations/core/send-email", data);
