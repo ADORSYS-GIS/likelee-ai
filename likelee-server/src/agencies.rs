@@ -1,7 +1,7 @@
 use crate::{auth::AuthUser, config::AppState};
 use axum::extract::Multipart;
 use axum::extract::Query;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::Path, extract::State, http::StatusCode, Json};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -418,6 +418,28 @@ pub struct AgencyClientPayload {
     pub phone: Option<String>,
     pub terms: Option<String>,
     pub industry: Option<String>,
+    pub status: Option<String>,
+    pub website: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub preferences: Option<serde_json::Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct AgencyClientContactPayload {
+    pub name: String,
+    pub role: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub is_primary: Option<bool>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct AgencyClientCommunicationPayload {
+    pub contact_id: Option<String>,
+    pub communication_type: String, // 'type' is a reserved keyword in Rust
+    pub subject: String,
+    pub content: Option<String>,
+    pub occurred_at: Option<String>,
 }
 
 pub async fn list_clients(
@@ -428,7 +450,7 @@ pub async fn list_clients(
         .pg
         .from("agency_clients")
         .select(
-            "id,agency_id,company,contact_name,email,phone,terms,industry,created_at,updated_at",
+            "id,agency_id,company,contact_name,email,phone,terms,industry,status,website,tags,preferences,created_at,updated_at",
         )
         .eq("agency_id", &user.id)
         .order("created_at.desc")
@@ -457,6 +479,10 @@ pub async fn create_client(
         "phone": payload.phone,
         "terms": payload.terms,
         "industry": payload.industry,
+        "status": payload.status.unwrap_or_else(|| "Lead".to_string()),
+        "website": payload.website,
+        "tags": payload.tags.unwrap_or_default(),
+        "preferences": payload.preferences.unwrap_or_else(|| json!({})),
     });
     let resp = state
         .pg
@@ -501,5 +527,127 @@ pub async fn get_by_user(
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    Ok(Json(v))
+}
+
+pub async fn list_contacts(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("client_contacts")
+        .select("*")
+        .eq("client_id", &client_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn create_contact(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+    Json(payload): Json<AgencyClientContactPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = json!({
+        "client_id": client_id,
+        "name": payload.name,
+        "role": payload.role,
+        "email": payload.email,
+        "phone": payload.phone,
+        "is_primary": payload.is_primary.unwrap_or(false),
+    });
+    let resp = state
+        .pg
+        .from("client_contacts")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn delete_contact(
+    State(state): State<AppState>,
+    Path((_client_id, contact_id)): Path<(String, String)>,
+    _user: AuthUser,
+) -> Result<StatusCode, (StatusCode, String)> {
+    state
+        .pg
+        .from("client_contacts")
+        .delete()
+        .eq("id", &contact_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn list_communications(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("client_communications")
+        .select("*")
+        .eq("client_id", &client_id)
+        .order("occurred_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn create_communication(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+    Json(payload): Json<AgencyClientCommunicationPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = json!({
+        "client_id": client_id,
+        "contact_id": payload.contact_id,
+        "type": payload.communication_type,
+        "subject": payload.subject,
+        "content": payload.content,
+        "occurred_at": payload.occurred_at.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+    });
+    let resp = state
+        .pg
+        .from("client_communications")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }

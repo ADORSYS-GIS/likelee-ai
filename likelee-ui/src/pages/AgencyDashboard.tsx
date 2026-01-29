@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -118,6 +118,7 @@ import {
   createBookOut,
   notifyBookingCreatedEmail,
 } from "@/api/functions";
+import * as crmApi from "@/api/crm";
 
 const STATUS_MAP = {
   new: "New Lead",
@@ -408,11 +409,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -974,6 +974,65 @@ const AddClientModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    company: "",
+    industry: "",
+    website: "",
+    status: "Lead",
+    tags: "",
+    notes: "",
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => crmApi.createClient(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
+      toast({
+        title: "Success",
+        description: "Client added successfully",
+      });
+      onClose();
+      setFormData({
+        company: "",
+        industry: "",
+        website: "",
+        status: "Lead",
+        tags: "",
+        notes: "",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add client",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!formData.company) {
+      toast({
+        title: "Error",
+        description: "Company name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    mutation.mutate({
+      ...formData,
+      tags: formData.tags
+        ? formData.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+        : [],
+      preferences: { notes: formData.notes },
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
@@ -992,6 +1051,10 @@ const AddClientModal = ({
               <Input
                 placeholder="Company Inc."
                 className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                value={formData.company}
+                onChange={(e) =>
+                  setFormData({ ...formData, company: e.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -1001,6 +1064,10 @@ const AddClientModal = ({
               <Input
                 placeholder="Fashion, Tech, etc."
                 className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                value={formData.industry}
+                onChange={(e) =>
+                  setFormData({ ...formData, industry: e.target.value })
+                }
               />
             </div>
           </div>
@@ -1010,6 +1077,10 @@ const AddClientModal = ({
             <Input
               placeholder="company.com"
               className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              value={formData.website}
+              onChange={(e) =>
+                setFormData({ ...formData, website: e.target.value })
+              }
             />
           </div>
 
@@ -1017,14 +1088,17 @@ const AddClientModal = ({
             <Label className="text-sm font-bold text-gray-700">
               Pipeline Stage
             </Label>
-            <Select defaultValue="lead">
+            <Select
+              value={formData.status}
+              onValueChange={(val) => setFormData({ ...formData, status: val })}
+            >
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
                 <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lead">Lead</SelectItem>
-                <SelectItem value="prospect">Prospect</SelectItem>
-                <SelectItem value="active">Active Client</SelectItem>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Prospect">Prospect</SelectItem>
+                <SelectItem value="Active Client">Active Client</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1036,6 +1110,8 @@ const AddClientModal = ({
             <Input
               placeholder="Fashion, Commercial, High-Budget"
               className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              value={formData.tags}
+              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
             />
           </div>
 
@@ -1044,6 +1120,8 @@ const AddClientModal = ({
             <Textarea
               placeholder="Add notes about this client..."
               className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
           </div>
 
@@ -1055,11 +1133,268 @@ const AddClientModal = ({
             >
               Cancel
             </Button>
-            <Button className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
-              Add Client
+            <Button
+              onClick={handleSubmit}
+              disabled={mutation.isPending}
+              className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            >
+              {mutation.isPending ? "Adding..." : "Add Client"}
             </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const AddContactModal = ({
+  clientId,
+  isOpen,
+  onClose,
+}: {
+  clientId: string;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    role: "",
+    email: "",
+    phone: "",
+    is_primary: false,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => crmApi.createContact(clientId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["client-contacts", clientId],
+      });
+      toast({ title: "Success", description: "Contact added successfully" });
+      onClose();
+      setFormData({
+        name: "",
+        role: "",
+        email: "",
+        phone: "",
+        is_primary: false,
+      });
+    },
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">Add Contact</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label className="font-bold">Full Name *</Label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="John Doe"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Role</Label>
+            <Input
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              placeholder="Casting Director"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Email</Label>
+              <Input
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                placeholder="john@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Phone</Label>
+              <Input
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                placeholder="+1..."
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="is_primary"
+              checked={formData.is_primary}
+              onCheckedChange={(val) =>
+                setFormData({ ...formData, is_primary: !!val })
+              }
+            />
+            <Label htmlFor="is_primary" className="font-bold">
+              Primary Contact
+            </Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => mutation.mutate(formData)}
+            disabled={mutation.isPending}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {mutation.isPending ? "Adding..." : "Add Contact"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const LogCommunicationModal = ({
+  clientId,
+  contacts,
+  isOpen,
+  onClose,
+}: {
+  clientId: string;
+  contacts: any[];
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    contact_id: "",
+    communication_type: "email",
+    subject: "",
+    content: "",
+    occurred_at: new Date().toISOString().split("T")[0],
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => crmApi.createCommunication(clientId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["client-communications", clientId],
+      });
+      toast({
+        title: "Success",
+        description: "Communication logged successfully",
+      });
+      onClose();
+      setFormData({
+        contact_id: "",
+        communication_type: "email",
+        subject: "",
+        content: "",
+        occurred_at: new Date().toISOString().split("T")[0],
+      });
+    },
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">
+            Log Communication
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="font-bold">Type</Label>
+              <Select
+                value={formData.communication_type}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, communication_type: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="call">Phone Call</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Contact (Optional)</Label>
+              <Select
+                value={formData.contact_id}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, contact_id: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select contact" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contacts.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Subject *</Label>
+            <Input
+              value={formData.subject}
+              onChange={(e) =>
+                setFormData({ ...formData, subject: e.target.value })
+              }
+              placeholder="e.g., Spring Campaign Talent Options"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Content / Notes</Label>
+            <Textarea
+              value={formData.content}
+              onChange={(e) =>
+                setFormData({ ...formData, content: e.target.value })
+              }
+              placeholder="Summary of the discussion..."
+              className="min-h-[100px]"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Date</Label>
+            <Input
+              type="date"
+              value={formData.occurred_at}
+              onChange={(e) =>
+                setFormData({ ...formData, occurred_at: e.target.value })
+              }
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => mutation.mutate(formData)}
+            disabled={mutation.isPending}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {mutation.isPending ? "Logging..." : "Log Communication"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -1074,597 +1409,352 @@ const ClientProfileModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [isLogCommOpen, setIsLogCommOpen] = useState(false);
+
+  const { data: contacts = [], isLoading: isLoadingContacts } = useQuery({
+    queryKey: ["client-contacts", client.id],
+    queryFn: async () => {
+      const resp = await crmApi.listContacts(client.id);
+      return resp as any[];
+    },
+    enabled: !!client.id && isOpen,
+  });
+
+  const { data: communications = [], isLoading: isLoadingComms } = useQuery({
+    queryKey: ["client-communications", client.id],
+    queryFn: async () => {
+      const resp = await crmApi.listCommunications(client.id);
+      return resp as any[];
+    },
+    enabled: !!client.id && isOpen,
+  });
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
-        <div className="p-8 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-gray-400" />
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
+          <div className="p-8 space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-gray-400" />
+              </div>
+              <div className="flex items-center gap-3">
+                <DialogTitle className="text-2xl font-bold text-gray-900">
+                  {client.name}
+                </DialogTitle>
+                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                  {client.status}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                {client.name}
-              </DialogTitle>
-              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
-                {client.status}
-              </Badge>
-            </div>
-          </div>
 
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
-              <TabsTrigger
-                value="overview"
-                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger
-                value="contacts"
-                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
-              >
-                Contacts
-              </TabsTrigger>
-              <TabsTrigger
-                value="communications"
-                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
-              >
-                Communications
-              </TabsTrigger>
-              <TabsTrigger
-                value="bookings"
-                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
-              >
-                Bookings
-              </TabsTrigger>
-              <TabsTrigger
-                value="files"
-                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
-              >
-                Files & Notes
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+                <TabsTrigger
+                  value="overview"
+                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                >
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="contacts"
+                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                >
+                  Contacts
+                </TabsTrigger>
+                <TabsTrigger
+                  value="communications"
+                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                >
+                  Communications
+                </TabsTrigger>
+                <TabsTrigger
+                  value="bookings"
+                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                >
+                  Bookings
+                </TabsTrigger>
+                <TabsTrigger
+                  value="files"
+                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                >
+                  Files & Notes
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="overview" className="space-y-6 mt-0">
-              <div className="grid grid-cols-2 gap-6">
-                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Building2 className="w-5 h-5 text-gray-400" />
-                    <h4 className="font-bold text-gray-900">
-                      Company Information
-                    </h4>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                        Industry
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {client.industry}
-                      </p>
+              <TabsContent value="overview" className="space-y-6 mt-0">
+                <div className="grid grid-cols-2 gap-6">
+                  <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Building2 className="w-5 h-5 text-gray-400" />
+                      <h4 className="font-bold text-gray-900">
+                        Company Information
+                      </h4>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                        Website
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {client.website}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
-                        Tags
-                      </p>
-                      <div className="flex gap-2">
-                        {client.tags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="outline"
-                            className="text-[10px] font-bold text-gray-500 border-gray-200"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                          Industry
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {client.industry}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                          Website
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {client.website}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
+                          Tags
+                        </p>
+                        <div className="flex gap-2">
+                          {client.tags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-[10px] font-bold text-gray-500 border-gray-200"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
 
-                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="w-5 h-5 text-gray-400" />
-                    <h4 className="font-bold text-gray-900">
-                      Client Preferences
-                    </h4>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                        Preferred Talent Types
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {client.preferences?.talentTypes.join(", ") || "—"}
-                      </p>
+                  <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <TrendingUp className="w-5 h-5 text-gray-400" />
+                      <h4 className="font-bold text-gray-900">
+                        Client Preferences
+                      </h4>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                        Budget Range
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {client.preferences?.budgetRange || "—"}
-                      </p>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                          Preferred Talent Types
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {client.preferences?.talentTypes.join(", ") || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                          Budget Range
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {client.preferences?.budgetRange || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                          Booking Lead Time
+                        </p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {client.preferences?.leadTime || "—"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                        Booking Lead Time
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {client.preferences?.leadTime || "—"}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                <div className="grid grid-cols-4 gap-4">
-                  <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
-                    <span className="text-2xl font-bold text-purple-600 block">
-                      {client.metrics?.revenue || "—"}
-                    </span>
-                    <span className="text-[10px] font-bold text-purple-400 uppercase">
-                      Total Revenue
-                    </span>
-                  </Card>
-                  <Card className="p-4 bg-green-50/50 border-green-100 rounded-xl text-center">
-                    <span className="text-2xl font-bold text-green-600 block">
-                      {client.metrics?.bookings || 0}
-                    </span>
-                    <span className="text-[10px] font-bold text-green-400 uppercase">
-                      Total Bookings
-                    </span>
-                  </Card>
-                  <Card className="p-4 bg-blue-50/50 border-blue-100 rounded-xl text-center">
-                    <span className="text-2xl font-bold text-blue-600 block">
-                      {client.metrics?.packagesSent || 0}
-                    </span>
-                    <span className="text-[10px] font-bold text-blue-400 uppercase">
-                      Packages Sent
-                    </span>
-                  </Card>
-                  <Card className="p-4 bg-orange-50/50 border-orange-100 rounded-xl text-center">
-                    <span className="text-2xl font-bold text-orange-600 block">
-                      {client.metrics?.lastBookingDate || "—"}
-                    </span>
-                    <span className="text-[10px] font-bold text-orange-400 uppercase">
-                      Last Booking
-                    </span>
                   </Card>
                 </div>
-              </div>
-            </TabsContent>
 
-            <TabsContent value="contacts" className="space-y-6 mt-0">
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-gray-900">Contact List</h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
-                  Add Contact
-                </Button>
-              </div>
-              <div className="mt-0">
-                <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
-                  <div className="flex-1 min-w-[200px]">
-                    <Input
-                      placeholder="Search talent..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="border-2 border-gray-300"
-                    />
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900">Client Metrics</h4>
+                  <div className="grid grid-cols-4 gap-4">
+                    <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
+                      <span className="text-2xl font-bold text-purple-600 block">
+                        {client.metrics?.revenue || "—"}
+                      </span>
+                      <span className="text-[10px] font-bold text-purple-400 uppercase">
+                        Total Revenue
+                      </span>
+                    </Card>
+                    <Card className="p-4 bg-green-50/50 border-green-100 rounded-xl text-center">
+                      <span className="text-2xl font-bold text-green-600 block">
+                        {client.metrics?.bookings || 0}
+                      </span>
+                      <span className="text-[10px] font-bold text-green-400 uppercase">
+                        Total Bookings
+                      </span>
+                    </Card>
+                    <Card className="p-4 bg-blue-50/50 border-blue-100 rounded-xl text-center">
+                      <span className="text-2xl font-bold text-blue-600 block">
+                        {client.metrics?.packagesSent || 0}
+                      </span>
+                      <span className="text-[10px] font-bold text-blue-400 uppercase">
+                        Packages Sent
+                      </span>
+                    </Card>
+                    <Card className="p-4 bg-orange-50/50 border-orange-100 rounded-xl text-center">
+                      <span className="text-2xl font-bold text-orange-600 block">
+                        {client.metrics?.lastBookingDate || "—"}
+                      </span>
+                      <span className="text-[10px] font-bold text-orange-400 uppercase">
+                        Last Booking
+                      </span>
+                    </Card>
                   </div>
+                </div>
+              </TabsContent>
 
-                  <div className="w-40 border-2 border-gray-300">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="pending">Pending</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
+              <TabsContent value="contacts" className="space-y-6 mt-0">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-bold text-gray-900">Contact List</h4>
+                  <Button
+                    onClick={() => setIsAddContactOpen(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Contact
+                  </Button>
+                </div>
 
-                  <div className="w-40 border-2 border-gray-300">
-                    <select
-                      value={consentFilter}
-                      onChange={(e) => setConsentFilter(e.target.value)}
-                    >
-                      <option value="all">All Consent</option>
-                      <option value="complete">Complete</option>
-                      <option value="expiring">Expiring</option>
-                      <option value="missing">Missing</option>
-                    </select>
-                  </div>
-
-                  {(searchQuery ||
-                    statusFilter !== "all" ||
-                    consentFilter !== "all") && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                        setConsentFilter("all");
-                      }}
-                      className="text-gray-600"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear Filters
-                    </Button>
+                <div className="space-y-4">
+                  {isLoadingContacts ? (
+                    <div className="text-center py-8 text-gray-500">
+                      Loading contacts...
+                    </div>
+                  ) : contacts.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-2xl">
+                      <Users className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                      <p className="text-gray-500 font-bold">
+                        No contacts added yet
+                      </p>
+                    </div>
+                  ) : (
+                    contacts.map((contact) => (
+                      <Card
+                        key={contact.id}
+                        className="p-4 border-gray-100 rounded-xl shadow-sm flex justify-between items-center"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold">
+                            {contact.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-bold text-gray-900">
+                                {contact.name}
+                              </h5>
+                              {contact.is_primary && (
+                                <Badge className="bg-indigo-100 text-indigo-700 border-none text-[8px] px-1">
+                                  Primary
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {contact.role || "No role specified"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Mail className="w-3 h-3" />
+                            {contact.email || "—"}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {contact.phone || "—"}
+                          </div>
+                        </div>
+                      </Card>
+                    ))
                   )}
                 </div>
+              </TabsContent>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("name")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            Talent
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("status")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            Status
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("consent")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            Consent
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                          AI Usage
-                        </th>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("instagram_followers")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            Followers
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                          Assets
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                          Top Brand
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                          License Expiry
-                        </th>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("earnings_30d")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            30D Earnings
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left">
-                          <button
-                            onClick={() => handleSort("projected_earnings")}
-                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
-                          >
-                            Projected
-                            <ArrowUpDown className="w-3 h-3" />
-                          </button>
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredRoster.map((talent) => (
-                        <tr
-                          key={talent.id}
-                          onClick={() => setSelectedTalent(talent)}
-                          className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        >
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={talent.headshot}
-                                alt={talent.name}
-                                className="w-12 h-12 object-cover border-2 border-gray-200"
-                              />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-gray-900">
-                                    {talent.name}
-                                  </span>
-                                  {talent.verified && (
-                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                  )}
-                                </div>
-                                <span className="text-xs text-gray-500">
-                                  {talent.categories.join(", ")}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span
-                              className={
-                                talent.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : talent.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-gray-100 text-gray-800"
-                              }
-                            >
-                              {talent.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span
-                              className={
-                                talent.consent === "complete"
-                                  ? "bg-green-100 text-green-800"
-                                  : talent.consent === "expiring"
-                                    ? "bg-orange-100 text-orange-800"
-                                    : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {talent.consent === "expiring" ? (
-                                <Clock className="w-3 h-3 mr-1" />
-                              ) : talent.consent === "missing" ? (
-                                <XCircle className="w-3 h-3 mr-1" />
-                              ) : (
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                              )}
-                              {talent.consent}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex gap-1">
-                              {talent.ai_usage_types.includes("video") && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Video className="w-3 h-3 mr-1" />
-                                  Video
-                                </Badge>
-                              )}
-                              {talent.ai_usage_types.includes("image") && (
-                                <Badge variant="outline" className="text-xs">
-                                  <ImageIcon className="w-3 h-3 mr-1" />
-                                  Image
-                                </Badge>
-                              )}
-                              {talent.ai_usage_types.includes("voice") && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Mic className="w-3 h-3 mr-1" />
-                                  Voice
-                                </Badge>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-1 text-sm text-gray-700">
-                              <Instagram className="w-4 h-4 text-purple-600" />
-                              {talent.instagram_followers.toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-sm text-gray-700">
-                            {talent.assets_count}
-                          </td>
-                          <td className="px-4 py-4 text-sm text-gray-700">
-                            {talent.top_brand}
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-sm ${isLicenseExpired(talent.license_expiry) ? "text-red-600 font-medium" : isLicenseExpiring(talent.license_expiry) ? "text-orange-600 font-medium" : "text-gray-700"}`}
-                              >
-                                {talent.license_expiry !== "—"
-                                  ? new Date(
-                                      talent.license_expiry,
-                                    ).toLocaleDateString()
-                                  : "—"}
-                              </span>
-                              {isLicenseExpiring(talent.license_expiry) && (
-                                <Clock className="w-4 h-4 text-orange-500" />
-                              )}
-                              {isLicenseExpired(talent.license_expiry) && (
-                                <XCircle className="w-4 h-4 text-red-500" />
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                            ${talent.earnings_30d.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-4 text-sm text-gray-700">
-                            ${talent.projected_earnings.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-4">
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-center py-12">
-                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">
-                    Campaign tracking coming soon
+              <TabsContent value="bookings" className="space-y-6 mt-0">
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+                  <h4 className="text-xl font-bold text-gray-900">
+                    No Bookings Yet
+                  </h4>
+                  <p className="text-gray-500">
+                    This client hasn't made any bookings through the platform
+                    yet.
                   </p>
                 </div>
-              </div>
+              </TabsContent>
 
-              <div>
-                <div className="text-center py-12">
-                  <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">
-                    License management coming soon
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-center py-12">
-                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg mb-2">
-                    Advanced Analytics
-                  </p>
-                  <p className="text-gray-400 text-sm mb-6">
-                    Upgrade to Agency Pro to unlock revenue forecasting,
-                    performance charts, and insights.
-                  </p>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                    Upgrade to Pro
+              <TabsContent value="files" className="space-y-6 mt-0">
+                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
+                  <h4 className="font-bold text-gray-900">Notes</h4>
+                  <Textarea
+                    defaultValue={client.notes || ""}
+                    className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                  />
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
+                    Save Notes
                   </Button>
-                </div>
-              </div>
-            </TabsContent>
+                </Card>
 
-            <TabsContent value="communications" className="space-y-6 mt-0">
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-gray-900">
-                  Communication History
-                </h4>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                  <Plus className="w-4 h-4" />
-                  Log Communication
+                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-gray-900">
+                      Files & Documents
+                    </h4>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                      <Plus className="w-4 h-4" />
+                      Upload File
+                    </Button>
+                  </div>
+                  <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                    <File className="w-12 h-12 text-gray-300 mb-3" />
+                    <p className="text-gray-500 font-bold">
+                      No files uploaded yet
+                    </p>
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Client
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Client
                 </Button>
               </div>
-              <div className="space-y-4">
-                {MOCK_COMMUNICATIONS.map((comm, idx) => (
-                  <Card
-                    key={idx}
-                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
-                          {comm.type === "email" && (
-                            <Mail className="w-5 h-5 text-indigo-600" />
-                          )}
-                          {comm.type === "call" && (
-                            <Phone className="w-5 h-5 text-indigo-600" />
-                          )}
-                          {comm.type === "meeting" && (
-                            <Video className="w-5 h-5 text-indigo-600" />
-                          )}
-                        </div>
-                        <div>
-                          <h5 className="font-bold text-gray-900">
-                            {comm.subject}
-                          </h5>
-                          <p className="text-sm text-gray-600 font-medium">
-                            {comm.date} • {comm.participants}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
-                      >
-                        {comm.type}
-                      </Badge>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="bookings" className="space-y-6 mt-0">
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <Calendar className="w-16 h-16 text-gray-200 mb-4" />
-                <h4 className="text-xl font-bold text-gray-900">
-                  No Bookings Yet
-                </h4>
-                <p className="text-gray-500">
-                  This client hasn't made any bookings through the platform yet.
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="files" className="space-y-6 mt-0">
-              <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
-                <h4 className="font-bold text-gray-900">Notes</h4>
-                <Textarea
-                  defaultValue="Prefers diverse talent, always books for multi-day shoots."
-                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
-                />
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
-                  Save Notes
-                </Button>
-              </Card>
-
-              <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-bold text-gray-900">Files & Documents</h4>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                    <Plus className="w-4 h-4" />
-                    Upload File
-                  </Button>
-                </div>
-                <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                  <File className="w-12 h-12 text-gray-300 mb-3" />
-                  <p className="text-gray-500 font-bold">
-                    No files uploaded yet
-                  </p>
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-            <div className="flex gap-2">
               <Button
-                variant="outline"
-                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+                onClick={onClose}
+                className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
               >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Client
-              </Button>
-              <Button
-                variant="outline"
-                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Client
+                Close
               </Button>
             </div>
-            <Button
-              onClick={onClose}
-              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
-            >
-              Close
-            </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AddContactModal
+        clientId={client.id}
+        isOpen={isAddContactOpen}
+        onClose={() => setIsAddContactOpen(false)}
+      />
+
+      <LogCommunicationModal
+        clientId={client.id}
+        contacts={contacts}
+        isOpen={isLogCommOpen}
+        onClose={() => setIsLogCommOpen(false)}
+      />
+    </>
   );
 };
 
@@ -1803,7 +1893,38 @@ const ClientCRMView = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const filteredClients = MOCK_CLIENTS.filter((client) => {
+  const { data: clients = [], isLoading } = useQuery({
+    queryKey: ["agency-clients"],
+    queryFn: async () => {
+      const resp = await crmApi.listClients();
+      return (resp as any[]).map((c: any) => ({
+        id: c.id,
+        name: c.company,
+        status: c.status,
+        industry: c.industry || "Unknown",
+        website: c.website || "",
+        contacts: 0,
+        totalRevenue: "$0K",
+        bookings: 0,
+        lastBooking: "Never",
+        nextFollowUp: "None",
+        tags: c.tags || [],
+        preferences: c.preferences || {
+          talentTypes: [],
+          budgetRange: "",
+          leadTime: "",
+        },
+        metrics: {
+          revenue: "$0K",
+          bookings: 0,
+          packagesSent: 0,
+          lastBookingDate: "Never",
+        },
+      }));
+    },
+  });
+
+  const filteredClients = clients.filter((client: Client) => {
     const matchesSearch =
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.industry.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1853,7 +1974,9 @@ const ClientCRMView = () => {
               Active Clients
             </span>
           </div>
-          <span className="text-3xl font-bold text-green-900">1</span>
+          <span className="text-3xl font-bold text-green-900">
+            {clients.filter((c) => c.status === "Active Client").length}
+          </span>
         </Card>
         <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
@@ -1862,7 +1985,9 @@ const ClientCRMView = () => {
             </div>
             <span className="text-base font-bold text-blue-800">Prospects</span>
           </div>
-          <span className="text-3xl font-bold text-blue-900">1</span>
+          <span className="text-3xl font-bold text-blue-900">
+            {clients.filter((c) => c.status === "Prospect").length}
+          </span>
         </Card>
         <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
@@ -1873,7 +1998,7 @@ const ClientCRMView = () => {
               Total Revenue
             </span>
           </div>
-          <span className="text-3xl font-bold text-purple-900">$495K</span>
+          <span className="text-3xl font-bold text-purple-900">$0K</span>
         </Card>
         <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
@@ -3337,11 +3462,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -3815,11 +3939,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -3827,11 +3950,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -4385,11 +4507,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -5507,11 +5628,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-            }`}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+              }`}
           >
             {tab}
           </button>
@@ -7242,13 +7362,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -7367,16 +7487,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -8217,9 +8336,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -9031,11 +9150,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -11206,7 +11324,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -11369,11 +11487,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -11866,11 +11983,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -12752,11 +12868,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -14002,92 +14117,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14140,16 +14255,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14170,11 +14283,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
