@@ -97,7 +97,7 @@ pub async fn share_comp_card(
 
     let agency_name = agency_json
         .as_array()
-        .and_then(|a| a.get(0))
+        .and_then(|a| a.first())
         .and_then(|r| r.get("agency_name"))
         .and_then(|v| v.as_str())
         .unwrap_or("Your Agency")

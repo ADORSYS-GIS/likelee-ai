@@ -11,7 +11,7 @@ use std::collections::HashSet;
 
 #[derive(Clone, Deserialize)]
 #[serde(untagged)]
-pub(crate) enum StringOrVec {
+pub enum StringOrVec {
     String(String),
     Vec(Vec<String>),
 }
@@ -274,9 +274,7 @@ pub async fn get_roster(
                 .unwrap_or_default();
 
             if !id.is_empty() {
-                let entry = asset_urls_by_talent
-                    .entry(id.clone())
-                    .or_insert_with(HashSet::new);
+                let entry = asset_urls_by_talent.entry(id.clone()).or_default();
                 if !img.trim().is_empty() {
                     entry.insert(img.clone());
                 }
@@ -373,7 +371,7 @@ pub async fn get_roster(
                 .or_else(|| {
                     item.get("race_ethnicity")
                         .and_then(|v| v.as_str())
-                        .map(|s| split_csv_tags(s))
+                        .map(split_csv_tags)
                 })
                 .unwrap_or_default();
 
@@ -435,12 +433,9 @@ pub async fn get_roster(
     let mut active_campaigns: i64 = 0;
     let mut earnings_30d_by_talent: HashMap<String, i64> = HashMap::new();
     let mut earnings_prev_30d_by_talent: HashMap<String, i64> = HashMap::new();
-    let mut license_expiry_by_talent: HashMap<String, String> = HashMap::new();
-    let mut digitals_by_talent: HashMap<
-        String,
-        (Option<i32>, Option<i32>, Option<i32>, Option<String>),
-    > = HashMap::new();
-    let mut digitals_photo_count_by_talent: HashMap<String, i32> = HashMap::new();
+    let license_expiry_by_talent: HashMap<String, String> = HashMap::new();
+    type DigitalsPhysicals = (Option<i32>, Option<i32>, Option<i32>, Option<String>);
+    let mut digitals_by_talent: HashMap<String, DigitalsPhysicals> = HashMap::new();
     let mut status_by_talent: HashMap<String, String> = HashMap::new();
     let mut top_brand_by_talent: HashMap<String, String> = HashMap::new();
 
@@ -472,9 +467,7 @@ pub async fn get_roster(
                     continue;
                 }
 
-                let entry = asset_urls_by_talent
-                    .entry(t_id.to_string())
-                    .or_insert_with(HashSet::new);
+                let entry = asset_urls_by_talent.entry(t_id.to_string()).or_default();
                 if let Some(urls) = r.get("photo_urls").and_then(|v| v.as_array()) {
                     for u in urls.iter().filter_map(|x| x.as_str()) {
                         let t = u.trim();
@@ -511,7 +504,7 @@ pub async fn get_roster(
                     .map(|s| s.to_string());
                 if measurements.is_none() {
                     if let (Some(b), Some(w), Some(h)) = (bust, waist, hips) {
-                        measurements = Some(format!("{}-{}-{}", b, w, h));
+                        measurements = Some(format!("{b}-{w}-{h}"));
                     }
                 }
                 digitals_by_talent.insert(t_id.to_string(), (bust, waist, hips, measurements));

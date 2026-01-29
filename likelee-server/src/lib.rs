@@ -1,3 +1,5 @@
+#![allow(clippy::uninlined_format_args)]
+
 pub mod agencies;
 pub mod agency_clients;
 pub mod agency_roster;

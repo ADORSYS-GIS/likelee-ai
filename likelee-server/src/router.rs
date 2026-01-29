@@ -65,12 +65,9 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::digitals::send_digitals_reminders),
         )
         .route(
-            "/api/agency/clients",
-            get(crate::agency_clients::list_agency_clients),
-        )
-        .route(
             "/api/agency/comp-cards/share",
             post(crate::agency_clients::share_comp_card),
+        )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
             "/api/agency/clients",
