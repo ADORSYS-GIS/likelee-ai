@@ -30,4 +30,4 @@ lettre = { version = "0.11", default-features = false, features = ["builder", "h
 urlencoding = "2"
 jsonwebtoken = "9"
 stripe-sdk = { package = "async-stripe", version = "0.33.0", features = ["runtime-tokio-hyper-rustls"] }
-base64 = "0.22.1"
+base64 = "0.22"

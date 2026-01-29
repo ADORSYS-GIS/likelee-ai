@@ -1,14 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { scoutingService } from "@/services/scoutingService";
-import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
-import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
-import { PlanTripModal } from "@/components/scouting/map/PlanTripModal";
-import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
-import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebounce } from "@/hooks/useDebounce";
-import { searchLocations } from "@/components/scouting/map/geocoding";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -132,6 +123,8 @@ import {
   cancelBooking as apiCancelBooking,
   listBookOuts,
   createBookOut,
+  getAgencyClients,
+  listInvoices,
   notifyBookingCreatedEmail,
 } from "@/api/functions";
 

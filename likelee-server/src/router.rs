@@ -52,6 +52,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::get_profile),
         )
         .route(
+            "/api/agency-profile",
+            post(crate::agencies::update),
+        )
+        .route(
             "/api/agency/files/upload",
             post(crate::agencies::upload_agency_file),
         )
