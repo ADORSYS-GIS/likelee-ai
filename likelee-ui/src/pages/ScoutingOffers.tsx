@@ -827,51 +827,41 @@ export default function ScoutingOffers() {
                           Download
                         </Button>
                       )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={async () => {
-                        const direct =
-                          offer.signing_url &&
-                            offer.signing_url.trim() !== ""
-                            ? offer.signing_url
-                            : undefined;
-                        if (direct) {
-                          window.location.href = direct;
-                          return;
-                        }
-                        try {
-                          const updated = await scoutingService.getOffer(
-                            offer.id,
-                          );
-                          const link =
-                            (updated.signing_url &&
-                              updated.signing_url.trim() !== ""
-                              ? updated.signing_url
-                              : undefined) ||
-                            (updated as any)?.docuseal_details
-                              ?.submitters?.[0]?.url;
-                          if (link) {
-                            window.location.href = link;
-                          } else {
+                    {(["sent", "opened", "pending"] as const).includes(offer.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={async () => {
+                          try {
+                            await scoutingService.refreshOfferStatus(offer.id);
+                            const updated = await scoutingService.getOffer(offer.id);
+                            const link =
+                              (updated.signing_url && updated.signing_url.trim() !== ""
+                                ? updated.signing_url
+                                : undefined) ||
+                              (updated as any)?.docuseal_details?.submitters?.[0]?.url;
+                            if (link) {
+                              window.location.href = link;
+                            } else {
+                              toast({
+                                title: "No signing link",
+                                description:
+                                  "No signing URL available. Try Sync Status and retry.",
+                              });
+                            }
+                          } catch (e: any) {
                             toast({
-                              title: "No signing link",
-                              description:
-                                "No signing URL available yet. Try Refresh Status and retry.",
+                              title: "Failed to fetch offer",
+                              description: e?.message || String(e),
                             });
                           }
-                        } catch (e: any) {
-                          toast({
-                            title: "Failed to fetch offer",
-                            description: e?.message || String(e),
-                          });
-                        }
-                      }}
-                    >
-                      <Eye className="w-3 h-3 mr-1.5" />
-                      View
-                    </Button>
+                        }}
+                      >
+                        <Eye className="w-3 h-3 mr-1.5" />
+                        View
+                      </Button>
+                    )}
                     {offer.status === "archived" ? (
                       <Button
                         variant="ghost"
