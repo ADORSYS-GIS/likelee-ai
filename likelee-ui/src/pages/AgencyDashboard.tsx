@@ -1453,279 +1453,363 @@ const ClientProfileModal = ({
               <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
                 <TabsTrigger
                   value="overview"
-                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
                   Overview
                 </TabsTrigger>
                 <TabsTrigger
                   value="contacts"
-                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
                   Contacts
                 </TabsTrigger>
                 <TabsTrigger
                   value="communications"
-                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
                   Communications
                 </TabsTrigger>
                 <TabsTrigger
                   value="bookings"
-                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
                   Bookings
                 </TabsTrigger>
                 <TabsTrigger
                   value="files"
-                  className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
                   Files & Notes
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-6 mt-0">
-                <div className="grid grid-cols-2 gap-6">
-                  <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Building2 className="w-5 h-5 text-gray-400" />
-                      <h4 className="font-bold text-gray-900">
-                        Company Information
-                      </h4>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                          Industry
-                        </p>
-                        <p className="text-sm font-bold text-gray-900">
-                          {client.industry}
-                        </p>
+              <div className="min-h-[500px] max-h-[700px] overflow-y-auto pr-2 -mr-2 pb-12">
+
+                <TabsContent value="overview" className="space-y-6 mt-0">
+                  <div className="grid grid-cols-2 gap-6">
+                    <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Building2 className="w-5 h-5 text-gray-400" />
+                        <h4 className="font-bold text-gray-900">
+                          Company Information
+                        </h4>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                          Website
-                        </p>
-                        <p className="text-sm font-bold text-gray-900">
-                          {client.website}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
-                          Tags
-                        </p>
-                        <div className="flex gap-2">
-                          {client.tags.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="outline"
-                              className="text-[10px] font-bold text-gray-500 border-gray-200"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                            Industry
+                          </p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {client.industry}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                            Website
+                          </p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {client.website}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
+                            Tags
+                          </p>
+                          <div className="flex gap-2">
+                            {client.tags.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="text-[10px] font-bold text-gray-500 border-gray-200"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
 
-                  <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                      <TrendingUp className="w-5 h-5 text-gray-400" />
-                      <h4 className="font-bold text-gray-900">
-                        Client Preferences
-                      </h4>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                          Preferred Talent Types
-                        </p>
-                        <p className="text-sm font-bold text-gray-900">
-                          {client.preferences?.talentTypes.join(", ") || "—"}
-                        </p>
+                    <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                      <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp className="w-5 h-5 text-gray-400" />
+                        <h4 className="font-bold text-gray-900">
+                          Client Preferences
+                        </h4>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                          Budget Range
-                        </p>
-                        <p className="text-sm font-bold text-gray-900">
-                          {client.preferences?.budgetRange || "—"}
-                        </p>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                            Preferred Talent Types
+                          </p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {client.preferences?.talentTypes?.join(", ") || "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                            Budget Range
+                          </p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {client.preferences?.budgetRange || "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                            Booking Lead Time
+                          </p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {client.preferences?.leadTime || "—"}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                          Booking Lead Time
-                        </p>
-                        <p className="text-sm font-bold text-gray-900">
-                          {client.preferences?.leadTime || "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                  <div className="grid grid-cols-4 gap-4">
-                    <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
-                      <span className="text-2xl font-bold text-purple-600 block">
-                        {client.metrics?.revenue || "—"}
-                      </span>
-                      <span className="text-[10px] font-bold text-purple-400 uppercase">
-                        Total Revenue
-                      </span>
-                    </Card>
-                    <Card className="p-4 bg-green-50/50 border-green-100 rounded-xl text-center">
-                      <span className="text-2xl font-bold text-green-600 block">
-                        {client.metrics?.bookings || 0}
-                      </span>
-                      <span className="text-[10px] font-bold text-green-400 uppercase">
-                        Total Bookings
-                      </span>
-                    </Card>
-                    <Card className="p-4 bg-blue-50/50 border-blue-100 rounded-xl text-center">
-                      <span className="text-2xl font-bold text-blue-600 block">
-                        {client.metrics?.packagesSent || 0}
-                      </span>
-                      <span className="text-[10px] font-bold text-blue-400 uppercase">
-                        Packages Sent
-                      </span>
-                    </Card>
-                    <Card className="p-4 bg-orange-50/50 border-orange-100 rounded-xl text-center">
-                      <span className="text-2xl font-bold text-orange-600 block">
-                        {client.metrics?.lastBookingDate || "—"}
-                      </span>
-                      <span className="text-[10px] font-bold text-orange-400 uppercase">
-                        Last Booking
-                      </span>
                     </Card>
                   </div>
-                </div>
-              </TabsContent>
 
-              <TabsContent value="contacts" className="space-y-6 mt-0">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-bold text-gray-900">Contact List</h4>
-                  <Button
-                    onClick={() => setIsAddContactOpen(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Contact
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {isLoadingContacts ? (
-                    <div className="text-center py-8 text-gray-500">
-                      Loading contacts...
-                    </div>
-                  ) : contacts.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-2xl">
-                      <Users className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                      <p className="text-gray-500 font-bold">
-                        No contacts added yet
-                      </p>
-                    </div>
-                  ) : (
-                    contacts.map((contact) => (
-                      <Card
-                        key={contact.id}
-                        className="p-4 border-gray-100 rounded-xl shadow-sm flex justify-between items-center"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold">
-                            {contact.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h5 className="font-bold text-gray-900">
-                                {contact.name}
-                              </h5>
-                              {contact.is_primary && (
-                                <Badge className="bg-indigo-100 text-indigo-700 border-none text-[8px] px-1">
-                                  Primary
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              {contact.role || "No role specified"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {contact.email || "—"}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {contact.phone || "—"}
-                          </div>
-                        </div>
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-gray-900">Client Metrics</h4>
+                    <div className="grid grid-cols-4 gap-4">
+                      <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
+                        <span className="text-2xl font-bold text-indigo-600 block">
+                          {client.metrics?.revenue || "$0K"}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Total Revenue
+                        </span>
                       </Card>
-                    ))
-                  )}
-                </div>
-              </TabsContent>
+                      <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
+                        <span className="text-2xl font-bold text-emerald-600 block">
+                          {client.metrics?.bookings || 0}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Total Bookings
+                        </span>
+                      </Card>
+                      <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
+                        <span className="text-2xl font-bold text-blue-600 block">
+                          {client.metrics?.packagesSent || 0}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Packages Sent
+                        </span>
+                      </Card>
+                      <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
+                        <span className="text-2xl font-bold text-orange-600 block">
+                          {client.metrics?.lastBookingDate || "Never"}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Last Booking
+                        </span>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="bookings" className="space-y-6 mt-0">
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Calendar className="w-16 h-16 text-gray-200 mb-4" />
-                  <h4 className="text-xl font-bold text-gray-900">
-                    No Bookings Yet
-                  </h4>
-                  <p className="text-gray-500">
-                    This client hasn't made any bookings through the platform
-                    yet.
-                  </p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="files" className="space-y-6 mt-0">
-                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
-                  <h4 className="font-bold text-gray-900">Notes</h4>
-                  <Textarea
-                    defaultValue={client.notes || ""}
-                    className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
-                  />
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
-                    Save Notes
-                  </Button>
-                </Card>
-
-                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
+                <TabsContent value="contacts" className="space-y-6 mt-0">
                   <div className="flex justify-between items-center">
-                    <h4 className="font-bold text-gray-900">
-                      Files & Documents
-                    </h4>
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                    <h4 className="font-bold text-gray-900">Contact List</h4>
+                    <Button
+                      onClick={() => setIsAddContactOpen(true)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                    >
                       <Plus className="w-4 h-4" />
-                      Upload File
+                      Add Contact
                     </Button>
                   </div>
-                  <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                    <File className="w-12 h-12 text-gray-300 mb-3" />
-                    <p className="text-gray-500 font-bold">
-                      No files uploaded yet
+
+                  <div className="space-y-3">
+                    {isLoadingContacts ? (
+                      <div className="text-center py-12 text-gray-400 font-bold">
+                        <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
+                        Loading contacts...
+                      </div>
+                    ) : contacts.length === 0 ? (
+                      <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
+                        <Users className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                        <p className="text-gray-400 font-bold">
+                          No contacts added yet
+                        </p>
+                      </div>
+                    ) : (
+                      contacts.map((contact) => (
+                        <Card
+                          key={contact.id}
+                          className="p-4 border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex justify-between items-center bg-white group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:bg-indigo-100 transition-colors">
+                              {contact.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h5 className="font-bold text-gray-900">
+                                  {contact.name}
+                                </h5>
+                                {contact.is_primary && (
+                                  <Badge className="bg-indigo-100 text-indigo-700 border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                    Primary
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 font-bold">
+                                {contact.role || "No role specified"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6 text-xs font-bold">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <div className="p-1.5 bg-gray-50 rounded-lg">
+                                <Mail className="w-3.5 h-3.5 text-gray-400" />
+                              </div>
+                              {contact.email || "—"}
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <div className="p-1.5 bg-gray-50 rounded-lg">
+                                <Phone className="w-3.5 h-3.5 text-gray-400" />
+                              </div>
+                              {contact.phone || "—"}
+                            </div>
+                          </div>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="communications" className="space-y-6 mt-0">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-gray-900">
+                      Communication History
+                    </h4>
+                    <Button
+                      onClick={() => setIsLogCommOpen(true)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Log Communication
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {isLoadingComms ? (
+                      <div className="text-center py-12 text-gray-400 font-bold">
+                        <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
+                        Loading history...
+                      </div>
+                    ) : communications.length === 0 ? (
+                      <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
+                        <History className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                        <p className="text-gray-400 font-bold">
+                          No communications logged yet
+                        </p>
+                      </div>
+                    ) : (
+                      communications.map((comm) => (
+                        <Card
+                          key={comm.id}
+                          className="p-5 border-gray-100 rounded-2xl shadow-sm bg-white"
+                        >
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-gray-50 rounded-lg">
+                                {comm.type === "email" && (
+                                  <Mail className="w-4 h-4 text-indigo-500" />
+                                )}
+                                {comm.type === "call" && (
+                                  <Phone className="w-4 h-4 text-emerald-500" />
+                                )}
+                                {comm.type === "meeting" && (
+                                  <Users className="w-4 h-4 text-blue-500" />
+                                )}
+                                {comm.type === "other" && (
+                                  <FileText className="w-4 h-4 text-gray-500" />
+                                )}
+                              </div>
+                              <div>
+                                <h5 className="font-bold text-gray-900">
+                                  {comm.subject}
+                                </h5>
+                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">
+                                  {comm.type} •{" "}
+                                  {new Date(comm.occurred_at).toLocaleDateString(
+                                    undefined,
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    },
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                            {comm.content}
+                          </p>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="bookings" className="space-y-6 mt-0">
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+                    <h4 className="text-xl font-bold text-gray-900">
+                      No Bookings Yet
+                    </h4>
+                    <p className="text-gray-500">
+                      This client hasn't made any bookings through the platform
+                      yet.
                     </p>
                   </div>
-                </Card>
-              </TabsContent>
+                </TabsContent>
+
+                <TabsContent value="files" className="space-y-6 mt-0">
+                  <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
+                    <h4 className="font-bold text-gray-900">Notes</h4>
+                    <Textarea
+                      defaultValue={client.notes || ""}
+                      className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                    />
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
+                      Save Notes
+                    </Button>
+                  </Card>
+
+                  <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-bold text-gray-900">
+                        Files & Documents
+                      </h4>
+                      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                        <Plus className="w-4 h-4" />
+                        Upload File
+                      </Button>
+                    </div>
+                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                      <File className="w-12 h-12 text-gray-300 mb-3" />
+                      <p className="text-gray-500 font-bold">
+                        No files uploaded yet
+                      </p>
+                    </div>
+                  </Card>
+                </TabsContent>
+              </div>
             </Tabs>
 
             <div className="flex justify-between items-center pt-6 border-t border-gray-100">
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+                  className="h-11 px-6 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Client
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+                  className="h-11 px-6 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold transition-colors"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Client
@@ -1733,7 +1817,7 @@ const ClientProfileModal = ({
               </div>
               <Button
                 onClick={onClose}
-                className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+                className="h-11 px-10 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow-lg shadow-gray-200 transition-all active:scale-95"
               >
                 Close
               </Button>
@@ -1779,19 +1863,16 @@ const ClientCard = ({
   };
 
   return (
-    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
-      <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex gap-6">
-          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-gray-500" />
+    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center gap-6 flex-1">
+          <div className="w-14 h-14 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
+            <Building2 className="w-8 h-8 text-gray-400" />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5 flex-1">
             <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
-              <Badge
-                variant="outline"
-                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
-              >
+              <h3 className="text-lg font-bold text-gray-900">{client.name}</h3>
+              <Badge className="bg-gray-100 text-gray-600 border-none font-bold text-[10px] px-2 py-0.5">
                 {client.status}
               </Badge>
               <div className="flex gap-1.5">
@@ -1799,84 +1880,73 @@ const ClientCard = ({
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                    className="text-[10px] font-bold text-gray-400 border-gray-200 flex items-center gap-1"
                   >
-                    <Tag className="w-3 h-3 text-gray-900" />
+                    <Tag className="w-2.5 h-2.5" />
                     {tag}
                   </Badge>
                 ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
-              <span className="flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-6 text-xs text-gray-500 font-bold">
+              <div className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-gray-400" />
                 {client.industry}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-gray-400" />
-                {client.website}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-gray-400" />
+                {client.website || "No website"}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-gray-400" />
                 {client.contacts} contacts
-              </span>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
-              <span className="text-gray-500">
-                Total Revenue:{" "}
-                <span className="font-bold text-gray-900">
-                  {client.totalRevenue}
-                </span>
-              </span>
-              <span className="text-gray-500">
-                Bookings:{" "}
-                <span className="font-bold text-gray-900">
-                  {client.bookings}
-                </span>
-              </span>
-              <span className="text-gray-500">
-                Last Booking:{" "}
-                <span className="font-bold text-gray-900">
-                  {client.lastBooking}
-                </span>
-              </span>
-              <span className="text-gray-500">
-                Next Follow-up:{" "}
-                <span className="font-bold text-gray-900">
-                  {client.nextFollowUp}
-                </span>
-              </span>
+            <div className="flex items-center gap-8 text-[11px] font-bold">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 uppercase">Total Revenue:</span>
+                <span className="text-gray-900">{client.totalRevenue}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 uppercase">Bookings:</span>
+                <span className="text-gray-900">{client.bookings}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 uppercase">Last Booking:</span>
+                <span className="text-gray-900">{client.lastBooking}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 uppercase">Next Follow-up:</span>
+                <span className="text-gray-900">{client.nextFollowUp}</span>
+              </div>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs"
           >
-            <Mail className="w-4 h-4 mr-2" />
+            <Mail className="w-3.5 h-3.5 mr-2" />
             Email
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs"
           >
-            <Phone className="w-4 h-4 mr-2" />
+            <Phone className="w-3.5 h-3.5 mr-2" />
             Call
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs"
           >
-            <Package className="w-4 h-4 mr-2" />
+            <Package className="w-3.5 h-3.5 mr-2" />
             Send Package
           </Button>
           <Button
             onClick={onViewProfile}
-            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            className="h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs"
           >
             View Profile
           </Button>
@@ -1936,13 +2006,6 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
 
       <div className="flex justify-between items-center">
         <div>
