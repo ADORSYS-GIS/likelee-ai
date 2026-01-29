@@ -196,6 +196,97 @@ CREATE TABLE IF NOT EXISTS public.brand_licenses (
 CREATE INDEX IF NOT EXISTS idx_brand_licenses_brand ON public.brand_licenses(brand_org_id);
 CREATE INDEX IF NOT EXISTS idx_brand_licenses_face ON public.brand_licenses(face_user_id);
 
+ALTER TABLE public.brand_licenses DROP COLUMN IF EXISTS talent_user_id CASCADE;
+ALTER TABLE public.brand_licenses 
+    ADD COLUMN IF NOT EXISTS agency_id uuid REFERENCES public.agencies(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS talent_id uuid REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS compliance_status text NOT NULL DEFAULT 'none' CHECK (compliance_status IN ('none','issue','resolved')),
+    ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+
+-- 6. Licensing Requests (linked to agency_users)
+CREATE TABLE IF NOT EXISTS public.licensing_requests (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    brand_id uuid REFERENCES public.brands(id) ON DELETE SET NULL,
+    talent_id uuid NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    
+    status text NOT NULL CHECK (status IN ('pending','approved','rejected')) DEFAULT 'pending',
+    notes text,
+    decided_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.licensing_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agency users can view their agency's licensing_requests" ON public.licensing_requests;
+CREATE POLICY "Agency users can view their agency's licensing_requests" 
+    ON public.licensing_requests FOR SELECT USING (auth.uid() = agency_id);
+
+-- 7. Campaigns (linked to agency_users)
+CREATE TABLE IF NOT EXISTS public.campaigns (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    brand_id uuid REFERENCES public.brands(id) ON DELETE SET NULL,
+    talent_id uuid NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    
+    name text,
+    campaign_type text, 
+    brand_vertical text, 
+    region text,
+    
+    start_at timestamptz,
+    end_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agency users can view their agency's campaigns" ON public.campaigns;
+CREATE POLICY "Agency users can view their agency's campaigns" 
+    ON public.campaigns FOR SELECT USING (auth.uid() = agency_id);
+
+-- 8. Payments (linked to agency_users)
+CREATE TABLE IF NOT EXISTS public.payments (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    brand_id uuid REFERENCES public.brands(id) ON DELETE SET NULL,
+    talent_id uuid NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    campaign_id uuid REFERENCES public.campaigns(id) ON DELETE SET NULL,
+    
+    booking_id text,
+    status text NOT NULL CHECK (status IN ('succeeded','pending','failed')),
+    currency_code text NOT NULL DEFAULT 'USD',
+    gross_cents integer NOT NULL DEFAULT 0 CHECK (gross_cents >= 0),
+    talent_earnings_cents integer NOT NULL DEFAULT 0 CHECK (talent_earnings_cents >= 0),
+    paid_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agency users can view their agency's payments" ON public.payments;
+CREATE POLICY "Agency users can view their agency's payments" 
+    ON public.payments FOR SELECT USING (auth.uid() = agency_id);
+
+-- 9. Activity Events
+CREATE TABLE IF NOT EXISTS public.activity_events (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    type text NOT NULL,
+    subject_table text,
+    subject_id uuid,
+    title text,
+    subtitle text,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.activity_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agency users can view their agency's activity_events" ON public.activity_events;
+CREATE POLICY "Agency users can view their agency's activity_events" 
+    ON public.activity_events FOR SELECT USING (auth.uid() = agency_id);
+
+-- 10. Brand Voice Folders
 CREATE TABLE IF NOT EXISTS public.brand_voice_folders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   brand_org_id uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
@@ -207,6 +298,9 @@ CREATE TABLE IF NOT EXISTS public.brand_voice_folders (
 );
 
 CREATE INDEX IF NOT EXISTS idx_brand_voice_folders_brand ON public.brand_voice_folders(brand_org_id);
+
+ALTER TABLE public.brand_voice_folders 
+    ADD COLUMN IF NOT EXISTS talent_id uuid REFERENCES public.agency_users(id) ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS public.brand_voice_assets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
