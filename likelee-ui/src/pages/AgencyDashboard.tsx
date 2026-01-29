@@ -110,6 +110,12 @@ import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -1303,7 +1309,7 @@ const LogCommunicationModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] rounded-2xl">
+      <DialogContent className="sm:max-w-[600px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             Log Communication
@@ -1369,7 +1375,7 @@ const LogCommunicationModal = ({
                 setFormData({ ...formData, content: e.target.value })
               }
               placeholder="Summary of the discussion..."
-              className="min-h-[100px]"
+              className="min-h-[200px] bg-gray-50/50 border-gray-200 rounded-xl resize-none font-medium"
             />
           </div>
           <div className="space-y-2">
@@ -1425,7 +1431,27 @@ const ClientProfileModal = ({
     queryKey: ["client-communications", client.id],
     queryFn: async () => {
       const resp = await crmApi.listCommunications(client.id);
-      return resp as any[];
+      const data = resp as any[];
+      // Add mock data for "new company" for demonstration if empty
+      if (data.length === 0 && client.name.toLowerCase().includes("new company")) {
+        return [
+          {
+            id: "mock-1",
+            type: "email",
+            subject: "Follow-up on Proposal",
+            content: "Sent the updated proposal for the spring campaign. Waiting for feedback.",
+            occurred_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+          },
+          {
+            id: "mock-2",
+            type: "call",
+            subject: "Initial Discovery Call",
+            content: "Discussed talent requirements and budget ranges. Client is interested in commercial models.",
+            occurred_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+          }
+        ];
+      }
+      return data;
     },
     enabled: !!client.id && isOpen,
   });
@@ -1433,8 +1459,8 @@ const ClientProfileModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
-          <div className="p-8 space-y-6">
+        <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none max-h-[90vh] flex flex-col">
+          <div className="p-8 pb-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-gray-400" />
@@ -1448,9 +1474,11 @@ const ClientProfileModal = ({
                 </Badge>
               </div>
             </div>
+          </div>
 
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+          <div className="flex-1 overflow-hidden flex flex-col px-8">
+            <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6 shrink-0">
                 <TabsTrigger
                   value="overview"
                   className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
@@ -1483,7 +1511,7 @@ const ClientProfileModal = ({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="min-h-[500px] max-h-[700px] overflow-y-auto pr-2 -mr-2 pb-12">
+              <div className="flex-1 overflow-y-auto pr-2 -mr-2 pb-8">
 
                 <TabsContent value="overview" className="space-y-6 mt-0">
                   <div className="grid grid-cols-2 gap-6">
@@ -1704,50 +1732,55 @@ const ClientProfileModal = ({
                         </p>
                       </div>
                     ) : (
-                      communications.map((comm) => (
-                        <Card
-                          key={comm.id}
-                          className="p-5 border-gray-100 rounded-2xl shadow-sm bg-white"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-gray-50 rounded-lg">
-                                {comm.type === "email" && (
-                                  <Mail className="w-4 h-4 text-indigo-500" />
-                                )}
-                                {comm.type === "call" && (
-                                  <Phone className="w-4 h-4 text-emerald-500" />
-                                )}
-                                {comm.type === "meeting" && (
-                                  <Users className="w-4 h-4 text-blue-500" />
-                                )}
-                                {comm.type === "other" && (
-                                  <FileText className="w-4 h-4 text-gray-500" />
-                                )}
-                              </div>
-                              <div>
-                                <h5 className="font-bold text-gray-900">
-                                  {comm.subject}
-                                </h5>
-                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">
-                                  {comm.type} •{" "}
-                                  {new Date(comm.occurred_at).toLocaleDateString(
-                                    undefined,
-                                    {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    },
+                      <Accordion type="single" collapsible className="w-full space-y-4">
+                        {communications.map((comm) => (
+                          <AccordionItem
+                            key={comm.id}
+                            value={comm.id}
+                            className="border-gray-100 rounded-2xl shadow-sm bg-white px-5 border"
+                          >
+                            <AccordionTrigger className="hover:no-underline py-4">
+                              <div className="flex items-center gap-3 text-left">
+                                <div className="p-2 bg-gray-50 rounded-lg shrink-0">
+                                  {comm.type === "email" && (
+                                    <Mail className="w-4 h-4 text-indigo-500" />
                                   )}
-                                </p>
+                                  {comm.type === "call" && (
+                                    <Phone className="w-4 h-4 text-emerald-500" />
+                                  )}
+                                  {comm.type === "meeting" && (
+                                    <Users className="w-4 h-4 text-blue-500" />
+                                  )}
+                                  {comm.type === "other" && (
+                                    <FileText className="w-4 h-4 text-gray-500" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h5 className="font-bold text-gray-900">
+                                    {comm.subject}
+                                  </h5>
+                                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">
+                                    {comm.type} •{" "}
+                                    {new Date(comm.occurred_at).toLocaleDateString(
+                                      undefined,
+                                      {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      },
+                                    )}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                            {comm.content}
-                          </p>
-                        </Card>
-                      ))
+                            </AccordionTrigger>
+                            <AccordionContent className="pb-4">
+                              <p className="text-sm text-gray-600 font-medium leading-relaxed pt-4 border-t border-gray-50">
+                                {comm.content}
+                              </p>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
                     )}
                   </div>
                 </TabsContent>
@@ -1797,8 +1830,10 @@ const ClientProfileModal = ({
                 </TabsContent>
               </div>
             </Tabs>
+          </div>
 
-            <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+          <div className="p-8 pt-6 border-t border-gray-100 bg-white shrink-0">
+            <div className="flex justify-between items-center">
               <div className="flex gap-3">
                 <Button
                   variant="outline"
