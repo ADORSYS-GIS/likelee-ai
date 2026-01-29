@@ -5,6 +5,12 @@ export const listClients = () => base44Client.get("/api/agency/clients");
 export const createClient = (data: any) =>
     base44Client.post("/api/agency/clients", data);
 
+export const updateClient = (id: string, data: any) =>
+    base44Client.post(`/api/agency/clients/${id}`, data);
+
+export const deleteClient = (id: string) =>
+    base44Client.delete(`/api/agency/clients/${id}`);
+
 export const listContacts = (clientId: string) =>
     base44Client.get(`/api/agency/clients/${clientId}/contacts`);
 

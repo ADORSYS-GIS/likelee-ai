@@ -1153,6 +1153,193 @@ const AddClientModal = ({
   );
 };
 
+const EditClientModal = ({
+  client,
+  isOpen,
+  onClose,
+}: {
+  client: any;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    company: "",
+    industry: "",
+    website: "",
+    status: "Lead",
+    tags: "",
+    notes: "",
+  });
+
+  useEffect(() => {
+    if (client) {
+      setFormData({
+        company: client.company || "",
+        industry: client.industry || "",
+        website: client.website || "",
+        status: client.status || "Lead",
+        tags: client.tags ? client.tags.join(", ") : "",
+        notes: client.preferences?.notes || "",
+      });
+    }
+  }, [client]);
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => crmApi.updateClient(client.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
+      toast({
+        title: "Success",
+        description: "Client updated successfully",
+      });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update client",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!formData.company) {
+      toast({
+        title: "Error",
+        description: "Company name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    mutation.mutate({
+      ...formData,
+      tags: formData.tags
+        ? formData.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+        : [],
+      preferences: { ...client.preferences, notes: formData.notes },
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
+        <div className="p-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Edit Client
+            </DialogTitle>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Company Name *
+              </Label>
+              <Input
+                placeholder="Company Inc."
+                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                value={formData.company}
+                onChange={(e) =>
+                  setFormData({ ...formData, company: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Industry
+              </Label>
+              <Input
+                placeholder="Fashion, Tech, etc."
+                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                value={formData.industry}
+                onChange={(e) =>
+                  setFormData({ ...formData, industry: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">Website</Label>
+            <Input
+              placeholder="company.com"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              value={formData.website}
+              onChange={(e) =>
+                setFormData({ ...formData, website: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">
+              Pipeline Stage
+            </Label>
+            <Select
+              value={formData.status}
+              onValueChange={(val) => setFormData({ ...formData, status: val })}
+            >
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue placeholder="Select stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Prospect">Prospect</SelectItem>
+                <SelectItem value="Active Client">Active Client</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">
+              Tags (comma-separated)
+            </Label>
+            <Input
+              placeholder="Fashion, Commercial, High-Budget"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              value={formData.tags}
+              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">Notes</Label>
+            <Textarea
+              placeholder="Add notes about this client..."
+              className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={mutation.isPending}
+              className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+            >
+              {mutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const AddContactModal = ({
   clientId,
   isOpen,
@@ -1410,10 +1597,14 @@ const ClientProfileModal = ({
   client,
   isOpen,
   onClose,
+  onEdit,
+  onDelete,
 }: {
   client: Client;
   isOpen: boolean;
   onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) => {
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isLogCommOpen, setIsLogCommOpen] = useState(false);
@@ -1767,7 +1958,7 @@ const ClientProfileModal = ({
                           <AccordionItem
                             key={comm.id}
                             value={comm.id}
-                            className="border-gray-100 rounded-2xl shadow-sm bg-white px-5 border"
+                            className="group border-gray-100 rounded-2xl shadow-sm bg-white px-5 border"
                           >
                             <AccordionTrigger className="hover:no-underline py-4">
                               <div className="flex items-center gap-3 text-left">
@@ -1800,13 +1991,18 @@ const ClientProfileModal = ({
                                       },
                                     )}
                                   </p>
+                                  <p className="text-sm text-gray-500 font-medium line-clamp-2 mt-2 group-data-[state=open]:hidden">
+                                    {comm.content}
+                                  </p>
                                 </div>
                               </div>
                             </AccordionTrigger>
                             <AccordionContent className="pb-4">
-                              <p className="text-sm text-gray-600 font-medium leading-relaxed pt-4 border-t border-gray-50">
-                                {comm.content}
-                              </p>
+                              <div className="pt-4 border-t border-gray-50">
+                                <p className="text-sm text-gray-600 font-medium leading-relaxed">
+                                  {comm.content}
+                                </p>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
                         ))}
@@ -1926,6 +2122,7 @@ const ClientProfileModal = ({
               <div className="flex gap-3">
                 <Button
                   variant="outline"
+                  onClick={onEdit}
                   className="h-11 px-6 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
                 >
                   <Edit className="w-4 h-4 mr-2" />
@@ -1933,6 +2130,7 @@ const ClientProfileModal = ({
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={onDelete}
                   className="h-11 px-6 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold transition-colors"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -2086,6 +2284,39 @@ const ClientCRMView = () => {
   const [sortBy, setSortBy] = useState("last-booking");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isEditClientOpen, setIsEditClientOpen] = useState(false);
+  const [isDeleteClientOpen, setIsDeleteClientOpen] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<any>(null);
+  const [clientToDelete, setClientToDelete] = useState<any>(null);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const deleteClientMutation = useMutation({
+    mutationFn: (id: string) => crmApi.deleteClient(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
+      toast({
+        title: "Success",
+        description: "Client deleted successfully",
+      });
+      setIsDeleteClientOpen(false);
+      setClientToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete client",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteClient = () => {
+    if (clientToDelete) {
+      deleteClientMutation.mutate(clientToDelete.id);
+    }
+  };
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["agency-clients"],
@@ -2255,8 +2486,61 @@ const ClientCRMView = () => {
           client={selectedClient}
           isOpen={!!selectedClient}
           onClose={() => setSelectedClient(null)}
+          onEdit={() => {
+            setClientToEdit(selectedClient);
+            setIsEditClientOpen(true);
+          }}
+          onDelete={() => {
+            setClientToDelete(selectedClient);
+            setIsDeleteClientOpen(true);
+          }}
         />
       )}
+
+      {clientToEdit && (
+        <EditClientModal
+          client={clientToEdit}
+          isOpen={isEditClientOpen}
+          onClose={() => {
+            setIsEditClientOpen(false);
+            setClientToEdit(null);
+          }}
+        />
+      )}
+
+      <Dialog open={isDeleteClientOpen} onOpenChange={setIsDeleteClientOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Delete Client?
+            </DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Are you sure you want to delete{" "}
+              <span className="font-bold text-gray-900">
+                {clientToDelete?.company}
+              </span>
+              ? This action cannot be undone and will remove all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteClientOpen(false)}
+              className="rounded-xl font-bold border-gray-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteClient}
+              disabled={deleteClientMutation.isPending}
+              className="rounded-xl font-bold bg-red-600 hover:bg-red-700"
+            >
+              {deleteClientMutation.isPending ? "Deleting..." : "Delete Client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

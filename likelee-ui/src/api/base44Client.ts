@@ -59,8 +59,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {
@@ -86,8 +86,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -106,6 +106,32 @@ export const base44 = {
     if (!res.ok) {
       const txt = await res.text();
       throw new Error(`POST ${full} failed: ${res.status} ${txt}`);
+    }
+    return (await res.json()) as T;
+  },
+  async delete<T = any>(
+    url: string,
+    config?: RequestConfig,
+  ): Promise<T> {
+    const full = buildUrl(API_BASE, url, config?.params);
+
+    // Get token from Supabase
+    const {
+      data: { session },
+    } = supabase
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
+    const token = session?.access_token;
+
+    const headers = {
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const res = await fetch(full, { method: "DELETE", headers });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`DELETE ${full} failed: ${res.status} ${txt}`);
     }
     return (await res.json()) as T;
   },

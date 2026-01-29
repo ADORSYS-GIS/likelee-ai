@@ -570,6 +570,86 @@ pub async fn create_client(
     Ok(Json(v))
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+pub struct UpdateAgencyClientPayload {
+    pub company: Option<String>,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub terms: Option<String>,
+    pub industry: Option<String>,
+    pub status: Option<String>,
+    pub website: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub preferences: Option<serde_json::Value>,
+}
+
+pub async fn update_client(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+    Json(payload): Json<UpdateAgencyClientPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut v =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    
+    // Remove nulls to allow partial updates
+    if let serde_json::Value::Object(ref mut map) = v {
+        let null_keys: Vec<String> = map
+            .iter()
+            .filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None })
+            .collect();
+        for k in null_keys {
+            map.remove(&k);
+        }
+        // Always update updated_at
+        map.insert("updated_at".to_string(), json!(chrono::Utc::now()));
+    }
+
+    let resp = state
+        .pg
+        .from("agency_clients")
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
+        .update(v.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn delete_client(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_clients")
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Supabase delete returns the deleted row(s)
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
 pub async fn get_by_user(
     State(state): State<AppState>,
     user: AuthUser,
