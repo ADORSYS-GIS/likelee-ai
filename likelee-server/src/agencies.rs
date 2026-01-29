@@ -446,6 +446,7 @@ pub async fn list_clients(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Fetch clients
     let resp = state
         .pg
         .from("agency_clients")
@@ -461,9 +462,72 @@ pub async fn list_clients(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text)
+    let mut clients: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+
+    // 2. Fetch all bookings for this agency to aggregate metrics
+    let bookings_resp = state
+        .pg
+        .from("bookings")
+        .select("client_id,rate_cents,date")
+        .eq("agency_user_id", &user.id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bookings_text = bookings_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bookings: Vec<serde_json::Value> = serde_json::from_str(&bookings_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3. Aggregate metrics by client_id
+    use std::collections::HashMap;
+    let mut metrics_map: HashMap<String, (i32, i32, Option<String>)> = HashMap::new();
+
+    for b in bookings {
+        if let Some(cid) = b.get("client_id").and_then(|v| v.as_str()) {
+            let rate = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+            let date = b.get("date").and_then(|v| v.as_str()).map(|s| s.to_string());
+            
+            let entry = metrics_map.entry(cid.to_string()).or_insert((0, 0, None));
+            entry.0 += 1; // count
+            entry.1 += rate; // revenue
+            if let Some(d) = date {
+                if entry.2.is_none() || d > *entry.2.as_ref().unwrap() {
+                    entry.2 = Some(d);
+                }
+            }
+        }
+    }
+
+    // 4. Attach metrics to clients
+    for client in &mut clients {
+        if let Some(id) = client.get("id").and_then(|v| v.as_str()) {
+            if let Some((count, revenue, last_date)) = metrics_map.get(id) {
+                let revenue_str = format!("${}K", revenue / 100000); // Simple $K formatting
+                let formatted_revenue = if *revenue >= 100000 {
+                    revenue_str
+                } else {
+                    format!("${}", revenue / 100)
+                };
+
+                client.as_object_mut().unwrap().insert("metrics".to_string(), json!({
+                    "bookings": count,
+                    "revenue": formatted_revenue,
+                    "lastBookingDate": last_date.clone().unwrap_or_else(|| "Never".to_string()),
+                }));
+            } else {
+                client.as_object_mut().unwrap().insert("metrics".to_string(), json!({
+                    "bookings": 0,
+                    "revenue": "$0",
+                    "lastBookingDate": "Never",
+                }));
+            }
+        }
+    }
+
+    Ok(Json(serde_json::Value::Array(clients)))
 }
 
 pub async fn create_client(
