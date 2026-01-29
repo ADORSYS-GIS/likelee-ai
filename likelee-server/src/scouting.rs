@@ -168,7 +168,9 @@ pub async fn delete_template(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let offers_text = offers_resp.text().await
+    let offers_text = offers_resp
+        .text()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
