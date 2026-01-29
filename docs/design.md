@@ -108,30 +108,26 @@
  - `expenses_cents = sum(expense.amount_cents)`
  - `discount_cents` is applied once at invoice level.
  - `taxable_base_cents` defaults to `subtotal_cents + (sum(taxable_expenses)) - discount_cents`, not below zero.
- - `tax_cents = round(taxable_base_cents * tax_rate_bps / 10_000)` unless `tax_exempt = true`.
- - `total_cents = (subtotal_cents + expenses_cents - discount_cents) + tax_cents`, not below zero.
- - `agency_fee_cents = round(subtotal_cents * agency_commission_bps / 10_000)`.
- - `talent_net_cents = subtotal_cents - agency_fee_cents`.
- 
+
  ### Invoice Numbering (MVP)
  - Invoice id is stored as a uuid.
  - Default generation is performed server-side at creation time.
- - Format: `INV-YYYY-NNNN` (example: `INV-2026-6174`).
- - Invoice number can be edited while in `draft` (future phase may restrict edits after `sent`).
- 
+ - Format: `INVC[A-Z][0-9]{7}` (example: `INVCZ9930308`).
+ - Invoice number is system-generated and cannot be provided or edited by users.
+
  ### Permissions & RLS
  - Agencies can only read/write their own invoices and related rows.
  - Ownership is by `agency_id` matching the authenticated agency user id.
  - When a server endpoint accepts `invoice_id`, it must validate `agency_id = auth_user.id`.
- 
+
  ### Backend API (likelee-server)
- 
+
  #### Existing dependencies
  - Bookings and clients already exist and can be used for invoice creation:
    - `GET /api/bookings`
    - `GET /api/agency/clients`
    - `GET /api/agency/talents`
- 
+
  #### New endpoints (MVP)
  - `GET /api/invoices`
    - List invoices for the agency (filters: status, date range optional).

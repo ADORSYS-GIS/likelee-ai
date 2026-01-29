@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -70,6 +70,7 @@ import {
   Printer,
   Files,
   TrendingDown,
+  AlertTriangle,
   MapPin,
   Star,
   Menu,
@@ -111,6 +112,8 @@ import {
   cancelBooking as apiCancelBooking,
   listBookOuts,
   createBookOut,
+  getAgencyClients,
+  listInvoices,
   notifyBookingCreatedEmail,
 } from "@/api/functions";
 
@@ -2755,9 +2758,192 @@ const TalentStatementsView = () => {
 };
 
 const PaymentTrackingView = () => {
+  const reminderKey = "likelee.payment_reminders.v1";
   const [reminder3Days, setReminder3Days] = useState(true);
   const [reminderDueDate, setReminderDueDate] = useState(true);
   const [reminder7Days, setReminder7Days] = useState(true);
+
+  const { toast } = useToast();
+
+  const [loading, setLoading] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<any[]>([]);
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const moneyTotals = (totalsByCurrency: Map<string, number>) => {
+    const entries = Array.from(totalsByCurrency.entries()).filter(([, v]) => (v || 0) !== 0);
+    if (!entries.length) return money(0, "USD");
+    if (entries.length === 1) {
+      const [cur, cents] = entries[0];
+      return money(cents, cur);
+    }
+    // If invoices are in multiple currencies, show a compact breakdown.
+    return entries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cur, cents]) => money(cents, cur))
+      .join(" + ");
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(reminderKey);
+      if (raw) {
+        const v = JSON.parse(raw);
+        if (typeof v?.reminder3Days === "boolean") setReminder3Days(v.reminder3Days);
+        if (typeof v?.reminderDueDate === "boolean") setReminderDueDate(v.reminderDueDate);
+        if (typeof v?.reminder7Days === "boolean") setReminder7Days(v.reminder7Days);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        reminderKey,
+        JSON.stringify({ reminder3Days, reminderDueDate, reminder7Days }),
+      );
+    } catch {
+      // ignore
+    }
+  }, [reminder3Days, reminderDueDate, reminder7Days]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const inv = await listInvoices({});
+        if (!mounted) return;
+        setInvoiceRows(asArray(inv));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load payments",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const normalized = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return invoiceRows.map((inv) => {
+      const statusRaw = String(
+        (inv as any)?.status ??
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
+      );
+      const dueDateStr = String((inv as any)?.due_date || "");
+      const due = dueDateStr ? new Date(dueDateStr) : null;
+      const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
+      const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
+      const inferredStatus = (() => {
+        if (statusRaw === "void") return "void";
+        if (paidAt) return "paid";
+        if (sentAt) return "sent";
+        return statusRaw;
+      })();
+      const isOverdue =
+        inferredStatus !== "paid" && inferredStatus !== "void" && due && due < today;
+      return {
+        id: String((inv as any)?.id || ""),
+        invoiceNumber: String((inv as any)?.invoice_number || ""),
+        currency: String((inv as any)?.currency || "USD"),
+        totalCents: Number((inv as any)?.total_cents || 0) || 0,
+        status: isOverdue ? "overdue" : inferredStatus,
+        dueDate: dueDateStr,
+        paidAt: paidAt ? String(paidAt) : "",
+        sentAt: sentAt ? String(sentAt) : "",
+      };
+    });
+  }, [invoiceRows]);
+
+  const summary = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const paidThisMonth = normalized.filter((i) => {
+      if (!i.paidAt) return false;
+      const d = new Date(i.paidAt);
+      return !Number.isNaN(d.getTime()) && d >= monthStart;
+    });
+    const paidThisMonthTotals = new Map<string, number>();
+    for (const i of paidThisMonth) {
+      const cur = String(i.currency || "USD");
+      paidThisMonthTotals.set(cur, (paidThisMonthTotals.get(cur) || 0) + (i.totalCents || 0));
+    }
+
+    const pending = normalized.filter((i) => i.status === "sent");
+    const pendingTotals = new Map<string, number>();
+    for (const i of pending) {
+      const cur = String(i.currency || "USD");
+      pendingTotals.set(cur, (pendingTotals.get(cur) || 0) + (i.totalCents || 0));
+    }
+
+    const overdue = normalized.filter((i) => i.status === "overdue");
+    const overdueTotals = new Map<string, number>();
+    for (const i of overdue) {
+      const cur = String(i.currency || "USD");
+      overdueTotals.set(cur, (overdueTotals.get(cur) || 0) + (i.totalCents || 0));
+    }
+
+    // Non-goal for MVP per design.md
+    const partialCount = 0;
+    const partialCents = 0;
+
+    const recentPayments = normalized
+      .filter((i) => i.status === "paid" && i.paidAt)
+      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime())
+      .slice(0, 10);
+
+    return {
+      paidThisMonthTotals,
+      paidThisMonthCount: paidThisMonth.length,
+      pendingTotals,
+      pendingCount: pending.length,
+      partialCents,
+      partialCount,
+      overdueTotals,
+      overdueCount: overdue.length,
+      recentPayments,
+    };
+  }, [normalized]);
 
   return (
     <div className="space-y-6">
@@ -2768,32 +2954,81 @@ const PaymentTrackingView = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Paid This Month
-          </p>
-          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
-          <p className="text-xs text-gray-600 font-medium">1 invoices</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Paid This Month
+              </p>
+              <p className="text-3xl font-bold text-green-600">
+                {moneyTotals(summary.paidThisMonthTotals)}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.paidThisMonthCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Pending Payment
-          </p>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+
+        <Card className="p-6 bg-yellow-50 border border-yellow-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Pending Payment
+              </p>
+              <p className="text-3xl font-bold text-yellow-600">
+                {moneyTotals(summary.pendingTotals)}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.pendingCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+          </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Partial Payments
-          </p>
-          <p className="text-3xl font-bold text-blue-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+
+        <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Partial Payments
+              </p>
+              <p className="text-3xl font-bold text-blue-600">
+                {money(summary.partialCents, "USD")}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.partialCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <PieChart className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
-          <p className="text-3xl font-bold text-red-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+
+        <Card className="p-6 bg-red-50 border border-red-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Overdue
+              </p>
+              <p className="text-3xl font-bold text-red-600">
+                {moneyTotals(summary.overdueTotals)}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.overdueCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -2801,39 +3036,47 @@ const PaymentTrackingView = () => {
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Recent Payments
         </h3>
-        <div className="space-y-3">
-          {MOCK_PAYMENTS.map((payment) => (
-            <div
-              key={payment.id}
-              className="flex items-center justify-between p-4 bg-green-50 border border-green-100 rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+        {loading ? (
+          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+        ) : summary.recentPayments.length ? (
+          <div className="space-y-3">
+            {summary.recentPayments.map((p: any) => (
+              <div
+                key={String(p.id || p.invoiceNumber)}
+                className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      Invoice #{p.invoiceNumber}
+                    </p>
+                    <p className="text-xs text-gray-600 font-medium">
+                      {formatDate(p.paidAt)}
+                    </p>
+                  </div>
                 </div>
-
-                <div>
-                  <p className="text-sm font-bold text-gray-900">
-                    Invoice {payment.invoiceNumber} • {payment.client}
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {payment.date}
-                  </p>
-                </div>
+                <span className="text-lg font-bold text-green-600">
+                  {money(p.totalCents, p.currency)}
+                </span>
               </div>
-              <span className="text-lg font-bold text-green-600">
-                {payment.amount}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600 font-medium">No payments yet.</div>
+        )}
       </Card>
 
       <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Payment Reminder Settings
         </h3>
-        <div className="space-y-4">
+        <p className="text-xs text-gray-500 font-medium mb-4">
+          Reminders are not sent automatically in the current MVP. These toggles only save your preferences.
+        </p>
+        <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
             <div>
               <p className="text-sm font-bold text-gray-900">
@@ -4009,6 +4252,7 @@ const InvoiceManagementView = ({
 }: {
   setActiveSubTab: (tab: string) => void;
 }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -4016,11 +4260,17 @@ const InvoiceManagementView = ({
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 
+  const { toast } = useToast();
+
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<any[]>([]);
+  const [clientRows, setClientRows] = useState<any[]>([]);
+
   // Filter states
   const [issueDateFrom, setIssueDateFrom] = useState("");
   const [issueDateTo, setIssueDateTo] = useState("");
   const [minAmount, setMinAmount] = useState("");
-  const [maxAmount, setMaxAmount] = useState("10000");
+  const [maxAmount, setMaxAmount] = useState("");
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [currencyFilter, setCurrencyFilter] = useState("all");
 
@@ -4028,10 +4278,231 @@ const InvoiceManagementView = ({
     setIssueDateFrom("");
     setIssueDateTo("");
     setMinAmount("");
-    setMaxAmount("10000");
+    setMaxAmount("");
     setShowOverdueOnly(false);
     setCurrencyFilter("all");
   };
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoadingInvoices(true);
+      try {
+        const [inv, clients] = await Promise.all([listInvoices({}), getAgencyClients()]);
+        if (!mounted) return;
+        setInvoiceRows(asArray(inv));
+        setClientRows(asArray(clients));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load invoices",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoadingInvoices(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const clientNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of clientRows) {
+      const id = String((c as any)?.id || "");
+      if (!id) continue;
+      const name =
+        String((c as any)?.company || "").trim() ||
+        String((c as any)?.contact_name || "").trim() ||
+        String((c as any)?.email || "").trim();
+      if (name) m.set(id, name);
+    }
+    return m;
+  }, [clientRows]);
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  };
+
+  const formatDateTime = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const normalizedInvoices = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return invoiceRows.map((inv) => {
+      const invoiceId = String((inv as any)?.id || "");
+      const statusRaw = String(
+        (inv as any)?.status ??
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
+      );
+      const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
+      const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
+      const dueDateStr = String((inv as any)?.due_date || "");
+      const due = dueDateStr ? new Date(dueDateStr) : null;
+      const inferredStatus = (() => {
+        // If the DB has lifecycle timestamps but the status wasn't backfilled, infer it.
+        if (statusRaw === "void") return "void";
+        if (paidAt) return "paid";
+        if (sentAt) return "sent";
+        return statusRaw;
+      })();
+
+      const isOverdue =
+        inferredStatus !== "paid" && inferredStatus !== "void" && due && due < today;
+
+      return {
+        id: invoiceId,
+        invoiceNumber: String((inv as any)?.invoice_number || ""),
+        clientId: String((inv as any)?.client_id || ""),
+        clientName:
+          clientNameById.get(String((inv as any)?.client_id || "")) ||
+          String((inv as any)?.bill_to_company || "") ||
+          "(unknown)",
+        issueDate: String((inv as any)?.invoice_date || ""),
+        dueDate: dueDateStr,
+        amountCents: Number((inv as any)?.total_cents || 0) || 0,
+        currency: String((inv as any)?.currency || "USD"),
+        status: isOverdue ? "overdue" : inferredStatus,
+        sentAt: sentAt ? String(sentAt) : "",
+        paidAt: paidAt ? String(paidAt) : "",
+        createdAt: String((inv as any)?.created_at || ""),
+        updatedAt: String((inv as any)?.updated_at || ""),
+      };
+    });
+  }, [clientNameById, invoiceRows]);
+
+  const filteredInvoices = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const min = Number(minAmount || "") || 0;
+    const max = Number(maxAmount || "") || 0;
+    const from = issueDateFrom ? new Date(issueDateFrom) : null;
+    const to = issueDateTo ? new Date(issueDateTo) : null;
+
+    const matchesCurrency = (cur: string) => {
+      if (currencyFilter === "all") return true;
+      return String(cur || "").toLowerCase() === currencyFilter.toLowerCase();
+    };
+
+    let out = normalizedInvoices.filter((inv) => {
+      if (statusFilter !== "all" && inv.status !== statusFilter) return false;
+      if (!matchesCurrency(inv.currency)) return false;
+
+      if (q) {
+        const hay = `${inv.invoiceNumber} ${inv.clientName}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+
+      if (from) {
+        const d = inv.issueDate ? new Date(inv.issueDate) : null;
+        if (!d || d < from) return false;
+      }
+      if (to) {
+        const d = inv.issueDate ? new Date(inv.issueDate) : null;
+        if (!d || d > to) return false;
+      }
+
+      const amount = inv.amountCents / 100;
+      if (minAmount !== "" && amount < min) return false;
+      if (maxAmount !== "" && max > 0 && amount > max) return false;
+
+      if (showOverdueOnly && inv.status !== "overdue") return false;
+
+      return true;
+    });
+
+    const byInvoice = (a: any, b: any) => a.invoiceNumber.localeCompare(b.invoiceNumber);
+    const byClient = (a: any, b: any) => a.clientName.localeCompare(b.clientName);
+    const byIssue = (a: any, b: any) => new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime();
+    const byDue = (a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    const byAmount = (a: any, b: any) => (a.amountCents || 0) - (b.amountCents || 0);
+
+    switch (sortBy) {
+      case "oldest":
+        out = out.sort(byIssue);
+        break;
+      case "newest":
+        out = out.sort((a, b) => byIssue(b, a));
+        break;
+      case "due-soonest":
+        out = out.sort(byDue);
+        break;
+      case "due-latest":
+        out = out.sort((a, b) => byDue(b, a));
+        break;
+      case "amount-high":
+        out = out.sort((a, b) => byAmount(b, a));
+        break;
+      case "amount-low":
+        out = out.sort(byAmount);
+        break;
+      case "client-az":
+        out = out.sort(byClient);
+        break;
+      case "client-za":
+        out = out.sort((a, b) => byClient(b, a));
+        break;
+      case "invoice-asc":
+        out = out.sort(byInvoice);
+        break;
+      case "invoice-desc":
+        out = out.sort((a, b) => byInvoice(b, a));
+        break;
+      default:
+        break;
+    }
+
+    return out;
+  }, [
+    currencyFilter,
+    issueDateFrom,
+    issueDateTo,
+    maxAmount,
+    minAmount,
+    normalizedInvoices,
+    searchTerm,
+    showOverdueOnly,
+    sortBy,
+    statusFilter,
+  ]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -4043,9 +4514,7 @@ const InvoiceManagementView = ({
         return "bg-green-50 text-green-700 border-green-200";
       case "overdue":
         return "bg-red-50 text-red-700 border-red-200";
-      case "partial":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "cancelled":
+      case "void":
         return "bg-gray-50 text-gray-700 border-gray-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
@@ -4153,16 +4622,10 @@ const InvoiceManagementView = ({
                 <span className="text-gray-900">Overdue</span>
               </div>
             </SelectItem>
-            <SelectItem value="partial" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                <span className="text-gray-900">Partial</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="cancelled" className="font-bold">
+            <SelectItem value="void" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
-                <span className="text-gray-900">Cancelled</span>
+                <span className="text-gray-900">Void</span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -4299,7 +4762,11 @@ const InvoiceManagementView = ({
       )}
 
       <div className="text-sm text-gray-700 font-bold">
-        Showing <span className="font-bold text-gray-900">1 of 1</span> invoices
+        Showing{" "}
+        <span className="font-bold text-gray-900">
+          {filteredInvoices.length} of {normalizedInvoices.length}
+        </span>{" "}
+        invoices
       </div>
 
       <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -4334,7 +4801,7 @@ const InvoiceManagementView = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {MOCK_INVOICES.map((invoice) => (
+              {filteredInvoices.map((invoice) => (
                 <tr
                   key={invoice.id}
                   className="hover:bg-gray-50 transition-colors"
@@ -4354,17 +4821,17 @@ const InvoiceManagementView = ({
                   </td>
                   <td className="px-6 py-3">
                     <span className="text-sm text-gray-700 font-bold">
-                      {invoice.issueDate}
+                      {formatDate(invoice.issueDate)}
                     </span>
                   </td>
                   <td className="px-6 py-3">
                     <span className="text-sm text-gray-700 font-bold">
-                      {invoice.dueDate}
+                      {formatDate(invoice.dueDate)}
                     </span>
                   </td>
                   <td className="px-6 py-3">
                     <span className="text-sm font-bold text-gray-900">
-                      {invoice.amount}
+                      {money(invoice.amountCents, invoice.currency)}
                     </span>
                   </td>
                   <td className="px-6 py-3">
@@ -4382,6 +4849,11 @@ const InvoiceManagementView = ({
                         variant="ghost"
                         className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
                         title="View Invoice"
+                        onClick={() => {
+                          if (!invoice.id) return;
+                          setActiveSubTab("Invoice Generation");
+                          navigate({ search: `?invoiceId=${encodeURIComponent(invoice.id)}` });
+                        }}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -4390,6 +4862,11 @@ const InvoiceManagementView = ({
                         variant="ghost"
                         className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
                         title="Edit Invoice"
+                        onClick={() => {
+                          if (!invoice.id) return;
+                          setActiveSubTab("Invoice Generation");
+                          navigate({ search: `?invoiceId=${encodeURIComponent(invoice.id)}` });
+                        }}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -4398,6 +4875,11 @@ const InvoiceManagementView = ({
                         variant="ghost"
                         className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
                         title="Download PDF"
+                        onClick={() => {
+                          if (!invoice.id) return;
+                          setActiveSubTab("Invoice Generation");
+                          navigate({ search: `?invoiceId=${encodeURIComponent(invoice.id)}` });
+                        }}
                       >
                         <Download className="w-4 h-4" />
                       </Button>
@@ -4456,19 +4938,42 @@ const InvoiceManagementView = ({
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Invoice Total
                 </p>
-                <p className="text-2xl font-bold text-blue-600">$3</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {money(
+                    Number((selectedInvoice as any)?.amountCents || 0) || 0,
+                    String((selectedInvoice as any)?.currency || "USD"),
+                  )}
+                </p>
               </Card>
               <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Total Paid
                 </p>
-                <p className="text-2xl font-bold text-green-600">$3</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {money(
+                    ((selectedInvoice as any)?.paidAt
+                      ? Number((selectedInvoice as any)?.amountCents || 0) || 0
+                      : 0) || 0,
+                    String((selectedInvoice as any)?.currency || "USD"),
+                  )}
+                </p>
               </Card>
               <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Remaining Balance
                 </p>
-                <p className="text-2xl font-bold text-orange-600">$0</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {money(
+                    Math.max(
+                      0,
+                      (Number((selectedInvoice as any)?.amountCents || 0) || 0) -
+                        ((selectedInvoice as any)?.paidAt
+                          ? Number((selectedInvoice as any)?.amountCents || 0) || 0
+                          : 0),
+                    ),
+                    String((selectedInvoice as any)?.currency || "USD"),
+                  )}
+                </p>
               </Card>
             </div>
 
@@ -4477,38 +4982,72 @@ const InvoiceManagementView = ({
               <h4 className="text-sm font-bold text-gray-900 mb-3">
                 Payment Transactions
               </h4>
-              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          Payment #1
-                        </p>
+              {(() => {
+                const inv: any = selectedInvoice || {};
+                const currency = String(inv.currency || "USD");
+                const events: Array<{
+                  key: string;
+                  kind: "paid" | "sent" | "created" | "void";
+                  at: string;
+                }> = [];
+
+                const status = String(inv.status || "").toLowerCase();
+                if (String(inv.createdAt || ""))
+                  events.push({ key: "created", kind: "created", at: String(inv.createdAt) });
+                if (String(inv.sentAt || ""))
+                  events.push({ key: "sent", kind: "sent", at: String(inv.sentAt) });
+                if (String(inv.paidAt || ""))
+                  events.push({ key: "paid", kind: "paid", at: String(inv.paidAt) });
+                if (status === "void")
+                  events.push({
+                    key: "void",
+                    kind: "void",
+                    at: String(inv.updatedAt || inv.createdAt || ""),
+                  });
+
+                const payments = events.filter((e) => e.kind === "paid");
+                if (!payments.length) {
+                  return (
+                    <Card className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                      <p className="text-sm font-bold text-gray-900">No payments recorded</p>
+                      <p className="text-xs text-gray-600 font-medium">
+                        This invoice has not been marked as paid.
+                      </p>
+                    </Card>
+                  );
+                }
+
+                return payments.map((p, idx) => (
+                  <Card
+                    key={p.key}
+                    className="p-4 bg-green-50 border border-green-100 rounded-xl"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              Payment #{idx + 1}
+                            </p>
+                            <p className="text-xs text-gray-600 font-medium">
+                              {formatDateTime(p.at)}
+                            </p>
+                          </div>
+                          <span className="text-lg font-bold text-green-600">
+                            {money(Number(inv.amountCents || 0) || 0, currency)}
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-600 font-medium">
-                          January 27, 2026 • Wire
+                          Invoice marked as paid
                         </p>
                       </div>
-                      <span className="text-lg font-bold text-green-600">
-                        $3
-                      </span>
                     </div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      Full payment received
-                    </p>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
+                  </Card>
+                ));
+              })()}
             </div>
           </div>
 

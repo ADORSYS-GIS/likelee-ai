@@ -1663,6 +1663,7 @@ dependencies = [
  "aws-sdk-rekognition",
  "aws-types",
  "axum",
+ "base64 0.22.1",
  "chrono",
  "dotenvy",
  "envconfig",
