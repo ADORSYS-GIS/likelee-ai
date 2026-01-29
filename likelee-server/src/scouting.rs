@@ -84,7 +84,15 @@ pub async fn list_templates(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
-    Ok((StatusCode::OK, body))
+    let templates: Vec<serde_json::Value> = serde_json::from_str(&body)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let response_data = json!({
+        "templates": templates,
+        "total_count": templates.len()
+    });
+
+    Ok((StatusCode::OK, response_data.to_string()))
 }
 
 /// POST /api/scouting/templates
@@ -105,6 +113,13 @@ pub async fn create_template(
             format!("Bearer {}", state.supabase_service_key),
         );
 
+    let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
     let template_data = json!({
         "agency_id": payload.agency_id,
         "docuseal_template_id": payload.docuseal_template_id,
@@ -112,7 +127,7 @@ pub async fn create_template(
         "description": payload.description,
     });
 
-    let response = pg
+    let response = pg2
         .from("scouting_templates")
         .insert(template_data.to_string())
         .execute()
@@ -144,7 +159,32 @@ pub async fn delete_template(
             format!("Bearer {}", state.supabase_service_key),
         );
 
-    pg.from("scouting_templates")
+    // Count offers before deleting (for response)
+    let offers_resp = pg
+        .from("scouting_offers")
+        .select("id")
+        .eq("template_id", &id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let offers_text = offers_resp.text().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let offers_count = offers.len();
+
+    info!(template_id = %id, offers_count, "Deleting template and associated offers");
+
+    // Delete template (CASCADE will delete offers)
+    let pg2 = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
+    pg2.from("scouting_templates")
         .delete()
         .eq("id", &id)
         .execute()
@@ -154,7 +194,12 @@ pub async fn delete_template(
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
-    Ok(StatusCode::NO_CONTENT)
+    let response_data = json!({
+        "deleted": true,
+        "offers_deleted": offers_count
+    });
+
+    Ok((StatusCode::OK, response_data.to_string()))
 }
 
 // ============================================================================

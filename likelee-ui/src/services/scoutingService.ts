@@ -595,8 +595,9 @@ export const scoutingService = {
     const text = await response.text();
     try {
       return JSON.parse(text) as ScoutingOffer;
-    } catch {
-      return undefined as unknown as ScoutingOffer;
+    } catch (e) {
+      console.error("Failed to parse createOffer response", text);
+      throw new Error(`Failed to parse response from createOffer: ${e}`);
     }
   },
 
