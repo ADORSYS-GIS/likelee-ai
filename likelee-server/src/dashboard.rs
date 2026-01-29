@@ -29,7 +29,11 @@ pub async fn get_dashboard(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let rows: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let profile = rows.get(0).cloned().unwrap_or(serde_json::json!({}));
+    let profile = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
 
     let campaigns: Vec<serde_json::Value> = vec![];
     let approvals: Vec<serde_json::Value> = vec![];

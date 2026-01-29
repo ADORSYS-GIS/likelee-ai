@@ -2992,7 +2992,8 @@ export default function CreatorDashboard() {
     // Apply overrides if provided (e.g. for immediate toggle updates)
     const profileData = {
       email: creator.email || user.email,
-      full_name: creator.name,
+      full_name:
+        creator.name || profile?.full_name || user?.user_metadata?.full_name,
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
@@ -3009,9 +3010,13 @@ export default function CreatorDashboard() {
     };
 
     try {
+      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify(profileData),
       });
 
@@ -3028,6 +3033,7 @@ export default function CreatorDashboard() {
         const savedProfile = responseData[0];
         setCreator((prev) => ({
           ...prev,
+          name: savedProfile.full_name || prev.name,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
           content_restrictions:
@@ -8369,7 +8375,7 @@ export default function CreatorDashboard() {
 
       {/* Payout Settings Modal */}
       <Dialog open={showPayoutSettings} onOpenChange={setShowPayoutSettings}>
-        <DialogContent className="max-w-2xl relative">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               Payout Settings
@@ -8656,7 +8662,7 @@ export default function CreatorDashboard() {
         open={showRequestPayoutModal}
         onOpenChange={setShowRequestPayoutModal}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md ">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Cash Out</DialogTitle>
             <DialogDescription>
