@@ -1456,6 +1456,36 @@ const ClientProfileModal = ({
     enabled: !!client.id && isOpen,
   });
 
+  const { data: bookings = [], isLoading: isLoadingBookings } = useQuery({
+    queryKey: ["client-bookings", client.id],
+    queryFn: async () => {
+      const resp = await listBookings({ client_id: client.id });
+      return resp as any[];
+    },
+    enabled: !!client.id && isOpen,
+  });
+
+  const totalRevenueCents = bookings.reduce(
+    (sum: number, b: any) => sum + (b.rate_cents || 0),
+    0,
+  );
+  const totalRevenue = (totalRevenueCents / 100).toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+  const totalBookingsCount = bookings.length;
+  const lastBooking =
+    bookings.length > 0
+      ? new Date(
+        Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
+      ).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+      : "Never";
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -1599,7 +1629,7 @@ const ClientProfileModal = ({
                     <div className="grid grid-cols-4 gap-4">
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
                         <span className="text-2xl font-bold text-indigo-600 block">
-                          {client.metrics?.revenue || "$0K"}
+                          {totalRevenue}
                         </span>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                           Total Revenue
@@ -1607,7 +1637,7 @@ const ClientProfileModal = ({
                       </Card>
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
                         <span className="text-2xl font-bold text-emerald-600 block">
-                          {client.metrics?.bookings || 0}
+                          {totalBookingsCount}
                         </span>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                           Total Bookings
@@ -1623,7 +1653,7 @@ const ClientProfileModal = ({
                       </Card>
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
                         <span className="text-2xl font-bold text-orange-600 block">
-                          {client.metrics?.lastBookingDate || "Never"}
+                          {lastBooking}
                         </span>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                           Last Booking
@@ -1786,15 +1816,74 @@ const ClientProfileModal = ({
                 </TabsContent>
 
                 <TabsContent value="bookings" className="space-y-6 mt-0">
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <Calendar className="w-16 h-16 text-gray-200 mb-4" />
-                    <h4 className="text-xl font-bold text-gray-900">
-                      No Bookings Yet
-                    </h4>
-                    <p className="text-gray-500">
-                      This client hasn't made any bookings through the platform
-                      yet.
-                    </p>
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-gray-900">Bookings History</h4>
+                  </div>
+
+                  <div className="space-y-4">
+                    {isLoadingBookings ? (
+                      <div className="text-center py-12 text-gray-400 font-bold">
+                        <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
+                        Loading bookings...
+                      </div>
+                    ) : bookings.length === 0 ? (
+                      <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
+                        <Calendar className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                        <p className="text-gray-400 font-bold">
+                          No bookings found for this client
+                        </p>
+                      </div>
+                    ) : (
+                      bookings.map((booking: any) => (
+                        <Card
+                          key={booking.id}
+                          className="p-5 border-gray-100 rounded-2xl shadow-sm bg-white hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                                <Users className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h5 className="font-bold text-gray-900">
+                                  {booking.talent_name || "Unknown Talent"}
+                                </h5>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge
+                                    className={`${booking.status === "confirmed"
+                                      ? "bg-green-100 text-green-700"
+                                      : booking.status === "pending"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-gray-100 text-gray-700"
+                                      } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
+                                  >
+                                    {booking.status}
+                                  </Badge>
+                                  <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">
+                                    {booking.type}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-gray-900">
+                                {new Date(booking.date).toLocaleDateString(
+                                  undefined,
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </p>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider mt-1">
+                                {booking.location || "No location"}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))
+                    )}
                   </div>
                 </TabsContent>
 

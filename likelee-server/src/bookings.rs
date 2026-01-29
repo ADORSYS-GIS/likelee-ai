@@ -261,6 +261,7 @@ pub async fn create_with_files(
 pub struct ListParams {
     pub date_start: Option<String>,
     pub date_end: Option<String>,
+    pub client_id: Option<String>,
 }
 
 pub async fn create(
@@ -495,6 +496,11 @@ pub async fn list(
     };
     let req = if let Some(de) = params.date_end.as_ref() {
         req.lte("date", de)
+    } else {
+        req
+    };
+    let req = if let Some(cid) = params.client_id.as_ref() {
+        req.eq("client_id", cid)
     } else {
         req
     };
