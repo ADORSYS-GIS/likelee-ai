@@ -116,7 +116,6 @@ import {
   getAgencyRoster,
   getAgencyProfile,
   createOrganizationKycSession,
-import {
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -13683,8 +13682,6 @@ export default function AgencyDashboard() {
     (agencyProfileQuery.data as any)?.agency_name || "Cult Management";
   const seatsLimit = Number((agencyProfileQuery.data as any)?.seats_limit || 0);
 
-  const onAddBooking = (booking: any) => {
-    setBookings([...bookings, booking]);
   // Load persisted bookings on mount
   useEffect(() => {
     (async () => {
