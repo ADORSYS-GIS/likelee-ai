@@ -38,6 +38,7 @@ const EditClientModal = ({
         status: "Lead",
         tags: "",
         notes: "",
+        next_follow_up_date: "",
     });
 
     useEffect(() => {
@@ -48,7 +49,8 @@ const EditClientModal = ({
                 website: client.website || "",
                 status: client.status || "Lead",
                 tags: client.tags ? client.tags.join(", ") : "",
-                notes: client.preferences?.notes || "",
+                notes: client.notes || client.preferences?.notes || "",
+                next_follow_up_date: client.next_follow_up_date ? new Date(client.next_follow_up_date).toISOString().split('T')[0] : "",
             });
         }
     }, [client]);
@@ -89,6 +91,7 @@ const EditClientModal = ({
                     .map((t) => t.trim())
                     .filter(Boolean)
                 : [],
+            next_follow_up_date: formData.next_follow_up_date || null,
             preferences: { ...client.preferences, notes: formData.notes },
         });
     };
@@ -172,6 +175,16 @@ const EditClientModal = ({
                             className="h-11 bg-gray-50 border-gray-200 rounded-xl"
                             value={formData.tags}
                             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-bold text-gray-700">Next Follow-up Date</Label>
+                        <Input
+                            type="date"
+                            className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                            value={formData.next_follow_up_date}
+                            onChange={(e) => setFormData({ ...formData, next_follow_up_date: e.target.value })}
                         />
                     </div>
 

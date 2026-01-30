@@ -421,6 +421,8 @@ pub struct AgencyClientPayload {
     pub status: Option<String>,
     pub website: Option<String>,
     pub tags: Option<Vec<String>>,
+    pub notes: Option<String>,
+    pub next_follow_up_date: Option<String>,
     pub preferences: Option<serde_json::Value>,
 }
 
@@ -451,7 +453,7 @@ pub async fn list_clients(
         .pg
         .from("agency_clients")
         .select(
-            "id,agency_id,company,contact_name,email,phone,terms,industry,status,website,tags,preferences,created_at,updated_at",
+            "id,agency_id,company,contact_name,email,phone,terms,industry,status,website,tags,notes,next_follow_up_date,preferences,created_at,updated_at",
         )
         .eq("agency_id", &user.id)
         .order("created_at.desc")
@@ -481,9 +483,25 @@ pub async fn list_clients(
     let bookings: Vec<serde_json::Value> = serde_json::from_str(&bookings_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    // 2.1 Fetch contacts to count them
+    let contacts_resp = state
+        .pg
+        .from("client_contacts")
+        .select("client_id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contacts_text = contacts_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contacts: Vec<serde_json::Value> = serde_json::from_str(&contacts_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     // 3. Aggregate metrics by client_id
     use std::collections::HashMap;
     let mut metrics_map: HashMap<String, (i32, i32, Option<String>)> = HashMap::new();
+    let mut contacts_count_map: HashMap<String, i32> = HashMap::new();
 
     for b in bookings {
         if let Some(cid) = b.get("client_id").and_then(|v| v.as_str()) {
@@ -501,9 +519,18 @@ pub async fn list_clients(
         }
     }
 
+    for c in contacts {
+        if let Some(cid) = c.get("client_id").and_then(|v| v.as_str()) {
+            let count = contacts_count_map.entry(cid.to_string()).or_insert(0);
+            *count += 1;
+        }
+    }
+
     // 4. Attach metrics to clients
     for client in &mut clients {
         if let Some(id) = client.get("id").and_then(|v| v.as_str()) {
+            let c_count = contacts_count_map.get(id).copied().unwrap_or(0);
+            
             if let Some((count, revenue, last_date)) = metrics_map.get(id) {
                 let revenue_str = format!("${}K", revenue / 100000); // Simple $K formatting
                 let formatted_revenue = if *revenue >= 100000 {
@@ -515,13 +542,17 @@ pub async fn list_clients(
                 client.as_object_mut().unwrap().insert("metrics".to_string(), json!({
                     "bookings": count,
                     "revenue": formatted_revenue,
+                    "revenue_cents": revenue,
                     "lastBookingDate": last_date.clone().unwrap_or_else(|| "Never".to_string()),
+                    "contacts": c_count,
                 }));
             } else {
                 client.as_object_mut().unwrap().insert("metrics".to_string(), json!({
                     "bookings": 0,
                     "revenue": "$0",
+                    "revenue_cents": 0,
                     "lastBookingDate": "Never",
+                    "contacts": c_count,
                 }));
             }
         }
@@ -546,6 +577,8 @@ pub async fn create_client(
         "status": payload.status.unwrap_or_else(|| "Lead".to_string()),
         "website": payload.website,
         "tags": payload.tags.unwrap_or_default(),
+        "notes": payload.notes,
+        "next_follow_up_date": payload.next_follow_up_date,
         "preferences": payload.preferences.unwrap_or_else(|| json!({})),
     });
     let resp = state
@@ -581,6 +614,8 @@ pub struct UpdateAgencyClientPayload {
     pub status: Option<String>,
     pub website: Option<String>,
     pub tags: Option<Vec<String>>,
+    pub notes: Option<String>,
+    pub next_follow_up_date: Option<String>,
     pub preferences: Option<serde_json::Value>,
 }
 

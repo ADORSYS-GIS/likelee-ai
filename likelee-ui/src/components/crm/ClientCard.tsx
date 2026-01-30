@@ -33,17 +33,30 @@ const ClientCard = ({
         }
     };
 
+    const getFollowUpColor = (dateString: string | undefined) => {
+        if (!dateString) return "text-gray-900";
+        const d = new Date(dateString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) return "text-red-600 font-black flex items-center gap-1 animate-pulse";
+        if (diffDays <= 3) return "text-orange-600 font-bold";
+        return "text-indigo-600 font-bold";
+    };
+
     return (
-        <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+        <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow group">
             <div className="flex items-center justify-between gap-6">
                 <div className="flex items-center gap-6 flex-1">
-                    <div className="w-14 h-14 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
-                        <Building2 className="w-8 h-8 text-gray-400" />
+                    <div className="w-14 h-14 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
+                        <Building2 className="w-8 h-8 text-gray-400 group-hover:text-indigo-400 transition-colors" />
                     </div>
                     <div className="space-y-1.5 flex-1">
                         <div className="flex items-center gap-3">
                             <h3 className="text-lg font-bold text-gray-900">{client.name}</h3>
-                            <Badge className="bg-gray-100 text-gray-600 border-none font-bold text-[10px] px-2 py-0.5">
+                            <Badge className={`${getStatusColor(client.status)} border-none font-bold text-[10px] px-2 py-0.5 uppercase tracking-tighter`}>
                                 {client.status}
                             </Badge>
                             <div className="flex gap-1.5">
@@ -51,7 +64,7 @@ const ClientCard = ({
                                     <Badge
                                         key={tag}
                                         variant="outline"
-                                        className="text-[10px] font-bold text-gray-400 border-gray-200 flex items-center gap-1"
+                                        className="text-[10px] font-bold text-gray-400 border-gray-200 flex items-center gap-1 bg-gray-50/50"
                                     >
                                         <Tag className="w-2.5 h-2.5" />
                                         {tag}
@@ -66,29 +79,33 @@ const ClientCard = ({
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Globe className="w-3.5 h-3.5 text-gray-400" />
-                                {client.website || "No website"}
+                                <span className={client.website ? "text-indigo-600 hover:underline cursor-pointer" : ""}>
+                                    {client.website || "No website"}
+                                </span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Users className="w-3.5 h-3.5 text-gray-400" />
                                 {client.contacts} contacts
                             </div>
                         </div>
-                        <div className="flex items-center gap-8 text-[11px] font-bold">
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-400 uppercase">Total Revenue:</span>
-                                <span className="text-gray-900">{client.metrics?.revenue || client.totalRevenue}</span>
+                        <div className="flex items-center gap-8 text-[11px] font-bold mt-2">
+                            <div className="flex items-center gap-2 p-1.5 bg-purple-50 rounded-lg">
+                                <span className="text-purple-400 uppercase text-[9px] tracking-widest">Revenue:</span>
+                                <span className="text-purple-700 font-black">{client.metrics?.revenue || client.totalRevenue}</span>
+                            </div>
+                            <div className="flex items-center gap-2 p-1.5 bg-emerald-50 rounded-lg">
+                                <span className="text-emerald-400 uppercase text-[9px] tracking-widest">Bookings:</span>
+                                <span className="text-emerald-700 font-black">{client.metrics?.bookings || client.bookings}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-400 uppercase">Bookings:</span>
-                                <span className="text-gray-900">{client.metrics?.bookings || client.bookings}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-400 uppercase">Last Booking:</span>
+                                <span className="text-gray-400 uppercase text-[9px] tracking-widest">Last Booking:</span>
                                 <span className="text-gray-900">{client.metrics?.lastBookingDate || client.lastBooking}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-400 uppercase">Next Follow-up:</span>
-                                <span className="text-gray-900">{client.nextFollowUp}</span>
+                            <div className="flex items-center gap-2 bg-gray-50/50 p-1.5 rounded-lg border border-gray-100">
+                                <span className="text-gray-400 uppercase text-[9px] tracking-widest">Follow-up:</span>
+                                <span className={getFollowUpColor(client.next_follow_up_date)}>
+                                    {client.nextFollowUp}
+                                </span>
                             </div>
                         </div>
                     </div>

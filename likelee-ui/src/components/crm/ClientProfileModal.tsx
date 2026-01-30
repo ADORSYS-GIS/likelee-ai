@@ -210,6 +210,14 @@ const ClientProfileModal = ({
                                                     </p>
                                                 </div>
                                                 <div>
+                                                    <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                                                        Next Follow-up
+                                                    </p>
+                                                    <p className="text-sm font-bold text-indigo-600">
+                                                        {client.nextFollowUp}
+                                                    </p>
+                                                </div>
+                                                <div>
                                                     <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
                                                         Tags
                                                     </p>

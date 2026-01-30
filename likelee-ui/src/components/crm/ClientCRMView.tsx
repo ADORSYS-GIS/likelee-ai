@@ -84,22 +84,28 @@ const ClientCRMView = () => {
                 status: c.status,
                 industry: c.industry || "Unknown",
                 website: c.website || "",
-                contacts: 0,
-                totalRevenue: "$0K",
-                bookings: 0,
-                lastBooking: "Never",
-                nextFollowUp: "None",
+                contacts: c.metrics?.contacts || 0,
+                totalRevenue: c.metrics?.revenue || "$0",
+                bookings: c.metrics?.bookings || 0,
+                lastBooking: c.metrics?.lastBookingDate || "Never",
+                nextFollowUp: c.next_follow_up_date
+                    ? new Date(c.next_follow_up_date).toLocaleDateString()
+                    : "None",
+                next_follow_up_date: c.next_follow_up_date,
                 tags: c.tags || [],
+                notes: c.notes || "",
                 preferences: c.preferences || {
                     talentTypes: [],
                     budgetRange: "",
                     leadTime: "",
                 },
                 metrics: {
-                    revenue: "$0K",
-                    bookings: 0,
-                    packagesSent: 0,
-                    lastBookingDate: "Never",
+                    revenue: c.metrics?.revenue || "$0",
+                    revenue_cents: c.metrics?.revenue_cents || 0,
+                    bookings: c.metrics?.bookings || 0,
+                    packagesSent: c.metrics?.packagesSent || 0,
+                    lastBookingDate: c.metrics?.lastBookingDate || "Never",
+                    contacts: c.metrics?.contacts || 0,
                 },
             }));
         },
@@ -149,7 +155,7 @@ const ClientCRMView = () => {
                         </span>
                     </div>
                     <span className="text-3xl font-bold text-green-900">
-                        {clients.filter((c) => c.status === "Active Client").length}
+                        {clients.filter((c) => (c.bookings || 0) > 0).length}
                     </span>
                 </Card>
                 <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
@@ -160,7 +166,7 @@ const ClientCRMView = () => {
                         <span className="text-base font-bold text-blue-800">Prospects</span>
                     </div>
                     <span className="text-3xl font-bold text-blue-900">
-                        {clients.filter((c) => c.status === "Prospect").length}
+                        {clients.filter((c) => c.status === "Prospect" || c.status === "Lead").length}
                     </span>
                 </Card>
                 <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
@@ -172,7 +178,9 @@ const ClientCRMView = () => {
                             Total Revenue
                         </span>
                     </div>
-                    <span className="text-3xl font-bold text-purple-900">$0K</span>
+                    <span className="text-3xl font-bold text-purple-900">
+                        ${(clients.reduce((sum, c) => sum + (c.metrics?.revenue_cents || 0), 0) / 100000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K
+                    </span>
                 </Card>
                 <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
                     <div className="flex items-center gap-3 mb-3">
@@ -183,7 +191,13 @@ const ClientCRMView = () => {
                             Follow-ups Due
                         </span>
                     </div>
-                    <span className="text-3xl font-bold text-orange-900">0</span>
+                    <span className="text-3xl font-bold text-orange-900">
+                        {clients.filter(c => {
+                            if (!c.next_follow_up_date) return false;
+                            const d = new Date(c.next_follow_up_date);
+                            return d <= new Date();
+                        }).length}
+                    </span>
                 </Card>
             </div>
 

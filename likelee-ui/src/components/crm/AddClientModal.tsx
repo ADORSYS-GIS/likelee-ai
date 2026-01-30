@@ -35,6 +35,7 @@ const AddClientModal = ({
         status: "Lead",
         tags: "",
         notes: "",
+        next_follow_up_date: "",
     });
 
     const mutation = useMutation({
@@ -53,6 +54,7 @@ const AddClientModal = ({
                 status: "Lead",
                 tags: "",
                 notes: "",
+                next_follow_up_date: "",
             });
         },
         onError: (error: any) => {
@@ -81,6 +83,7 @@ const AddClientModal = ({
                     .map((t) => t.trim())
                     .filter(Boolean)
                 : [],
+            next_follow_up_date: formData.next_follow_up_date || null,
             preferences: { notes: formData.notes },
         });
     };
@@ -164,6 +167,16 @@ const AddClientModal = ({
                             className="h-11 bg-gray-50 border-gray-200 rounded-xl"
                             value={formData.tags}
                             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-bold text-gray-700">Next Follow-up Date</Label>
+                        <Input
+                            type="date"
+                            className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                            value={formData.next_follow_up_date}
+                            onChange={(e) => setFormData({ ...formData, next_follow_up_date: e.target.value })}
                         />
                     </div>
 
