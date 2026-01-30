@@ -34,8 +34,6 @@ services:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
-        VITE_AWS_REGION: ${VITE_AWS_REGION}
-        VITE_COGNITO_IDENTITY_POOL_ID: ${VITE_COGNITO_IDENTITY_POOL_ID}
     restart: unless-stopped
     expose:
       - "8080"
