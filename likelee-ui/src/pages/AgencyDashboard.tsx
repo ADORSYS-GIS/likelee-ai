@@ -125,8 +125,43 @@ import {
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import { PerformanceTiersView } from "@/components/dashboard/PerformanceTiers";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "../auth/AuthProvider";
 
-const TALENT_DATA: any[] = [];
+const TalentDataContext = React.createContext<any[]>([]);
+
+function useTalentData() {
+  return React.useContext(TalentDataContext);
+}
 
 const AddProspectModal = ({
   open,
@@ -301,37 +336,6 @@ const AddProspectModal = ({
     </Dialog>
   );
 };
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "../auth/AuthProvider";
 
 // --- Mock Data (Based on Reference) ---
 const mockAgency = {
@@ -1959,8 +1963,14 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
-  <div className="space-y-8">
+const DashboardView = ({ onKYC }: { onKYC: () => void }) => {
+  const talentData = useTalentData();
+  const topEarners = [...talentData]
+    .sort((a, b) => (b?.earningsVal ?? 0) - (a?.earningsVal ?? 0))
+    .slice(0, 3);
+
+  return (
+    <div className="space-y-8">
     {/* KYC Verification Alert */}
     <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
       <div className="flex items-center gap-4">
@@ -2079,50 +2089,31 @@ const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
             </h3>
           </div>
 
-          {TALENT_DATA.length === 0 ? (
+          {topEarners.length === 0 ? (
             <p className="text-xs text-gray-500 font-medium">
               No talent data available.
             </p>
           ) : (
-            [
-              {
-                rank: "#1",
-                talent: TALENT_DATA.find((t) => t.id === "carla"),
-                amount: "$6,800",
-                color: "text-green-600",
-              },
-              {
-                rank: "#2",
-                talent: TALENT_DATA.find((t) => t.id === "clemence"),
-                amount: "$5,400",
-                color: "text-green-600",
-              },
-              {
-                rank: "#3",
-                talent: TALENT_DATA.find((t) => t.id === "julia"),
-                amount: "$5,200",
-                color: "text-green-600",
-              },
-            ]
-              .filter((item) => item.talent)
-              .map((item) => (
+            topEarners.map((talent, idx) => (
                 <div
-                  key={item.rank}
+                  key={talent.id}
                   className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <span className={`font-bold text-2xl w-10 ${item.color}`}>
-                    {item.rank}
+                  <span className="font-bold text-2xl w-10 text-green-600">
+                    #{idx + 1}
                   </span>
                   <img
-                    src={item.talent?.img || ""}
-                    alt={item.talent?.name || "Talent"}
+                    src={talent?.img || ""}
+                    alt={talent?.name || "Talent"}
                     className="w-12 h-12 rounded-lg object-cover"
                   />
                   <div className="flex-1">
                     <p className="font-bold text-gray-900 text-sm">
-                      {item.talent?.name}
+                      {talent?.name}
                     </p>
-                    <p className="text-xs text-gray-500">{item.amount}</p>
+                    <p className="text-xs text-gray-500">
+                      {talent?.earnings || "—"}
+                    </p>
                   </div>
                   <TrendingUp className="w-4 h-4 text-green-500" />
                 </div>
@@ -2419,6 +2410,7 @@ const RosterView = ({
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
 }) => {
   const navigate = useNavigate();
+  const talentData = useTalentData();
   const [rosterTab, setRosterTab] = useState("roster");
 
   const handleSort = (key: string) => {
@@ -2434,7 +2426,7 @@ const RosterView = ({
   };
 
   const filteredTalent = React.useMemo(() => {
-    let data = [...TALENT_DATA];
+    let data = [...talentData];
 
     // Search
     if (searchTerm) {
@@ -2472,7 +2464,7 @@ const RosterView = ({
     }
 
     return data;
-  }, [searchTerm, statusFilter, consentFilter, sortConfig]);
+  }, [searchTerm, statusFilter, consentFilter, sortConfig, talentData]);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -2644,7 +2636,7 @@ const RosterView = ({
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-gray-400" />
             <span className="font-medium">
-              {TALENT_DATA.length} / 15 seats used
+              {talentData.length} / 15 seats used
             </span>
           </div>
         </div>
@@ -2658,10 +2650,10 @@ const RosterView = ({
               Active Talent
             </h3>
             <div className="text-3xl font-bold text-gray-900">
-              {TALENT_DATA.filter((t) => t.status === "active").length}
+              {talentData.filter((t) => t.status === "active").length}
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              of {TALENT_DATA.length} total
+              of {talentData.length} total
             </p>
           </div>
           <Users className="w-10 h-10 text-gray-300" />
@@ -3277,6 +3269,7 @@ const LicensingRequestsView = () => {
 };
 
 const ActiveLicensesView = () => {
+  const talentData = useTalentData();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
 
@@ -3284,7 +3277,7 @@ const ActiveLicensesView = () => {
     {
       id: "LIC-001",
       talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
+      talentImg: talentData.find((t) => t.name === "Emma")?.img || "",
       type: "Cosmetics Campaign",
       brand: "Glamour Beauty Co.",
       duration: "2025-01-15 to 2025-07-15",
@@ -3298,7 +3291,7 @@ const ActiveLicensesView = () => {
     {
       id: "LIC-002",
       talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
+      talentImg: talentData.find((t) => t.name === "Sergine")?.img || "",
       type: "Fashion Editorial",
       brand: "Vogue Magazine",
       duration: "2024-12-01 to 2025-06-01",
@@ -3312,7 +3305,7 @@ const ActiveLicensesView = () => {
     {
       id: "LIC-003",
       talent: "Milan",
-      talentImg: TALENT_DATA.find((t) => t.name === "Milan")?.img || "",
+      talentImg: talentData.find((t) => t.name === "Milan")?.img || "",
       type: "Athletic Wear Campaign",
       brand: "Nike Performance",
       duration: "2025-01-01 to 2025-03-01",
@@ -3326,7 +3319,7 @@ const ActiveLicensesView = () => {
     {
       id: "LIC-004",
       talent: "Julia",
-      talentImg: TALENT_DATA.find((t) => t.name === "Julia")?.img || "",
+      talentImg: talentData.find((t) => t.name === "Julia")?.img || "",
       type: "Tech Product Launch",
       brand: "Apple Inc.",
       duration: "2024-11-15 to 2025-02-15",
@@ -3340,7 +3333,7 @@ const ActiveLicensesView = () => {
     {
       id: "LIC-005",
       talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
+      talentImg: talentData.find((t) => t.name === "Emma")?.img || "",
       type: "Luxury Watch Campaign",
       brand: "Rolex",
       duration: "2024-08-01 to 2024-12-31",
@@ -3354,7 +3347,7 @@ const ActiveLicensesView = () => {
     {
       id: "LIC-006",
       talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
+      talentImg: talentData.find((t) => t.name === "Sergine")?.img || "",
       type: "Beverage Campaign",
       brand: "Coca-Cola",
       duration: "2024-09-01 to 2025-09-01",
@@ -4468,6 +4461,7 @@ const LicenseTemplatesView = () => {
 };
 
 const ProtectionUsageView = () => {
+  const talentData = useTalentData();
   const [activeTab, setActiveTab] = useState("Current Alerts");
 
   // Alert Settings checkbox states
@@ -4623,7 +4617,7 @@ const ProtectionUsageView = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex gap-4">
                 <img
-                  src={TALENT_DATA.find((t) => t.name === "Emma")?.img || ""}
+                  src={talentData.find((t) => t.name === "Emma")?.img || ""}
                   alt="Emma"
                   className="w-12 h-12 rounded-full object-cover"
                 />
@@ -7336,6 +7330,7 @@ const ComplianceHubView = () => {
 };
 
 const RoyaltiesPayoutsView = () => {
+  const talentData = useTalentData();
   const [activeTab, setActiveTab] = useState("Commission Structure");
   const subTabs = [
     "Commission Structure",
@@ -7351,8 +7346,8 @@ const RoyaltiesPayoutsView = () => {
 
   const filteredTalent =
     selectedTier === "All Tiers"
-      ? TALENT_DATA
-      : TALENT_DATA.filter((t) => t.tier === selectedTier);
+      ? talentData
+      : talentData.filter((t) => t.tier === selectedTier);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -7735,7 +7730,7 @@ const RoyaltiesPayoutsView = () => {
                     </select>
                   </div>
                   <p className="text-xs font-medium text-gray-400 italic">
-                    Showing {filteredTalent.length} of {TALENT_DATA.length}{" "}
+                    Showing {filteredTalent.length} of {talentData.length}{" "}
                     talent
                   </p>
                 </div>
@@ -8295,6 +8290,7 @@ const RoyaltiesPayoutsView = () => {
 };
 
 const AnalyticsDashboardView = () => {
+  const talentData = useTalentData();
   const [activeTab, setActiveTab] = useState("Overview");
   const subTabs = [
     "Overview",
@@ -8834,7 +8830,7 @@ const AnalyticsDashboardView = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {TALENT_DATA.filter((t) => t.status === "active")
+                  {talentData.filter((t) => t.status === "active")
                     .slice(0, 10)
                     .map((talent) => (
                       <tr
@@ -9339,6 +9335,7 @@ const NewBookingModal = ({
   mode?: "new" | "edit" | "duplicate";
 }) => {
   const { toast } = useToast();
+  const talentData = useTalentData();
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
   const [talentSearch, setTalentSearch] = useState("");
@@ -9380,7 +9377,7 @@ const NewBookingModal = ({
       setNotes(initialData.notes || "");
 
       // Try to find talent in TALENT_DATA
-      const talent = TALENT_DATA.find((t) => t.name === initialData.talentName);
+      const talent = talentData.find((t) => t.name === initialData.talentName);
       if (talent) setSelectedTalents([talent]);
 
       // Try to find client in clients
@@ -9396,9 +9393,9 @@ const NewBookingModal = ({
       setNotes("");
       setDate("2026-01-12");
     }
-  }, [open, initialData, clients]);
+  }, [open, initialData, clients, talentData]);
 
-  const filteredTalents = TALENT_DATA.filter((t) =>
+  const filteredTalents = talentData.filter((t) =>
     t.name.toLowerCase().includes(talentSearch.toLowerCase()),
   );
 
@@ -11826,11 +11823,12 @@ const TalentAvailabilityTab = ({
   onRemoveBookOut: (id: string) => void;
 }) => {
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
+  const talentData = useTalentData();
   const { toast, dismiss } = useToast();
 
   // Helper to find talent name
   const getTalentName = (id: string) =>
-    TALENT_DATA.find((t) => t.id === id)?.name || "Unknown Talent";
+    talentData.find((t) => t.id === id)?.name || "Unknown Talent";
 
   return (
     <div className="space-y-6">
@@ -13680,6 +13678,72 @@ function AgencyDashboard() {
   })();
   const api = (path: string) => new URL(path, API_BASE_ABS).toString();
 
+  const [talentData, setTalentData] = useState<any[]>([]);
+  const [talentDataLoading, setTalentDataLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTalentData = async () => {
+      try {
+        setTalentDataLoading(true);
+        const tiersRes = await fetch(api("/api/performance-tiers"));
+        if (!tiersRes.ok) {
+          setTalentData([]);
+          return;
+        }
+        const tiers = await tiersRes.json();
+        const all: any[] = [];
+        for (const tier of tiers) {
+          const tierName = tier?.tier_name;
+          if (!tierName) continue;
+          const talentsRes = await fetch(
+            api(`/api/performance-tiers/${tierName}/talents`),
+          );
+          if (!talentsRes.ok) continue;
+          const talents = await talentsRes.json();
+          for (const t of talents ?? []) {
+            const earningsVal = Number(t?.avg_monthly_earnings ?? 0);
+            all.push({
+              id: String(t?.profile_id ?? ""),
+              name: String(t?.name ?? "Unknown"),
+              img: t?.photo_url ?? "",
+              tier: String(t?.current_tier ?? tierName),
+              status:
+                String(t?.current_tier ?? tierName).toLowerCase() === "inactive"
+                  ? "inactive"
+                  : "active",
+              role: "Talent",
+              consent: "complete",
+              aiUsage: [],
+              followers: "0",
+              followersVal: 0,
+              assets: "0",
+              brand: "—",
+              expiry: "—",
+              earnings: `$${earningsVal.toLocaleString()}`,
+              earningsVal,
+              projected: `$${Math.round(earningsVal * 1.1).toLocaleString()}`,
+              projectedVal: Math.round(earningsVal * 1.1),
+              isVerified: true,
+            });
+          }
+        }
+
+        const byId = new Map<string, any>();
+        for (const t of all) {
+          if (!t?.id) continue;
+          if (!byId.has(t.id)) byId.set(t.id, t);
+        }
+        setTalentData(Array.from(byId.values()));
+      } catch {
+        setTalentData([]);
+      } finally {
+        setTalentDataLoading(false);
+      }
+    };
+
+    fetchTalentData();
+  }, [api]);
+
   const handleKYC = async () => {
     if (!authenticated || !user?.id) {
       toast({
@@ -13863,7 +13927,8 @@ function AgencyDashboard() {
         ];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+    <TalentDataContext.Provider value={talentDataLoading ? [] : talentData}>
+      <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -14243,7 +14308,8 @@ function AgencyDashboard() {
           )}
         </main>
       </div>
-    </div>
+      </div>
+    </TalentDataContext.Provider>
   );
 }
 
