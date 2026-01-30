@@ -870,7 +870,10 @@ pub async fn get_roster(
 
                 let cents: i64 = r
                     .get("rate_cents")
-                    .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                    .and_then(|v| {
+                        v.as_i64()
+                            .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                    })
                     .unwrap_or(0);
 
                 if d >= start_30d_date {
