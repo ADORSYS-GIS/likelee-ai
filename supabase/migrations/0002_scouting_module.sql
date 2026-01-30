@@ -1,5 +1,8 @@
 -- 0002_scouting_module.sql
 -- Scouting Module: Prospects, Trips, Events, and Submissions
+-- Enable trigram extension for full-text search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 
 BEGIN;
 
