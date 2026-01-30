@@ -372,7 +372,10 @@ export const PerformanceTiersView: React.FC<PerformanceTiersViewProps> = ({
                         className="flex items-center gap-4 p-5 border border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-indigo-100 transition-all group"
                       >
                         <Avatar className="w-14 h-14 rounded-2xl bg-gray-50 shadow-sm border border-gray-50">
-                          <AvatarImage src={t.photo_url || undefined} alt={t.name} />
+                          <AvatarImage
+                            src={t.photo_url || undefined}
+                            alt={t.name}
+                          />
                           <AvatarFallback className="rounded-2xl font-bold text-gray-600">
                             {(t.name || "?")
                               .split(" ")
