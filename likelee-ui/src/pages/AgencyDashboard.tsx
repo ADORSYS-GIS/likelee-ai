@@ -2390,6 +2390,8 @@ const DashboardView = ({ onKYC }: { onKYC: () => void }) => {
   </div>
 );
 
+};
+
 const RosterView = ({
   searchTerm,
   setSearchTerm,
@@ -7889,7 +7891,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 6800,
                   talent: 5984,
                   agency: 816,
-                  img: TALENT_DATA.find((t) => t.id === "carla")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "carla",
+                    )?.img || "",
                 },
                 {
                   name: "Clemence",
@@ -7897,7 +7902,11 @@ const RoyaltiesPayoutsView = () => {
                   amount: 5400,
                   talent: 4752,
                   agency: 648,
-                  img: TALENT_DATA.find((t) => t.id === "clemence")?.img,
+                  img:
+                    talentData.find(
+                      (t) =>
+                        String(t?.name ?? "").toLowerCase() === "clemence",
+                    )?.img || "",
                 },
                 {
                   name: "Julia",
@@ -7905,7 +7914,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 5200,
                   talent: 4576,
                   agency: 624,
-                  img: TALENT_DATA.find((t) => t.id === "julia")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "julia",
+                    )?.img || "",
                 },
                 {
                   name: "Luisa",
@@ -7913,7 +7925,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 4200,
                   talent: 3570,
                   agency: 630,
-                  img: TALENT_DATA.find((t) => t.id === "luisa")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "luisa",
+                    )?.img || "",
                 },
                 {
                   name: "Milan",
@@ -7921,7 +7936,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 4100,
                   talent: 3485,
                   agency: 615,
-                  img: TALENT_DATA.find((t) => t.id === "milan")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "milan",
+                    )?.img || "",
                 },
                 {
                   name: "Matt",
@@ -7929,7 +7947,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 3600,
                   talent: 3060,
                   agency: 540,
-                  img: TALENT_DATA.find((t) => t.id === "matt")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "matt",
+                    )?.img || "",
                 },
                 {
                   name: "Emma",
@@ -7937,7 +7958,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 3200,
                   talent: 2720,
                   agency: 480,
-                  img: TALENT_DATA.find((t) => t.id === "emma")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "emma",
+                    )?.img || "",
                 },
                 {
                   name: "Sergine",
@@ -7945,7 +7969,11 @@ const RoyaltiesPayoutsView = () => {
                   amount: 2800,
                   talent: 2296,
                   agency: 504,
-                  img: TALENT_DATA.find((t) => t.id === "sergine")?.img,
+                  img:
+                    talentData.find(
+                      (t) =>
+                        String(t?.name ?? "").toLowerCase() === "sergine",
+                    )?.img || "",
                 },
                 {
                   name: "Lina",
@@ -7953,7 +7981,10 @@ const RoyaltiesPayoutsView = () => {
                   amount: 2400,
                   talent: 1968,
                   agency: 432,
-                  img: TALENT_DATA.find((t) => t.id === "lina")?.img,
+                  img:
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "lina",
+                    )?.img || "",
                 },
               ].map((talent, i) => (
                 <div
@@ -8732,7 +8763,12 @@ const AnalyticsDashboardView = () => {
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-green-500 p-0.5">
                   <img
-                    src={TALENT_DATA.find((t) => t.id === "carla")?.img}
+                    src={
+                      talentData.find(
+                        (t) =>
+                          String(t?.name ?? "").toLowerCase() === "carla",
+                      )?.img || ""
+                    }
                     alt="Carla"
                     className="w-full h-full object-cover rounded-lg"
                   />
@@ -8756,7 +8792,12 @@ const AnalyticsDashboardView = () => {
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-indigo-500 p-0.5">
                   <img
-                    src={TALENT_DATA.find((t) => t.id === "julia")?.img}
+                    src={
+                      talentData.find(
+                        (t) =>
+                          String(t?.name ?? "").toLowerCase() === "julia",
+                      )?.img || ""
+                    }
                     alt="Julia"
                     className="w-full h-full object-cover rounded-lg"
                   />
@@ -8780,7 +8821,11 @@ const AnalyticsDashboardView = () => {
               <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-purple-500 p-0.5">
                   <img
-                    src={TALENT_DATA.find((t) => t.id === "carla")?.img}
+                    src={
+                      talentData.find(
+                        (t) => String(t?.name ?? "").toLowerCase() === "carla",
+                      )?.img || ""
+                    }
                     alt="Carla"
                     className="w-full h-full object-cover rounded-lg"
                   />
@@ -9166,7 +9211,11 @@ const AnalyticsDashboardView = () => {
             <div className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <img
-                  src={TALENT_DATA.find((t) => t.id === "julia")?.img}
+                  src={
+                    talentData.find(
+                      (t) => String(t?.name ?? "").toLowerCase() === "julia",
+                    )?.img || ""
+                  }
                   alt="Julia"
                   className="w-12 h-12 rounded-lg object-cover"
                 />
@@ -9376,7 +9425,7 @@ const NewBookingModal = ({
       setDate(initialData.date || "2026-01-12");
       setNotes(initialData.notes || "");
 
-      // Try to find talent in TALENT_DATA
+      // Try to find talent in talentData
       const talent = talentData.find((t) => t.name === initialData.talentName);
       if (talent) setSelectedTalents([talent]);
 
@@ -11674,6 +11723,7 @@ const AddBookOutModal = ({
   onOpenChange: (open: boolean) => void;
   onAdd: (bookOut: any) => void;
 }) => {
+  const talentData = useTalentData();
   const [reason, setReason] = useState("personal");
   const [talentId, setTalentId] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -11744,7 +11794,7 @@ const AddBookOutModal = ({
                 <SelectValue placeholder="Select talent" />
               </SelectTrigger>
               <SelectContent>
-                {TALENT_DATA.map((talent) => (
+                {talentData.map((talent) => (
                   <SelectItem key={talent.id} value={talent.id}>
                     {talent.name}
                   </SelectItem>
