@@ -607,6 +607,194 @@ pub async fn get_agency_account_status(
     )
 }
 
+    pub async fn create_agency_onboarding_link(
+        State(state): State<AppState>,
+        user: AuthUser,
+    ) -> (StatusCode, Json<serde_json::Value>) {
+        info!("Creating agency onboarding link for user: {}", user.id);
+        if !state.payouts_enabled {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"status":"error","error":"payouts_disabled"})),
+            );
+        }
+        if state.stripe_secret_key.trim().is_empty() {
+            return (
+                StatusCode::PRECONDITION_FAILED,
+                Json(json!({"status":"error","error":"stripe_not_configured"})),
+            );
+        }
+
+    let agency_resp = match state
+        .pg
+        .from("agencies")
+        .select("id,stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+    let text = agency_resp.text().await.unwrap_or("[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "status":"error",
+                "error":"agency_not_found",
+                "message":"No agency profile row found for this user. Complete agency registration (or create your agency profile) before connecting a bank account."
+            })),
+        );
+    }
+
+    let mut account_id = rows[0]
+        .get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    if account_id.is_empty() {
+        let mut params = stripe_sdk::CreateAccount::new();
+        params.type_ = Some(stripe_sdk::AccountType::Express);
+        match stripe_sdk::Account::create(&client, params).await {
+            Ok(acct) => {
+                account_id = acct.id.to_string();
+                let body = json!({"stripe_connect_account_id": account_id});
+                let _ = state
+                    .pg
+                    .from("agencies")
+                    .eq("id", &user.id)
+                    .update(body.to_string())
+                    .execute()
+                    .await;
+            }
+            Err(e) => {
+                return (
+                    StatusCode::BAD_GATEWAY,
+                    Json(json!({"status":"error","error":e.to_string()})),
+                )
+            }
+        }
+    }
+
+    let account_id_parsed = match account_id.parse::<stripe_sdk::AccountId>() {
+        Ok(v) => v,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"status":"error","error":"invalid_account_id"})),
+            )
+        }
+    };
+    let mut link_params = stripe_sdk::CreateAccountLink::new(
+        account_id_parsed,
+        stripe_sdk::AccountLinkType::AccountOnboarding,
+    );
+    link_params.return_url = Some(state.stripe_return_url.as_str());
+    link_params.refresh_url = Some(state.stripe_refresh_url.as_str());
+    match stripe_sdk::AccountLink::create(&client, link_params).await {
+        Ok(link) => (StatusCode::OK, Json(json!({"url": link.url}))),
+        Err(e) => (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({"status":"error","error":e.to_string()})),
+        ),
+    }
+}
+
+pub async fn get_agency_account_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let resp = match state
+        .pg
+        .from("agencies")
+        .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+    let text = match resp.text().await {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows.first().cloned().unwrap_or(json!({}));
+    let connected = row
+        .get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let mut payouts_enabled = row
+        .get("payouts_enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let last_error = row
+        .get("last_payout_error")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let mut transfers_enabled = false;
+    if connected {
+        if let Some(acct_id) = row
+            .get("stripe_connect_account_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+        {
+            let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+            if let Ok(parsed) = acct_id.parse::<stripe_sdk::AccountId>() {
+                match stripe_sdk::Account::retrieve(&client, &parsed, &[]).await {
+                    Ok(acct) => {
+                        payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
+                        if let Some(caps) = acct.capabilities {
+                            if let Some(tr) = caps.transfers {
+                                transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
+                            }
+                        }
+                    }
+                    Err(e) => warn!(error=%e, "stripe retrieve account failed"),
+                }
+            } else {
+                warn!("invalid stripe account id in agency: {}", acct_id);
+            }
+        }
+    }
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "connected": connected,
+            "payouts_enabled": payouts_enabled,
+            "transfers_enabled": transfers_enabled,
+            "last_error": last_error
+        })),
+    )
+}
+
 #[derive(Deserialize)]
 pub struct BalanceQuery {
     pub profile_id: String,

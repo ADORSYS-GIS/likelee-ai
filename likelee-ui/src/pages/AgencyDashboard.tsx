@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { scoutingService } from "@/services/scoutingService";
+import { ScoutingProspect } from "@/types/scouting";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -105,15 +108,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { BookingsView } from "@/components/Bookings/BookingsView";
-import { GenerateInvoiceViewApi } from "@/components/accounting/GenerateInvoiceView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import {
@@ -124,23 +119,405 @@ import {
   listBookOuts,
   createBookOut,
   getAgencyClients,
+  getAgencyTalents,
   listInvoices,
+  listTalentStatements,
+  listExpenses,
+  createExpense,
+  getAgencyPayoutsAccountStatus,
+  getAgencyStripeOnboardingLink,
   notifyBookingCreatedEmail,
 } from "@/api/functions";
 
-const AddProspectModal = ({
+const STATUS_MAP = {
+  new: "New Lead",
+  contacted: "In Contact",
+  meeting: "Meeting Scheduled",
+  test_shoot: "Test Shoots",
+  offer_sent: "Offer Sent",
+  signed: "Signed",
+  declined: "Declined",
+};
+
+const ConnectBankView = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    connected: boolean;
+    payouts_enabled: boolean;
+    transfers_enabled: boolean;
+    last_error: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const resp = await getAgencyPayoutsAccountStatus();
+        const data = (resp as any)?.data ?? resp;
+        if (!mounted) return;
+        setStatus({
+          connected: Boolean((data as any)?.connected),
+          payouts_enabled: Boolean((data as any)?.payouts_enabled),
+          transfers_enabled: Boolean((data as any)?.transfers_enabled),
+          last_error: String((data as any)?.last_error || ""),
+        });
+      } catch (e: any) {
+        toast({
+          title: "Failed to load bank connection status",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const connect = async () => {
+    setLoading(true);
+    try {
+      const resp = await getAgencyStripeOnboardingLink();
+      const url = String((resp as any)?.data?.url || "");
+      if (!url) {
+        throw new Error("Missing Stripe onboarding URL");
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      toast({
+        title: "Failed to start Stripe onboarding",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connected = Boolean(status?.connected);
+  const ready = Boolean(status?.payouts_enabled || status?.transfers_enabled);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Connect Your Bank Account</h2>
+          <p className="text-gray-600 font-medium">
+            Link your bank account to receive direct payments from clients and manage payouts to talent
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          onClick={connect}
+          disabled={loading}
+        >
+          <CreditCard className="w-4 h-4" />
+          Connect Bank Account
+        </Button>
+      </div>
+
+      <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CreditCard className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Connect Your Bank Account</h3>
+            <p className="text-sm text-gray-600 font-medium mt-1">
+              Link your bank account to receive direct payments from clients and manage payouts to talent
+            </p>
+          </div>
+
+          {connected && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Bank account connected</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {ready ? "Payouts enabled" : "Connection created — complete onboarding in Stripe to enable payouts"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!!status?.last_error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Last payout error</p>
+                <p className="text-xs text-gray-600 font-medium">{status.last_error}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-bold text-gray-900">Why Connect Your Bank?</p>
+            </div>
+            <div className="space-y-2">
+              {[
+                "Receive invoice payments directly to your account",
+                "Automate talent commission payouts",
+                "Track cash flow and reconcile payments",
+                "Bank-level security with 256-bit encryption",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
+                  <p className="text-xs text-gray-700 font-medium">{t}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold flex items-center justify-center gap-2"
+            onClick={connect}
+            disabled={loading}
+          >
+            <Link className="w-4 h-4" />
+            Connect with Stripe
+          </Button>
+
+          <div className="text-center mt-4">
+            <p className="text-xs text-gray-500 font-medium">Powered by Stripe Connect</p>
+            <p className="text-[10px] text-gray-400 font-medium">
+              Bank-level security • SOC 2 certified • PCI DSS compliant
+            </p>
+          </div>
+
+          <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
+            <p className="text-xs font-bold text-gray-700 mb-2">What you'll need:</p>
+            <div className="text-xs text-gray-600 font-medium space-y-1">
+              <div>Business bank account details (routing & account number)</div>
+              <div>Business tax ID (EIN or SSN)</div>
+              <div>Business address and contact information</div>
+              <div>Government-issued ID for verification</div>
+            </div>
+          </Card>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const STATUS_COLORS = {
+  new: "bg-blue-50 text-blue-700 border-blue-200",
+  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  meeting: "bg-purple-50 text-purple-700 border-purple-200",
+  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
+  offer_sent: "bg-green-50 text-green-700 border-green-200",
+  signed: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const ProspectModal = ({
   open,
   onOpenChange,
+  prospect = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prospect?: ScoutingProspect | null;
 }) => {
+  const { user } = useAuth();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [starRating, setStarRating] = useState(3);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    source: "instagram",
+    discoveryDate: new Date().toISOString().split("T")[0],
+    discoveryLocation: "",
+    referredBy: "",
+    status: "new",
+    assignedAgent: "",
+    notes: "",
+    instagramFollowers: 10000,
+    engagementRate: 4.5,
+  });
+
+  useEffect(() => {
+    if (prospect) {
+      setFormData({
+        name: prospect.full_name,
+        email: prospect.email || "",
+        phone: prospect.phone || "",
+        instagram: prospect.instagram_handle || "",
+        source: prospect.source || "instagram",
+        discoveryDate:
+          prospect.discovery_date || new Date().toISOString().split("T")[0],
+        discoveryLocation: prospect.discovery_location || "",
+        referredBy: prospect.referred_by || "",
+        status: prospect.status,
+        assignedAgent: prospect.assigned_agent_name || "",
+        notes: prospect.notes || "",
+        instagramFollowers: prospect.instagram_followers || 10000,
+        engagementRate: prospect.engagement_rate || 4.5,
+      });
+      setSelectedCategories(prospect.categories || []);
+      setStarRating(prospect.rating || 3);
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        instagram: "",
+        source: "instagram",
+        discoveryDate: new Date().toISOString().split("T")[0],
+        discoveryLocation: "",
+        referredBy: "",
+        status: "new",
+        assignedAgent: "",
+        notes: "",
+        instagramFollowers: 10000,
+        engagementRate: 4.5,
+      });
+      setSelectedCategories([]);
+      setStarRating(3);
+    }
+  }, [prospect, open]);
+
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+  };
+
+  const queryClient = useQueryClient();
+
+  const handleSaveProspect = async () => {
+    try {
+      if (!formData.name) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter a name for the prospect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSaving(true);
+
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) {
+        toast({
+          title: "Error",
+          description:
+            "Could not identify your agency. Please try logging in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!prospect) {
+        // Check for duplicates only when adding new
+        const existing = await scoutingService.checkDuplicate(
+          agencyId,
+          formData.email || undefined,
+          formData.instagram || undefined,
+        );
+
+        if (existing) {
+          toast({
+            title: "Prospect Already Exists",
+            description: `This prospect (${existing.full_name}) is already in your pipeline.`,
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        await scoutingService.createProspect({
+          agency_id: agencyId,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Added",
+          description: `${formData.name} has been added to your pipeline.`,
+        });
+      } else {
+        // Update existing prospect
+        await scoutingService.updateProspect(prospect.id, {
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Updated",
+          description: `${formData.name}'s information has been updated.`,
+        });
+      }
+
+      // Invalidate the prospects query to trigger a refetch
+      await queryClient.invalidateQueries({
+        queryKey: ["prospects", user?.id],
+      });
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving prospect:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save prospect. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Add New Prospect
+            {prospect ? "Edit Prospect" : "Add New Prospect"}
           </DialogTitle>
           <p className="text-sm text-gray-500">
             Track talent before signing them to your roster
@@ -152,19 +529,41 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
-                <Input id="name" placeholder="Full name" />
+                <Input
+                  id="name"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="email@example.com" />
+                <Input
+                  id="email"
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="+1 (555) 123-4567" />
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram Handle</Label>
-                <Input id="instagram" placeholder="@username" />
+                <Input
+                  id="instagram"
+                  placeholder="@username"
+                  value={formData.instagram}
+                  onChange={(e) =>
+                    handleInputChange("instagram", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -182,8 +581,15 @@ const AddProspectModal = ({
               ].map((cat) => (
                 <Button
                   key={cat}
-                  variant="secondary"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"
+                  variant={
+                    selectedCategories.includes(cat) ? "default" : "secondary"
+                  }
+                  onClick={() => toggleCategory(cat)}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -196,7 +602,10 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Discovery Source</Label>
-                <Select defaultValue="instagram">
+                <Select
+                  value={formData.source}
+                  onValueChange={(val) => handleInputChange("source", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
@@ -204,22 +613,42 @@ const AddProspectModal = ({
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="street">Street Scouting</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Date</Label>
                 <div className="relative">
-                  <Input type="date" defaultValue="2026-01-12" />
+                  <Input
+                    type="date"
+                    value={formData.discoveryDate}
+                    onChange={(e) =>
+                      handleInputChange("discoveryDate", e.target.value)
+                    }
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Location</Label>
-                <Input placeholder="New York, NY" />
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.discoveryLocation}
+                  onChange={(e) =>
+                    handleInputChange("discoveryLocation", e.target.value)
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Referred By</Label>
-                <Input placeholder="Name of referrer" />
+                <Input
+                  placeholder="Name of referrer"
+                  value={formData.referredBy}
+                  onChange={(e) =>
+                    handleInputChange("referredBy", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -231,20 +660,31 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="new">
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => handleInputChange("status", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">New Lead</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                    {Object.entries(STATUS_MAP).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Assigned Agent</Label>
-                <Input placeholder="Agent name" />
+                <Input
+                  placeholder="Agent name"
+                  value={formData.assignedAgent}
+                  onChange={(e) =>
+                    handleInputChange("assignedAgent", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -252,14 +692,12 @@ const AddProspectModal = ({
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
             <div className="flex gap-1">
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Star
                   key={i}
-                  className="w-8 h-8 fill-yellow-400 text-yellow-400"
+                  className={`w-8 h-8 cursor-pointer ${i <= starRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  onClick={() => setStarRating(i)}
                 />
-              ))}
-              {[4, 5].map((i) => (
-                <Star key={i} className="w-8 h-8 text-gray-300" />
               ))}
             </div>
           </div>
@@ -269,6 +707,8 @@ const AddProspectModal = ({
             <Textarea
               placeholder="Add notes about this prospect..."
               className="h-32"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
             />
           </div>
 
@@ -279,21 +719,56 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Instagram Followers</Label>
-                <Input type="number" defaultValue="10000" />
+                <Input
+                  type="number"
+                  value={formData.instagramFollowers || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "instagramFollowers",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Engagement Rate (%)</Label>
-                <Input type="number" defaultValue="4.5" />
+                <Input
+                  type="number"
+                  value={formData.engagementRate || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "engagementRate",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              Add Prospect
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+              onClick={handleSaveProspect}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : prospect ? (
+                "Update Prospect"
+              ) : (
+                "Add Prospect"
+              )}
             </Button>
           </div>
         </div>
@@ -7805,14 +8280,10 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
-  const queryClient = useQueryClient();
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
     null,
   );
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
-  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
 
   const tabs = [
     "Prospect Pipeline",
@@ -7937,23 +8408,6 @@ const ScoutingHubView = ({
         onOpenChange={setIsProspectModalOpen}
         prospect={prospectToEdit}
       />
-      <CreateEventModal
-        open={isEventModalOpen}
-        onOpenChange={setIsEventModalOpen}
-        event={eventToEdit}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
-        }}
-      />
-      <PlanTripModal
-        isOpen={isPlanTripModalOpen}
-        onClose={() => setIsPlanTripModalOpen(false)}
-        onPlan={async (trip) => {
-          console.log("Planning trip:", trip);
-          setIsPlanTripModalOpen(false);
-          refreshScoutingData();
-        }}
-      />
     </div>
   );
 };
@@ -7967,14 +8421,16 @@ const ProspectDetailsSheet = ({
   onClose: () => void;
   onEdit: (prospect: ScoutingProspect) => void;
 }) => {
+  if (!prospect) return null;
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleStatusChange = async (newStatus: string) => {
-    if (!prospect) return;
     try {
-      await scoutingService.updateProspect(prospect.id, { status: newStatus });
+      await scoutingService.updateProspect(prospect.id, {
+        status: newStatus as any,
+      });
       await queryClient.invalidateQueries({ queryKey: ["prospects"] });
       toast({
         title: "Status Updated",
@@ -7982,108 +8438,21 @@ const ProspectDetailsSheet = ({
       });
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({ title: "Error", description: "Failed to update status." });
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  if (!prospect) return null;
-
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="max-w-none sm:max-w-none md:max-w-none lg:max-w-none w-[75vw] lg:w-[860px] xl:w-[960px] p-0 flex flex-col">
-        <SheetHeader className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-bold text-gray-600">
-                  Status
-                </Label>
-                <Badge
-                  className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
-                >
-                  {STATUS_MAP[prospect.status] || prospect.status}
-                </Badge>
-              </div>
-              <Select
-                onValueChange={handleStatusChange}
-                defaultValue={prospect.status}
-                disabled={["offer_sent", "signed", "declined"].includes(
-                  prospect.status,
-                )}
-              >
-                <SelectTrigger className="w-full h-10 text-sm font-semibold mt-2 bg-white">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || "bg-gray-400"}`}
-                    ></span>
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    value="new_lead"
-                    className="text-sm font-semibold"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}
-                      ></span>
-                      <span>{STATUS_MAP.new_lead}</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem
-                    value="in_contact"
-                    className="text-sm font-semibold"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}
-                      ></span>
-                      <span>{STATUS_MAP.in_contact}</span>
-                    </div>
-                  </SelectItem>
-                  <SelectGroup>
-                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                      Test Shoot
-                    </SelectLabel>
-                    <SelectItem
-                      value="test_shoot_pending"
-                      className="text-sm font-semibold bg-gray-50/50"
-                    >
-                      <div className="flex items-center gap-2 pl-6">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}
-                        ></span>
-                        <span>Pending</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem
-                      value="test_shoot_success"
-                      className="text-sm font-semibold bg-gray-50/50"
-                    >
-                      <div className="flex items-center gap-2 pl-6">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}
-                        ></span>
-                        <span>Success</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem
-                      value="test_shoot_failed"
-                      className="text-sm font-semibold bg-gray-50/50"
-                    >
-                      <div className="flex items-center gap-2 pl-6">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}
-                        ></span>
-                        <span>Failed</span>
-                      </div>
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="text-xl font-bold">
+            Prospect Details
+          </SheetTitle>
         </SheetHeader>
 
         {/* Scrollable content */}
@@ -8101,47 +8470,9 @@ const ProspectDetailsSheet = ({
                 </div>
               </div>
               <div className="flex-1 pt-2">
-                <div className="flex justify-between items-start">
-                  <h2 className="text-3xl font-bold text-gray-900">
-                    {prospect.full_name}
-                  </h2>
-                  {prospect.status === "test_shoot_success" ? (
-                    <Button
-                      onClick={() =>
-                        (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
-                      }
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Send Offer
-                    </Button>
-                  ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                      prospect.status,
-                    ) ? (
-                    <div className="flex items-center gap-3">
-                      <Button
-                        onClick={() =>
-                          (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
-                        }
-                        className="bg-white hover:bg-gray-50 border text-gray-700 font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
-                      >
-                        <FileText className="w-4 h-4" />
-                        View Offers
-                      </Button>
-                      {prospect.status === "signed" && (
-                        <Button
-                          onClick={() =>
-                            navigate("/addtalent", { state: { prospect } })
-                          }
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add Talent
-                        </Button>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {prospect.full_name}
+                </h2>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {prospect.categories?.map((cat) => (
                     <Badge key={cat} variant="outline" className="font-medium">
@@ -8161,6 +8492,36 @@ const ProspectDetailsSheet = ({
                   </span>
                 </div>
               </div>
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/70">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-gray-700">Status</h3>
+                <Badge
+                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
+                >
+                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
+                    prospect.status.replace("_", " ")}
+                </Badge>
+              </div>
+              <Select
+                defaultValue={prospect.status}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_MAP).map(([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="font-medium"
+                    >
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -8265,6 +8626,66 @@ const ProspectDetailsSheet = ({
   );
 };
 
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-3">
+    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+      <MapPin className="w-4 h-4 text-gray-400" /> {title}
+    </h3>
+    {children}
+  </div>
+);
+
+const InfoRow = ({
+  icon: Icon,
+  text,
+  subtext,
+}: {
+  icon: React.ElementType;
+  text?: string | null;
+  subtext?: string;
+}) => (
+  <div className="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-xl border">
+    <div className="flex items-center gap-3">
+      <Icon className="w-5 h-5 text-gray-400" />
+      <span className="font-medium text-gray-800">{text || "-"}</span>
+      {subtext && <span className="text-xs text-gray-500">{subtext}</span>}
+    </div>
+    <LinkIcon className="w-4 h-4 text-gray-400 cursor-pointer hover:text-indigo-600" />
+  </div>
+);
+
+const DetailItem = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) => (
+  <div>
+    <div className="text-xs text-gray-500">{label}</div>
+    <div className="font-semibold text-gray-800">{value || "-"}</div>
+  </div>
+);
+
+const MetricBox = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) => (
+  <div className="p-4 bg-gray-50/70 rounded-xl border">
+    <div className="text-xs text-gray-500 mb-1">{label}</div>
+    <div className="text-2xl font-bold text-gray-900">{value}</div>
+  </div>
+);
+
 const ProspectPipelineTab = ({
   onAddProspect,
   onEditProspect,
@@ -8273,27 +8694,10 @@ const ProspectPipelineTab = ({
   onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedProspect, setSelectedProspect] =
     useState<ScoutingProspect | null>(null);
-
-  // Filter states - initialize from URL
-  const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") || "",
-  );
-  const [statusFilter, setStatusFilter] = useState(
-    searchParams.get("status") || "all",
-  );
-  const [sourceFilter, setSourceFilter] = useState(
-    searchParams.get("source") || "all",
-  );
-
-  // Debounce search input
-  const debouncedSearch = useDebounce(searchInput, 300);
-
-  // Fetch all prospects for stats (unfiltered)
-  const { data: allProspects } = useQuery({
-    queryKey: ["prospects-all", user?.id],
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: ["prospects", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const agencyId = await scoutingService.getUserAgencyId();
@@ -8303,43 +8707,6 @@ const ProspectPipelineTab = ({
     enabled: !!user,
   });
 
-  // Fetch filtered prospects
-  const { data: prospects, isLoading } = useQuery({
-    queryKey: [
-      "prospects",
-      user?.id,
-      debouncedSearch,
-      statusFilter,
-      sourceFilter,
-    ],
-    queryFn: async () => {
-      if (!user) return [];
-      const agencyId = await scoutingService.getUserAgencyId();
-      if (!agencyId) return [];
-      return scoutingService.getProspects(agencyId, {
-        searchQuery: debouncedSearch,
-        statusFilter,
-        sourceFilter,
-      });
-    },
-    enabled: !!user,
-    refetchInterval: 5000, // Poll every 5 seconds for real-time pipeline updates
-  });
-
-  // Update URL when filters change
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (debouncedSearch) params.set("search", debouncedSearch);
-    else params.delete("search");
-
-    if (statusFilter !== "all") params.set("status", statusFilter);
-    else params.delete("status");
-
-    if (sourceFilter !== "all") params.set("source", sourceFilter);
-    else params.delete("source");
-
-    setSearchParams(params, { replace: true });
-  }, [debouncedSearch, statusFilter, sourceFilter, setSearchParams]);
   useEffect(() => {
     if (selectedProspect && prospects) {
       const updated = prospects.find((p) => p.id === selectedProspect.id);
@@ -8347,34 +8714,25 @@ const ProspectPipelineTab = ({
     }
   }, [prospects]);
 
-  // Calculate stats from all prospects (not filtered)
   const stats = [
     {
       label: "New Leads",
-      count: allProspects?.filter((p) => p.status === "new_lead").length || 0,
+      count: prospects?.filter((p) => p.status === "new").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: allProspects?.filter((p) => p.status === "in_contact").length || 0,
+      count: prospects?.filter((p) => p.status === "contacted").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count:
-        allProspects?.filter((p) => p.status.startsWith("test_shoot")).length ||
-        0,
-      color: "border-orange-200 bg-orange-50/30",
+      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
+      color: "border-purple-200 bg-purple-50/30",
     },
     {
-      label: "Offers",
-      count:
-        allProspects?.filter(
-          (p) =>
-            p.status === "offer_sent" ||
-            p.status === "signed" ||
-            p.status === "declined",
-        ).length || 0,
+      label: "Offers Sent",
+      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -8540,13 +8898,6 @@ const ProspectPipelineTab = ({
           ))}
         </div>
 
-        {/* Results count */}
-        {hasActiveFilters && prospects && (
-          <div className="mb-4 text-sm text-gray-600">
-            Showing {prospects.length} of {allProspects?.length || 0} prospects
-          </div>
-        )}
-
         {isLoading ? (
           <div className="text-center py-24">Loading prospects...</div>
         ) : !prospects || prospects.length === 0 ? (
@@ -8591,7 +8942,7 @@ const ProspectPipelineTab = ({
                     TEST SHOOTS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                    OFFERS
+                    OFFERS SENT
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
                     SOURCE
@@ -8622,47 +8973,23 @@ const ProspectPipelineTab = ({
                       <div className="text-xs">{p.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "new_lead" ? (
+                      {p.status === "new" ? (
                         <CheckCircle2 className="w-5 h-5 text-blue-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "in_contact" ? (
+                      {p.status === "contacted" ? (
                         <CheckCircle2 className="w-5 h-5 text-yellow-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status.startsWith("test_shoot") && (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
-                        >
-                          {p.status.replace("test_shoot_", "")}
-                        </Badge>
-                      )}
+                      {p.status === "test_shoot" ? (
+                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "signed" ? (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS.signed}`}
-                        >
-                          {STATUS_MAP.signed}
-                        </Badge>
-                      ) : p.status === "declined" ? (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS.declined}`}
-                        >
-                          {STATUS_MAP.declined}
-                        </Badge>
-                      ) : p.status === "opened" ? (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS.opened}`}
-                        >
-                          Opened
-                        </Badge>
-                      ) : p.status === "offer_sent" ? (
-                        <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">
-                          Awaiting
-                        </Badge>
+                      {p.status === "offer_sent" ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-gray-600 font-medium">
@@ -16533,7 +16860,7 @@ export default function AgencyDashboard() {
 
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
-    (searchParams.get("mode") as "AI" | "IRL") || "IRL",
+    (searchParams.get("mode") as "AI" | "IRL") || "AI",
   );
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
@@ -17316,7 +17643,8 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "accounting" && (
             <div>
-              {activeSubTab === "Invoice Generation" && <GenerateInvoiceViewApi />}
+              {activeSubTab === "Connect Bank" && <ConnectBankView />}
+              {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
               {activeSubTab === "Invoice Management" && (
                 <InvoiceManagementView
                   setActiveSubTab={setActiveSubTab}
